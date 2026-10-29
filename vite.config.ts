@@ -2,6 +2,10 @@ import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
 import { fileURLToPath, URL } from 'node:url';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
 /**
  * Emits `sw.js`: a cache-first service worker that precaches every file the
@@ -13,7 +17,9 @@ function serviceWorker(): Plugin {
     name: 'arise-sw',
     apply: 'build',
     generateBundle(_, bundle) {
-      const files = Object.keys(bundle).filter((f) => !f.endsWith('.map'));
+      const walk = (dir: string): string[] => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
+      const pub = walk('public').map((f) => relative('public', f).split('\\').join('/'));
+      const files = [...Object.keys(bundle).filter((f) => !f.endsWith('.map')), ...pub];
       const assets = ['./', ...files.map((f) => './' + f)];
       let h = 2166136261;
       for (const ch of assets.join('|')) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
@@ -45,6 +51,7 @@ self.addEventListener('fetch', (e) => {
 export default defineConfig({
   base: './',
   plugins: [preact(), serviceWorker()],
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

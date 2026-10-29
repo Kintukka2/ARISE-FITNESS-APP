@@ -240,7 +240,7 @@ export function summary(s: Save): string[] {
   const p = s.profile;
   const g = goalOf(p.goal);
   const exp = EXPERIENCE.find((e) => e.id === p.experience)!;
-  const kit = p.equipment.map((id) => GEAR.find((e) => e.id === id)?.name ?? id);
+  const kit = ['Bare Hands', ...p.equipment.map((id) => GEAR.find((e) => e.id === id)?.name ?? id)];
   const fits = available(p.equipment, p.limitations).length;
   const notes = [
     `Goal locked to <em>${g.name}</em>: ${g.sets} sets, roughly ${g.reps} reps, ${g.rest}s between sets.`,

@@ -245,6 +245,20 @@ export interface OpenRaid {
   bossFaced: boolean;
 }
 
+export interface SessionRecord {
+  day: string;
+  kind: SessionKind;
+  title: string;
+  minutes: number;
+  sets: number;
+  setsAsked: number;
+  ratio: number;
+  rating: string | null;
+  /** Sets completed per movement pattern. */
+  patterns: Record<string, number>;
+  xp: number;
+}
+
 export interface LogEntry { day: string; kind: 'quest' | 'penalty' | 'session' | 'boon' | 'gate'; name: string; xp: number }
 
 export interface Message {
@@ -311,6 +325,8 @@ export interface Save {
   templates: Template[];
   lifts: Record<string, LiftRecord>;
   session: ActiveSession | null;
+  /** Finished sessions, newest first, capped. */
+  history: SessionRecord[];
 
   training: {
     /** Basic Hunter Training finished. Opens the Gates. */
@@ -320,6 +336,8 @@ export interface Save {
   };
 
   daily: { date: string | null; quest: Quest | null; cleared: boolean; penalty: Quest | null };
+  /** Every day the Daily Quest was cleared. */
+  questDays: string[];
   streak: { current: number; best: number; lastDay: string | null };
   boon: { start: string; points: Attrs; sets: number; days: string[]; last: { day: string; tier: string; grant: Partial<Attrs>; free: number } | null };
 

@@ -60,7 +60,7 @@ function open(kind: ActiveSession['kind'], ref: string | null, title: string, su
 }
 
 export function startBasic(s: Save, now = Date.now()): ActiveSession {
-  s.session = open('basic', null, BASIC_TITLE, 'The session player, end to end', itemsFrom(s, basicSlots(s)), now);
+  s.session = open('basic', null, BASIC_TITLE, 'Learning the ropes', itemsFrom(s, basicSlots(s)), now);
   return s.session;
 }
 
@@ -235,6 +235,14 @@ export function finish(s: Save, sess: ActiveSession, rating: coach.Rating | null
     }
   }
 
+  const patterns: Record<string, number> = {};
+  for (const it of sess.items) {
+    const p = exById(it.exId)?.pattern ?? 'other';
+    const n = it.log.filter((x) => x.ok).length;
+    if (n) patterns[p] = (patterns[p] ?? 0) + n;
+  }
+  s.history.unshift({ day, kind: sess.kind, title: sess.title, minutes, sets: setsDone, setsAsked, ratio, rating: sess.kind === 'program' ? rating ?? 'right' : null, patterns, xp: xp.gained });
+  s.history.length = Math.min(s.history.length, 300);
   s.log.unshift({ day, kind: 'session', name: sess.title, xp: xp.gained });
   s.log.length = Math.min(s.log.length, 400);
   s.session = null;

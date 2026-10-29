@@ -129,6 +129,7 @@ export function clearDaily(s: Save, now = new Date()): ClearResult | null {
   const today = dayKey(now);
   s.daily.cleared = true;
   s.stats.questsCleared += 1;
+  if (!s.questDays.includes(today)) s.questDays.push(today);
   const shards = shop.earn(s, shop.questShards(s));
   for (const it of s.daily.quest.items) boon.log(s, it.exId, 1, today);
 

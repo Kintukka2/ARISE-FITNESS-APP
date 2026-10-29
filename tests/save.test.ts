@@ -14,6 +14,26 @@ describe('save', () => {
     expect(back.settings.sound).toBe(true);
   });
 
+  it('keeps records keyed by id across a reload', () => {
+    const s = defaults();
+    s.equipped.head = 'it1';
+    s.lifts.pushup = { best: 20, heaviest: 0, lastWeight: null, sets: 3, volume: 0, history: [] };
+    s.gates.runs['DNG-001'] = { fought: 2, cleared: 1 };
+    const back = parse(JSON.stringify(s))!;
+    expect(back.equipped.head).toBe('it1');
+    expect(back.lifts.pushup.best).toBe(20);
+    expect(back.gates.runs['DNG-001'].cleared).toBe(1);
+  });
+
+  it('a field of the wrong type falls back to its default', () => {
+    const raw = JSON.parse(JSON.stringify(defaults()));
+    raw.items = 'garbage';
+    raw.hunter.level = 'nine';
+    const back = parse(JSON.stringify(raw))!;
+    expect(back.items).toEqual([]);
+    expect(back.hunter.level).toBe(1);
+  });
+
   it('rejects things that are not saves', () => {
     expect(parse('nope')).toBeNull();
     expect(parse('{"a":1}')).toBeNull();

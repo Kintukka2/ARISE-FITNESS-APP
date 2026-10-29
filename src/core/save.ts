@@ -36,8 +36,10 @@ export function defaults(): Save {
     templates: [],
     lifts: {},
     session: null,
+    history: [],
     training: { certified: false, excluded: [] },
     daily: { date: null, quest: null, cleared: false, penalty: null },
+    questDays: [],
     streak: { current: 0, best: 0, lastDay: null },
     boon: boon.blank(),
     vitals: { hp: null, mp: null, fatigue: 0, at: null, lockedUntil: null },
@@ -75,13 +77,17 @@ export function defaults(): Save {
 type Obj = Record<string, unknown>;
 const isObj = (x: unknown): x is Obj => !!x && typeof x === 'object' && !Array.isArray(x);
 
-/** Deep-merge a saved object over the defaults. Arrays and scalars are taken whole. */
+/**
+ * Deep-merge a saved object over the defaults. Arrays and scalars are taken
+ * whole; keys the defaults do not name are kept, because many save fields are
+ * records keyed by id (equipped slots, lift ledgers, gate tallies).
+ */
 export function merge<T>(base: T, saved: unknown): T {
   if (saved === undefined || saved === null) return base;
   if (base === null || base === undefined) return saved as T;
-  if (!isObj(base)) return (typeof saved === typeof base || Array.isArray(base) === Array.isArray(saved) ? saved : base) as T;
+  if (!isObj(base)) return (Array.isArray(base) === Array.isArray(saved) && typeof saved === typeof base ? saved : base) as T;
   if (!isObj(saved)) return base;
-  const out: Obj = {};
+  const out: Obj = { ...saved };
   for (const k of Object.keys(base as Obj)) out[k] = merge((base as Obj)[k], saved[k]);
   return out as T;
 }
@@ -220,6 +226,7 @@ export function fromLegacy(old: Obj): Save {
   s.story = arr(g(old.narrative, 'seen')).filter((x): x is string => typeof x === 'string');
   if (s.onboarded) s.seen.push('questWalk');
   if (isObj(old.licence) && old.licence.granted) s.licence = merge(s.licence, old.licence);
+  s.questDays = [...new Set(arr(old.log).filter(isObj).filter((e) => e.kind === 'quest').map((e) => String(e.day)))].sort();
   s.log = arr(old.log)
     .filter(isObj)
     .map((e) => ({ day: String(e.day ?? dayKey()), kind: (e.kind === 'tribute' ? 'boon' : e.kind) as Save['log'][number]['kind'], name: String(e.name ?? ''), xp: num(e.xp, 0) }))
