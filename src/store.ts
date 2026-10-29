@@ -54,6 +54,8 @@ export function init(opts: { onWriteFail?: () => void } = {}) {
   const parsed = raw ? parse(raw) : null;
   if (parsed) save = parsed;
   else {
+    // Something is stored but cannot be read: keep it aside rather than writing over the only copy.
+    if (raw) write(`arise:unreadable:${Date.now()}`, raw);
     save = defaults();
     // A save from the original app is offered, not silently taken.
     const old = read(LEGACY_KEY);

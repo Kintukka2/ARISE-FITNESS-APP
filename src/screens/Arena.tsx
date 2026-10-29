@@ -112,6 +112,9 @@ export function Arena() {
     const r = st.gates.raid;
     if (!r || !d) return;
     const plan = raid.plan(d, r.seed);
+    // A run closed mid-replay is settled by what was already recorded: a lost chamber, or all of them won.
+    if (r.won < r.at) return end('defeated');
+    if (r.at >= plan.length) return end('cleared');
     const party = raid.partyFor(st, d, r);
     const res = raid.runChamber(d, r.seed, r.at, party, plan);
     store.update((x) => raid.record(x, d, x.gates.raid!, party, res));

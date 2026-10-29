@@ -35,7 +35,7 @@ describe('daily quest', () => {
     expect(ev.some((e) => e.type === 'penalty')).toBe(true);
     expect(s.streak.current).toBe(0);
     expect(s.flags.hollow).toBe(true);
-    expect(s.daily.penalty?.items[0].target).toBe(15);
+    expect(s.daily.penalty?.items[0].target).toBe(29);
     expect(s.daily.penalty?.xp).toBe(0);
     clearPenalty(s);
     expect(s.flags.hollow).toBe(false);

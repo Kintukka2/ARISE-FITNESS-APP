@@ -34,6 +34,15 @@ export function earn(s: Save, n: number): number {
   return add;
 }
 
+/** Shards paid for with money, credited once per store transaction. */
+export function deposit(s: Save, n: number, receipt: string): boolean {
+  if (s.wallet.receipts.includes(receipt)) return false;
+  s.wallet.receipts.push(receipt);
+  s.wallet.shards += n;
+  s.wallet.bought += n;
+  return true;
+}
+
 export function pay(s: Save, n: number): boolean {
   const cost = Math.max(0, Math.round(n));
   if (s.wallet.shards < cost) return false;

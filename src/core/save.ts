@@ -43,7 +43,7 @@ export function defaults(): Save {
     streak: { current: 0, best: 0, lastDay: null },
     boon: boon.blank(),
     vitals: { hp: null, mp: null, fatigue: 0, at: null, lockedUntil: null },
-    wallet: { shards: 0, earned: 0, spent: 0 },
+    wallet: { shards: 0, earned: 0, spent: 0, bought: 0, receipts: [] },
     items: [],
     equipped: {},
     favourites: [],

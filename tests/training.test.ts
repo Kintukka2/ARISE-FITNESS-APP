@@ -84,7 +84,9 @@ describe('sessions', () => {
   it('repeats the same day pay less', () => {
     const s = defaults();
     expect(sessions.repeatFactor(s, '2026-01-01')).toBe(1);
-    s.log.unshift({ day: '2026-01-01', kind: 'session', name: 'x', xp: 1 });
+    s.history.unshift({ day: '2026-01-01', kind: 'basic', title: 'x', minutes: 1, sets: 1, setsAsked: 1, ratio: 1, rating: null, patterns: {}, xp: 1 });
+    expect(sessions.repeatFactor(s, '2026-01-01')).toBe(1);
+    s.history.unshift({ day: '2026-01-01', kind: 'program', title: 'x', minutes: 1, sets: 1, setsAsked: 1, ratio: 1, rating: 'right', patterns: {}, xp: 1 });
     expect(sessions.repeatFactor(s, '2026-01-01')).toBe(0.6);
   });
 });

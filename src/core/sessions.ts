@@ -136,7 +136,7 @@ export function sessionXp(completed: number, setsDone: number) {
 
 /** The second session of a day pays 60%, the third and on 30%. Repeats are allowed; farming is not. */
 export function repeatFactor(s: Save, day = dayKey()) {
-  const today = s.log.filter((e) => e.kind === 'session' && e.day === day).length;
+  const today = s.history.filter((h) => h.kind !== 'basic' && h.day === day).length;
   return today === 0 ? 1 : today === 1 ? 0.6 : 0.3;
 }
 

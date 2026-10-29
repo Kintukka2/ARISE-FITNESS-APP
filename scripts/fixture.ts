@@ -51,7 +51,7 @@ s.daily.quest!.items[0].done = 20;
 s.boon = boon.blank(addDays(today, -1));
 boon.log(s, 'bench_press', 8, addDays(today, -1));
 boon.log(s, 'pullup', 5, today);
-s.wallet = { shards: 2480, earned: 6200, spent: 3720 };
+s.wallet = { shards: 2480, earned: 6200, spent: 3720, bought: 0, receipts: [] };
 s.gates.clears = 23; s.gates.fails = 3; s.gates.withdrawn = 2;
 s.gates.cleared = ['DNG-000', 'DNG-001', 'DNG-002', 'DNG-004', 'DNG-007', 'DNG-009', 'DNG-011', 'DNG-013', 'DNG-015'];
 s.gates.bosses = [...s.gates.cleared, 'DNG-019'];

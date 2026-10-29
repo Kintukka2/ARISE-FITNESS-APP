@@ -51,8 +51,7 @@ function Exchange() {
             {PRODUCTS.shards.map((p) => (
               <Btn key={p.id} kind="ghost" class="grow" onClick={async () => {
                 const ok = await buyShards(p.id);
-                if (ok) { store.update((x) => { x.wallet.shards += p.amount; }); toast(`+${p.amount} Mana Shards.`, 'xp'); }
-                else toast('The purchase did not complete. You have not been charged.', 'bad');
+                toast(ok ? `+${p.amount} Mana Shards.` : 'The purchase did not complete. You have not been charged.', ok ? 'xp' : 'bad');
               }}><Shards n={p.amount} /></Btn>
             ))}
           </div>

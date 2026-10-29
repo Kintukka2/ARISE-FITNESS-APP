@@ -164,9 +164,7 @@ export function forge(s: Save, opts: { week?: number; salt?: string } = {}): Pro
   const seed = `${p.goal}|${p.experience}|${p.days}|${p.equipment.join(',')}|w${week}|${opts.salt ?? ''}`;
   const r = rng(seed);
   // Nothing above the hunter's tier: the higher of what their rank and their declared history allow.
-  const all = allowed(s);
-  const tiered = all.filter((x) => x.tier <= techTier(s));
-  const pool = tiered.length >= 6 ? tiered : all;
+  const pool = allowed(s, techTier(s));
   const n = slotCount(p.minutes);
   const adapt = s.program?.adapt ?? 1;
   // volumeFactor reads program.week/adapt, so park a stub while slots are built.

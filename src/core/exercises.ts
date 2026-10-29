@@ -27,8 +27,8 @@ export function available(equipment: string[], limitations: string[], maxTier = 
  * struck off. If striking things off would empty a whole movement pattern,
  * that pattern's techniques come back so no session is ever starved.
  */
-export function allowed(s: Save): Exercise[] {
-  const fits = available(s.profile.equipment, s.profile.limitations);
+export function allowed(s: Save, maxTier = 4): Exercise[] {
+  const fits = available(s.profile.equipment, s.profile.limitations, maxTier);
   const out = new Set(s.training.excluded);
   const kept = fits.filter((x) => !out.has(x.id));
   const alive = new Set(kept.map((x) => x.pattern));

@@ -6,6 +6,7 @@
  *   - Reminders: @capacitor/local-notifications, at `Capacitor.Plugins.LocalNotifications`.
  */
 import { setStoreAvailable, grantLicence } from '@/core/licence';
+import { deposit } from '@/core/shop';
 import type { Save } from '@/core/types';
 import { addDays, dayKey } from '@/core/util';
 import * as store from '@/store';
@@ -20,50 +21,69 @@ export const PRODUCTS = {
 
 let cdv: any = null;
 let ready = false;
+const waiting = new Map<string, (ok: boolean) => void>();
 
 export const storeReady = () => ready;
 
-/** Register products with Play and restore a licence bought on another install. */
+/**
+ * Register products with Play. Every approved transaction is credited here,
+ * once (deduplicated by transaction id), then finished — including ones that
+ * completed while the app was closed, or that were approved later.
+ */
 export async function initBilling() {
   cdv = w.CdvPurchase;
   if (!cdv?.store) return;
+  // The bridge exists, so the licence applies from this moment — not once Play answers.
+  setStoreAvailable(true);
   const { store: st, ProductType, Platform } = cdv;
   st.register([
     { id: PRODUCTS.licence, type: ProductType.NON_CONSUMABLE, platform: Platform.GOOGLE_PLAY },
     ...PRODUCTS.shards.map((p) => ({ id: p.id, type: ProductType.CONSUMABLE, platform: Platform.GOOGLE_PLAY })),
   ]);
-  st.when().approved((tx: any) => tx.verify()).verified((r: any) => r.finish());
-  await st.initialize([Platform.GOOGLE_PLAY]);
-  ready = true;
-  setStoreAvailable(true);
-  if (st.owned(PRODUCTS.licence) && !store.get().licence.granted) store.update((s) => grantLicence(s, 'restored'));
+  st.when()
+    .approved((tx: any) => tx.verify())
+    .verified((receipt: any) => {
+      for (const tx of receipt.transactions ?? [receipt]) {
+        const ids: string[] = (tx.products ?? []).map((p: any) => p.id);
+        const txId = String(tx.transactionId ?? tx.id ?? '');
+        for (const id of ids) {
+          if (id === PRODUCTS.licence) store.update((s) => grantLicence(s, txId || 'play'));
+          const pack = PRODUCTS.shards.find((p) => p.id === id);
+          if (pack && txId) store.update((s) => deposit(s, pack.amount, txId));
+          waiting.get(id)?.(true);
+          waiting.delete(id);
+        }
+      }
+      receipt.finish();
+    });
+  try {
+    await st.initialize([Platform.GOOGLE_PLAY]);
+    ready = true;
+    if (st.owned(PRODUCTS.licence) && !store.get().licence.granted) store.update((s) => grantLicence(s, 'restored'));
+  } catch (e) {
+    console.warn('ARISE: the store did not start', e);
+  }
 }
 
 export function priceOf(id: string): string | null {
   return cdv?.store?.get(id)?.pricing?.price ?? null;
 }
 
-/** Resolves true once Play has approved the purchase. */
+/** Resolves true once Play has approved and the purchase has been credited. */
 export function buy(id: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const p = cdv?.store?.get(id);
-    const offer = p?.getOffer?.();
+    const offer = cdv?.store?.get(id)?.getOffer?.();
     if (!offer) return resolve(false);
-    let settled = false;
-    cdv.store.when().finished((tx: any) => {
-      if (settled || !tx.products?.some((x: any) => x.id === id)) return;
-      settled = true;
-      resolve(true);
+    waiting.set(id, resolve);
+    offer.order().then((err: any) => {
+      if (!err) return;
+      waiting.delete(id);
+      resolve(false);
     });
-    offer.order().then((err: any) => { if (err && !settled) { settled = true; resolve(false); } });
   });
 }
 
-export async function buyLicence(): Promise<boolean> {
-  const ok = await buy(PRODUCTS.licence);
-  if (ok) store.update((s) => grantLicence(s, 'play'));
-  return ok;
-}
+export const buyLicence = () => buy(PRODUCTS.licence);
 
 // ------------------------------------------------------------------ reminders
 

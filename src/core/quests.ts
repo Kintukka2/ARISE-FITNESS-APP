@@ -85,10 +85,11 @@ export function rollDay(s: Save, today = dayKey()): RollEvent[] {
   const missed = (s.daily.cleared ? 0 : 1) + Math.max(0, gap - 1);
   if (missed > 0) {
     s.stats.questsFailed += missed;
+    // The penalty is half again the quest that was missed, so it is sized before the streak goes.
+    s.daily.penalty = buildQuest(s, true);
     if (s.streak.current >= 14) s.stats.prevBestStreak = s.streak.current;
     s.streak.current = 0;
     s.flags.hollow = true;
-    s.daily.penalty = buildQuest(s, true);
     events.push({ type: 'penalty', missed });
   }
   if (gap >= 5 && s.program) {

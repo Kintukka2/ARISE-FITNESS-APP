@@ -211,7 +211,9 @@ function survive(t: Unit, log: Ev[]) {
 }
 
 function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill: (killer: Unit, victim: Unit) => void) {
-  if (Object.keys(u.status).some((k) => STATUS[k]?.skip)) {
+  if (u.status.Stunned) {
+    // A stun costs the next action, whenever in the round it landed.
+    delete u.status.Stunned;
     log.push({ t: 'stun', a: u.uid });
     return;
   }
@@ -266,6 +268,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
 function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Unit) => void) {
   if (u.esc) u.esc -= 1;
   for (const st of Object.keys(u.status)) {
+    if (STATUS[st]?.skip) continue;
     const dot = STATUS[st]?.dot;
     if (dot && u.alive()) {
       const d = Math.max(1, Math.round(u.maxHp * dot));

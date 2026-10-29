@@ -108,3 +108,25 @@ describe('gear and the exchange', () => {
     expect(s.wallet.shards).toBe(500);
   });
 });
+
+describe('combat rules', () => {
+  it('a stun costs the next action even if it landed after the target acted', async () => {
+    const { Unit, fight } = await import('@/core/combat');
+    const { rng } = await import('@/core/util');
+    const base = { STR: 10, AGI: 10, PER: 10, VIT: 10, INT: 10 };
+    const hero = new Unit({ uid: 'hero', name: 'H', side: 'p', base });
+    const foe = new Unit({ uid: 'e0', name: 'F', side: 'e', base, hpMult: 50 });
+    foe.status.Stunned = 1;
+    const res = fight([hero], [foe], rng('stun'), 1);
+    const firstFoeEvent = res.log.find((e) => ('a' in e && e.a === 'e0'));
+    expect(firstFoeEvent?.t).toBe('stun');
+  });
+
+  it('store purchases are credited once per transaction', () => {
+    const s = defaults();
+    expect(shop.deposit(s, 300, 'GPA.1')).toBe(true);
+    expect(shop.deposit(s, 300, 'GPA.1')).toBe(false);
+    expect(s.wallet.shards).toBe(300);
+    expect(s.wallet.earned).toBe(0);
+  });
+});

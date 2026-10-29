@@ -329,7 +329,8 @@ export interface Save {
   boon: { start: string; points: Attrs; sets: number; days: string[]; last: { day: string; tier: string; grant: Partial<Attrs>; free: number } | null };
 
   vitals: { hp: number | null; mp: number | null; fatigue: number; at: number | null; lockedUntil: number | null };
-  wallet: { shards: number; earned: number; spent: number };
+  /** `bought` counts shards paid for with money; `receipts` are store transactions already credited. */
+  wallet: { shards: number; earned: number; spent: number; bought: number; receipts: string[] };
 
   items: Item[];
   equipped: Partial<Record<SlotKey, string>>;
