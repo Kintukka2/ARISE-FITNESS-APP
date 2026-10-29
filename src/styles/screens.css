@@ -370,3 +370,5 @@
 .unit--hero .unit__name { color: var(--mana); }
 .unit--shadow .unit__name { color: #c9a7ff; }
 .unit--foe .unit__name { color: #ffd6de; }
+.setrow .iconbtn { width: 34px; height: 34px; border-color: transparent; background: transparent; color: var(--ink-3); }
+.setrow .iconbtn:hover { color: var(--blood); box-shadow: none; }

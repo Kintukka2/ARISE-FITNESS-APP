@@ -68,3 +68,24 @@ describe('save', () => {
     expect(fromLegacy(old as never).gates.clears).toBe(6);
   });
 });
+
+describe('a real v5 save', () => {
+  it('imports one written by the original app', async () => {
+    const { readFileSync } = await import('node:fs');
+    const raw = readFileSync('tests/fixtures/v5-save.json', 'utf8');
+    const s = parse(raw)!;
+    expect(s.onboarded).toBe(true);
+    expect(s.hunter.name).toBe('KINTUKKA');
+    expect(s.hunter.level).toBe(36);
+    expect(s.items).toHaveLength(11);
+    expect(Object.keys(s.equipped)).toHaveLength(6);
+    expect(s.shadows.army.map((x) => x.enemyId)).toEqual(['ENM-001', 'ENM-007']);
+    expect(s.shadows.squad).toHaveLength(1);
+    expect(s.shadows.army[1].kills).toBe(11);
+    expect(s.training.certified).toBe(true);
+    expect(s.program?.days.length).toBeGreaterThan(0);
+    expect(s.streak.current).toBe(41);
+    expect(s.profile.equipment).toEqual(['dumbbell', 'pullupbar']);
+    expect(s.questDays).toHaveLength(1);
+  });
+});

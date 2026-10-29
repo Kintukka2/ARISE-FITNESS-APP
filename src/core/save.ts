@@ -6,6 +6,7 @@
  * in. Bump SAVE_VERSION and add a step only when existing data must change shape.
  */
 import * as boon from './boon';
+import { forge } from './coach';
 import { gearDef, make } from './gear';
 import type { Save } from './types';
 import { STATS } from './types';
@@ -121,7 +122,7 @@ export const isLegacy = (raw: Obj) => 'association' in raw || 'tribute' in raw |
  * Carry a save from the original app forward. Everything with an equivalent
  * comes across: level, attributes, points, streak, profile, stats, shards,
  * gear that still exists, Shadows, clears, Secret Missions. The programme is
- * re-forged on first open from the profile it was built on.
+ * re-forged from the profile it was built on.
  */
 export function fromLegacy(old: Obj): Save {
   const s = defaults();
@@ -155,9 +156,11 @@ export function fromLegacy(old: Obj): Save {
   const t = old.training;
   s.training.certified = isObj(t) && arr(t.basic).length > 0;
   s.training.excluded = isObj(t) ? arr(t.excluded).filter((x): x is string => typeof x === 'string' && EXERCISES.some((e) => e.id === x)) : [];
-  if (s.training.certified || old.program) {
-    // A programme existed, so the intake was done; the week re-forges on first open.
+  if (isObj(old.program)) {
+    // The intake was done: rebuild the week from the same profile, at the same week and volume.
     s.seen.push('intake');
+    forge(s, { week: Math.max(1, num(old.program.week, 1)) });
+    s.program!.adapt = Math.min(1.9, Math.max(0.55, num(old.program.adapt, 1)));
   }
 
   s.streak = merge(s.streak, old.streak);

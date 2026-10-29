@@ -8,7 +8,7 @@
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 
 const PORT = 4179;
 const OUT = 'e2e/out';
@@ -176,6 +176,19 @@ try {
   await page.locator('.topbar__purse').click();
   await sleep(500);
   await snap('exchange');
+
+  // A save from the original app is offered on first launch.
+  const legacy = readFileSync('tests/fixtures/v5-save.json', 'utf8');
+  const fresh = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  fresh.on('pageerror', (e) => errors.push(String(e)));
+  fresh.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await fresh.addInitScript((json) => { if (!localStorage.getItem('arise:save')) localStorage.setItem('arise.save.v1', json); }, legacy);
+  await fresh.goto(`http://localhost:${PORT}/`);
+  await fresh.waitForSelector('text=Record Found', { timeout: 10000 });
+  await fresh.locator('.syswin__foot .btn--primary').click();
+  await fresh.waitForSelector('.topbar__name', { timeout: 10000 });
+  if (!(await fresh.locator('.topbar__name').innerText()).includes('KINTUKKA')) throw new Error('LEGACY SAVE DID NOT CARRY FORWARD');
+  await fresh.screenshot({ path: `${OUT}/${String(++shot).padStart(2, '0')}-legacy-import.png` });
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));
   console.log(`smoke green · ${shot} screenshots in ${OUT}/`);

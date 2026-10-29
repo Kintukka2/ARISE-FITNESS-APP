@@ -3,6 +3,8 @@ import * as store from '@/store';
 
 export function buzz(pattern: number | number[]) {
   if (!store.get().settings.haptics || !navigator.vibrate) return;
+  // Browsers refuse (and complain) before the first tap.
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
   try { navigator.vibrate(pattern); } catch { /* unsupported */ }
 }
 
