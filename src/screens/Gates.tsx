@@ -45,8 +45,6 @@ export function Gates() {
     if (!story.seen(s, 'gates-visited')) {
       store.update((x) => story.markOnce(x, 'gates-visited'));
       setTimeout(() => void intro(), 500);
-    } else if (!story.seen(s, `board-${new Date().toDateString()}`)) {
-      store.update((x) => story.markOnce(x, `board-${new Date().toDateString()}`));
     }
   }, []);
 

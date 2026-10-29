@@ -233,16 +233,3 @@ export function HpBar({ cur, max, tone = 'hp' }: { cur: number; max: number; ton
   );
 }
 
-export function Ring({ pct, children, tone }: { pct: number; children?: ComponentChildren; tone?: string }) {
-  const r = 26;
-  const c = 2 * Math.PI * r;
-  return (
-    <div class="ringdial" data-tone={tone}>
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r={r} class="ringdial__track" />
-        <circle cx="32" cy="32" r={r} class="ringdial__fill" style={{ strokeDasharray: c, strokeDashoffset: c * (1 - Math.max(0, Math.min(1, pct / 100))) }} />
-      </svg>
-      <div class="ringdial__in">{children}</div>
-    </div>
-  );
-}

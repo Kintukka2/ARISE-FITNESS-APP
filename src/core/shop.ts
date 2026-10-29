@@ -4,7 +4,7 @@
  * premium. Potions are always in stock and are drunk on purchase.
  */
 import { EQUIPMENT } from '@/data/equipment';
-import { gearDef, grant, make, RARITY, score } from './gear';
+import { gearDef, grant, make, score } from './gear';
 import type { Item, Rank, Save } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
@@ -142,5 +142,3 @@ export function drink(s: Save, id: PotionId, now = Date.now()): number | null {
   if (id === 'fatigue') return vitals.ease(s, 20, now);
   return vitals.unlock(s, now);
 }
-
-export const rarityName = (r: string) => RARITY[r as Rank]?.name ?? r;

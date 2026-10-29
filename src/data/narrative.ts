@@ -6,13 +6,6 @@
  */
 import type { Save } from '@/core/types';
 
-export const COACH = {
-  name: 'Ryn Valcorde',
-  role: 'Instructor · Hunter Training',
-  bio: 'Cleared 214 Gates. Walked out of the last one alone. Now he runs Hunter Training for the newly Awakened, so nobody else has to walk out alone.',
-  creed: 'Knowing how to train does not make you strong. It means the training will.',
-};
-
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
   'Sit. This takes four minutes and most of it is paperwork.',
@@ -64,15 +57,6 @@ export const DEBRIEF = {
     'Back after a gap. The programme has been reset to something you can actually finish. Rebuild the streak first, ego second.',
   ],
 };
-
-export const GREETINGS = [
-  'Show me something.',
-  'The window is open. Get to work.',
-  'No warm-up speech today. Move.',
-  'You are here. That is most of it.',
-  'Same as yesterday. That is the whole secret.',
-  'Nothing clever today. Just the work.',
-];
 
 export const PRAISE = [
   'Good job.', 'Well done.', 'That one counted.', 'Logged.', 'Nicely done.', 'Recorded, and well earned.',

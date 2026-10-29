@@ -1,0 +1,42 @@
+name: Android
+
+# Run by hand from the Actions tab. Builds a debug APK to sideload, and a
+# release AAB for Play — signed when the ARISE_KEYSTORE_BASE64 secret exists.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - name: Keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ARISE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "ARISE_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Build
+        env:
+          ARISE_KEYSTORE_PASSWORD: ${{ secrets.ARISE_KEYSTORE_PASSWORD }}
+          ARISE_KEY_ALIAS: ${{ secrets.ARISE_KEY_ALIAS }}
+          ARISE_KEY_PASSWORD: ${{ secrets.ARISE_KEY_PASSWORD }}
+        run: node scripts/android.mjs --apk --bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arise-android-${{ github.sha }}
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/bundle/release/*.aab

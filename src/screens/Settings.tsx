@@ -7,6 +7,8 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Section } from '@/ui/components';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
+import { Glyph } from '@/ui/icons';
+import { openGuide } from './Guide';
 
 export function openSettings() {
   openSheet({ title: 'System Console', render: () => <Settings /> });
@@ -29,6 +31,7 @@ function Settings() {
   const set = (fn: (x: typeof s) => void) => store.update(fn);
   return (
     <div class="stack">
+      <Btn kind="ghost" block onClick={openGuide}><Glyph name="help" /> How ARISE Works</Btn>
       <Section title="System settings">
         <div class="toggles">
           <Toggle label="Sound" on={s.settings.sound} onChange={(v) => set((x) => { x.settings.sound = v; })} />

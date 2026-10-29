@@ -3,7 +3,6 @@ import { useState } from 'preact/hooks';
 import { archetype, forge, goalOf, nextDay } from '@/core/coach';
 import { available, exById, fmtAmount, PATTERN_NAMES } from '@/core/exercises';
 import * as sessions from '@/core/sessions';
-import * as story from '@/core/story';
 import * as templates from '@/core/templates';
 import type { Save, Slot, Template } from '@/core/types';
 import { CERTIFIED_LINES, TRAINING_BLURB } from '@/data/narrative';
@@ -379,5 +378,3 @@ function Stats({ s }: { s: Save }) {
 function RangeChips({ range, setRange }: { range: number; setRange: (r: 4 | 12 | 0) => void }) {
   return <div class="chips">{([4, 12, 0] as const).map((r) => <Chip key={r} on={range === r} onClick={() => setRange(r)}>{r ? `${r} weeks` : 'All time'}</Chip>)}</div>;
 }
-
-export const trainingSeen = (s: Save) => story.seen(s, 'intake');

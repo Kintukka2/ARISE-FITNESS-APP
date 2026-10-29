@@ -112,5 +112,3 @@ export function sweep(s: Save): Mission[] {
   }
   return fresh;
 }
-
-export const missionById = (id: string) => MISSIONS.find((m) => m.id === id);

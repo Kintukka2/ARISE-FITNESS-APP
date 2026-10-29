@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
 import { forge, adapt, weekMultiplier, slotCount } from '@/core/coach';
 import { exById, available } from '@/core/exercises';
+import { techTier } from '@/core/progression';
 import * as sessions from '@/core/sessions';
 import type { Experience, Goal } from '@/core/types';
 
@@ -22,6 +23,7 @@ describe('coach', () => {
         const ids = d.slots.map((x) => x.exId);
         expect(new Set(ids).size).toBe(ids.length);
         for (const id of ids) expect(ok.has(id)).toBe(true);
+        for (const id of ids) expect(exById(id)!.tier).toBeLessThanOrEqual(techTier(s));
       }
     }
   });

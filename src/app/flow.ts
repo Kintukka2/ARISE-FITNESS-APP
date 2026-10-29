@@ -5,13 +5,11 @@
  */
 import { sfx } from '@/audio/audio';
 import * as boon from '@/core/boon';
-import { classById } from '@/data/classes';
-import { MISSIONS, TIER_NAMES, grantText, sweep } from '@/core/missions';
+import { TIER_NAMES, grantText, sweep } from '@/core/missions';
 import { syncClass, type XpResult } from '@/core/progression';
 import * as quests from '@/core/quests';
 import * as story from '@/core/story';
 import { BEATS } from '@/data/narrative';
-import { dayKey } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import * as store from '@/store';
 import { buzz, flash } from '@/ui/feedback';
@@ -156,9 +154,3 @@ async function settleBoon() {
     });
   }
 }
-
-/** Every unlocked mission, in board order, for the Dossier. */
-export const heldMissions = () => MISSIONS.filter((m) => store.get().hunter.missions.includes(m.id));
-
-export const classOf = () => classById(store.get().hunter.classId);
-export const today = () => dayKey();

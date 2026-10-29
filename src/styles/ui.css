@@ -419,14 +419,6 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .vbar .num { min-width: 70px; text-align: right; font-size: 0.95rem; }
 .vbar .num small { color: var(--ink-3); }
 
-.ringdial { position: relative; width: 84px; height: 84px; }
-.ringdial svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ringdial__track { fill: none; stroke: rgba(255, 255, 255, 0.08); stroke-width: 6; }
-.ringdial__fill { fill: none; stroke: var(--mana); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 600ms var(--ease); }
-.ringdial[data-tone='ember'] .ringdial__fill { stroke: var(--ember); }
-.ringdial[data-tone='blood'] .ringdial__fill { stroke: var(--blood); }
-.ringdial__in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.ringdial__in .label { font-size: 0.56rem; }
 
 .verdict { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid; }
 .verdict small { color: var(--ink-2); }

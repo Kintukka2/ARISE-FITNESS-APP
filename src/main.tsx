@@ -4,6 +4,7 @@ import * as store from '@/store';
 import { back, toast } from '@/ui/overlays';
 import { App } from '@/app/App';
 import { catchUp } from '@/app/flow';
+import { dayKey } from '@/core/util';
 import { go, route, player, arena } from '@/app/router';
 import { initBilling, onReminderTap, syncReminders } from '@/platform/native';
 import './styles/theme.css';
@@ -24,6 +25,8 @@ store.subscribe(() => void syncReminders(store.get()));
 const wake = () => { if (!document.hidden) void catchUp(); };
 document.addEventListener('visibilitychange', wake);
 window.addEventListener('focus', wake);
+// ...and so does midnight, if the app is simply left open through it.
+setInterval(() => { if (store.get().onboarded && store.get().daily.date !== dayKey()) void catchUp(); }, 60_000);
 
 // Android back: unwind one overlay, else go home, else a second press leaves.
 let armed = false;

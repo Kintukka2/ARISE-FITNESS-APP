@@ -167,10 +167,6 @@ export interface Item {
 
 // ------------------------------------------------------------------ combat data
 
-export type StatusName =
-  | 'Bleeding' | 'Poisoned' | 'Burning' | 'Staggered' | 'Cursed' | 'Marked'
-  | 'Rooted' | 'Corroded' | 'Stunned' | 'Weakened' | 'Chilled' | 'Rallied';
-
 export type AbilityProfile = 'single' | 'cleave' | 'volley' | 'spread' | 'burst' | 'wild' | 'all' | 'support';
 
 export interface Ability {
@@ -260,15 +256,6 @@ export interface SessionRecord {
 }
 
 export interface LogEntry { day: string; kind: 'quest' | 'penalty' | 'session' | 'boon' | 'gate'; name: string; xp: number }
-
-export interface Message {
-  id: string;
-  from: 'system' | 'coach';
-  title: string;
-  lines: string[];
-  at: number;
-  read: boolean;
-}
 
 export interface Settings {
   sound: boolean;
@@ -377,7 +364,6 @@ export interface Save {
   shop: { day: string | null; taken: number[] };
 
   log: LogEntry[];
-  inbox: Message[];
   story: string[];
   /** One-shot flags: walkthroughs seen, notices read. */
   seen: string[];

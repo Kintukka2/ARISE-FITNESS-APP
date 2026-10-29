@@ -13,15 +13,22 @@
     "test:watch": "vitest",
     "smoke": "node e2e/smoke.mjs",
     "check": "npm run typecheck && npm test && npm run build",
-    "android": "npm run build && npx cap sync android",
+    "android": "node scripts/android.mjs",
     "balance": "node scripts/run.mjs scripts/balance.ts",
-    "calibrate": "node scripts/run.mjs scripts/calibrate.ts"
+    "calibrate": "node scripts/run.mjs scripts/calibrate.ts",
+    "fixture": "node scripts/run.mjs scripts/fixture.ts",
+    "screens": "node e2e/screens.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/local-notifications": "^8.3.1",
+    "cordova-plugin-purchase": "^13.20.0",
     "preact": "^10.29.8"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@capacitor/cli": "^8.6.0",
     "@preact/preset-vite": "^2.10.6",
     "@types/node": "^22.20.5",
     "esbuild": "^0.28.2",

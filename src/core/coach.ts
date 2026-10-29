@@ -3,7 +3,8 @@
  * from it, and adapting that programme after every session.
  */
 import { DEBRIEF } from '@/data/narrative';
-import { allowed, exById, GEAR, LIMITATIONS, available, ALL_EXERCISES } from './exercises';
+import { allowed, GEAR, LIMITATIONS, available, ALL_EXERCISES } from './exercises';
+import { techTier } from './progression';
 import type { Day, Exercise, Experience, Focus, Goal, Program, Save, Slot } from './types';
 import { clamp, dayKey, pick, rng, type Rand } from './util';
 
@@ -162,7 +163,10 @@ export function forge(s: Save, opts: { week?: number; salt?: string } = {}): Pro
   const week = opts.week ?? s.program?.week ?? 1;
   const seed = `${p.goal}|${p.experience}|${p.days}|${p.equipment.join(',')}|w${week}|${opts.salt ?? ''}`;
   const r = rng(seed);
-  const pool = allowed(s);
+  // Nothing above the hunter's tier: the higher of what their rank and their declared history allow.
+  const all = allowed(s);
+  const tiered = all.filter((x) => x.tier <= techTier(s));
+  const pool = tiered.length >= 6 ? tiered : all;
   const n = slotCount(p.minutes);
   const adapt = s.program?.adapt ?? 1;
   // volumeFactor reads program.week/adapt, so park a stub while slots are built.
@@ -227,13 +231,6 @@ export function softReset(s: Save): string {
   return pick(DEBRIEF.returning);
 }
 
-export function greeting(s: Save, greetings: string[]): string {
-  if (s.flags.hollow) return 'You have a debt open. Pay it before anything else.';
-  if (s.streak.current >= 30) return 'Thirty-plus days. You are not a beginner any more. Act like it.';
-  if (s.streak.current >= 7) return 'Streak is holding. Do not get precious about it — just show up again.';
-  if (s.streak.current === 0) return 'Clean slate today. Day one is not an insult, it is a start.';
-  return pick(greetings, rng(dayKey() + s.hunter.name));
-}
 
 /** Plain-language notes on the forged programme, for the reveal. */
 export function summary(s: Save): string[] {
@@ -266,9 +263,3 @@ const ARCHETYPES: Record<string, string> = {
 };
 export const archetype = (s: Save) => ARCHETYPES[`${s.profile.goal}:${s.profile.experience}`] ?? 'The Awakened';
 
-/** Exercises of the same pattern the hunter could swap into a slot. */
-export function swapsFor(s: Save, exId: string): Exercise[] {
-  const ex = exById(exId);
-  if (!ex) return [];
-  return available(s.profile.equipment, s.profile.limitations).filter((x) => x.pattern === ex.pattern && x.id !== ex.id);
-}

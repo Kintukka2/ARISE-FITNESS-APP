@@ -55,7 +55,6 @@ export function defaults(): Save {
     shadows: { army: [], squad: [], fresh: [] },
     shop: { day: null, taken: [] },
     log: [],
-    inbox: [],
     story: [],
     seen: [],
     flags: { hollow: false, ignoredPlan: false },

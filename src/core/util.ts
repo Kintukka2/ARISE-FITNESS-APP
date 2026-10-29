@@ -30,14 +30,6 @@ export function rng(seed: string | number): Rand {
 
 export const pick = <T>(xs: readonly T[], r: Rand = Math.random): T => xs[Math.floor(r() * xs.length)];
 
-export function shuffle<T>(xs: readonly T[], r: Rand = Math.random): T[] {
-  const a = xs.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(r() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 export function weighted<T extends { w: number }>(xs: readonly T[], roll: number): T {
   let v = roll * sum(xs.map((x) => x.w));
@@ -109,9 +101,6 @@ export function compact(n: number): string {
 
 export const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-export function plural(n: number, one: string, many = one + 's'): string {
-  return `${n} ${n === 1 ? one : many}`;
-}
 
 export function whenDay(key: string, today = dayKey()): string {
   const gap = daysBetween(key, today);

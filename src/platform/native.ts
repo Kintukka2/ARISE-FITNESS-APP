@@ -21,7 +21,6 @@ export const PRODUCTS = {
 let cdv: any = null;
 let ready = false;
 
-export const isNative = () => !!w.Capacitor?.isNativePlatform?.();
 export const storeReady = () => ready;
 
 /** Register products with Play and restore a licence bought on another install. */

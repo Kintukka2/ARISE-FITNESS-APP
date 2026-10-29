@@ -5,7 +5,7 @@
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
 import type { Attrs, GearDef, Item, Rank, Save, SlotKey, Stat } from './types';
-import { RANKS, STATS } from './types';
+import { STATS } from './types';
 import { rng, round2, uid } from './util';
 
 export const SLOTS: { key: SlotKey; name: string; accepts: string; side: 'l' | 'r' }[] = [
@@ -195,8 +195,6 @@ export function toggleFav(s: Save, id: string): boolean {
   s.favourites.push(id);
   return true;
 }
-
-export const rankIndex = (r: string) => RANKS.indexOf(r as Rank);
 
 /** Roll-stat names to the derived combat stat they raise. */
 export const ROLL_EFFECT: Record<string, { key: string; pct: boolean }> = {

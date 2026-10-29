@@ -228,6 +228,7 @@ function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: strin
   return (
     <div class="stack">
       <div class="chips">{types.map((t) => <Chip key={t} on={f === t} onClick={() => { setF(t); onFilter(t); }}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
+      <small class="muted">Designs discovered: {s.found.length} of {gear.ALL_GEAR.length + gear.ISSUED.length}.</small>
       {s.items.length >= 6 && <Btn kind="ghost" size="sm" onClick={openRecycle}>Recycle Artifacts</Btn>}
       {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No artifacts yet. They are recovered from cleared Gates and bought at the Exchange.'}</Empty>}
       <div class="stack stack--tight">{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => openItem(it.id)} />)}</div>
