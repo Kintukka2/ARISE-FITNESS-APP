@@ -128,7 +128,7 @@ generated, never committed:
 
 ```bash
 npm run android                  # android/ ready for Android Studio
-node scripts/android.mjs --apk   # ...and a debug APK (needs the Android SDK)
+node scripts/android.mjs --apk   # ...and a debug APK for sideloading (needs the Android SDK)
 ```
 
 The **Android** workflow (run it by hand from the Actions tab) builds a debug APK and a release AAB,
@@ -138,7 +138,8 @@ signed when the `ARISE_KEYSTORE_BASE64`, `ARISE_KEYSTORE_PASSWORD`, `ARISE_KEY_A
 On Android, Play billing sells one thing that matters: the **Association Licence**, a one-time
 purchase. Without it, the Gate board and the Exchange stop at D-Rank. Everything else — levels,
 streak, training, classes, Shadows — is unaffected. Shard packs are also sold. On the web there is
-no store and the game is fully open. Product ids `licence`, `shards_small` and `shards_large` live
+no store and the game is fully open, and so is the debug APK, which is built with billing off
+because a sideloaded app has no Play listing to buy from. Product ids `licence`, `shards_small` and `shards_large` live
 in `src/platform/native.ts`. The same file schedules the local Daily Quest reminders.
 
 ## What changed from v5

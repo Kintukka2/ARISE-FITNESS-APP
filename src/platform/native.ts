@@ -31,6 +31,8 @@ export const storeReady = () => ready;
  * completed while the app was closed, or that were approved later.
  */
 export async function initBilling() {
+  // A sideloaded debug APK has no Play listing to buy from; it is built with billing off.
+  if (import.meta.env.VITE_BILLING === 'off') return;
   cdv = w.CdvPurchase;
   if (!cdv?.store) return;
   // The bridge exists, so the licence applies from this moment — not once Play answers.
