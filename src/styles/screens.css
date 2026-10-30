@@ -344,3 +344,4 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .pickcard:disabled:not(.is-kept) { opacity: 0.6; }
 .pickcard__tag { align-self: flex-start; margin-top: 2px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
 .rung.is-shut .pickcard { opacity: 0.45; }
+.extract.promoted .grant { color: var(--arcane); }

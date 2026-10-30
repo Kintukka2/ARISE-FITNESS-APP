@@ -128,6 +128,8 @@ export interface UnitSpec {
   atkMult?: number;
   tag?: 'hero' | 'ally' | 'shadow' | 'foe';
   ref?: string;
+  /** Standing orders of its own, over the party's. */
+  tactic?: Tactic;
 }
 
 export class Unit {
@@ -135,7 +137,7 @@ export class Unit {
   maxHp: number; hp: number; kit: string[]; styles: string[]; names: string[];
   imm: string[]; res: string[]; status: Record<string, number> = {}; cd: Record<string, number> = {};
   esc = 0; aura = { ini: 0, acc: 0 }; spent = new Set<string>(); kin: Unit[] = [];
-  atkMult: number; tag: UnitSpec['tag']; ref?: string;
+  atkMult: number; tag: UnitSpec['tag']; ref?: string; tactic?: Tactic;
   /** The last foe to land a hit on this unit, for allies told to protect it. */
   hitBy?: Unit;
   /** A foe's next action, settled in advance and shown: an ability, and the unit it goes at first. */
@@ -143,7 +145,7 @@ export class Unit {
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
-    this.tag = sp.tag; this.ref = sp.ref;
+    this.tag = sp.tag; this.ref = sp.ref; this.tactic = sp.tactic;
     this.kit = sp.kit ?? [];
     this.names = sp.passives ?? [];
     this.styles = this.names.map((n) => passiveStyle(n) ?? '');
@@ -254,12 +256,12 @@ function ordered(u: Unit, o: Order): Ability | null {
   return ability(o.use) ?? null;
 }
 
-/** The standing orders, as the brief offers them. */
-export const TACTICS: { key: Tactic; name: string; desc: string }[] = [
-  { key: 'default', name: 'As They See Fit', desc: 'Everyone picks their own targets.' },
-  { key: 'finish', name: 'Finish The Weakest', desc: 'Every ally and Shadow goes for the foe nearest to falling.' },
-  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for whatever last hit you, and until something has, whatever hits hardest.' },
-  { key: 'spread', name: 'Spread The Pain', desc: 'They aim their bleeds, curses and stuns at foes not already carrying them.' },
+/** The standing orders, as the brief offers them, and as one Shadow's own. */
+export const TACTICS: { key: Tactic; name: string; desc: string; one: string }[] = [
+  { key: 'default', name: 'As They See Fit', desc: 'Everyone picks their own targets.', one: 'It picks its own targets.' },
+  { key: 'finish', name: 'Finish The Weakest', desc: 'Every ally and Shadow goes for the foe nearest to falling.', one: 'It goes for the foe nearest to falling.' },
+  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for whatever last hit you, and until something has, whatever hits hardest.', one: 'It goes for whatever last hit you, and until something has, whatever hits hardest.' },
+  { key: 'spread', name: 'Spread The Pain', desc: 'They aim their bleeds, curses and stuns at foes not already carrying them.', one: 'It aims its bleeds, curses and stuns at foes not already carrying them.' },
 ];
 
 const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
@@ -325,7 +327,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   const magic = a.type === 'magic';
   const meant = u.intent?.ab === a.name ? u.intent.at : undefined;
   const at = o?.at ?? meant;
-  const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, ctx.tactic, ctx.hero);
+  const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, u.tactic ?? ctx.tactic, ctx.hero);
   for (const t of targets(a, foes, r, first)) {
     const aim = u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0);
     if (r() * 100 > hitChance(aim, t.eva())) {

@@ -196,12 +196,26 @@ fight was tried and did not narrow it.
   60 shards a step at Rare, 270 at Legendary). The issued kit is not upgraded. Recycling stays the
   way to turn spares into shards.
 
-### 6. Depth for the Shadows
+### 6. Depth for the Shadows — built
 
-- **Shadow ranks:** a Shadow that lands enough kills is promoted, which raises its cap and unlocks
-  a second ability from its creature's kit.
-- **More slots** through Secret Missions, not only through grade.
-- **Standing orders** from step 1 set per Shadow, not only for the whole party.
+- **Shadow ranks** (`data/shadows.ts`). Kills promote a Shadow: Bound, Sworn at 25 kills, Vanguard
+  at 75 and Ascendant at 150. Each rank lifts how far kills can grow it (+25%, +50%, +75%, +100%),
+  so a promotion is a visible jump.
+  - A newly bound Shadow fights with its creature's first ability. Sworn, it remembers a second:
+    the second in its own kit or, for the 58 creatures that have only one, the first ability of
+    its kin it lacks (its family's, or its role's for a family that shares one).
+  - Promotions are counted in `raid.finish` and shown on the results.
+- **More slots through Secret Missions.** Three new ones each make room for one more Shadow: a
+  first Sworn Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions'
+  (`shadows.slots`).
+- **Standing orders per Shadow.** A Shadow can keep orders of its own, set on its sheet, over the
+  party's. They ride on its unit spec (`tactic`), so a run frozen at entry keeps them. A Shadow
+  without orders of its own fights exactly as before.
+- **Balance.** Calibration's typical hunters have no Shadows, so `npm run calibrate` wrote an
+  identical `gatetune.ts`. A mid-grade hunter with a full squad of Bound Shadows of their grade's
+  creatures clears about four to nine points more, and promoting them all the way adds up to four
+  more. A Shadow bound before this change, with fewer than 25 kills, now fights with one ability
+  until it is Sworn.
 
 ## What stays out
 

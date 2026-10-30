@@ -268,7 +268,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <div class="chips" aria-label="Standing orders" data-tour="orders">
           {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
         </div>
-        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc} The assessment above already fights with these orders.</p>
+        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc} The assessment above already fights with these orders.{squad.filter((x) => x.tactic).length ? ` ${squad.filter((x) => x.tactic).length === 1 ? 'One Shadow keeps' : `${squad.filter((x) => x.tactic).length} Shadows keep`} orders of its own.` : ''}</p>
       </Section>
 
       <Section title="Satchel" right={`${s.satchel} of ${shop.FIELD_POTION.max} field potions`}>

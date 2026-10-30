@@ -108,6 +108,8 @@ export interface Shadow {
   out: number;
   kills: number;
   bosses: number;
+  /** Standing orders of its own. Unset, it follows the party's. */
+  tactic?: Tactic;
 }
 
 export interface OpenRaid {

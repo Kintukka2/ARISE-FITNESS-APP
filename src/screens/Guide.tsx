@@ -3,7 +3,7 @@ import { FIELD_POTION, GATE_SHARDS, POTIONS, stepCost } from '@/core/shop';
 import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { OPEN_PER_DAY } from '@/core/gates';
-import { SLOTS as SQUAD, EXTRACT_MP } from '@/core/shadows';
+import { SLOTS as SQUAD, EXTRACT_MP, GROWTH_PER_KILL, SECOND_AT, SHADOW_RANKS } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
@@ -95,7 +95,9 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Shadows',
     lines: [
       'A creature you felled can linger after a clear. Reach for it with mana and it may follow you home — the odds are shown before you commit, and rise with INT.',
-      `Reaching costs MP by grade (${EXTRACT_MP.E} at E to ${EXTRACT_MP.S} at S), whether or not it holds. You can deploy ${SQUAD.E} at E, ${SQUAD.C} at C and ${SQUAD.A} at A. Shadows grow with every kill and never make a gate harder.`,
+      `Reaching costs MP by grade (${EXTRACT_MP.E} at E to ${EXTRACT_MP.S} at S), whether or not it holds. You can deploy ${SQUAD.E} at E, ${SQUAD.C} at C and ${SQUAD.A} at A, and some Secret Missions make room for more. Shadows never make a gate harder.`,
+      `A Shadow grows ${GROWTH_PER_KILL * 100}% with every kill it lands, as far as its rank allows, and kills promote it: ${SHADOW_RANKS.map((r) => `${r.name}${r.kills ? ` at ${r.kills} kills` : ''} (up to +${Math.round(r.cap * 100)}%)`).join(', ')}. A newly bound Shadow fights with its creature's first ability; ${SHADOW_RANKS[SECOND_AT].name}, it remembers a second, from its own kit or, if it had only one, from its kin.`,
+      'Each Shadow follows the standing orders you set in the brief, unless you give it orders of its own on its sheet.',
     ],
   },
   {

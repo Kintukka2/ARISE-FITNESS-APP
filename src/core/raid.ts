@@ -58,7 +58,7 @@ export function allySpec(a: Ally, i: number): UnitSpec {
 
 export function shadowSpec(sh: Shadow, i: number): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: e.shadow, side: 'p', base: shadows.statsOf(sh), kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, tag: 'shadow', ref: sh.id };
+  return { uid: `s${i}`, name: e.shadow, side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
 }
 
 export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[], now = Date.now()): UnitSpec[] {
@@ -449,6 +449,8 @@ export interface RaidResult {
   contracts: contracts.ContractReport;
   /** A Spire block: the floor it reached, and whether that is the week's best. */
   spire: { floor: number; best: boolean } | null;
+  /** Shadows the run's kills promoted, and to what. */
+  promoted: { id: string; rank: string }[];
   /** The hunter's health afterwards, on the real (vitals) scale. */
   heroHp: number;
   heroMax: number;
@@ -565,6 +567,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   }
 
   // Records.
+  const promoted: RaidResult['promoted'] = [];
   if (!practice) {
     if (!tower) {
       const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
@@ -592,9 +595,11 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     for (const id of run.squad) {
       const sh = s.shadows.army.find((x) => x.id === id);
       if (!sh) continue;
+      const was = shadows.rankIndex(sh);
       sh.out++;
       sh.kills += run.kills[id]?.kills ?? 0;
       sh.bosses += run.kills[id]?.bosses ?? 0;
+      if (shadows.rankIndex(sh) > was) promoted.push({ id: sh.id, rank: shadows.rankOf(sh).name });
     }
   }
   if (run.bossFaced && !tower && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
@@ -610,7 +615,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth, contracts: deal, spire: climb,
+    steps: run.at, depth, contracts: deal, spire: climb, promoted,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }

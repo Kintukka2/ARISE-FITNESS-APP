@@ -43,7 +43,9 @@ autoEquip(s);
 const worn = s.items.findIndex((it) => it.id === s.equipped.hands);
 if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[worn]) ?? s.items[worn];
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));
-s.shadows.army[0].kills = 14;
+// One Sworn, with orders of its own; one still Bound.
+s.shadows.army[0].kills = 31;
+s.shadows.army[0].tactic = 'finish';
 s.shadows.army[1].kills = 6;
 s.shadows.fresh = [s.shadows.army[2].id];
 s.wallet = { shards: 2480, earned: 6200, spent: 3720, bought: 0, receipts: [] };
