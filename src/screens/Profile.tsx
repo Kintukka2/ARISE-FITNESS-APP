@@ -5,7 +5,7 @@ import { classById } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import * as gear from '@/core/gear';
 import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
-import { ATTRS, autoAllocate, BOOST_CAP, classBonus, nextRank, rankFor, resonance, spendPoint, STAT_CAP } from '@/core/progression';
+import { ATTRS, autoAllocate, BOOST_CAP, classBonus, nextRank, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, spendPoint, STAT_CAP } from '@/core/progression';
 import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
 import type { Item, Save, SlotKey, Stat } from '@/core/types';
@@ -49,7 +49,7 @@ function classInfo() {
   const s = store.get();
   const cls = classById(s.hunter.classId);
   if (!cls) {
-    void sys({ title: 'Unclassified', kind: 'system', typed: false, lines: ['The System classifies hunters from D-Rank — Level 10 — off the attribute you have actually trained most, and renames you at every rank above that.', 'Until then you are unclassified, which costs you nothing.'] });
+    void sys({ title: 'Unclassified', kind: 'system', typed: false, lines: ['The System classifies hunters from D-Rank — Level 10 — off the attribute you have raised highest, and renames you at every rank above that.', 'Until then you are unclassified, which costs you nothing.'] });
     return;
   }
   const skills = CLASS_SKILLS.filter((x) => x.line === cls.lead && x.rung <= cls.tier);
@@ -59,7 +59,7 @@ function classInfo() {
     lines: [cls.desc, `Effect: <em>+${cls.bonus} ${cls.lead}</em>.`,
       `Skills: ${skills.map((x) => `<strong>${x.name}</strong>`).join(', ')}.`,
       pas.length ? `Passives: ${pas.map((x) => `<strong>${x.name}</strong> — ${x.text}`).join(' ')}` : 'Passives arrive at the next rank.',
-      'Class follows your highest attribute. Train differently and the System reclassifies you.'],
+      'Class follows your highest attribute. Spend differently and the System reclassifies you.'],
   });
 }
 
@@ -99,7 +99,7 @@ export async function drinkFlow(id: shop.PotionId) {
     return;
   }
   if (s.wallet.shards < p.price) {
-    await sys({ title: 'Not Enough', kind: 'app', typed: false, lines: [`${p.name} costs <strong>${p.price}</strong> shards. You have <strong>${s.wallet.shards}</strong>.`, 'Shards come from cleared Daily Quests and cleared Gates.'] });
+    await sys({ title: 'Not Enough', kind: 'app', typed: false, lines: [`${p.name} costs <strong>${p.price}</strong> shards. You have <strong>${s.wallet.shards}</strong>.`, 'Shards come from Gates and from recycled artifacts.'] });
     return;
   }
   if (!(await confirm(p.name, `${p.effect}. <strong>${p.price}</strong> of your ${s.wallet.shards} shards.`, 'Drink It'))) return;
@@ -118,11 +118,11 @@ function Attributes() {
   const spend = (k: Stat) => {
     if (!s.hunter.points) {
       const a = ATTRS.find((x) => x.key === k)!;
-      void sys({ title: a.name, kind: 'system', typed: false, lines: [a.desc, total[k] !== s.hunter.attrs[k] ? `Trained to <strong>${s.hunter.attrs[k]}</strong>; class and equipment carry it to <strong>${Math.round(total[k])}</strong>.` : 'Raised by spending a point, or by the Boon.', `Training goes to ${STAT_CAP}. Class and equipment stack on top, as far as ${BOOST_CAP}.`] });
+      void sys({ title: a.name, kind: 'system', typed: false, lines: [a.desc, total[k] !== s.hunter.attrs[k] ? `Raised to <strong>${s.hunter.attrs[k]}</strong>; class and equipment carry it to <strong>${Math.round(total[k])}</strong>.` : 'Raised by spending a point, or by a Secret Mission.', `Points take it to ${STAT_CAP}. Class and equipment stack on top, as far as ${BOOST_CAP}.`] });
       return;
     }
     const ok = store.update((x) => spendPoint(x, k));
-    if (!ok) return toast(`${k} is trained as far as it goes.`, 'warn');
+    if (!ok) return toast(`${k} is as high as points can take it.`, 'warn');
     sfx.blip();
     buzz(12);
     void checkAwards();
@@ -323,7 +323,6 @@ function openDossier() {
     title: 'Hunter Dossier', render: () => {
       const s = store.get();
       const held = MISSIONS.filter((m) => s.hunter.missions.includes(m.id));
-      const res = resonance(s);
       return (
         <div class="stack">
           <Card>
@@ -348,28 +347,23 @@ function openDossier() {
             <small class="muted">{MISSIONS.length - held.length} still sealed. The System does not publish these. It tells you afterwards.</small>
           </Fold>
           <Fold title="Active effects">
-            <KV k={`Resonance (${res.days} days)`} v={`×${res.mult.toFixed(2)}`} />
-            {s.flags.hollow && <KV k="Hollow" v="−50% experience" tone="blood" />}
-            <KV k="Points per level" v="3, plus 5 per rank" />
+            <KV k="Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
             {Object.entries(classBonus(s)).map(([k, v]) => <KV key={k} k="Class" v={`+${v} ${k}`} />)}
           </Fold>
           <Fold title="Lifetime record">
-            <KV k="Daily Quests cleared" v={s.stats.questsCleared} />
-            <KV k="Daily Quests failed" v={s.stats.questsFailed} />
-            <KV k="Penalties paid" v={s.stats.penaltiesCleared} />
-            <KV k="Training sessions" v={s.stats.sessions} />
             <KV k="Gates cleared" v={`${s.gates.clears} (${s.gates.cleared.length} distinct)`} />
-            <KV k="Shadows bound" v={s.shadows.army.length} />
-            <KV k="Total reps" v={s.stats.totalReps.toLocaleString()} />
-            <KV k="Time under tension" v={`${Math.round(s.stats.totalSeconds / 60)} min`} />
-            <KV k="Distance" v={`${(s.stats.totalMeters / 1000).toFixed(1)} km`} />
+            <KV k="Withdrawn" v={s.gates.withdrawn} />
+            <KV k="Carried out" v={s.gates.fails} />
+            <KV k="Best run unbroken" v={`${s.gates.bestUnbroken} clears`} />
+            <KV k="Cleared above your grade" v={s.stats.reachClears} />
+            <KV k="Bosses faced" v={s.gates.bosses.length} />
+            <KV k="Creatures felled" v={Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0).toLocaleString()} />
+            <KV k="Shadows bound" v={`${s.shadows.army.length} (${s.stats.extractionsWon} of ${s.stats.extractions} reaches held)`} />
             <KV k="Lifetime experience" v={s.stats.xpTotal.toLocaleString()} />
-            <KV k="Best Resonance" v={`${s.streak.best} days`} />
-            <KV k="Boons received" v={`${s.stats.boons} (${s.stats.boonPoints} points)`} />
             <KV k="Shards earned" v={s.wallet.earned.toLocaleString()} />
           </Fold>
           <Fold title="Activity log" right={`${s.log.length}`}>
-            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '—'}</span></li>)}</ul> : <Empty>Nothing logged yet. Clear a Daily Quest.</Empty>}
+            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '—'}</span></li>)}</ul> : <Empty>Nothing logged yet. Clear a Gate.</Empty>}
           </Fold>
         </div>
       );

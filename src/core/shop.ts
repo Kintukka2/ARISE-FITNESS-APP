@@ -12,9 +12,7 @@ import * as vitals from './vitals';
 import { licensedRank } from './licence';
 
 export const STOCK = 8;
-export const QUEST_SHARDS: Record<Rank, number> = { E: 15, D: 20, C: 27, B: 36, A: 45, S: 60 };
 export const GATE_SHARDS: Record<Rank, number> = { E: 10, D: 16, C: 26, B: 42, A: 68, S: 110 };
-export const FAIL_SHARE = 0.15;
 const PRICE_PER_SCORE = 10;
 const REACH_PREMIUM = 0.5;
 const RECYCLE_SHARE = 0.05;
@@ -51,7 +49,6 @@ export function pay(s: Save, n: number): boolean {
   return true;
 }
 
-export const questShards = (s: Save) => QUEST_SHARDS[licensedRank(s)];
 export const gateShards = (rank: string, share = 1) => Math.round((GATE_SHARDS[rank as Rank] ?? 0) * share);
 
 const round5 = (n: number) => Math.round(n / 5) * 5;

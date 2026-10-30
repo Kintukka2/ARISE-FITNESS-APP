@@ -10,7 +10,7 @@ import { classById, classFor } from '@/data/classes';
 import { fight, Unit, type Ev, type UnitSpec } from './combat';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, worn as wornItems } from './gear';
-import { classBonus, BOOST_CAP } from './progression';
+import { BOOST_CAP, classBonus, GATE_XP, grantXP, practiceAward, type XpResult } from './progression';
 import { licensedRank } from './licence';
 import * as shadows from './shadows';
 import * as shop from './shop';
@@ -19,7 +19,7 @@ import { RANKS } from './types';
 import { clamp, dayKey, rng } from './util';
 import * as vitals from './vitals';
 
-/** The hunter is the protagonist: a training edge on top of their attributes. */
+/** The hunter is the protagonist: an edge on top of their attributes. */
 export const HERO = { hp: 2, atk: 1.5 };
 /** Enemies scale to an expected party, never the actual one, so every extra body helps. */
 export const EXPECTED_PARTY: Record<string, number> = { E: 4, D: 4, C: 5, B: 5, A: 6, S: 6 };
@@ -27,7 +27,8 @@ const BOSS_HP = 2.5;
 const ROOM_RECOVERY = 0.25;
 /** A downed hunter is pulled back up between chambers if the party held. */
 const REVIVE = 0.15;
-const FAIL_SHARE = 0.15;
+/** What being carried out pays, as a share of a clear. Withdrawing pays this plus a share of the chambers won. */
+export const FAIL_SHARE = 0.15;
 const WITHDRAW_CAP = 0.6;
 
 export interface Chamber { label: string; foes: string[]; boss: boolean; elite: boolean }
@@ -51,7 +52,7 @@ function classKit(lead: string, tier: number) {
   };
 }
 
-/** The hunter as they will actually fight: trained + class + gear, worn down by fatigue. */
+/** The hunter as they will actually fight: attributes + class + gear, worn down by fatigue. */
 export function heroSpec(s: Save, now = Date.now()): UnitSpec {
   const items = wornItems(s);
   const base = vitals.worn(boosted(s.hunter.attrs, items, classBonus(s), BOOST_CAP), vitals.read(s, now).fatigue);
@@ -196,6 +197,8 @@ export interface RaidResult {
   dungeonId: string;
   shards: number;
   bounty: number;
+  /** Experience paid, and the levels it bought. Null when it paid nothing. */
+  xp: XpResult | null;
   loot: Item[];
   lingering: Lingering[];
   chambersWon: number;
@@ -245,6 +248,13 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const firstClear = outcome === 'cleared' && !s.gates.cleared.includes(d.id);
   const shards = practice ? 0 : shop.earn(s, shop.gateShards(d.rank, share));
   const bounty = firstClear && !practice ? shop.earn(s, shop.gateShards(d.rank, 2)) : 0;
+  // Read the grade before the experience lands: a level-up must not decide whether this was a
+  // reach, or redraw the allies who were actually in the party.
+  const reach = outcome === 'cleared' && rankIdx(d.rank) > rankIdx(licensedRank(s));
+  const allies = alliesFor(d, run.day, licensedRank(s));
+  const gateXp = GATE_XP[d.rank as Rank] ?? 0;
+  const xpDue = practice ? (outcome === 'cleared' ? practiceAward(s) : 0) : Math.round(gateXp * share) + (firstClear ? gateXp : 0);
+  const xp = xpDue > 0 ? grantXP(s, xpDue) : null;
 
   let lootIds = outcome === 'defeated' ? [] : rollLoot(d, r, mobChambers, outcome === 'cleared');
   if (practice) {
@@ -267,7 +277,6 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   }
 
   // Records.
-  const allies = alliesFor(d, run.day, licensedRank(s));
   if (!practice) {
     const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
     tally.fought++;
@@ -275,6 +284,13 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     if (outcome === 'cleared') s.gates.clears++;
     else if (outcome === 'withdrawn') s.gates.withdrawn++;
     else s.gates.fails++;
+    if (outcome === 'cleared') {
+      if (s.gates.last === 'defeated') s.stats.comebacks++;
+      if (reach) s.stats.reachClears++;
+      s.gates.unbroken++;
+      s.gates.bestUnbroken = Math.max(s.gates.bestUnbroken, s.gates.unbroken);
+    } else if (outcome === 'defeated') s.gates.unbroken = 0;
+    s.gates.last = outcome;
     for (const a of allies) {
       if (!s.gates.met.includes(a.id)) s.gates.met.push(a.id);
       if (outcome === 'cleared') s.gates.together[a.id] = (s.gates.together[a.id] ?? 0) + 1;
@@ -299,10 +315,10 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   if (outcome === 'defeated' && !practice) vitals.wipe(s, now);
   const v = vitals.read(s, now);
   s.gates.raid = null;
-  s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name} — ${outcome}`, xp: 0 });
+  s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name} — ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, 400);
   return {
-    outcome, dungeonId: d.id, shards, bounty, loot, lingering,
+    outcome, dungeonId: d.id, shards, bounty, xp, loot, lingering,
     chambersWon: run.won, chambers: chambers.length,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };

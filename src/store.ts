@@ -3,7 +3,7 @@
  * every subscribed component re-renders. There is no second source of truth.
  */
 import { useEffect, useState } from 'preact/hooks';
-import { BACKUP_KEY, defaults, LEGACY_KEY, parse, STORAGE_KEY } from '@/core/save';
+import { BACKUP_KEY, defaults, parse, STORAGE_KEY } from '@/core/save';
 import type { Save } from '@/core/types';
 
 type Listener = () => void;
@@ -43,7 +43,6 @@ function write(key: string, value: string): boolean {
 }
 
 let save: Save = defaults();
-let legacy: string | null = null;
 const subs = new Set<Listener>();
 let timer: ReturnType<typeof setTimeout> | null = null;
 let onWriteFail: () => void = () => {};
@@ -55,11 +54,8 @@ export function init(opts: { onWriteFail?: () => void } = {}) {
   if (parsed) save = parsed;
   else {
     // Something is stored but cannot be read: keep it aside rather than writing over the only copy.
-    if (raw) write(`arise:unreadable:${Date.now()}`, raw);
+    if (raw) write(`${STORAGE_KEY}:unreadable:${Date.now()}`, raw);
     save = defaults();
-    // A save from the original app is offered, not silently taken.
-    const old = read(LEGACY_KEY);
-    legacy = old && parse(old) ? old : null;
   }
   // Never lose a pending write to a closing app — but never write when nothing changed.
   const pending = () => { if (timer) flush(); };
@@ -67,9 +63,6 @@ export function init(opts: { onWriteFail?: () => void } = {}) {
   document.addEventListener('visibilitychange', () => document.hidden && pending());
   return save;
 }
-
-export const legacySave = () => legacy;
-export const dismissLegacy = () => { legacy = null; };
 
 export const get = () => save;
 
@@ -101,7 +94,7 @@ export function useSave(): Save {
   return save;
 }
 
-/** Replace the whole save (import, legacy carry-over, erase). The previous one is kept as a backup. */
+/** Replace the whole save (import, erase). The previous one is kept as a backup. */
 export function replace(next: Save) {
   write(BACKUP_KEY, JSON.stringify(save));
   save = next;

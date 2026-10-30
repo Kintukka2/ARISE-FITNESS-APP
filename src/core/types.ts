@@ -7,136 +7,6 @@ export type Attrs = Record<Stat, number>;
 export const RANKS = ['E', 'D', 'C', 'B', 'A', 'S'] as const;
 export type Rank = (typeof RANKS)[number];
 
-// ------------------------------------------------------------------ training
-
-export type Pattern =
-  | 'push' | 'vpush' | 'pull' | 'vpull' | 'squat' | 'hinge' | 'lunge'
-  | 'core' | 'carry' | 'cardio' | 'plyo' | 'mobility';
-
-export type Unit = 'reps' | 'sec' | 'm';
-
-export interface Exercise {
-  id: string;
-  name: string;
-  pattern: Pattern | string;
-  /** Any-of: available if the hunter owns one of these. */
-  equip: string[];
-  /** Attributes it trains, primary first. */
-  stats: Stat[] | string[];
-  tier: number;
-  unit: Unit | string;
-  /** A sensible starting volume for one set. */
-  base: number;
-  load?: boolean;
-  /** An easier stand-in, only prescribed when nothing harder is free. */
-  regress?: boolean;
-  /** Joints it loads, matched against the hunter's limitations. */
-  flags: string[];
-  cue: string;
-}
-
-export interface GearKind { id: string; name: string; desc: string }
-export interface Limitation { id: string; name: string; desc: string }
-
-export type Goal = 'strength' | 'muscle' | 'lean' | 'endurance' | 'athletic';
-export type Experience = 'novice' | 'trained' | 'seasoned' | 'elite';
-export type Focus = 'balanced' | 'upper' | 'lower' | 'core';
-
-export interface Profile {
-  goal: Goal;
-  experience: Experience;
-  days: number;
-  minutes: number;
-  equipment: string[];
-  limitations: string[];
-  focus: Focus;
-  age: number;
-  weight: number;
-}
-
-export interface Slot {
-  exId: string;
-  sets: number;
-  /** Target per set, in the exercise's unit. */
-  target: number;
-  rest: number;
-  load: boolean;
-  /** Working weight in kg, for loaded exercises. */
-  weight?: number | null;
-  note?: string;
-}
-
-export interface Day {
-  id: string;
-  key: string;
-  name: string;
-  rationale: string;
-  slots: Slot[];
-}
-
-export interface Program {
-  seed: string;
-  week: number;
-  /** Volume scalar the coach moves after every session. 0.55–1.9. */
-  adapt: number;
-  days: Day[];
-  /** Day ids finished this week. */
-  completed: string[];
-  weekStarted: string;
-  deload: boolean;
-}
-
-export interface SetLog { target: number; done: number; weight: number | null; ok: boolean }
-export interface SessionItem extends Slot { log: SetLog[] }
-
-export type SessionKind = 'basic' | 'program' | 'template' | 'free';
-
-export interface ActiveSession {
-  id: string;
-  kind: SessionKind;
-  /** Program day id or template id. */
-  ref: string | null;
-  title: string;
-  subtitle: string;
-  startedAt: number;
-  /** Time actually spent in the player; gaps while the app is closed are not counted. */
-  activeMs: number;
-  lastTick: number;
-  /** Wall-clock end of a running rest, so a locked phone does not pause it. */
-  restEndsAt: number | null;
-  restSpan: number;
-  items: SessionItem[];
-  /** Index of the exercise in focus. */
-  at: number;
-  /** Basic Training coaching passes already given. */
-  taught: string[];
-}
-
-export interface Template {
-  id: string;
-  name: string;
-  slots: Slot[];
-  runs: number;
-  lastRun: string | null;
-}
-
-export interface LiftRecord {
-  /** Best single set, in the exercise's unit. */
-  best: number;
-  /** Heaviest load logged, kg. */
-  heaviest: number;
-  /** Last working weight, handed back next time. */
-  lastWeight: number | null;
-  sets: number;
-  volume: number;
-  history: { day: string; sets: number; top: number; weight: number | null }[];
-}
-
-// ------------------------------------------------------------------ daily
-
-export interface QuestItem { exId: string; target: number; done: number }
-export interface Quest { items: QuestItem[]; xp: number; penalty: boolean }
-
 // ------------------------------------------------------------------ gear
 
 export type SlotKey = 'head' | 'chest' | 'hands' | 'legs' | 'feet' | 'weapon' | 'offhand' | 'amulet' | 'ring1' | 'ring2';
@@ -241,54 +111,26 @@ export interface OpenRaid {
   bossFaced: boolean;
 }
 
-export interface SessionRecord {
-  day: string;
-  kind: SessionKind;
-  title: string;
-  minutes: number;
-  sets: number;
-  setsAsked: number;
-  ratio: number;
-  rating: string | null;
-  /** Sets completed per movement pattern. */
-  patterns: Record<string, number>;
-  xp: number;
-}
-
-export interface LogEntry { day: string; kind: 'quest' | 'penalty' | 'session' | 'boon' | 'gate'; name: string; xp: number }
+export interface LogEntry { day: string; kind: 'gate'; name: string; xp: number }
 
 export interface Settings {
   sound: boolean;
   music: boolean;
   haptics: boolean;
-  units: 'kg' | 'lb';
-  autoRest: boolean;
   fastText: boolean;
-  reminders: { on: boolean; at: string; lastCall: boolean; refresh: boolean };
+  /** A phone notification when fatigue has faded or the lockout has lifted. */
+  reminders: { on: boolean };
 }
 
 export interface Stats {
-  questsCleared: number;
-  questsFailed: number;
-  penaltiesCleared: number;
-  sessions: number;
-  totalReps: number;
-  totalSeconds: number;
-  totalMeters: number;
-  totalVolumeKg: number;
-  earlyClears: number;
-  comebacks: number;
-  prevBestStreak: number;
-  perfectDays: number;
   xpTotal: number;
-  boons: number;
-  boonPoints: number;
-  boonsMissed: number;
   extractions: number;
   extractionsWon: number;
   killsByFamily: Record<string, number>;
-  programRuns: number;
-  templateRuns: number;
+  /** Gates cleared above the hunter's own grade. */
+  reachClears: number;
+  /** Clears that came straight after being carried out. */
+  comebacks: number;
 }
 
 export interface Save {
@@ -306,27 +148,6 @@ export interface Save {
     classId: string | null;
     missions: string[];
   };
-
-  profile: Profile;
-  program: Program | null;
-  templates: Template[];
-  lifts: Record<string, LiftRecord>;
-  session: ActiveSession | null;
-  /** Finished sessions, newest first, capped. */
-  history: SessionRecord[];
-
-  training: {
-    /** Basic Hunter Training finished. Opens the Gates. */
-    certified: boolean;
-    /** Techniques the hunter struck off. */
-    excluded: string[];
-  };
-
-  daily: { date: string | null; quest: Quest | null; cleared: boolean; penalty: Quest | null };
-  /** Every day the Daily Quest was cleared. */
-  questDays: string[];
-  streak: { current: number; best: number; lastDay: string | null };
-  boon: { start: string; points: Attrs; sets: number; days: string[]; last: { day: string; tier: string; grant: Partial<Attrs>; free: number } | null };
 
   vitals: { hp: number | null; mp: number | null; fatigue: number; at: number | null; lockedUntil: number | null };
   /** `bought` counts shards paid for with money; `receipts` are store transactions already credited. */
@@ -352,6 +173,10 @@ export interface Save {
     met: string[];
     together: Record<string, number>;
     bosses: string[];
+    /** How the last run ended, and clears since the last time you were carried out. */
+    last: 'cleared' | 'withdrawn' | 'defeated' | null;
+    unbroken: number;
+    bestUnbroken: number;
   };
 
   shadows: {
@@ -368,7 +193,6 @@ export interface Save {
   story: string[];
   /** One-shot flags: walkthroughs seen, notices read. */
   seen: string[];
-  flags: { hollow: boolean; ignoredPlan: boolean };
   licence: { granted: boolean; at: string | null; tx: string | null };
   stats: Stats;
   settings: Settings;

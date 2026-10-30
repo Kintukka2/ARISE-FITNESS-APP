@@ -1,6 +1,6 @@
 import type { Rank, Stat } from '@/core/types';
 
-/** A class is the System naming what your training has made you. */
+/** A class is the System naming what your attributes have made you. */
 export interface ClassDef {
   id: string;
   name: string;

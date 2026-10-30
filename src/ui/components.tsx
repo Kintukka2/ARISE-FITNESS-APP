@@ -1,11 +1,10 @@
 /** The building blocks every screen is made of. */
-import type { ComponentChildren, JSX } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { defOf, RARITY, rollTag, score } from '@/core/gear';
 import type { Item, Rank } from '@/core/types';
 import { compact } from '@/core/util';
-import { buzz } from './feedback';
 import { CoachPortrait, Glyph, Shard, Sigil, SystemMark } from './icons';
 
 type Sound = 'tap' | 'blip' | 'success' | 'gate' | 'none';
@@ -149,63 +148,6 @@ export function useNow(ms = 1000): number {
     return () => clearInterval(t);
   }, [ms]);
   return now;
-}
-
-/**
- * − [value] + with press-and-hold acceleration. Each bump is local; one
- * commit fires on release, so holding to a hundred is one save, not a hundred.
- */
-export function Stepper({ value, step, min = 0, max = Infinity, onCommit, label, unit }: {
-  value: number; step: number; min?: number; max?: number; onCommit: (v: number) => void; label: string; unit?: string;
-}) {
-  const [v, setV] = useState(value);
-  const cur = useRef(value);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reps = useRef(0);
-  const holding = useRef(false);
-  useEffect(() => { if (!holding.current) { setV(value); cur.current = value; } }, [value]);
-  const clampV = (x: number) => Math.max(min, Math.min(max, Math.round(x * 100) / 100));
-  const bump = (dir: number) => {
-    const mult = reps.current >= 20 ? 10 : reps.current >= 8 ? 5 : 1;
-    cur.current = clampV(cur.current + dir * step * mult);
-    setV(cur.current);
-    sfx.tap();
-  };
-  const down = (dir: number) => (e: PointerEvent) => {
-    e.preventDefault();
-    holding.current = true;
-    reps.current = 0;
-    bump(dir);
-    const loop = () => { reps.current++; bump(dir); timer.current = setTimeout(loop, 70); };
-    timer.current = setTimeout(loop, 380);
-  };
-  const up = () => {
-    if (!holding.current) return;
-    holding.current = false;
-    if (timer.current) clearTimeout(timer.current);
-    if (cur.current !== value) { buzz(10); onCommit(cur.current); }
-  };
-  const btn = (dir: number) => (
-    <button type="button" class="stepper__btn" aria-label={`${dir < 0 ? 'Less' : 'More'} ${label}`}
-      onPointerDown={down(dir) as unknown as JSX.PointerEventHandler<HTMLButtonElement>} onPointerUp={up} onPointerLeave={up} onPointerCancel={up}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cur.current = clampV(cur.current + dir * step); setV(cur.current); onCommit(cur.current); } }}
-      onContextMenu={(e) => e.preventDefault()}>
-      <Glyph name={dir < 0 ? 'minus' : 'plus'} />
-    </button>
-  );
-  return (
-    <div class="stepper">
-      {btn(-1)}
-      <label class="stepper__val">
-        <input class="num" type="number" inputMode="decimal" value={v} aria-label={label}
-          onInput={(e) => { const n = Number((e.target as HTMLInputElement).value); if (isFinite(n)) { cur.current = clampV(n); setV(cur.current); } }}
-          onChange={() => cur.current !== value && onCommit(cur.current)}
-          onFocus={(e) => (e.target as HTMLInputElement).select()} />
-        {unit && <small>{unit}</small>}
-      </label>
-      {btn(1)}
-    </div>
-  );
 }
 
 /** An artifact, framed by its rarity. The frame carries the whole difference between grades. */

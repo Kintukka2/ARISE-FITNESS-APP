@@ -1,24 +1,20 @@
 /**
- * The opening, in three acts.
- *   1. The Association desk: assessment, name, licence. Valcorde does not know the System exists.
- *   2. The cut: the System speaks for the first time.
- *   3. Enrolment: the nine-question intake, started later from the Training tab.
+ * The opening, in two acts.
+ *   1. The Association desk: assessment, name, licence, kit. Valcorde does not know the System exists.
+ *   2. The cut: the System speaks for the first time, and the practice gate is waiting.
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { archetype, DAYS_OPTIONS, EXPERIENCE, FOCUS, forge, GOALS, MINUTES_OPTIONS, slotCount, summary } from '@/core/coach';
-import { exById, fmtAmount, GEAR, LIMITATIONS } from '@/core/exercises';
 import { regNo } from '@/core/gates';
-import * as quests from '@/core/quests';
+import { issueKit } from '@/core/gear';
 import * as story from '@/core/story';
-import type { Profile } from '@/core/types';
 import { ASSESSMENT, HANDOVER } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Card, Fold } from '@/ui/components';
-import { buzz, flash } from '@/ui/feedback';
+import { Btn } from '@/ui/components';
+import { flash } from '@/ui/feedback';
 import { CoachPortrait, Sigil } from '@/ui/icons';
-import { HoldButton, sys } from '@/ui/overlays';
+import { sys } from '@/ui/overlays';
 
 // ------------------------------------------------------------------ typing
 
@@ -114,7 +110,7 @@ export function Awakening() {
             sfx.success();
             flash();
             const n = name.trim().toUpperCase();
-            store.update((x) => { x.hunter.name = n; x.hunter.regNo = regNo(n); story.markOnce(x, 'ob-licence'); });
+            store.update((x) => { x.hunter.name = n; x.hunter.regNo = regNo(n); issueKit(x); story.markOnce(x, 'ob-licence'); });
             setStep('handover');
           }}>
             <label class="label" for="hunter-name">Name for the licence</label>
@@ -186,256 +182,9 @@ function Cut() {
         hold: { label: 'Hold To Accept', ms: 5000, ticks: 5, holding: 'Accepting…', done: 'Accepted', tick: sfx.awakenGong, seal: sfx.awakenSeal, after: 1500 },
       });
       await sys({ title: 'Notification', kind: 'system', center: true, lines: ['Congratulations on becoming a <em>Player</em>.'], actions: [{ label: 'Continue', value: true, primary: true }] });
-      store.update((x) => { x.onboarded = true; quests.rollDay(x); });
+      store.update((x) => { x.onboarded = true; });
     })();
     return () => { live = false; };
   }, []);
   return <main class="awaken" />;
 }
-
-// ------------------------------------------------------------------ act 3: enrolment
-
-type Draft = Pick<Profile, 'goal' | 'experience' | 'days' | 'minutes' | 'equipment' | 'limitations' | 'focus'> & { age: number | null; weight: number | null; units: 'kg' | 'lb' };
-
-interface Option { id: string | number; name: string; desc: string }
-type Q =
-  | { id: string; coach: string; q: string; hint?: string; type: 'single'; field: keyof Draft; options: Option[] }
-  | { id: string; coach: string; q: string; hint?: string; type: 'multi'; field: 'equipment' | 'limitations'; options: Option[] }
-  | { id: string; coach: string; q: string; hint?: string; type: 'body' }
-  | { id: string; coach: string; q: string; hint?: string; type: 'oath' };
-
-const QUESTIONS: Q[] = [
-  { id: 'goal', type: 'single', field: 'goal', coach: 'Enrolment, then. One goal — not four. People who chase four goals get four mediocre outcomes.', q: 'What do you want to improve?', options: GOALS },
-  { id: 'experience', type: 'single', field: 'experience', coach: 'Be honest here. If you lie, the first week will hurt and you will blame me.', q: 'What is your training experience?', options: EXPERIENCE },
-  { id: 'days', type: 'single', field: 'days', coach: 'Pick the number you will hit on your worst week, not your best one.', q: 'How many sessions a week?', options: DAYS_OPTIONS },
-  { id: 'minutes', type: 'single', field: 'minutes', coach: 'Time budget. I would rather give you twenty honest minutes than sixty you skip.', q: 'How long can each session be?', options: MINUTES_OPTIONS },
-  {
-    id: 'equipment', type: 'multi', field: 'equipment', coach: 'Tell me what you actually own and can reach today. Not what is in the garage under a tarp.',
-    q: 'What can you train with?', hint: 'Bare hands are always included. Select everything else you can reach.', options: GEAR.filter((g) => g.id !== 'none'),
-  },
-  { id: 'focus', type: 'single', field: 'focus', coach: 'Emphasis, not exclusion. I will still train everything.', q: 'Any particular emphasis?', options: FOCUS },
-  {
-    id: 'limits', type: 'multi', field: 'limitations', coach: 'Anything that hurts, I route around. This is the question people lie about and then get hurt.',
-    q: 'Anything that hurts right now?', hint: 'Nothing that loads these will ever be prescribed. Leave it empty if nothing flares up.', options: LIMITATIONS,
-  },
-  { id: 'body', type: 'body', coach: 'Numbers for the register. They only affect intensity estimates — nothing here is a judgement.', q: 'Age and bodyweight?', hint: 'Optional. Everything stays on this device.' },
-  { id: 'oath', type: 'oath', coach: 'Last thing. Every student signs this, and most of them mean it for about a fortnight.', q: 'Training Terms', hint: 'Agree to all four to enrol.' },
-];
-
-const TERMS = [
-  'I will log honest numbers, not flattering ones.',
-  'I will take the deload weeks the programme puts in front of me.',
-  'I will tell the instructor when something hurts, before it becomes an injury.',
-  'I accept that an E-Rank who trains beats an E-Rank who does not.',
-];
-
-const KG_PER_LB = 0.45359237;
-
-export function Intake({ onDone }: { onDone: () => void }) {
-  const s = useSave();
-  const [first] = useState(() => !s.program && !story.seen(s, 'intake'));
-  const [draft, setDraft] = useState<Draft>(() => ({
-    goal: s.profile.goal, experience: s.profile.experience, days: s.profile.days, minutes: s.profile.minutes,
-    equipment: s.profile.equipment.slice(), limitations: s.profile.limitations.slice(), focus: s.profile.focus,
-    age: s.program ? s.profile.age : null, weight: s.program ? s.profile.weight : null, units: s.settings.units,
-  }));
-  const [i, setI] = useState(0);
-  const [phase, setPhase] = useState<'ask' | 'forge' | 'reveal'>('ask');
-
-  if (phase === 'forge') return <Forge draft={draft} onDone={() => setPhase('reveal')} />;
-  if (phase === 'reveal') return <Reveal first={first} onDone={onDone} />;
-
-  const q = QUESTIONS[i];
-  const next = () => (i + 1 < QUESTIONS.length ? setI(i + 1) : setPhase('forge'));
-  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft({ ...draft, [k]: v });
-  const answered = q.type !== 'single' || draft[q.field] !== undefined;
-
-  return (
-    <main class="intake">
-      <div class="intake__progress"><span style={{ transform: `scaleX(${(i + 1) / QUESTIONS.length})` }} /></div>
-      <Coach key={q.id} lines={[q.coach]} onDone={() => {}} />
-      <section class="card stack">
-        <span class="label">Question {i + 1} of {QUESTIONS.length}</span>
-        <h2 class="intake__q">{q.q}</h2>
-        {q.hint && <p class="muted">{q.hint}</p>}
-        {q.type === 'single' && (
-          <div class="choices" role="radiogroup">
-            {q.options.map((o) => (
-              <button type="button" role="radio" aria-checked={draft[q.field] === o.id} key={o.id}
-                class={`choice ${draft[q.field] === o.id ? 'is-on' : ''}`}
-                onClick={() => { sfx.tap(); set(q.field, o.id as never); }}>
-                <span class="choice__mark" /><span class="choice__text"><b>{o.name}</b><small>{o.desc}</small></span>
-              </button>
-            ))}
-          </div>
-        )}
-        {q.type === 'multi' && (
-          <div class="choices">
-            {q.options.map((o) => {
-              const list = draft[q.field] as string[];
-              const on = list.includes(String(o.id));
-              return (
-                <button type="button" role="checkbox" aria-checked={on} key={o.id} class={`choice choice--multi ${on ? 'is-on' : ''}`}
-                  onClick={() => { sfx.tap(); set(q.field, (on ? list.filter((x) => x !== o.id) : [...list, String(o.id)]) as never); }}>
-                  <span class="choice__mark" /><span class="choice__text"><b>{o.name}</b><small>{o.desc}</small></span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {q.type === 'body' && <BodyStats draft={draft} set={set} />}
-        {q.type === 'oath' && <Oath onSigned={next} />}
-      </section>
-      {q.type !== 'oath' && (
-        <div class="row">
-          {i > 0 && <Btn kind="ghost" onClick={() => setI(i - 1)}>Back</Btn>}
-          <Btn kind="primary" size="lg" class="grow" disabled={!answered} onClick={next}>Continue</Btn>
-        </div>
-      )}
-      {q.type === 'oath' && <Btn kind="ghost" onClick={() => setI(i - 1)}>Back</Btn>}
-    </main>
-  );
-}
-
-function BodyStats({ draft, set }: { draft: Draft; set: <K extends keyof Draft>(k: K, v: Draft[K]) => void }) {
-  const lb = draft.units === 'lb';
-  const shownWeight = draft.weight == null ? '' : String(Math.round(lb ? draft.weight / KG_PER_LB : draft.weight));
-  return (
-    <div class="grid2">
-      <label class="field">
-        <span class="label">Age</span>
-        <input class="input num" type="number" inputMode="numeric" min={12} max={99} placeholder="28" value={draft.age ?? ''}
-          onInput={(e) => { const n = parseInt((e.target as HTMLInputElement).value, 10); set('age', isFinite(n) ? Math.max(12, Math.min(99, n)) : null); }} />
-      </label>
-      <label class="field">
-        <span class="label">Bodyweight
-          <button type="button" class="unit" aria-label="Switch weight units" onClick={(e) => { e.preventDefault(); sfx.tap(); set('units', lb ? 'kg' : 'lb'); }}>{lb ? 'LB' : 'KG'}</button>
-        </span>
-        <input class="input num" type="number" inputMode="decimal" placeholder={lb ? '165' : '75'} value={shownWeight}
-          onInput={(e) => { const n = Number((e.target as HTMLInputElement).value); set('weight', n > 0 ? Math.max(20, Math.min(250, Math.round(lb ? n * KG_PER_LB : n))) : null); }} />
-      </label>
-    </div>
-  );
-}
-
-function Oath({ onSigned }: { onSigned: () => void }) {
-  const [ticks, setTicks] = useState<boolean[]>(TERMS.map(() => false));
-  const all = ticks.every(Boolean);
-  return (
-    <div class="stack">
-      {TERMS.map((t, i) => (
-        <button type="button" role="checkbox" aria-checked={ticks[i]} key={t} class={`choice choice--multi ${ticks[i] ? 'is-on' : ''}`}
-          onClick={() => { sfx.tap(); setTicks(ticks.map((x, j) => (j === i ? !x : x))); }}>
-          <span class="choice__mark" /><span class="choice__text"><b>{t}</b></span>
-        </button>
-      ))}
-      <div class="contract">
-        <div class="sigbox">
-          <span class="label">Signed by</span>
-          <HoldSign disabled={!all} onSigned={onSigned} />
-          <span class="sigbox__rule" /><small>Licensed Hunter</small>
-        </div>
-        <div class="sigbox">
-          <span class="label">Signed by</span>
-          <span class="signature">Ryn Valcorde</span>
-          <span class="sigbox__rule" /><small>Accredited Instructor</small>
-        </div>
-        <p class="fineprint">Hunter Association · Training Division · Form BHT-1. Enrolment is a training agreement and not a guarantee of rank, placement, survival, or return. Your answers stay on this device; the Association does not receive them.</p>
-      </div>
-    </div>
-  );
-}
-
-/** The same hold gesture as the System's windows, so signing feels like the System accepting you. */
-const HoldSign = ({ disabled, onSigned }: { disabled: boolean; onSigned: () => void }) =>
-  <HoldButton disabled={disabled} hold={{ label: 'Hold To Sign', done: 'Signed' }} onFire={onSigned} />;
-
-const FORGE_LOG = (d: Draft) => [
-  'Reading enrolment responses...',
-  'Filtering codex against available equipment...',
-  'Removing contraindicated exercises...',
-  `Selecting split for ${d.days} sessions per week...`,
-  `Sizing sessions to ${slotCount(d.minutes)} exercises...`,
-  'Assigning sets, targets, and rest intervals...',
-  'Setting week 1 volume baseline...',
-  'Programme compiled.',
-];
-
-function Forge({ draft, onDone }: { draft: Draft; onDone: () => void }) {
-  const [n, setN] = useState(0);
-  const lines = FORGE_LOG(draft);
-  useEffect(() => {
-    store.update((x) => {
-      Object.assign(x.profile, {
-        goal: draft.goal, experience: draft.experience, days: draft.days, minutes: draft.minutes,
-        equipment: draft.equipment, limitations: draft.limitations, focus: draft.focus,
-        age: draft.age ?? 28, weight: draft.weight ?? 75,
-      });
-      x.settings.units = draft.units;
-      forge(x, { week: 1 });
-      story.markOnce(x, 'intake');
-    });
-    const t = setInterval(() => setN((k) => { sfx.tap(); return k + 1; }), 210);
-    const done = setTimeout(() => { clearInterval(t); sfx.gate(); flash(); onDone(); }, 210 * lines.length + 500);
-    return () => { clearInterval(t); clearTimeout(done); };
-  }, []);
-  return (
-    <main class="intake">
-      <Coach lines={['Give me a moment. I am building this around what you told me, not a template.']} onDone={() => {}} />
-      <section class="card">
-        <span class="label">Compiling Programme</span>
-        <pre class="forgelog num">{lines.slice(0, n).map((l) => `> ${l}`).join('\n')}</pre>
-      </section>
-    </main>
-  );
-}
-
-function Reveal({ first, onDone }: { first: boolean; onDone: () => void }) {
-  const s = useSave();
-  const [read, setRead] = useState({ a: false, p: false });
-  const p = s.program!;
-  const enter = async () => {
-    if (first && !(read.a && read.p)) {
-      sfx.alarm();
-      const v = await sys({
-        title: 'Hunter Training', kind: 'coach',
-        lines: [
-          `Straight past it, then. I have just spent nine questions working out what you can actually do, and built you a week off the back of it, and you have looked at ${read.a || read.p ? 'half of it' : 'neither'}.`,
-          'It takes about ninety seconds. Two rectangles. On the screen. Behind me.',
-        ],
-        actions: [{ label: 'Leave Anyway', value: 'leave', danger: true }, { label: 'Read It', value: false, primary: true }],
-      });
-      if (v !== 'leave') return;
-      store.update((x) => { x.flags.ignoredPlan = true; });
-    }
-    sfx.gate();
-    buzz([20, 40, 80]);
-    onDone();
-  };
-  return (
-    <main class="intake">
-      <Coach lines={[first
-        ? 'Enrolment is done and you are on the training roll. I finished your assessment and built a programme off the back of it — shaped by what you can reach, how long you have got, and what hurts. Both are below. Open them before you go anywhere.'
-        : 'Re-assessed. Your level, attributes, Shadows and streak are untouched. Here is the week I would give you now.']} onDone={() => {}} />
-      <Fold title="Assessment" right={archetype(s)} onOpen={() => setRead((r) => ({ ...r, a: true }))}>
-        <h3 class="archetype">{archetype(s)}</h3>
-        <ul class="notes">{summary(s).map((n) => <li key={n} dangerouslySetInnerHTML={{ __html: n }} />)}</ul>
-      </Fold>
-      <Fold title="Ryn’s Training Programme" right={`Week ${p.week}`} onOpen={() => setRead((r) => ({ ...r, p: true }))}>
-        <div class="stack">
-          {p.days.map((d, i) => (
-            <Card key={d.id}>
-              <div class="row between"><span class="label">Session {i + 1}</span><span class="chip">{d.slots.length} exercises</span></div>
-              <b>{d.name}</b>
-              <p class="muted">{d.rationale}</p>
-              <ul class="slotlist">{d.slots.map((sl) => <li key={sl.exId}><span>{exById(sl.exId)?.name}</span><span class="num">{sl.sets} × {fmtAmount(exById(sl.exId), sl.target)}</span></li>)}</ul>
-            </Card>
-          ))}
-        </div>
-      </Fold>
-      <Btn kind="primary" size="lg" block onClick={enter} class={first && !(read.a && read.p) ? 'is-dim' : ''} sound="none">Enter The Association</Btn>
-      {first && !(read.a && read.p) && <p class="hint">{!read.a && !read.p ? 'Open the assessment and your programme first.' : `Open your ${read.a ? 'programme' : 'assessment'} as well.`}</p>}
-    </main>
-  );
-}
-

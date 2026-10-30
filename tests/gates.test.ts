@@ -1,20 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
-import { board, allies, dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
+import { board, allies, dungeonById, entryBlock, seal, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
 import { grant, autoEquip, ofRank, upgradeCount, power } from '@/core/gear';
-import { totalXpFor, grantXP, autoAllocate } from '@/core/progression';
+import { totalXpFor, grantXP, autoAllocate, GATE_XP, PRACTICE_LEVEL } from '@/core/progression';
+import type { Dungeon, Save } from '@/core/types';
+
+import { dayKey as dayKeyOf } from '@/core/util';
 
 const day = '2026-02-02';
 const now = Date.parse(day + 'T12:00:00');
 
 function hunter(level: number) {
   const s = defaults();
-  grantXP(s, totalXpFor(level), { raw: true });
+  grantXP(s, totalXpFor(level));
   autoAllocate(s);
-  s.training.certified = true;
   return s;
+}
+
+/** Play a gate to the end, pressing on while the party holds. */
+function play(s: Save, d: Dungeon) {
+  const run = raid.begin(s, d, now);
+  const chambers = raid.plan(d, run.seed);
+  let won = true;
+  for (let i = 0; i < chambers.length && won; i++) {
+    const party = raid.partyFor(s, d, run, now);
+    const ch = raid.runChamber(d, run.seed, i, party, chambers);
+    raid.record(s, d, run, party, ch, now);
+    won = ch.won;
+  }
+  return { won, res: raid.finish(s, d, run, won ? 'cleared' : 'defeated', now) };
 }
 
 describe('the board', () => {
@@ -26,6 +42,26 @@ describe('the board', () => {
     expect(real).toHaveLength(10);
     for (const r of ['E', 'D', 'C', 'B', 'A', 'S']) expect(real.some((d) => d.rank === r)).toBe(true);
     expect(real.filter((d) => d.rank === 'E').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('a cleared gate leaves the board and another of its grade takes its place', () => {
+    const s = hunter(1);
+    const before = board(s, day).slice(1);
+    const gone = before.find((d) => d.rank === 'E')!;
+    seal(s, gone, day);
+    const after = board(s, day).slice(1);
+    expect(after).toHaveLength(10);
+    expect(after.map((d) => d.id)).not.toContain(gone.id);
+    expect(after.filter((d) => d.rank === 'E')).toHaveLength(before.filter((d) => d.rank === 'E').length);
+    // Every other gate stays where it was.
+    expect(before.filter((d) => d !== gone).every((d) => after.includes(d))).toBe(true);
+  });
+
+  it('a grade cleared out opens its gates again', () => {
+    const s = hunter(1);
+    for (const d of board(s, day).filter((x) => x.rank === 'S')) seal(s, d, day);
+    for (let i = 0; i < 5; i++) for (const d of board(s, day).filter((x) => x.rank === 'S')) seal(s, d, day);
+    expect(board(s, day).filter((d) => d.rank === 'S').length).toBeGreaterThan(0);
   });
 
   it('licenses one grade above and no further', () => {
@@ -44,21 +80,12 @@ describe('a raid', () => {
   it('is deterministic for a seed and pays out', () => {
     const s = hunter(12);
     const d = dungeonById('DNG-001')!;
-    const run = raid.begin(s, d, now);
-    const chambers = raid.plan(d, run.seed);
-    let won = true;
-    for (let i = 0; i < chambers.length && won; i++) {
-      const party = raid.partyFor(s, d, run, now);
-      const ch = raid.runChamber(d, run.seed, i, party, chambers);
-      raid.record(s, d, run, party, ch, now);
-      won = ch.won;
-    }
-    const res = raid.finish(s, d, run, won ? 'cleared' : 'defeated', now);
+    const { won, res } = play(s, d);
     if (won) {
       expect(res.shards).toBe(shop.GATE_SHARDS.E);
       expect(res.bounty).toBe(shop.GATE_SHARDS.E * 2);
       expect(s.gates.clears).toBe(1);
-      expect(entryBlock(s, d, now)).toBe('sealed');
+      expect(board(s, dayKeyOf(now)).map((x) => x.id)).not.toContain(d.id);
     } else {
       expect(s.vitals.lockedUntil).toBeGreaterThan(now);
     }
@@ -66,10 +93,56 @@ describe('a raid', () => {
     expect(s.vitals.fatigue).toBeGreaterThan(0);
   });
 
-  it('the practice gate is won and pays a ring', () => {
-    const s = hunter(5);
-    const p = raid.project(s, PRACTICE_GATE, 10, now);
-    expect(p.rate).toBe(1);
+  it('the practice gate is won by a fresh hunter, pays a ring, and lands them on the practice level', () => {
+    const s = defaults();
+    expect(raid.project(s, PRACTICE_GATE, 10, now).rate).toBe(1);
+    const { won, res } = play(s, PRACTICE_GATE);
+    expect(won).toBe(true);
+    expect(s.hunter.level).toBe(PRACTICE_LEVEL);
+    expect(res.xp?.to).toBe(PRACTICE_LEVEL);
+    expect(res.loot).toHaveLength(1);
+    expect(s.gates.clears).toBe(0);
+  });
+
+  it('a clear pays its grade in experience, twice the first time', () => {
+    const s = hunter(12);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    run.won = raid.plan(d, run.seed).length;
+    const first = raid.finish(s, d, run, 'cleared', now);
+    expect(first.xp?.gained).toBe(GATE_XP.E * 2);
+    const again = raid.begin(s, d, now);
+    again.won = raid.plan(d, again.seed).length;
+    expect(raid.finish(s, d, again, 'cleared', now).xp?.gained).toBe(GATE_XP.E);
+    expect(s.log[0].xp).toBe(GATE_XP.E);
+  });
+
+  it('being carried out pays a share, breaks the run, and a clear after it is a comeback', () => {
+    const s = hunter(12);
+    const d = dungeonById('DNG-001')!;
+    const won = (x: Save) => { const r = raid.begin(x, d, now); r.won = raid.plan(d, r.seed).length; return raid.finish(x, d, r, 'cleared', now); };
+    won(s);
+    expect(s.gates.unbroken).toBe(1);
+    const lost = raid.finish(s, d, raid.begin(s, d, now), 'defeated', now);
+    expect(lost.xp?.gained).toBe(Math.round(GATE_XP.E * raid.FAIL_SHARE));
+    expect(s.gates.unbroken).toBe(0);
+    s.vitals.lockedUntil = null;
+    won(s);
+    expect(s.stats.comebacks).toBe(1);
+    expect(s.gates.bestUnbroken).toBe(1);
+  });
+
+  it('a clear above your grade counts as a reach, read before the experience lands', () => {
+    const s = hunter(9);
+    const d = dungeonById('DNG-007')!;
+    const run = raid.begin(s, d, now);
+    run.won = raid.plan(d, run.seed).length;
+    raid.finish(s, d, run, 'cleared', now);
+    expect(s.hunter.level).toBeGreaterThanOrEqual(10);
+    expect(s.stats.reachClears).toBe(1);
+    // The hunters credited are the ones who went in, not the ones a D-Rank would be sent with.
+    expect(s.gates.met).toEqual(allies(d, run.day, 'E').map((a) => a.id));
+    expect(s.gates.met).not.toEqual(allies(d, run.day, 'D').map((a) => a.id));
   });
 
   it('a stronger hunter clears more', () => {

@@ -4,11 +4,12 @@
  *
  *   - Billing: cordova-plugin-purchase, exposed as `window.CdvPurchase`.
  *   - Reminders: @capacitor/local-notifications, at `Capacitor.Plugins.LocalNotifications`.
+ *     One kind only: when fatigue has faded, or the lockout after a wipe lifts.
  */
 import { setStoreAvailable, grantLicence } from '@/core/licence';
 import { deposit } from '@/core/shop';
 import type { Save } from '@/core/types';
-import { addDays, dayKey } from '@/core/util';
+import { FATIGUE_PER_HOUR, read } from '@/core/vitals';
 import * as store from '@/store';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -92,28 +93,15 @@ export const buyLicence = () => buy(PRODUCTS.licence);
 const notes = () => w.Capacitor?.Plugins?.LocalNotifications;
 export const remindersAvailable = () => !!notes();
 
-const QUEST_ID = 1000;
-const CALL_ID = 2000;
-const REFRESH_ID = 3000;
-const HORIZON = 7;
+const READY_ID = 1000;
 
-/** What should be scheduled, a week ahead, given the save. Pure. */
-export function plan(s: Save, now = new Date()) {
-  const r = s.settings.reminders;
-  if (!r.on || !s.onboarded) return [];
-  const [qh, qm] = r.at.split(':').map(Number);
-  const today = dayKey(now);
-  const out: { id: number; title: string; body: string; at: Date }[] = [];
-  for (let i = 0; i < HORIZON; i++) {
-    const day = addDays(today, i);
-    const [y, m, d] = day.split('-').map(Number);
-    const at = (h: number, min = 0) => new Date(y, m - 1, d, h, min);
-    const clearedToday = i === 0 && s.daily.cleared;
-    if (!clearedToday && at(qh, qm) > now) out.push({ id: QUEST_ID + i, title: 'Daily Quest', body: 'The Daily Quest is waiting. Clear it before midnight.', at: at(qh, qm) });
-    if (r.lastCall && !clearedToday && at(20) > now) out.push({ id: CALL_ID + i, title: 'Penalty Warning', body: 'The Daily Quest is still open. Miss it and the streak resets.', at: at(20) });
-    if (r.refresh && s.training.certified && at(17) > now) out.push({ id: REFRESH_ID + i, title: 'Gates & Exchange', body: 'New Gates stand open and the Exchange has restocked.', at: at(17) });
-  }
-  return out;
+/** What should be scheduled, given the save. Pure. */
+export function plan(s: Save, now = Date.now()) {
+  if (!s.settings.reminders.on || !s.onboarded) return [];
+  const v = read(s, now);
+  if (v.locked) return [{ id: READY_ID, title: 'Fit To Raid', body: 'The Association medics have signed you off. The Gates are open to you again.', at: new Date(now + v.lockedFor) }];
+  if (v.fatigue <= 0) return [];
+  return [{ id: READY_ID, title: 'Rested', body: 'Your fatigue has faded. You will fight at full strength.', at: new Date(now + (v.fatigue / FATIGUE_PER_HOUR) * 36e5) }];
 }
 
 let lastPlan = '';
@@ -122,13 +110,12 @@ export async function syncReminders(s: Save) {
   const n = notes();
   if (!n) return;
   const want = plan(s);
-  const key = JSON.stringify(want.map((x) => [x.id, x.at.getTime()]));
+  // Only the minute matters: fatigue changes on every render, the reminder should not.
+  const key = JSON.stringify(want.map((x) => [x.id, Math.round(x.at.getTime() / 6e4)]));
   if (key === lastPlan) return;
   lastPlan = key;
-  const ids = [];
-  for (let i = 0; i < HORIZON; i++) ids.push({ id: QUEST_ID + i }, { id: CALL_ID + i }, { id: REFRESH_ID + i });
   try {
-    await n.cancel({ notifications: ids });
+    await n.cancel({ notifications: [{ id: READY_ID }] });
     if (want.length) await n.schedule({ notifications: want.map((x) => ({ id: x.id, title: x.title, body: x.body, schedule: { at: x.at, allowWhileIdle: true }, smallIcon: 'ic_stat_arise' })) });
   } catch { /* the phone refused; the switch says so */ }
 }
@@ -143,9 +130,6 @@ export async function askNotifications(): Promise<boolean> {
   } catch { return false; }
 }
 
-export function onReminderTap(go: (where: 'quests' | 'gates') => void) {
-  notes()?.addListener?.('localNotificationActionPerformed', (e: any) => {
-    const id = e?.notification?.id ?? 0;
-    go(id >= REFRESH_ID ? 'gates' : 'quests');
-  });
+export function onReminderTap(go: () => void) {
+  notes()?.addListener?.('localNotificationActionPerformed', () => go());
 }

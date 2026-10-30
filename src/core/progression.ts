@@ -1,14 +1,12 @@
 /**
- * Levels, rank, Resonance, attributes and class.
+ * Levels, rank, attributes and class.
  *
- * One rank ladder. It is earned by level, and level is earned by training and
- * the Daily Quest — never by a simulated fight. Gates pay gear, shards and
- * Shadows; they do not pay experience.
+ * One rank ladder, earned by level. Level is earned in the Gates: every run
+ * pays experience by the gate's grade, settled once in `raid.finish`.
  */
 import { classById, classFor } from '@/data/classes';
 import type { Attrs, Rank, Save, Stat } from './types';
 import { STATS } from './types';
-import { clamp } from './util';
 
 export type HunterRank = Rank | 'N';
 
@@ -33,29 +31,20 @@ export const RANK_LADDER: RankInfo[] = [
 
 export const ATTRS: { key: Stat; name: string; desc: string }[] = [
   { key: 'STR', name: 'Strength', desc: 'Force. Drives physical damage.' },
-  { key: 'AGI', name: 'Agility', desc: 'Speed: initiative, evasion, critical hits, and shorter rests.' },
+  { key: 'AGI', name: 'Agility', desc: 'Speed: initiative, evasion and critical hits.' },
   { key: 'PER', name: 'Perception', desc: 'Awareness: accuracy and critical hits.' },
   { key: 'VIT', name: 'Vitality', desc: 'Resilience. Sets HP and defence.' },
-  { key: 'INT', name: 'Intelligence', desc: 'Judgement under fatigue. Sets MP, magic, and the odds of binding a Shadow.' },
+  { key: 'INT', name: 'Intelligence', desc: 'Sets MP, magic, and the odds of binding a Shadow.' },
 ];
 
 export const STAT_CAP = 100;
 export const BOOST_CAP = 200;
 export const POINTS_PER_LEVEL = 3;
 export const RANK_UP_POINTS = 5;
-export const CERT_LEVEL = 5;
-/** Basic Training always pays at least this much, even past Level 5. */
-const BASIC_MIN = 300;
-
-export const RESONANCE = { perDay: 0.01, max: 2, maxDays: 100 } as const;
-export const RESONANCE_TIERS = [
-  { key: 'dormant', min: 0, name: 'Dormant' },
-  { key: 'ember', min: 1, name: 'Ember' },
-  { key: 'kindled', min: 10, name: 'Kindled' },
-  { key: 'burning', min: 20, name: 'Burning' },
-  { key: 'searing', min: 50, name: 'Searing' },
-  { key: 'perfect', min: 100, name: 'Perfect Resonance' },
-] as const;
+/** Clearing the practice gate lands you here: the System counts your first kill. */
+export const PRACTICE_LEVEL = 5;
+/** Experience a cleared gate pays, by grade. A first clear pays it twice; withdrawing or being carried out pays a share. */
+export const GATE_XP: Record<Rank, number> = { E: 120, D: 300, C: 650, B: 1000, A: 1600, S: 2700 };
 
 export const xpToNext = (level: number) => Math.floor(4.5 * Math.pow(level, 1.8)) + 55;
 
@@ -83,27 +72,6 @@ export function gateRank(s: Save): Rank {
   return k === 'N' ? 'S' : k;
 }
 
-export function techTier(s: Save): number {
-  const byExp = { novice: 1, trained: 2, seasoned: 3, elite: 4 }[s.profile.experience] ?? 1;
-  return clamp(Math.max(rankFor(s.hunter.level).tier, byExp), 1, 4);
-}
-
-export function resonance(s: Save) {
-  const days = Math.max(0, s.streak.current);
-  const raw = 1 + days * RESONANCE.perDay;
-  const mult = Math.min(RESONANCE.max, raw);
-  let tier: (typeof RESONANCE_TIERS)[number] = RESONANCE_TIERS[0];
-  for (const t of RESONANCE_TIERS) if (days >= t.min) tier = t;
-  return {
-    days,
-    mult,
-    atMax: raw >= RESONANCE.max,
-    daysToMax: Math.max(0, RESONANCE.maxDays - days),
-    pct: clamp(((mult - 1) / (RESONANCE.max - 1)) * 100, 0, 100),
-    tier,
-  };
-}
-
 /** Flat attribute points from the class. */
 export function classBonus(s: Save): Partial<Attrs> {
   const c = classById(s.hunter.classId);
@@ -117,14 +85,11 @@ export interface XpResult {
   to: number;
   points: number;
   rankUp: RankInfo | null;
-  mult: number;
 }
 
-/** Award experience: Resonance and Hollow apply unless `raw`. Mutates. */
-export function grantXP(s: Save, amount: number, opts: { raw?: boolean } = {}): XpResult {
-  let mult = opts.raw ? 1 : resonance(s).mult;
-  if (s.flags.hollow && !opts.raw) mult *= 0.5;
-  const gained = Math.max(1, Math.round(amount * mult));
+/** Award experience. Mutates. */
+export function grantXP(s: Save, amount: number): XpResult {
+  const gained = Math.max(0, Math.round(amount));
   const from = s.hunter.level;
   const fromRank = rankFor(from).key;
   const pointsBefore = s.hunter.points;
@@ -145,17 +110,12 @@ export function grantXP(s: Save, amount: number, opts: { raw?: boolean } = {}): 
     const crossed = RANK_LADDER.filter((r) => r.min > from && r.min <= to).length;
     s.hunter.points += RANK_UP_POINTS * crossed;
   }
-  return { gained, levels: to - from, from, to, points: s.hunter.points - pointsBefore, rankUp, mult };
+  return { gained, levels: to - from, from, to, points: s.hunter.points - pointsBefore, rankUp };
 }
 
-/** What an amount will actually pay right now, for honest labels. */
-export function previewXP(s: Save, amount: number): number {
-  return Math.max(1, Math.round(amount * resonance(s).mult * (s.flags.hollow ? 0.5 : 1)));
-}
-
-/** Exactly the shortfall to Level 5, so finishing Basic Training lands you on it. */
-export function basicAward(s: Save): number {
-  return Math.max(totalXpFor(CERT_LEVEL) - bankedXp(s), BASIC_MIN);
+/** Exactly the shortfall to the practice level, so clearing the practice gate lands you on it. */
+export function practiceAward(s: Save): number {
+  return Math.max(0, totalXpFor(PRACTICE_LEVEL) - bankedXp(s));
 }
 
 /** Spend one point. False means nothing moved and nothing was charged. */
@@ -199,5 +159,4 @@ export function syncClass(s: Save) {
   return { cls: c, was };
 }
 
-export const gatesOpen = (s: Save) => s.training.certified;
 export const shadowsOpen = (s: Save) => s.shadows.army.length > 0;

@@ -1,7 +1,7 @@
 /**
  * The Association Licence: the one thing for sale, and only where a store
- * exists (the Android build). Without it a hunter keeps every level, point,
- * streak and Shadow, but the Gate board and the Exchange stop at D-Rank.
+ * exists (the Android build). Without it a hunter keeps every level, point
+ * and Shadow, but the Gate board and the Exchange stop at D-Rank.
  * On the web there is no store, so the game is simply open.
  */
 import { gateRank } from './progression';

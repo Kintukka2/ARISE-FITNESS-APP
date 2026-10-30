@@ -1,13 +1,13 @@
 // Generated from the original ARISE codex. Edit freely: this file is the source now.
 import type { GearDef } from '@/core/types';
 
-/** Issued by Hunter Training, one piece for finishing Basic Training. Never sold or scrapped. */
+/** Issued with the licence, at the Association desk. Never sold or scrapped. */
 export const ISSUED: GearDef[] = [
   {"id":"RECRUIT_SHIRT","name":"Hunter Recruit Shirt","rank":"E","slot":"Chest","core":{"VIT":1},"issued":true,"desc":"Association grey, reinforced at the shoulders, and issued in one size that fits nobody. Every hunter alive owned one of these first."},
-  {"id":"RECRUIT_TROUSERS","name":"Hunter Recruit Trousers","rank":"E","slot":"Legs","core":{"VIT":1},"issued":true,"desc":"Hard-wearing, unflattering, and cut for squatting in. Valcorde will tell you the last part is not an accident."},
+  {"id":"RECRUIT_TROUSERS","name":"Hunter Recruit Trousers","rank":"E","slot":"Legs","core":{"VIT":1},"issued":true,"desc":"Hard-wearing, unflattering, and cut for crouching in. Valcorde will tell you the last part is not an accident."},
   {"id":"RECRUIT_BOOTS","name":"Hunter Recruit Boots","rank":"E","slot":"Feet","core":{"PER":1},"issued":true,"desc":"Flat, stiff, and honest. You will feel the ground through them, which is the only thing a boot has to do."},
   {"id":"TRAINING_SHIELD","name":"Training Shield","rank":"D","slot":"Off-Hand","core":{"VIT":2},"issued":true,"desc":"Battered plywood over a steel rim, and heavier than it looks. Handed out because a recruit who has never held a shield puts it in the wrong place."},
-  {"id":"TRAINING_SWORD","name":"Training Sword","rank":"D","slot":"Weapon","core":{"STR":2},"issued":true,"desc":"Blunt, nose-heavy, and deliberately worse than a real blade. Valcorde issues it on the last day of Basic Training and tells every recruit the same thing: the sword is not the point, the swinging is."},
+  {"id":"TRAINING_SWORD","name":"Training Sword","rank":"D","slot":"Weapon","core":{"STR":2},"issued":true,"desc":"Blunt, nose-heavy, and deliberately worse than a real blade. Valcorde issues it with the licence and tells every recruit the same thing: the sword is not the point, the swinging is."},
 ];
 
 export const EQUIPMENT: GearDef[] = [

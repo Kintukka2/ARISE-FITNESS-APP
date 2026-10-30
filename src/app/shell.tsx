@@ -3,12 +3,12 @@ import { useEffect, useRef } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import { upgradeCount } from '@/core/gear';
-import { gatesOpen, rankFor, resonance, shadowsOpen, xpToNext } from '@/core/progression';
+import { rankFor, shadowsOpen, xpToNext } from '@/core/progression';
 import { licensedRank } from '@/core/licence';
 import { compact } from '@/core/util';
 import { useSave } from '@/store';
 import { reducedMotion } from '@/ui/feedback';
-import { Flame, Glyph, Shard, Sigil } from '@/ui/icons';
+import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { go, route, type Route } from './router';
 import { openExchange } from '@/screens/Exchange';
 import { openSettings } from '@/screens/Settings';
@@ -60,7 +60,6 @@ export function Fx() {
 export function TopBar() {
   const s = useSave();
   const need = xpToNext(s.hunter.level);
-  const res = resonance(s);
   const cls = classById(s.hunter.classId);
   const rank = rankFor(s.hunter.level).key;
   const shown = rank === 'N' ? 'N' : licensedRank(s);
@@ -76,10 +75,6 @@ export function TopBar() {
             <div class="xpbar__fill" style={{ transform: `scaleX(${Math.min(1, s.hunter.xp / need)})` }} />
             <span class="xpbar__label num">LV {s.hunter.level} · {s.hunter.xp} / {need}</span>
           </div>
-          <div class="topbar__streak" data-streak={res.tier.key} title={`Resonance: ${res.days} days · ×${res.mult.toFixed(2)} experience`}>
-            <Flame tier={res.tier.key} />
-            <span class="num">{res.days}</span>
-          </div>
           <button type="button" class="topbar__purse" aria-label={`${s.wallet.shards} Mana Shards — open the Exchange`} onClick={() => { sfx.blip(); openExchange(); }}>
             <Shard size={15} /><span class="num">{compact(s.wallet.shards)}</span>
           </button>
@@ -93,8 +88,6 @@ export function TopBar() {
 }
 
 const TABS: { key: Route; label: string; icon: string }[] = [
-  { key: 'quests', label: 'Quests', icon: 'quests' },
-  { key: 'training', label: 'Training', icon: 'training' },
   { key: 'profile', label: 'Profile', icon: 'profile' },
   { key: 'gates', label: 'Gates', icon: 'gates' },
   { key: 'shadows', label: 'Shadows', icon: 'shadows' },
@@ -104,7 +97,6 @@ export function NavBar() {
   const s = useSave();
   const r = route.use();
   const badge = (k: Route): string | null => {
-    if (k === 'quests' && (s.flags.hollow || (s.daily.quest && !s.daily.cleared))) return '!';
     if (k === 'profile') {
       const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0);
       return n > 0 ? String(n) : null;
@@ -112,8 +104,8 @@ export function NavBar() {
     if (k === 'shadows' && s.shadows.fresh.length) return String(s.shadows.fresh.length);
     return null;
   };
-  const lock = (k: Route) => (k === 'gates' && !gatesOpen(s)) || (k === 'shadows' && !shadowsOpen(s));
-  const beckon = (k: Route) => (k === 'gates' && gatesOpen(s) && !s.seen.includes('gates-visited')) || (k === 'shadows' && shadowsOpen(s) && !s.seen.includes('shadows-visited'));
+  const lock = (k: Route) => k === 'shadows' && !shadowsOpen(s);
+  const beckon = (k: Route) => (k === 'gates' && !s.seen.includes('gates-visited')) || (k === 'shadows' && shadowsOpen(s) && !s.seen.includes('shadows-visited'));
   return (
     <nav class="navbar" aria-label="Main">
       {TABS.map((t) => (

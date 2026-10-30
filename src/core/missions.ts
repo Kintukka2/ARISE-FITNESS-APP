@@ -5,9 +5,8 @@
 import { DUNGEONS } from '@/data/dungeons';
 import { BEATS } from '@/data/narrative';
 import { ISSUED } from '@/data/equipment';
-import * as boon from './boon';
 import { defOf, power, SLOTS, worn } from './gear';
-import { gateRank, resonance, STAT_CAP } from './progression';
+import { gateRank, STAT_CAP } from './progression';
 import type { Attrs, Save, Stat } from './types';
 import { STATS } from './types';
 
@@ -18,41 +17,43 @@ type Grant = Partial<Attrs> & { free?: number; all?: number };
 
 export interface Mission { id: string; name: string; tier: MissionTier; did: string; grant: Grant; check: (s: Save) => boolean }
 
-const EXALTED = boon.TIERS[boon.TIERS.length - 1];
 const fromGate = (s: Save) => s.items.some((it) => !defOf(it)?.issued);
 const metGrades = (s: Save) => new Set(s.gates.met.map((id) => id.split('-')[1]));
+const felled = (s: Save) => Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
+const families = (s: Save) => Object.keys(s.stats.killsByFamily).length;
+const bestShadow = (s: Save) => s.shadows.army.reduce((n, x) => Math.max(n, x.kills), 0);
 
 export const MISSIONS: Mission[] = [
   // Mission — 1 point
-  { id: 'first_light', name: 'First Light', tier: 'minor', did: 'Cleared a Daily Quest.', grant: { VIT: 1 }, check: (s) => s.stats.questsCleared >= 1 },
-  { id: 'trained', name: 'Trained', tier: 'minor', did: 'Finished Basic Hunter Training.', grant: { PER: 1 }, check: (s) => s.training.certified },
-  { id: 'first_impressions', name: 'First Impressions Don’t Matter', tier: 'minor', did: 'Walked straight past Ryn Valcorde’s training plan without reading it.', grant: { INT: -2, VIT: 1 }, check: (s) => s.flags.ignoredPlan },
-  { id: 'seven_straight', name: 'Seven Straight', tier: 'minor', did: 'Held Resonance for seven consecutive days.', grant: { AGI: 1 }, check: (s) => s.streak.best >= 7 },
-  { id: 'iron_debt', name: 'Iron Debt', tier: 'minor', did: 'Missed a day, paid the Penalty Quest, and came back anyway.', grant: { INT: 1 }, check: (s) => s.stats.penaltiesCleared >= 1 },
-  { id: 'acknowledged', name: 'Acknowledged', tier: 'minor', did: 'Received a Boon.', grant: { PER: 1 }, check: (s) => s.stats.boons >= 1 },
-  { id: 'nobody_saw', name: 'Nobody Saw It', tier: 'minor', did: 'Cleared a Daily Quest before seven in the morning.', grant: { PER: 1 }, check: (s) => s.stats.earlyClears >= 1 },
-  { id: 'under_tension', name: 'Under Tension', tier: 'minor', did: 'Held position for a cumulative hour.', grant: { VIT: 1 }, check: (s) => s.stats.totalSeconds >= 3600 },
+  { id: 'first_light', name: 'First Light', tier: 'minor', did: 'Walked out of the practice gate on your own feet.', grant: { VIT: 1 }, check: (s) => s.gates.cleared.includes('DNG-000') },
+  { id: 'knew_when', name: 'Knew When To Leave', tier: 'minor', did: 'Withdrew from a Gate between chambers, with something left to walk out on.', grant: { PER: 1 }, check: (s) => s.gates.withdrawn >= 1 },
+  { id: 'first_reach', name: 'Above Your Station', tier: 'minor', did: 'Cleared a Gate a grade above your own.', grant: { STR: 1 }, check: (s) => s.stats.reachClears >= 1 },
+  { id: 'seven_straight', name: 'Seven Straight', tier: 'minor', did: 'Cleared seven Gates in a row without being carried out.', grant: { AGI: 1 }, check: (s) => s.gates.bestUnbroken >= 7 },
+  { id: 'iron_debt', name: 'Iron Debt', tier: 'minor', did: 'Was carried out of a Gate, and cleared the very next one.', grant: { INT: 1 }, check: (s) => s.stats.comebacks >= 1 },
+  { id: 'spoils', name: 'Spoils', tier: 'minor', did: 'Carried a thousand Mana Shards out of the Gates, all told.', grant: { PER: 1 }, check: (s) => s.wallet.earned >= 1000 },
+  { id: 'first_boss', name: 'Nobody Saw It', tier: 'minor', did: 'Faced a gate boss nobody had told you about, and lived to name it.', grant: { PER: 1 }, check: (s) => s.gates.bosses.filter((id) => id !== 'DNG-000').length >= 1 },
+  { id: 'hundred_down', name: 'A Hundred Down', tier: 'minor', did: 'Felled a hundred creatures.', grant: { VIT: 1 }, check: (s) => felled(s) >= 100 },
   { id: 'gatebreaker', name: 'Gatebreaker', tier: 'minor', did: 'Cleared a dungeon.', grant: { STR: 1 }, check: (s) => s.gates.clears >= 1 },
   { id: 'first_artifact', name: 'Salvage', tier: 'minor', did: 'Carried something out of a Gate that Hunter Training did not issue you.', grant: { AGI: 1 }, check: fromGate },
   { id: 'first_shadow', name: 'Something Followed You Home', tier: 'minor', did: 'Bound your first Shadow.', grant: { free: 1 }, check: (s) => s.shadows.army.length >= 1 },
-  { id: 'classified', name: 'Classified', tier: 'minor', did: 'Trained long enough for the System to put a name to what you are.', grant: { free: 1 }, check: (s) => !!s.hunter.classId },
+  { id: 'classified', name: 'Classified', tier: 'minor', did: 'Fought long enough for the System to put a name to what you are.', grant: { free: 1 }, check: (s) => !!s.hunter.classId },
   {
     id: 'standard_issue', name: 'Standard Issue', tier: 'minor', did: 'Wore the issued kit entire — the sword, the shield and the grey.', grant: { free: 1 },
     check: (s) => { const ids = worn(s).map((i) => i.defId); return ISSUED.every((d) => ids.includes(d.id)); },
   },
   { id: 'names_on_board', name: 'Names On The Board', tier: 'minor', did: 'Stood in a party with ten different hunters.', grant: { PER: 1 }, check: (s) => s.gates.met.length >= 10 },
-  { id: 'own_programme', name: 'Your Own Hand', tier: 'minor', did: 'Wrote a programme of your own and ran it.', grant: { INT: 1 }, check: (s) => s.stats.templateRuns >= 1 },
+  { id: 'bestiary', name: 'Bestiary', tier: 'minor', did: 'Felled creatures of five different families.', grant: { INT: 1 }, check: (s) => families(s) >= 5 },
 
   // Directive — 2–3 points
-  { id: 'thirty_unbroken', name: 'Thirty Unbroken', tier: 'major', did: 'Held Resonance for thirty consecutive days.', grant: { STR: 1, VIT: 1 }, check: (s) => s.streak.best >= 30 },
-  { id: 'exalted', name: 'Exalted', tier: 'major', did: `Banked ${EXALTED.min} sets across ${EXALTED.days} days in one period — the top of the ladder.`, grant: { INT: 1, PER: 1 }, check: (s) => s.boon.last?.tier === EXALTED.name },
+  { id: 'thirty_unbroken', name: 'Thirty Unbroken', tier: 'major', did: 'Cleared thirty Gates in a row without being carried out.', grant: { STR: 1, VIT: 1 }, check: (s) => s.gates.bestUnbroken >= 30 },
+  { id: 'reaching', name: 'Reaching', tier: 'major', did: 'Cleared ten Gates a grade above your own.', grant: { INT: 1, PER: 1 }, check: (s) => s.stats.reachClears >= 10 },
   { id: 'well_rounded', name: 'No Weak Side', tier: 'major', did: 'Brought every one of the five attributes to twenty or above.', grant: { INT: 2 }, check: (s) => STATS.every((k) => s.hunter.attrs[k] >= 20) },
   { id: 'specialist', name: 'Specialist', tier: 'major', did: 'Drove a single attribute to fifty. Everything went into one place.', grant: { free: 3 }, check: (s) => STATS.some((k) => s.hunter.attrs[k] >= 50) },
-  { id: 'ten_thousand', name: 'Ten Thousand', tier: 'major', did: 'Logged ten thousand repetitions.', grant: { STR: 3 }, check: (s) => s.stats.totalReps >= 10000 },
-  { id: 'the_distance', name: 'The Distance', tier: 'major', did: 'Covered a marathon — 42,195 metres, in total.', grant: { AGI: 2, VIT: 1 }, check: (s) => s.stats.totalMeters >= 42195 },
-  { id: 'tonnage', name: 'Tonnage', tier: 'major', did: 'Moved fifty tonnes of load. The bar does not care how you felt about it.', grant: { STR: 2 }, check: (s) => s.stats.totalVolumeKg >= 50000 },
-  { id: 'hundred_sessions', name: 'A Hundred Sessions', tier: 'major', did: 'Logged one hundred training sessions.', grant: { VIT: 1, INT: 1, PER: 1 }, check: (s) => s.stats.sessions >= 100 },
-  { id: 'two_hundred_quests', name: 'Two Hundred Mornings', tier: 'major', did: 'Cleared two hundred Daily Quests.', grant: { free: 3 }, check: (s) => s.stats.questsCleared >= 200 },
+  { id: 'two_thousand_down', name: 'Two Thousand Down', tier: 'major', did: 'Felled two thousand creatures.', grant: { STR: 3 }, check: (s) => felled(s) >= 2000 },
+  { id: 'whole_bestiary', name: 'The Whole Bestiary', tier: 'major', did: 'Felled creatures of ten different families.', grant: { AGI: 2, VIT: 1 }, check: (s) => families(s) >= 10 },
+  { id: 'veteran_shadow', name: 'Veteran Of The Line', tier: 'major', did: 'One Shadow has landed fifty kills under your command.', grant: { STR: 2 }, check: (s) => bestShadow(s) >= 50 },
+  { id: 'hundred_gates', name: 'A Hundred Gates', tier: 'major', did: 'Cleared one hundred Gates.', grant: { VIT: 1, INT: 1, PER: 1 }, check: (s) => s.gates.clears >= 100 },
+  { id: 'every_boss', name: 'Every Boss On File', tier: 'major', did: 'Faced twenty-five different gate bosses.', grant: { free: 3 }, check: (s) => s.gates.bosses.filter((id) => id !== 'DNG-000').length >= 25 },
   { id: 'delver', name: 'Delver', tier: 'major', did: 'Cleared ten dungeons.', grant: { STR: 2, VIT: 1 }, check: (s) => s.gates.clears >= 10 },
   { id: 'legendary_find', name: 'Legendary Find', tier: 'major', did: 'Recovered an S-Rank artifact.', grant: { PER: 3 }, check: (s) => s.items.some((it) => defOf(it)?.rank === 'S') },
   { id: 'fully_kitted', name: 'Fully Kitted', tier: 'major', did: 'Filled every one of the ten equipment slots.', grant: { free: 2 }, check: (s) => worn(s).length >= SLOTS.length },
@@ -64,9 +65,9 @@ export const MISSIONS: Mission[] = [
   { id: 'every_grade', name: 'The Whole Ladder', tier: 'major', did: 'Raided beside a hunter of every grade the Association licenses — E through S.', grant: { PER: 3 }, check: (s) => ['E', 'D', 'C', 'B', 'A', 'S'].every((r) => metGrades(s).has(r)) },
 
   // Edict — 4–5 points
-  { id: 'perfect_resonance', name: 'Perfect Resonance', tier: 'legend', did: 'Reached the Resonance ceiling — ×2.00, one hundred consecutive days.', grant: { all: 1 }, check: (s) => resonance(s).atMax },
-  { id: 'never_missed', name: 'Not Once', tier: 'legend', did: 'Reached fifty days of Resonance having never failed a Daily Quest.', grant: { all: 1 }, check: (s) => s.streak.best >= 50 && s.stats.questsFailed === 0 },
-  { id: 'three_hundred', name: 'Three Hundred', tier: 'legend', did: 'Logged three hundred training sessions.', grant: { STR: 2, VIT: 2, INT: 1 }, check: (s) => s.stats.sessions >= 300 },
+  { id: 'hundred_unbroken', name: 'A Hundred Unbroken', tier: 'legend', did: 'Cleared one hundred Gates in a row without being carried out.', grant: { all: 1 }, check: (s) => s.gates.bestUnbroken >= 100 },
+  { id: 'never_missed', name: 'Not Once', tier: 'legend', did: 'Cleared fifty Gates without ever having been carried out of one.', grant: { all: 1 }, check: (s) => s.gates.clears >= 50 && s.gates.fails === 0 },
+  { id: 'three_hundred', name: 'Three Hundred', tier: 'legend', did: 'Cleared three hundred Gates.', grant: { STR: 2, VIT: 2, INT: 1 }, check: (s) => s.gates.clears >= 300 },
   { id: 'six_figures', name: 'Six Figures', tier: 'legend', did: 'Earned one hundred thousand lifetime experience.', grant: { free: 5 }, check: (s) => s.stats.xpTotal >= 100000 },
   { id: 'every_gate', name: 'Nothing Left Standing', tier: 'legend', did: 'Cleared every dungeon the Association has on file. All fifty.', grant: { STR: 2, AGI: 2 }, check: (s) => DUNGEONS.every((d) => s.gates.cleared.includes(d.id)) },
   { id: 's_rank', name: 'The Highest Grant', tier: 'legend', did: 'Reached S-Rank. The Association has run out of letters.', grant: { free: 4 }, check: (s) => gateRank(s) === 'S' },

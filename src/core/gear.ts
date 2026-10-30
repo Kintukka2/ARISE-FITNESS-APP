@@ -51,6 +51,18 @@ export function make(defId: string, id = uid('it')): Item {
   return { id, defId, q, rolls };
 }
 
+/** The kit the Association hands over with the licence. Returns what was new. */
+export function issueKit(s: Save): Item[] {
+  const out: Item[] = [];
+  for (const d of ISSUED) {
+    if (s.items.some((i) => i.defId === d.id)) continue;
+    const it = grant(s, d.id);
+    if (it) out.push(it);
+  }
+  autoEquip(s);
+  return out;
+}
+
 export function grant(s: Save, defId: string, id?: string): Item | null {
   if (!defs.has(defId)) return null;
   const it = make(defId, id);

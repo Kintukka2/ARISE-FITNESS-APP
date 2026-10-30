@@ -1,9 +1,9 @@
 {
-  "name": "arise-fitness",
+  "name": "arise-rpg",
   "private": true,
-  "version": "6.0.0",
+  "version": "7.0.0",
   "type": "module",
-  "description": "ARISE: a Solo-Leveling-style fitness RPG for the phone.",
+  "description": "ARISE: a Solo-Leveling-inspired dungeon RPG for the phone.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

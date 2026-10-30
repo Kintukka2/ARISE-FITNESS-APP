@@ -21,7 +21,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, devi
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-await page.addInitScript((json) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('arise:save', json); sessionStorage.setItem('seeded', '1'); } }, save);
+await page.addInitScript((json) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('arise-rpg:save', json); sessionStorage.setItem('seeded', '1'); } }, save);
 
 const sleep = (ms) => page.waitForTimeout(ms);
 const snap = (name, full = false) => page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
@@ -41,18 +41,6 @@ try {
   await page.goto(`http://localhost:${PORT}/`);
   await sleep(1200);
   await drain();
-  await snap('quests', true);
-  await page.locator('.booncard').click(); await sleep(400); await snap('boon'); await close();
-  await page.locator('[aria-label="Daily Quest stats"]').click(); await sleep(400); await snap('quest-record'); await close();
-
-  await nav('training');
-  await snap('training', true);
-  await page.locator('[aria-label="Training stats"]').click(); await sleep(400); await snap('training-stats', true); await close();
-  await page.locator('.tab', { hasText: 'Your Programmes' }).click(); await sleep(200); await snap('programmes');
-  await page.locator('.tab', { hasText: 'Ryn' }).click();
-  await page.locator('text=Begin Session').click(); await sleep(600); await drain();
-  await snap('player-loaded');
-  await page.locator('text=Abort').click(); await drain();
 
   await nav('profile');
   await snap('profile', true);

@@ -1,4 +1,4 @@
-/** The System Console: settings, reminders and the save itself. */
+/** The System Console: settings, the reminder and the save itself. */
 import { useEffect, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import { defaults, parse } from '@/core/save';
@@ -35,37 +35,22 @@ function Settings() {
       <Section title="System settings">
         <div class="toggles">
           <Toggle label="Sound" on={s.settings.sound} onChange={(v) => set((x) => { x.settings.sound = v; })} />
-          <Toggle label="Music" note="Plays quietly and changes with the screen. It goes silent while you log a session." on={s.settings.music} onChange={(v) => { set((x) => { x.settings.music = v; }); music.refresh(); }} />
+          <Toggle label="Music" note="Plays quietly and changes with the screen." on={s.settings.music} onChange={(v) => { set((x) => { x.settings.music = v; }); music.refresh(); }} />
           <Toggle label="Haptics" on={s.settings.haptics} onChange={(v) => set((x) => { x.settings.haptics = v; })} />
-          <Toggle label="Auto rest timer" note="Starts the prescribed rest after every set but the last." on={s.settings.autoRest} onChange={(v) => set((x) => { x.settings.autoRest = v; })} />
           <Toggle label="Fast story text" note="System windows appear at once instead of typing out." on={s.settings.fastText} onChange={(v) => set((x) => { x.settings.fastText = v; })} />
-          <div class="toggle">
-            <span class="toggle__text"><b>Weight units</b><small class="muted">Weights are stored in kilograms and shown in the unit you choose.</small></span>
-            <div class="seg" role="radiogroup" aria-label="Weight units">
-              {(['kg', 'lb'] as const).map((u) => <button type="button" role="radio" aria-checked={s.settings.units === u} key={u} class={`seg__btn ${s.settings.units === u ? 'is-on' : ''}`} onClick={() => { sfx.tap(); set((x) => { x.settings.units = u; }); }}>{u.toUpperCase()}</button>)}
-            </div>
-          </div>
         </div>
       </Section>
 
       {remindersAvailable() && (
-        <Section title="Reminders">
+        <Section title="Reminder">
           <div class="toggles">
-            <Toggle label="Daily Quest reminder" on={s.settings.reminders.on} onChange={async (v) => {
+            <Toggle label="Tell me when I am rested" note="One notification when your fatigue has faded, or when the medics sign you off after a wipe." on={s.settings.reminders.on} onChange={async (v) => {
               if (v && !(await askNotifications())) { sfx.alarm(); toast('Notifications are blocked for ARISE. Allow them in Android settings.', 'warn'); return; }
               set((x) => { x.settings.reminders.on = v; });
               void syncReminders(store.get());
             }} />
-            {s.settings.reminders.on && (
-              <>
-                <label class="toggle"><span class="toggle__text"><b>Remind me at</b></span>
-                  <input class="input input--time" type="time" value={s.settings.reminders.at} onChange={(e) => { set((x) => { x.settings.reminders.at = (e.target as HTMLInputElement).value || '10:00'; }); void syncReminders(store.get()); }} /></label>
-                <Toggle label="Last call at 20:00" on={s.settings.reminders.lastCall} onChange={(v) => { set((x) => { x.settings.reminders.lastCall = v; }); void syncReminders(store.get()); }} />
-                <Toggle label="Gates & Exchange at 17:00" on={s.settings.reminders.refresh} onChange={(v) => { set((x) => { x.settings.reminders.refresh = v; }); void syncReminders(store.get()); }} />
-              </>
-            )}
           </div>
-          <small class="muted">Scheduled on this phone by the app, a week ahead. Nothing is sent anywhere.</small>
+          <small class="muted">Scheduled on this phone by the app. Nothing is sent anywhere.</small>
         </Section>
       )}
 
@@ -104,7 +89,7 @@ function importSave() {
     const file = input.files?.[0];
     if (!file) return;
     const next = parse(await file.text());
-    if (!next) return toast('That is not an ARISE save. Use a file Export Save wrote, or one from the original app.', 'bad');
+    if (!next) return toast('That is not an ARISE save. Use a file Export Save wrote.', 'bad');
     if (!(await confirm('Import Save', `Replace this hunter with <strong>${next.hunter.name.replace(/</g, '&lt;')}</strong>, Level ${next.hunter.level}? The current save is kept as a backup you can restore.`, 'Import', true))) return;
     store.replace(next);
     toast('Save imported.', 'xp');
@@ -123,7 +108,7 @@ async function restoreBackup() {
 }
 
 async function erase() {
-  if (!(await confirm('Erase Save', 'Every level, Shadow, attribute and day of streak is deleted. A single backup is kept until the next import or erase.', 'Erase', true))) return;
+  if (!(await confirm('Erase Save', 'Every level, Shadow, attribute and artifact is deleted. A single backup is kept until the next import or erase.', 'Erase', true))) return;
   const v = await sys({ title: 'Confirm Erasure', kind: 'danger', typed: false, lines: ['Last chance.'], actions: [{ label: 'Cancel', value: false }, { label: 'Erase Everything', value: true, danger: true }] });
   if (!v) return;
   store.replace(defaults());

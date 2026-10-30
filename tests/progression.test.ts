@@ -1,40 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
-import { grantXP, totalXpFor, basicAward, rankFor, resonance, spendPoint, autoAllocate, syncClass, xpToNext } from '@/core/progression';
+import { grantXP, totalXpFor, practiceAward, PRACTICE_LEVEL, rankFor, spendPoint, autoAllocate, syncClass, xpToNext } from '@/core/progression';
 
 describe('progression', () => {
   it('levels up and pays three points per level plus rank bonuses', () => {
     const s = defaults();
-    const r = grantXP(s, totalXpFor(10), { raw: true });
+    const r = grantXP(s, totalXpFor(10));
     expect(s.hunter.level).toBe(10);
     expect(r.rankUp?.key).toBe('D');
     expect(s.hunter.points).toBe(9 * 3 + 5);
   });
 
-  it('Resonance multiplies experience and caps at x2.00', () => {
+  it('pays experience as given, with no multiplier', () => {
     const s = defaults();
-    s.streak.current = 40;
-    expect(resonance(s).mult).toBeCloseTo(1.4);
-    s.streak.current = 170;
-    expect(resonance(s).mult).toBe(2);
-    expect(grantXP(s, 10).gained).toBe(20);
+    expect(grantXP(s, 37).gained).toBe(37);
+    expect(s.stats.xpTotal).toBe(37);
   });
 
-  it('Hollow halves experience', () => {
+  it('the practice award lands exactly on the practice level, and nothing past it', () => {
     const s = defaults();
-    s.flags.hollow = true;
-    expect(grantXP(s, 100).gained).toBe(50);
-  });
-
-  it('Basic Training lands exactly on Level 5, Hollow or not', () => {
-    const s = defaults();
-    s.flags.hollow = true;
-    grantXP(s, basicAward(s), { raw: true });
-    expect(s.hunter.level).toBe(5);
+    grantXP(s, 40);
+    grantXP(s, practiceAward(s));
+    expect(s.hunter.level).toBe(PRACTICE_LEVEL);
     expect(s.hunter.xp).toBe(0);
+    expect(practiceAward(s)).toBe(0);
   });
 
-  it('refuses to spend past the trained cap', () => {
+  it('refuses to spend past the cap', () => {
     const s = defaults();
     s.hunter.points = 2;
     s.hunter.attrs.STR = 100;
