@@ -37,6 +37,21 @@ async function drain() {
 const close = () => page.locator('.sheet.is-top .sheet__head .iconbtn[aria-label="Close"]').click();
 const nav = async (k) => { await page.locator(`[data-nav="${k}"]`).click(); await sleep(400); await drain(); };
 
+/** Hand the rest of a run to the System and wait for its results. */
+async function autoToResults() {
+  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  await page.locator('.seg__btn', { hasText: 'Auto' }).click();
+  for (let i = 0; i < 200; i++) {
+    await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin, .arena__map, .arena__field', { timeout: 30000 });
+    if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
+    if (await page.locator('.syswin').first().isVisible().catch(() => false)) { await drain(); continue; }
+    if (await page.locator('text=Claim The Gate').isVisible()) { await page.locator('text=Claim The Gate').click(); break; }
+    if (await page.locator('text=Carried Out').isVisible()) { await page.locator('text=Carried Out').click(); break; }
+    await sleep(800);
+  }
+  await page.waitForSelector('.arena--results');
+}
+
 try {
   await page.goto(`http://localhost:${PORT}/`);
   await sleep(1200);
@@ -50,6 +65,9 @@ try {
 
   await nav('gates');
   await snap('gates', true);
+  // The Pale Spire's next block, beside the board.
+  await page.locator('.spirecard').click(); await sleep(800); await snap('spire-brief', true);
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess'); await close();
   await page.locator('.gaterow:not(.is-locked):not(.is-practice)').first().click(); await sleep(800); await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-orders');
   await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
@@ -60,21 +78,26 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
-  // Hand the rest to the System.
-  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
-  await page.locator('.seg__btn', { hasText: 'Auto' }).click();
-  for (let i = 0; i < 200; i++) {
-    await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin, .arena__map, .arena__field', { timeout: 30000 });
-    if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
-    if (await page.locator('.syswin').first().isVisible().catch(() => false)) { await drain(); continue; }
-    if (await page.locator('text=Claim The Gate').isVisible()) { await page.locator('text=Claim The Gate').click(); break; }
-    if (await page.locator('text=Carried Out').isVisible()) { await page.locator('text=Carried Out').click(); break; }
-    await sleep(800);
-  }
-  await page.waitForSelector('.arena--results');
+  await autoToResults();
   for (const f of await page.locator('.flip').all()) await f.click();
   await sleep(600); await snap('raid-results', true);
   await page.locator('text=Leave The Gate').click(); await drain();
+
+  // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in.
+  await page.locator('.spirecard').click(); await sleep(600);
+  if (await page.locator('text=Enter The Gate').isVisible()) {
+    await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
+    await page.waitForSelector('.arena', { timeout: 10000 });
+    await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
+    await page.locator('button.gnode.is-next').first().click();
+    await page.waitForSelector('.turnbar', { timeout: 20000 });
+    await drain();
+    if (!/floor \d+ of \d+/i.test(await page.locator('.arena__head').innerText())) throw new Error('THE SPIRE DID NOT COUNT FLOORS');
+    await snap('spire-turn');
+    await autoToResults();
+    await sleep(600); await snap('spire-results', true);
+    await page.locator('text=Leave The Gate').click(); await drain();
+  } else await close();
 
   await nav('shadows');
   await snap('shadows', true);

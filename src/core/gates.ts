@@ -11,6 +11,7 @@ import { DUNGEONS } from '@/data/dungeons';
 import { ENEMIES } from '@/data/enemies';
 import { HOLLOW_MONARCH, HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
 import { licensedRank } from './licence';
+import { isSpire, spireById } from './spire';
 import type { Attrs, Dungeon, Enemy, Rank, Save } from './types';
 import { RANKS, STATS } from './types';
 import { dayKey, hash, rng, weighted } from './util';
@@ -24,7 +25,8 @@ export const enemyById = (id: string) => enemyMap.get(id);
 export const ALL_ENEMIES = ENEMIES;
 
 const dungeonMap = new Map<string, Dungeon>([...DUNGEONS, HOLLOW_THRONE, PRACTICE_GATE].map((d) => [d.id, d]));
-export const dungeonById = (id: string) => dungeonMap.get(id);
+/** A gate by id: one on file, or a block of the Spire, which is drawn from its id. */
+export const dungeonById = (id: string) => dungeonMap.get(id) ?? spireById(id);
 export const ALL_DUNGEONS = DUNGEONS;
 export { HOLLOW_THRONE, PRACTICE_GATE };
 
@@ -94,7 +96,7 @@ export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | 
 }
 
 /** Whether the boss has been seen: cleared, or reached. */
-export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d);
+export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d);
 
 // ------------------------------------------------------------------ allies
 

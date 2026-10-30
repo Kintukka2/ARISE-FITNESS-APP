@@ -29,6 +29,10 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - The day's contracts are written to the save the first time they are shown (`contracts.issue`),
   so nothing redraws them that day. Change what they pay and rerun `npm run balance`; its
   days-to-rank count them.
+- A block of the Pale Spire is a gate drawn from its id (`SPR-<week>-<block>`, `spire.spireBlock`), so
+  `gates.dungeonById` resolves it and the whole raid engine plays it. `npm run calibrate` tunes it
+  after the gates; anything that needs recalibrating the gates needs the Spire recalibrated too, and
+  the same run does both.
 - A gate's map is drawn from the gate and the day (`map.mapSeed`). Steps and choices are written to
   the open run (`raid.choose`, `raid.resolve`) before they play, and every roll a step makes is
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.

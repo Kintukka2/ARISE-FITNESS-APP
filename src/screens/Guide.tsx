@@ -9,6 +9,7 @@ import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
+import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
 
@@ -72,6 +73,14 @@ const TOPICS: { title: string; lines: string[] }[] = [
       `The System issues ${CONTRACTS_PER_DAY} contracts a day, for your grade as it stood when it issued them: clear so many gates, fell so many of one family, beat a gatekeeper, walk off the marked road, and the like. They are on the Gates screen, and each says where it can be done.`,
       `Each pays ${CONTRACT_PAY.shards === 1 ? 'a clear’s' : `${CONTRACT_PAY.shards} clears’`} worth of shards at that grade and ${CONTRACT_PAY.xp * 100}% of a clear’s experience. All ${CONTRACTS_PER_DAY} pay ${CONTRACT_BONUS.shards} clears’ shards and ${CONTRACT_BONUS.xp * 100}% of a clear’s experience on top.`,
       'A run counts the moment it is settled, however it ends: kills count even when you are carried out, a clear only when you clear. New contracts come at midnight, and one left undone costs nothing.',
+    ],
+  },
+  {
+    title: SPIRE_NAME,
+    lines: [
+      `It opens once you have cleared ${SPIRE_OPENS} gates, and stands beside the board. It is climbed ${BLOCK} floors at a time: ${BLOCK - 2} floors of choices, a rest, then a boss. A block costs the fatigue of one gate of its grade, and pays like one, with no first-clear bounty.`,
+      `Floor N is built for a hunter of Level N, up to Floor ${SPIRE_TOP}. Past it, every block is ${Math.round((SPIRE_GROWTH - 1) * 100)}% harder than the last, and it does not stop. Each grade’s floors begin at ${(Object.entries(SPIRE_FLOORS) as [string, number][]).map(([r, f]) => `${f} (${r})`).join(', ')}. You climb from your own grade’s, or from above your best this week, and as with any gate you can go one grade above your own.`,
+      `Your best floor this week is kept. On Monday the week closes and pays ${SEASON_PAY.shards} clears’ worth of shards at the grade of your highest floor, and a piece of that grade’s gear: ${SEASON_PAY.step * 100}% more for every ${SEASON_PAY.beyond} floors past ${SPIRE_TOP}. Then the floors rearrange and everyone climbs again.`,
     ],
   },
   {

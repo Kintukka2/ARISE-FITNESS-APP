@@ -8,6 +8,9 @@
 import { ALL_DUNGEONS } from '@/core/gates';
 import { bonusOf, payOf } from '@/core/contracts';
 import { FAIL_SHARE, project } from '@/core/raid';
+import { blockOf, firstFloor, seasonOf, spireBlock } from '@/core/spire';
+import { dayKey } from '@/core/util';
+import { SPIRE_TOP } from '@/data/spire';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
 import { GATE_XP, PRACTICE_LEVEL, RANK_LADDER, rankFor, xpToNext } from '@/core/progression';
 import type { Rank } from '@/core/types';
@@ -38,6 +41,23 @@ for (const rank of RANKS) {
   }
   console.log(`  ${rank}   ${cells.join('  ')}  |   ${up.length ? Math.round((cu / nu) * 100) + '%' : '—'}`);
 }
+
+// The Spire: a hunter on the floor that matches their level, and a Sovereign above the top floor.
+const spireRate = (level: number, floor: number) => {
+  const key = rankFor(level).key;
+  const grade: Rank = key === 'N' ? 'S' : key;
+  let c = 0, n = 0;
+  // A block's odds move a lot with the day's map and allies, as a gate's do, so this samples eight weeks.
+  for (let h = 0; h < 8; h++) {
+    const now = Date.UTC(2026, 5, 1 + h * 7, 12);
+    const p = project(typicalHunter(level, grade, `spire|${level}|${floor}|${h}`), spireBlock(seasonOf(dayKey(now)), blockOf(floor)), RUNS, now);
+    c += p.cleared; n += p.runs;
+  }
+  return `${Math.round((c / n) * 100)}%`;
+};
+console.log(`\nThe Spire: a hunter on the block holding the floor of their own level (floor / middle / top of each grade).`);
+for (const rank of RANKS) console.log(`  ${rank}   ${LEVELS[rank].map((l) => `L${l} ${spireRate(l, l)}`.padEnd(10)).join('  ').trimEnd()}`);
+console.log(`  Level 100, above Floor ${SPIRE_TOP}:  ${[0, 2, 4, 6, 10].map((k) => { const f = firstFloor(blockOf(SPIRE_TOP) + 1 + k); return `F${f} ${spireRate(100, f)}`; }).join('  ')}`);
 
 // A hunter who raids at their own grade, clears three in four, and takes every first-clear bounty the grade offers.
 // The second line of each pair also finishes all of the day's System contracts, every day.

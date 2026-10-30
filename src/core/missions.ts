@@ -5,6 +5,7 @@
 import { DUNGEONS } from '@/data/dungeons';
 import { BEATS } from '@/data/narrative';
 import { ISSUED } from '@/data/equipment';
+import { BLOCK, SPIRE_TOP } from '@/data/spire';
 import { defOf, power, SLOTS, worn } from './gear';
 import { gateRank, STAT_CAP } from './progression';
 import type { Attrs, Save, Stat } from './types';
@@ -43,6 +44,7 @@ export const MISSIONS: Mission[] = [
   },
   { id: 'names_on_board', name: 'Names On The Board', tier: 'minor', did: 'Stood in a party with ten different hunters.', grant: { PER: 1 }, check: (s) => s.gates.met.length >= 10 },
   { id: 'bestiary', name: 'Bestiary', tier: 'minor', did: 'Felled creatures of five different families.', grant: { INT: 1 }, check: (s) => families(s) >= 5 },
+  { id: 'spire_first', name: 'Up', tier: 'minor', did: 'Took a block of the Pale Spire, boss and all.', grant: { AGI: 1 }, check: (s) => s.spire.top >= BLOCK },
 
   // Directive — 2–3 points
   { id: 'thirty_unbroken', name: 'Thirty Unbroken', tier: 'major', did: 'Cleared thirty Gates in a row without being carried out.', grant: { STR: 1, VIT: 1 }, check: (s) => s.gates.bestUnbroken >= 30 },
@@ -72,6 +74,7 @@ export const MISSIONS: Mission[] = [
   { id: 'every_gate', name: 'Nothing Left Standing', tier: 'legend', did: 'Cleared every dungeon the Association has on file. All fifty.', grant: { STR: 2, AGI: 2 }, check: (s) => DUNGEONS.every((d) => s.gates.cleared.includes(d.id)) },
   { id: 's_rank', name: 'The Highest Grant', tier: 'legend', did: 'Reached S-Rank. The Association has run out of letters.', grant: { free: 4 }, check: (s) => gateRank(s) === 'S' },
   { id: 'sovereign', name: 'Beyond Classification', tier: 'legend', did: 'Reached Sovereign — Level 100. The System has nothing left to award.', grant: { all: 1 }, check: (s) => s.hunter.level >= 100 },
+  { id: 'spire_top', name: 'The Top Floor', tier: 'legend', did: `Stood on Floor ${SPIRE_TOP} of the Pale Spire. Nothing above it is built for anyone.`, grant: { free: 4 }, check: (s) => s.spire.top >= SPIRE_TOP },
   { id: 'walked_out_together', name: 'Someone To Walk Out With', tier: 'legend', did: 'Cleared twenty-five Gates alongside the same hunter.', grant: { PER: 2, VIT: 2 }, check: (s) => Object.values(s.gates.together).some((n) => n >= 25) },
 
   // Testament — 6 or more

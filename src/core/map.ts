@@ -122,7 +122,7 @@ export function systemRoad(m: GateMap): string[] {
 export function chamberOf(d: Dungeon, x: MapNode): Chamber {
   const boss = x.kind === 'boss';
   const elite = x.kind === 'elite';
-  const label = boss ? enemyById(d.boss)?.name ?? 'Boss' : elite ? 'Gatekeeper' : `Chamber ${x.layer + 1}`;
+  const label = boss ? enemyById(d.boss)?.name ?? 'Boss' : elite ? 'Gatekeeper' : d.floor ? `Floor ${d.floor + x.layer}` : `Chamber ${x.layer + 1}`;
   return { label, foes: x.foes ?? [], boss, elite };
 }
 

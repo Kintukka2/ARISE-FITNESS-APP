@@ -14,6 +14,7 @@ import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
 import { MISSIONS } from '@/core/missions';
 import { issue } from '@/core/contracts';
+import { seasonOf } from '@/core/spire';
 
 const today = dayKey();
 const s = defaults();
@@ -50,11 +51,14 @@ s.log = Array.from({ length: 12 }, (_, i) => ({ day: addDays(today, -Math.floor(
 const [done, going] = issue(s, today).list;
 Object.assign(done, { got: done.need, done: true });
 going.got = Math.floor(going.need / 2);
+// A few weeks on the Spire, and this week's climb under way. Last week's pay has been told.
+const lastWeek = seasonOf(addDays(today, -7));
+s.spire = { season: seasonOf(today), best: 25, top: 40, seasons: 3, last: { season: lastWeek, best: 40, tier: 'B-Rank', shards: 168, item: null } };
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);
 s.hunter.missions = MISSIONS.filter((m) => { try { return m.check(s); } catch { return false; } }).map((m) => m.id);
-s.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited'];
+s.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spire-week-${lastWeek}`];
 s.vitals = { hp: 520, mp: 120, fatigue: 22, at: Date.now(), lockedUntil: null };
 writeFileSync('e2e/fixtures/veteran.json', JSON.stringify(s));
 console.log('veteran: level', s.hunter.level, 'class', s.hunter.classId, 'items', s.items.length, 'equipped', Object.keys(s.equipped).length);

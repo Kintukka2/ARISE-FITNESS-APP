@@ -303,3 +303,14 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .unit--hero .unit__name { color: var(--mana); }
 .unit--shadow .unit__name { color: #c9a7ff; }
 .unit--foe .unit__name { color: #ffd6de; }
+
+/* ------------------------------------------------------------------ the Pale Spire, beside the board */
+
+.spirecard { gap: 10px; border-color: rgba(255, 154, 60, 0.45); background: linear-gradient(180deg, rgba(255, 154, 60, 0.08), var(--inset)); }
+.spirecard__head { display: flex; align-items: center; gap: 12px; }
+.spirecard__head > div { display: flex; flex-direction: column; min-width: 0; }
+.spirecard__head b { font-size: 1.1rem; }
+.spirecard__head .ico { color: var(--ember); }
+.spirecard__week { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 154, 60, 0.2); font-size: 0.85rem; color: var(--ink-2); }
+.spirecard__week .num { color: var(--ink-3); }
+.spirecard.is-locked { opacity: 0.72; }

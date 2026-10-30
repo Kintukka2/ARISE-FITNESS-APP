@@ -5,6 +5,8 @@
  */
 import { sfx } from '@/audio/audio';
 import { issue } from '@/core/contracts';
+import { gearDef } from '@/core/gear';
+import * as spire from '@/core/spire';
 import { TIER_NAMES, grantText, sweep } from '@/core/missions';
 import { syncClass, type XpResult } from '@/core/progression';
 import * as story from '@/core/story';
@@ -66,8 +68,26 @@ export async function playBeats() {
   }
 }
 
+/** The Spire's week closing, told once, whichever engine call closed it. */
+export async function weekClosed() {
+  const last = store.get().spire.last;
+  if (!last || !store.update((x) => story.markOnce(x, `spire-week-${last.season}`))) return;
+  sfx.rankUp();
+  flash('gold');
+  const item = last.item ? gearDef(last.item)?.name : null;
+  await sys({
+    title: 'The Week Has Turned', kind: 'gates', center: true,
+    lines: [
+      `Your highest floor of the Pale Spire last week: <strong>Floor ${last.best}</strong>, which pays at <em>${last.tier}</em>.`,
+      `Paid: <span class="grant">${last.shards} Mana Shards</span>${item ? ` and <span class="grant">${item}</span>` : ''}.`,
+      'Its floors have rearranged themselves. The climb starts again.',
+    ],
+  });
+}
+
 /** After any payout: level-ups, missions, class, story. Honours an "Allocate" choice. */
 export async function rewardChain(xp: XpResult | null, then?: Route) {
+  await weekClosed();
   const want = await celebrate(xp);
   await checkAwards();
   await playBeats();
@@ -83,7 +103,8 @@ export async function catchUp() {
   if (catching || !s.onboarded || arena.get()) return;
   catching = true;
   try {
-    store.update((x) => { vitals.settle(x); issue(x); });
+    store.update((x) => { vitals.settle(x); issue(x); spire.settle(x); });
+    await weekClosed();
     await checkAwards();
     await playBeats();
   } finally {
