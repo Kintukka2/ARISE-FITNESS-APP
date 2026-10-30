@@ -6,7 +6,9 @@
  *   npm run balance
  */
 import { ALL_DUNGEONS } from '@/core/gates';
+import { bonusOf, payOf } from '@/core/contracts';
 import { FAIL_SHARE, project } from '@/core/raid';
+import { CONTRACTS_PER_DAY } from '@/data/contracts';
 import { GATE_XP, PRACTICE_LEVEL, RANK_LADDER, rankFor, xpToNext } from '@/core/progression';
 import type { Rank } from '@/core/types';
 import { RANKS } from '@/core/types';
@@ -38,25 +40,29 @@ for (const rank of RANKS) {
 }
 
 // A hunter who raids at their own grade, clears three in four, and takes every first-clear bounty the grade offers.
+// The second line of each pair also finishes all of the day's System contracts, every day.
 console.log(`\nDays to each rank (N gates a day at your own grade, ${CLEAR_RATE * 100}% cleared, first clears counted):`);
-for (const perDay of [3, 6, 10]) {
+for (const perDay of [3, 6, 10]) for (const withContracts of [false, true]) {
   let level = PRACTICE_LEVEL, xp = 0, day = 0, runs = 0;
   const firsts: Record<string, number> = {};
   const hit: string[] = [];
   let next = 1;
+  const gradeOf = (): Rank => { const key = rankFor(level).key; return key === 'N' ? 'S' : key; };
+  const settle = () => { while (xp >= xpToNext(level)) { xp -= xpToNext(level); level++; } };
   while (next < RANK_LADDER.length && day < 2000) {
     day++;
+    const issued = gradeOf();
     for (let k = 0; k < perDay; k++, runs++) {
-      const key = rankFor(level).key;
-      const grade: Rank = key === 'N' ? 'S' : key;
+      const grade = gradeOf();
       const pay = GATE_XP[grade];
       // Every fourth run fails, so a day's gates pay their expected value without randomness.
       if (runs % 4 === 3) { xp += Math.round(pay * FAIL_SHARE); continue; }
       xp += pay;
       if ((firsts[grade] ?? 0) < ALL_DUNGEONS.filter((d) => d.rank === grade).length) { firsts[grade] = (firsts[grade] ?? 0) + 1; xp += pay; }
-      while (xp >= xpToNext(level)) { xp -= xpToNext(level); level++; }
+      settle();
     }
+    if (withContracts) { xp += CONTRACTS_PER_DAY * payOf(issued).xp + bonusOf(issued).xp; settle(); }
     while (next < RANK_LADDER.length && level >= RANK_LADDER[next].min) hit.push(`${RANK_LADDER[next++].key}:${day}d`);
   }
-  console.log(`  ${String(perDay).padStart(2)} gates/day  ${hit.join('  ')}`);
+  console.log(`  ${withContracts ? ' + contracts' : `${String(perDay).padStart(2)} gates/day`}  ${hit.join('  ')}`);
 }

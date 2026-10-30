@@ -13,6 +13,7 @@ import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
+import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -22,6 +23,7 @@ import { arena } from '@/app/router';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
+import { ContractsWindow } from '@/ui/contracts';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
@@ -531,6 +533,9 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   const v = vitals.read(s);
   const title = r.outcome === 'cleared' ? 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const deal = r.contracts;
+  const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `${deal.xp} for contracts` : ''].filter(Boolean).join(' · ');
+  const shardSub = [r.bounty > 0 ? `a first-clear bounty of ${r.bounty}` : r.banked > 0 ? `${r.banked} banked on the way` : '', deal.shards ? `${deal.shards} for contracts` : ''].filter(Boolean);
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       <div class="arena__results stack">
@@ -542,8 +547,8 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
         </header>
         <div class="tiles">
-          <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared'}</small></div>
-          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty} /></b>{r.bounty > 0 ? <small class="tile__sub">includes a first-clear bounty of {r.bounty}</small> : r.banked > 0 ? <small class="tile__sub">{r.banked} of it banked on the way</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
+          <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>
+          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">includes {shardSub.join(' and ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
           <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `locked out ${Math.ceil(v.lockedFor / 36e5)}h` : 'recovers ~5% an hour'}</small></div>
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of 100</small></div>
         </div>
@@ -594,6 +599,11 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </section>
           );
         })}
+        {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (
+          <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)}>
+            {deal.done.length > 0 && <p class="grant">{deal.done.length === 1 ? 'Contract complete' : `${deal.done.length} contracts complete`}{deal.bonus ? ', and the day’s bonus with it' : ''}: <Shards n={deal.shards} /> and {deal.xp} XP.</p>}
+          </ContractsWindow>
+        )}
         <Btn kind="primary" size="lg" block onClick={onDone} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>
     </div>

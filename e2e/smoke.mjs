@@ -139,6 +139,7 @@ async function raidGate(row, name, auto = false) {
   if (!auto && !steps) throw new Error(`${name.toUpperCase()} NEVER SHOWED THE MAP`);
   if (name === 'practice' && !resumed) throw new Error('THE PRACTICE GATE ENDED BEFORE THE RELOAD CHECK');
   await page.waitForSelector('.arena--results');
+  if (name !== 'practice' && !(await visible('.arena--results .sysbox.contracts'))) throw new Error('THE RESULTS DID NOT COUNT THE CONTRACTS');
   for (const f of await page.locator('.flip').all()) await f.click();
   await sleep(500);
   await snap(`${name}-results`);
@@ -183,10 +184,13 @@ try {
   await drain();
   await snap('profile');
 
-  // A real gate, at E.
+  // A real gate, at E. The practice gate is behind the hunter, so the System has issued the day's contracts.
   await nav('gates');
   await sleep(400);
   await drain();
+  if ((await page.locator('.sysbox.contracts .contract').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
+  await page.locator('.sysbox.contracts').scrollIntoViewIfNeeded();
+  await snap('contracts');
   const before = await page.locator('.xpbar__label').innerText();
   // Win or lose it pays: a defeat still pays a share. The System fights this one.
   await raidGate('.gaterow:not(.is-locked):not(.is-practice)', 'first-gate', true);

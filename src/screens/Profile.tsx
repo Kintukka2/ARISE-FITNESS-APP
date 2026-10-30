@@ -356,6 +356,7 @@ function openDossier() {
             <KV k="Carried out" v={s.gates.fails} />
             <KV k="Best run unbroken" v={`${s.gates.bestUnbroken} clears`} />
             <KV k="Cleared above your grade" v={s.stats.reachClears} />
+            <KV k="Contracts completed" v={`${s.stats.contracts} (every one of the day’s, ${s.stats.contractDays} times)`} />
             <KV k="Bosses faced" v={s.gates.bosses.length} />
             <KV k="Creatures felled" v={Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0).toLocaleString()} />
             <KV k="Shadows bound" v={`${s.shadows.army.length} (${s.stats.extractionsWon} of ${s.stats.extractions} reaches held)`} />

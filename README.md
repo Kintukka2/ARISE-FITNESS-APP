@@ -42,6 +42,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief shows today's map and simulates the System's road through it 24 times: the honest clear rate |
 | **The map** | A few layers of steps, a rest, then the boss. You pick each step: fights, gatekeepers, rests, caches, shrines, traps and events with stated odds. What you find is banked and paid when you walk out; carried out, you lose it. Only a rest lets you withdraw |
 | **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
+| **Contracts** | The System issues three a day for your grade: clear so many gates, fell so many of one family, beat a gatekeeper, walk off the marked road, clear one on tired legs. Each pays a clear's shards and a tenth of its experience, all three pay a bonus, and one left undone lapses at midnight for nothing |
 | **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). Three points per level, five per rank, spent by you |
@@ -50,7 +51,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
 | **Secret Missions** | 43 unpublished citations that pay attributes. Nothing says one exists until you have done it |
-| **Story** | 16 beats gated on level and deeds, ending at the Hollow Throne |
+| **Story** | 17 beats gated on level and deeds, ending at the Hollow Throne |
 
 ## Layout
 
@@ -64,8 +65,9 @@ src/
     raid          the run down the map, chambers fought turn by turn, orders, rewards, extraction, the projection
     map           a gate's map: drawing it, where you can step, the System's road
     gates         the board and the hunters sent with you
+    contracts     the System's three a day: drawing them, counting a run against them, paying them
     gear, shop, vitals, shadows, missions, story, licence
-  data/         content: enemies, abilities, dungeons, map steps and events, equipment, classes, story text
+  data/         content: enemies, abilities, dungeons, map steps and events, contracts, equipment, classes, story text
   app/          the shell: routing, the top bar and nav, and flow.ts, which narrates results
   screens/      one file per screen or major sheet
   ui/           overlays (System windows, sheets, tours, toasts), components, icons
@@ -102,14 +104,18 @@ grade  floor  middle  top   | middle vs one grade up
 
 Days to each rank (N gates a day at your own grade, 75% cleared, first clears counted):
    3 gates/day  D:2d  C:8d  B:19d  A:38d  S:73d  N:135d
+   + contracts  D:2d  C:7d  B:16d  A:32d  S:61d  N:112d
    6 gates/day  D:1d  C:4d  B:10d  A:19d  S:37d  N:68d
+   + contracts  D:1d  C:4d  B:9d  A:18d  S:34d  N:62d
   10 gates/day  D:1d  C:3d  B:6d  A:12d  S:22d  N:41d
+   + contracts  D:1d  C:3d  B:6d  A:11d  S:21d  N:39d
 ```
 
 A hunter at the bottom of a grade clears its gates about half to two thirds of the time, and one at the top
 about four times in five. Reaching a grade above your own is possible, and costly. Sovereign takes about two
-months at six gates a day. The economy model assumes you raid at your own grade; fatigue makes ten
-a day at S-Rank a hard thing to keep up.
+months at six gates a day. Each `+ contracts` line also finishes every System contract every day, which
+is worth most to the hunter who raids least. The economy model assumes you raid at your own grade;
+fatigue makes ten a day at S-Rank a hard thing to keep up.
 
 ## Saves
 

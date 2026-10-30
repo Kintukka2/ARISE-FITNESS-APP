@@ -36,12 +36,13 @@ export function defaults(): Save {
     },
     shadows: { army: [], squad: [], fresh: [] },
     shop: { day: null, taken: [] },
+    contracts: { day: null, grade: 'E', list: [], bonus: false },
     satchel: 0,
     log: [],
     story: [],
     seen: [],
     licence: { granted: false, at: null, tx: null },
-    stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0 },
+    stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0, contracts: 0, contractDays: 0 },
     settings: { sound: true, music: true, haptics: true, fastText: false, reminders: { on: false } },
   };
 }

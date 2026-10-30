@@ -13,6 +13,7 @@ import { bind } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
 import { MISSIONS } from '@/core/missions';
+import { issue } from '@/core/contracts';
 
 const today = dayKey();
 const s = defaults();
@@ -45,6 +46,12 @@ s.gates.last = 'cleared'; s.gates.unbroken = 11; s.gates.bestUnbroken = 19;
 s.gates.sealed = { day: today, ids: ['DNG-015'] };
 s.stats = { ...s.stats, extractions: 7, extractionsWon: 3, reachClears: 4, comebacks: 1, killsByFamily: { Undead: 140, Beast: 96, Goblinoid: 61, Orc: 44, Plant: 30 } };
 s.log = Array.from({ length: 12 }, (_, i) => ({ day: addDays(today, -Math.floor(i / 3)), kind: 'gate' as const, name: `${['Champion’s Burial March', 'Moonfang Hunting Grounds', 'Totemscar Encampment'][i % 3]} — cleared`, xp: [650, 300, 300][i % 3] }));
+// Today's contracts: one done, one under way.
+const [done, going] = issue(s, today).list;
+Object.assign(done, { got: done.need, done: true });
+going.got = Math.floor(going.need / 2);
+s.stats.contracts = 41;
+s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);
 s.hunter.missions = MISSIONS.filter((m) => { try { return m.check(s); } catch { return false; } }).map((m) => m.id);
 s.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited'];
