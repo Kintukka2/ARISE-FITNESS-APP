@@ -25,7 +25,8 @@ export function typicalHunter(level: number, gearRank: Rank, seed: string) {
     const gi = RANKS.indexOf(gearRank) - (r() < 0.4 ? 1 : 0);
     if (gi < 0) continue;
     const pool = ofRank(RANKS[gi]).filter((d) => d.slot === t);
-    if (pool.length) grant(s, pool[Math.floor(r() * pool.length)].id);
+    // Seeded ids: an item's rolls come from its id, and a random one made every calibration different.
+    if (pool.length) grant(s, pool[Math.floor(r() * pool.length)].id, `${seed}|${t}|${s.items.length}`);
   }
   autoEquip(s);
   return s;
