@@ -8,7 +8,7 @@ import { issue } from '@/core/contracts';
 import { gearDef } from '@/core/gear';
 import * as spire from '@/core/spire';
 import { TIER_NAMES, grantText, sweep } from '@/core/missions';
-import { syncClass, type XpResult } from '@/core/progression';
+import { optionsAt, syncClass, waiting, type XpResult } from '@/core/progression';
 import * as story from '@/core/story';
 import * as vitals from '@/core/vitals';
 import * as store from '@/store';
@@ -46,12 +46,14 @@ export async function checkAwards() {
   }
   const change = store.update(syncClass);
   if (change) {
+    const fresh = waiting(store.get()).includes(change.cls.tier) ? optionsAt(change.cls.lead, change.cls.tier) : null;
     await sys({
       title: change.was ? 'Class Upgrade' : 'Class Assigned', kind: 'gold', center: true,
       lines: [
         change.was ? `Your class has changed: <em>${change.was.name}</em> → <strong>${change.cls.name}</strong>.` : `The System has classified you: <strong>${change.cls.name}</strong>.`,
         change.cls.desc,
         `Effect: <em>+${change.cls.bonus} ${change.cls.lead}</em>, and the ${change.cls.lead} line’s combat skills.`,
+        ...(fresh ? [`This rank offers a choice of ${fresh.kind}: <strong>${fresh.names[0]}</strong> or <strong>${fresh.names[1]}</strong>. You fight with ${fresh.names[0]} until you choose, on your Profile.`] : []),
       ],
     });
     // A class can complete a mission of its own.

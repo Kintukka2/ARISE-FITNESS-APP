@@ -35,7 +35,7 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Classes',
     lines: [
       `From D-Rank the System names you after your highest attribute — ${CLASSES.length} classes across five lines — and renames you at every rank. A class pays flat points into its attribute and gives you that line’s combat skills.`,
-      `Each line’s skills arrive at ${unlocks(CLASS_SKILLS)}-Rank, and its passives at ${unlocks(CLASS_PASSIVES)}-Rank.`,
+      `Each line’s skills arrive at ${unlocks(CLASS_SKILLS)}-Rank, and its passives at ${unlocks(CLASS_PASSIVES)}-Rank. Every one of those ranks offers two, and you keep one: until you choose, you fight with the first. A choice holds until your next rank, when every choice you have made can be made again.`,
     ],
   },
   {

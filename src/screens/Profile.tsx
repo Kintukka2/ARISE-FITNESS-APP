@@ -2,10 +2,10 @@
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { CLASS_RANKS, classById } from '@/data/classes';
-import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import * as gear from '@/core/gear';
 import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
-import { ATTRS, autoAllocate, BOOST_CAP, classBonus, nextRank, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, spendPoint, STAT_CAP } from '@/core/progression';
+import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
+import { ability, passiveText, REACH_TEXT } from '@/core/combat';
 import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
 import type { Item, Save, SlotKey, Stat } from '@/core/types';
@@ -36,10 +36,11 @@ export function Profile() {
           <div class="hero__level"><b class="num">{s.hunter.level}</b><span class="label">Level</span></div>
           <div class="hero__rows">
             <KV k="Rank" v={<span class="row"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
-            <KV k="Class" v={<button type="button" class="linkish" onClick={() => classInfo()}>{cls?.name ?? 'Unclassified'}</button>} />
+            <KV k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
             <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'There is nothing above this.'}{licenceHolding(s) ? ' The Association holds your Gate grade at D without a licence.' : ''}</small>
           </div>
         </div>
+        {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose at your class’s new rung · {waiting(s).length}</Btn>}
         <VitalsBlock />
         <Attributes />
       </Panel>
@@ -48,22 +49,70 @@ export function Profile() {
   );
 }
 
-function classInfo() {
-  const s = store.get();
+/** The class, and the choice at each of its rungs. */
+export function openClass() {
+  openSheet({ title: 'Class', tone: 'gold', render: () => <ClassSheet /> });
+}
+
+function ClassSheet() {
+  const s = useSave();
   const cls = classById(s.hunter.classId);
   if (!cls) {
-    void sys({ title: 'Unclassified', kind: 'system', typed: false, lines: ['The System classifies hunters from D-Rank — Level 10 — off the attribute you have raised highest, and renames you at every rank above that.', 'Until then you are unclassified, which costs you nothing.'] });
-    return;
+    return <Empty title="Unclassified">The System classifies hunters from D-Rank, Level 10, off the attribute you have raised highest, and renames you at every rank above that. Until then you are unclassified, which costs you nothing.</Empty>;
   }
-  const skills = CLASS_SKILLS.filter((x) => x.line === cls.lead && x.rung <= cls.tier);
-  const pas = CLASS_PASSIVES.filter((x) => x.line === cls.lead && x.rung <= cls.tier);
-  void sys({
-    title: cls.name, kind: 'gold', typed: false,
-    lines: [cls.desc, `Effect: <em>+${cls.bonus} ${cls.lead}</em>.`,
-      `Skills: ${skills.map((x) => `<strong>${x.name}</strong>`).join(', ')}.`,
-      pas.length ? `Passives: ${pas.map((x) => `<strong>${x.name}</strong> — ${x.text}`).join(' ')}` : `Passives arrive at ${CLASS_RANKS[Math.min(...CLASS_PASSIVES.filter((x) => x.line === cls.lead).map((x) => x.rung))]}-Rank.`,
-      'Class follows your highest attribute. Spend differently and the System reclassifies you.'],
-  });
+  return (
+    <div class="stack">
+      <div>
+        <b class="big">{cls.name}</b>
+        <p class="muted">{cls.desc}</p>
+        <small class="muted">Effect: <b>+{cls.bonus} {cls.lead}</b>. Class follows your highest attribute: spend differently and the System reclassifies you, and the choices you made for another line wait for you there.</small>
+      </div>
+      {rungsOf(cls.lead).map((r) => <Rung key={r} rung={r} lead={cls.lead} tier={cls.tier} />)}
+    </div>
+  );
+}
+
+/** What a skill or passive does, read from the data. */
+function describe(kind: 'skill' | 'passive', name: string) {
+  if (kind === 'passive') return passiveText(name);
+  const a = ability(name);
+  if (!a) return '';
+  const what = a.profile === 'support' ? 'Rallies the whole party' : `${a.type === 'magic' ? 'Magic' : 'Physical'}, ×${a.mult}, ${REACH_TEXT[a.profile] ?? 'one target'}`;
+  return `${what}${a.cd ? `, cooldown ${a.cd}` : ''}${a.inflicts.length ? `. Inflicts ${a.inflicts.join(' and ')}` : ''}.`;
+}
+
+/** One rung: its two options, the one kept, and whether it can be changed yet. */
+function Rung({ rung, lead, tier }: { rung: number; lead: string; tier: number }) {
+  const s = useSave();
+  const open = rung <= tier;
+  const { kind, names } = optionsAt(lead, rung);
+  const kept = keptAt(s.hunter.picks, lead, rung);
+  const chosen = s.hunter.picks?.[`${lead}:${rung}`];
+  const can = open && canPick(s, rung);
+  const until = chosen ? CLASS_RANKS[chosen.at + 1] : null;
+  const state = !open ? `opens at ${CLASS_RANKS[rung]}-Rank` : !chosen ? 'choose one' : can ? 'you may change it' : until ? `kept until ${until}-Rank` : 'kept for good';
+  return (
+    <section class={`rung ${open ? '' : 'is-shut'}`}>
+      <header class="rung__head"><span class="label">{CLASS_RANKS[rung]}-Rank {kind}</span><small>{state}</small></header>
+      <div class="rung__options">
+        {names.map((n) => {
+          const isKept = open && n === kept;
+          return (
+            <button type="button" key={n} class={`pickcard ${isKept ? 'is-kept' : ''}`} disabled={!can || (isKept && !!chosen)} aria-pressed={isKept}
+              onClick={async () => {
+                const next = CLASS_RANKS[tier + 1];
+                if (!(await confirm(`Keep ${n}?`, next ? `You can change it again at <strong>${next}-Rank</strong>.` : 'At S-Rank the choice is for good.', 'Keep it'))) return;
+                if (store.update((x) => pick(x, rung, n))) { sfx.rankUp(); toast(`${n} kept.`, 'good'); }
+              }}>
+              <b>{n}</b>
+              <small>{describe(kind, n)}</small>
+              {isKept && <span class="pickcard__tag">{chosen ? 'Kept' : 'Until you choose'}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 export function VitalsBlock() {
