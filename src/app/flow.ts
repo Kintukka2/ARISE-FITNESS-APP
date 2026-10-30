@@ -4,6 +4,7 @@
  * one window at a time.
  */
 import { sfx } from '@/audio/audio';
+import { issue } from '@/core/contracts';
 import { TIER_NAMES, grantText, sweep } from '@/core/missions';
 import { syncClass, type XpResult } from '@/core/progression';
 import * as story from '@/core/story';
@@ -82,7 +83,7 @@ export async function catchUp() {
   if (catching || !s.onboarded || arena.get()) return;
   catching = true;
   try {
-    store.update((x) => { vitals.settle(x); });
+    store.update((x) => { vitals.settle(x); issue(x); });
     await checkAwards();
     await playBeats();
   } finally {

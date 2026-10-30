@@ -24,8 +24,11 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - `src/core/` never touches the DOM. Engine functions take the save and mutate it. Screens call
   them inside `store.update(...)`, and `src/app/flow.ts` narrates what happened. Put game logic in
   `core/` so it can be tested, not in a screen.
-- Every reward from a raid — experience, shards, loot, records — is settled in one engine call,
-  `raid.finish`. Nothing pays out on a tap that can be undone.
+- Every reward from a raid — experience, shards, loot, records, System contracts — is settled in
+  one engine call, `raid.finish`. Nothing pays out on a tap that can be undone.
+- The day's contracts are written to the save the first time they are shown (`contracts.issue`),
+  so nothing redraws them that day. Change what they pay and rerun `npm run balance`; its
+  days-to-rank count them.
 - A gate's map is drawn from the gate and the day (`map.mapSeed`). Steps and choices are written to
   the open run (`raid.choose`, `raid.resolve`) before they play, and every roll a step makes is
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.

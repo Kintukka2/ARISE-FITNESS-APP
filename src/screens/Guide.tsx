@@ -8,6 +8,7 @@ import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } 
 import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
+import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
 
@@ -63,6 +64,14 @@ const TOPICS: { title: string; lines: string[] }[] = [
       `${OPEN_PER_DAY} gates stand open at a time: one of every grade, at least two at yours. You can enter up to one grade above your own. Clear one and another of its grade opens in its place; the whole board redraws at midnight.`,
       'The brief runs the gate headlessly 24 times with your actual party and tells you how often it cleared. That is the verdict.',
       `A gate pays shards on a clear (${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S), double that once as a first-clear bounty, and equipment. Being carried out locks you out for ${WIPE_LOCK / 36e5} hours.`,
+    ],
+  },
+  {
+    title: 'Contracts',
+    lines: [
+      `The System issues ${CONTRACTS_PER_DAY} contracts a day, for your grade as it stood when it issued them: clear so many gates, fell so many of one family, beat a gatekeeper, walk off the marked road, and the like. They are on the Gates screen, and each says where it can be done.`,
+      `Each pays ${CONTRACT_PAY.shards === 1 ? 'a clear’s' : `${CONTRACT_PAY.shards} clears’`} worth of shards at that grade and ${CONTRACT_PAY.xp * 100}% of a clear’s experience. All ${CONTRACTS_PER_DAY} pay ${CONTRACT_BONUS.shards} clears’ shards and ${CONTRACT_BONUS.xp * 100}% of a clear’s experience on top.`,
+      'A run counts the moment it is settled, however it ends: kills count even when you are carried out, a clear only when you clear. New contracts come at midnight, and one left undone costs nothing.',
     ],
   },
   {

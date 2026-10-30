@@ -7,6 +7,8 @@ import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
 import { GATE_XP, practiceAward } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
+import * as contracts from '@/core/contracts';
+import { ContractsWindow } from '@/ui/contracts';
 import { MapView } from '@/ui/map';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -92,6 +94,8 @@ export function Gates() {
         </Card>
       )}
 
+      <Contracts />
+
       <div class="bands" role="tablist" aria-label="Filter gates by grade" data-tour="bands">
         <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
         {RANKS.map((r) => {
@@ -108,6 +112,21 @@ export function Gates() {
         {shown.map((d) => <GateRow key={d.id} d={d} />)}
       </ul>
     </div>
+  );
+}
+
+/** Today's contracts, written to the save the first time they are shown, so nothing can redraw them. */
+function Contracts() {
+  const s = useSave();
+  const day = dayKey();
+  useEffect(() => {
+    if (contracts.contractsOpen(store.get()) && store.get().contracts.day !== day) store.update((x) => { contracts.issue(x, day); });
+  }, [day, contracts.contractsOpen(s)]);
+  if (!contracts.contractsOpen(s)) return null;
+  return (
+    <ContractsWindow c={contracts.today(s, day)}>
+      <small class="contracts__when">Reissued in <b class="num countdown">{hhmmss(msUntilMidnight())}</b>. One left undone lapses, and costs nothing.</small>
+    </ContractsWindow>
   );
 }
 

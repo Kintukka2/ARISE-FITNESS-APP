@@ -44,6 +44,15 @@ function slotGrades(mine: Rank, day: string): Rank[] {
   return out;
 }
 
+/** One grade's gates in today's order. The board shows them from the front. */
+export function dayOrder(g: Rank, day: string): string[] {
+  const r = rng(`arise|order|${day}|${g}`);
+  return DUNGEONS.filter((d) => d.rank === g).map((d) => ({ id: d.id, k: r() })).sort((a, b) => a.k - b.k).map((x) => x.id);
+}
+
+/** The gates of a grade every hunter of that grade finds open when the day starts. */
+export const opening = (g: Rank, day: string): Dungeon[] => dayOrder(g, day).slice(0, MIN_AT_RANK).map((id) => dungeonById(id)!);
+
 /**
  * Today's board, in grade order. Each grade has one shuffled order for the
  * day; its slots show the first gates in that order not cleared today, so a
@@ -55,8 +64,7 @@ export function board(s: Save, day = dayKey()): Dungeon[] {
   const grades = slotGrades(licensedRank(s), day);
   const picked: string[] = [];
   for (const g of RANKS) {
-    const r = rng(`arise|order|${day}|${g}`);
-    const order = DUNGEONS.filter((d) => d.rank === g).map((d) => ({ id: d.id, k: r() })).sort((a, b) => a.k - b.k).map((x) => x.id);
+    const order = dayOrder(g, day);
     const open = [...order.filter((id) => !shut.includes(id)), ...order.filter((id) => shut.includes(id))];
     picked.push(...open.slice(0, grades.filter((x) => x === g).length));
   }

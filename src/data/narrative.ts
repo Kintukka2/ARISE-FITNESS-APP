@@ -6,6 +6,7 @@
  * exists, so nothing he says may reference it. The System speaks in windows.
  */
 import type { Save } from '@/core/types';
+import { CONTRACTS_PER_DAY } from './contracts';
 
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
@@ -51,6 +52,14 @@ export const BEATS: Beat[] = [
       'First kill registered.',
       'The System has counted what you did in there, and it pays in <em>experience</em>. Every Gate you clear will be counted the same way — the deeper the grade, the more it is worth.',
       'Levels pay attribute points. <span class="warn">Unspent points do nothing.</span>',
+    ],
+  },
+  {
+    id: 'contracts_issued', when: (s) => s.gates.cleared.includes('DNG-000'), kind: 'system', title: 'Contracts Issued', center: true,
+    lines: [
+      `The System has issued you <strong>${CONTRACTS_PER_DAY} contracts</strong>. They are posted on the Gates screen.`,
+      'Each pays <em>Mana Shards</em> and experience the moment it is done. All of them together pay a bonus.',
+      'New ones are issued at midnight. One left undone lapses. <span class="warn">The System does not punish what it did not get.</span>',
     ],
   },
   {

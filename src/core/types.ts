@@ -1,4 +1,5 @@
 /** Shared shapes for the game data and the save. */
+import type { ContractKind } from '@/data/contracts';
 import type { UnitSpec } from './combat';
 
 export const STATS = ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const;
@@ -137,6 +138,23 @@ export interface OpenRaid {
   blessings: string[];
   /** A chamber was lost: the run is over, waiting to be settled. */
   lost: boolean;
+  /** The hunter's fatigue as they walked in, before this gate added its own. */
+  fatigue: number;
+}
+
+/** One of the day's System contracts, and how far along it is. */
+export interface Contract {
+  kind: ContractKind;
+  /** How many it takes, and how many are in. */
+  need: number;
+  got: number;
+  done: boolean;
+  /** The family to fell. */
+  family?: string;
+  /** The fatigue to walk in carrying. */
+  at?: number;
+  /** Gates open this morning where it can be done, where that depends on the gate. */
+  where?: string[];
 }
 
 export interface LogEntry { day: string; kind: 'gate'; name: string; xp: number }
@@ -159,6 +177,9 @@ export interface Stats {
   reachClears: number;
   /** Clears that came straight after being carried out. */
   comebacks: number;
+  /** System contracts completed, and days on which every one of them was. */
+  contracts: number;
+  contractDays: number;
 }
 
 export interface Save {
@@ -218,6 +239,8 @@ export interface Save {
   };
 
   shop: { day: string | null; taken: number[] };
+  /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
+  contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */
   satchel: number;
 

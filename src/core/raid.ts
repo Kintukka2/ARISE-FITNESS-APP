@@ -16,6 +16,7 @@ import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } 
 import { boosted, grant, make, ofRank, rollBonuses, worn as wornItems } from './gear';
 import { BOOST_CAP, classBonus, GATE_XP, grantXP, practiceAward, type XpResult } from './progression';
 import { licensedRank } from './licence';
+import * as contracts from './contracts';
 import * as shadows from './shadows';
 import * as shop from './shop';
 import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
@@ -230,6 +231,7 @@ export const systemChoice = (x: MapNode) => (x.kind === 'shrine' ? 0 : Math.max(
 /** Enter a gate: charge fatigue, open the run. Mutates. */
 export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   const day = dayKey(now);
+  const fatigue = vitals.read(s, now).fatigue;
   if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now);
   const specs = partySpecs(s, d, day, undefined, now);
   const party = buildParty(specs);
@@ -241,7 +243,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), path: [], haul: [], purse: 0, blessings: [], lost: false,
+    map: mapSeed(d, day), path: [], haul: [], purse: 0, blessings: [], lost: false, fatigue,
   };
   return s.gates.raid;
 }
@@ -447,6 +449,8 @@ export interface RaidResult {
   /** Steps taken, of the steps from the gate to the boss. */
   steps: number;
   depth: number;
+  /** The System contracts this run completed, and what they paid. */
+  contracts: contracts.ContractReport;
   /** The hunter's health afterwards, on the real (vitals) scale. */
   heroHp: number;
   heroMax: number;
@@ -504,13 +508,21 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // reach, or redraw the allies who were actually in the party.
   const reach = outcome === 'cleared' && rankIdx(d.rank) > rankIdx(licensedRank(s));
   const allies = alliesFor(d, run.day, licensedRank(s));
+  const fights = steps.filter((x) => x.kind === 'fight').length;
+  const elites = steps.filter((x) => x.kind === 'elite').length;
+  // The contracts count what the run did, and their experience lands with the gate's.
+  const road = systemRoad(mapOf(d, run));
+  const deal = practice ? contracts.nothing() : contracts.count(s, {
+    rank: d.rank, cleared: outcome === 'cleared', fatigue: run.fatigue ?? 0, felled: run.felled,
+    shadowKills: run.squad.reduce((n, id) => n + (run.kills[id]?.kills ?? 0), 0),
+    elites: elites - (run.lost && steps[steps.length - 1]?.kind === 'elite' ? 1 : 0),
+    offroad: (run.path ?? []).some((id, i) => id !== road[i]),
+  }, dayKey(now));
   const gateXp = GATE_XP[d.rank as Rank] ?? 0;
-  const xpDue = practice ? (outcome === 'cleared' ? practiceAward(s) : 0) : Math.round(gateXp * share) + (firstClear ? gateXp : 0);
+  const xpDue = (practice ? (outcome === 'cleared' ? practiceAward(s) : 0) : Math.round(gateXp * share) + (firstClear ? gateXp : 0)) + deal.xp;
   const xp = xpDue > 0 ? grantXP(s, xpDue) : null;
 
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
-  const fights = steps.filter((x) => x.kind === 'fight').length;
-  const elites = steps.filter((x) => x.kind === 'elite').length;
   let lootIds = kept ? [...rollLoot(d, r, fights, elites, outcome === 'cleared'), ...(run.haul ?? [])] : [];
   if (practice) {
     const rings = ofRank('E').filter((g) => g.slot === 'Ring');
@@ -574,7 +586,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth,
+    steps: run.at, depth, contracts: deal,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }

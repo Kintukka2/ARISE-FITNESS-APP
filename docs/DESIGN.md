@@ -97,15 +97,33 @@ only withdraw right before the boss. That makes every gate a commitment; whether
 one is a question for playing it. Calibration now samples twelve days per gate, because a gate's
 difficulty moves a little with its map.
 
-### 3. System contracts
+### 3. System contracts — built
 
-The System issues three contracts a day, replacing what the Daily Quest used to be: *Clear two
-C-Rank gates*, *Fell thirty Undead*, *Bind a Shadow*, *Clear a gate at over 60 fatigue*.
+The System issues three contracts a day, replacing what the Daily Quest used to be. They sit in a
+System window on the Gates screen, and again on the results of every run.
 
-- Drawn at midnight from a table in `data/`, weighted to the hunter's grade. They pay shards and a
-  small amount of experience, all three together pay a bonus, and none of them ever expires into a
-  penalty.
-- Progress is counted, and contracts are paid, inside `raid.finish`.
+- **Drawn** (`core/contracts.ts`, table in `data/contracts.ts`) from the day and the hunter's grade,
+  and written to the save the first time the day's are shown, so a level-up at noon cannot redraw
+  them. They read the two gates that open the day at the hunter's grade, so each one names where it
+  can be done.
+- **Six kinds:** clear two or three gates at your grade or above; fell so many of one family (kills
+  in any gate count, cleared or not); beat a gatekeeper; clear a gate off the System's marked road;
+  clear one walked into carrying three gates' worth of fatigue (the hint says how weak that makes
+  you); and, from D-Rank with a Shadow out, let the Shadows land so many kills.
+- **Pay:** each contract pays a clear's shards and a tenth of a clear's experience at the grade it
+  was issued for; all three pay twice the shards and a fifth of the experience on top. Nothing
+  expires into a penalty.
+- **Counted, and paid, inside `raid.finish`**, from what the run did. Their experience is granted
+  with the gate's in one call. The practice gate counts toward nothing, and contracts start once it
+  is behind the hunter.
+- **The balance report** shows days to each rank with every contract done every day. It saves a
+  three-a-day hunter about a sixth of the climb to Sovereign, and a ten-a-day hunter about a
+  twentieth.
+
+**What changed from the plan.** *Bind a Shadow* is not a contract: binding hangs on a creature
+lingering, which a contract cannot promise, so it became Shadow kills instead. Nothing asks for a
+gate above the hunter's grade either. A mid-grade hunter clears about one in ten of those, and
+being carried out locks them out for twelve hours, so it would cost the day's other two.
 
 ### 4. The endless climb
 
