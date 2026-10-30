@@ -39,14 +39,15 @@ Everything runs on the device. There is no server, no account and no network: th
 | Layer | What it is |
 |---|---|
 | **The practice gate** | Valcorde walks every new licence through it once. Clearing it lands you on Level 5 with points to spend |
-| **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. A deterministic auto-battle: you, hunters the Association sends, and your Shadows. The brief simulates the gate 24 times and tells you the honest clear rate |
+| **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief simulates the gate 24 times and tells you the honest clear rate |
+| **Fighting** | Turn by turn, in order of initiative. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
 | **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of what you cleared; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). Three points per level, five per rank, spent by you |
 | **Classes** | From D-Rank you are named after your highest attribute (25 classes in five lines). A class adds flat points to that attribute and gives you combat skills |
 | **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill |
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat |
-| **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards |
+| **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
 | **Secret Missions** | 43 unpublished citations that pay attributes. Nothing says one exists until you have done it |
 | **Story** | 16 beats gated on level and deeds, ending at the Hollow Throne |
 
@@ -58,8 +59,8 @@ src/
     types.ts      every data and save shape
     save.ts       defaults and migrations
     progression   levels, ranks, gate experience, attributes, classes
-    combat        units, abilities, statuses and the fight itself
-    raid          chambers, the party, rewards, extraction, and the headless projection
+    combat        units, abilities, statuses, and the fight: it pauses on the hunter's turn
+    raid          chambers fought turn by turn, orders, the party, rewards, extraction, and the headless projection
     gates         the board and the hunters sent with you
     gear, shop, vitals, shadows, missions, story, licence
   data/         content: enemies, abilities, dungeons, equipment, classes, story text

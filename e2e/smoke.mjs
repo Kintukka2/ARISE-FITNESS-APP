@@ -59,28 +59,67 @@ async function tapCoachUntil(sel, max = 30) {
 }
 const nav = (k) => page.locator(`[data-nav="${k}"]`).click();
 
-/** Open a gate from the board, play it through, and leave. Only the practice gate must be won. */
-async function raidGate(row, name) {
+/**
+ * Open a gate from the board, play it through, and leave. By hand, the hunter
+ * aims at a foe and strikes every turn; with `auto`, the System fights them.
+ * Only the practice gate must be won.
+ */
+async function raidGate(row, name, auto = false) {
   await page.locator(row).first().click();
   await sleep(500);
   await snap(`${name}-brief`);
   await page.locator('text=Enter The Gate').click();
   await drain();
   await page.waitForSelector('.arena');
-  await sleep(1800);
-  await snap(`${name}-arena`);
-  if (await visible('.seg__btn')) await page.locator('.seg__btn', { hasText: 'Skip' }).click();
-  for (let i = 0; i < 12; i++) {
-    await page.waitForSelector('.arena__foot .btn', { timeout: 20000 });
+  if (auto) await page.locator('.seg__btn', { hasText: 'Auto' }).click();
+  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  let turns = 0;
+  let resumed = false;
+  for (let i = 0; i < 400; i++) {
+    await page.waitForSelector('.arena__foot .btn, .turnbar, .syswin, .arena--results', { timeout: 20000 });
+    if (await visible('.arena--results')) break;
+    if (await visible('.syswin')) { await drain(); continue; }
+    if (await visible('.turnbar')) {
+      if (auto) throw new Error('AUTO STILL ASKED FOR A TURN');
+      if (!turns++) {
+        await snap(`${name}-turn`);
+        // Aim at the last foe standing in the list, so aiming is exercised as well as striking.
+        if (await visible('.unit.is-pickable')) await page.locator('.unit.is-pickable').last().click();
+      }
+      if (name === 'practice' && turns === 2) {
+        // Leave with a turn waiting. Every order so far is in the save, so coming back
+        // must land on this same turn, with everyone exactly as they stand now.
+        const hp = async () => (await page.locator('.unit__hp').allInnerTexts()).join(',');
+        const before = await hp();
+        await sleep(400);
+        await page.reload();
+        await page.waitForSelector('text=Go Back In', { timeout: 10000 });
+        await drain();
+        await page.locator('text=Go Back In').click();
+        await page.waitForSelector('.arena');
+        await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+        await page.waitForSelector('.turnbar', { timeout: 20000 });
+        await drain();
+        const after = await hp();
+        if (after !== before) throw new Error(`RESUMED SOMEWHERE ELSE: ${before} became ${after}`);
+        await snap('practice-resumed');
+        resumed = true;
+      }
+      await page.locator('.turnbar .act', { hasText: 'Strike' }).click();
+      continue;
+    }
     if (await visible('text=Claim The Gate')) { await page.locator('text=Claim The Gate').click(); break; }
     if (await visible('text=Carried Out')) {
       if (name === 'practice') throw new Error(`LOST ${name.toUpperCase()}`);
       await page.locator('text=Carried Out').click();
       break;
     }
+    // Auto presses on by itself; a tap here would be a second press.
+    if (auto) { await sleep(300); continue; }
     await page.locator('text=Press On').click();
-    await sleep(300);
   }
+  if (!auto && !turns) throw new Error(`${name.toUpperCase()} NEVER GAVE A TURN`);
+  if (name === 'practice' && !resumed) throw new Error('THE PRACTICE GATE ENDED BEFORE THE RELOAD CHECK');
   await page.waitForSelector('.arena--results');
   for (const f of await page.locator('.flip').all()) await f.click();
   await sleep(500);
@@ -131,8 +170,8 @@ try {
   await sleep(400);
   await drain();
   const before = await page.locator('.xpbar__label').innerText();
-  // Win or lose it pays: a defeat still pays a share.
-  await raidGate('.gaterow:not(.is-locked):not(.is-practice)', 'first-gate');
+  // Win or lose it pays: a defeat still pays a share. The System fights this one.
+  await raidGate('.gaterow:not(.is-locked):not(.is-practice)', 'first-gate', true);
   if ((await page.locator('.xpbar__label').innerText()) === before) throw new Error('A GATE PAID NO EXPERIENCE');
 
   await nav('shadows');

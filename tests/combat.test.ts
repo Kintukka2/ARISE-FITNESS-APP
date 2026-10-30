@@ -64,6 +64,26 @@ describe('turn by turn', () => {
     expect(ch.result().log).toEqual(whole.result().log);
   });
 
+  it('a chamber replays the same after the hunter changes gear, spends points and rests', () => {
+    const s = hunter(20);
+    s.hunter.points = 6;
+    s.wallet.shards = 0;
+    const d = dungeonById('DNG-015')!;
+    atBoss(s, d.id);
+    const whole = fightOut(s, (t) => ({ use: 'Strike', at: t.foes[0] }));
+    const orders = s.gates.raid!.orders;
+    const back = structuredClone(s);
+    back.gates.raid!.orders = orders.slice(0, 2);
+    // Everything that makes a hunter, changed between leaving and going back in.
+    back.hunter.attrs.STR += 6;
+    back.hunter.points = 0;
+    back.vitals.fatigue = 0;
+    back.equipped = {};
+    const { ch } = raid.resume(back, d, back.gates.raid!, now + 8 * 36e5);
+    for (const o of orders.slice(2)) ch.play(o);
+    expect(ch.result().log).toEqual(whole.result().log);
+  });
+
   it('the foe aimed at is always among those hit or missed', () => {
     const s = hunter(20);
     const d = dungeonById('DNG-015')!;
@@ -158,6 +178,28 @@ describe('turn by turn', () => {
     expect(s.gates.raid!.orders.length).toBeGreaterThan(0);
     raid.record(s, d, s.gates.raid!, raid.partyFor(s, d, s.gates.raid!, now), ch.result(), now);
     expect(s.gates.raid!.orders).toEqual([]);
+  });
+});
+
+describe('the practice gate', () => {
+  it('leaves the kills to the hunter, so it teaches turns, and is never lost', () => {
+    for (let k = 0; k < 20; k++) {
+      const s = defaults();
+      const at = now + k * 7919000;
+      raid.begin(s, PRACTICE_GATE, at);
+      const run = s.gates.raid!;
+      let turns = 0;
+      let won = true;
+      for (let i = 0; i < raid.plan(PRACTICE_GATE, run.seed).length && won; i++) {
+        const { party, ch } = raid.resume(s, PRACTICE_GATE, run, at);
+        while (ch.turn) { turns++; ch.play(raid.order(s, run, { use: 'Strike', at: ch.turn.foes[0] })); }
+        const res = ch.result();
+        won = res.won;
+        raid.record(s, PRACTICE_GATE, run, party, res, at);
+      }
+      expect(won).toBe(true);
+      expect(turns).toBeGreaterThanOrEqual(5);
+    }
   });
 });
 

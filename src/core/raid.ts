@@ -65,7 +65,7 @@ export function heroSpec(s: Save, now = Date.now()): UnitSpec {
 export function allySpec(a: Ally, i: number): UnitSpec {
   const cls = classFor(a.base, a.rank);
   const k = cls ? classKit(cls.lead, cls.tier) : { kit: [], passives: [] };
-  return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id };
+  return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id, atkMult: a.atkMult };
 }
 
 export function shadowSpec(sh: Shadow, i: number): UnitSpec {
@@ -201,7 +201,8 @@ export const buildParty = (specs: UnitSpec[]) => specs.map((sp) => new Unit(sp))
 export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   const day = dayKey(now);
   if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now);
-  const party = buildParty(partySpecs(s, d, day, undefined, now));
+  const specs = partySpecs(s, d, day, undefined, now);
+  const party = buildParty(specs);
   const hero = party[0];
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
@@ -209,7 +210,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     dungeonId: d.id, seed: `${d.id}|${now}`, day, at: 0,
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
-    tactic: s.gates.tactic, orders: [],
+    party: specs, tactic: s.gates.tactic, orders: [],
   };
   return s.gates.raid;
 }
@@ -239,9 +240,14 @@ export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
   return given;
 }
 
-/** Rebuild the live party for an open run. */
+/**
+ * Rebuild the live party for an open run, as it walked in. Gear swapped, points
+ * spent or fatigue slept off since then do not reach it: a chamber replayed from
+ * its orders must meet the same party, or it would play out differently.
+ */
 export function partyFor(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
-  return restore(buildParty(partySpecs(s, d, run.day, run.squad, now)), run.carried);
+  const specs = run.party?.length ? run.party : partySpecs(s, d, run.day, run.squad, now);
+  return restore(buildParty(specs), run.carried);
 }
 
 /** Fold a chamber into the open run and write the hunter's health back. Mutates. */

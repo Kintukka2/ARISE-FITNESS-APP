@@ -1,7 +1,7 @@
 /** The Gates: the board, the brief, and the way in. */
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { powerOf } from '@/core/combat';
+import { powerOf, TACTICS } from '@/core/combat';
 import { allies, board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
@@ -18,11 +18,12 @@ import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Card, Panel, RankPlate, Section, Shards, Tile, useNow, Voice } from '@/ui/components';
+import { Btn, Card, Chip, Panel, RankPlate, Section, Shards, Tile, useNow, Voice } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { drinkFlow, VitalsBlock } from './Profile';
+import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
   const v = vitals.read(s);
@@ -143,7 +144,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const squad = isPractice(d) ? [] : shadows.squad(s);
   const hero = raid.heroSpec(s);
   // The verdict is the engine answering for itself: the gate, run headlessly.
-  const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join()]);
+  const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic]);
+  const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
   const sh = shop.GATE_SHARDS[d.rank as Rank];
@@ -185,7 +187,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Section title="The assessment">
         <div class={`verdict verdict--${v.tone}`} data-tour="assess">
           <b>{v.text}</b>
-          <small>The System ran this gate {proj.runs} times with this party. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
+          <small>The System ran this gate {proj.runs} times with this party, fighting your turns the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
         </div>
         <div class="tiles">
@@ -196,7 +198,24 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
       </Section>
 
-      {block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
+      <Section title="Standing orders" right={party.length + squad.length ? 'allies and Shadows' : undefined}>
+        <div class="chips" aria-label="Standing orders" data-tour="orders">
+          {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
+        </div>
+        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc} The assessment above already fights with these orders.</p>
+      </Section>
+
+      <Section title="Satchel" right={`${s.satchel} of ${shop.FIELD_POTION.max} field potions`}>
+        <p class="muted">{s.satchel
+          ? `Drink one on your turn for ${shop.FIELD_POTION.heal * 100}% of your health back. What you do not drink stays in the satchel.`
+          : 'Empty. Field potions are carried in and drunk on your turn; the Exchange sells them.'}
+        {s.satchel < shop.FIELD_POTION.max && <> <button type="button" class="linkish" onClick={() => { close(); openExchange(); }}>To the Exchange</button></>}</p>
+      </Section>
+
+      {block === 'open' ? open?.id === d.id
+        ? <Btn kind="primary" size="lg" block sound="gate" onClick={() => { close(); arena.set(d.id); }}>Go Back In</Btn>
+        : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
+        : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
           : block === 'down' ? <Btn block disabled>You are in no condition to enter anything.</Btn>
             : <Btn kind="primary" size="lg" block onClick={enter} sound="none" tour="enter">Enter The Gate</Btn>}
 
@@ -213,6 +232,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">{shadows.freeSlots(s)} Shadow slot{shadows.freeSlots(s) === 1 ? '' : 's'} empty. Deploy from the Shadows screen.</p>}
         {isPractice(d) && <p class="hint">Valcorde has signed you both in. Nothing in here is dangerous; everything on this sheet is.</p>}
       </Section>
+
     </div>
   );
 }

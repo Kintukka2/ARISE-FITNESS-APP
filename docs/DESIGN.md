@@ -41,28 +41,36 @@ the specifics: no named characters, places, monarchs or story beats from the sou
 
 ## The roadmap
 
-### 1. Turn-based combat
+### 1. Turn-based combat — built
 
 The hunter acts by hand. Allies and Shadows act on standing orders. An **Auto** toggle hands the
-hunter to the System's own policy, for grinding.
+hunter's turns to the System and presses on between chambers, for grinding.
 
-- **Engine.** `fight()` in `core/combat.ts` already runs in rounds and initiative order, and every
-  unit picks its ability with `choose()` and its targets with `targets()`. Split it into
-  `start(party, foes, seed)` → state, and `step(state, order?)`, which runs until it is the hero's
-  turn or the fight ends. `choose()` and `targets()` become the **auto policy**: what Auto does,
-  and what allies do when given no orders.
-- **Orders** for allies and Shadows, set before a gate: *Focus the strongest*, *Protect the
-  hunter*, *Spread status*, *Default*. Each order is a different target rule; no new UI per turn.
-- **Hunter actions:** an ability from the class kit, a basic strike, *Guard* (halve damage, gain
-  initiative next round), or a potion. Potions are drunk on purchase today; this step lets the
-  hunter carry up to three into a gate instead.
-- **The save** records the hunter's choices per chamber, not the fight state: the engine is
-  deterministic for a seed and a list of choices, so a reload replays to exactly where you were.
-  Write the list after every hero turn.
-- **The projection** plays the hunter with the auto policy. The brief says so: "The System ran this
-  gate 24 times, fighting as the System would." Playing well beats the verdict; that is the point.
-- **Calibration** keeps using the auto policy. A skilled player clears above 75%, which is the
-  reward for skill.
+- **Engine.** `battle()` in `core/combat.ts` is the fight as a generator: it pauses on the
+  hunter's turn, yields what they can use and who is left to aim at, and takes back an order.
+  `fight()` drives it with nobody waiting. `choose()` and `targets()` are the **auto policy**: what
+  Auto does, and what everyone does without orders.
+- **Hunter actions:** a skill from the class kit, Strike, *Guard* (half damage until your next
+  turn), or a field potion (30% of maximum HP). Field potions are bought at the Exchange into a
+  satchel of three; the other potions are still drunk on purchase.
+- **Standing orders**, set in the brief: *As They See Fit*, *Finish The Weakest*, *Protect The
+  Hunter*, *Spread The Pain*. Each is a target rule. The run keeps the orders it went in with.
+- **The save** records the hunter's orders for the chamber being fought, not the fight state. The
+  engine is deterministic for a seed and a list of orders, so a reload replays to the same turn.
+  Each order is written before it plays out, so a turn cannot be rerolled.
+- **The projection** fights the hunter's turns on the auto policy, with the party's real standing
+  orders. The brief says so. Playing well beats the verdict; that is the point.
+- **Calibration** still uses the auto policy and default orders, and the auto policy fights
+  exactly as the old replayed battle did, so the tuning did not move.
+- **The practice gate** is where the first turn is taught. Valcorde holds back in there
+  (`INSTRUCTOR_RESTRAINT`) so the kills are the hunter's.
+
+**What playing it showed.** A typical hunter gets two or three turns in a mob chamber and eight to
+fourteen against a boss, so turns matter. But class skills unlock at D, B and S, and the first one
+has no cooldown: from E to C-Rank a turn is Strike, one skill, Guard or a potion. That is thin for
+the first thirty-five levels, and it is the first thing step 5 should fix. **Foe intents** (showing
+what each foe will do next, so Guard and target choices are read rather than guessed) would deepen
+every turn at every rank; they change how foes choose, so they need a recalibration.
 
 ### 2. Dungeon maps
 
@@ -101,8 +109,11 @@ every fifth floor is a boss; difficulty keeps scaling past S-Rank.
 
 ### 5. Depth for the hunter
 
+- **Skills sooner:** a second class skill by C-Rank and a third by A, so the early turns have real
+  choices. Today the first skill arrives at D, the second at B and the third at S.
 - **Skill choices at rank-up:** each class rung offers two skills and you keep one, instead of
   receiving the whole line. The choice is permanent until the next rank.
+- **Foe intents:** each foe shows what it will do on its next turn.
 - **Gear sets:** sixteen sets already exist in `data/equipment.ts` (`set` on a design), and none of
   them does anything yet. Two and four pieces of a set grant bonuses, defined as data.
 - **Upgrading:** spend shards to raise an item's quality within its design's range, with the
@@ -113,7 +124,7 @@ every fifth floor is a boss; difficulty keeps scaling past S-Rank.
 - **Shadow ranks:** a Shadow that lands enough kills is promoted, which raises its cap and unlocks
   a second ability from its creature's kit.
 - **More slots** through Secret Missions, not only through grade.
-- **Orders** from step 1 apply to Shadows individually.
+- **Standing orders** from step 1 set per Shadow, not only for the whole party.
 
 ## What stays out
 

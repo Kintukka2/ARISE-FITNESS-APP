@@ -226,6 +226,14 @@ function ordered(u: Unit, o: Order): Ability | null {
   return ability(o.use) ?? null;
 }
 
+/** The standing orders, as the brief offers them. */
+export const TACTICS: { key: Tactic; name: string; desc: string }[] = [
+  { key: 'default', name: 'As They See Fit', desc: 'Everyone picks their own targets.' },
+  { key: 'finish', name: 'Finish The Weakest', desc: 'Every ally and Shadow goes for the foe nearest to falling.' },
+  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for whatever last hit you, and until something has, whatever hits hardest.' },
+  { key: 'spread', name: 'Spread The Pain', desc: 'They aim their bleeds, curses and stuns at foes not already carrying them.' },
+];
+
 const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
 
 /** Where standing orders point an ally or a Shadow. Undefined leaves it to chance. */

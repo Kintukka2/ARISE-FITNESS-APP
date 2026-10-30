@@ -1,4 +1,5 @@
 /** Shared shapes for the game data and the save. */
+import type { UnitSpec } from './combat';
 
 export const STATS = ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const;
 export type Stat = (typeof STATS)[number];
@@ -117,6 +118,8 @@ export interface OpenRaid {
   kills: Record<string, { kills: number; bosses: number }>;
   startHp: number;
   bossFaced: boolean;
+  /** Everyone as they walked in, fixed for the whole run so a chamber always replays the same. */
+  party: UnitSpec[];
   /** The standing orders the party went in with; they hold for the whole run. */
   tactic: Tactic;
   /**
