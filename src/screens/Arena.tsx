@@ -13,6 +13,7 @@ import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
+import { BLOCK } from '@/data/spire';
 import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
@@ -353,7 +354,7 @@ export function Arena() {
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
       <header class="arena__head">
         <div><span class="label">{d.name}</span><b>{head}</b></div>
-        <span class="label num">Step {here} of {depth}</span>
+        <span class="label num">{d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : `Step ${here} of ${depth}`}</span>
       </header>
       {onMap && run && m ? (
         <div class="arena__map">
@@ -532,7 +533,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const [flipped, setFlipped] = useState<number[]>([]);
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   const v = vitals.read(s);
-  const title = r.outcome === 'cleared' ? 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
   const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `${deal.xp} for contracts` : ''].filter(Boolean).join(' · ');
   const shardSub = [r.bounty > 0 ? `a first-clear bounty of ${r.bounty}` : r.banked > 0 ? `${r.banked} banked on the way` : '', deal.shards ? `${deal.shards} for contracts` : ''].filter(Boolean);
@@ -542,8 +543,10 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
-          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.' : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
-            : r.outcome === 'withdrawn' ? `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
+          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.'
+            : r.spire ? r.spire.best ? `The boss on Floor ${r.spire.floor} is down, and that is your best this week. The next ${BLOCK} floors open above you.` : `The boss on Floor ${r.spire.floor} is down. The week turned while you were inside, so it does not count toward this one.`
+              : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
+            : r.outcome === 'withdrawn' ? d.floor ? `You walked back down from the rest on Floor ${d.floor + r.steps - 1}. These floors stand as they are until Monday.` : `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
               : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
         </header>
         <div class="tiles">

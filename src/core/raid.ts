@@ -18,6 +18,7 @@ import { BOOST_CAP, classBonus, GATE_XP, grantXP, practiceAward, type XpResult }
 import { licensedRank } from './licence';
 import * as contracts from './contracts';
 import * as shadows from './shadows';
+import * as spire from './spire';
 import * as shop from './shop';
 import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
 import { RANKS } from './types';
@@ -85,8 +86,8 @@ export interface ChamberResult {
   kills: Record<string, { kills: number; bosses: number }>;
 }
 
-/** Per-gate difficulty, from calibration. Exported so the calibrator can drive it. */
-export const tuneOf = (d: Dungeon) => GATE_TUNE[d.id] ?? 1;
+/** Per-gate difficulty, from calibration, or a Spire block's own. Exported so the calibrator can drive it. */
+export const tuneOf = (d: Dungeon) => d.scale ?? GATE_TUNE[d.id] ?? 1;
 
 function foeUnits(c: Chamber, d: Dungeon, index: number): Unit[] {
   const k = (EXPECTED_PARTY[d.rank] ?? 4) / 3;
@@ -451,6 +452,8 @@ export interface RaidResult {
   depth: number;
   /** The System contracts this run completed, and what they paid. */
   contracts: contracts.ContractReport;
+  /** A Spire block: the floor it reached, and whether that is the week's best. */
+  spire: { floor: number; best: boolean } | null;
   /** The hunter's health afterwards, on the real (vitals) scale. */
   heroHp: number;
   heroMax: number;
@@ -498,9 +501,12 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const steps = walked(d, run);
   const r = rng('arise|spoils|' + run.seed);
   const practice = isPractice(d);
+  // A block of the Spire is fought and paid as a gate. It has no first clear, and is never sealed:
+  // the week's best floor moves on past it instead.
+  const tower = spire.isSpire(d);
   const kept = outcome !== 'defeated';
   const share = outcome === 'cleared' ? 1 : outcome === 'withdrawn' ? withdrawShare(run.at, depth) : FAIL_SHARE;
-  const firstClear = outcome === 'cleared' && !s.gates.cleared.includes(d.id);
+  const firstClear = outcome === 'cleared' && !tower && !s.gates.cleared.includes(d.id);
   const banked = kept && !practice ? shop.earn(s, run.purse ?? 0) : 0;
   const shards = (practice ? 0 : shop.earn(s, shop.gateShards(d.rank, share))) + banked;
   const bounty = firstClear && !practice ? shop.earn(s, shop.gateShards(d.rank, 2)) : 0;
@@ -545,9 +551,11 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
 
   // Records.
   if (!practice) {
-    const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
-    tally.fought++;
-    if (outcome === 'cleared') tally.cleared++;
+    if (!tower) {
+      const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
+      tally.fought++;
+      if (outcome === 'cleared') tally.cleared++;
+    }
     if (outcome === 'cleared') s.gates.clears++;
     else if (outcome === 'withdrawn') s.gates.withdrawn++;
     else s.gates.fails++;
@@ -574,8 +582,9 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       sh.bosses += run.kills[id]?.bosses ?? 0;
     }
   }
-  if (run.bossFaced && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
-  if (outcome === 'cleared') {
+  if (run.bossFaced && !tower && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
+  const climb = tower && outcome === 'cleared' ? spire.climbed(s, d, now) : null;
+  if (outcome === 'cleared' && !tower) {
     if (!s.gates.cleared.includes(d.id)) s.gates.cleared.push(d.id);
     seal(s, d, dayKey(now));
   }
@@ -586,7 +595,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth, contracts: deal,
+    steps: run.at, depth, contracts: deal, spire: climb,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }

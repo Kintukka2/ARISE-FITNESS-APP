@@ -42,6 +42,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief shows today's map and simulates the System's road through it 24 times: the honest clear rate |
 | **The map** | A few layers of steps, a rest, then the boss. You pick each step: fights, gatekeepers, rests, caches, shrines, traps and events with stated odds. What you find is banked and paid when you walk out; carried out, you lose it. Only a rest lets you withdraw |
 | **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
+| **The Pale Spire** | The one Gate that never closed, beside the board. It is climbed five floors at a time (three of choices, a rest, a boss), each block costing and paying like a gate of its grade. Floor N is built for Level N up to Floor 100, and it keeps getting harder above that. Your best floor this week is kept; on Monday the week pays by the grade of your highest floor, the floors rearrange, and everyone climbs again |
 | **Contracts** | The System issues three a day for your grade: clear so many gates, fell so many of one family, beat a gatekeeper, walk off the marked road, clear one on tired legs. Each pays a clear's shards and a tenth of its experience, all three pay a bonus, and one left undone lapses at midnight for nothing |
 | **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
@@ -50,8 +51,8 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill |
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
-| **Secret Missions** | 43 unpublished citations that pay attributes. Nothing says one exists until you have done it |
-| **Story** | 17 beats gated on level and deeds, ending at the Hollow Throne |
+| **Secret Missions** | 45 unpublished citations that pay attributes. Nothing says one exists until you have done it |
+| **Story** | 18 beats gated on level and deeds, ending at the Hollow Throne |
 
 ## Layout
 
@@ -66,8 +67,9 @@ src/
     map           a gate's map: drawing it, where you can step, the System's road
     gates         the board and the hunters sent with you
     contracts     the System's three a day: drawing them, counting a run against them, paying them
+    spire         the Pale Spire: its floors and blocks, the climb, and the week that pays for it
     gear, shop, vitals, shadows, missions, story, licence
-  data/         content: enemies, abilities, dungeons, map steps and events, contracts, equipment, classes, story text
+  data/         content: enemies, abilities, dungeons, map steps and events, contracts, the Spire, equipment, classes, story text
   app/          the shell: routing, the top bar and nav, and flow.ts, which narrates results
   screens/      one file per screen or major sheet
   ui/           overlays (System windows, sheets, tours, toasts), components, icons
@@ -89,9 +91,11 @@ simulated headlessly.
 
 Combat difficulty is measured, not guessed. `npm run calibrate` runs every gate against typical
 hunters from the middle of its grade, down the System's road on twelve different days' maps, and
-sets a per-gate multiplier so they clear about 75% of the time. Run it after any change to combat,
-enemies, classes, gear, the party or the map. Its hunters are seeded, so two runs give the same
-answer. `npm run balance` prints the result:
+sets a per-gate multiplier so they clear about 75% of the time. Then it tunes the Pale Spire the same
+way: each gate's creatures as a block of five floors, then every block up to Floor 100 for a hunter
+of the level of its middle floor. Run it after any change to combat, enemies, classes, gear, the
+party or the map. Its hunters are seeded, so two runs give the same answer. `npm run balance`
+prints the result:
 
 ```
 grade  floor  middle  top   | middle vs one grade up
@@ -102,6 +106,15 @@ grade  floor  middle  top   | middle vs one grade up
   A     64%    73%    81%  |   13%
   S     40%    62%    85%  |   —
 
+The Spire: a hunter on the block holding the floor of their own level (floor / middle / top of each grade).
+  E   L3 47%      L6 78%      L9 89%
+  D   L10 100%    L15 92%     L19 100%
+  C   L20 97%     L27 61%     L34 59%
+  B   L35 74%     L42 91%     L49 93%
+  A   L50 99%     L60 88%     L69 64%
+  S   L70 91%     L85 44%     L100 79%
+  Level 100, above Floor 100:  F101 52%  F111 47%  F121 50%  F131 51%  F151 9%
+
 Days to each rank (N gates a day at your own grade, 75% cleared, first clears counted):
    3 gates/day  D:2d  C:8d  B:19d  A:38d  S:73d  N:135d
    + contracts  D:2d  C:7d  B:16d  A:32d  S:61d  N:112d
@@ -110,6 +123,9 @@ Days to each rank (N gates a day at your own grade, 75% cleared, first clears co
   10 gates/day  D:1d  C:3d  B:6d  A:12d  S:22d  N:41d
    + contracts  D:1d  C:3d  B:6d  A:11d  S:21d  N:39d
 ```
+
+A single day's odds move a lot with its map and the allies the Association sends, on a gate and on
+the Spire alike; that is what the brief's assessment is for. The figures above average over days.
 
 A hunter at the bottom of a grade clears its gates about half to two thirds of the time, and one at the top
 about four times in five. Reaching a grade above your own is possible, and costly. Sovereign takes about two

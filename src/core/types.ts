@@ -81,6 +81,9 @@ export interface Dungeon {
   elite?: string;
   boss: string;
   mobRounds: number;
+  /** A block of the Spire: the floor it starts on, and its difficulty, which no calibrated gate holds. */
+  floor?: number;
+  scale?: number;
 }
 
 // ------------------------------------------------------------------ orders
@@ -140,6 +143,17 @@ export interface OpenRaid {
   lost: boolean;
   /** The hunter's fatigue as they walked in, before this gate added its own. */
   fatigue: number;
+}
+
+/** What a week on the Spire paid when it closed. */
+export interface SeasonPay {
+  /** The Monday it began. */
+  season: string;
+  best: number;
+  tier: string;
+  shards: number;
+  /** The design of the piece of gear it paid, if any. */
+  item: string | null;
 }
 
 /** One of the day's System contracts, and how far along it is. */
@@ -239,6 +253,14 @@ export interface Save {
   };
 
   shop: { day: string | null; taken: number[] };
+  /** The Pale Spire: this week's highest floor cleared, the highest ever, and what the last week paid. */
+  spire: {
+    season: string | null;
+    best: number;
+    top: number;
+    seasons: number;
+    last: SeasonPay | null;
+  };
   /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */

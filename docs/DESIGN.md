@@ -125,15 +125,37 @@ lingering, which a contract cannot promise, so it became Shadow kills instead. N
 gate above the hunter's grade either. A mid-grade hunter clears about one in ten of those, and
 being carried out locks them out for twelve hours, so it would cost the day's other two.
 
-### 4. The endless climb
+### 4. The endless climb — built
 
-A permanent tower beside the board, named and designed for this world. Each floor is one chamber;
-every fifth floor is a boss; difficulty keeps scaling past S-Rank.
+**The Pale Spire** is the one Gate that never closed. It stands beside the board on the Gates
+screen, and opens once a hunter has cleared five gates. Valcorde introduces it; he can, since
+everyone knows the Spire is there.
 
-- Floors cost fatigue in blocks of five, so the climb respects the same pacing as the board.
-- Your best floor is kept, and each new best pays once. A weekly season resets the best floor
-  and pays by tier, all on the device: there is no server and no leaderboard.
-- It reuses the map nodes from step 2 between boss floors.
+- **Blocks of five floors** (`core/spire.ts`, rules in `data/spire.ts`). Each block is played as a
+  gate of its own: three floors of choices from step 2's map, a rest, then a boss. A block costs the
+  fatigue of one gate of its grade and pays like one, with no first-clear bounty. The rest is the only
+  place to walk out, as in any gate.
+- **Floor N is built for a hunter of Level N** as far as Floor 100. Each grade's floors start where the
+  level ladder does (E 1, D 11, C 21, B 36, A 51, S 71). A hunter climbs from their own grade's first
+  floor, or from above their best this week. As with the board, they can go one grade above their own.
+  Above Floor 100 each block is 3% harder than the last, and nothing stops it: a maxed Sovereign gets
+  about halfway on Floor 131 and has a one-in-ten chance on Floor 151.
+- **The week.** Each block takes the shape of one gate of its grade for the week: its creatures, its
+  gatekeeper, its boss. The best floor of the week is kept. On Monday the week closes (`spire.settle`,
+  run when the app opens and inside `finish`). It pays four clears' worth of shards at the grade of the
+  highest floor and a piece of that grade's gear, plus a quarter more for every ten floors past 100.
+  Then the climb starts again. It is all on the device; there is no server and no leaderboard.
+- **Calibrated like the gates.** `npm run calibrate` tunes each gate's creatures as a block at the
+  middle of their grade (`BLOCK_TUNE`), then each block up to Floor 100 for the level of its middle
+  floor (`SPIRE_TUNE`). Both land near 75%.
+- **Records and Missions:** the best floor ever and this week, two new Secret Missions (*Up* and *The
+  Top Floor*), and a Profile record. A Spire block counts as a gate for the gate records and the
+  contracts. It does not count for the board's distinct gates cleared or bosses on file.
+
+**What playing it showed.** A single block's odds swing as much from day to day as a gate's do, with
+the day's map and the allies sent in. On a five-floor block the swing is a little wider. The brief
+shows that day's real odds, so the spread stays honest rather than hidden. A fixed number of foes per
+fight was tried and did not narrow it.
 
 ### 5. Depth for the hunter
 

@@ -8,6 +8,8 @@ import { RARITY } from '@/core/gear';
 import { GATE_XP, practiceAward } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
+import * as spire from '@/core/spire';
+import { SPIRE_NAME } from '@/data/spire';
 import { ContractsWindow } from '@/ui/contracts';
 import { MapView } from '@/ui/map';
 import * as raid from '@/core/raid';
@@ -16,7 +18,7 @@ import * as shop from '@/core/shop';
 import * as story from '@/core/story';
 import type { Dungeon, Rank } from '@/core/types';
 import { RANKS } from '@/core/types';
-import { dayKey, hhmmss, msUntilMidnight } from '@/core/util';
+import { dayKey, hhmmss, msUntilMidnight, msUntilWeek } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
@@ -95,6 +97,7 @@ export function Gates() {
       )}
 
       <Contracts />
+      <SpireCard />
 
       <div class="bands" role="tablist" aria-label="Filter gates by grade" data-tour="bands">
         <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
@@ -127,6 +130,39 @@ function Contracts() {
     <ContractsWindow c={contracts.today(s, day)}>
       <small class="contracts__when">Reissued in <b class="num countdown">{hhmmss(msUntilMidnight())}</b>. One left undone lapses, and costs nothing.</small>
     </ContractsWindow>
+  );
+}
+
+/** The Pale Spire, beside the board: the next block up, and how the week stands. */
+function SpireCard() {
+  const s = useSave();
+  if (!spire.spireOpen(s)) return null;
+  const d = spire.nextSpire(s);
+  const b = spire.blockOf(d.floor ?? 1);
+  const best = spire.weekBest(s);
+  const tier = spire.seasonTier(best);
+  const locked = entryBlock(s, d) === 'licence';
+  const left = msUntilWeek();
+  const days = Math.floor(left / 864e5);
+  const built = spire.builtFor(b);
+  return (
+    <Card class={`spirecard ${locked ? 'is-locked' : ''}`} tone="ember" onClick={() => {
+      if (locked) toast(`Floors ${spire.firstFloor(b)}–${spire.lastFloor(b)} are ${d.rank}-Rank. The Association will not license you for them yet.`, 'warn');
+      else openBrief(d);
+    }}>
+      <div class="spirecard__head">
+        <RankPlate rank={d.rank} size={34} />
+        <div class="grow">
+          <b>{SPIRE_NAME}</b>
+          <small class="muted">Floors {spire.firstFloor(b)}–{spire.lastFloor(b)} next · {built <= 100 ? `built for Level ${built}` : 'built for nobody'}</small>
+        </div>
+        <Glyph name={locked ? 'lock' : 'up'} />
+      </div>
+      <div class="spirecard__week">
+        <span>{best ? <>This week: <b>Floor {best}</b>{tier ? `, pays at ${tier.tier}` : ''}</> : 'Not climbed this week'}</span>
+        <span class="num">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</span>
+      </div>
+    </Card>
   );
 }
 
@@ -172,7 +208,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const block = entryBlock(s, d);
   const sh = shop.GATE_SHARDS[d.rank as Rank];
   const xp = isPractice(d) ? practiceAward(s) : GATE_XP[d.rank as Rank];
-  const first = !s.gates.cleared.includes(d.id);
+  const tower = spire.isSpire(d);
+  const first = !tower && !s.gates.cleared.includes(d.id);
   const hpNow = vitals.read(s);
 
   const enter = async () => {
@@ -214,9 +251,11 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
         <div class="tiles">
           <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />
-          <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '—'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />
+          {tower
+            ? <Tile label="This week" value={`Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`} sub="a new best, if you clear it" />
+            : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '—'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
           <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
-          <Tile label="Depth" value={`${map.layers.length} steps`} sub="a rest, then the boss" />
+          <Tile label="Depth" value={`${map.layers.length} ${tower ? 'floors' : 'steps'}`} sub="a rest, then the boss" />
         </div>
       </Section>
 

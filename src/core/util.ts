@@ -67,6 +67,18 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((Date.UTC(yb, mb - 1, db) - Date.UTC(ya, ma - 1, da)) / 86400000);
 }
 
+/** The Monday that starts the week a day falls in: weeks run Monday to Sunday, on the device's calendar. */
+export function weekStart(key: string): string {
+  return addDays(key, -((parseDay(key).getDay() + 6) % 7));
+}
+
+/** Until the next Monday's midnight. */
+export function msUntilWeek(now: Date = new Date()): number {
+  const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const next = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 7 - ((day.getDay() + 6) % 7));
+  return next.getTime() - now.getTime();
+}
+
 export function msUntilMidnight(now: Date = new Date()): number {
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return next.getTime() - now.getTime();

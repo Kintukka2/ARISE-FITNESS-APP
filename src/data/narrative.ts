@@ -7,6 +7,7 @@
  */
 import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
+import { BLOCK, SPIRE_OPENS } from './spire';
 
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
@@ -67,6 +68,14 @@ export const BEATS: Beat[] = [
     lines: [
       'Three gates and you are still walking. Good. Here is the part the brochure leaves out.',
       'The board will always have something on it. Your body will not. Fatigue is what kills hunters at your grade — not the boss, the fourth gate of the afternoon.',
+    ],
+  },
+  {
+    id: 'spire_open', when: (s) => s.gates.clears >= SPIRE_OPENS, kind: 'coach', title: 'Valcorde',
+    lines: [
+      `${SPIRE_OPENS} gates cleared. That is enough that I can tell you about the one that does not close.`,
+      `The Pale Spire. It opened over the old reservoir before either of us held a licence, and every boss killed inside it opens another floor above. You climb it ${BLOCK} floors at a time, with a rest before each boss.`,
+      'It rearranges itself every Monday, and everyone starts again from their own grade’s floors. The Association pays at the end of each week for how high you got. You will find it on the Gates screen.',
     ],
   },
   {
