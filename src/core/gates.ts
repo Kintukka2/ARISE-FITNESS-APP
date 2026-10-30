@@ -75,10 +75,12 @@ export function seal(s: Save, d: Dungeon, day = dayKey()) {
 /** Up to one grade above your own: the "taster". */
 export const licensedFor = (s: Save, d: Dungeon) => rankIdx(d.rank) <= rankIdx(licensedRank(s)) + 1;
 
-export type EntryBlock = 'licence' | 'locked' | 'down';
+export type EntryBlock = 'licence' | 'open' | 'locked' | 'down';
 
 export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | null {
   if (!licensedFor(s, d)) return 'licence';
+  // A run left open is gone back into or abandoned, never entered again: that would write over it unsettled.
+  if (s.gates.raid) return 'open';
   const can = vitals.canRaid(s, now);
   return can.ok ? null : can.why;
 }

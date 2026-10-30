@@ -1,7 +1,8 @@
 /**
  * Mana Shards and the Exchange. Eight pieces a day, redrawn at midnight with
  * the Gate board, most at the hunter's grade and some well above it at a
- * premium. Potions are always in stock and are drunk on purchase.
+ * premium. Potions are always in stock: most are drunk on purchase, and
+ * field potions go in the satchel for the hunter's turn in a fight.
  */
 import { EQUIPMENT } from '@/data/equipment';
 import { gearDef, grant, make, score } from './gear';
@@ -9,6 +10,7 @@ import type { Item, Rank, Save } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
 import * as vitals from './vitals';
+import { FIELD_POTION_HEAL } from './combat';
 import { licensedRank } from './licence';
 
 export const STOCK = 8;
@@ -130,6 +132,16 @@ export const POTIONS: { id: PotionId; name: string; price: number; effect: strin
   { id: 'fatigue', name: 'Fatigue Potion', price: 45, effect: 'Removes 20 Fatigue', desc: 'It does not rest you. It persuades your body it has rested.' },
   { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Lifts the lockout after being downed', desc: 'The only argument the Association accepts for walking back into a Gate the same day one carried you out of it.' },
 ];
+
+/** Field potions are carried, not drunk: into a Gate, for the hunter's own turn. */
+export const FIELD_POTION = { price: 40, max: 3, heal: FIELD_POTION_HEAL } as const;
+
+/** Put a field potion in the satchel. False if it is full or the shards are short. */
+export function buyField(s: Save): boolean {
+  if (s.satchel >= FIELD_POTION.max || !pay(s, FIELD_POTION.price)) return false;
+  s.satchel += 1;
+  return true;
+}
 
 /** Why a potion would be wasted right now, or null if it is worth drinking. */
 export function potionIdle(s: Save, id: PotionId, now = Date.now()): string | null {

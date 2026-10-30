@@ -1,20 +1,21 @@
 /**
- * A raid, chamber by chamber. Each chamber is fought in full, then replayed;
- * between chambers the hunter decides to press on or withdraw. Health is
- * written back after every chamber, so closing the app cannot dodge a loss.
+ * A raid, chamber by chamber. The hunter fights their own turns; between
+ * chambers they decide to press on or withdraw. Every order is written to the
+ * save before it plays out, and health after every chamber, so closing the
+ * app can neither dodge a loss nor reroll a turn.
  */
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { LOOT } from '@/data/dungeons';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classById, classFor } from '@/data/classes';
-import { fight, Unit, type Ev, type UnitSpec } from './combat';
+import { battle, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, worn as wornItems } from './gear';
 import { BOOST_CAP, classBonus, GATE_XP, grantXP, practiceAward, type XpResult } from './progression';
 import { licensedRank } from './licence';
 import * as shadows from './shadows';
 import * as shop from './shop';
-import type { Dungeon, Item, OpenRaid, Rank, Save, Shadow } from './types';
+import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
 import { RANKS } from './types';
 import { clamp, dayKey, rng } from './util';
 import * as vitals from './vitals';
@@ -111,28 +112,73 @@ function foeUnits(c: Chamber, d: Dungeon, index: number): Unit[] {
 
 export const enemyActions = (d: Dungeon) => Math.max(1, Math.round((EXPECTED_PARTY[d.rank] ?? 4) / 3));
 
-/** Fight one chamber. Mutates the party's units (health, statuses). */
-export function runChamber(d: Dungeon, seed: string, index: number, party: Unit[], chambers = plan(d, seed)): ChamberResult {
+/** A chamber being fought, one hunter's turn at a time. */
+export interface ChamberFight {
+  /** Everyone as the chamber opened, for the arena to draw from. */
+  roster: RosterRow[];
+  /** Every event so far. It grows as the fight goes on. */
+  log: Ev[];
+  /** The hunter's turn, waiting for an order. Null once the chamber is decided. */
+  turn: Turn | null;
+  /** Answer the waiting turn: an order, or null to let the System choose. */
+  play(order: Order | null): void;
+  /** The decided chamber. Throws while it is still being fought. */
+  result(): ChamberResult;
+}
+
+export interface ChamberOpts {
+  /** The hunter fights their own turns. Otherwise the auto policy fights them, and nothing waits. */
+  manual?: boolean;
+  tactic?: Tactic;
+  /** Field potions the hunter has to drink in this chamber. */
+  potions?: number;
+  /** Orders already given in this chamber, replayed silently to bring it back to where it was. */
+  orders?: (Order | null)[];
+}
+
+/** Open one chamber. Mutates the party's units (health, statuses) as it is fought. */
+export function openChamber(d: Dungeon, seed: string, index: number, party: Unit[], chambers = plan(d, seed), opts: ChamberOpts = {}): ChamberFight {
   const c = chambers[index];
   const foes = foeUnits(c, d, index);
   const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status) }));
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];
-  const res = fight(party, foes, rng(`arise|raid|${seed}|${index}`), enemyActions(d), (killer, victim) => {
+  const log: Ev[] = [];
+  const g = battle(party, foes, rng(`arise|raid|${seed}|${index}`), enemyActions(d), (killer, victim) => {
     if (victim.side === 'e' && victim.ref) felled.push(victim.ref);
     if (killer?.tag === 'shadow' && killer.ref && victim.side === 'e') {
       const t = (kills[killer.ref] ??= { kills: 0, bosses: 0 });
       t.kills++;
       if (c.boss) t.bosses++;
     }
-  });
-  if (res.won) {
-    for (const u of party) {
-      if (u.alive()) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * (ROOM_RECOVERY + u.d.recovery));
-      else if (u.tag === 'hero') u.hp = Math.round(u.maxHp * REVIVE);
-    }
-  }
-  return { index, label: c.label, boss: c.boss, won: res.won, rounds: res.rounds, log: res.log, roster, felled, kills };
+  }, log, { hero: opts.manual ? party[0]?.uid : undefined, tactic: opts.tactic, potions: opts.potions });
+  let step: IteratorResult<Turn, FightResult> = g.next();
+  for (const o of opts.orders ?? []) if (!step.done) step = g.next(o);
+  let done: ChamberResult | null = null;
+  return {
+    roster,
+    log,
+    get turn() { return step.done ? null : step.value; },
+    play(order) { if (!step.done) step = g.next(order); },
+    result() {
+      if (!step.done) throw new Error('The chamber is still being fought.');
+      if (done) return done;
+      const res = step.value;
+      if (res.won) {
+        for (const u of party) {
+          if (u.alive()) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * (ROOM_RECOVERY + u.d.recovery));
+          else if (u.tag === 'hero') u.hp = Math.round(u.maxHp * REVIVE);
+        }
+      }
+      done = { index, label: c.label, boss: c.boss, won: res.won, rounds: res.rounds, log: res.log, roster, felled, kills };
+      return done;
+    },
+  };
+}
+
+/** Fight one chamber to the end on the auto policy. Mutates the party's units (health, statuses). */
+export function runChamber(d: Dungeon, seed: string, index: number, party: Unit[], chambers = plan(d, seed), tactic: Tactic = 'default'): ChamberResult {
+  return openChamber(d, seed, index, party, chambers, { tactic }).result();
 }
 
 export const snapshot = (party: Unit[]) => party.map((u) => ({ hp: Math.max(0, u.hp), status: { ...u.status } }));
@@ -163,8 +209,34 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     dungeonId: d.id, seed: `${d.id}|${now}`, day, at: 0,
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
+    tactic: s.gates.tactic, orders: [],
   };
   return s.gates.raid;
+}
+
+/** The chamber being fought in an open run, brought back to exactly where its orders left it. */
+export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
+  const party = partyFor(s, d, run, now);
+  const orders = run.orders ?? [];
+  // The satchel has already paid for the potions this chamber's orders drank.
+  const potions = s.satchel + orders.filter((o) => o?.use === 'Potion').length;
+  const ch = openChamber(d, run.seed, run.at, party, plan(d, run.seed), { manual: true, tactic: run.tactic ?? 'default', potions, orders });
+  return { party, ch };
+}
+
+/**
+ * Write the hunter's order to the save, before it plays out. A potion is paid
+ * for here, out of the satchel; one the satchel cannot pay for becomes the
+ * System's choice. Returns the order as it will be played. Mutates.
+ */
+export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
+  let given = o;
+  if (given?.use === 'Potion') {
+    if (s.satchel > 0) s.satchel -= 1;
+    else given = null;
+  }
+  run.orders = [...(run.orders ?? []), given];
+  return given;
 }
 
 /** Rebuild the live party for an open run. */
@@ -175,6 +247,7 @@ export function partyFor(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
 /** Fold a chamber into the open run and write the hunter's health back. Mutates. */
 export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: ChamberResult, now = Date.now()) {
   run.at = ch.index + 1;
+  run.orders = [];
   run.carried = snapshot(party);
   run.felled.push(...ch.felled);
   if (ch.boss) run.bossFaced = true;
@@ -356,7 +429,7 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
     party[0].hp = Math.max(1, Math.round(party[0].maxHp * frac));
     let won = true;
     for (let c = 0; c < chambers.length && won; c++) {
-      const res = runChamber(d, seed, c, party, chambers);
+      const res = runChamber(d, seed, c, party, chambers, s.gates.tactic);
       won = res.won;
       if (c === chambers.length - 1) reached++;
     }

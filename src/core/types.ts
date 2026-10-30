@@ -81,6 +81,14 @@ export interface Dungeon {
   mobRounds: number;
 }
 
+// ------------------------------------------------------------------ orders
+
+/** What the hunter does with a turn: a skill from the kit by name, or `Strike`, `Guard` or `Potion`. `at` is the foe aimed at. */
+export interface Order { use: string; at?: string }
+
+/** Standing orders for allies and Shadows, set before a gate. */
+export type Tactic = 'default' | 'finish' | 'protect' | 'spread';
+
 // ------------------------------------------------------------------ save
 
 export interface Shadow {
@@ -109,6 +117,13 @@ export interface OpenRaid {
   kills: Record<string, { kills: number; bosses: number }>;
   startHp: number;
   bossFaced: boolean;
+  /** The standing orders the party went in with; they hold for the whole run. */
+  tactic: Tactic;
+  /**
+   * The hunter's orders so far in the chamber being fought, null where the
+   * System chose. The fight is deterministic, so these replay it exactly.
+   */
+  orders: (Order | null)[];
 }
 
 export interface LogEntry { day: string; kind: 'gate'; name: string; xp: number }
@@ -177,6 +192,8 @@ export interface Save {
     last: 'cleared' | 'withdrawn' | 'defeated' | null;
     unbroken: number;
     bestUnbroken: number;
+    /** Standing orders for the allies and Shadows who go in with you. */
+    tactic: Tactic;
   };
 
   shadows: {
@@ -188,6 +205,8 @@ export interface Save {
   };
 
   shop: { day: string | null; taken: number[] };
+  /** Field potions carried into Gates, drunk on the hunter's turn. */
+  satchel: number;
 
   log: LogEntry[];
   story: string[];
