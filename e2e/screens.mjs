@@ -54,14 +54,17 @@ try {
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-orders');
   await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
   await page.waitForSelector('.arena', { timeout: 10000 });
+  await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
+  await sleep(400); await snap('arena-map');
+  await page.locator('button.gnode.is-next').first().click();
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
   // Hand the rest to the System.
   await page.locator('.seg__btn', { hasText: 'Skip' }).click();
   await page.locator('.seg__btn', { hasText: 'Auto' }).click();
-  for (let i = 0; i < 40; i++) {
-    await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin', { timeout: 30000 });
+  for (let i = 0; i < 200; i++) {
+    await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin, .arena__map, .arena__field', { timeout: 30000 });
     if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
     if (await page.locator('.syswin').first().isVisible().catch(() => false)) { await drain(); continue; }
     if (await page.locator('text=Claim The Gate').isVisible()) { await page.locator('text=Claim The Gate').click(); break; }

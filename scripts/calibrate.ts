@@ -12,13 +12,14 @@ import type { Dungeon, Rank } from '@/core/types';
 import { LEVELS, typicalHunter } from './hunters';
 
 const TARGET = 0.75;
-const HUNTERS = 6;
-const RUNS = 16;
+const HUNTERS = 12;
+const RUNS = 10;
 
 function rate(d: Dungeon, level: number) {
   let c = 0, n = 0;
   for (let h = 0; h < HUNTERS; h++) {
     const s = typicalHunter(level, d.rank as Rank, `cal|${d.id}|${h}`);
+    // A gate's map changes by the day, so each hunter tries it on a different one.
     const p = project(s, d, RUNS, Date.UTC(2026, 0, 1 + h * 11));
     c += p.cleared; n += p.runs;
   }

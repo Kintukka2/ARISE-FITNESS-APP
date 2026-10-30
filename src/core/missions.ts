@@ -26,7 +26,7 @@ const bestShadow = (s: Save) => s.shadows.army.reduce((n, x) => Math.max(n, x.ki
 export const MISSIONS: Mission[] = [
   // Mission — 1 point
   { id: 'first_light', name: 'First Light', tier: 'minor', did: 'Walked out of the practice gate on your own feet.', grant: { VIT: 1 }, check: (s) => s.gates.cleared.includes('DNG-000') },
-  { id: 'knew_when', name: 'Knew When To Leave', tier: 'minor', did: 'Withdrew from a Gate between chambers, with something left to walk out on.', grant: { PER: 1 }, check: (s) => s.gates.withdrawn >= 1 },
+  { id: 'knew_when', name: 'Knew When To Leave', tier: 'minor', did: 'Withdrew from a Gate at a rest, with something left to walk out on.', grant: { PER: 1 }, check: (s) => s.gates.withdrawn >= 1 },
   { id: 'first_reach', name: 'Above Your Station', tier: 'minor', did: 'Cleared a Gate a grade above your own.', grant: { STR: 1 }, check: (s) => s.stats.reachClears >= 1 },
   { id: 'seven_straight', name: 'Seven Straight', tier: 'minor', did: 'Cleared seven Gates in a row without being carried out.', grant: { AGI: 1 }, check: (s) => s.gates.bestUnbroken >= 7 },
   { id: 'iron_debt', name: 'Iron Debt', tier: 'minor', did: 'Was carried out of a Gate, and cleared the very next one.', grant: { INT: 1 }, check: (s) => s.stats.comebacks >= 1 },
