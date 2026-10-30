@@ -21,7 +21,7 @@ export function defaults(): Save {
     hunter: {
       name: 'HUNTER', regNo: '', level: 1, xp: 0,
       attrs: { STR: 5, AGI: 5, PER: 5, VIT: 5, INT: 5 },
-      points: 0, classId: null, missions: [],
+      points: 0, classId: null, missions: [], picks: {},
     },
     vitals: { hp: null, mp: null, fatigue: 0, at: null, lockedUntil: null },
     wallet: { shards: 0, earned: 0, spent: 0, bought: 0, receipts: [] },

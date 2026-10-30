@@ -59,6 +59,7 @@ try {
 
   await nav('profile');
   await snap('profile', true);
+  await page.locator('.hero__rows .linkish').click(); await sleep(400); await snap('class', true); await close();
   await page.locator('[aria-label="Inventory"]').first().click(); await sleep(400); await snap('inventory');
   await page.locator('.itemrow').first().click(); await sleep(400); await snap('item'); await close();
   await page.locator('.itemrow', { hasText: 'Warden' }).first().click(); await sleep(400);

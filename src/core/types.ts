@@ -213,6 +213,11 @@ export interface Save {
     points: number;
     classId: string | null;
     missions: string[];
+    /**
+     * The skill or passive kept at each of a class line's rungs, keyed `LINE:rung`, and the
+     * class tier it was chosen at: a choice holds until the hunter reaches a higher rank.
+     */
+    picks: Record<string, { name: string; at: number }>;
   };
 
   vitals: { hp: number | null; mp: number | null; fatigue: number; at: number | null; lockedUntil: number | null };

@@ -167,6 +167,22 @@ export const CLASS_SKILLS: (Ability & { line: string; rung: number })[] = [
   {"name":"Mana Bolt","type":"magic","profile":"single","mult":1.1,"cd":0,"inflicts":[],"line":"INT","rung":0},
   {"name":"Hex","type":"magic","profile":"single","mult":1.3,"cd":2,"inflicts":["Cursed"],"line":"INT","rung":1},
   {"name":"Mindbreak","type":"magic","profile":"volley","mult":1.45,"cd":3,"inflicts":["Weakened"],"line":"INT","rung":3},
+  // The other half of each rung's choice. The first listed at a rung is the one a hunter fights with until they choose.
+  {"name":"Rend","type":"physical","profile":"single","mult":0.95,"cd":0,"inflicts":["Bleeding"],"line":"STR","rung":0},
+  {"name":"Skullsplitter","type":"physical","profile":"single","mult":1.6,"cd":2,"inflicts":["Weakened"],"line":"STR","rung":1},
+  {"name":"Titan's Fall","type":"physical","profile":"all","mult":0.85,"cd":4,"inflicts":["Staggered"],"line":"STR","rung":3},
+  {"name":"Venom Edge","type":"physical","profile":"single","mult":0.9,"cd":0,"inflicts":["Poisoned"],"line":"AGI","rung":0},
+  {"name":"Hamstring","type":"physical","profile":"single","mult":1.35,"cd":2,"inflicts":["Rooted"],"line":"AGI","rung":1},
+  {"name":"Thousand Cuts","type":"physical","profile":"wild","mult":1.4,"cd":3,"inflicts":["Bleeding"],"line":"AGI","rung":3},
+  {"name":"Pinning Shot","type":"physical","profile":"single","mult":1.05,"cd":0,"inflicts":["Rooted"],"line":"PER","rung":0},
+  {"name":"Scatter Shot","type":"physical","profile":"volley","mult":1.1,"cd":2,"inflicts":["Corroded"],"line":"PER","rung":1},
+  {"name":"Execution","type":"physical","profile":"single","mult":1.8,"cd":3,"inflicts":["Marked"],"line":"PER","rung":3},
+  {"name":"Shoulder Charge","type":"physical","profile":"cleave","mult":0.7,"cd":0,"inflicts":[],"line":"VIT","rung":0},
+  {"name":"Iron Retort","type":"physical","profile":"cleave","mult":0.9,"cd":2,"inflicts":["Weakened"],"line":"VIT","rung":1},
+  {"name":"Earthshaker","type":"physical","profile":"all","mult":0.7,"cd":3,"inflicts":["Chilled"],"line":"VIT","rung":3},
+  {"name":"Frost Needle","type":"magic","profile":"single","mult":0.95,"cd":0,"inflicts":["Chilled"],"line":"INT","rung":0},
+  {"name":"Flame Lash","type":"magic","profile":"cleave","mult":1.05,"cd":2,"inflicts":["Burning"],"line":"INT","rung":1},
+  {"name":"Starfall","type":"magic","profile":"all","mult":0.85,"cd":3,"inflicts":["Burning"],"line":"INT","rung":3},
 ];
 
 export const PASSIVES: Passive[] = [
@@ -226,4 +242,15 @@ export const CLASS_PASSIVES: (Passive & { line: string; rung: number })[] = [
   {"name":"Last Word","style":"survival","text":"The first blow that would put you down leaves you at 1 instead.","line":"VIT","rung":4},
   {"name":"Warded Mind","style":"arcane","text":"+15 Resistance, and one magical blow a fight lands at half.","line":"INT","rung":2},
   {"name":"Field Command","style":"leadership","text":"Everyone you walked in with gains initiative and accuracy.","line":"INT","rung":4},
+  // The other half of each rung's choice. A line's four passives never share a style, so any two of them stack.
+  {"name":"Scarred Hide","style":"bulwark","text":"+20% maximum health.","line":"STR","rung":2},
+  {"name":"Undying Rage","style":"survival","text":"The first blow that would put you down leaves you at 1 instead.","line":"STR","rung":4},
+  {"name":"Hunter's Read","style":"targeting","text":"+10 Accuracy against anything Marked.","line":"AGI","rung":2},
+  {"name":"Not There","style":"survival","text":"The first blow that would put you down leaves you at 1 instead.","line":"AGI","rung":4},
+  {"name":"Patient Eye","style":"identity","text":"+10% accuracy, the mark of your leading attribute.","line":"PER","rung":2},
+  {"name":"Lethal Precision","style":"bladework","text":"Critical hits come far more often.","line":"PER","rung":4},
+  {"name":"Stone Footing","style":"brace","text":"+20% Defence, and the first stagger of a fight does not take.","line":"VIT","rung":2},
+  {"name":"Rallying Wall","style":"leadership","text":"Everyone you walked in with gains initiative and accuracy.","line":"VIT","rung":4},
+  {"name":"Overflow","style":"identity","text":"+10% magic, the mark of your leading attribute.","line":"INT","rung":2},
+  {"name":"Soul Anchor","style":"survival","text":"The first blow that would put you down leaves you at 1 instead.","line":"INT","rung":4},
 ];

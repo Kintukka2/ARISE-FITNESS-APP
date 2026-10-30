@@ -330,3 +330,17 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .setbonus b { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
 .setbonus.is-on { border-left-color: var(--verdant); color: var(--verdant); }
 .upgrade { display: flex; flex-direction: column; gap: 2px; }
+
+/* ------------------------------------------------------------------ class rungs: one of two kept */
+
+.rung { display: flex; flex-direction: column; gap: 8px; }
+.rung__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rung__head small { color: var(--ink-3); font-size: 0.78rem; }
+.rung__options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pickcard { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); text-align: left; }
+.pickcard small { color: var(--ink-3); font-size: 0.8rem; line-height: 1.35; }
+.pickcard.is-kept { border-color: var(--gold); box-shadow: 0 0 16px var(--gold-glow) inset; }
+.pickcard.is-kept b { color: var(--gold); }
+.pickcard:disabled:not(.is-kept) { opacity: 0.6; }
+.pickcard__tag { align-self: flex-start; margin-top: 2px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.rung.is-shut .pickcard { opacity: 0.45; }

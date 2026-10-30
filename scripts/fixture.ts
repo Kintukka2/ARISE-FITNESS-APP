@@ -7,7 +7,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { defaults } from '@/core/save';
-import { autoAllocate, grantXP, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, optionsAt, pick, syncClass, totalXpFor } from '@/core/progression';
 import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
 import { bind } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
@@ -28,6 +28,8 @@ s.hunter.attrs.STR += 12;
 autoAllocate(s);
 s.hunter.points = 4;
 syncClass(s);
+// The D-Rank skill chosen, the C-Rank one still waiting.
+pick(s, 0, optionsAt('STR', 0).names[1]);
 const r = rng('fixture');
 for (const rank of ['D', 'C', 'C', 'B'] as const) for (const slot of ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Weapon', 'Off-Hand', 'Amulet', 'Ring']) {
   const pool = ofRank(rank).filter((d) => d.slot === slot);

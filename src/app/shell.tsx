@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import { upgradeCount } from '@/core/gear';
-import { rankFor, shadowsOpen, xpToNext } from '@/core/progression';
+import { rankFor, shadowsOpen, waiting, xpToNext } from '@/core/progression';
 import { licensedRank } from '@/core/licence';
 import { compact } from '@/core/util';
 import { useSave } from '@/store';
@@ -98,7 +98,7 @@ export function NavBar() {
   const r = route.use();
   const badge = (k: Route): string | null => {
     if (k === 'profile') {
-      const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0);
+      const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0) + waiting(s).length;
       return n > 0 ? String(n) : null;
     }
     if (k === 'shadows' && s.shadows.fresh.length) return String(s.shadows.fresh.length);

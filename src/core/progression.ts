@@ -4,6 +4,7 @@
  * One rank ladder, earned by level. Level is earned in the Gates: every run
  * pays experience by the gate's grade, settled once in `raid.finish`.
  */
+import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { classById, classFor } from '@/data/classes';
 import type { Attrs, Rank, Save, Stat } from './types';
 import { STATS } from './types';
@@ -160,3 +161,56 @@ export function syncClass(s: Save) {
 }
 
 export const shadowsOpen = (s: Save) => s.shadows.army.length > 0;
+
+// ------------------------------------------------------------------ choices at each rung
+
+/** A class rung's two options, the default first: two skills, or two passives. */
+export function optionsAt(lead: string, rung: number): { kind: 'skill' | 'passive'; names: string[] } {
+  const skills = CLASS_SKILLS.filter((x) => x.line === lead && x.rung === rung).map((x) => x.name);
+  if (skills.length) return { kind: 'skill', names: skills };
+  return { kind: 'passive', names: CLASS_PASSIVES.filter((x) => x.line === lead && x.rung === rung).map((x) => x.name) };
+}
+
+/** The rungs of a line, in order. */
+export const rungsOf = (lead: string) => [...new Set([...CLASS_SKILLS, ...CLASS_PASSIVES].filter((x) => x.line === lead).map((x) => x.rung))].sort((a, b) => a - b);
+
+const pickKey = (lead: string, rung: number) => `${lead}:${rung}`;
+
+/** What a rung gives: the hunter's pick, if they have made one, or the default. */
+export function keptAt(picks: Save['hunter']['picks'] | undefined, lead: string, rung: number): string {
+  const { names } = optionsAt(lead, rung);
+  const mine = picks?.[pickKey(lead, rung)]?.name;
+  return mine && names.includes(mine) ? mine : names[0];
+}
+
+/** The skills and passives a hunter of a line and tier fights with, by their picks (defaults when there are none). */
+export function kitFor(lead: string, tier: number, picks?: Save['hunter']['picks']) {
+  const open = rungsOf(lead).filter((r) => r <= tier);
+  const kit: string[] = [];
+  const passives: string[] = [];
+  for (const r of open) (optionsAt(lead, r).kind === 'skill' ? kit : passives).push(keptAt(picks, lead, r));
+  return { kit, passives };
+}
+
+/** Whether a rung's choice can be made now: it is open, and either never chosen or chosen at a lower rank than this one. */
+export function canPick(s: Save, rung: number): boolean {
+  const cls = classById(s.hunter.classId);
+  if (!cls || rung > cls.tier) return false;
+  const was = s.hunter.picks?.[pickKey(cls.lead, rung)];
+  return !was || cls.tier > was.at;
+}
+
+/** The open rungs of the hunter's line nobody has chosen at yet. */
+export function waiting(s: Save): number[] {
+  const cls = classById(s.hunter.classId);
+  if (!cls) return [];
+  return rungsOf(cls.lead).filter((r) => r <= cls.tier && !s.hunter.picks?.[pickKey(cls.lead, r)]);
+}
+
+/** Keep one of a rung's options. False if the rung is not open to a choice, or the option is not one of its two. Mutates. */
+export function pick(s: Save, rung: number, name: string): boolean {
+  const cls = classById(s.hunter.classId);
+  if (!cls || !canPick(s, rung) || !optionsAt(cls.lead, rung).names.includes(name)) return false;
+  (s.hunter.picks ??= {})[pickKey(cls.lead, rung)] = { name, at: cls.tier };
+  return true;
+}

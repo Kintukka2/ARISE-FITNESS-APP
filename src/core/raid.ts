@@ -5,7 +5,6 @@
  * every step, so closing the app can neither dodge a loss nor reroll a turn.
  * What the run finds is banked on it and paid out once, in `finish`.
  */
-import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { LOOT } from '@/data/dungeons';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classById, classFor } from '@/data/classes';
@@ -15,7 +14,7 @@ import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSp
 import { build, chamberOf, isFight, mapSeed, next, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, heldOf, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
-import { BOOST_CAP, classBonus, GATE_XP, grantXP, practiceAward, type XpResult } from './progression';
+import { BOOST_CAP, classBonus, GATE_XP, grantXP, kitFor, practiceAward, type XpResult } from './progression';
 import { licensedRank } from './licence';
 import * as contracts from './contracts';
 import * as shadows from './shadows';
@@ -40,25 +39,20 @@ const WITHDRAW_CAP = 0.6;
 
 export type { Chamber };
 
-function classKit(lead: string, tier: number) {
-  return {
-    kit: CLASS_SKILLS.filter((x) => x.line === lead && x.rung <= tier).map((x) => x.name),
-    passives: CLASS_PASSIVES.filter((x) => x.line === lead && x.rung <= tier).map((x) => x.name),
-  };
-}
 
 /** The hunter as they will actually fight: attributes + class + gear, worn down by fatigue. */
 export function heroSpec(s: Save, now = Date.now()): UnitSpec {
   const items = wornItems(s);
   const base = vitals.worn(boosted(s.hunter.attrs, items, classBonus(s), BOOST_CAP), vitals.read(s, now).fatigue);
   const cls = classById(s.hunter.classId);
-  const k = cls ? classKit(cls.lead, cls.tier) : { kit: [], passives: [] };
+  const k = cls ? kitFor(cls.lead, cls.tier, s.hunter.picks) : { kit: [], passives: [] };
   return { uid: 'hero', name: s.hunter.name, side: 'p', base, ...k, bonus: sumBonuses(rollBonuses(items), setBonuses(items)), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
   const cls = classFor(a.base, a.rank);
-  const k = cls ? classKit(cls.lead, cls.tier) : { kit: [], passives: [] };
+  // The Association's hunters fight with every rung's first option.
+  const k = cls ? kitFor(cls.lead, cls.tier) : { kit: [], passives: [] };
   return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id, atkMult: a.atkMult };
 }
 

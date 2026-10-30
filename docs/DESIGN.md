@@ -166,8 +166,20 @@ fight was tried and did not narrow it.
   it is stunned. Intents are chosen against the cooldowns as they will be when the foe acts, so a
   one-round cooldown stays one round. The hunter's card counts the foes coming for them, and
   *Protect The Hunter* goes for whatever is about to hit you. Gates recalibrated.
-- **Skill choices at rank-up:** each class rung offers two skills and you keep one, instead of
-  receiving the whole line. The choice is permanent until the next rank.
+- **Skill choices at rank-up — built.** Each rung of every line now offers two options, two skills
+  or two passives, and the hunter keeps one. There are 15 new skills and 10 new passives, all data
+  built from abilities and passive styles the combat engine already plays. A line's four passives
+  never share a style, so any pair of picks stacks.
+  - **Defaults:** until a hunter chooses, a rung gives its first option, which is exactly the old
+    kit. The Association's hunters and calibration's typical hunters fight as before, and
+    `npm run calibrate` wrote an identical `gatetune.ts`.
+  - **Holding a choice:** a choice holds until the hunter's next rank. Then every earlier choice can
+    be made again, and at S-Rank it is for good. Choices are kept per line, so a hunter reclassified
+    away and back finds theirs waiting. An open run keeps the party it walked in with.
+  - **Where:** the class sheet on the Profile holds the choices. The class window at a rank-up names
+    the two options, and the Profile tab counts the rungs still to choose.
+  - **Balance:** a hunter on every second option, against the same hunter on every first, lands
+    within seven points of the clear rate at C, A and S for every line. They are trades, not upgrades.
 - **Gear sets — built.** All sixteen sets in `data/equipment.ts` have three pieces, so the bonuses
   are for two and three pieces worn, not two and four. They are defined as data in `data/sets.ts`,
   in the units the combat engine's gear bonuses already use, and reach the fight through
