@@ -7,6 +7,8 @@ import { battle, fight, FIELD_POTION_HEAL, GUARD, Unit } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor } from '@/core/progression';
 import type { Order, Save } from '@/core/types';
 import { rng } from '@/core/util';
+import { chamberOf } from '@/core/map';
+import { isFight, toBoss, walk } from './walk';
 
 const now = Date.parse('2026-02-02T12:00:00');
 const base = { STR: 10, AGI: 10, PER: 10, VIT: 10, INT: 10 };
@@ -20,12 +22,18 @@ function hunter(level: number) {
   return s;
 }
 
+/** Enter a gate and step into its first fight. */
+function enter(s: Save, id: string) {
+  const d = dungeonById(id)!;
+  const run = raid.begin(s, d, now);
+  raid.choose(s, d, run, raid.options(d, run)[0].id, now);
+  return run;
+}
+
 /** Open a run at its boss: the chamber with turns enough to test. */
 function atBoss(s: Save, id: string) {
   const d = dungeonById(id)!;
-  const run = raid.begin(s, d, now);
-  run.at = raid.plan(d, run.seed).length - 1;
-  return run;
+  return toBoss(d, raid.begin(s, d, now));
 }
 
 /** Fight the open chamber to the end, choosing each turn with `pick`, and record every order as the arena does. */
@@ -40,8 +48,9 @@ describe('turn by turn', () => {
   it('a hunter who always lets the System choose fights exactly the auto fight', () => {
     const s = hunter(20);
     const d = dungeonById('DNG-015')!;
-    const run = raid.begin(s, d, now);
-    const auto = raid.runChamber(d, run.seed, 0, raid.partyFor(s, d, run, now));
+    const run = enter(s, d.id);
+    const x = raid.pending(d, run)!;
+    const auto = raid.runChamber(d, run.seed, x.layer, raid.partyFor(s, d, run, now), chamberOf(d, x));
     const manual = fightOut(s, () => null).result();
     expect(manual.log).toEqual(auto.log);
     expect(manual.won).toBe(auto.won);
@@ -86,8 +95,7 @@ describe('turn by turn', () => {
 
   it('the foe aimed at is always among those hit or missed', () => {
     const s = hunter(20);
-    const d = dungeonById('DNG-015')!;
-    raid.begin(s, d, now);
+    enter(s, 'DNG-015');
     const aimed: string[] = [];
     const ch = fightOut(s, (t) => { const at = t.foes[t.foes.length - 1]; aimed.push(at); return { use: 'Strike', at }; });
     const swings = ch.log.filter((e): e is Extract<typeof e, { t: 'hit' | 'miss' }> => (e.t === 'hit' || e.t === 'miss') && e.a === 'hero');
@@ -162,7 +170,7 @@ describe('turn by turn', () => {
     const s = hunter(20);
     s.satchel = 1;
     const d = dungeonById('DNG-015')!;
-    raid.begin(s, d, now);
+    enter(s, d.id);
     const { ch } = raid.resume(s, d, s.gates.raid!, now);
     ch.play(raid.order(s, s.gates.raid!, { use: 'Potion' }));
     expect(s.satchel).toBe(0);
@@ -173,7 +181,7 @@ describe('turn by turn', () => {
   it('recording a chamber clears its orders for the next', () => {
     const s = hunter(20);
     const d = dungeonById('DNG-015')!;
-    raid.begin(s, d, now);
+    enter(s, d.id);
     const ch = fightOut(s, () => ({ use: 'Strike' }));
     expect(s.gates.raid!.orders.length).toBeGreaterThan(0);
     raid.record(s, d, s.gates.raid!, raid.partyFor(s, d, s.gates.raid!, now), ch.result(), now);
@@ -188,8 +196,9 @@ describe('foe intents', () => {
       const s = hunter(level);
       const d = dungeonById(id)!;
       const run = raid.begin(s, d, now);
-      for (let i = 0; i < raid.plan(d, run.seed).length; i++) {
-        const ch = raid.runChamber(d, run.seed, i, raid.partyFor(s, d, run, now));
+      const m = raid.mapOf(d, run);
+      for (const x of m.layers.flat().filter(isFight)) {
+        const ch = raid.runChamber(d, run.seed, x.layer, raid.partyFor(s, d, run, now), chamberOf(d, x));
         const intent: Record<string, { ab: string; at?: string }> = {};
         const fresh = new Set<string>();
         const down = new Set<string>();
@@ -255,16 +264,7 @@ describe('the practice gate', () => {
       const s = defaults();
       const at = now + k * 7919000;
       raid.begin(s, PRACTICE_GATE, at);
-      const run = s.gates.raid!;
-      let turns = 0;
-      let won = true;
-      for (let i = 0; i < raid.plan(PRACTICE_GATE, run.seed).length && won; i++) {
-        const { party, ch } = raid.resume(s, PRACTICE_GATE, run, at);
-        while (ch.turn) { turns++; ch.play(raid.order(s, run, { use: 'Strike', at: ch.turn.foes[0] })); }
-        const res = ch.result();
-        won = res.won;
-        raid.record(s, PRACTICE_GATE, run, party, res, at);
-      }
+      const { won, turns } = walk(s, PRACTICE_GATE, at, (t) => ({ use: 'Strike', at: t.foes[0] }));
       expect(won).toBe(true);
       expect(turns).toBeGreaterThanOrEqual(5);
     }

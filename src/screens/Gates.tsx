@@ -6,6 +6,8 @@ import { allies, board, bossKnown, dungeonById, enemyById, entryBlock, isPractic
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
 import { GATE_XP, practiceAward } from '@/core/progression';
+import { build, mapSeed } from '@/core/map';
+import { MapView } from '@/ui/map';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
@@ -78,7 +80,7 @@ export function Gates() {
       {open && run && (
         <Card hot tone="ember">
           <b>{open.name} is still standing.</b>
-          <p class="muted">You cleared {run.won} of {raid.plan(open, run.seed).length} chambers. Walk away now and it counts as a defeat.</p>
+          <p class="muted">You are {run.at} of {raid.mapOf(open, run).layers.length} steps in. Walk away now and it counts as a defeat.</p>
           <div class="row">
             <Btn kind="ghost" onClick={async () => {
               if (await confirm('Abandon the run?', 'The party is dragged out. Nothing is banked for the chambers you cleared, and you are carried out.', 'Abandon', true)) {
@@ -146,6 +148,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   // The verdict is the engine answering for itself: the gate, run headlessly.
   const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic]);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
+  const map = useMemo(() => build(d, mapSeed(d, dayKey())), [d.id, dayKey()]);
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
   const sh = shop.GATE_SHARDS[d.rank as Rank];
@@ -187,15 +190,20 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Section title="The assessment">
         <div class={`verdict verdict--${v.tone}`} data-tour="assess">
           <b>{v.text}</b>
-          <small>The System ran this gate {proj.runs} times with this party, fighting your turns the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
+          <small>The System ran this gate {proj.runs} times with this party down the marked road, fighting your turns and making your choices the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
         </div>
         <div class="tiles">
           <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />
           <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '—'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />
           <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
-          <Tile label="Chambers" value={d.mobRounds + (d.elite ? 1 : 0) + 1} sub={d.elite ? 'mobs, gatekeeper, boss' : 'mobs, then the boss'} />
+          <Tile label="Depth" value={`${map.layers.length} steps`} sub="a rest, then the boss" />
         </div>
+      </Section>
+
+      <Section title="Today’s map" right="the System’s road is marked">
+        <MapView m={map} road={proj.road} compact />
+        <p class="muted">The map is the same all day. Inside, you pick each step; only a rest lets you leave.</p>
       </Section>
 
       <Section title="Standing orders" right={party.length + squad.length ? 'allies and Shadows' : undefined}>

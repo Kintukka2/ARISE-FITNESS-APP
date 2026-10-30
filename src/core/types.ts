@@ -108,7 +108,7 @@ export interface OpenRaid {
   seed: string;
   /** The day it was entered: the allies are drawn from it. */
   day: string;
-  /** Chambers already resolved. */
+  /** Steps on the map already done. */
   at: number;
   squad: string[];
   /** Party hp/status carried between chambers. */
@@ -127,6 +127,16 @@ export interface OpenRaid {
    * System chose. The fight is deterministic, so these replay it exactly.
    */
   orders: (Order | null)[];
+  /** The map's seed, and the steps chosen on it so far, the last of them perhaps still underway. */
+  map: string;
+  path: string[];
+  /** Gear and shards found on the way, paid out when the run ends unless the party is carried out. */
+  haul: string[];
+  purse: number;
+  /** Blessings picked up at shrines and events, on the hunter for the rest of the run. */
+  blessings: string[];
+  /** A chamber was lost: the run is over, waiting to be settled. */
+  lost: boolean;
 }
 
 export interface LogEntry { day: string; kind: 'gate'; name: string; xp: number }

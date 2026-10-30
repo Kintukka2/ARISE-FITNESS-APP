@@ -70,20 +70,32 @@ fourteen against a boss, so turns matter. But with skills at D, B and S, a turn 
 Strike, one skill, Guard or a potion, and Guard was a guess. Both are fixed in step 5's first half,
 below.
 
-### 2. Dungeon maps
+### 2. Dungeon maps — built
 
-A gate stops being a straight line of chambers. It becomes a short branching map, generated from
-its seed: three to five columns of nodes, paths between them, the boss at the end.
+A gate is a short branching map: a few layers of choices, a rest, then the boss. It is drawn from
+the gate and the day (`core/map.ts`), so the brief shows it before you go in and everyone who
+enters that day walks the same one. Every node is reachable and leads on to the boss; the first
+layer is all fights and every layer holds at least one.
 
-- **Node types:** fight, elite, rest (heal, and the only place you can withdraw), shrine (a
-  choice: a stat blessing for this run, or shards), treasure, trap (a PER check), and event
-  (a short System window with two choices and stated odds).
-- **Engine.** `raid.plan()` becomes `raid.map()`. `OpenRaid` gains the path taken. The node kinds
-  and their odds live in `data/`; their effects resolve in `core/raid.ts`, never in a screen.
-- **The projection** walks the map with a simple policy (the safest path to the boss) and reports
-  that path's clear rate.
-- **The arena screen** gains a map view between chambers; Press On / Withdraw becomes picking the
-  next node.
+- **Steps** (`data/nodes.ts`): fight (banks shards, sometimes gear), gatekeeper (a sure piece of
+  gear), rest (heals, and is the only place to withdraw from), cache (gear a grade below the gate),
+  shrine (one of two blessings for the run), trap (a Perception check) and five events, each a
+  choice with its odds stated, some read off an attribute.
+- **What the run finds is banked on it** (`haul`, `purse`, `blessings`) and paid in `finish`: kept
+  walking out, at the end or from a rest; lost when carried out.
+- **The brief's verdict walks the System's road**, marked on the map: fight first, rest when it
+  can, decline the gambles, avoid traps and gatekeepers. Auto walks it too, and calibration tunes
+  to it, so the verdict is exact for the road it shows and nothing else.
+- **The arena** shows the map between steps, with a strip for the hunter's health, the party
+  still standing, what is banked and the blessings held. Every step and choice is written to the
+  save before it plays.
+- **Save version 2.** A run left open from before maps starts its map over as it stood, or stays
+  lost if it had lost a chamber.
+
+**What is left open.** Mid-map rests are rare (a weight of 6 against fights' 44), so most runs can
+only withdraw right before the boss. That makes every gate a commitment; whether it is too much of
+one is a question for playing it. Calibration now samples twelve days per gate, because a gate's
+difficulty moves a little with its map.
 
 ### 3. System contracts
 

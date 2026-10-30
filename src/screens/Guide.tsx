@@ -7,6 +7,7 @@ import { SLOTS as SQUAD, EXTRACT_MP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
+import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
 
@@ -35,13 +36,23 @@ const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
+    title: 'The map',
+    lines: [
+      'A gate is a map: a few layers of steps, a rest, then the boss. It is drawn from the gate and the day, so the brief shows it before you go in. Inside, you choose each step from the ones your last step leads to.',
+      ...(['fight', 'elite', 'rest', 'treasure', 'shrine', 'trap', 'event'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
+      `A rest gives everyone standing ${REST_HEAL * 100}% of their health back. Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards, a gatekeeper ${FIGHT_PURSE.elite * 100}%. What the run banks, shards and gear, is paid when you walk out: at the end, or from a rest. Carried out, you lose it.`,
+      `Blessings last until you leave the gate: ${BLESSINGS.map((b) => `${b.name} (${b.text})`).join(', ')}.`,
+      'The brief’s verdict walks the marked road, the one the System would take, and makes its choices. Auto takes that road too. Take a riskier one and the verdict no longer speaks for you.',
+    ],
+  },
+  {
     title: 'Fighting',
     lines: [
       'The fight is turn by turn, in order of initiative. On your turn, tap a foe to aim at it, then act. A skill or a Strike always goes at the foe you aimed at first, though it can still miss; a skill that reaches several finds the rest itself.',
       'Every foe shows its next move on its card: the ability, and who it goes at first. What it shows is what it does, unless its target falls first or it is stunned. Your own card counts the foes coming for you.',
       `Guard and you take ${GUARD * 100}% of every hit until your next turn. A field potion restores ${FIELD_POTION_HEAL * 100}% of your health; the satchel carries ${FIELD_POTION.max}, bought at the Exchange.`,
       `Allies and Shadows follow standing orders, set in the brief: ${TACTICS.map((x) => x.name).join(', ')}.`,
-      'Auto hands your turns to the System and presses on between chambers. It is how the System fights when it assesses a gate, so the verdict is what Auto would do; you can do better.',
+      'Auto hands your turns to the System, and your steps: it walks the marked road and makes the System’s choices. It is how the System plays when it assesses a gate, so the verdict is what Auto would do; you can do better.',
       'Every order is written down before it plays, and the fight is fixed by its seed: leave mid-fight and you come back to the same turn, with the same outcome waiting.',
       'You fight a whole run as you walked in. Gear changed or points spent halfway count from the next gate.',
     ],

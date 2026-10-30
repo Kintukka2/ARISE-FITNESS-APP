@@ -39,9 +39,10 @@ Everything runs on the device. There is no server, no account and no network: th
 | Layer | What it is |
 |---|---|
 | **The practice gate** | Valcorde walks every new licence through it once. Clearing it lands you on Level 5 with points to spend |
-| **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief simulates the gate 24 times and tells you the honest clear rate |
+| **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief shows today's map and simulates the System's road through it 24 times: the honest clear rate |
+| **The map** | A few layers of steps, a rest, then the boss. You pick each step: fights, gatekeepers, rests, caches, shrines, traps and events with stated odds. What you find is banked and paid when you walk out; carried out, you lose it. Only a rest lets you withdraw |
 | **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
-| **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of what you cleared; being carried out pays a little and locks you out for twelve hours |
+| **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). Three points per level, five per rank, spent by you |
 | **Classes** | From D-Rank you are named after your highest attribute (25 classes in five lines). A class adds flat points to that attribute and gives you combat skills: at D, C and A, with passives at B and S |
@@ -60,10 +61,11 @@ src/
     save.ts       defaults and migrations
     progression   levels, ranks, gate experience, attributes, classes
     combat        units, abilities, statuses, and the fight: it pauses on the hunter's turn
-    raid          chambers fought turn by turn, orders, the party, rewards, extraction, and the headless projection
+    raid          the run down the map, chambers fought turn by turn, orders, rewards, extraction, the projection
+    map           a gate's map: drawing it, where you can step, the System's road
     gates         the board and the hunters sent with you
     gear, shop, vitals, shadows, missions, story, licence
-  data/         content: enemies, abilities, dungeons, equipment, classes, story text
+  data/         content: enemies, abilities, dungeons, map steps and events, equipment, classes, story text
   app/          the shell: routing, the top bar and nav, and flow.ts, which narrates results
   screens/      one file per screen or major sheet
   ui/           overlays (System windows, sheets, tours, toasts), components, icons
@@ -84,18 +86,19 @@ simulated headlessly.
 ## Balance
 
 Combat difficulty is measured, not guessed. `npm run calibrate` runs every gate against typical
-hunters from the middle of its grade and sets a per-gate multiplier so they clear about 75% of the
-time. Run it after any change to combat, enemies, classes, gear or the party. Its hunters are
-seeded, so two runs give the same answer. `npm run balance` prints the result:
+hunters from the middle of its grade, down the System's road on twelve different days' maps, and
+sets a per-gate multiplier so they clear about 75% of the time. Run it after any change to combat,
+enemies, classes, gear, the party or the map. Its hunters are seeded, so two runs give the same
+answer. `npm run balance` prints the result:
 
 ```
 grade  floor  middle  top   | middle vs one grade up
-  E     57%    67%    76%  |   20%
-  D     58%    64%    80%  |   11%
-  C     71%    82%    90%  |   11%
-  B     70%    74%    82%  |   9%
-  A     65%    70%    85%  |   17%
-  S     47%    73%    86%  |   —
+  E     59%    67%    78%  |   9%
+  D     62%    65%    72%  |   10%
+  C     73%    84%    88%  |   11%
+  B     78%    82%    90%  |   8%
+  A     64%    73%    81%  |   13%
+  S     40%    62%    85%  |   —
 
 Days to each rank (N gates a day at your own grade, 75% cleared, first clears counted):
    3 gates/day  D:2d  C:8d  B:19d  A:38d  S:73d  N:135d

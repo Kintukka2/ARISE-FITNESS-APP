@@ -9,7 +9,7 @@
  */
 import type { Save } from './types';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -64,7 +64,18 @@ export function merge<T>(base: T, saved: unknown): T {
   return out as T;
 }
 
-const MIGRATIONS: Record<number, (s: Obj) => Obj> = {};
+const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
+  // v2: a gate is a map, not a straight line. A run left open across the change starts its map
+  // from the beginning, as it stood, unless it had already lost a chamber: then it is lost.
+  1: (s) => {
+    const raid = isObj(s.gates) ? s.gates.raid : null;
+    if (isObj(raid) && !Array.isArray(raid.path)) {
+      const lost = typeof raid.won === 'number' && typeof raid.at === 'number' && raid.won < raid.at;
+      Object.assign(raid, { map: `${raid.dungeonId}|${raid.day}`, path: [], haul: [], purse: 0, blessings: [], lost, at: 0, orders: [] });
+    }
+    return s;
+  },
+};
 
 export function migrate(raw: Obj): Obj {
   let v = typeof raw.v === 'number' ? raw.v : 1;

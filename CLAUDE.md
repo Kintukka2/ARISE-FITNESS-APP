@@ -16,7 +16,7 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - `npm run screens` — screenshots every screen from `e2e/fixtures/veteran.json`. Look at them after
   UI work. Regenerate the fixture with `npm run fixture` if the save shape changed.
 - `npm run calibrate`, then `npm run balance` — after any change to combat, enemies, abilities,
-  classes, gear, the party or the attribute points a hunter earns. Commit the rewritten
+  classes, gear, the party, the map or the attribute points a hunter earns. Commit the rewritten
   `src/data/gatetune.ts`.
 
 ## Rules that matter
@@ -26,6 +26,11 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `core/` so it can be tested, not in a screen.
 - Every reward from a raid — experience, shards, loot, records — is settled in one engine call,
   `raid.finish`. Nothing pays out on a tap that can be undone.
+- A gate's map is drawn from the gate and the day (`map.mapSeed`). Steps and choices are written to
+  the open run (`raid.choose`, `raid.resolve`) before they play, and every roll a step makes is
+  seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.
+- The brief, Auto and calibration all walk the System's road (`map.systemRoad`) and make the
+  System's choices (`raid.systemChoice`). Change either and you must recalibrate.
 - The fight is deterministic for a seed and a list of orders. The hunter's orders are written to
   the open run (`raid.order`) before they play, and a chamber is resumed by replaying them
   (`raid.resume`). Never let anything in a fight read `Math.random` or the clock.

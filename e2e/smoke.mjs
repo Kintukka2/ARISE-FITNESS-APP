@@ -71,16 +71,29 @@ async function raidGate(row, name, auto = false) {
   await page.locator('text=Enter The Gate').click();
   await drain();
   await page.waitForSelector('.arena');
-  if (auto) await page.locator('.seg__btn', { hasText: 'Auto' }).click();
   await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  if (auto) await page.locator('.seg__btn', { hasText: 'Auto' }).click();
   let turns = 0;
   let resumed = false;
-  for (let i = 0; i < 400; i++) {
-    await page.waitForSelector('.arena__foot .btn, .turnbar, .syswin, .arena--results', { timeout: 20000 });
+  let steps = 0;
+  let panels = 0;
+  for (let i = 0; i < 600; i++) {
+    await page.waitForSelector('.arena__foot .btn, .turnbar, .syswin, .arena--results, button.gnode.is-next, .nodepanel', { timeout: 20000 });
     if (await visible('.arena--results')) break;
     if (await visible('.syswin')) { await drain(); continue; }
+    if (await visible('.arena__foot >> text=Claim The Gate')) { await page.locator('.arena__foot >> text=Claim The Gate').click(); break; }
+    if (await visible('.arena__foot >> text=Carried Out')) {
+      if (name === 'practice') throw new Error(`LOST ${name.toUpperCase()}`);
+      await page.locator('.arena__foot >> text=Carried Out').click();
+      break;
+    }
+    // Auto walks, fights and chooses by itself; a tap here would be a second hand on the wheel.
+    if (auto) {
+      if (await visible('.turnbar')) throw new Error('AUTO STILL ASKED FOR A TURN');
+      await sleep(300);
+      continue;
+    }
     if (await visible('.turnbar')) {
-      if (auto) throw new Error('AUTO STILL ASKED FOR A TURN');
       if (!turns++) {
         await snap(`${name}-turn`);
         // Aim at the last foe standing in the list, so aiming is exercised as well as striking.
@@ -108,17 +121,22 @@ async function raidGate(row, name, auto = false) {
       await page.locator('.turnbar .act', { hasText: 'Strike' }).click();
       continue;
     }
-    if (await visible('text=Claim The Gate')) { await page.locator('text=Claim The Gate').click(); break; }
-    if (await visible('text=Carried Out')) {
-      if (name === 'practice') throw new Error(`LOST ${name.toUpperCase()}`);
-      await page.locator('text=Carried Out').click();
-      break;
+    if (await visible('.nodepanel')) {
+      if (!panels++) await snap(`${name}-step`);
+      if (await visible('.nodepanel .choice-row')) { await page.locator('.nodepanel .choice-row').first().click(); continue; }
+      if (await visible('.nodepanel >> text=Press On')) { await page.locator('.nodepanel >> text=Press On').click(); continue; }
+      await page.locator('.nodepanel >> text=Continue').click();
+      continue;
     }
-    // Auto presses on by itself; a tap here would be a second press.
-    if (auto) { await sleep(300); continue; }
-    await page.locator('text=Press On').click();
+    if (await visible('button.gnode.is-next')) {
+      if (!steps++) await snap(`${name}-map`);
+      await page.locator('button.gnode.is-next').first().click();
+      continue;
+    }
+    if (i === 599) throw new Error(`${name.toUpperCase()} NEVER FINISHED`);
   }
   if (!auto && !turns) throw new Error(`${name.toUpperCase()} NEVER GAVE A TURN`);
+  if (!auto && !steps) throw new Error(`${name.toUpperCase()} NEVER SHOWED THE MAP`);
   if (name === 'practice' && !resumed) throw new Error('THE PRACTICE GATE ENDED BEFORE THE RELOAD CHECK');
   await page.waitForSelector('.arena--results');
   for (const f of await page.locator('.flip').all()) await f.click();

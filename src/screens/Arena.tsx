@@ -1,8 +1,8 @@
 /**
- * The arena. The engine fights the chamber up to the hunter's turn; this
- * plays the log up to there, beat by beat, then asks for an order. Every
- * order goes to the save before it is played, so leaving mid-fight and
- * coming back lands on the same turn.
+ * The arena: the gate's map, and the fights on it. The hunter picks each step;
+ * a fight is fought up to the hunter's turn by the engine, played back beat by
+ * beat, then waits for an order. Every step, choice and order goes to the save
+ * before it plays, so leaving at any point and coming back lands in the same place.
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
@@ -11,6 +11,8 @@ import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_
 import * as story from '@/core/story';
 import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
+import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
+import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -19,7 +21,8 @@ import { rewardChain } from '@/app/flow';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Bar, Btn, GearArt, RankPlate, Shards } from '@/ui/components';
+import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
+import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
 import { HoldButton, pushBack, sys } from '@/ui/overlays';
@@ -100,12 +103,17 @@ function apply(local: UnitView[], b: Beat) {
 
 interface Room { label: string; boss: boolean; index: number }
 
+type Phase = 'map' | 'fight' | 'turn' | 'decide' | 'node' | 'results';
+
+/** A step being shown: a rest or a cache as it happened, or a choice waiting, then how it went. */
+interface Panel { node: MapNode; item?: string; done?: raid.Resolution }
+
 export function Arena() {
   const s = useSave();
   const id = arena.use();
   const d = id ? dungeonById(id) : undefined;
   const run = s.gates.raid;
-  const [phase, setPhase] = useState<'fight' | 'turn' | 'decide' | 'results'>('fight');
+  const [phase, setPhase] = useState<Phase>('map');
   const [room, setRoom] = useState<Room | null>(null);
   const [won, setWon] = useState<boolean | null>(null);
   const [units, setUnits] = useState<UnitView[]>([]);
@@ -114,6 +122,7 @@ export function Arena() {
   const [auto, setAuto] = useState(false);
   const [turn, setTurn] = useState<Turn | null>(null);
   const [aim, setAim] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
   const paceRef = useRef<Pace>(1);
   paceRef.current = pace;
@@ -123,25 +132,87 @@ export function Arena() {
   aimRef.current = aim;
   /** Settles the turn waiting on the hunter. */
   const pick = useRef<((o: Order | null) => void) | null>(null);
-  /** A chamber is being fought: a second Press On (a tap racing Auto) must not open it twice. */
+  /** One thing at a time: a tap racing Auto must never take a step or open a chamber twice. */
   const busy = useRef(false);
   const seq = useRef(0);
-
-  const chambers = d && run ? raid.plan(d, run.seed) : [];
 
   useEffect(() => {
     if (!d) return;
     music.set('raid');
     const off = pushBack(() => true);
-    if (run) void fightNext();
+    if (run) void guarded(dispatch);
     return () => { off(); music.set('gates'); };
   }, []);
 
   if (!d) return null;
+  const m = run ? raid.mapOf(d, run) : null;
 
   const say = (ls: { text: string; tone: string }[]) => {
     if (ls.length) setFeed((f) => [...ls.map((l) => ({ ...l, k: ++seq.current })).reverse(), ...f].slice(0, 7));
   };
+
+  async function guarded(fn: () => Promise<void> | void) {
+    if (busy.current) return;
+    busy.current = true;
+    try { await fn(); } finally { busy.current = false; }
+  }
+
+  /** Do whatever the run is waiting on. Only ever called inside `guarded`. */
+  async function dispatch() {
+    const r = store.get().gates.raid;
+    if (!r || !d) return;
+    // A run closed after a lost chamber, or after the boss fell, is settled by what was recorded.
+    if (r.lost) return end('defeated');
+    if (r.at >= raid.mapOf(d, r).layers.length) return end('cleared');
+    const x = raid.pending(d, r);
+    if (x && isFight(x)) return chamber();
+    if (x) return open({ node: x });
+    toMap();
+  }
+
+  function toMap() {
+    setPanel(null);
+    setPhase('map');
+    music.set('raid');
+    if (autoRef.current) later(() => {
+      const r = store.get().gates.raid;
+      const opts = r ? raid.options(d!, r) : [];
+      if (opts.length) void step(systemPick(opts).id);
+    });
+  }
+
+  /** Run `fn` shortly, if Auto is still on by then. */
+  function later(fn: () => void) {
+    setTimeout(() => { if (autoRef.current) fn(); }, 500);
+  }
+
+  /** Take a step on the map. */
+  function step(nodeId: string) {
+    return guarded(async () => {
+      const res = store.update((x) => raid.choose(x, d!, x.gates.raid!, nodeId));
+      if (!res) return;
+      if (isFight(res.node)) return chamber();
+      open({ node: res.node, item: res.item });
+    });
+  }
+
+  function open(p: Panel) {
+    setPanel(p);
+    setPhase('node');
+    if (!autoRef.current) return;
+    if (!p.done && raid.pending(d!, store.get().gates.raid!)) later(() => void choice(raid.systemChoice(p.node)));
+    else later(() => void guarded(dispatch));
+  }
+
+  /** Make the choice a shrine, a trap or an event is waiting on. */
+  function choice(i: number) {
+    return guarded(() => {
+      const out = store.update((x) => raid.resolve(x, d!, x.gates.raid!, i));
+      if (!out) return;
+      if (out.effect.hurt) { sfx.hit(-40); flash('danger'); } else if (out.won) sfx.success();
+      open({ node: out.node, item: out.item, done: out });
+    });
+  }
 
   /** Play the log from `from` to its end, at the chosen pace. Returns where it got to. */
   async function show(log: Ev[], from: number, local: UnitView[]) {
@@ -177,7 +248,7 @@ export function Arena() {
           'The System waits on you. Tap a foe to aim at it, then act.',
           'Every foe shows what it will do next, and at whom. What it shows is what it does, unless its target falls first.',
           `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>field potion</em> restores ${FIELD_POTION_HEAL * 100}% of your health.`,
-          '<em>Auto</em> lets the System fight your turns for you, as it does when it assesses a gate.',
+          '<em>Auto</em> lets the System fight your turns and pick your way, as it does when it assesses a gate.',
         ],
       });
     }
@@ -194,24 +265,15 @@ export function Arena() {
     f(o);
   }
 
-  async function fightNext() {
-    if (busy.current) return;
-    busy.current = true;
-    try { await chamber(); } finally { busy.current = false; }
-  }
-
+  /** Fight the chamber underway. Only ever called inside `guarded`. */
   async function chamber() {
     const st = store.get();
     const r = st.gates.raid;
     if (!r || !d) return;
-    const plan = raid.plan(d, r.seed);
-    // A run closed between chambers is settled by what was already recorded: a lost chamber, or all of them won.
-    if (r.won < r.at) return end('defeated');
-    if (r.at >= plan.length) return end('cleared');
-    const { party, ch } = raid.resume(st, d, r);
-    const c = plan[r.at];
+    const { party, ch, node } = raid.resume(st, d, r);
+    const c = chamberOf(d, node);
     if (c.boss) music.set('boss');
-    setRoom({ label: c.label, boss: c.boss, index: r.at });
+    setRoom({ label: c.label, boss: c.boss, index: node.layer });
     setWon(null);
     setPhase('fight');
     const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
@@ -244,10 +306,10 @@ export function Arena() {
     if (res.won) buzz(20);
     else { sfx.alarm(); flash('danger'); buzz([40, 60, 120]); }
     setWon(res.won);
-    setPhase('decide');
-    const last = res.index === plan.length - 1;
-    // After `busy` is released, so this press is the only one.
-    if (res.won && !last && autoRef.current) setTimeout(() => { if (autoRef.current) void fightNext(); }, 450);
+    // A lost chamber, or the boss down: that is the run's to end. Anything else, back to the map.
+    if (!res.won || res.boss) return setPhase('decide');
+    await new Promise((r2) => setTimeout(r2, paceRef.current === 'skip' ? 0 : 900));
+    toMap();
   }
 
   function end(outcome: raid.Outcome) {
@@ -265,39 +327,61 @@ export function Arena() {
 
   if (phase === 'results' && result) return <Results d={d} r={result} onDone={leave} />;
 
-  const last = room ? room.index === chambers.length - 1 : false;
   const party = units.filter((u) => u.side === 'p');
   const foes = units.filter((u) => u.side === 'e');
   const hero = party.find((u) => u.uid === 'hero');
   const aiming = phase === 'turn' && turn ? turn.foes : [];
+  const depth = m?.layers.length ?? 0;
   const toggleAuto = () => {
     sfx.tap();
     const on = !auto;
     autoRef.current = on;
     setAuto(on);
     if (!on) return;
-    // Switching Auto on hands the System the turn that is waiting, or the choice to press on.
+    // Switching Auto on hands the System whatever is waiting: a turn, the next step, or a choice.
     give(null);
-    if (phase === 'decide' && won && !last) void fightNext();
+    if (phase === 'map') toMap();
+    if (phase === 'node' && panel) open(panel);
   };
+  const onMap = phase === 'map' || phase === 'node';
+  // The step underway, or about to be taken; a rest or cache already done still counts as where you stand.
+  const here = !run ? 1 : Math.min(depth, raid.pending(d, run) || phase !== 'node' ? run.at + 1 : run.at);
+  const head = phase === 'node' && panel ? NODE[panel.node.kind].name : onMap ? 'Choose your way' : room?.label ?? '…';
   return (
-    <div class={`arena ${room?.boss ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
+    <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
       <header class="arena__head">
-        <div><span class="label">{d.name}</span><b>{room?.label ?? '…'}</b></div>
-        <span class="label num">Chamber {(room?.index ?? 0) + 1} of {chambers.length}</span>
+        <div><span class="label">{d.name}</span><b>{head}</b></div>
+        <span class="label num">Step {here} of {depth}</span>
       </header>
-      <div class="arena__field">
-        <div class="arena__side">
-          {party.map((u) => <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid).length} />)}
+      {onMap && run && m ? (
+        <div class="arena__map">
+          <RunStrip s={s} d={d} />
+          {phase === 'node' && panel
+            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} />
+            : <>
+              {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
+              <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)} />
+              {raid.canWithdraw(d, run)
+                ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
+                : <small class="muted center">Tap a step that glows. Only a rest lets you leave the gate.</small>}
+            </>}
         </div>
-        <div class="arena__side arena__side--foes">
-          {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-            intent={u.hp > 0 ? u.intent : undefined} party={party} />)}
-        </div>
-      </div>
-      <ol class="arena__feed" aria-live="polite">
-        {feed.map((l) => <li key={l.k} class={`feed feed--${l.tone}`}>{l.text}</li>)}
-      </ol>
+      ) : (
+        <>
+          <div class="arena__field">
+            <div class="arena__side">
+              {party.map((u) => <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid).length} />)}
+            </div>
+            <div class="arena__side arena__side--foes">
+              {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
+                intent={u.hp > 0 ? u.intent : undefined} party={party} />)}
+            </div>
+          </div>
+          <ol class="arena__feed" aria-live="polite">
+            {feed.map((l) => <li key={l.k} class={`feed feed--${l.tone}`}>{l.text}</li>)}
+          </ol>
+        </>
+      )}
       <footer class="arena__foot">
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
@@ -316,29 +400,96 @@ export function Arena() {
             </div>
           </div>
         )}
-        {(phase === 'fight' || phase === 'turn') && (
+        {phase !== 'decide' && (
           <div class="seg" role="radiogroup" aria-label="Playback speed">
             {(['1', '2', 'skip'] as const).map((p) => {
               const key = (p === 'skip' ? 'skip' : Number(p)) as Pace;
               return <button type="button" role="radio" aria-checked={pace === key} key={p} class={`seg__btn ${pace === key ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setPace(key); }}>{p === 'skip' ? 'Skip' : `${p}×`}</button>;
             })}
-            <button type="button" role="switch" aria-checked={auto} class={`seg__btn ${auto ? 'is-on' : ''}`} onClick={toggleAuto} title="The System fights your turns and presses on">Auto</button>
+            <button type="button" role="switch" aria-checked={auto} class={`seg__btn ${auto ? 'is-on' : ''}`} onClick={toggleAuto} title="The System fights your turns and picks your way">Auto</button>
           </div>
         )}
         {phase === 'decide' && room && (
           won
-            ? last
-              ? <Btn kind="primary" size="lg" block sound="success" onClick={() => end('cleared')}>Claim The Gate</Btn>
-              : auto
-                ? <Btn kind="ghost" block onClick={toggleAuto}>Pressing on… tap to stop</Btn>
-                : <div class="row">
-                  <Btn kind="ghost" onClick={() => end('withdrawn')}>Withdraw</Btn>
-                  <Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => void fightNext()}>Press On</Btn>
-                </div>
+            ? <Btn kind="primary" size="lg" block sound="success" onClick={() => end('cleared')}>Claim The Gate</Btn>
             : <Btn kind="danger" size="lg" block onClick={() => end('defeated')}>Carried Out</Btn>
         )}
       </footer>
     </div>
+  );
+}
+
+/** What the run is carrying: the hunter's health, the allies still up, what it has banked, its blessings. */
+function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<ReturnType<typeof dungeonById>> }) {
+  const run = s.gates.raid;
+  if (!run) return null;
+  const party = raid.partyFor(s, d, run);
+  const hero = party[0];
+  const up = party.slice(1).filter((u) => u.alive()).length;
+  return (
+    <div class="runstrip">
+      <div class="runstrip__hp"><span class="label">You</span><HpBar cur={Math.round(Math.max(0, hero.hp))} max={hero.maxHp} tone="hp" /></div>
+      <div class="runstrip__row">
+        <small>{up} of {party.length - 1} beside you standing</small>
+        <small><Shards n={run.purse ?? 0} /> · {(run.haul ?? []).length} found</small>
+      </div>
+      {(run.blessings ?? []).length > 0 && (
+        <div class="chips">{run.blessings.map((b) => <span key={b} class="chip" data-tone="gold" title={blessingById(b)?.text}>{blessingById(b)?.name}</span>)}</div>
+      )}
+    </div>
+  );
+}
+
+/** A step that is not a fight: what happened, or the choice it puts to you. */
+function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
+  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void;
+}) {
+  const s = useSave();
+  const run = s.gates.raid;
+  const x = p.node;
+  const kind = NODE[x.kind];
+  const ev = raid.eventAt(x);
+  const hero = run?.party[0];
+  const waiting = !p.done && run && raid.pending(d, run)?.id === x.id;
+  const item = p.item ? gear.gearDef(p.item) : null;
+  return (
+    <section class={`nodepanel nodepanel--${x.kind}`}>
+      <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
+      {x.kind === 'rest' && <p>The party catches its breath: everyone standing gets {REST_HEAL * 100}% of their health back, and what ails them lifts.</p>}
+      {x.kind === 'treasure' && <p>{item ? <>Under the dust: <strong>{item.name}</strong>. It is banked, and comes out with you, unless you are carried out.</> : 'Someone got here first. Nothing left.'}</p>}
+      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one. The blessing lasts until you leave the gate.</p>}
+      {ev && !p.done && <p>{ev.text}</p>}
+      {p.done && <p class={p.done.won ? 'grant' : 'warn'}>{p.done.effect.text}{p.done.item ? ` ${gear.gearDef(p.done.item)?.name} is banked.` : ''}{p.done.blessing && x.kind !== 'shrine' ? ` ${blessingById(p.done.blessing)?.name}: ${blessingById(p.done.blessing)?.text}.` : ''}</p>}
+      {waiting && x.kind === 'shrine' && (
+        <div class="stack stack--tight">
+          {(x.offer ?? []).map((b, i) => (
+            <button type="button" key={b} class="choice-row" onClick={() => onChoose(i)}>
+              <b>{blessingById(b)?.name}</b><small>{blessingById(b)?.text}</small>
+            </button>
+          ))}
+        </div>
+      )}
+      {waiting && ev && hero && (
+        <div class="stack stack--tight">
+          {ev.choices.map((c, i) => {
+            const odds = raid.oddsOf(c, hero);
+            return (
+              <button type="button" key={c.label} class="choice-row" onClick={() => onChoose(i)}>
+                <b>{c.label}</b><small>{odds < 1 ? `${Math.round(odds * 100)}% it goes well${c.check ? `, read off your ${c.check.stat}` : ''}` : 'Certain'}</small>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {!waiting && (
+        x.kind === 'rest' && run && raid.canWithdraw(d, run)
+          ? <div class="row">
+            <Btn kind="ghost" onClick={onWithdraw}>Withdraw</Btn>
+            <Btn kind="primary" size="lg" class="grow" sound="gate" onClick={onGo}>Press On</Btn>
+          </div>
+          : <Btn kind="primary" size="lg" block sound="tap" onClick={onGo}>Continue</Btn>
+      )}
+    </section>
   );
 }
 
@@ -387,12 +538,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
           <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.' : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
-            : r.outcome === 'withdrawn' ? `You walked back out after ${r.chambersWon} of ${r.chambers} chambers. It is still open.`
+            : r.outcome === 'withdrawn' ? `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
               : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
         </header>
         <div class="tiles">
           <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared'}</small></div>
-          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty} /></b>{r.bounty > 0 ? <small class="tile__sub">includes a first-clear bounty of {r.bounty}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
+          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty} /></b>{r.bounty > 0 ? <small class="tile__sub">includes a first-clear bounty of {r.bounty}</small> : r.banked > 0 ? <small class="tile__sub">{r.banked} of it banked on the way</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
           <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `locked out ${Math.ceil(v.lockedFor / 36e5)}h` : 'recovers ~5% an hour'}</small></div>
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of 100</small></div>
         </div>
