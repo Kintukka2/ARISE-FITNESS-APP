@@ -6,7 +6,7 @@ import { DUNGEONS } from '@/data/dungeons';
 import { BEATS } from '@/data/narrative';
 import { ISSUED } from '@/data/equipment';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
-import { defOf, power, SLOTS, worn } from './gear';
+import { defOf, power, setPieces, setsIn, SLOTS, worn } from './gear';
 import { gateRank, STAT_CAP } from './progression';
 import type { Attrs, Save, Stat } from './types';
 import { STATS } from './types';
@@ -44,6 +44,7 @@ export const MISSIONS: Mission[] = [
   },
   { id: 'names_on_board', name: 'Names On The Board', tier: 'minor', did: 'Stood in a party with ten different hunters.', grant: { PER: 1 }, check: (s) => s.gates.met.length >= 10 },
   { id: 'bestiary', name: 'Bestiary', tier: 'minor', did: 'Felled creatures of five different families.', grant: { INT: 1 }, check: (s) => families(s) >= 5 },
+  { id: 'full_set', name: 'Matched', tier: 'minor', did: 'Wore every piece of a set at once.', grant: { free: 1 }, check: (s) => [...setsIn(worn(s))].some(([id, n]) => n >= setPieces(id).length) },
   { id: 'spire_first', name: 'Up', tier: 'minor', did: 'Took a block of the Pale Spire, boss and all.', grant: { AGI: 1 }, check: (s) => s.spire.top >= BLOCK },
 
   // Directive — 2–3 points

@@ -1,9 +1,11 @@
 /**
  * Equipment: ten slots, six rarities. Every piece's core bonus rolls between
  * 75% and 125% of its design, and its unique properties roll inside their
- * ranges. Both are seeded off the item id, so a piece never changes.
+ * ranges. Both are seeded off the item id, so a piece never changes unless it
+ * is upgraded. Three-piece sets pay a bonus for two pieces worn, and for all three.
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
+import { SET_KEEP, setById, UPGRADE } from '@/data/sets';
 import type { Attrs, GearDef, Item, Rank, Save, SlotKey, Stat } from './types';
 import { STATS } from './types';
 import { rng, round2, uid } from './util';
@@ -113,8 +115,21 @@ export function unequip(s: Save, slot: SlotKey) {
   delete s.equipped[slot];
 }
 
-/** Value used to rank pieces for auto-equip: score first, then the stat total. */
-const worth = (it: Item) => score(it) * 1000 + Object.values(coreOf(it)).reduce((a, b) => a + (b ?? 0), 0);
+/** The pieces of a set the hunter holds, by design: what Auto Equip and the item sheet count. */
+export const heldOf = (s: Save, set: string) => new Set(s.items.map((i) => defOf(i)).filter((d) => d?.set === set).map((d) => d!.id));
+
+/**
+ * Value used to rank pieces for auto-equip: score first, then the stat total. A
+ * piece of a set the hunter holds two or more of leans a share of its rarity's
+ * score higher for each other piece, so Auto Equip keeps a set together unless
+ * something is a good deal better.
+ */
+function worth(s: Save, it: Item) {
+  const d = defOf(it);
+  const held = d?.set ? heldOf(s, d.set).size : 0;
+  const lean = d && held >= 2 ? RARITY[d.rank].score * SET_KEEP * (held - 1) : 0;
+  return (score(it) + lean) * 1000 + Object.values(coreOf(it)).reduce((a, b) => a + (b ?? 0), 0);
+}
 
 /** The best piece for every slot: a plan of slot → item id (or null to clear). */
 export function autoPlan(s: Save): Partial<Record<SlotKey, string | null>> {
@@ -122,7 +137,7 @@ export function autoPlan(s: Save): Partial<Record<SlotKey, string | null>> {
   const groups = new Map<string, SlotKey[]>();
   for (const sl of SLOTS) groups.set(sl.accepts, [...(groups.get(sl.accepts) ?? []), sl.key]);
   for (const [type, keys] of groups) {
-    const best = s.items.filter((i) => defOf(i)?.slot === type).sort((a, b) => worth(b) - worth(a)).slice(0, keys.length);
+    const best = s.items.filter((i) => defOf(i)?.slot === type).sort((a, b) => worth(s, b) - worth(s, a)).slice(0, keys.length);
     const settled: Partial<Record<SlotKey, string>> = {};
     const placed = new Set<string>();
     for (const k of keys) {
@@ -155,9 +170,9 @@ export function beatsWorn(s: Save, it: Item): boolean {
   for (const f of fits) {
     const w = equippedIn(s, f.key);
     if (!w) return true;
-    weakest = Math.min(weakest, worth(w));
+    weakest = Math.min(weakest, worth(s, w));
   }
-  return worth(it) > weakest;
+  return worth(s, it) > weakest;
 }
 
 /** Empty slots the bag holds something for. */
@@ -238,6 +253,76 @@ export function rollBonuses(items: Item[]): Record<string, number> {
     });
   }
   return out;
+}
+
+// ------------------------------------------------------------------ sets
+
+export const setPieces = (set: string) => EQUIPMENT.filter((d) => d.set === set);
+
+/** Sets among these pieces, with how many different pieces of each. Two of the same design count once. */
+export function setsIn(items: Item[]): Map<string, number> {
+  const seen = new Map<string, Set<string>>();
+  for (const it of items) {
+    const d = defOf(it);
+    if (!d?.set) continue;
+    if (!seen.has(d.set)) seen.set(d.set, new Set());
+    seen.get(d.set)!.add(d.id);
+  }
+  return new Map([...seen].map(([k, v]) => [k, v.size]));
+}
+
+/** What the sets among worn pieces pay, summed by derived stat, in the units of `rollBonuses`. */
+export function setBonuses(items: Item[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [id, n] of setsIn(items)) {
+    const set = setById(id);
+    if (!set) continue;
+    for (const b of [n >= 2 ? set.two : {}, n >= 3 ? set.three : {}]) for (const [k, v] of Object.entries(b)) out[k] = (out[k] ?? 0) + v;
+  }
+  return out;
+}
+
+/** Bonuses added together, as a hunter carries them into a fight. */
+export function sumBonuses(...xs: Record<string, number>[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const x of xs) for (const [k, v] of Object.entries(x)) out[k] = (out[k] ?? 0) + v;
+  return out;
+}
+
+const BONUS_NAMES: Record<string, string> = {
+  patk: 'attack', mpow: 'magic', defense: 'defence', resist: 'resistance', maxHp: 'maximum HP', recovery: 'healing between fights',
+  crit: 'critical chance', accuracy: 'accuracy', evasion: 'evasion', initiative: 'initiative', statusChance: 'status chance', statusSave: 'status save',
+};
+const FRACTION = new Set(['patk', 'mpow', 'defense', 'resist', 'maxHp', 'recovery']);
+
+/** Pairs that read as one when they are equal. */
+const PAIRS: [string, string][] = [['patk', 'mpow'], ['defense', 'resist']];
+
+/** A bonus in words, read from its numbers: "+8% attack and magic", "+6 critical chance". */
+export function bonusText(b: Record<string, number>): string {
+  const amount = (k: string, v: number) => (FRACTION.has(k) ? `+${Math.round(v * 100)}%` : `+${v}`);
+  const left = { ...b };
+  const parts: string[] = [];
+  for (const [x, y] of PAIRS) {
+    if (left[x] === undefined || left[x] !== left[y]) continue;
+    parts.push(`${amount(x, left[x])} ${BONUS_NAMES[x]} and ${BONUS_NAMES[y]}`);
+    delete left[x];
+    delete left[y];
+  }
+  for (const [k, v] of Object.entries(left)) parts.push(`${amount(k, v)} ${BONUS_NAMES[k] ?? k}`);
+  return parts.join(', ');
+}
+
+// ------------------------------------------------------------------ upgrades
+
+/** The piece one upgrade step on: its quality and every property a share of the way closer to their best. Null when there is nothing to raise. */
+export function upgradeStep(it: Item): Item | null {
+  const d = defOf(it);
+  if (!d || d.issued) return null;
+  const q = round2(Math.min(Q_HIGH, it.q + (Q_HIGH - Q_LOW) * UPGRADE.share));
+  const rolls = (d.rolls ?? []).map((r, i) => round2(Math.min(r.max, (it.rolls[i] ?? r.min) + (r.max - r.min) * UPGRADE.share)));
+  if (q === it.q && rolls.every((v, i) => v === it.rolls[i])) return null;
+  return { ...it, q, rolls, up: (it.up ?? 0) + 1 };
 }
 
 export function rollText(it: Item): string[] {

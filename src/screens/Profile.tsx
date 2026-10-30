@@ -15,7 +15,9 @@ import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { weekBest } from '@/core/spire';
-import { Btn, Card, Chip, Empty, Fold, GearArt, HpBar, IconBtn, KV, Panel, Shards, Tile, useNow } from '@/ui/components';
+import { dungeonById } from '@/core/gates';
+import { setById, type GearSet } from '@/data/sets';
+import { Btn, Card, Chip, Empty, Fold, GearArt, HpBar, IconBtn, KV, Panel, Section, Shards, Tile, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
@@ -191,11 +193,68 @@ function Equipment() {
         <div class="doll__figure" aria-hidden="true"><Glyph name="profile" /><span class="doll__ring" /></div>
         <div class="doll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
       </div>
+      <ActiveSets s={s} />
       <div class="row">
         <Btn kind="ghost" class="grow" onClick={openInventory}><Glyph name="bag" /> Inventory · {s.items.length}</Btn>
         <Btn kind="ghost" class="grow" onClick={openExchange}><Shards n={s.wallet.shards} /> Exchange</Btn>
       </div>
     </Panel>
+  );
+}
+
+/** The sets the hunter is wearing two or more pieces of, and what they pay. */
+function ActiveSets({ s }: { s: Save }) {
+  const on = [...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2);
+  if (!on.length) return null;
+  return (
+    <ul class="setlist" aria-label="Set bonuses">
+      {on.map(([id, n]) => {
+        const set = setById(id)!;
+        return <li key={id}><b>{id}</b><span class="num">{n} of {gear.setPieces(id).length}</span><small>{gear.bonusText(gear.sumBonuses(set.two, n >= 3 ? set.three : {}))}</small></li>;
+      })}
+    </ul>
+  );
+}
+
+/** A set as the item sheet shows it: its pieces, what two and three of them pay, and where they come from. */
+function SetBlock({ set, s }: { set: GearSet; s: Save }) {
+  const pieces = gear.setPieces(set.id);
+  const held = gear.heldOf(s, set.id);
+  const worn = gear.setsIn(gear.worn(s)).get(set.id) ?? 0;
+  const home = dungeonById(set.home);
+  return (
+    <Section title={`${set.id} set`} right={`${held.size} of ${pieces.length} held · ${worn} worn`}>
+      <ul class="setpieces">
+        {pieces.map((p) => <li key={p.id} class={held.has(p.id) ? 'is-held' : ''}><Glyph name={held.has(p.id) ? 'check' : 'unknown'} />{p.name}<small>{p.slot}</small></li>)}
+      </ul>
+      <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b>2 worn</b><span>{gear.bonusText(set.two)}</span></div>
+      <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b>3 worn</b><span>{gear.bonusText(set.three)}</span></div>
+      {home && <p class="hint">Its home is {home.name}, a {home.rank}-Rank gate. Every clear there leaves a piece of it, one you do not hold yet while there is one.</p>}
+    </Section>
+  );
+}
+
+/** The next upgrade step on a piece: what it raises, and what it costs. */
+function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
+  const next = gear.upgradeStep(it);
+  const cost = shop.upgradeCost(it);
+  if (!next || cost === null) return <p class="hint">At its design’s best. There is nothing left to raise.</p>;
+  const short = s.wallet.shards < cost;
+  return (
+    <Section title="Upgrade" right={it.up ? `${it.up} step${it.up === 1 ? '' : 's'} bought` : 'at the Exchange'}>
+      <div class="upgrade">
+        <KV k="Quality" v={`${gear.quality(it)}% → ${gear.quality(next)}%`} />
+        <KV k="Core" v={gear.coreText(next)} />
+        {gear.rollText(next).map((t) => <KV key={t} k="Property" v={t} />)}
+      </div>
+      <Btn kind="gold" disabled={short} onClick={() => {
+        if (!store.update((x) => shop.upgrade(x, it.id))) return;
+        sfx.success();
+        buzz([14, 24]);
+        toast(`${gear.defOf(it)?.name} upgraded.`, 'good');
+        void checkAwards();
+      }}>{short ? `Short ${cost - s.wallet.shards} shards` : <>Upgrade · <Shards n={cost} /></>}</Btn>
+    </Section>
   );
 }
 
@@ -208,7 +267,7 @@ export function ItemLine({ it, s, onClick }: { it: Item; s: Save; onClick?: () =
       <span class="itemrow__text">
         <b>{d.name} {s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}{gear.beatsWorn(s, it) && <span class="up" title="Better than what you are wearing">▲</span>}</b>
         <small>{gear.coreText(it)}</small>
-        <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(it))}</small>
+        <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(it))}{d.set ? ` · ${d.set} set` : ''}{it.up ? ` · upgraded ${it.up}` : ''}</small>
       </span>
     </button>
   );
@@ -259,6 +318,8 @@ export function openItem(id: string) {
           <KV k="Core" v={gear.coreText(it)} />
           {gear.rollText(it).map((t) => <KV key={t} k="Property" v={t} />)}
           {d.desc && <p class="muted">{d.desc}</p>}
+          {!d.issued && <UpgradeBlock it={it} s={s} />}
+          {d.set && setById(d.set) && <SetBlock set={setById(d.set)!} s={s} />}
           <div class="row">
             <Btn kind="primary" class="grow" sound="success" onClick={() => { store.update((x) => (worn ? gear.unequip(x, worn) : gear.equip(x, it.id))); toast(`${d.name} ${worn ? 'stowed' : 'equipped'}.`, 'xp'); void checkAwards(); }}>{worn ? 'Unequip' : 'Equip'}</Btn>
             <IconBtn icon="star" label={s.favourites.includes(it.id) ? 'Unstar' : 'Star (protects from bulk recycle)'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />

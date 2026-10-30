@@ -8,7 +8,7 @@
 import { writeFileSync } from 'node:fs';
 import { defaults } from '@/core/save';
 import { autoAllocate, grantXP, syncClass, totalXpFor } from '@/core/progression';
-import { autoEquip, grant, issueKit, ofRank } from '@/core/gear';
+import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
 import { bind } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
@@ -34,7 +34,12 @@ for (const rank of ['D', 'C', 'C', 'B'] as const) for (const slot of ['Head', 'C
   if (r() < 0.55) grant(s, pool[Math.floor(r() * pool.length)].id);
 }
 grant(s, ofRank('S').find((d) => d.slot === 'Weapon')!.id);
+// Two pieces of the Warden set, and the third still to find.
+for (const d of setPieces('Warden').slice(0, 2)) grant(s, d.id, `fixture|${d.id}`);
 autoEquip(s);
+// Something worn, upgraded three steps at the Exchange.
+const worn = s.items.findIndex((it) => it.id === s.equipped.hands);
+if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[worn]) ?? s.items[worn];
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));
 s.shadows.army[0].kills = 14;
 s.shadows.army[1].kills = 6;
