@@ -4,6 +4,10 @@
  * plays out the same way every time, so a fight can be replayed from its
  * orders alone. Nobody waits in `fight`: the auto policy plays everyone.
  *
+ * Foes show their hand. Each one settles its next action (ability and first
+ * target) as soon as its last one is done, and then does exactly that,
+ * unless the target fell first or it is stunned.
+ *
  * Everything a unit is worth comes from its five attributes. Abilities and
  * passives are data; statuses are a table of multipliers.
  */
@@ -85,6 +89,8 @@ export const STATUS_TEXT: Record<string, string> = {
 };
 
 const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0 };
+/** How many an ability reaches, by its profile. */
+export const reachOf = (profile: string) => REACH[profile] ?? 1;
 export const REACH_TEXT: Record<string, string> = {
   single: 'one target', cleave: 'two targets', volley: 'three targets', spread: 'three targets',
   burst: 'four targets', wild: 'three targets', all: 'every foe', support: 'the whole party',
@@ -132,6 +138,8 @@ export class Unit {
   atkMult: number; tag: UnitSpec['tag']; ref?: string;
   /** The last foe to land a hit on this unit, for allies told to protect it. */
   hitBy?: Unit;
+  /** A foe's next action, settled in advance and shown: an ability, and the unit it goes at first. */
+  intent?: { ab: string; at?: string };
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
@@ -187,6 +195,7 @@ export type Ev =
   | { t: 'expire'; v: string; s: string }
   | { t: 'down'; v: string }
   | { t: 'guard'; a: string }
+  | { t: 'intent'; u: string; ab: string; at?: string }
   | { t: 'heal'; a: string; amt: number; hp: number }
   | { t: 'passive'; u: string; p: string; k: string; hp?: number };
 
@@ -199,8 +208,9 @@ function statusLands(src: Unit, t: Unit, st: string) {
   return Math.max(5, c);
 }
 
-function choose(u: Unit, r: Rand): Ability {
-  const ready = u.kit.map(ability).filter((a): a is Ability => !!a && !u.cd[a.name]);
+/** The auto policy's pick. `ahead` counts the cooldown ticks that will pass before the action happens. */
+function choose(u: Unit, r: Rand, ahead = 0): Ability {
+  const ready = u.kit.map(ability).filter((a): a is Ability => !!a && (u.cd[a.name] ?? 0) <= ahead);
   if (!ready.length) return STRIKE;
   if (ready.length === 1) return ready[0];
   const heavy = ready.reduce((a, b) => (b.mult > a.mult ? b : a));
@@ -211,12 +221,30 @@ function choose(u: Unit, r: Rand): Ability {
 function targets(a: Ability, foes: Unit[], r: Rand, first?: Unit): Unit[] {
   const live = foes.filter((f) => f.alive());
   const n = REACH[a.profile] ?? 1;
-  if (n >= live.length) return live;
+  // Reaching everyone still means the one aimed at is hit first.
+  if (n >= live.length) return first && live.includes(first) ? [first, ...live.filter((x) => x !== first)] : live;
   const pool = live.slice();
   const out: Unit[] = [];
   if (first && pool.includes(first)) out.push(...pool.splice(pool.indexOf(first), 1));
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]);
   return out;
+}
+
+/** Settle a foe's next action and show it. Mutates. */
+function foresee(u: Unit, enemy: Unit[], r: Rand, log: Ev[], ahead: number) {
+  const a = choose(u, r, ahead);
+  const live = enemy.filter((x) => x.alive());
+  const aimed = a.profile !== 'support' && a.profile !== 'all' && live.length > 0;
+  u.intent = { ab: a.name, at: aimed ? live[Math.floor(r() * live.length)].uid : undefined };
+  log.push({ t: 'intent', u: u.uid, ab: u.intent.ab, at: u.intent.at });
+}
+
+/** The ability a foe settled on, if it can still use it. */
+function intended(u: Unit): Ability | null {
+  if (!u.intent) return null;
+  if (u.intent.ab === STRIKE.name) return STRIKE;
+  const a = ability(u.intent.ab);
+  return a && !u.cd[a.name] ? a : null;
 }
 
 /** The hunter's order, if it names something they can use right now. */
@@ -243,6 +271,9 @@ function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Un
   if (!live.length) return undefined;
   if (tactic === 'finish') return live.reduce((x, y) => (y.hp < x.hp ? y : x));
   if (tactic === 'protect') {
+    // Whatever is about to hit the hunter, then whatever last did, then whatever hits hardest.
+    const coming = live.filter((f) => hero && f.intent?.at === hero.uid);
+    if (coming.length) return coming.reduce((x, y) => (threat(y) > threat(x) ? y : x));
     const last = hero?.hitBy;
     return last && last.alive() && live.includes(last) ? last : live.reduce((x, y) => (threat(y) > threat(x) ? y : x));
   }
@@ -284,7 +315,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp) });
     return;
   }
-  const a = (o && ordered(u, o)) ?? choose(u, r);
+  const a = (o && ordered(u, o)) ?? intended(u) ?? choose(u, r);
   if (a.cd) u.cd[a.name] = a.cd;
   if (a.profile === 'support') {
     for (const f of friends) if (f.alive()) f.status.Rallied = STATUS.Rallied.turns;
@@ -292,7 +323,9 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     return;
   }
   const magic = a.type === 'magic';
-  const first = o?.at ? foes.find((f) => f.uid === o.at && f.alive()) : aim(u, a, foes, ctx.tactic, ctx.hero);
+  const meant = u.intent?.ab === a.name ? u.intent.at : undefined;
+  const at = o?.at ?? meant;
+  const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, ctx.tactic, ctx.hero);
   for (const t of targets(a, foes, r, first)) {
     const aim = u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0);
     if (r() * 100 > hitChance(aim, t.eva())) {
@@ -410,6 +443,7 @@ export function* battle(
   openSide(party, log);
   openSide(foes, log);
   const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0 };
+  for (const u of foes) if (u.alive()) foresee(u, party, r, log, 0);
   let round = 0;
   const any = (xs: Unit[]) => xs.some((x) => x.alive());
   while (round < ROUND_CAP && any(party) && any(foes)) {
@@ -426,6 +460,8 @@ export function* battle(
         const wait = u.uid === opts.hero && !u.status.Stunned;
         const o = wait ? (yield turnOf(u, enemy, ctx.potions)) ?? null : null;
         act(u, enemy, own, r, log, onKill, o, ctx);
+        // A foe settles its next action at once. If that action is next round, a cooldown tick comes first.
+        if (u.side === 'e' && u.alive() && any(enemy)) foresee(u, enemy, r, log, k < reps - 1 ? 0 : 1);
       }
     }
     for (const u of [...party, ...foes]) if (u.alive()) endOfRound(u, log, onKill);

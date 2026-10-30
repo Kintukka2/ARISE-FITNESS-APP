@@ -66,11 +66,9 @@ hunter's turns to the System and presses on between chambers, for grinding.
   (`INSTRUCTOR_RESTRAINT`) so the kills are the hunter's.
 
 **What playing it showed.** A typical hunter gets two or three turns in a mob chamber and eight to
-fourteen against a boss, so turns matter. But class skills unlock at D, B and S, and the first one
-has no cooldown: from E to C-Rank a turn is Strike, one skill, Guard or a potion. That is thin for
-the first thirty-five levels, and it is the first thing step 5 should fix. **Foe intents** (showing
-what each foe will do next, so Guard and target choices are read rather than guessed) would deepen
-every turn at every rank; they change how foes choose, so they need a recalibration.
+fourteen against a boss, so turns matter. But with skills at D, B and S, a turn from E to C-Rank was
+Strike, one skill, Guard or a potion, and Guard was a guess. Both are fixed in step 5's first half,
+below.
 
 ### 2. Dungeon maps
 
@@ -109,11 +107,15 @@ every fifth floor is a boss; difficulty keeps scaling past S-Rank.
 
 ### 5. Depth for the hunter
 
-- **Skills sooner:** a second class skill by C-Rank and a third by A, so the early turns have real
-  choices. Today the first skill arrives at D, the second at B and the third at S.
+- **Skills sooner — built.** Class skills arrive at D, C and A, passives at B and S. A C-Rank hunter
+  has two skills, one with a cooldown. Every rank still adds exactly one thing.
+- **Foe intents — built.** Each foe settles its next action (ability and first target) the moment
+  its last one ends, shows it on its card, and does exactly that unless its target falls first or
+  it is stunned. Intents are chosen against the cooldowns as they will be when the foe acts, so a
+  one-round cooldown stays one round. The hunter's card counts the foes coming for them, and
+  *Protect The Hunter* goes for whatever is about to hit you. Gates recalibrated.
 - **Skill choices at rank-up:** each class rung offers two skills and you keep one, instead of
   receiving the whole line. The choice is permanent until the next rank.
-- **Foe intents:** each foe shows what it will do on its next turn.
 - **Gear sets:** sixteen sets already exist in `data/equipment.ts` (`set` on a design), and none of
   them does anything yet. Two and four pieces of a set grant bonuses, defined as data.
 - **Upgrading:** spend shards to raise an item's quality within its design's range, with the

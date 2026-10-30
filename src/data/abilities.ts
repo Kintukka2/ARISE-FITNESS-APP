@@ -153,20 +153,20 @@ export const ABILITIES: Ability[] = [
 /** What the five class lines can do, rung by rung (rung 0 = D-Rank). */
 export const CLASS_SKILLS: (Ability & { line: string; rung: number })[] = [
   {"name":"Hammerblow","type":"physical","profile":"single","mult":1.15,"cd":0,"inflicts":[],"line":"STR","rung":0},
-  {"name":"Sundering Arc","type":"physical","profile":"cleave","mult":1.1,"cd":2,"inflicts":["Staggered"],"line":"STR","rung":2},
-  {"name":"Cataclysm","type":"physical","profile":"burst","mult":1.5,"cd":4,"inflicts":["Stunned"],"line":"STR","rung":4},
+  {"name":"Sundering Arc","type":"physical","profile":"cleave","mult":1.1,"cd":2,"inflicts":["Staggered"],"line":"STR","rung":1},
+  {"name":"Cataclysm","type":"physical","profile":"burst","mult":1.5,"cd":4,"inflicts":["Stunned"],"line":"STR","rung":3},
   {"name":"Quick Cut","type":"physical","profile":"single","mult":1.05,"cd":0,"inflicts":[],"line":"AGI","rung":0},
-  {"name":"Bladestorm","type":"physical","profile":"cleave","mult":1.2,"cd":2,"inflicts":["Bleeding"],"line":"AGI","rung":2},
-  {"name":"Afterimage","type":"physical","profile":"volley","mult":1.35,"cd":3,"inflicts":["Marked"],"line":"AGI","rung":4},
+  {"name":"Bladestorm","type":"physical","profile":"cleave","mult":1.2,"cd":2,"inflicts":["Bleeding"],"line":"AGI","rung":1},
+  {"name":"Afterimage","type":"physical","profile":"volley","mult":1.35,"cd":3,"inflicts":["Marked"],"line":"AGI","rung":3},
   {"name":"Precise Shot","type":"physical","profile":"single","mult":1.1,"cd":0,"inflicts":[],"line":"PER","rung":0},
-  {"name":"Weak Point","type":"physical","profile":"single","mult":1.6,"cd":2,"inflicts":["Marked"],"line":"PER","rung":2},
-  {"name":"Killing Sight","type":"physical","profile":"volley","mult":1.4,"cd":3,"inflicts":["Corroded"],"line":"PER","rung":4},
+  {"name":"Weak Point","type":"physical","profile":"single","mult":1.6,"cd":2,"inflicts":["Marked"],"line":"PER","rung":1},
+  {"name":"Killing Sight","type":"physical","profile":"volley","mult":1.4,"cd":3,"inflicts":["Corroded"],"line":"PER","rung":3},
   {"name":"Shield Blow","type":"physical","profile":"single","mult":1,"cd":0,"inflicts":["Staggered"],"line":"VIT","rung":0},
-  {"name":"Shieldwall","type":"physical","profile":"support","mult":1,"cd":3,"inflicts":[],"line":"VIT","rung":2},
-  {"name":"Unyielding Advance","type":"physical","profile":"cleave","mult":1.3,"cd":3,"inflicts":["Staggered"],"line":"VIT","rung":4},
+  {"name":"Shieldwall","type":"physical","profile":"support","mult":1,"cd":3,"inflicts":[],"line":"VIT","rung":1},
+  {"name":"Unyielding Advance","type":"physical","profile":"cleave","mult":1.3,"cd":3,"inflicts":["Staggered"],"line":"VIT","rung":3},
   {"name":"Mana Bolt","type":"magic","profile":"single","mult":1.1,"cd":0,"inflicts":[],"line":"INT","rung":0},
-  {"name":"Hex","type":"magic","profile":"single","mult":1.3,"cd":2,"inflicts":["Cursed"],"line":"INT","rung":2},
-  {"name":"Mindbreak","type":"magic","profile":"volley","mult":1.45,"cd":3,"inflicts":["Weakened"],"line":"INT","rung":4},
+  {"name":"Hex","type":"magic","profile":"single","mult":1.3,"cd":2,"inflicts":["Cursed"],"line":"INT","rung":1},
+  {"name":"Mindbreak","type":"magic","profile":"volley","mult":1.45,"cd":3,"inflicts":["Weakened"],"line":"INT","rung":3},
 ];
 
 export const PASSIVES: Passive[] = [
@@ -216,14 +216,14 @@ export const PASSIVES: Passive[] = [
 ];
 
 export const CLASS_PASSIVES: (Passive & { line: string; rung: number })[] = [
-  {"name":"Blood Up","style":"escalation","text":"Landing a blow banks strength for a turn, up to twice over.","line":"STR","rung":1},
-  {"name":"Immovable Guard","style":"brace","text":"+20% Defence, and the first stagger of a fight does not take.","line":"STR","rung":3},
-  {"name":"Light Step","style":"tempo","text":"+10 Initiative and +10 Evasion, for as long as you can move.","line":"AGI","rung":1},
-  {"name":"Bladework","style":"bladework","text":"Critical hits come far more often.","line":"AGI","rung":3},
-  {"name":"Killer Instinct","style":"targeting","text":"+10 Accuracy against anything you have Marked.","line":"PER","rung":1},
-  {"name":"True Sight","style":"keen","text":"+15 Accuracy. Very little goes wide.","line":"PER","rung":3},
-  {"name":"Deep Reserves","style":"bulwark","text":"+20% maximum health.","line":"VIT","rung":1},
-  {"name":"Last Word","style":"survival","text":"The first blow that would put you down leaves you at 1 instead.","line":"VIT","rung":3},
-  {"name":"Warded Mind","style":"arcane","text":"+15 Resistance, and one magical blow a fight lands at half.","line":"INT","rung":1},
-  {"name":"Field Command","style":"leadership","text":"Everyone you walked in with gains initiative and accuracy.","line":"INT","rung":3},
+  {"name":"Blood Up","style":"escalation","text":"Landing a blow banks strength for a turn, up to twice over.","line":"STR","rung":2},
+  {"name":"Immovable Guard","style":"brace","text":"+20% Defence, and the first stagger of a fight does not take.","line":"STR","rung":4},
+  {"name":"Light Step","style":"tempo","text":"+10 Initiative and +10 Evasion, for as long as you can move.","line":"AGI","rung":2},
+  {"name":"Bladework","style":"bladework","text":"Critical hits come far more often.","line":"AGI","rung":4},
+  {"name":"Killer Instinct","style":"targeting","text":"+10 Accuracy against anything you have Marked.","line":"PER","rung":2},
+  {"name":"True Sight","style":"keen","text":"+15 Accuracy. Very little goes wide.","line":"PER","rung":4},
+  {"name":"Deep Reserves","style":"bulwark","text":"+20% maximum health.","line":"VIT","rung":2},
+  {"name":"Last Word","style":"survival","text":"The first blow that would put you down leaves you at 1 instead.","line":"VIT","rung":4},
+  {"name":"Warded Mind","style":"arcane","text":"+15 Resistance, and one magical blow a fight lands at half.","line":"INT","rung":2},
+  {"name":"Field Command","style":"leadership","text":"Everyone you walked in with gains initiative and accuracy.","line":"INT","rung":4},
 ];

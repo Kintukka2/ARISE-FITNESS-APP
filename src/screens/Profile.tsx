@@ -1,7 +1,7 @@
 /** Profile: who you are — level, class, attributes, vitals — and what you are wearing. */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { classById } from '@/data/classes';
+import { CLASS_RANKS, classById } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import * as gear from '@/core/gear';
 import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
@@ -58,7 +58,7 @@ function classInfo() {
     title: cls.name, kind: 'gold', typed: false,
     lines: [cls.desc, `Effect: <em>+${cls.bonus} ${cls.lead}</em>.`,
       `Skills: ${skills.map((x) => `<strong>${x.name}</strong>`).join(', ')}.`,
-      pas.length ? `Passives: ${pas.map((x) => `<strong>${x.name}</strong> — ${x.text}`).join(' ')}` : 'Passives arrive at the next rank.',
+      pas.length ? `Passives: ${pas.map((x) => `<strong>${x.name}</strong> — ${x.text}`).join(' ')}` : `Passives arrive at ${CLASS_RANKS[Math.min(...CLASS_PASSIVES.filter((x) => x.line === cls.lead).map((x) => x.rung))]}-Rank.`,
       'Class follows your highest attribute. Spend differently and the System reclassifies you.'],
   });
 }

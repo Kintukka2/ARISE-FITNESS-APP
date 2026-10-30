@@ -5,11 +5,17 @@ import { GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS,
 import { OPEN_PER_DAY } from '@/core/gates';
 import { SLOTS as SQUAD, EXTRACT_MP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
-import { CLASSES } from '@/data/classes';
+import { CLASS_RANKS, CLASSES } from '@/data/classes';
+import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
 
 const ranks = RANK_LADDER.map((r) => `${r.name} at Level ${r.min}`).join(', ');
+/** The ranks a class line's rungs open at, read from the data. */
+const unlocks = (xs: { rung: number }[]) => {
+  const at = [...new Set(xs.map((x) => x.rung))].sort((a, b) => a - b).map((n) => CLASS_RANKS[n]);
+  return at.length > 1 ? `${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}` : at.join('');
+};
 
 const TOPICS: { title: string; lines: string[] }[] = [
   {
@@ -25,12 +31,14 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Classes',
     lines: [
       `From D-Rank the System names you after your highest attribute — ${CLASSES.length} classes across five lines — and renames you at every rank. A class pays flat points into its attribute and gives you that line’s combat skills.`,
+      `Each line’s skills arrive at ${unlocks(CLASS_SKILLS)}-Rank, and its passives at ${unlocks(CLASS_PASSIVES)}-Rank.`,
     ],
   },
   {
     title: 'Fighting',
     lines: [
       'The fight is turn by turn, in order of initiative. On your turn, tap a foe to aim at it, then act. A skill or a Strike always goes at the foe you aimed at first, though it can still miss; a skill that reaches several finds the rest itself.',
+      'Every foe shows its next move on its card: the ability, and who it goes at first. What it shows is what it does, unless its target falls first or it is stunned. Your own card counts the foes coming for you.',
       `Guard and you take ${GUARD * 100}% of every hit until your next turn. A field potion restores ${FIELD_POTION_HEAL * 100}% of your health; the satchel carries ${FIELD_POTION.max}, bought at the Exchange.`,
       `Allies and Shadows follow standing orders, set in the brief: ${TACTICS.map((x) => x.name).join(', ')}.`,
       'Auto hands your turns to the System and presses on between chambers. It is how the System fights when it assesses a gate, so the verdict is what Auto would do; you can do better.',

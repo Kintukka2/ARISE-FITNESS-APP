@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
-import { FIELD_POTION_HEAL, GUARD, REACH_TEXT, STATUS, STATUS_TEXT } from '@/core/combat';
+import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT } from '@/core/combat';
 import * as story from '@/core/story';
 import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
@@ -48,7 +48,7 @@ function toBeats(log: Ev[]): Beat[] {
   return out;
 }
 
-interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[] }
+interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
 
 function lines(b: Beat, name: (uid: string) => string): { text: string; tone: string }[] {
   const out: { text: string; tone: string }[] = [];
@@ -91,6 +91,7 @@ function apply(local: UnitView[], b: Beat) {
     else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
     else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
     else if (e.t === 'guard') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+    else if (e.t === 'intent') { const t = u(e.u); if (t) t.intent = { ab: e.ab, at: e.at }; }
     else if (e.t === 'expire') { const t = u(e.v); if (t) t.status = t.status.filter((x) => x !== e.s); }
     else if (e.t === 'passive' && e.k === 'stand') { const t = u(e.u); if (t) t.hp = 1; }
     else if (e.t === 'support') for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0 && !t.status.includes('Rallied')) t.status.push('Rallied');
@@ -150,7 +151,10 @@ export function Arena() {
       const p = paceRef.current;
       if (p === 'skip') continue;
       setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
-      say(lines(b, name));
+      const ls = lines(b, name);
+      // A beat with nothing to say (a foe settling its next move) costs no time.
+      if (!ls.length) continue;
+      say(ls);
       if (b.ev.some((e) => e.t === 'down')) sfx.hit(-40);
       else if (b.ev.some((e) => e.t === 'hit' && e.crit)) sfx.hit(80);
       await new Promise((r) => setTimeout(r, b.kind === 'round' ? PACE[p] * 0.6 : PACE[p]));
@@ -171,6 +175,7 @@ export function Arena() {
         title: 'Your Turn', kind: 'system',
         lines: [
           'The System waits on you. Tap a foe to aim at it, then act.',
+          'Every foe shows what it will do next, and at whom. What it shows is what it does, unless its target falls first.',
           `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>field potion</em> restores ${FIELD_POTION_HEAL * 100}% of your health.`,
           '<em>Auto</em> lets the System fight your turns for you, as it does when it assesses a gate.',
         ],
@@ -282,9 +287,12 @@ export function Arena() {
         <span class="label num">Chamber {(room?.index ?? 0) + 1} of {chambers.length}</span>
       </header>
       <div class="arena__field">
-        <div class="arena__side">{party.map((u) => <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} />)}</div>
+        <div class="arena__side">
+          {party.map((u) => <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid).length} />)}
+        </div>
         <div class="arena__side arena__side--foes">
-          {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined} />)}
+          {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
+            intent={u.hp > 0 ? u.intent : undefined} party={party} />)}
         </div>
       </div>
       <ol class="arena__feed" aria-live="polite">
@@ -334,14 +342,29 @@ export function Arena() {
   );
 }
 
-function UnitChip({ u, acting, aimed, onPick }: { u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void }) {
+/** A foe's next move, as its chip shows it: the ability, who it goes at, and how many more it reaches. */
+function Intent({ intent, party }: { intent: { ab: string; at?: string }; party: UnitView[] }) {
+  const a = ability(intent.ab);
+  const live = party.filter((p) => p.hp > 0).length;
+  const at = intent.at ? party.find((p) => p.uid === intent.at) : undefined;
+  const more = a ? Math.min(reachOf(a.profile), live) - 1 : 0;
+  const who = a?.profile === 'support' ? 'rallies its side' : a?.profile === 'all' ? 'everyone' : `${at ? (at.tag === 'hero' ? 'you' : at.name) : '?'}${more > 0 ? ` +${more}` : ''}`;
+  const tip = a ? `${a.type === 'magic' ? 'Magic' : 'Physical'} · ×${a.mult} · ${REACH_TEXT[a.profile] ?? 'one target'}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}` : intent.ab;
+  return <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''}`} title={tip}>⟶ {intent.ab} · {who}</div>;
+}
+
+function UnitChip({ u, acting, aimed, onPick, intent, party, incoming }: {
+  u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
+  intent?: { ab: string; at?: string }; party?: UnitView[]; incoming?: number;
+}) {
   const pct = (u.hp / Math.max(1, u.mx)) * 100;
   const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''}`;
   const inner = (
     <>
-      <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{Math.max(0, u.hp)}</span></div>
+      <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{incoming && u.hp > 0 ? <span class="unit__incoming" title={`${incoming} foe${incoming === 1 ? ' is' : 's are'} coming for ${u.tag === 'hero' ? 'you' : u.name} next`}>◀{incoming}</span> : null}{Math.max(0, u.hp)}</span></div>
       <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />
       {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''}`} title={STATUS_TEXT[st]}>{st}</span>)}</div>}
+      {intent && party && <Intent intent={intent} party={party} />}
     </>
   );
   return onPick
