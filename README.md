@@ -49,9 +49,9 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). Three points per level, five per rank, spent by you |
 | **Classes** | From D-Rank you are named after your highest attribute (25 classes in five lines). A class adds flat points to that attribute and gives you combat skills: at D, C and A, with passives at B and S |
 | **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill |
-| **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat |
+| **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat. Sixteen three-piece sets pay a bonus for two pieces worn and another for all three, and each has a home gate whose clears leave a piece you do not have yet. Anything you hold can be upgraded with shards, a step at a time, to perfect |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
-| **Secret Missions** | 45 unpublished citations that pay attributes. Nothing says one exists until you have done it |
+| **Secret Missions** | 46 unpublished citations that pay attributes. Nothing says one exists until you have done it |
 | **Story** | 18 beats gated on level and deeds, ending at the Hollow Throne |
 
 ## Layout
@@ -69,7 +69,7 @@ src/
     contracts     the System's three a day: drawing them, counting a run against them, paying them
     spire         the Pale Spire: its floors and blocks, the climb, and the week that pays for it
     gear, shop, vitals, shadows, missions, story, licence
-  data/         content: enemies, abilities, dungeons, map steps and events, contracts, the Spire, equipment, classes, story text
+  data/         content: enemies, abilities, dungeons, map steps and events, contracts, the Spire, equipment and its sets, classes, story text
   app/          the shell: routing, the top bar and nav, and flow.ts, which narrates results
   screens/      one file per screen or major sheet
   ui/           overlays (System windows, sheets, tours, toasts), components, icons
@@ -101,10 +101,10 @@ prints the result:
 grade  floor  middle  top   | middle vs one grade up
   E     59%    67%    78%  |   9%
   D     62%    65%    72%  |   10%
-  C     73%    84%    88%  |   11%
+  C     74%    84%    88%  |   11%
   B     78%    82%    90%  |   8%
   A     64%    73%    81%  |   13%
-  S     40%    62%    85%  |   —
+  S     41%    62%    85%  |   —
 
 The Spire: a hunter on the block holding the floor of their own level (floor / middle / top of each grade).
   E   L3 47%      L6 78%      L9 89%
@@ -112,8 +112,8 @@ The Spire: a hunter on the block holding the floor of their own level (floor / m
   C   L20 97%     L27 61%     L34 59%
   B   L35 74%     L42 91%     L49 93%
   A   L50 99%     L60 88%     L69 64%
-  S   L70 91%     L85 44%     L100 79%
-  Level 100, above Floor 100:  F101 52%  F111 47%  F121 50%  F131 51%  F151 9%
+  S   L70 92%     L85 44%     L100 79%
+  Level 100, above Floor 100:  F101 52%  F111 47%  F121 51%  F131 51%  F151 9%
 
 Days to each rank (N gates a day at your own grade, 75% cleared, first clears counted):
    3 gates/day  D:2d  C:8d  B:19d  A:38d  S:73d  N:135d

@@ -5,7 +5,8 @@
  * field potions go in the satchel for the hunter's turn in a fight.
  */
 import { EQUIPMENT } from '@/data/equipment';
-import { gearDef, grant, make, score } from './gear';
+import { defOf, gearDef, grant, make, Q_HIGH, Q_LOW, RARITY, score, upgradeStep } from './gear';
+import { UPGRADE } from '@/data/sets';
 import type { Item, Rank, Save } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
@@ -120,6 +121,28 @@ export function recycleAll(s: Save, ranks: string[]) {
   const doomed = scrapMatches(s, ranks);
   for (const it of doomed) paid += recycle(s, it.id);
   return { count: doomed.length, paid };
+}
+
+// ------------------------------------------------------------------ upgrades
+
+/** What an upgrade step costs at a rarity: the score a step adds to a piece of it, at a price per point. */
+export const stepCost = (rank: Rank) => Math.max(5, round5(RARITY[rank].score * (Q_HIGH - Q_LOW) * UPGRADE.share * UPGRADE.rate));
+
+/** What the next upgrade step on a piece costs. Null when there is nothing left to raise. */
+export function upgradeCost(it: Item): number | null {
+  const d = defOf(it);
+  return d && upgradeStep(it) ? stepCost(d.rank as Rank) : null;
+}
+
+/** Buy one upgrade step on a held piece. False if it cannot be raised or the shards are short. Mutates. */
+export function upgrade(s: Save, itemId: string): boolean {
+  const i = s.items.findIndex((x) => x.id === itemId);
+  const it = s.items[i];
+  const cost = it ? upgradeCost(it) : null;
+  const next = it ? upgradeStep(it) : null;
+  if (cost === null || !next || !pay(s, cost)) return false;
+  s.items[i] = next;
+  return true;
 }
 
 // ------------------------------------------------------------------ potions

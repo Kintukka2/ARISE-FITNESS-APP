@@ -52,6 +52,7 @@ export function blockFrom(season: string, b: number, g: Dungeon): Dungeon {
     // Choices, then the rest and the boss the map always ends on: a block's worth of floors.
     mobRounds: BLOCK - 2 - (g.elite ? 1 : 0),
     floor: firstFloor(b),
+    shape: g.id,
     // As hard as that gate's creatures make a block at its grade's middle, then the Spire's own scaling.
     scale: (BLOCK_TUNE[g.id] ?? 1) * spireTune(b),
   };

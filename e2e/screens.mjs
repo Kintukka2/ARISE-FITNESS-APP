@@ -60,7 +60,9 @@ try {
   await nav('profile');
   await snap('profile', true);
   await page.locator('[aria-label="Inventory"]').first().click(); await sleep(400); await snap('inventory');
-  await page.locator('.itemrow').first().click(); await sleep(400); await snap('item'); await close(); await close();
+  await page.locator('.itemrow').first().click(); await sleep(400); await snap('item'); await close();
+  await page.locator('.itemrow', { hasText: 'Warden' }).first().click(); await sleep(400);
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close(); await close();
   await page.locator('[aria-label="Hunter dossier"]').click(); await sleep(400); await snap('dossier', true); await close();
 
   await nav('gates');

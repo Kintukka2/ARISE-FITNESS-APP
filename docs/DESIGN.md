@@ -168,10 +168,21 @@ fight was tried and did not narrow it.
   *Protect The Hunter* goes for whatever is about to hit you. Gates recalibrated.
 - **Skill choices at rank-up:** each class rung offers two skills and you keep one, instead of
   receiving the whole line. The choice is permanent until the next rank.
-- **Gear sets:** sixteen sets already exist in `data/equipment.ts` (`set` on a design), and none of
-  them does anything yet. Two and four pieces of a set grant bonuses, defined as data.
-- **Upgrading:** spend shards to raise an item's quality within its design's range, with the
-  price shown up front. Recycling stays the way to turn spares into shards.
+- **Gear sets — built.** All sixteen sets in `data/equipment.ts` have three pieces, so the bonuses
+  are for two and three pieces worn, not two and four. They are defined as data in `data/sets.ts`,
+  in the units the combat engine's gear bonuses already use, and reach the fight through
+  `raid.heroSpec`.
+  - **Home gates:** each set has a home gate of its grade, named for it. A clear there turns the
+    first piece of the clear's gear into a piece of the set, one the hunter does not hold yet while
+    there is one, so a set takes three clears of its gate. A Spire block in that gate's shape counts.
+  - **Auto Equip** leans toward a set the hunter holds two or more pieces of, by more than quality
+    can span, so only a much rarer piece breaks a set.
+  - **Effect:** a full set lifts a mid-grade hunter's clear rate by two to eight points. Typical
+    hunters almost never wear one, so calibration did not move.
+- **Upgrading — built.** From a piece's sheet, each step moves its quality and every property a tenth
+  of the way across its design's range, until it is perfect, for a price shown up front (by rarity:
+  60 shards a step at Rare, 270 at Legendary). The issued kit is not upgraded. Recycling stays the
+  way to turn spares into shards.
 
 ### 6. Depth for the Shadows
 

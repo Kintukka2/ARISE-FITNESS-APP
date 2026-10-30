@@ -10,10 +10,11 @@ import { LOOT } from '@/data/dungeons';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classById, classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
 import { build, chamberOf, isFight, mapSeed, next, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
-import { boosted, grant, make, ofRank, rollBonuses, worn as wornItems } from './gear';
+import { boosted, grant, heldOf, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
 import { BOOST_CAP, classBonus, GATE_XP, grantXP, practiceAward, type XpResult } from './progression';
 import { licensedRank } from './licence';
 import * as contracts from './contracts';
@@ -52,7 +53,7 @@ export function heroSpec(s: Save, now = Date.now()): UnitSpec {
   const base = vitals.worn(boosted(s.hunter.attrs, items, classBonus(s), BOOST_CAP), vitals.read(s, now).fatigue);
   const cls = classById(s.hunter.classId);
   const k = cls ? classKit(cls.lead, cls.tier) : { kit: [], passives: [] };
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, ...k, bonus: rollBonuses(items), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, ...k, bonus: sumBonuses(rollBonuses(items), setBonuses(items)), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
@@ -462,8 +463,26 @@ export interface RaidResult {
 
 export const withdrawShare = (done: number, total: number) => FAIL_SHARE + (1 - FAIL_SHARE) * WITHDRAW_CAP * Math.min(1, done / Math.max(1, total));
 
-/** What the fights paid in gear: a chance per fight, a sure piece per gatekeeper, and the clear's. */
-function rollLoot(d: Dungeon, r: () => number, fights: number, elites: number, complete: boolean): string[] {
+/** The sets a gate is home to: a Spire block's are those of the gate whose shape it takes. */
+export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?? d.id));
+
+/**
+ * The piece of a home set a clear leaves: one the hunter does not hold yet,
+ * while there is one. Null when the gate is home to no set.
+ */
+function setPiece(s: Save, d: Dungeon, r: () => number): string | null {
+  const sets = homeSets(d);
+  if (!sets.length) return null;
+  const set = sets[Math.floor(r() * sets.length)];
+  const pieces = setPieces(set.id);
+  const held = heldOf(s, set.id);
+  const missing = pieces.filter((p) => !held.has(p.id));
+  const pool = missing.length ? missing : pieces;
+  return pool[Math.floor(r() * pool.length)]?.id ?? null;
+}
+
+/** What the fights paid in gear: a chance per fight, a sure piece per gatekeeper, and the clear's, the first of it a home set's piece. */
+function rollLoot(d: Dungeon, r: () => number, fights: number, elites: number, complete: boolean, home: string | null = null): string[] {
   const at = rankIdx(d.rank);
   const shift = (n: number) => RANKS[clamp(at + n, 0, 5)];
   const pick = (rank: Rank) => {
@@ -487,6 +506,7 @@ function rollLoot(d: Dungeon, r: () => number, fights: number, elites: number, c
   if (complete) {
     const n = LOOT.completionQuantity[0] + Math.floor(r() * (LOOT.completionQuantity[1] - LOOT.completionQuantity[0] + 1));
     for (let k = 0; k < n; k++) {
+      if (k === 0 && home) { out.push(home); continue; }
       const id = pick(d.rank !== 'S' && r() > LOOT.completionRank.same ? shift(1) : shift(0));
       if (id) out.push(id);
     }
@@ -529,7 +549,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const xp = xpDue > 0 ? grantXP(s, xpDue) : null;
 
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
-  let lootIds = kept ? [...rollLoot(d, r, fights, elites, outcome === 'cleared'), ...(run.haul ?? [])] : [];
+  const cleared = outcome === 'cleared';
+  let lootIds = kept ? [...rollLoot(d, r, fights, elites, cleared, cleared ? setPiece(s, d, rng('arise|set|' + run.seed)) : null), ...(run.haul ?? [])] : [];
   if (practice) {
     const rings = ofRank('E').filter((g) => g.slot === 'Ring');
     lootIds = [rings[Math.floor(rng('arise|practice|' + s.hunter.name)() * rings.length)].id, ...(kept ? run.haul ?? [] : [])];

@@ -1,5 +1,5 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
-import { FIELD_POTION, GATE_SHARDS, POTIONS } from '@/core/shop';
+import { FIELD_POTION, GATE_SHARDS, POTIONS, stepCost } from '@/core/shop';
 import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { OPEN_PER_DAY } from '@/core/gates';
@@ -8,6 +8,7 @@ import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } 
 import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
+import { SETS, UPGRADE } from '@/data/sets';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
@@ -101,6 +102,8 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Equipment and the Exchange',
     lines: [
       'Ten slots, six rarities. Every piece rolls its core bonus between 75% and 125% of its design, plus its own properties. Auto Equip picks the best of what you hold.',
+      `${SETS.length} sets of three pieces, Rare and up. Two pieces of a set worn together pay a bonus, and all three pay another; the piece’s sheet says what. Each set has a home gate, and every clear of it leaves one of the set’s pieces, one you do not hold yet while there is one. Auto Equip favours a set you hold two or more pieces of.`,
+      `Anything you hold can be upgraded from its sheet: each step moves its quality and every property ${UPGRADE.share * 100}% of the way across its design’s range, until it is perfect. A step costs ${UPGRADE.rate} shards for every point of score it adds: ${stepCost('C')} at Rare, ${stepCost('S')} at Legendary.`,
       `The Exchange redraws eight pieces at midnight, mostly at your grade. Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}, and the Field Potion ${FIELD_POTION.price} for the satchel.`,
     ],
   },

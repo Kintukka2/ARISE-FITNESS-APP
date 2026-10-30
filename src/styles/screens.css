@@ -314,3 +314,19 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .spirecard__week { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 154, 60, 0.2); font-size: 0.85rem; color: var(--ink-2); }
 .spirecard__week .num { color: var(--ink-3); }
 .spirecard.is-locked { opacity: 0.72; }
+
+/* ------------------------------------------------------------------ gear sets and upgrades */
+
+.setlist { display: flex; flex-direction: column; gap: 6px; }
+.setlist li { display: grid; grid-template-columns: auto auto 1fr; gap: 4px 10px; align-items: baseline; padding: 8px 10px; border: 1px solid rgba(72, 245, 168, 0.35); border-radius: var(--r-sm); background: rgba(72, 245, 168, 0.06); }
+.setlist li .num { color: var(--verdant); font-size: 0.8rem; }
+.setlist li small { grid-column: 1 / -1; color: var(--ink-2); }
+.setpieces { display: flex; flex-direction: column; gap: 4px; }
+.setpieces li { display: flex; align-items: center; gap: 8px; color: var(--ink-3); }
+.setpieces li small { margin-left: auto; color: var(--ink-3); font-size: 0.75rem; }
+.setpieces li.is-held { color: var(--ink); }
+.setpieces li.is-held .ico { color: var(--verdant); }
+.setbonus { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-left: 2px solid var(--edge); color: var(--ink-3); }
+.setbonus b { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.setbonus.is-on { border-left-color: var(--verdant); color: var(--verdant); }
+.upgrade { display: flex; flex-direction: column; gap: 2px; }

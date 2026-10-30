@@ -35,6 +35,8 @@ export interface Item {
   q: number;
   /** One value per def roll. */
   rolls: number[];
+  /** Upgrade steps bought for it at the Exchange. */
+  up?: number;
 }
 
 // ------------------------------------------------------------------ combat data
@@ -81,9 +83,10 @@ export interface Dungeon {
   elite?: string;
   boss: string;
   mobRounds: number;
-  /** A block of the Spire: the floor it starts on, and its difficulty, which no calibrated gate holds. */
+  /** A block of the Spire: the floor it starts on, its difficulty, which no calibrated gate holds, and the gate it takes the shape of. */
   floor?: number;
   scale?: number;
+  shape?: string;
 }
 
 // ------------------------------------------------------------------ orders
