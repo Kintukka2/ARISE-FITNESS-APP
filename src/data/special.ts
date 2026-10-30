@@ -21,7 +21,7 @@ export const HOLLOW_THRONE: Dungeon = {
   id: 'DNG-HOLLOW',
   rank: 'S',
   name: 'The Hollow Throne',
-  theme: 'A Gate of impossible density. Everything that ever quit is in here, and it has been waiting for you specifically.',
+  theme: 'A Gate of impossible density. Every hunter who ever stopped climbing is in here, and it has been waiting for you specifically.',
   identity: 'Monarch-led',
   mobs: ['ENM-109', 'ENM-110', 'ENM-108'],
   elite: 'ENM-109',

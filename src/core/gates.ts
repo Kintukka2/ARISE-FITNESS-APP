@@ -1,10 +1,11 @@
 /**
  * The Gate board and the hunters the Association sends in with you.
  *
- * Ten gates stand open a day: one of every grade so the whole ladder is
- * visible, at least two at the hunter's own, the rest at random. A gate up
- * to one grade above your own can be entered; clearing one seals it until
- * midnight.
+ * Ten gates stand open at a time: one of every grade so the whole ladder is
+ * visible, at least two at the hunter's own, the rest at random. A gate up to
+ * one grade above your own can be entered. Clearing one closes it, and
+ * another of the same grade opens in its place; the board redraws at
+ * midnight. Fatigue, not the board, is what paces a hunter.
  */
 import { DUNGEONS } from '@/data/dungeons';
 import { ENEMIES } from '@/data/enemies';
@@ -30,32 +31,42 @@ export { HOLLOW_THRONE, PRACTICE_GATE };
 export const isPractice = (d: Dungeon) => d.id === PRACTICE_GATE.id;
 export const rankIdx = (r: string) => RANKS.indexOf(r as Rank);
 
-/** Today's board, in grade order. Deterministic per day and grade. */
-export function board(s: Save, day = dayKey()): Dungeon[] {
+/**
+ * The grade of each of today's ten slots. Deterministic per day and grade:
+ * one of every grade, then your own until there are two, then grades drawn
+ * the way the dungeons are spread.
+ */
+function slotGrades(mine: Rank, day: string): Rank[] {
   const r = rng('arise|gates|' + day);
-  const mine = licensedRank(s);
+  const out: Rank[] = [...RANKS];
+  while (out.filter((g) => g === mine).length < MIN_AT_RANK) out.push(mine);
+  while (out.length < OPEN_PER_DAY) out.push(DUNGEONS[Math.floor(r() * DUNGEONS.length)].rank as Rank);
+  return out;
+}
+
+/**
+ * Today's board, in grade order. Each grade has one shuffled order for the
+ * day; its slots show the first gates in that order not cleared today, so a
+ * clear swaps in the next one and leaves the others where they are. Once a
+ * grade runs out, its cleared gates open again.
+ */
+export function board(s: Save, day = dayKey()): Dungeon[] {
+  const shut = s.gates.sealed.day === day ? s.gates.sealed.ids : [];
+  const grades = slotGrades(licensedRank(s), day);
   const picked: string[] = [];
-  const take = (pool: Dungeon[]) => {
-    const free = pool.filter((d) => !picked.includes(d.id));
-    if (!free.length) return false;
-    picked.push(free[Math.floor(r() * free.length)].id);
-    return true;
-  };
-  for (const k of RANKS) take(DUNGEONS.filter((d) => d.rank === k));
-  let guard = 0;
-  while (picked.filter((id) => dungeonById(id)!.rank === mine).length < MIN_AT_RANK && guard++ < 50) {
-    if (!take(DUNGEONS.filter((d) => d.rank === mine))) break;
+  for (const g of RANKS) {
+    const r = rng(`arise|order|${day}|${g}`);
+    const order = DUNGEONS.filter((d) => d.rank === g).map((d) => ({ id: d.id, k: r() })).sort((a, b) => a.k - b.k).map((x) => x.id);
+    const open = [...order.filter((id) => !shut.includes(id)), ...order.filter((id) => shut.includes(id))];
+    picked.push(...open.slice(0, grades.filter((x) => x === g).length));
   }
-  guard = 0;
-  while (picked.length < OPEN_PER_DAY && guard++ < 500) take(DUNGEONS);
   const out = DUNGEONS.filter((d) => picked.includes(d.id));
-  if (mine === 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id)) out.push(HOLLOW_THRONE);
+  if (licensedRank(s) === 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id)) out.push(HOLLOW_THRONE);
   if (!s.gates.cleared.includes(PRACTICE_GATE.id)) out.unshift(PRACTICE_GATE);
   return out;
 }
 
-export const sealed = (s: Save, d: Dungeon, day = dayKey()) => s.gates.sealed.day === day && s.gates.sealed.ids.includes(d.id);
-
+/** Close a cleared gate for the rest of the day: it leaves the board, and another of its grade takes its slot. */
 export function seal(s: Save, d: Dungeon, day = dayKey()) {
   if (s.gates.sealed.day !== day) s.gates.sealed = { day, ids: [] };
   if (!s.gates.sealed.ids.includes(d.id)) s.gates.sealed.ids.push(d.id);
@@ -64,11 +75,10 @@ export function seal(s: Save, d: Dungeon, day = dayKey()) {
 /** Up to one grade above your own: the "taster". */
 export const licensedFor = (s: Save, d: Dungeon) => rankIdx(d.rank) <= rankIdx(licensedRank(s)) + 1;
 
-export type EntryBlock = 'licence' | 'sealed' | 'locked' | 'down';
+export type EntryBlock = 'licence' | 'locked' | 'down';
 
 export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | null {
   if (!licensedFor(s, d)) return 'licence';
-  if (sealed(s, d, dayKey(now))) return 'sealed';
   const can = vitals.canRaid(s, now);
   return can.ok ? null : can.why;
 }

@@ -1,14 +1,14 @@
 {
   "name": "ARISE — The System",
   "short_name": "ARISE",
-  "description": "A fitness RPG. An instructor builds your programme. The System issues a Daily Quest, every day.",
+  "description": "A dungeon RPG. Clear Gates, raise your attributes, and bind what you kill into a Shadow army.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#04060f",
   "theme_color": "#04060f",
-  "categories": ["health", "fitness", "games"],
+  "categories": ["games"],
   "icons": [
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

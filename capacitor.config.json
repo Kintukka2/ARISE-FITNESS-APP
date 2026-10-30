@@ -1,6 +1,6 @@
 {
-  "appId": "com.arisefitnessrpg.app",
-  "appName": "ARISE: Fitness RPG",
+  "appId": "com.ariserpg.app",
+  "appName": "ARISE",
   "webDir": "dist",
   "backgroundColor": "#04060f",
   "android": { "backgroundColor": "#04060f" },

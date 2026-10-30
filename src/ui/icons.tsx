@@ -2,8 +2,6 @@
 
 const P: Record<string, string> = {
   // navigation
-  quests: 'M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z',
-  training: 'M2 8h3v8H2zM6 6h3v12H6zM9.5 10.5h5v3h-5zM15 6h3v12h-3zM19 8h3v8h-3z',
   profile: 'M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-8 18a8 8 0 0 1 16 0z',
   gates: 'M3 21V10a9 9 0 0 1 18 0v11h-6v-8a3 3 0 0 0-6 0v8zm6-13.5a5.5 5.5 0 0 1 6 0V9a5.5 5.5 0 0 0-6 0z',
   shadows: 'M15.5 5.6a3.4 3.4 0 1 1 0 6.8 3.4 3.4 0 0 1 0-6.8zM9 21.6a6.5 6.5 0 0 1 13 0z',
@@ -78,16 +76,6 @@ export function Shard({ size = 16 }: { size?: number }) {
       <path fill="currentColor" d="M12 1.6 20.4 8l-3.2 12.4H6.8L3.6 8zm0 3.1L6.4 9l2.2 8.6h6.8L17.6 9z" />
       <path fill="currentColor" d="M12 6.7 15.3 9.6 13.9 16h-3.8L8.7 9.6z" opacity=".65" />
     </svg>
-  );
-}
-
-export function Flame({ tier }: { tier: string }) {
-  return (
-    <span class="flame" data-streak={tier} aria-hidden="true">
-      <svg viewBox="0 0 24 24" class="flame__body"><path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.3-2-.9-2.9C18.7 9.6 20 12 20 14a8 8 0 1 1-16 0C4 8 9 6 12 2z" /></svg>
-      <svg viewBox="0 0 24 24" class="flame__core"><path d="M12 9c.6 2-1.2 2.6-1.2 4.4a3.2 3.2 0 0 0 6.4 0c0-2.2-2.6-3.6-5.2-4.4z" /></svg>
-      <i class="flame__spark" /><i class="flame__spark" /><i class="flame__spark" />
-    </span>
   );
 }
 

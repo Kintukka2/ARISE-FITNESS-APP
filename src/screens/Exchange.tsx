@@ -1,7 +1,6 @@
 /** The Exchange: eight pieces a day and the potions, paid for in Mana Shards. */
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
-import { gatesOpen } from '@/core/progression';
 import * as shop from '@/core/shop';
 import { hhmmss, msUntilMidnight } from '@/core/util';
 import { checkAwards } from '@/app/flow';
@@ -43,7 +42,7 @@ function Exchange() {
         <div><span class="label">Mana Shards</span><Shards n={s.wallet.shards} big /></div>
         <div class="purse__right"><span class="label">New stock in</span><b class="num">{hhmmss(msUntilMidnight())}</b></div>
       </div>
-      <p class="muted">Shards come from cleared Daily Quests, cleared Gates and recycled artifacts. Most of the shelf answers your grade; now and again something far above it turns up, at a price that says so.</p>
+      <p class="muted">Shards come from cleared Gates and recycled artifacts. Most of the shelf answers your grade; now and again something far above it turns up, at a price that says so.</p>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -74,27 +73,24 @@ function Exchange() {
       </Section>
 
       <Section title="The Manifest" right={`${left} of ${offers.length} left`}>
-        {!gatesOpen(s) && <p class="hint">The Exchange sells equipment to licensed hunters. Finish Basic Hunter Training and the shelf opens.</p>}
-        {gatesOpen(s) && (
-          <div class="stack stack--tight">
-            {offers.map((o) => {
-              const d = gear.defOf(o.item)!;
-              return (
-                <div key={o.index} class={`shoprow ${o.sold ? 'is-sold' : ''}`}>
-                  <GearArt item={o.item} size={48} />
-                  <span class="shoprow__text">
-                    <b>{d.name} {!o.sold && gear.beatsWorn(s, o.item) && <span class="up">▲</span>}</b>
-                    <small>{gear.coreText(o.item)}{gear.rollText(o.item).length ? ` · ${gear.rollText(o.item).join(' · ')}` : ''}</small>
-                    <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(o.item))}{o.reach ? '' : ''}</small>
-                    {o.reach > 0 && <span class="chip" data-tone="gold">+{o.reach + 1} grades · +{o.reach * 50}% price</span>}
-                  </span>
-                  {o.sold ? <Chip>Bought</Chip> : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < o.price} onClick={() => buy(o)}><Shards n={o.price} /></Btn>}
-                </div>
-              );
-            })}
-            {!left && <p class="muted center">You have cleared the shelf. Nothing more until it is redrawn.</p>}
-          </div>
-        )}
+        <div class="stack stack--tight">
+          {offers.map((o) => {
+            const d = gear.defOf(o.item)!;
+            return (
+              <div key={o.index} class={`shoprow ${o.sold ? 'is-sold' : ''}`}>
+                <GearArt item={o.item} size={48} />
+                <span class="shoprow__text">
+                  <b>{d.name} {!o.sold && gear.beatsWorn(s, o.item) && <span class="up">▲</span>}</b>
+                  <small>{gear.coreText(o.item)}{gear.rollText(o.item).length ? ` · ${gear.rollText(o.item).join(' · ')}` : ''}</small>
+                  <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(o.item))}{o.reach ? '' : ''}</small>
+                  {o.reach > 0 && <span class="chip" data-tone="gold">+{o.reach + 1} grades · +{o.reach * 50}% price</span>}
+                </span>
+                {o.sold ? <Chip>Bought</Chip> : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < o.price} onClick={() => buy(o)}><Shards n={o.price} /></Btn>}
+              </div>
+            );
+          })}
+          {!left && <p class="muted center">You have cleared the shelf. Nothing more until it is redrawn.</p>}
+        </div>
       </Section>
     </div>
   );

@@ -16,7 +16,6 @@
 @font-face { font-family: 'Rajdhani'; font-weight: 600; font-display: swap; src: url(../assets/fonts/rajdhani-600.woff2) format('woff2'); }
 @font-face { font-family: 'Rajdhani'; font-weight: 700; font-display: swap; src: url(../assets/fonts/rajdhani-700.woff2) format('woff2'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 400 700; font-display: swap; src: url(../assets/fonts/jetbrains-mono.woff2) format('woff2'); }
-@font-face { font-family: 'Mrs Saint Delafield'; font-weight: 400; font-display: swap; src: url(../assets/fonts/mrs-saint-delafield-400.woff2) format('woff2'); }
 @font-face { font-family: 'Trueno Round'; font-weight: 700; font-display: block; src: url(../assets/fonts/trueno-round-700.woff2) format('woff2'); }
 
 :root {
@@ -112,7 +111,6 @@ p { text-wrap: pretty; }
 .between { justify-content: space-between; }
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .stack--tight { gap: 8px; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ico { width: 1.3em; height: 1.3em; fill: currentColor; display: inline-block; vertical-align: middle; flex: none; }
 em { font-style: normal; color: var(--mana); font-weight: 700; }
 strong { color: var(--ink); font-weight: 700; }
@@ -276,7 +274,6 @@ strong { color: var(--ink); font-weight: 700; }
   box-shadow: 0 0 10px var(--blood-glow);
 }
 .badge--gold { background: var(--gold); color: #1a1200; box-shadow: 0 0 10px var(--gold-glow); }
-.badge--plain { position: static; display: inline-block; margin-left: 6px; background: rgba(79, 214, 255, 0.2); color: var(--mana); box-shadow: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }

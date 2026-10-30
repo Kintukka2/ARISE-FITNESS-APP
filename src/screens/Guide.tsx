@@ -1,11 +1,9 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
-import * as boon from '@/core/boon';
-import { QUEST_SHARDS, GATE_SHARDS, POTIONS } from '@/core/shop';
-import { BASE_REPS, REPS_CAP, PENALTY_MULT } from '@/core/quests';
-import { CERT_LEVEL, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, RESONANCE, STAT_CAP, BOOST_CAP } from '@/core/progression';
+import { GATE_SHARDS, POTIONS } from '@/core/shop';
+import { GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { SLOTS as SQUAD, EXTRACT_MP } from '@/core/shadows';
-import { RAID_FATIGUE, FATIGUE_MAX, WIPE_LOCK } from '@/core/vitals';
+import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
@@ -14,57 +12,33 @@ const ranks = RANK_LADDER.map((r) => `${r.name} at Level ${r.min}`).join(', ');
 
 const TOPICS: { title: string; lines: string[] }[] = [
   {
-    title: 'The Daily Quest',
-    lines: [
-      `Push-ups, sit-ups and squats, every day. ${BASE_REPS} of each on day one, one more of each for every day of Resonance, up to ${REPS_CAP}.`,
-      'Something that hurts is swapped for a movement of the same kind. The quest resets at local midnight.',
-      `Clearing it pays experience and Mana Shards (${QUEST_SHARDS.E} at E-Rank, ${QUEST_SHARDS.S} at S), and banks one Boon set per movement.`,
-    ],
-  },
-  {
-    title: 'Resonance, Penalties and Hollow',
-    lines: [
-      `Every consecutive cleared day adds +${RESONANCE.perDay.toFixed(2)} to a multiplier on all experience, up to ×${RESONANCE.max.toFixed(2)} on day ${RESONANCE.maxDays}.`,
-      `Miss a day and Resonance returns to zero, a Penalty Quest at ×${PENALTY_MULT} volume is issued, and Hollow halves all experience until it is paid. The penalty pays nothing.`,
-    ],
-  },
-  {
-    title: 'The Boon',
-    lines: [
-      `Every completed set banks a point into the attributes that movement trains. Every ${boon.PERIOD_DAYS} days the System pays the ledger out as raw attributes — not experience.`,
-      `Tiers need both sets and separate days: ${boon.TIERS.slice(1).map((t) => `${t.name} ${t.min} sets over ${t.days} day${t.days === 1 ? '' : 's'} (+${t.grant})`).join('; ')}. ${boon.FREE.sets} sets across all ${boon.FREE.days} days adds a free point.`,
-    ],
-  },
-  {
     title: 'Levels, ranks and attributes',
     lines: [
-      `Experience comes from the Daily Quest and from training sessions. Gates do not pay experience: training is what makes you stronger.`,
-      `Each level pays ${POINTS_PER_LEVEL} attribute points, and each new rank ${RANK_UP_POINTS} more. Ranks: ${ranks}.`,
-      `Training takes an attribute to ${STAT_CAP}; class and equipment can carry it to ${BOOST_CAP}.`,
-      'STR drives physical damage. VIT sets HP and defence. AGI is speed, evasion and shorter rests. PER is accuracy and critical hits. INT sets MP, magic, and the odds of binding a Shadow.',
+      `Experience comes from Gates. A clear pays by the gate’s grade — ${GATE_XP.E} at E up to ${GATE_XP.S} at S — and the first clear of each gate pays it twice. Withdrawing pays a share of what you cleared; being carried out pays a little.`,
+      `The practice gate lands you on Level ${PRACTICE_LEVEL}. Each level pays ${POINTS_PER_LEVEL} attribute points, and each new rank ${RANK_UP_POINTS} more. Ranks: ${ranks}.`,
+      `Points take an attribute to ${STAT_CAP}; class and equipment can carry it to ${BOOST_CAP}.`,
+      'STR drives physical damage. VIT sets HP and defence. AGI is speed, evasion and critical hits. PER is accuracy and critical hits. INT sets MP, magic, and the odds of binding a Shadow.',
     ],
   },
   {
     title: 'Classes',
     lines: [
-      `From D-Rank the System names you after your highest trained attribute — ${CLASSES.length} classes across five lines — and renames you at every rank. A class pays flat points into its attribute and gives you that line’s combat skills.`,
-    ],
-  },
-  {
-    title: 'Training',
-    lines: [
-      `Basic Hunter Training is one guided session. Finishing it lands you on Level ${CERT_LEVEL}, issues your kit, and opens the Gates.`,
-      'Valcorde builds a week from your interview and adapts it after every session from how it felt and how much you finished. Every fifth week is a deload.',
-      'A second session in one day pays 60% of its experience, a third and later 30%.',
+      `From D-Rank the System names you after your highest attribute — ${CLASSES.length} classes across five lines — and renames you at every rank. A class pays flat points into its attribute and gives you that line’s combat skills.`,
     ],
   },
   {
     title: 'Gates',
     lines: [
-      `${OPEN_PER_DAY} gates stand open a day, redrawn at midnight: one of every grade, at least two at yours. You can enter up to one grade above your own.`,
+      `${OPEN_PER_DAY} gates stand open at a time: one of every grade, at least two at yours. You can enter up to one grade above your own. Clear one and another of its grade opens in its place; the whole board redraws at midnight.`,
       'The brief runs the gate headlessly 24 times with your actual party and tells you how often it cleared. That is the verdict.',
-      `A gate pays shards on a clear (${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S), double that once as a first-clear bounty, and equipment. Withdrawing between chambers pays a share; being carried out pays little and locks you out for ${WIPE_LOCK / 36e5} hours.`,
-      `Each gate adds fatigue (${RAID_FATIGUE.E} at E to ${RAID_FATIGUE.S} at S, of ${FATIGUE_MAX}). Fatigue drags every attribute down until it fades, about five an hour.`,
+      `A gate pays shards on a clear (${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S), double that once as a first-clear bounty, and equipment. Being carried out locks you out for ${WIPE_LOCK / 36e5} hours.`,
+    ],
+  },
+  {
+    title: 'Health, mana and fatigue',
+    lines: [
+      `Health and mana carry from one gate to the next and come back on their own, about ${Math.round(PCT_PER_HOUR * 100)}% an hour.`,
+      `Each gate adds fatigue (${RAID_FATIGUE.E} at E to ${RAID_FATIGUE.S} at S, of ${FATIGUE_MAX}). Fatigue drags every attribute down — at ${FATIGUE_MAX} you fight at half strength — and fades about ${FATIGUE_PER_HOUR} an hour. It is the only thing that limits how much you can raid.`,
     ],
   },
   {

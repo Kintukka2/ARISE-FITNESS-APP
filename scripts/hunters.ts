@@ -1,7 +1,7 @@
 /** Synthetic hunters for the balance tools: a typical player at a given level. */
 import { defaults } from '@/core/save';
 import { grant, autoEquip, ofRank } from '@/core/gear';
-import { syncClass, RANK_LADDER, autoAllocate } from '@/core/progression';
+import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, syncClass } from '@/core/progression';
 import type { Rank } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
 import { rng } from '@/core/util';
@@ -14,10 +14,9 @@ export const LEVELS: Record<Rank, [number, number, number]> = {
 export function typicalHunter(level: number, gearRank: Rank, seed: string) {
   const s = defaults();
   s.hunter.level = level;
-  s.training.certified = true;
   const ranks = RANK_LADDER.filter((r) => r.min <= level && r.min > 1).length;
-  // Points from levels and rank-ups, plus roughly a Boon point every three days of the climb.
-  s.hunter.points = (level - 1) * 3 + ranks * 5 + Math.round(level * 0.6);
+  // Points from levels and rank-ups. Secret Missions add a little on top; a typical hunter is not counted on to have them.
+  s.hunter.points = (level - 1) * POINTS_PER_LEVEL + ranks * RANK_UP_POINTS;
   const r = rng(seed);
   s.hunter.attrs[STATS[Math.floor(r() * 5)]] += 5;
   autoAllocate(s);

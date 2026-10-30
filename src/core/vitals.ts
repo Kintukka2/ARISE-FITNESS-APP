@@ -7,8 +7,8 @@ import { clamp } from './util';
 
 const HOUR = 36e5;
 const FLAT_PER_HOUR = 10;
-const PCT_PER_HOUR = 0.05;
-const FATIGUE_PER_HOUR = 5;
+export const PCT_PER_HOUR = 0.05;
+export const FATIGUE_PER_HOUR = 5;
 export const FATIGUE_MAX = 100;
 export const RAID_FATIGUE: Record<string, number> = { E: 5, D: 8, C: 12, B: 16, A: 22, S: 30 };
 /** Carried out of a gate: the medics keep you this long. */

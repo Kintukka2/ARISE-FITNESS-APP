@@ -1,17 +1,18 @@
-/** The Gates: today's board, the brief, and the way in. */
+/** The Gates: the board, the brief, and the way in. */
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { powerOf } from '@/core/combat';
-import { allies, board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx, sealed } from '@/core/gates';
+import { allies, board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
+import { GATE_XP, practiceAward } from '@/core/progression';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as story from '@/core/story';
 import type { Dungeon, Rank } from '@/core/types';
 import { RANKS } from '@/core/types';
-import { hhmmss, msUntilMidnight } from '@/core/util';
+import { dayKey, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
@@ -28,7 +29,7 @@ function coachLine(s = store.get()) {
   if (v.locked) return 'You were carried out of the last one. Sit down. The board will have turned over by the time you are fit anyway.';
   if (v.fatigue > 50) return 'You are running on nothing. Whatever you clear like this, you will clear badly and pay for twice.';
   if (!s.gates.clears) return 'Pick something at your own grade and go in with people. Nobody clears their first gate alone, and nobody sensible tries.';
-  return 'Clear one and it closes. Ten a day, and they are not the same ten tomorrow — read the assessment before you commit.';
+  return 'Clear one and it closes, and something else opens in its place. The board never runs dry. You do — read the assessment, and watch your fatigue.';
 }
 
 export function Gates() {
@@ -97,8 +98,8 @@ export function Gates() {
       </div>
       <div class="boardhead">
         <span class="label">{band === 'all' ? 'Open gates' : `${band}-Rank gates`}</span>
-        <span class="label">Refresh <b class="num countdown">{hhmmss(msUntilMidnight())}</b></span>
-        <span class="label">{shown.filter((d) => sealed(s, d)).length}/{shown.length} cleared</span>
+        <span class="label">Redraw <b class="num countdown">{hhmmss(msUntilMidnight())}</b></span>
+        <span class="label">{s.gates.sealed.day === dayKey() ? s.gates.sealed.ids.length : 0} closed today</span>
       </div>
       <ul class="board" data-tour="board">
         {shown.map((d) => <GateRow key={d.id} d={d} />)}
@@ -110,18 +111,17 @@ export function Gates() {
 function GateRow({ d }: { d: Dungeon }) {
   const s = useSave();
   const block = entryBlock(s, d);
-  const shut = sealed(s, d);
   const locked = block === 'licence';
   const known = bossKnown(s, d);
   const boss = enemyById(d.boss);
   return (
     <li>
-      <button type="button" class={`gaterow ${shut ? 'is-shut' : ''} ${locked ? 'is-locked' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${isPractice(d) ? 'is-practice' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
+      <button type="button" class={`gaterow ${locked ? 'is-locked' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${isPractice(d) ? 'is-practice' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
         onClick={() => { sfx.tap(); if (locked) toast(`The Association will not license you for ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
         <RankPlate rank={d.rank} size={34} />
         <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}</span>
         <span class="gaterow__mark">
-          {shut ? <span class="chip" data-tone="verdant">Cleared</span> : locked ? <Glyph name="lock" /> : <span title={known ? boss?.name : 'Unidentified'}><Glyph name={known ? 'skull' : 'unknown'} /></span>}
+          {locked ? <Glyph name="lock" /> : <span title={known ? boss?.name : 'Unidentified'}><Glyph name={known ? 'skull' : 'unknown'} /></span>}
         </span>
       </button>
     </li>
@@ -147,6 +147,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
   const sh = shop.GATE_SHARDS[d.rank as Rank];
+  const xp = isPractice(d) ? practiceAward(s) : GATE_XP[d.rank as Rank];
   const first = !s.gates.cleared.includes(d.id);
   const hpNow = vitals.read(s);
 
@@ -188,15 +189,14 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
         </div>
         <div class="tiles">
-          <Tile label="Clear" value={<Shards n={sh} />} sub="Mana Shards" />
-          <Tile label="First clear" value={first ? <Shards n={sh * 2} /> : '—'} sub={first ? 'bounty, once' : 'already claimed'} />
+          <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />
+          <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '—'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />
           <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
           <Tile label="Chambers" value={d.mobRounds + (d.elite ? 1 : 0) + 1} sub={d.elite ? 'mobs, gatekeeper, boss' : 'mobs, then the boss'} />
         </div>
       </Section>
 
-      {block === 'sealed' ? <Btn block disabled>Cleared. A fresh board opens in {hhmmss(msUntilMidnight())}</Btn>
-        : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
+      {block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
           : block === 'down' ? <Btn block disabled>You are in no condition to enter anything.</Btn>
             : <Btn kind="primary" size="lg" block onClick={enter} sound="none" tour="enter">Enter The Gate</Btn>}
 
@@ -218,15 +218,11 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 }
 
 async function intro() {
-  await sys({
-    title: 'Dungeons Unlocked', kind: 'gates',
-    lines: ['Basic Hunter Training complete. The Association has cleared you to enter Gates.', 'Ten stand open at a time. Read the board before you pick one.'],
-  });
   await tour({
     who: 'coach', title: 'What am I looking at?', steps: [
-      { at: 'licence', say: 'Your Association grade. It rises with your level — training, not raiding, is what gets you licensed for deeper gates. You can always go one grade above it, if you are brave.' },
+      { at: 'licence', say: 'Your Association grade. It rises with your level, and your level rises with every gate you clear. You can always go one grade above it, if you are brave.' },
       { at: 'vitals', say: 'Health and mana carry between runs and come back on their own, about five per cent an hour. Fatigue builds with every gate and drags everything you are worth down until it fades.' },
-      { at: 'bands', say: 'Ten gates a day, redrawn at midnight. One of every grade, so you can see the whole ladder, and at least two at your own.' },
+      { at: 'bands', say: 'Ten gates at a time: one of every grade, so you can see the whole ladder, and at least two at your own. Clear one and another opens in its place. The whole board redraws at midnight.' },
       { at: 'board', say: 'The one at the top is mine. The Association keeps a practice gate shut for exactly this, and I have signed us both in. Open it, read the brief, then go in.' },
     ],
   });

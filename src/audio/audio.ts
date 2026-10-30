@@ -192,7 +192,6 @@ export const sfx = {
     tone(160 + pitch, 0, 0.12, 'square', 0.16, 60);
     noise(0, 0.14, 0.1, 1800);
   },
-  beep: (last = false) => on() && tone(last ? 1200 : 760, 0, last ? 0.3 : 0.08, 'sine', last ? 0.28 : 0.16),
   startTicker: () => {
     if (!on() || ticker) return;
     ticker = setInterval(() => tone(1500 + Math.random() * 700, 0, 0.014, 'square', 0.022), 46);
@@ -219,7 +218,6 @@ const MOODS: Record<Mood, MoodDef> = {
 const semi = (root: number, n: number) => root * Math.pow(2, n / 12);
 let mood: Mood | null = null;
 let want: Mood = 'calm';
-let ducked = false;
 let beat = 0;
 let nextAt = 0;
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -298,7 +296,7 @@ function schedule() {
   }
 }
 
-const level = () => (ducked || !musicOn() ? 1e-4 : 0.36);
+const level = () => (!musicOn() ? 1e-4 : 0.36);
 
 function ramp(to: number, secs: number) {
   if (!ctx || !bus) return;
@@ -325,10 +323,6 @@ export const music = {
       ramp(1e-4, 0.5);
       setTimeout(() => ramp(level(), 0.8), 500);
     }
-  },
-  duck(yes: boolean) {
-    ducked = yes;
-    ramp(level(), yes ? 0.45 : 1.4);
   },
   refresh() {
     ramp(level(), 0.6);

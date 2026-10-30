@@ -4,8 +4,7 @@ import * as store from '@/store';
 import { back, toast } from '@/ui/overlays';
 import { App } from '@/app/App';
 import { catchUp } from '@/app/flow';
-import { dayKey } from '@/core/util';
-import { go, route, player, arena } from '@/app/router';
+import { go, route, arena } from '@/app/router';
 import { initBilling, onReminderTap, syncReminders } from '@/platform/native';
 import './styles/theme.css';
 import './styles/ui.css';
@@ -18,15 +17,13 @@ armAudio();
 document.documentElement.dataset.screen = route.get();
 
 void initBilling();
-onReminderTap((where) => { if (!player.get() && !arena.get()) go(where); });
+onReminderTap(() => { if (!arena.get() && store.get().onboarded) go('gates'); });
 store.subscribe(() => void syncReminders(store.get()));
 
-// The calendar is authoritative: coming back to the app rolls the day.
+// Coming back to the app settles the vitals; the board and the shelf read the date on every render.
 const wake = () => { if (!document.hidden) void catchUp(); };
 document.addEventListener('visibilitychange', wake);
 window.addEventListener('focus', wake);
-// ...and so does midnight, if the app is simply left open through it.
-setInterval(() => { if (store.get().onboarded && store.get().daily.date !== dayKey()) void catchUp(); }, 60_000);
 
 // Android back: unwind one overlay, else go home, else a second press leaves.
 let armed = false;
@@ -34,7 +31,7 @@ const trap = () => { try { history.pushState({ arise: 1 }, ''); } catch { /* san
 trap();
 window.addEventListener('popstate', () => {
   if (back()) return trap();
-  if (route.get() !== 'quests' && store.get().onboarded) { go('quests'); return trap(); }
+  if (route.get() !== 'gates' && store.get().onboarded) { go('gates'); return trap(); }
   if (!armed) {
     armed = true;
     toast('Back again to leave ARISE.', 'warn');

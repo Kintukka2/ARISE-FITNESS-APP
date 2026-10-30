@@ -6,14 +6,13 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev } from '@/core/combat';
 import { STATUS_TEXT } from '@/core/combat';
-import { dungeonById, enemyById } from '@/core/gates';
+import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
-import { hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { rewardChain } from '@/app/flow';
-import { arena, go } from '@/app/router';
+import { arena } from '@/app/router';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, RankPlate, Shards } from '@/ui/components';
@@ -177,8 +176,7 @@ export function Arena() {
 
   async function leave() {
     arena.set(null);
-    await rewardChain(null);
-    go('gates');
+    await rewardChain(result?.xp ?? null, 'gates');
   }
 
   if (phase === 'results' && result) return <Results d={d} r={result} onDone={leave} />;
@@ -249,15 +247,15 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
-          <p class="muted">{r.outcome === 'cleared' ? `${d.name} cleared. The gate begins to close — new gates open in ${hhmmss(msUntilMidnight())}.`
+          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.' : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
             : r.outcome === 'withdrawn' ? `You walked back out after ${r.chambersWon} of ${r.chambers} chambers. It is still open.`
               : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
         </header>
         <div class="tiles">
+          <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared'}</small></div>
           <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty} /></b>{r.bounty > 0 ? <small class="tile__sub">includes a first-clear bounty of {r.bounty}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
           <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `locked out ${Math.ceil(v.lockedFor / 36e5)}h` : 'recovers ~5% an hour'}</small></div>
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of 100</small></div>
-          <div class="tile"><span class="label">Recovered</span><b class="tile__v num">{r.loot.length}</b><small class="tile__sub">artifact{r.loot.length === 1 ? '' : 's'}</small></div>
         </div>
         {r.loot.length > 0 && (
           <section>
