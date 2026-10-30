@@ -1,0 +1,33 @@
+/** Synthetic hunters for the balance tools: a typical player at a given level. */
+import { defaults } from '@/core/save';
+import { grant, autoEquip, ofRank } from '@/core/gear';
+import { syncClass, RANK_LADDER, autoAllocate } from '@/core/progression';
+import type { Rank } from '@/core/types';
+import { RANKS, STATS } from '@/core/types';
+import { rng } from '@/core/util';
+
+/** Levels across each grade: its floor, its middle, its top. */
+export const LEVELS: Record<Rank, [number, number, number]> = {
+  E: [3, 6, 9], D: [10, 15, 19], C: [20, 27, 34], B: [35, 42, 49], A: [50, 60, 69], S: [70, 85, 100],
+};
+
+export function typicalHunter(level: number, gearRank: Rank, seed: string) {
+  const s = defaults();
+  s.hunter.level = level;
+  s.training.certified = true;
+  const ranks = RANK_LADDER.filter((r) => r.min <= level && r.min > 1).length;
+  // Points from levels and rank-ups, plus roughly a Boon point every three days of the climb.
+  s.hunter.points = (level - 1) * 3 + ranks * 5 + Math.round(level * 0.6);
+  const r = rng(seed);
+  s.hunter.attrs[STATS[Math.floor(r() * 5)]] += 5;
+  autoAllocate(s);
+  syncClass(s);
+  for (const t of ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Weapon', 'Off-Hand', 'Amulet', 'Ring', 'Ring']) {
+    const gi = RANKS.indexOf(gearRank) - (r() < 0.4 ? 1 : 0);
+    if (gi < 0) continue;
+    const pool = ofRank(RANKS[gi]).filter((d) => d.slot === t);
+    if (pool.length) grant(s, pool[Math.floor(r() * pool.length)].id);
+  }
+  autoEquip(s);
+  return s;
+}

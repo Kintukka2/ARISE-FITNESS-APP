@@ -1,0 +1,97 @@
+/**
+ * Visual tour: loads the veteran fixture and screenshots every screen and the
+ * main sheets, at phone size, into e2e/out/screens/. Fails on console errors.
+ *
+ *   npm run build && node scripts/run.mjs scripts/fixture.ts && node e2e/screens.mjs
+ */
+import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import { mkdirSync, readFileSync } from 'node:fs';
+
+const PORT = 4181;
+const OUT = 'e2e/out/screens';
+mkdirSync(OUT, { recursive: true });
+const save = readFileSync('e2e/fixtures/veteran.json', 'utf8');
+
+const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe' });
+await new Promise((r) => { server.stdout.on('data', (d) => String(d).includes(String(PORT)) && r()); setTimeout(r, 4000); });
+
+const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const errors = [];
+page.on('pageerror', (e) => errors.push(String(e)));
+page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+await page.addInitScript((json) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('arise:save', json); sessionStorage.setItem('seeded', '1'); } }, save);
+
+const sleep = (ms) => page.waitForTimeout(ms);
+const snap = (name, full = false) => page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
+async function drain() {
+  for (let i = 0, quiet = 0; i < 40 && quiet < 4; i++) {
+    await sleep(150);
+    if (await page.locator('.syswin__foot .btn').first().isVisible().catch(() => false)) { quiet = 0; await page.locator('.syswin__foot .btn').last().click(); continue; }
+    if (await page.locator('.syswin').first().isVisible().catch(() => false)) { quiet = 0; await page.locator('.syswin').first().click(); continue; }
+    if (await page.locator('.tour').isVisible().catch(() => false)) { quiet = 0; await page.locator('.tour').click({ position: { x: 10, y: 10 } }); continue; }
+    quiet++;
+  }
+}
+const close = () => page.locator('.sheet.is-top .sheet__head .iconbtn[aria-label="Close"]').click();
+const nav = async (k) => { await page.locator(`[data-nav="${k}"]`).click(); await sleep(400); await drain(); };
+
+try {
+  await page.goto(`http://localhost:${PORT}/`);
+  await sleep(1200);
+  await drain();
+  await snap('quests', true);
+  await page.locator('.booncard').click(); await sleep(400); await snap('boon'); await close();
+  await page.locator('[aria-label="Daily Quest stats"]').click(); await sleep(400); await snap('quest-record'); await close();
+
+  await nav('training');
+  await snap('training', true);
+  await page.locator('[aria-label="Training stats"]').click(); await sleep(400); await snap('training-stats', true); await close();
+  await page.locator('.tab', { hasText: 'Your Programmes' }).click(); await sleep(200); await snap('programmes');
+  await page.locator('.tab', { hasText: 'Ryn' }).click();
+  await page.locator('text=Begin Session').click(); await sleep(600); await drain();
+  await snap('player-loaded');
+  await page.locator('text=Abort').click(); await drain();
+
+  await nav('profile');
+  await snap('profile', true);
+  await page.locator('[aria-label="Inventory"]').first().click(); await sleep(400); await snap('inventory');
+  await page.locator('.itemrow').first().click(); await sleep(400); await snap('item'); await close(); await close();
+  await page.locator('[aria-label="Hunter dossier"]').click(); await sleep(400); await snap('dossier', true); await close();
+
+  await nav('gates');
+  await snap('gates', true);
+  await page.locator('.gaterow:not(.is-locked):not(.is-practice)').first().click(); await sleep(800); await snap('brief', true);
+  await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
+  await page.waitForSelector('.arena', { timeout: 10000 });
+  await sleep(2500); await snap('arena-fight');
+  for (let i = 0; i < 12; i++) {
+    await page.waitForSelector('.arena__foot .btn, .arena--results', { timeout: 30000 });
+    if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
+    if (await page.locator('.seg__btn').first().isVisible().catch(() => false)) { await page.locator('.seg__btn', { hasText: 'Skip' }).click(); continue; }
+    if (await page.locator('text=Claim The Gate').isVisible()) { await page.locator('text=Claim The Gate').click(); break; }
+    if (await page.locator('text=Carried Out').isVisible()) { await page.locator('text=Carried Out').click(); break; }
+    await page.locator('text=Press On').click();
+  }
+  await page.waitForSelector('.arena--results');
+  for (const f of await page.locator('.flip').all()) await f.click();
+  await sleep(600); await snap('raid-results', true);
+  await page.locator('text=Leave The Gate').click(); await drain();
+
+  await nav('shadows');
+  await snap('shadows', true);
+  await page.locator('.shadowrow__main').first().click(); await sleep(400); await snap('shadow-detail'); await close();
+  await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
+  await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
+
+  if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));
+  console.log(`screens green · ${OUT}/`);
+} catch (e) {
+  await snap('failure').catch(() => {});
+  console.error(e);
+  process.exitCode = 1;
+} finally {
+  await browser.close();
+  server.kill();
+}

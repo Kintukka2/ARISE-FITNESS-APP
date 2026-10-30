@@ -1,0 +1,8 @@
+node_modules/
+dist/
+/android/
+/ios/
+coverage/
+*.log
+.DS_Store
+e2e/out/

@@ -1,0 +1,10 @@
+{
+  "appId": "com.arisefitnessrpg.app",
+  "appName": "ARISE: Fitness RPG",
+  "webDir": "dist",
+  "backgroundColor": "#04060f",
+  "android": { "backgroundColor": "#04060f" },
+  "plugins": {
+    "LocalNotifications": { "smallIcon": "ic_stat_arise", "iconColor": "#4fd6ff" }
+  }
+}
