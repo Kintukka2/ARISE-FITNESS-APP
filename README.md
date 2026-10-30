@@ -40,11 +40,11 @@ Everything runs on the device. There is no server, no account and no network: th
 |---|---|
 | **The practice gate** | Valcorde walks every new licence through it once. Clearing it lands you on Level 5 with points to spend |
 | **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief simulates the gate 24 times and tells you the honest clear rate |
-| **Fighting** | Turn by turn, in order of initiative. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
+| **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
 | **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of what you cleared; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). Three points per level, five per rank, spent by you |
-| **Classes** | From D-Rank you are named after your highest attribute (25 classes in five lines). A class adds flat points to that attribute and gives you combat skills |
+| **Classes** | From D-Rank you are named after your highest attribute (25 classes in five lines). A class adds flat points to that attribute and gives you combat skills: at D, C and A, with passives at B and S |
 | **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill |
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
@@ -85,17 +85,17 @@ simulated headlessly.
 
 Combat difficulty is measured, not guessed. `npm run calibrate` runs every gate against typical
 hunters from the middle of its grade and sets a per-gate multiplier so they clear about 75% of the
-time. Run it after any change to combat, enemies, classes, gear or the party. `npm run balance`
-prints the result:
+time. Run it after any change to combat, enemies, classes, gear or the party. Its hunters are
+seeded, so two runs give the same answer. `npm run balance` prints the result:
 
 ```
 grade  floor  middle  top   | middle vs one grade up
-  E     57%    69%    77%  |   18%
-  D     60%    65%    82%  |   15%
-  C     72%    83%    91%  |   9%
-  B     68%    76%    82%  |   10%
-  A     69%    71%    85%  |   10%
-  S     42%    69%    87%  |   —
+  E     57%    67%    76%  |   20%
+  D     58%    64%    80%  |   11%
+  C     71%    82%    90%  |   11%
+  B     70%    74%    82%  |   9%
+  A     65%    70%    85%  |   17%
+  S     47%    73%    86%  |   —
 
 Days to each rank (N gates a day at your own grade, 75% cleared, first clears counted):
    3 gates/day  D:2d  C:8d  B:19d  A:38d  S:73d  N:135d
@@ -103,8 +103,8 @@ Days to each rank (N gates a day at your own grade, 75% cleared, first clears co
   10 gates/day  D:1d  C:3d  B:6d  A:12d  S:22d  N:41d
 ```
 
-A hunter at the bottom of a grade clears its gates a bit over half the time, and one at the top
-almost always. Reaching a grade above your own is possible, and costly. Sovereign takes about two
+A hunter at the bottom of a grade clears its gates about half to two thirds of the time, and one at the top
+about four times in five. Reaching a grade above your own is possible, and costly. Sovereign takes about two
 months at six gates a day. The economy model assumes you raid at your own grade; fatigue makes ten
 a day at S-Rank a hard thing to keep up.
 

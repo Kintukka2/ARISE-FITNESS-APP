@@ -215,6 +215,9 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .unit.is-pickable:hover { border-color: rgba(255, 77, 109, 0.7); }
 .unit.is-aimed { border-color: var(--blood); box-shadow: 0 0 0 1px var(--blood), 0 0 14px var(--blood-glow); }
 .unit.is-acting { box-shadow: 0 0 0 1px var(--mana), 0 0 16px var(--mana-glow); }
+.unit__intent { margin-top: 4px; font-size: 0.68rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unit__intent.is-you { color: var(--blood); font-weight: 700; }
+.unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
 .turnbar { width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
 .turnbar__hint { color: var(--ink-2); font-size: 0.78rem; text-align: center; }
 .turnbar__hint b { color: var(--blood); }

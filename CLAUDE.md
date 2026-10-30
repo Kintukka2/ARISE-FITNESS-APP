@@ -29,9 +29,11 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - The fight is deterministic for a seed and a list of orders. The hunter's orders are written to
   the open run (`raid.order`) before they play, and a chamber is resumed by replaying them
   (`raid.resume`). Never let anything in a fight read `Math.random` or the clock.
-- The projection and calibration fight on the auto policy (`choose()`, `targets()`). A hunter who
-  gives no orders must fight exactly the auto fight; `tests/combat.test.ts` checks it. Change the
-  auto policy and you must recalibrate.
+- The projection and calibration fight on the auto policy (`choose()`, `targets()`, and the foes'
+  `foresee()`). A hunter who gives no orders must fight exactly the auto fight;
+  `tests/combat.test.ts` checks it. Change the auto policy and you must recalibrate.
+- A foe's shown intent is a promise: it does exactly that unless its target fell or it is stunned.
+  Anything that changes what a foe does must keep that true; the intent test checks it.
 - Copy that quotes a number reads it from the engine's constants (see `screens/Guide.tsx`), so the
   text cannot drift from the rules.
 - Save shape: adding a field with a default needs nothing beyond `defaults()` in `core/save.ts`.

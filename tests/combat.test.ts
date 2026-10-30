@@ -96,7 +96,7 @@ describe('turn by turn', () => {
   });
 
   it('a skill still cooling down is not used, and the System chooses instead', () => {
-    // A B-Rank class has a second skill, and the second one has a cooldown.
+    // From C-Rank a class has a second skill, and the second one has a cooldown.
     const s = hunter(40);
     const run = atBoss(s, 'DNG-029');
     const d = dungeonById(run.dungeonId)!;
@@ -178,6 +178,74 @@ describe('turn by turn', () => {
     expect(s.gates.raid!.orders.length).toBeGreaterThan(0);
     raid.record(s, d, s.gates.raid!, raid.partyFor(s, d, s.gates.raid!, now), ch.result(), now);
     expect(s.gates.raid!.orders).toEqual([]);
+  });
+});
+
+describe('foe intents', () => {
+  it('every foe does exactly what it showed, unless its target fell first or it was stunned', () => {
+    let checked = 0;
+    for (const [level, id] of [[12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
+      const s = hunter(level);
+      const d = dungeonById(id)!;
+      const run = raid.begin(s, d, now);
+      for (let i = 0; i < raid.plan(d, run.seed).length; i++) {
+        const ch = raid.runChamber(d, run.seed, i, raid.partyFor(s, d, run, now));
+        const intent: Record<string, { ab: string; at?: string }> = {};
+        const fresh = new Set<string>();
+        const down = new Set<string>();
+        for (const e of ch.log) {
+          if (e.t === 'intent') { intent[e.u] = { ab: e.ab, at: e.at }; fresh.add(e.u); continue; }
+          if (e.t === 'down') { down.add(e.v); continue; }
+          if (e.t !== 'hit' && e.t !== 'miss' && e.t !== 'support' && e.t !== 'stun') continue;
+          if (!e.a.startsWith('e') || !fresh.has(e.a)) continue;
+          // The first event of a foe's action: it is the action it settled on.
+          fresh.delete(e.a);
+          if (e.t === 'stun') continue;
+          expect(e.ab).toBe(intent[e.a].ab);
+          const at = intent[e.a].at;
+          if (at && !down.has(at) && e.t !== 'support') expect(e.v).toBe(at);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(50);
+  });
+
+  it('every foe still standing has shown its next action when the hunter’s turn comes', () => {
+    const s = hunter(24);
+    const d = dungeonById('DNG-016')!;
+    atBoss(s, d.id);
+    const { ch } = raid.resume(s, d, s.gates.raid!, now);
+    let turns = 0;
+    while (ch.turn) {
+      const shown = new Set(ch.log.filter((e) => e.t === 'intent').map((e) => ('u' in e ? e.u : '')));
+      for (const f of ch.turn.foes) expect(shown.has(f)).toBe(true);
+      turns++;
+      ch.play(raid.order(s, s.gates.raid!, null));
+    }
+    expect(turns).toBeGreaterThan(2);
+  });
+
+  it('protect sends allies at the foe about to hit the hunter', () => {
+    const hero = new Unit({ uid: 'hero', name: 'H', side: 'p', base: { ...base, AGI: 1, PER: 1 }, tag: 'hero', hpMult: 50 });
+    const ally = new Unit({ uid: 'a0', name: 'A', side: 'p', base: { ...base, AGI: 30 }, tag: 'ally' });
+    const foes = [0, 1, 2].map((j) => new Unit({ uid: `e${j}`, name: `F${j}`, side: 'e', base, hpMult: 20 }));
+    const log: { t: string; u?: string; at?: string; a?: string; v?: string }[] = [];
+    const g = battle([hero, ally], foes, rng('protect'), 1, () => {}, log as never[], { hero: 'hero', tactic: 'protect' });
+    g.next();
+    const coming = log.filter((e) => e.t === 'intent' && e.at === 'hero').map((e) => e.u);
+    const swing = log.find((e) => (e.t === 'hit' || e.t === 'miss') && e.a === 'a0');
+    if (coming.length) expect(coming).toContain(swing?.v);
+  });
+});
+
+describe('class skills', () => {
+  it('arrive at D, C and A', () => {
+    const kit = (level: number) => raid.heroSpec(hunter(level), now).kit ?? [];
+    expect(kit(10)).toHaveLength(1);
+    expect(kit(20)).toHaveLength(2);
+    expect(kit(35)).toHaveLength(2);
+    expect(kit(50)).toHaveLength(3);
   });
 });
 
