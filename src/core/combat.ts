@@ -1,12 +1,14 @@
 /**
- * The fight. Deterministic, seeded and round-based: a chamber is resolved in
- * full before it is shown, and the arena only replays the log.
+ * The fight. Deterministic, seeded and round-based. `battle` pauses on the
+ * hunter's turn for an order; given the same seed and the same orders it
+ * plays out the same way every time, so a fight can be replayed from its
+ * orders alone. Nobody waits in `fight`: the auto policy plays everyone.
  *
  * Everything a unit is worth comes from its five attributes. Abilities and
  * passives are data; statuses are a table of multipliers.
  */
 import { ABILITIES, CLASS_PASSIVES, CLASS_SKILLS, PASSIVES } from '@/data/abilities';
-import type { Ability, Attrs } from './types';
+import type { Ability, Attrs, Order, Tactic } from './types';
 import { clamp, type Rand } from './util';
 
 export interface Derived {
@@ -62,6 +64,8 @@ export const STATUS: Record<string, { turns: number; dot?: number; pdef?: number
   Weakened: { turns: 3, atk: 0.75 },
   Chilled: { turns: 3, ini: 0.75 },
   Rallied: { turns: 3, good: true, ini: 1.2, acc: 1.1 },
+  // Two, so it outlives the end of the round it was raised in; the unit's next turn takes it down.
+  Guarded: { turns: 2, good: true },
 };
 
 export const STATUS_TEXT: Record<string, string> = {
@@ -77,6 +81,7 @@ export const STATUS_TEXT: Record<string, string> = {
   Weakened: 'Hits a quarter softer.',
   Chilled: 'Acts later.',
   Rallied: 'Acts sooner and hits more often.',
+  Guarded: 'Takes half damage until its next turn.',
 };
 
 const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0 };
@@ -86,6 +91,11 @@ export const REACH_TEXT: Record<string, string> = {
 };
 
 const STRIKE: Ability = { name: 'Strike', type: 'physical', profile: 'single', mult: 1, cd: 0, inflicts: [] };
+export { STRIKE };
+/** What a guarding unit takes of every hit. */
+export const GUARD = 0.5;
+/** A field potion restores this share of the drinker's maximum HP. */
+export const FIELD_POTION_HEAL = 0.3;
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS].map((a) => [a.name, a]));
 const passiveMap = new Map<string, string>([...PASSIVES, ...CLASS_PASSIVES].map((p) => [p.name, p.style]));
 export const ability = (n: string) => abilityMap.get(n);
@@ -120,6 +130,8 @@ export class Unit {
   imm: string[]; res: string[]; status: Record<string, number> = {}; cd: Record<string, number> = {};
   esc = 0; aura = { ini: 0, acc: 0 }; spent = new Set<string>(); kin: Unit[] = [];
   atkMult: number; tag: UnitSpec['tag']; ref?: string;
+  /** The last foe to land a hit on this unit, for allies told to protect it. */
+  hitBy?: Unit;
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
@@ -174,6 +186,8 @@ export type Ev =
   | { t: 'tick'; v: string; s: string; dmg: number; hp: number }
   | { t: 'expire'; v: string; s: string }
   | { t: 'down'; v: string }
+  | { t: 'guard'; a: string }
+  | { t: 'heal'; a: string; amt: number; hp: number }
   | { t: 'passive'; u: string; p: string; k: string; hp?: number };
 
 const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva), 5, 95);
@@ -193,15 +207,52 @@ function choose(u: Unit, r: Rand): Ability {
   return r() < 0.6 ? heavy : ready[Math.floor(r() * ready.length)];
 }
 
-function targets(a: Ability, foes: Unit[], r: Rand): Unit[] {
+/** Who an ability lands on. A `first` target is always among them; the rest are drawn at random. */
+function targets(a: Ability, foes: Unit[], r: Rand, first?: Unit): Unit[] {
   const live = foes.filter((f) => f.alive());
   const n = REACH[a.profile] ?? 1;
   if (n >= live.length) return live;
   const pool = live.slice();
   const out: Unit[] = [];
+  if (first && pool.includes(first)) out.push(...pool.splice(pool.indexOf(first), 1));
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]);
   return out;
 }
+
+/** The hunter's order, if it names something they can use right now. */
+function ordered(u: Unit, o: Order): Ability | null {
+  if (o.use === STRIKE.name) return STRIKE;
+  if (!u.kit.includes(o.use) || u.cd[o.use]) return null;
+  return ability(o.use) ?? null;
+}
+
+/** The standing orders, as the brief offers them. */
+export const TACTICS: { key: Tactic; name: string; desc: string }[] = [
+  { key: 'default', name: 'As They See Fit', desc: 'Everyone picks their own targets.' },
+  { key: 'finish', name: 'Finish The Weakest', desc: 'Every ally and Shadow goes for the foe nearest to falling.' },
+  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for whatever last hit you, and until something has, whatever hits hardest.' },
+  { key: 'spread', name: 'Spread The Pain', desc: 'They aim their bleeds, curses and stuns at foes not already carrying them.' },
+];
+
+const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
+
+/** Where standing orders point an ally or a Shadow. Undefined leaves it to chance. */
+function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Unit | undefined {
+  if (u.side !== 'p' || u.tag === 'hero' || tactic === 'default') return undefined;
+  const live = foes.filter((f) => f.alive());
+  if (!live.length) return undefined;
+  if (tactic === 'finish') return live.reduce((x, y) => (y.hp < x.hp ? y : x));
+  if (tactic === 'protect') {
+    const last = hero?.hitBy;
+    return last && last.alive() && live.includes(last) ? last : live.reduce((x, y) => (threat(y) > threat(x) ? y : x));
+  }
+  // Spread: the healthiest foe not already carrying what this ability inflicts.
+  const bare = live.filter((f) => a.inflicts.some((st) => STATUS[st] && !f.status[st] && !f.imm.includes(st)));
+  return bare.length ? bare.reduce((x, y) => (y.hp > x.hp ? y : x)) : undefined;
+}
+
+/** What a turn can do beyond its unit: the party's standing orders, its hunter, and potions left. */
+interface Ctx { tactic: Tactic; hero?: Unit; potions: number }
 
 function survive(t: Unit, log: Ev[]) {
   if (t.hp > 0 || !t.has('survival') || t.spent.has('stand')) return;
@@ -210,14 +261,30 @@ function survive(t: Unit, log: Ev[]) {
   log.push({ t: 'passive', u: t.uid, p: t.named('survival'), k: 'stand', hp: 1 });
 }
 
-function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill: (killer: Unit, victim: Unit) => void) {
+function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill: (killer: Unit, victim: Unit) => void, o: Order | null, ctx: Ctx) {
+  if (u.status.Guarded) {
+    delete u.status.Guarded;
+    log.push({ t: 'expire', v: u.uid, s: 'Guarded' });
+  }
   if (u.status.Stunned) {
     // A stun costs the next action, whenever in the round it landed.
     delete u.status.Stunned;
     log.push({ t: 'stun', a: u.uid });
     return;
   }
-  const a = choose(u, r);
+  if (o?.use === 'Guard') {
+    u.status.Guarded = STATUS.Guarded.turns;
+    log.push({ t: 'guard', a: u.uid });
+    return;
+  }
+  if (o?.use === 'Potion' && ctx.potions > 0) {
+    ctx.potions -= 1;
+    const was = u.hp;
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * FIELD_POTION_HEAL);
+    log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp) });
+    return;
+  }
+  const a = (o && ordered(u, o)) ?? choose(u, r);
   if (a.cd) u.cd[a.name] = a.cd;
   if (a.profile === 'support') {
     for (const f of friends) if (f.alive()) f.status.Rallied = STATUS.Rallied.turns;
@@ -225,7 +292,8 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     return;
   }
   const magic = a.type === 'magic';
-  for (const t of targets(a, foes, r)) {
+  const first = o?.at ? foes.find((f) => f.uid === o.at && f.alive()) : aim(u, a, foes, ctx.tactic, ctx.hero);
+  for (const t of targets(a, foes, r, first)) {
     const aim = u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0);
     if (r() * 100 > hitChance(aim, t.eva())) {
       log.push({ t: 'miss', a: u.uid, v: t.uid, ab: a.name });
@@ -235,6 +303,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     let dmg = Math.max(1, ((power * a.mult * power) / (power + t.def(magic))) * (1 - SWING + r() * 2 * SWING));
     const crit = r() * 100 < u.d.crit;
     if (crit) dmg *= 1.5;
+    if (t.status.Guarded) dmg *= GUARD;
     dmg = Math.round(dmg);
     if (magic && t.has('arcane') && !t.spent.has('ward')) {
       t.spent.add('ward');
@@ -244,6 +313,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     }
     const was = t.alive();
     t.hp -= dmg;
+    t.hitBy = u;
     survive(t, log);
     if (u.has('escalation') && u.esc < 2) u.esc += 1;
     log.push({ t: 'hit', a: u.uid, v: t.uid, ab: a.name, dmg, crit, hp: Math.max(0, Math.round(t.hp)) });
@@ -309,14 +379,37 @@ function openSide(side: Unit[], log: Ev[]) {
 
 export interface FightResult { won: boolean; rounds: number; log: Ev[] }
 
+/** The hunter's turn, as `battle` hands it out: what they can use, and who is left to aim at. */
+export interface Turn {
+  uid: string;
+  skills: { ability: Ability; cd: number }[];
+  foes: string[];
+  potions: number;
+}
+
+export interface BattleOpts {
+  /** The unit whose turns wait for an order. Unset, nobody waits and the auto policy plays everyone. */
+  hero?: string;
+  /** Standing orders for that unit's allies. */
+  tactic?: Tactic;
+  /** Field potions the waiting unit carries. */
+  potions?: number;
+}
+
 /**
- * Fight until one side is down. `actions` is how many times each foe acts per
- * round (it stands in for bodies the chamber does not show).
+ * Fight until one side is down, pausing on `opts.hero`'s turns. Each pause
+ * yields a `Turn` and takes back an `Order`, or null to let the auto policy
+ * choose. `actions` is how many times each foe acts per round (it stands in
+ * for bodies the chamber does not show). Events are written to `log` as they
+ * happen, so a caller can show the fight up to the pause.
  */
-export function fight(party: Unit[], foes: Unit[], r: Rand, actions: number, onKill: (killer: Unit | null, victim: Unit) => void = () => {}): FightResult {
-  const log: Ev[] = [];
+export function* battle(
+  party: Unit[], foes: Unit[], r: Rand, actions: number,
+  onKill: (killer: Unit | null, victim: Unit) => void = () => {}, log: Ev[] = [], opts: BattleOpts = {},
+): Generator<Turn, FightResult, Order | null | undefined> {
   openSide(party, log);
   openSide(foes, log);
+  const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0 };
   let round = 0;
   const any = (xs: Unit[]) => xs.some((x) => x.alive());
   while (round < ROUND_CAP && any(party) && any(foes)) {
@@ -328,7 +421,12 @@ export function fight(party: Unit[], foes: Unit[], r: Rand, actions: number, onK
       const enemy = u.side === 'p' ? foes : party;
       const own = u.side === 'p' ? party : foes;
       const reps = u.side === 'e' ? actions : 1;
-      for (let k = 0; k < reps && any(enemy); k++) act(u, enemy, own, r, log, onKill);
+      for (let k = 0; k < reps && any(enemy); k++) {
+        // A stunned hunter has no turn to give, so nothing waits for one.
+        const wait = u.uid === opts.hero && !u.status.Stunned;
+        const o = wait ? (yield turnOf(u, enemy, ctx.potions)) ?? null : null;
+        act(u, enemy, own, r, log, onKill, o, ctx);
+      }
     }
     for (const u of [...party, ...foes]) if (u.alive()) endOfRound(u, log, onKill);
     for (const u of foes) hazard(u, party, r, log);
@@ -336,6 +434,19 @@ export function fight(party: Unit[], foes: Unit[], r: Rand, actions: number, onK
   }
   // A stalemate is not a win.
   return { won: any(party) && !any(foes), rounds: round, log };
+}
+
+function turnOf(u: Unit, foes: Unit[], potions: number): Turn {
+  const skills = u.kit.map(ability).filter((a): a is Ability => !!a).map((a) => ({ ability: a, cd: u.cd[a.name] ?? 0 }));
+  return { uid: u.uid, skills, foes: foes.filter((f) => f.alive()).map((f) => f.uid), potions };
+}
+
+/** Fight to the end with nobody waiting: the auto policy plays every side. */
+export function fight(party: Unit[], foes: Unit[], r: Rand, actions: number, onKill: (killer: Unit | null, victim: Unit) => void = () => {}, tactic: Tactic = 'default'): FightResult {
+  const g = battle(party, foes, r, actions, onKill, [], { tactic });
+  let step = g.next();
+  while (!step.done) step = g.next(null);
+  return step.value;
 }
 
 /** Sum of attributes: the one "power" number shown anywhere. */

@@ -51,16 +51,22 @@ try {
   await nav('gates');
   await snap('gates', true);
   await page.locator('.gaterow:not(.is-locked):not(.is-practice)').first().click(); await sleep(800); await snap('brief', true);
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-orders');
   await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
   await page.waitForSelector('.arena', { timeout: 10000 });
-  await sleep(2500); await snap('arena-fight');
-  for (let i = 0; i < 12; i++) {
-    await page.waitForSelector('.arena__foot .btn, .arena--results', { timeout: 30000 });
+  await page.waitForSelector('.turnbar', { timeout: 20000 });
+  await drain();
+  await sleep(400); await snap('arena-turn');
+  // Hand the rest to the System.
+  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  await page.locator('.seg__btn', { hasText: 'Auto' }).click();
+  for (let i = 0; i < 40; i++) {
+    await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin', { timeout: 30000 });
     if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
-    if (await page.locator('.seg__btn').first().isVisible().catch(() => false)) { await page.locator('.seg__btn', { hasText: 'Skip' }).click(); continue; }
+    if (await page.locator('.syswin').first().isVisible().catch(() => false)) { await drain(); continue; }
     if (await page.locator('text=Claim The Gate').isVisible()) { await page.locator('text=Claim The Gate').click(); break; }
     if (await page.locator('text=Carried Out').isVisible()) { await page.locator('text=Carried Out').click(); break; }
-    await page.locator('text=Press On').click();
+    await sleep(800);
   }
   await page.waitForSelector('.arena--results');
   for (const f of await page.locator('.flip').all()) await f.click();

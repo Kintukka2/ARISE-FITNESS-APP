@@ -75,10 +75,12 @@ export function seal(s: Save, d: Dungeon, day = dayKey()) {
 /** Up to one grade above your own: the "taster". */
 export const licensedFor = (s: Save, d: Dungeon) => rankIdx(d.rank) <= rankIdx(licensedRank(s)) + 1;
 
-export type EntryBlock = 'licence' | 'locked' | 'down';
+export type EntryBlock = 'licence' | 'open' | 'locked' | 'down';
 
 export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | null {
   if (!licensedFor(s, d)) return 'licence';
+  // A run left open is gone back into or abandoned, never entered again: that would write over it unsettled.
+  if (s.gates.raid) return 'open';
   const can = vitals.canRaid(s, now);
   return can.ok ? null : can.why;
 }
@@ -108,7 +110,14 @@ const ROLES = [
 /** Total attribute points a hunter of each grade carries. */
 export const BANDS: Record<Rank, [number, number]> = { E: [15, 50], D: [51, 100], C: [101, 175], B: [176, 275], A: [276, 375], S: [376, 500] };
 
-export interface Ally { id: string; name: string; rank: Rank; role: string; base: Attrs; note?: string }
+export interface Ally {
+  id: string; name: string; rank: Rank; role: string; base: Attrs; note?: string;
+  /** Below 1, a hunter who is holding back: they take the hits and leave the kills to you. */
+  atkMult?: number;
+}
+
+/** How hard Valcorde hits in the practice gate. He is there to keep you alive, not to clear it for you. */
+export const INSTRUCTOR_RESTRAINT = 0.08;
 
 /** Where in their grade's band the Association's hunters sit. They are support; you are the one being watched. */
 export const ALLY_TUNE = { center: 0.35, spread: 0.4, tierUp: [75, 19, 5, 1] };
@@ -140,7 +149,7 @@ export const PARTY_MAX = 3;
 export function allies(d: Dungeon, day = dayKey(), yours: Rank = d.rank as Rank): Ally[] {
   if (isPractice(d)) {
     return [
-      { ...hunter('HTR-RYN', 'S', 0, 0.5), id: 'HTR-RYN', name: 'Ryn Valcorde', role: 'Leader', note: 'Your instructor' },
+      { ...hunter('HTR-RYN', 'S', 0, 0.5), id: 'HTR-RYN', name: 'Ryn Valcorde', role: 'Leader', note: 'Your instructor', atkMult: INSTRUCTOR_RESTRAINT },
       hunter('HTR-PRACTICE-1', 'E'),
     ];
   }

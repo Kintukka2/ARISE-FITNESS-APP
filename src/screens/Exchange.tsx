@@ -59,6 +59,22 @@ function Exchange() {
 
       <Section title="Potions" right="Always in stock">
         <div class="stack stack--tight">
+          <div class={`shoprow ${s.satchel >= shop.FIELD_POTION.max ? 'is-idle' : ''}`}>
+            <span class="potion potion--field"><Glyph name="potion" /></span>
+            <span class="shoprow__text">
+              <b>Field Potion</b>
+              <small>Carried into a Gate. Drink it on your turn: {shop.FIELD_POTION.heal * 100}% of your health back.</small>
+              <small class="muted">The satchel holds {shop.FIELD_POTION.max}. You are carrying {s.satchel}.</small>
+            </span>
+            {s.satchel >= shop.FIELD_POTION.max
+              ? <Chip>Satchel full</Chip>
+              : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < shop.FIELD_POTION.price} onClick={() => {
+                if (!store.update(shop.buyField)) return toast('Not enough shards.', 'bad');
+                sfx.success();
+                buzz([14, 30, 22]);
+                toast(`Field Potion · ${store.get().satchel} of ${shop.FIELD_POTION.max} in the satchel`, 'xp');
+              }}><Shards n={shop.FIELD_POTION.price} /></Btn>}
+          </div>
           {shop.POTIONS.map((p) => {
             const idle = shop.potionIdle(s, p.id);
             return (

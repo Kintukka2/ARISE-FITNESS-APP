@@ -1,5 +1,6 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
-import { GATE_SHARDS, POTIONS } from '@/core/shop';
+import { FIELD_POTION, GATE_SHARDS, POTIONS } from '@/core/shop';
+import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { SLOTS as SQUAD, EXTRACT_MP } from '@/core/shadows';
@@ -24,6 +25,17 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Classes',
     lines: [
       `From D-Rank the System names you after your highest attribute — ${CLASSES.length} classes across five lines — and renames you at every rank. A class pays flat points into its attribute and gives you that line’s combat skills.`,
+    ],
+  },
+  {
+    title: 'Fighting',
+    lines: [
+      'The fight is turn by turn, in order of initiative. On your turn, tap a foe to aim at it, then act. A skill or a Strike always goes at the foe you aimed at first, though it can still miss; a skill that reaches several finds the rest itself.',
+      `Guard and you take ${GUARD * 100}% of every hit until your next turn. A field potion restores ${FIELD_POTION_HEAL * 100}% of your health; the satchel carries ${FIELD_POTION.max}, bought at the Exchange.`,
+      `Allies and Shadows follow standing orders, set in the brief: ${TACTICS.map((x) => x.name).join(', ')}.`,
+      'Auto hands your turns to the System and presses on between chambers. It is how the System fights when it assesses a gate, so the verdict is what Auto would do; you can do better.',
+      'Every order is written down before it plays, and the fight is fixed by its seed: leave mid-fight and you come back to the same turn, with the same outcome waiting.',
+      'You fight a whole run as you walked in. Gear changed or points spent halfway count from the next gate.',
     ],
   },
   {
@@ -52,7 +64,7 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Equipment and the Exchange',
     lines: [
       'Ten slots, six rarities. Every piece rolls its core bonus between 75% and 125% of its design, plus its own properties. Auto Equip picks the best of what you hold.',
-      `The Exchange redraws eight pieces at midnight, mostly at your grade. Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}.`,
+      `The Exchange redraws eight pieces at midnight, mostly at your grade. Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}, and the Field Potion ${FIELD_POTION.price} for the satchel.`,
     ],
   },
   {

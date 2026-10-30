@@ -1,11 +1,15 @@
 /**
- * The arena. Each chamber is resolved by the engine first and written to the
- * save; this only replays the log, beat by beat, and asks what to do next.
+ * The arena. The engine fights the chamber up to the hunter's turn; this
+ * plays the log up to there, beat by beat, then asks for an order. Every
+ * order goes to the save before it is played, so leaving mid-fight and
+ * coming back lands on the same turn.
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
-import type { Ev } from '@/core/combat';
-import { STATUS_TEXT } from '@/core/combat';
+import type { Ev, Turn } from '@/core/combat';
+import { FIELD_POTION_HEAL, GUARD, REACH_TEXT, STATUS, STATUS_TEXT } from '@/core/combat';
+import * as story from '@/core/story';
+import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
@@ -18,7 +22,7 @@ import { useSave } from '@/store';
 import { Bar, Btn, GearArt, RankPlate, Shards } from '@/ui/components';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
-import { HoldButton, pushBack } from '@/ui/overlays';
+import { HoldButton, pushBack, sys } from '@/ui/overlays';
 
 type Beat = { kind: 'round' | 'act' | 'drain' | 'aura'; ev: Ev[] };
 
@@ -33,7 +37,7 @@ function toBeats(log: Ev[]): Beat[] {
       const head = c?.ev[0];
       if (c && c.kind === 'act' && head && (head.t === 'hit' || head.t === 'miss') && head.a === e.a && head.ab === e.ab) c.ev.push(e);
       else push({ kind: 'act', ev: [e] });
-    } else if (e.t === 'support' || e.t === 'stun') push({ kind: 'act', ev: [e] });
+    } else if (e.t === 'support' || e.t === 'stun' || e.t === 'guard' || e.t === 'heal') push({ kind: 'act', ev: [e] });
     else if (e.t === 'tick' || e.t === 'expire') {
       if (cur && (cur as Beat).kind === 'drain') (cur as Beat).ev.push(e);
       else push({ kind: 'drain', ev: [e] });
@@ -62,6 +66,8 @@ function lines(b: Beat, name: (uid: string) => string): { text: string; tone: st
     if (e.t === 'miss') out.push({ text: `○ ${name(e.a)} swings ${e.ab} at ${name(e.v)} and finds nothing.`, tone: 'muted' });
     else if (e.t === 'support') out.push({ text: `✦ ${name(e.a)} calls ${e.ab}. The line is rallied.`, tone: side(e.a) });
     else if (e.t === 'stun') out.push({ text: `✴ ${name(e.a)} is stunned and cannot act.`, tone: 'muted' });
+    else if (e.t === 'guard') out.push({ text: `◈ ${name(e.a)} raises a guard.`, tone: side(e.a) });
+    else if (e.t === 'heal') out.push({ text: `✚ ${name(e.a)} drinks a field potion. +${e.amt} HP.`, tone: side(e.a) });
     else if (e.t === 'status') out.push({ text: `✴ ${name(e.v)} is ${e.s}.`, tone: 'status' });
     else if (e.t === 'down') out.push({ text: `✖ ${name(e.v)} falls.`, tone: e.v.startsWith('e') ? 'kill' : 'loss' });
     else if (e.t === 'tick') out.push({ text: `● ${name(e.v)} loses ${e.dmg} to ${e.s}.`, tone: 'status' });
@@ -76,22 +82,48 @@ function lines(b: Beat, name: (uid: string) => string): { text: string; tone: st
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
 
+/** Move the arena's picture of everyone forward by one beat's events. */
+function apply(local: UnitView[], b: Beat) {
+  const u = (x: string) => local.find((v) => v.uid === x);
+  for (const e of b.ev) {
+    if (e.t === 'hit' || e.t === 'tick') { const t = u(e.v); if (t) t.hp = e.hp; }
+    else if (e.t === 'heal') { const t = u(e.a); if (t) t.hp = e.hp; }
+    else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
+    else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
+    else if (e.t === 'guard') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+    else if (e.t === 'expire') { const t = u(e.v); if (t) t.status = t.status.filter((x) => x !== e.s); }
+    else if (e.t === 'passive' && e.k === 'stand') { const t = u(e.u); if (t) t.hp = 1; }
+    else if (e.t === 'support') for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0 && !t.status.includes('Rallied')) t.status.push('Rallied');
+  }
+}
+
+interface Room { label: string; boss: boolean; index: number }
+
 export function Arena() {
   const s = useSave();
   const id = arena.use();
   const d = id ? dungeonById(id) : undefined;
   const run = s.gates.raid;
-  const [phase, setPhase] = useState<'fight' | 'decide' | 'results'>('fight');
-  const [ch, setCh] = useState<raid.ChamberResult | null>(null);
+  const [phase, setPhase] = useState<'fight' | 'turn' | 'decide' | 'results'>('fight');
+  const [room, setRoom] = useState<Room | null>(null);
+  const [won, setWon] = useState<boolean | null>(null);
   const [units, setUnits] = useState<UnitView[]>([]);
   const [feed, setFeed] = useState<{ text: string; tone: string; k: number }[]>([]);
   const [pace, setPace] = useState<Pace>(1);
   const [auto, setAuto] = useState(false);
+  const [turn, setTurn] = useState<Turn | null>(null);
+  const [aim, setAim] = useState<string | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
   const paceRef = useRef<Pace>(1);
   paceRef.current = pace;
   const autoRef = useRef(false);
   autoRef.current = auto;
+  const aimRef = useRef<string | null>(null);
+  aimRef.current = aim;
+  /** Settles the turn waiting on the hunter. */
+  const pick = useRef<((o: Order | null) => void) | null>(null);
+  /** A chamber is being fought: a second Press On (a tap racing Auto) must not open it twice. */
+  const busy = useRef(false);
   const seq = useRef(0);
 
   const chambers = d && run ? raid.plan(d, run.seed) : [];
@@ -106,64 +138,111 @@ export function Arena() {
 
   if (!d) return null;
 
+  const say = (ls: { text: string; tone: string }[]) => {
+    if (ls.length) setFeed((f) => [...ls.map((l) => ({ ...l, k: ++seq.current })).reverse(), ...f].slice(0, 7));
+  };
+
+  /** Play the log from `from` to its end, at the chosen pace. Returns where it got to. */
+  async function show(log: Ev[], from: number, local: UnitView[]) {
+    const name = (uid: string) => local.find((u) => u.uid === uid)?.name ?? '?';
+    for (const b of toBeats(log.slice(from))) {
+      apply(local, b);
+      const p = paceRef.current;
+      if (p === 'skip') continue;
+      setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+      say(lines(b, name));
+      if (b.ev.some((e) => e.t === 'down')) sfx.hit(-40);
+      else if (b.ev.some((e) => e.t === 'hit' && e.crit)) sfx.hit(80);
+      await new Promise((r) => setTimeout(r, b.kind === 'round' ? PACE[p] * 0.6 : PACE[p]));
+    }
+    setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+    return log.length;
+  }
+
+  /** Wait for the hunter to give an order, or for Auto to take the turn. */
+  async function ask(t: Turn, local: UnitView[]): Promise<Order | null> {
+    if (autoRef.current) return null;
+    const live = local.filter((u) => t.foes.includes(u.uid));
+    if (!aimRef.current || !t.foes.includes(aimRef.current)) setAim(live.reduce((a, b) => (b.hp < a.hp ? b : a), live[0])?.uid ?? null);
+    setTurn(t);
+    setPhase('turn');
+    if (store.update((x) => story.markOnce(x, 'turn-told'))) {
+      await sys({
+        title: 'Your Turn', kind: 'system',
+        lines: [
+          'The System waits on you. Tap a foe to aim at it, then act.',
+          `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>field potion</em> restores ${FIELD_POTION_HEAL * 100}% of your health.`,
+          '<em>Auto</em> lets the System fight your turns for you, as it does when it assesses a gate.',
+        ],
+      });
+    }
+    return new Promise((res) => { pick.current = res; });
+  }
+
+  function give(o: Order | null) {
+    const f = pick.current;
+    if (!f) return;
+    pick.current = null;
+    setTurn(null);
+    setPhase('fight');
+    sfx.tap();
+    f(o);
+  }
+
   async function fightNext() {
+    if (busy.current) return;
+    busy.current = true;
+    try { await chamber(); } finally { busy.current = false; }
+  }
+
+  async function chamber() {
     const st = store.get();
     const r = st.gates.raid;
     if (!r || !d) return;
     const plan = raid.plan(d, r.seed);
-    // A run closed mid-replay is settled by what was already recorded: a lost chamber, or all of them won.
+    // A run closed between chambers is settled by what was already recorded: a lost chamber, or all of them won.
     if (r.won < r.at) return end('defeated');
     if (r.at >= plan.length) return end('cleared');
-    const party = raid.partyFor(st, d, r);
-    const res = raid.runChamber(d, r.seed, r.at, party, plan);
-    store.update((x) => raid.record(x, d, x.gates.raid!, party, res));
-    if (res.boss) music.set('boss');
-    setCh(res);
+    const { party, ch } = raid.resume(st, d, r);
+    const c = plan[r.at];
+    if (c.boss) music.set('boss');
+    setRoom({ label: c.label, boss: c.boss, index: r.at });
+    setWon(null);
     setPhase('fight');
-    const view: UnitView[] = res.roster.map((u) => ({ ...u }));
-    setUnits(view);
-    const name = (uid: string) => view.find((u) => u.uid === uid)?.name ?? '?';
-    const beats = toBeats(res.log);
-    setFeed([{ text: res.boss ? `${res.label} rises.` : `${res.label}.`, tone: 'room', k: ++seq.current }]);
-    const local = view.map((u) => ({ ...u, status: [...u.status] }));
-    const apply = (b: Beat) => {
-      for (const e of b.ev) {
-        const u = (x: string) => local.find((v) => v.uid === x);
-        if (e.t === 'hit' || e.t === 'tick') { const t = u(e.v); if (t) t.hp = e.hp; }
-        else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
-        else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
-        else if (e.t === 'expire') { const t = u(e.v); if (t) t.status = t.status.filter((x) => x !== e.s); }
-        else if (e.t === 'passive' && e.k === 'stand') { const t = u(e.u); if (t) t.hp = 1; }
-        else if (e.t === 'support') for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0 && !t.status.includes('Rallied')) t.status.push('Rallied');
-      }
-    };
-    for (const b of beats) {
-      apply(b);
-      const p = paceRef.current;
-      if (p !== 'skip') {
-        setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
-        const ls = lines(b, name);
-        if (ls.length) setFeed((f) => [...ls.map((l) => ({ ...l, k: ++seq.current })).reverse(), ...f].slice(0, 7));
-        if (b.ev.some((e) => e.t === 'down')) sfx.hit(-40);
-        else if (b.ev.some((e) => e.t === 'hit' && e.crit)) sfx.hit(80);
-        await new Promise((r) => setTimeout(r, b.kind === 'round' ? PACE[p] * 0.6 : PACE[p]));
-      }
-    }
+    const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
     setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+    setFeed([{ text: c.boss ? `${c.label} rises.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
+    // Coming back mid-chamber: everything the saved orders already played is shown at once.
+    let at = 0;
+    if ((r.orders ?? []).length) {
+      for (const b of toBeats(ch.log)) apply(local, b);
+      at = ch.log.length;
+      setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+      say([{ text: '▸ Back where you were.', tone: 'muted' }]);
+    }
+    at = await show(ch.log, at, local);
+    while (ch.turn) {
+      const o = await ask(ch.turn, local);
+      // The order is in the save before it plays: leaving now cannot undo it.
+      const given = store.update((x) => raid.order(x, x.gates.raid!, o));
+      ch.play(given);
+      at = await show(ch.log, at, local);
+    }
+    const res = ch.result();
+    store.update((x) => raid.record(x, d, x.gates.raid!, party, res));
     const hero = local.find((x) => x.uid === 'hero');
     const left = local.filter((x) => x.side === 'p' && x.hp > 0).length;
     const band = !hero || hero.hp <= 0 ? 'down' : hero.hp >= hero.mx ? 'unhurt' : hero.hp / hero.mx >= 0.75 ? 'grazed' : hero.hp / hero.mx >= 0.45 ? 'wounded' : 'badly hurt';
-    setFeed((f) => [
-      ...(res.won
-        ? [{ text: `▸ ${res.label} is clear after ${res.rounds} round${res.rounds === 1 ? '' : 's'}. ${left} standing. You are ${band}.`, tone: 'outcome', k: ++seq.current }]
-        : [{ text: `▸ ${res.label} holds. The party is dragged out.`, tone: 'loss', k: ++seq.current }]),
-      ...f,
-    ].slice(0, 7));
+    say(res.won
+      ? [{ text: `▸ ${res.label} is clear after ${res.rounds} round${res.rounds === 1 ? '' : 's'}. ${left} standing. You are ${band}.`, tone: 'outcome' }]
+      : [{ text: `▸ ${res.label} holds. The party is dragged out.`, tone: 'loss' }]);
     if (res.won) buzz(20);
     else { sfx.alarm(); flash('danger'); buzz([40, 60, 120]); }
+    setWon(res.won);
     setPhase('decide');
-    const last = res.index === raid.plan(d, r.seed).length - 1;
-    if (res.won && !last && autoRef.current) setTimeout(() => void fightNext(), 450);
+    const last = res.index === plan.length - 1;
+    // After `busy` is released, so this press is the only one.
+    if (res.won && !last && autoRef.current) setTimeout(() => { if (autoRef.current) void fightNext(); }, 450);
   }
 
   function end(outcome: raid.Outcome) {
@@ -181,40 +260,73 @@ export function Arena() {
 
   if (phase === 'results' && result) return <Results d={d} r={result} onDone={leave} />;
 
-  const last = ch ? ch.index === chambers.length - 1 : false;
+  const last = room ? room.index === chambers.length - 1 : false;
   const party = units.filter((u) => u.side === 'p');
   const foes = units.filter((u) => u.side === 'e');
+  const hero = party.find((u) => u.uid === 'hero');
+  const aiming = phase === 'turn' && turn ? turn.foes : [];
+  const toggleAuto = () => {
+    sfx.tap();
+    const on = !auto;
+    autoRef.current = on;
+    setAuto(on);
+    if (!on) return;
+    // Switching Auto on hands the System the turn that is waiting, or the choice to press on.
+    give(null);
+    if (phase === 'decide' && won && !last) void fightNext();
+  };
   return (
-    <div class={`arena ${ch?.boss ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
+    <div class={`arena ${room?.boss ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
       <header class="arena__head">
-        <div><span class="label">{d.name}</span><b>{ch?.label ?? '…'}</b></div>
-        <span class="label num">Chamber {(ch?.index ?? 0) + 1} of {chambers.length}</span>
+        <div><span class="label">{d.name}</span><b>{room?.label ?? '…'}</b></div>
+        <span class="label num">Chamber {(room?.index ?? 0) + 1} of {chambers.length}</span>
       </header>
       <div class="arena__field">
-        <div class="arena__side">{party.map((u) => <UnitChip key={u.uid} u={u} />)}</div>
-        <div class="arena__side arena__side--foes">{foes.map((u) => <UnitChip key={u.uid} u={u} />)}</div>
+        <div class="arena__side">{party.map((u) => <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} />)}</div>
+        <div class="arena__side arena__side--foes">
+          {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined} />)}
+        </div>
       </div>
       <ol class="arena__feed" aria-live="polite">
         {feed.map((l) => <li key={l.k} class={`feed feed--${l.tone}`}>{l.text}</li>)}
       </ol>
       <footer class="arena__foot">
-        {phase === 'fight' && (
+        {phase === 'turn' && turn && (
+          <div class="turnbar" data-tour="turn">
+            <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? '—'}</b>; tap a foe to change.</small>
+            <div class="turnbar__acts">
+              {turn.skills.map((k) => (
+                <button type="button" key={k.ability.name} class="act" disabled={k.cd > 0} onClick={() => give({ use: k.ability.name, at: aim ?? undefined })}>
+                  <b>{k.ability.name}</b><small>{k.cd > 0 ? `ready in ${k.cd}` : REACH_TEXT[k.ability.profile] ?? 'one target'}</small>
+                </button>
+              ))}
+              <button type="button" class="act" onClick={() => give({ use: 'Strike', at: aim ?? undefined })}><b>Strike</b><small>{REACH_TEXT.single}</small></button>
+              <button type="button" class="act act--guard" onClick={() => give({ use: 'Guard' })}><b>Guard</b><small>take {GUARD * 100}% till your turn</small></button>
+              <button type="button" class="act act--potion" disabled={!turn.potions || !hero || hero.hp >= hero.mx} onClick={() => give({ use: 'Potion' })}>
+                <b>Potion · {turn.potions}</b><small>+{FIELD_POTION_HEAL * 100}% HP</small>
+              </button>
+            </div>
+          </div>
+        )}
+        {(phase === 'fight' || phase === 'turn') && (
           <div class="seg" role="radiogroup" aria-label="Playback speed">
             {(['1', '2', 'skip'] as const).map((p) => {
               const key = (p === 'skip' ? 'skip' : Number(p)) as Pace;
               return <button type="button" role="radio" aria-checked={pace === key} key={p} class={`seg__btn ${pace === key ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setPace(key); }}>{p === 'skip' ? 'Skip' : `${p}×`}</button>;
             })}
-            <button type="button" role="switch" aria-checked={auto} class={`seg__btn ${auto ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setAuto(!auto); }} title="Press on automatically">Auto</button>
+            <button type="button" role="switch" aria-checked={auto} class={`seg__btn ${auto ? 'is-on' : ''}`} onClick={toggleAuto} title="The System fights your turns and presses on">Auto</button>
           </div>
         )}
-        {phase === 'decide' && ch && (
-          ch.won
+        {phase === 'decide' && room && (
+          won
             ? last
               ? <Btn kind="primary" size="lg" block sound="success" onClick={() => end('cleared')}>Claim The Gate</Btn>
-              : <div class="row">
-                <Btn kind="ghost" onClick={() => end('withdrawn')}>Withdraw</Btn>
-                <Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => void fightNext()}>Press On</Btn>
-              </div>
+              : auto
+                ? <Btn kind="ghost" block onClick={toggleAuto}>Pressing on… tap to stop</Btn>
+                : <div class="row">
+                  <Btn kind="ghost" onClick={() => end('withdrawn')}>Withdraw</Btn>
+                  <Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => void fightNext()}>Press On</Btn>
+                </div>
             : <Btn kind="danger" size="lg" block onClick={() => end('defeated')}>Carried Out</Btn>
         )}
       </footer>
@@ -222,15 +334,19 @@ export function Arena() {
   );
 }
 
-function UnitChip({ u }: { u: UnitView }) {
+function UnitChip({ u, acting, aimed, onPick }: { u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void }) {
   const pct = (u.hp / Math.max(1, u.mx)) * 100;
-  return (
-    <div class={`unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''}`}>
+  const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''}`;
+  const inner = (
+    <>
       <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{Math.max(0, u.hp)}</span></div>
       <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />
-      {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${st === 'Rallied' ? 'is-good' : ''}`} title={STATUS_TEXT[st]}>{st}</span>)}</div>}
-    </div>
+      {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''}`} title={STATUS_TEXT[st]}>{st}</span>)}</div>}
+    </>
   );
+  return onPick
+    ? <button type="button" class={cls} aria-pressed={!!aimed} aria-label={`Aim at ${u.name}, ${Math.max(0, u.hp)} HP`} onClick={onPick}>{inner}</button>
+    : <div class={cls}>{inner}</div>;
 }
 
 // ------------------------------------------------------------------ results
