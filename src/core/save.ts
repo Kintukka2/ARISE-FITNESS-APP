@@ -38,7 +38,7 @@ export function defaults(): Save {
     shop: { day: null, taken: [] },
     contracts: { day: null, grade: 'E', list: [], bonus: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
-    ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [], spire: false } },
+    ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0 },
     satchel: 0,
     log: [],
     story: [],

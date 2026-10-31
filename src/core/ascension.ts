@@ -2,15 +2,16 @@
  * Ascension, on the hunter's own climb. The level chosen is written to a run
  * when it begins and holds for the whole of it, so a fight replays the same. A
  * level is opened by proving the one below it: clears of different gates at the
- * hunter's grade, and the top of their grade's floors on the Spire, all played
- * at that level. Settled in `raid.finish`, with everything else a run pays.
+ * hunter's grade, played at that level, and then the Trial. Settled in
+ * `raid.finish`, with everything else a run pays.
  */
 import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_TOP, PROOF, RULES } from '@/data/ascension';
 import { ASCENSION_TUNE } from '@/data/gatetune';
-import { SPIRE_FLOORS, SPIRE_TOP } from '@/data/spire';
 import { licensedRank } from './licence';
-import type { Dungeon, OpenRaid, Rank, Save } from './types';
+import { isTrial, trialDungeon, trialLevel } from './trial';
+import type { Dungeon, OpenRaid, Save } from './types';
 import { RANKS } from './types';
+import { dayKey } from './util';
 
 const on = (level: number, rule: { at: number }) => level >= rule.at;
 
@@ -55,12 +56,6 @@ export const levelInfo = (level: number): Level => ({ level, name: ASCENSION_NAM
 /** Every rule a level plays: its own and all below it. */
 export const rulesAt = (level: number): Level[] => Array.from({ length: level }, (_, i) => levelInfo(i + 1));
 
-/** The last floor of a grade's floors on the Spire: what the Spire part of a proof asks for. */
-export function gradeTop(grade: Rank): number {
-  const next = RANKS[RANKS.indexOf(grade) + 1];
-  return next ? SPIRE_FLOORS[next] - 1 : SPIRE_TOP;
-}
-
 /** Whether the hunter's clears count toward a proof yet. */
 export const proving = (s: Save) => RANKS.indexOf(licensedRank(s)) >= RANKS.indexOf(ASCENSION_FROM) && s.ascension.unlocked < ASCENSION_TOP;
 /** Whether Ascension shows at all: a level is open, or the hunter is proving one. */
@@ -71,21 +66,37 @@ export function choose(s: Save, level: number) {
   s.ascension.level = Math.max(0, Math.min(s.ascension.unlocked, Math.round(level)));
 }
 
+/** The level a run at this gate is entered at: a Trial is always fought at the level it proves, and the practice gate at none. */
+export const entryLevel = (s: Save, d: Dungeon, practice: boolean) => (practice ? 0 : isTrial(d) ? trialLevel(d) : s.ascension.level);
+
+/** The Trial the hunter would face next: the one that proves the highest level they have opened. */
+export const nextTrial = (s: Save) => trialDungeon(licensedRank(s), s.ascension.unlocked);
+/** The gates are proved, so the Trial stands open; it can be walked into once a day. */
+export const trialProved = (s: Save) => proving(s) && s.ascension.proof.gates.length >= PROOF.gates;
+export const trialReady = (s: Save, day = dayKey()) => trialProved(s) && s.ascension.trialDay !== day;
+
+/** Walking into a Trial spends the day's attempt, whatever comes of it. Mutates. */
+export function enterTrial(s: Save, day: string) {
+  s.ascension.trialDay = day;
+  s.ascension.trials += 1;
+}
+
 /**
- * Count a cleared run toward proving the highest level opened, and open the
- * next when it is proved. Only runs entered at that level count. Returns the
- * level opened, or null. Mutates.
+ * Count a cleared run toward proving the highest level opened. A gate of the
+ * hunter's grade counts once; a Trial won with the gates proved opens the next
+ * level. Only runs entered at that level count. Returns the level opened, or
+ * null. Mutates.
  */
-export function prove(s: Save, d: Dungeon, run: OpenRaid, spireFloor: number | null): number | null {
+export function prove(s: Save, d: Dungeon, run: OpenRaid): number | null {
   const a = s.ascension;
   if (!proving(s) || levelOf(run) !== a.unlocked) return null;
-  const grade = licensedRank(s);
-  if (spireFloor !== null) {
-    if (spireFloor >= gradeTop(grade) && d.rank === grade) a.proof.spire = true;
-  } else if (d.rank === grade && !a.proof.gates.includes(d.id)) a.proof.gates.push(d.id);
-  if (a.proof.gates.length < PROOF.gates || !a.proof.spire) return null;
+  if (!isTrial(d)) {
+    if (d.rank === licensedRank(s) && !d.floor && !a.proof.gates.includes(d.id)) a.proof.gates.push(d.id);
+    return null;
+  }
+  if (trialLevel(d) !== a.unlocked || a.proof.gates.length < PROOF.gates) return null;
   a.unlocked += 1;
   a.best = Math.max(a.best, a.unlocked);
-  a.proof = { gates: [], spire: false };
+  a.proof = { gates: [] };
   return a.unlocked;
 }

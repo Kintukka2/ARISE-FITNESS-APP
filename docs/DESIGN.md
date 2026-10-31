@@ -276,22 +276,33 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
   A run keeps the level it walked in with, and the brief's assessment plays every rule it brings.
   The practice gate is always played at 0.
 - **Proving.** A level opens when the one below it is proved: four different gates of the hunter's
-  grade cleared at it, and the top of their grade's floors on the Pale Spire. This is GM's league
-  trophies and Spartacus. Only clears at the highest level opened count, and only from C-Rank.
+  grade cleared at it (GM's league trophies), and then the Trial. Only clears at the highest level
+  opened count, and only from C-Rank.
+- **The Trial** (`core/trial.ts`) is GM's Ascension tournament.
+  - **The gauntlet:** proving level L means beating L+2 of the Chosen in a row, in a gate with one to a
+    layer, no rest and nothing to withdraw to.
+  - **The Chosen:** twelve named bosses (The Gatewatcher to The Ninth Door). Each is one of the
+    hunter's grade's gate bosses, weakest first, 6% stronger for every round before it. Every round
+    is fought with a boss's health, and only the last ends the run.
+  - **Play:** it is fought at the level it proves, whatever is chosen, and can be walked into once a day.
+    Losing it costs that day's attempt and a lockout, like any defeat.
+  - **Calibration:** each level's Trial is tuned so a hunter who keeps up wins it about half the time
+    (`TRIAL_TUNE`).
 - **Calibration.** Level 0 is the board as it was. Each level above is tuned so a hunter who keeps up
   (upgraded gear, a squad of Vanguard Shadows) clears from 85% at level 1 down to 53% at level 10. A
   typical hunter who has not kept up falls far faster: from 68% at level 0 to 19% at level 5. The
   ladder is for the hunter who has outgrown the board.
 - **What a campaign shows.** `npm run campaign` now reads the brief before each run. It climbs to the
-  highest level the assessment gives 75% or better, and takes an even chance on a run that counts
-  toward a proof. Over 120 days the invested hunters clear 73–82% instead of 97%, and open
-  Ascension 5 (one evening a day) and 7 (three sessions). They are carried out three to four times as
-  often, which slows the climb: S-Rank on day 87 instead of 63, and Sovereign on day 100 instead of 75.
+  highest level the assessment gives 75% or better, takes an even chance on a run that counts toward a
+  proof, and takes the Trial when the assessment gives it an even chance. Over 120 days the invested
+  hunters clear 72–83% instead of 97%. The one-evening hunter opens Ascension 5 in 24 Trials; the
+  three-session hunter opens 7 in 9. They are carried out three to four times as often, which slows
+  the climb: S-Rank on day 78 instead of 63, and Sovereign on day 98 instead of 75.
   A hunter who climbs without reading the brief is crushed (about 40% clears), which is the death
   spiral GM's analysis warns about; the brief is what stops it.
-- **Next.** The Trial, GM's Ascension tournament: a boss gauntlet that opens each level, replacing the
-  proof's last step, and a named boss per level sent into the world. Then marks for each level won,
-  and an upgrade cap that rises past perfect, to give the top of the climb somewhere to spend.
+- **Next.** Marks for each level won (GM's reincarnation bonuses, without the reincarnation), and an
+  upgrade cap that rises past perfect, so the top of the climb has somewhere to spend. GM's chosen
+  champions sent into the world each level are left for later: the Chosen live in the Trial for now.
 
 ## What stays out
 

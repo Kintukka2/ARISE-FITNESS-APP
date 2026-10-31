@@ -10,6 +10,7 @@ import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
+import { isTrial, trialRounds } from '@/core/trial';
 import { ASCENSION_PAY, ASCENSION_TOP, PROOF } from '@/data/ascension';
 import { SPIRE_NAME } from '@/data/spire';
 import { ContractsWindow } from '@/ui/contracts';
@@ -175,7 +176,7 @@ function AscensionCard() {
   if (!ascension.ascensionOpen(s)) return null;
   const a = s.ascension;
   const rules = ascension.rulesAt(a.level);
-  const top = ascension.gradeTop(licensedRank(s));
+  const trial = ascension.nextTrial(s);
   return (
     <Card class="ascension" tone="gold" tour="ascension">
       <div class="ascension__head">
@@ -191,13 +192,16 @@ function AscensionCard() {
         </div>
       )}
       {rules.length > 0 && <ol class="ascension__rules">{rules.map((r) => <li key={r.level}><b>{r.name}</b> {r.rule}</li>)}</ol>}
-      {a.unlocked < ASCENSION_TOP && (
+      {a.unlocked < ASCENSION_TOP && !ascension.trialProved(s) && (
         <small class="ascension__proof">
           {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {PROOF.gates} different {licensedRank(s)}-Rank gates
-          {' '}(<b class="num">{a.proof.gates.length}/{PROOF.gates}</b>) and Floor {top} of the Pale Spire (<b>{a.proof.spire ? 'done' : 'not yet'}</b>).
+          {' '}(<b class="num">{a.proof.gates.length}/{PROOF.gates}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
           {!ascension.proving(s) && ' Clears count from C-Rank.'}
         </small>
       )}
+      {ascension.trialProved(s) && (ascension.trialReady(s)
+        ? <Btn kind="gold" block onClick={() => openBrief(trial)}>Face {trial.name} · {trialRounds(a.unlocked)} Chosen</Btn>
+        : <small class="ascension__proof">The gates are proved. {trial.name} opens again tomorrow.</small>)}
     </Card>
   );
 }
@@ -233,7 +237,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   useNow();
   const known = bossKnown(s, d);
   const boss = enemyById(d.boss)!;
-  const level = isPractice(d) ? 0 : s.ascension.level;
+  // A Trial is fought at the level it proves, whatever is chosen: the party, the pay and the rules shown are that level's.
+  const level = ascension.entryLevel(s, d, isPractice(d));
   const party = raid.alliesAt(d, dayKey(), licensedRank(s), level);
   const squad = isPractice(d) ? [] : shadows.squad(s);
   const hero = raid.heroSpec(s);
@@ -290,11 +295,13 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
         <div class="tiles">
           <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />
-          {tower
+          {isTrial(d)
+            ? <Tile label="Opens" value={`Ascension ${s.ascension.unlocked + 1}`} sub="if you win it" />
+            : tower
             ? <Tile label="This week" value={`Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`} sub="a new best, if you clear it" />
             : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '—'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
           <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={raid.homeSets(d).length ? `and a ${raid.homeSets(d).map((x) => x.id).join(' or ')} piece on a clear` : d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
-          <Tile label="Depth" value={`${map.layers.length} ${tower ? 'floors' : 'steps'}`} sub="a rest, then the boss" />
+          <Tile label="Depth" value={`${map.layers.length} ${isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}`} sub={isTrial(d) ? 'no rest between them' : 'a rest, then the boss'} />
         </div>
       </Section>
 
@@ -320,6 +327,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       {block === 'open' ? open?.id === d.id
         ? <Btn kind="primary" size="lg" block sound="gate" onClick={() => { close(); arena.set(d.id); }}>Go Back In</Btn>
         : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
+        : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
         : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
           : block === 'down' ? <Btn block disabled>You are in no condition to enter anything.</Btn>
             : <Btn kind="primary" size="lg" block onClick={enter} sound="none" tour="enter">Enter The Gate</Btn>}

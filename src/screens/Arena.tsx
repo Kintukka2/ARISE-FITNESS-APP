@@ -15,6 +15,7 @@ import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
 import { BLOCK } from '@/data/spire';
 import * as ascension from '@/core/ascension';
+import { isTrial } from '@/core/trial';
 import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
@@ -538,7 +539,8 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const [flipped, setFlipped] = useState<number[]>([]);
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   const v = vitals.read(s);
-  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const trial = isTrial(d);
+  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
   const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `${deal.xp} for contracts` : ''].filter(Boolean).join(' · ');
   const shardSub = [r.bounty > 0 ? `a first-clear bounty of ${r.bounty}` : r.banked > 0 ? `${r.banked} banked on the way` : '', deal.shards ? `${deal.shards} for contracts` : ''].filter(Boolean);
@@ -550,8 +552,10 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <h2>{title}</h2>
           <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.'
             : r.spire ? r.spire.best ? `The boss on Floor ${r.spire.floor} is down, and that is your best this week. The next ${BLOCK} floors open above you.` : `The boss on Floor ${r.spire.floor} is down. The week turned while you were inside, so it does not count toward this one.`
+              : trial ? `The last of the Chosen is down. ${r.depth} of them, one after another, and you are still standing.`
               : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
             : r.outcome === 'withdrawn' ? d.floor ? `You walked back down from the rest on Floor ${d.floor + r.steps - 1}. These floors stand as they are until Monday.` : `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
+              : trial ? 'The party was carried out before the last of the Chosen fell. The Trial opens again tomorrow, and the gates you proved stay proved.'
               : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
         </header>
         <div class="tiles">

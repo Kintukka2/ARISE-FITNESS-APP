@@ -12,8 +12,23 @@ export const ASCENSION_TOP = 10;
 /** The grade from which a hunter's clears count toward proving a level. */
 export const ASCENSION_FROM: Rank = 'C';
 
-/** What proves a level: this many different gates of the hunter's grade cleared at it, and the top of their grade's floors on the Spire. */
+/** What proves a level: this many different gates of the hunter's grade cleared at it, and then the Trial. */
 export const PROOF = { gates: 4 } as const;
+
+/**
+ * The Trial: the gauntlet that opens each level. Proving level L means beating `L + 2` of the Chosen
+ * in a row, with no rest between them and no way out but through. Each Chosen is one of the hunter's
+ * grade's gate bosses, weakest first, made this much stronger for every round before it. The Trial
+ * can be entered once a day.
+ */
+export const TRIAL = { extra: 2, step: 0.06 } as const;
+
+/** The Chosen, round by round. Each takes the shape of a boss of the hunter's own grade. */
+export const CHOSEN: string[] = [
+  'The Gatewatcher', 'The Pale Hound', 'The Iron Penitent', 'The Drowned Bell', 'The Cinder Saint',
+  'The Thousand-Eyed', 'The Hollow Herald', 'The Last Knight', 'The Weeping Colossus', 'The Starless',
+  'The Unnamed King', 'The Ninth Door',
+];
 
 /** Each level pays this share more experience and shards on a gate than the level below. */
 export const ASCENSION_PAY = 0.1;

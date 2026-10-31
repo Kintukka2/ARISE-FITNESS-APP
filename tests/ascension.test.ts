@@ -112,32 +112,40 @@ describe('a run keeps the level it walked in with', () => {
 });
 
 describe('proving a level', () => {
-  function clearAt(s: Save, id: string, spireFloor: number | null = null) {
-    const d = spireFloor === null ? dungeonById(id)! : spire.spireBlock(spire.seasonOf(day), spire.blockOf(spireFloor));
+  function clearAt(s: Save, id: string) {
+    const d = dungeonById(id)!;
     const run = raid.begin(s, d, now);
     return raid.finish(s, d, run, 'cleared', now).ascended;
   }
 
-  it('takes different gates of the hunter’s grade and their grade’s top Spire floor, all at the highest level opened', () => {
+  it('takes different gates of the hunter’s grade at the highest level opened, then the Trial', () => {
     const s = hunter(2, 2);
     const cs = ['DNG-015', 'DNG-016', 'DNG-017', 'DNG-018', 'DNG-019'];
     expect(clearAt(s, cs[0])).toBeNull();
     expect(clearAt(s, cs[0])).toBeNull();
     expect(s.ascension.proof.gates).toEqual([cs[0]]);
-    // A clear at a lower level does not count.
+    // A clear at a lower level does not count, and neither does the Spire.
     asc.choose(s, 1);
     expect(clearAt(s, cs[1])).toBeNull();
-    expect(s.ascension.proof.gates).toEqual([cs[0]]);
     asc.choose(s, 2);
+    const block = spire.spireBlock(spire.seasonOf(day), spire.blockOf(30));
+    raid.finish(s, block, raid.begin(s, block, now), 'cleared', now);
+    expect(s.ascension.proof.gates).toEqual([cs[0]]);
+    expect(asc.trialProved(s)).toBe(false);
     for (const id of cs.slice(1, PROOF.gates)) expect(clearAt(s, id)).toBeNull();
-    expect(s.ascension.proof.gates).toHaveLength(PROOF.gates);
-    // The Spire's top C-Rank floor opens the next level.
-    expect(clearAt(s, '', asc.gradeTop('C'))).toBe(3);
+    expect(asc.trialReady(s, day)).toBe(true);
+    // The Trial is fought at the level it proves, whatever is chosen, and opens the next.
+    asc.choose(s, 0);
+    const trial = asc.nextTrial(s);
+    const run = raid.begin(s, trial, now);
+    expect(run.ascension).toBe(2);
+    expect(asc.trialReady(s, day)).toBe(false);
+    expect(raid.finish(s, trial, run, 'cleared', now).ascended).toBe(3);
     expect(s.ascension.unlocked).toBe(3);
     expect(s.ascension.best).toBe(3);
-    expect(s.ascension.proof).toEqual({ gates: [], spire: false });
+    expect(s.ascension.proof).toEqual({ gates: [] });
     // Opening a level does not choose it.
-    expect(s.ascension.level).toBe(2);
+    expect(s.ascension.level).toBe(0);
   });
 
   it('counts nothing below C-Rank', () => {

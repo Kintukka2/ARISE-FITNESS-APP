@@ -13,6 +13,7 @@
  * assessment says it will hold.
  */
 import * as asc from '@/core/ascension';
+import { isTrial } from '@/core/trial';
 import { contractsOpen, issue } from '@/core/contracts';
 import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
@@ -96,7 +97,7 @@ const PUSH = 0.5;
 function pickLevel(s: Save, d: Dungeon, now: number) {
   const a = s.ascension;
   const grade = licensedRank(s);
-  const counts = asc.proving(s) && d.rank === grade && (spire.isSpire(d) ? spire.lastFloor(spire.blockOf(d.floor ?? 1)) === asc.gradeTop(grade) && !a.proof.spire : !a.proof.gates.includes(d.id));
+  const counts = asc.proving(s) && d.rank === grade && !spire.isSpire(d) && !a.proof.gates.includes(d.id);
   for (let L = a.unlocked; L > 0; L--) {
     asc.choose(s, L);
     if (raid.project(s, d, 8, now).rate >= (counts && L === a.unlocked ? PUSH : SAFE)) return;
@@ -105,7 +106,8 @@ function pickLevel(s: Save, d: Dungeon, now: number) {
 }
 
 function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally) {
-  pickLevel(s, d, now);
+  // A Trial is fought at the level it proves; everything else at the level the brief can stand.
+  if (!isTrial(d)) pickLevel(s, d, now);
   const before = s.wallet.earned;
   const run = raid.begin(s, d, now);
   const { won } = walk(s, d, now);
@@ -146,9 +148,11 @@ function campaign(p: Profile) {
         const v = vitals.read(s, now);
         if (v.locked || v.fatigue > TIRED || v.hp < v.hpMax * HURT) break;
         // A block of the Spire first thing each day, once it is open; gates otherwise.
-        const tower = spire.spireOpen(s) && climbed !== day && !entryBlock(s, spire.nextSpire(s, dayKey(now)), now);
+        // The Trial, when it stands open and the brief gives it an even chance; then the Spire; then the board.
+        const trial = asc.trialReady(s, dayKey(now)) && raid.project(s, asc.nextTrial(s), 8, now).rate >= PUSH ? asc.nextTrial(s) : null;
+        const tower = !trial && spire.spireOpen(s) && climbed !== day && !entryBlock(s, spire.nextSpire(s, dayKey(now)), now);
         if (tower) climbed = day;
-        const d = tower ? spire.nextSpire(s, dayKey(now)) : pickGate(s, dayKey(now), now);
+        const d = trial ?? (tower ? spire.nextSpire(s, dayKey(now)) : pickGate(s, dayKey(now), now));
         if (!d) break;
         const cleared = t.cleared;
         play(s, d, now, r, t);
@@ -172,7 +176,7 @@ function campaign(p: Profile) {
   console.log(`  contracts  ${(t.contracts / days).toFixed(2)} of 3 a day, all three on ${Math.round((t.bonusDays / days) * 100)}% of days${contractsOpen(s) ? '' : ' (never opened)'}`);
   console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} pieces bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
-  console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
+  console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(weekly.join('\n'));
 }
 

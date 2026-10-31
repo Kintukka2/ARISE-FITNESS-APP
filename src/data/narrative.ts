@@ -84,7 +84,7 @@ export const BEATS: Beat[] = [
     lines: [
       'The System has noted that the gates no longer trouble you.',
       `It offers <strong>Ascension</strong>: ${ASCENSION_TOP} levels, each harder than the last, each paying more. Every level keeps the rules of the levels below it.`,
-      'Choose a level on the Gates screen before you go in; the brief assesses the gate at it. Prove a level, and the next opens. <span class="warn">Nothing makes you climb.</span>',
+      'Choose a level on the Gates screen before you go in; the brief assesses the gate at it. Prove a level and face its Trial, and the next opens. <span class="warn">Nothing makes you climb.</span>',
     ],
   },
   {
