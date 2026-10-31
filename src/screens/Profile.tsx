@@ -3,6 +3,8 @@ import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { CLASS_RANKS, classById } from '@/data/classes';
 import * as gear from '@/core/gear';
+import { ascensionOpen } from '@/core/ascension';
+import { ASCENSION_TOP, OVERCHARGE } from '@/data/ascension';
 import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
 import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
 import { ability, passiveText, REACH_TEXT } from '@/core/combat';
@@ -285,14 +287,20 @@ function SetBlock({ set, s }: { set: GearSet; s: Save }) {
 
 /** The next upgrade step on a piece: what it raises, and what it costs. */
 function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
-  const next = gear.upgradeStep(it);
-  const cost = shop.upgradeCost(it);
-  if (!next || cost === null) return <p class="hint">At its design’s best. There is nothing left to raise.</p>;
+  const cap = gear.overCap(s);
+  const next = gear.upgradeStep(it, cap);
+  const cost = shop.upgradeCost(it, cap);
+  if (!next || cost === null) {
+    const over = it.over ?? 0;
+    return <p class="hint">{over >= OVERCHARGE.per * ASCENSION_TOP ? 'As far past its design’s best as anything goes.'
+      : !ascensionOpen(s) ? 'At its design’s best. There is nothing left to raise.'
+      : `At its design’s best${over ? `, and ${over} step${over === 1 ? '' : 's'} past it` : ''}. Every level of Ascension you open lets it go ${OVERCHARGE.per === 1 ? 'one step' : `${OVERCHARGE.per} steps`} further.`}</p>;
+  }
   const short = s.wallet.shards < cost;
   return (
-    <Section title="Upgrade" right={it.up ? `${it.up} step${it.up === 1 ? '' : 's'} bought` : 'at the Exchange'}>
+    <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? `${it.up} step${it.up === 1 ? '' : 's'} bought` : 'at the Exchange'}>
       <div class="upgrade">
-        <KV k="Quality" v={`${gear.quality(it)}% → ${gear.quality(next)}%`} />
+        <KV k="Quality" v={`${gear.qualityText(it)} → ${gear.qualityText(next)}`} />
         <KV k="Core" v={gear.coreText(next)} />
         {gear.rollText(next).map((t) => <KV key={t} k="Property" v={t} />)}
       </div>
@@ -358,11 +366,11 @@ export function openItem(id: string) {
         <div class="stack itemsheet">
           <div class="row"><GearArt item={it} size={84} equipped={!!worn} /><div class="grow">
             <b class="big">{d.name}</b>
-            <div class="chips"><Chip tone={`rank-${d.rank}`}>{gear.RARITY[d.rank].name}</Chip><Chip>{d.slot}</Chip>{d.set && <Chip>{d.set} set</Chip>}{tag && <Chip tone={tag === 'perfect' ? 'gold' : 'blood'}>{tag === 'perfect' ? '✦ Perfect roll' : '✕ Dead roll'}</Chip>}</div>
+            <div class="chips"><Chip tone={`rank-${d.rank}`}>{gear.RARITY[d.rank].name}</Chip><Chip>{d.slot}</Chip>{d.set && <Chip>{d.set} set</Chip>}{tag && <Chip tone={tag === 'perfect' ? 'gold' : 'blood'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ' roll'}` : '✕ Dead roll'}</Chip>}</div>
           </div></div>
           <div class="tiles">
             <Tile label="Score" value={Math.round(gear.score(it))} />
-            <Tile label="Quality" value={d.issued ? 'Issued' : `${gear.quality(it)}%`} sub={d.issued ? 'to specification' : 'of the design’s range'} />
+            <Tile label="Quality" value={d.issued ? 'Issued' : gear.qualityText(it)} sub={d.issued ? 'to specification' : it.over ? 'steps past its best' : 'of the design’s range'} />
           </div>
           <KV k="Core" v={gear.coreText(it)} />
           {gear.rollText(it).map((t) => <KV key={t} k="Property" v={t} />)}

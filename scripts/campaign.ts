@@ -15,6 +15,7 @@
 import * as asc from '@/core/ascension';
 import { isTrial } from '@/core/trial';
 import { contractsOpen, issue } from '@/core/contracts';
+import { setAllBySystem } from '@/core/marks';
 import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
 import { sweep } from '@/core/missions';
@@ -59,10 +60,11 @@ function newHunter() {
   return s;
 }
 
-/** Between runs: points, class choices on their defaults, gear, missions, the shelf and upgrades. */
+/** Between runs: points, class choices on their defaults, marks as the System sets them, gear, missions, the shelf and upgrades. */
 function tidy(s: Save, now: number, t: Tally) {
   autoAllocate(s);
   syncClass(s);
+  setAllBySystem(s);
   sweep(s);
   gear.autoEquip(s);
   const day = dayKey(now);
@@ -70,9 +72,9 @@ function tidy(s: Save, now: number, t: Tally) {
   const shelf = shop.shelf(s, day).filter((o) => !o.sold && o.price <= s.wallet.shards / 2 && gear.beatsWorn(s, o.item));
   const best = shelf.sort((a, b) => gear.score(b.item) - gear.score(a.item))[0];
   if (best && shop.buy(s, best.index, day)) { t.bought++; t.shardsOut += best.price; gear.autoEquip(s); }
-  // Then upgrade what is worn, cheapest step first, above a reserve.
+  // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows.
   for (;;) {
-    const worn = gear.worn(s).map((it) => ({ it, cost: shop.upgradeCost(it) })).filter((x): x is { it: typeof x.it; cost: number } => x.cost !== null);
+    const worn = gear.worn(s).map((it) => ({ it, cost: shop.upgradeCost(it, gear.overCap(s)) })).filter((x): x is { it: typeof x.it; cost: number } => x.cost !== null);
     const next = worn.sort((a, b) => a.cost - b.cost)[0];
     if (!next || s.wallet.shards - next.cost < RESERVE) break;
     shop.upgrade(s, next.it.id);

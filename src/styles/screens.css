@@ -357,3 +357,11 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ascension__rules b { color: var(--ink); }
 .ascension__proof { color: var(--ink-3); font-size: 0.8rem; }
 .extract.ascended .grant { color: var(--gold); }
+.marks { display: flex; flex-direction: column; gap: 6px; }
+.marks__list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.marks__list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--edge); border-radius: 8px; }
+.marks__list li > div { display: flex; flex-direction: column; min-width: 0; }
+.marks__list li b { color: var(--ink-2); font-size: 0.9rem; }
+.marks__name { display: flex; align-items: baseline; gap: 8px; }
+.marks__list li.is-set { border-color: rgba(255, 203, 92, 0.4); }
+.marks__list li.is-set b { color: var(--gold); }

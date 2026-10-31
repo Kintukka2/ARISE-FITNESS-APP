@@ -5,7 +5,8 @@
  * field potions go in the satchel for the hunter's turn in a fight.
  */
 import { EQUIPMENT } from '@/data/equipment';
-import { defOf, gearDef, grant, make, Q_HIGH, Q_LOW, RARITY, score, upgradeStep } from './gear';
+import { defOf, gearDef, grant, make, overCap, Q_HIGH, Q_LOW, RARITY, score, upgradeStep } from './gear';
+import { OVERCHARGE } from '@/data/ascension';
 import { UPGRADE } from '@/data/sets';
 import type { Item, Rank, Save } from './types';
 import { RANKS } from './types';
@@ -128,18 +129,23 @@ export function recycleAll(s: Save, ranks: string[]) {
 /** What an upgrade step costs at a rarity: the score a step adds to a piece of it, at a price per point. */
 export const stepCost = (rank: Rank) => Math.max(5, round5(RARITY[rank].score * (Q_HIGH - Q_LOW) * UPGRADE.share * UPGRADE.rate));
 
-/** What the next upgrade step on a piece costs. Null when there is nothing left to raise. */
-export function upgradeCost(it: Item): number | null {
+/** What the k-th step past perfect costs at a rarity: the score it adds at the usual rate, (1 + k) times over. */
+export const overCost = (rank: Rank, k: number) => Math.max(5, round5(RARITY[rank].score * (Q_HIGH - Q_LOW) * OVERCHARGE.share * UPGRADE.rate * (1 + k)));
+
+/** What the next upgrade step on a piece costs, with `cap` steps past perfect allowed. Null when there is nothing left to raise. */
+export function upgradeCost(it: Item, cap = 0): number | null {
   const d = defOf(it);
-  return d && upgradeStep(it) ? stepCost(d.rank as Rank) : null;
+  const next = d ? upgradeStep(it, cap) : null;
+  if (!d || !next) return null;
+  return next.over ? overCost(d.rank as Rank, next.over) : stepCost(d.rank as Rank);
 }
 
-/** Buy one upgrade step on a held piece. False if it cannot be raised or the shards are short. Mutates. */
+/** Buy one upgrade step on a held piece, as far past perfect as the hunter's Ascension allows. False if it cannot be raised or the shards are short. Mutates. */
 export function upgrade(s: Save, itemId: string): boolean {
   const i = s.items.findIndex((x) => x.id === itemId);
   const it = s.items[i];
-  const cost = it ? upgradeCost(it) : null;
-  const next = it ? upgradeStep(it) : null;
+  const cost = it ? upgradeCost(it, overCap(s)) : null;
+  const next = it ? upgradeStep(it, overCap(s)) : null;
   if (cost === null || !next || !pay(s, cost)) return false;
   s.items[i] = next;
   return true;

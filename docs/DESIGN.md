@@ -295,14 +295,33 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
 - **What a campaign shows.** `npm run campaign` now reads the brief before each run. It climbs to the
   highest level the assessment gives 75% or better, takes an even chance on a run that counts toward a
   proof, and takes the Trial when the assessment gives it an even chance. Over 120 days the invested
-  hunters clear 72–83% instead of 97%. The one-evening hunter opens Ascension 5 in 24 Trials; the
-  three-session hunter opens 7 in 9. They are carried out three to four times as often, which slows
-  the climb: S-Rank on day 78 instead of 63, and Sovereign on day 98 instead of 75.
+  hunters clear 72–87% instead of 97%. The one-evening hunter opens Ascension 5 in 7 Trials; the
+  three-session hunter opens 8 in 11. They are carried out three to four times as often, which slows
+  the climb: S-Rank on day 81 instead of 63, and Sovereign on day 86 instead of 75.
   A hunter who climbs without reading the brief is crushed (about 40% clears), which is the death
   spiral GM's analysis warns about; the brief is what stops it.
-- **Next.** Marks for each level won (GM's reincarnation bonuses, without the reincarnation), and an
-  upgrade cap that rises past perfect, so the top of the climb has somewhere to spend. GM's chosen
-  champions sent into the world each level are left for later: the Chosen live in the Trial for now.
+- **Marks** (`core/marks.ts`) are GM's reincarnation bonuses, without the reincarnation.
+  - **Earning:** every level opened earns one, set for good on one of five, with up to four on any one:
+    - the Edge: +4% attack and magic;
+    - the Bulwark: +6% maximum HP;
+    - the Ward: +5% defence and resistance;
+    - the Legion: +5% attack, magic and maximum HP for every Shadow;
+    - the Long Stride: 6% less fatigue a gate.
+  - **Calibration:** the levels and the Trial are tuned for a hunter holding a mark for each level
+    below, set as the System would (the mark with the fewest first). A mark therefore keeps pace with
+    the climb and makes the levels below easier. It cost the top level 8% stronger foes.
+- **Past perfect.** Every level opened lets each piece of gear go one upgrade step past its design's
+  best (`OVERCHARGE`). Each such step raises the piece half as far as a step toward perfect.
+  - **Price:** the first costs what a step toward perfect did, and each one after it costs half a
+    step more.
+  - **Calibration:** none. It is the edge a hunter with shards to spare buys.
+  - **Campaign:** the three-session hunter, who ended 120 days on 37,485 shards with nothing to spend
+    them on, now ends on 592. That hunter opens Ascension 8 instead of 7 and reaches Sovereign on day
+    86 instead of 98. The one-evening hunter already spent everything, and plays as before.
+- **Next.** GM's Chosen sent into the world at each level are left for later: the Chosen live in the
+  Trial for now. A hunter who plays three sessions a day still settles at the highest level the brief
+  calls safe and clears nearly everything there. Whether the top of the ladder needs a reason to push
+  is the open question.
 
 ## What stays out
 

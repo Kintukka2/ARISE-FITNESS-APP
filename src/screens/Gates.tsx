@@ -4,14 +4,15 @@ import { sfx } from '@/audio/audio';
 import { powerOf, TACTICS } from '@/core/combat';
 import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
-import { RARITY } from '@/core/gear';
+import { overCap, RARITY } from '@/core/gear';
 import { GATE_XP, practiceAward } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialRounds } from '@/core/trial';
-import { ASCENSION_PAY, ASCENSION_TOP, PROOF } from '@/data/ascension';
+import { ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, type Mark } from '@/data/ascension';
+import * as marks from '@/core/marks';
 import { SPIRE_NAME } from '@/data/spire';
 import { ContractsWindow } from '@/ui/contracts';
 import { MapView } from '@/ui/map';
@@ -192,6 +193,7 @@ function AscensionCard() {
         </div>
       )}
       {rules.length > 0 && <ol class="ascension__rules">{rules.map((r) => <li key={r.level}><b>{r.name}</b> {r.rule}</li>)}</ol>}
+      {a.unlocked > 0 && <MarkList />}
       {a.unlocked < ASCENSION_TOP && !ascension.trialProved(s) && (
         <small class="ascension__proof">
           {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {PROOF.gates} different {licensedRank(s)}-Rank gates
@@ -203,6 +205,38 @@ function AscensionCard() {
         ? <Btn kind="gold" block onClick={() => openBrief(trial)}>Face {trial.name} · {trialRounds(a.unlocked)} Chosen</Btn>
         : <small class="ascension__proof">The gates are proved. {trial.name} opens again tomorrow.</small>)}
     </Card>
+  );
+}
+
+/** The marks: one for every level opened, each set for good. */
+function MarkList() {
+  const s = useSave();
+  const waiting = marks.unset(s);
+  const set = async (m: Mark) => {
+    const ok = await confirm(m.name, `<strong>${marks.markText(m)}</strong>, on top of every mark already set. A mark stays where you set it.`, 'Set The Mark');
+    if (!ok || !store.update((x) => marks.setMark(x, m.id))) return;
+    sfx.success();
+    toast(`${m.name} set.`, 'good');
+  };
+  return (
+    <div class="marks">
+      <span class="label">Marks{waiting ? ` · ${waiting} to set` : ''}</span>
+      <ul class="marks__list">
+        {MARKS.map((m) => {
+          const n = marks.setOn(s, m.id);
+          return (
+            <li key={m.id} class={n ? 'is-set' : ''}>
+              <div class="grow">
+                <span class="marks__name"><b>{m.name}</b><span class="num muted">{n}/{MARK_MAX}</span></span>
+                <small class="muted">{n ? marks.markText(m, n) : `Each: ${marks.markText(m)}`}</small>
+              </div>
+              {waiting > 0 && marks.canSet(s, m.id) && <Btn kind="gold" size="sm" onClick={() => void set(m)}>Set</Btn>}
+            </li>
+          );
+        })}
+      </ul>
+      <small class="ascension__proof">One mark for every level opened. Every level opened also lets each piece of gear go {OVERCHARGE.per === 1 ? 'one upgrade step' : `${OVERCHARGE.per} upgrade steps`} further past perfect, at the Exchange: {overCap(s)} now.</small>
+    </div>
   );
 }
 
@@ -258,7 +292,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const enter = async () => {
     const f = vitals.read(store.get()).fatigue;
     if (f > 20 && !isPractice(d)) {
-      const cost = vitals.RAID_FATIGUE[d.rank] ?? 10;
+      const cost = Math.round((vitals.RAID_FATIGUE[d.rank] ?? 10) * raid.fatigueShare(store.get(), level));
       const want = await sys({
         title: 'Warning', kind: 'gates', glyph: 'warn', typed: false,
         lines: [`<strong>Fatigue ${f}.</strong> You are carrying the last run into this one.`, `You will fight at <strong>${Math.round(vitals.drag(f) * 100)}%</strong> of yourself. This gate adds ${cost} more.`],

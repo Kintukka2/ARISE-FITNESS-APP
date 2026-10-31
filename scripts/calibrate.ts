@@ -14,6 +14,7 @@ import { blockFrom, blockOf, builtFor, seasonOf, spireBlock } from '@/core/spire
 import { dayKey } from '@/core/util';
 import { ASCENSION_TUNE, BLOCK_TUNE, GATE_TUNE, SPIRE_TUNE, TRIAL_TUNE } from '@/data/gatetune';
 import { trialDungeon } from '@/core/trial';
+import { setAllBySystem } from '@/core/marks';
 import { ASCENSION_FROM, ASCENSION_TARGET, ASCENSION_TOP } from '@/data/ascension';
 import { RANKS } from '@/core/types';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
@@ -99,6 +100,8 @@ function ascensionRate(level: number) {
   for (const d of ASC_GATES) for (let h = 0; h < 3; h++) {
     const s = keptUpHunter(LEVELS[d.rank as Rank][1], d.rank as Rank, `asc|${d.id}|${h}`);
     s.ascension.unlocked = s.ascension.level = level;
+    // A hunter who has opened a level holds a mark for every level below it, set as the System would.
+    setAllBySystem(s);
     const p = project(s, d, 8, Date.UTC(2026, 2, 1 + h * 9, 12));
     c += p.cleared; n += p.runs;
   }
@@ -124,6 +127,7 @@ function trialRate(level: number) {
   for (const g of RANKS.slice(RANKS.indexOf(ASCENSION_FROM))) for (let h = 0; h < 4; h++) {
     const s = keptUpHunter(LEVELS[g][1], g, `trial|${g}|${h}`);
     s.ascension.unlocked = level;
+    setAllBySystem(s);
     const p = project(s, trialDungeon(g, level), 8, Date.UTC(2026, 3, 1 + h * 5, 12));
     c += p.cleared; n += p.runs;
   }

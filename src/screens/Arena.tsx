@@ -16,6 +16,7 @@ import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
 import { BLOCK } from '@/data/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial } from '@/core/trial';
+import { OVERCHARGE } from '@/data/ascension';
 import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
@@ -614,7 +615,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         {r.ascended !== null && (
           <section class="extract is-bound ascended">
             <p class="grant">ASCENSION {r.ascended} OPENED — {ascension.levelInfo(r.ascended).name.toUpperCase()}</p>
-            <p class="muted">{ascension.levelInfo(r.ascended).rule} Choose it on the Gates screen when you want it; until then, nothing changes.</p>
+            <p class="muted">{ascension.levelInfo(r.ascended).rule} Choose it on the Gates screen when you want it; until then, nothing changes. A mark is yours to set there, and every piece you wear can go {OVERCHARGE.per === 1 ? 'a step' : `${OVERCHARGE.per} steps`} further past perfect.</p>
           </section>
         )}
         {r.promoted.map((p) => {

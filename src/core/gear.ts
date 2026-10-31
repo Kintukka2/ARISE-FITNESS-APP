@@ -3,8 +3,10 @@
  * 75% and 125% of its design, and its unique properties roll inside their
  * ranges. Both are seeded off the item id, so a piece never changes unless it
  * is upgraded. Three-piece sets pay a bonus for two pieces worn, and for all three.
+ * Each level of Ascension opened lets a piece go one upgrade step past perfect.
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
+import { OVERCHARGE } from '@/data/ascension';
 import { SET_KEEP, setById, UPGRADE } from '@/data/sets';
 import type { Attrs, GearDef, Item, Rank, Save, SlotKey, Stat } from './types';
 import { STATS } from './types';
@@ -86,8 +88,9 @@ export function coreOf(it: Item): Partial<Attrs> {
   return out;
 }
 
-/** Quality as a 0–100 grade for display. */
-export const quality = (it: Item) => Math.round(((it.q - Q_LOW) / (Q_HIGH - Q_LOW)) * 100);
+/** Quality as a 0–100 grade for display. Steps past perfect are counted on their own. */
+export const quality = (it: Item) => Math.min(100, Math.round(((it.q - Q_LOW) / (Q_HIGH - Q_LOW)) * 100));
+export const qualityText = (it: Item) => `${quality(it)}%${it.over ? ` +${it.over}` : ''}`;
 export const rollTag = (it: Item) => (defOf(it)?.issued ? null : it.q >= Q_HIGH - 0.005 ? 'perfect' : it.q <= Q_LOW + 0.005 ? 'dead' : null);
 
 export function equippedIn(s: Save, slot: SlotKey): Item | null {
@@ -315,14 +318,29 @@ export function bonusText(b: Record<string, number>): string {
 
 // ------------------------------------------------------------------ upgrades
 
-/** The piece one upgrade step on: its quality and every property a share of the way closer to their best. Null when there is nothing to raise. */
-export function upgradeStep(it: Item): Item | null {
+/** How many steps past perfect the hunter's Ascension lets a piece go. */
+export const overCap = (s: Save) => s.ascension.unlocked * OVERCHARGE.per;
+
+/**
+ * The piece one upgrade step on: its quality and every property a share of the way closer to their
+ * best. At its best, a smaller share on past it, if `cap` allows another step past perfect. Null when
+ * there is nothing to raise.
+ */
+export function upgradeStep(it: Item, cap = 0): Item | null {
   const d = defOf(it);
   if (!d || d.issued) return null;
-  const q = round2(Math.min(Q_HIGH, it.q + (Q_HIGH - Q_LOW) * UPGRADE.share));
-  const rolls = (d.rolls ?? []).map((r, i) => round2(Math.min(r.max, (it.rolls[i] ?? r.min) + (r.max - r.min) * UPGRADE.share)));
-  if (q === it.q && rolls.every((v, i) => v === it.rolls[i])) return null;
-  return { ...it, q, rolls, up: (it.up ?? 0) + 1 };
+  // Toward its best, never back down from past it.
+  const q = Math.max(it.q, round2(Math.min(Q_HIGH, it.q + (Q_HIGH - Q_LOW) * UPGRADE.share)));
+  const rolls = (d.rolls ?? []).map((r, i) => Math.max(it.rolls[i] ?? r.min, round2(Math.min(r.max, (it.rolls[i] ?? r.min) + (r.max - r.min) * UPGRADE.share))));
+  if (q !== it.q || rolls.some((v, i) => v !== it.rolls[i])) return { ...it, q, rolls, up: (it.up ?? 0) + 1 };
+  const over = (it.over ?? 0) + 1;
+  if (over > cap) return null;
+  // Past perfect, everything is read from the steps taken, so rounding never builds up.
+  return {
+    ...it, q: Math.round((Q_HIGH + (Q_HIGH - Q_LOW) * OVERCHARGE.share * over) * 1000) / 1000,
+    rolls: (d.rolls ?? []).map((r) => round2(r.max + (r.max - r.min) * OVERCHARGE.share * over)),
+    up: (it.up ?? 0) + 1, over,
+  };
 }
 
 export function rollText(it: Item): string[] {

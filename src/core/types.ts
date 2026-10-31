@@ -37,6 +37,8 @@ export interface Item {
   rolls: number[];
   /** Upgrade steps bought for it at the Exchange. */
   up?: number;
+  /** Of those, the steps taken past its design's best. */
+  over?: number;
 }
 
 // ------------------------------------------------------------------ combat data
@@ -277,10 +279,10 @@ export interface Save {
   };
   /**
    * Ascension: the level the next run is entered at, the highest the hunter has opened and ever reached,
-   * the proof of the highest so far (different gates of their grade cleared at it), and the day they last
-   * walked into a Trial.
+   * the proof of the highest so far (different gates of their grade cleared at it), the day they last
+   * walked into a Trial, and the marks set from the levels opened, by mark.
    */
-  ascension: { level: number; unlocked: number; best: number; proof: { gates: string[] }; trialDay: string | null; trials: number };
+  ascension: { level: number; unlocked: number; best: number; proof: { gates: string[] }; trialDay: string | null; trials: number; marks: Record<string, number> };
   /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */
