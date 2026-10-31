@@ -12,6 +12,8 @@ import { ENEMIES } from '@/data/enemies';
 import { HOLLOW_MONARCH, HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
 import { licensedRank } from './licence';
 import { isSpire, spireById } from './spire';
+import { chosenById, isTrial, trialById } from './trial';
+import { trialReady } from './ascension';
 import type { Attrs, Dungeon, Enemy, Rank, Save } from './types';
 import { RANKS, STATS } from './types';
 import { dayKey, hash, rng, weighted } from './util';
@@ -21,12 +23,13 @@ export const OPEN_PER_DAY = 10;
 const MIN_AT_RANK = 2;
 
 const enemyMap = new Map<string, Enemy>([...ENEMIES, HOLLOW_MONARCH].map((e) => [e.id, e]));
-export const enemyById = (id: string) => enemyMap.get(id);
+/** A creature by id: one on file, or one of the Trial's Chosen, which is drawn from its id. */
+export const enemyById = (id: string) => enemyMap.get(id) ?? chosenById(id);
 export const ALL_ENEMIES = ENEMIES;
 
 const dungeonMap = new Map<string, Dungeon>([...DUNGEONS, HOLLOW_THRONE, PRACTICE_GATE].map((d) => [d.id, d]));
 /** A gate by id: one on file, or a block of the Spire, which is drawn from its id. */
-export const dungeonById = (id: string) => dungeonMap.get(id) ?? spireById(id);
+export const dungeonById = (id: string) => dungeonMap.get(id) ?? spireById(id) ?? trialById(id);
 export const ALL_DUNGEONS = DUNGEONS;
 export { HOLLOW_THRONE, PRACTICE_GATE };
 
@@ -85,18 +88,20 @@ export function seal(s: Save, d: Dungeon, day = dayKey()) {
 /** Up to one grade above your own: the "taster". */
 export const licensedFor = (s: Save, d: Dungeon) => rankIdx(d.rank) <= rankIdx(licensedRank(s)) + 1;
 
-export type EntryBlock = 'licence' | 'open' | 'locked' | 'down';
+export type EntryBlock = 'licence' | 'open' | 'locked' | 'down' | 'spent';
 
 export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | null {
   if (!licensedFor(s, d)) return 'licence';
   // A run left open is gone back into or abandoned, never entered again: that would write over it unsettled.
   if (s.gates.raid) return 'open';
+  // A Trial can be walked into once a day, and only with its gates proved.
+  if (isTrial(d) && !trialReady(s, dayKey(now))) return 'spent';
   const can = vitals.canRaid(s, now);
   return can.ok ? null : can.why;
 }
 
-/** Whether the boss has been seen: cleared, or reached. */
-export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d);
+/** Whether the boss has been seen: cleared, or reached. The Spire's and the Trial's are never hidden. */
+export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d) || isTrial(d);
 
 // ------------------------------------------------------------------ allies
 

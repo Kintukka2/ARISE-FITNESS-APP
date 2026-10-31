@@ -27,7 +27,8 @@ export interface MapNode {
 
 export interface GateMap { layers: MapNode[][]; byId: Record<string, MapNode> }
 
-export interface Chamber { label: string; foes: string[]; boss: boolean; elite: boolean }
+/** A fight. A champion is one of the Trial's Chosen before the last: fought with a boss's health, but not the end of the run. */
+export interface Chamber { label: string; foes: string[]; boss: boolean; elite: boolean; champion?: boolean }
 
 /** The seed a gate's map is drawn from: the same all day. */
 export const mapSeed = (d: Dungeon, day: string) => `${d.id}|${day}`;
@@ -42,7 +43,20 @@ const WEIGHTS: { kind: NodeKind; w: number }[] = [
 /** The practice gate teaches the map without punishing it. */
 const PRACTICE: { kind: NodeKind; w: number }[] = [{ kind: 'fight', w: 60 }, { kind: 'treasure', w: 20 }, { kind: 'shrine', w: 20 }];
 
+/** A Trial's map: one of the Chosen to a layer, the last of them its boss. Nothing to choose, and nowhere to rest. */
+function trialMap(d: Dungeon): GateMap {
+  const n = d.trial ?? 1;
+  const layers: MapNode[][] = Array.from({ length: n }, (_, k) => [{
+    id: `${k}-0`, layer: k, kind: k === n - 1 ? 'boss' : 'elite', next: k === n - 1 ? [] : [`${k + 1}-0`],
+    foes: [`CHO-${k + 1}-${d.rank}`],
+  }]);
+  const byId: Record<string, MapNode> = {};
+  for (const row of layers) for (const x of row) byId[x.id] = x;
+  return { layers, byId };
+}
+
 export function build(d: Dungeon, seed: string): GateMap {
+  if (d.trial) return trialMap(d);
   const r = rng('arise|map|' + seed);
   const practice = isPractice(d);
   const n = choiceLayers(d);
@@ -122,6 +136,7 @@ export function systemRoad(m: GateMap): string[] {
 export function chamberOf(d: Dungeon, x: MapNode): Chamber {
   const boss = x.kind === 'boss';
   const elite = x.kind === 'elite';
+  if (d.trial) return { label: enemyById(x.foes?.[0] ?? '')?.name ?? 'The Chosen', foes: x.foes ?? [], boss, elite, champion: !boss };
   const label = boss ? enemyById(d.boss)?.name ?? 'Boss' : elite ? 'Gatekeeper' : d.floor ? `Floor ${d.floor + x.layer}` : `Chamber ${x.layer + 1}`;
   return { label, foes: x.foes ?? [], boss, elite };
 }

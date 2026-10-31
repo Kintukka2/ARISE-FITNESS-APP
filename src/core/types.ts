@@ -87,6 +87,8 @@ export interface Dungeon {
   floor?: number;
   scale?: number;
   shape?: string;
+  /** A Trial of Ascension: how many of the Chosen stand in it, one to a layer. */
+  trial?: number;
 }
 
 // ------------------------------------------------------------------ orders
@@ -275,9 +277,10 @@ export interface Save {
   };
   /**
    * Ascension: the level the next run is entered at, the highest the hunter has opened and ever reached,
-   * and the proof of the highest so far: different gates of their grade cleared at it, and the Spire.
+   * the proof of the highest so far (different gates of their grade cleared at it), and the day they last
+   * walked into a Trial.
    */
-  ascension: { level: number; unlocked: number; best: number; proof: { gates: string[]; spire: boolean } };
+  ascension: { level: number; unlocked: number; best: number; proof: { gates: string[] }; trialDay: string | null; trials: number };
   /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */

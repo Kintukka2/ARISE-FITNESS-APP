@@ -20,6 +20,7 @@ import * as asc from './ascension';
 import * as contracts from './contracts';
 import * as shadows from './shadows';
 import * as spire from './spire';
+import { isTrial } from './trial';
 import * as shop from './shop';
 import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
 import { RANKS } from './types';
@@ -96,7 +97,7 @@ function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0): Unit[] {
   const t = tuneOf(d) * asc.ascensionTune(level) * (c.elite ? asc.eliteShare(level) : 1);
   const units = c.foes.map((id, j) => {
     const e = enemyById(id)!;
-    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id });
+    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id });
   });
   const seen: Record<string, number> = {};
   for (const u of units) seen[u.name] = (seen[u.name] ?? 0) + 1;
@@ -246,8 +247,9 @@ export const systemChoice = (x: MapNode) => (x.kind === 'shrine' ? 0 : Math.max(
 export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   const day = dayKey(now);
   const fatigue = vitals.read(s, now).fatigue;
-  // The practice gate is played as it is, whatever the hunter has chosen.
-  const level = isPractice(d) ? 0 : s.ascension.level;
+  // The practice gate is played as it is, and a Trial at the level it proves, whatever the hunter has chosen.
+  const level = asc.entryLevel(s, d, isPractice(d));
+  if (isTrial(d)) asc.enterTrial(s, day);
   if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, asc.fatigueShare(level));
   const specs = partySpecs(s, d, day, undefined, now, level);
   const party = buildParty(specs);
@@ -540,8 +542,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const r = rng('arise|spoils|' + run.seed);
   const practice = isPractice(d);
   // A block of the Spire is fought and paid as a gate. It has no first clear, and is never sealed:
-  // the week's best floor moves on past it instead.
-  const tower = spire.isSpire(d);
+  // the week's best floor moves on past it instead. A Trial is the same: it is not on the board.
+  const tower = spire.isSpire(d) || isTrial(d);
   const kept = outcome !== 'defeated';
   // Ascension pays more for the gate itself, at the level the run was entered at.
   const level = asc.levelOf(run);
@@ -628,8 +630,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     }
   }
   if (run.bossFaced && !tower && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
-  const climb = tower && outcome === 'cleared' ? spire.climbed(s, d, now) : null;
-  const ascended = outcome === 'cleared' && !practice ? asc.prove(s, d, run, climb ? climb.floor : null) : null;
+  const climb = spire.isSpire(d) && outcome === 'cleared' ? spire.climbed(s, d, now) : null;
+  const ascended = outcome === 'cleared' && !practice ? asc.prove(s, d, run) : null;
   if (outcome === 'cleared' && !tower) {
     if (!s.gates.cleared.includes(d.id)) s.gates.cleared.push(d.id);
     seal(s, d, dayKey(now));
@@ -667,8 +669,8 @@ export function extract(s: Save, l: Lingering, roll: number, now = Date.now()): 
  */
 export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
   const day = dayKey(now);
-  // The run would be entered at the level chosen: the projection plays every rule it brings.
-  const level = isPractice(d) ? 0 : s.ascension.level;
+  // The run would be entered at the level chosen (a Trial, at its own): the projection plays every rule it brings.
+  const level = asc.entryLevel(s, d, isPractice(d));
   const specs = partySpecs(s, d, day, undefined, now, level);
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   const m = build(d, mapSeed(d, day));

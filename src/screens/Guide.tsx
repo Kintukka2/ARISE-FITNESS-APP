@@ -9,7 +9,7 @@ import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { SETS, UPGRADE } from '@/data/sets';
-import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, PROOF } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, PROOF, TRIAL } from '@/data/ascension';
 import { rulesAt } from '@/core/ascension';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
@@ -90,7 +90,8 @@ const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Ascension',
     lines: [
       `For a hunter the board no longer troubles: ${ASCENSION_TOP} levels, each making every foe stronger and adding a rule of its own, on top of every rule below it. Each pays ${ASCENSION_PAY * 100}% more on a gate than the level below. Nothing makes you climb, and you can step back down any time.`,
-      `A level opens when you prove the one below it: ${PROOF.gates} different gates of your grade cleared at it, and the top of your grade's floors on the Pale Spire. Clears count from ${ASCENSION_FROM}-Rank.`,
+      `A level opens when you prove the one below it: ${PROOF.gates} different gates of your grade cleared at it, and then the Trial. Clears count from ${ASCENSION_FROM}-Rank.`,
+      `The Trial is a gate of the Chosen, one after another with no rest between them and no way out but through: ${TRIAL.extra} more of them than the level it proves. Each is one of your grade's bosses, stronger for every round before it. It is fought at the level it proves, and you can walk into it once a day.`,
       ...rulesAt(ASCENSION_TOP).map((r) => `${r.level}. ${r.name}: ${r.rule}`),
       'The level you choose is fixed for a run when you walk in, and the brief’s assessment plays every rule it brings.',
     ],

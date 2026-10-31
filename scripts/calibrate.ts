@@ -12,7 +12,8 @@ import { rankFor } from '@/core/progression';
 import { project } from '@/core/raid';
 import { blockFrom, blockOf, builtFor, seasonOf, spireBlock } from '@/core/spire';
 import { dayKey } from '@/core/util';
-import { ASCENSION_TUNE, BLOCK_TUNE, GATE_TUNE, SPIRE_TUNE } from '@/data/gatetune';
+import { ASCENSION_TUNE, BLOCK_TUNE, GATE_TUNE, SPIRE_TUNE, TRIAL_TUNE } from '@/data/gatetune';
+import { trialDungeon } from '@/core/trial';
 import { ASCENSION_FROM, ASCENSION_TARGET, ASCENSION_TOP } from '@/data/ascension';
 import { RANKS } from '@/core/types';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
@@ -116,6 +117,30 @@ for (let L = 1; L <= ASCENSION_TOP; L++) {
   console.log('ASCENSION level', L, ASCENSION_TUNE[L - 1], (ascensionRate(L) * 100).toFixed(0) + '%', 'target', (ASCENSION_TARGET(L) * 100).toFixed(0) + '%');
 }
 
+// The Trial at each level it proves, so a hunter who keeps up wins it about half the time.
+const TRIAL_TARGET = 0.5;
+function trialRate(level: number) {
+  let c = 0, n = 0;
+  for (const g of RANKS.slice(RANKS.indexOf(ASCENSION_FROM))) for (let h = 0; h < 4; h++) {
+    const s = keptUpHunter(LEVELS[g][1], g, `trial|${g}|${h}`);
+    s.ascension.unlocked = level;
+    const p = project(s, trialDungeon(g, level), 8, Date.UTC(2026, 3, 1 + h * 5, 12));
+    c += p.cleared; n += p.runs;
+  }
+  return c / n;
+}
+TRIAL_TUNE.length = 0;
+for (let L = 0; L < ASCENSION_TOP; L++) {
+  let lo = 0.1, hi = 6;
+  for (let i = 0; i < 10; i++) {
+    const mid = Math.sqrt(lo * hi);
+    TRIAL_TUNE[L] = mid;
+    if (trialRate(L) > TRIAL_TARGET) lo = mid; else hi = mid;
+  }
+  TRIAL_TUNE[L] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
+  console.log('TRIAL proving', L, TRIAL_TUNE[L], (trialRate(L) * 100).toFixed(0) + '%');
+}
+
 const body = Object.entries(out).map(([k, v]) => `  '${k}': ${v},`).join('\n');
 writeFileSync('src/data/gatetune.ts',
   `// Per-gate difficulty multipliers on enemy health and attack, written by \`npm run calibrate\`.\n// Each is set so a hunter in the middle of the gate's grade clears it about three times in four.\nexport const GATE_TUNE: Record<string, number> = {\n${body}\n};\n`
@@ -123,4 +148,6 @@ writeFileSync('src/data/gatetune.ts',
   + `export const BLOCK_TUNE: Record<string, number> = {\n${Object.entries(BLOCK_TUNE).map(([k, v]) => `  '${k}': ${v},`).join('\n')}\n};\n`
   + `export const SPIRE_TUNE: number[] = [${SPIRE_TUNE.join(', ')}];\n`
   + `// Ascension: how much stronger every foe is at each level from 1 up, so a hunter who keeps up clears its target.\n`
-  + `export const ASCENSION_TUNE: number[] = [${ASCENSION_TUNE.join(', ')}];\n`);
+  + `export const ASCENSION_TUNE: number[] = [${ASCENSION_TUNE.join(', ')}];\n`
+  + `// The Trial at each level from 0 up: tuned so a hunter who keeps up wins it about half the time.\n`
+  + `export const TRIAL_TUNE: number[] = [${TRIAL_TUNE.join(', ')}];\n`);
