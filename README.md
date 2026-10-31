@@ -32,6 +32,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | `npm run screens` | Screenshots every screen from a seeded veteran save into `e2e/out/screens/` |
 | `npm run balance` | Clear rates per gate grade and days-to-rank, from the real engine |
 | `npm run calibrate` | Re-tunes every gate's difficulty by simulation and rewrites `src/data/gatetune.ts` |
+| `npm run campaign` | Plays two hunters from Level 1 for 120 days through the real engine and reports the climb, the economy, contracts and the Spire |
 | `npm run android` | Generates the Android project in `android/` (see [Android](#android)) |
 
 ## The loop
@@ -76,7 +77,7 @@ src/
   audio/        every sound and the music, synthesised in WebAudio — no audio files
   platform/     the Android bridge: Play billing and the rested notification (inert on the web)
   styles/       theme tokens, components, screens
-scripts/        balance and calibration tools, the fixture generator, the Android generator
+scripts/        balance, calibration and campaign tools, the fixture generator, the Android generator
 tests/          Vitest unit tests for the engine
 e2e/            Playwright smoke test and screen tour
 docs/           the design doc: where the game goes next

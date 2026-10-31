@@ -217,6 +217,49 @@ fight was tried and did not narrow it.
   more. A Shadow bound before this change, with fewer than 25 kills, now fights with one ability
   until it is Sworn.
 
+## What a campaign showed
+
+The roadmap is built. `npm run campaign` then played it end to end: two hunters from the licence
+desk, through the real engine, for 120 days. One played an evening a day; the other played three
+sessions. Each raided until tired or hurt, walked the System's road on Auto, climbed one Spire block
+a day, reached for every Shadow it had the mana for, and spent its shards on the shelf and on
+upgrades.
+
+| | One evening a day | Three sessions a day |
+|---|---|---|
+| Runs a day | 2.3 | 4.1 |
+| Cleared | 97% | 97% |
+| S-Rank | day 63 | day 40 |
+| Sovereign | not by day 120 | day 75 |
+| Contracts a day, of 3 | 0.9 | 1.6 |
+| Spire, best floor | 105 | 105 |
+| Shards left on day 120 | 16,800 | 79,900 |
+
+What it says, and what to decide next:
+
+1. **An invested hunter outgrows the calibration.** Gates are tuned to 75% for a typical hunter:
+   random gear at whatever quality it rolled, no Shadows, no sets. The campaign's hunters had
+   perfect, upgraded gear by A-Rank, four to six Shadows and a set or two, and cleared 97%. The
+   brief tells them so honestly, but from the middle of the climb nothing is hard. *Decision:*
+   either calibrate against a hunter who keeps up (upgraded gear and a squad for their grade), so
+   75% is what a playing hunter meets, or keep it and accept that investment makes the game easy.
+   The first is harder on someone who never binds a Shadow.
+2. **Shards have nowhere to go at the top.** Gear is perfect by S-Rank, the shelf has nothing
+   better, and the purse grows without limit: 80,000 unspent for the three-session hunter.
+   *Decision:* add a sink that keeps paying. The candidates are rerolling a piece's properties at the
+   Exchange, or training a Shadow with shards toward its next rank.
+3. **Contracts are a choice, as designed.** Auto completes one or two a day: the clears and the
+   kills. The rest ask for what Auto will not do: leave the road, take on a gatekeeper, walk in
+   tired. All three fall on 3–13% of an Auto hunter's days, and more for a player who chases them.
+4. **The climb is quicker than the formula says.** Clears run near 97% rather than the 75% the
+   days-to-rank model assumes. One evening a day reaches S-Rank in nine weeks, and three sessions
+   reach Sovereign in eleven.
+5. **Levels do not stop at 100.** They keep paying points until every attribute is capped. That
+   predates v7 and suits the endless Spire, but Sovereign's line, "the System has nothing left to
+   award", is not quite true.
+6. **Fatigue holds an S-Rank hunter to about one gate a session**, as intended. The Spire competes
+   with the board for that fatigue, which is why the campaign climbs one block a day.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
