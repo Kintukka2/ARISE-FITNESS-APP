@@ -53,6 +53,16 @@ export const MARK_MAX = 4;
  */
 export const OVERCHARGE = { per: 1, share: 0.05 } as const;
 
+/**
+ * The Chosen sent into the world, after Gladiator Manager's: winning the Trial that opens level L sends
+ * its last Chosen out into the gates. Each day one of them holds a gate of the hunter's grade, and shows
+ * itself only to a hunter who walks in at its level or higher, in the boss's place. The first time it
+ * falls it leaves a masterwork for the slot it guards (`MASTERWORK_SLOTS`, by level): a piece of the
+ * gate's grade, perfect and L steps past it. After that it pays `bounty` clears' worth of shards.
+ */
+export const WALKERS = { bounty: 2 } as const;
+export const MASTERWORK_SLOTS: string[] = ['Weapon', 'Chest', 'Off-Hand', 'Head', 'Hands', 'Legs', 'Feet', 'Amulet', 'Ring', 'Ring'];
+
 /** Each level pays this share more experience and shards on a gate than the level below. */
 export const ASCENSION_PAY = 0.1;
 

@@ -9,7 +9,7 @@ import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { SETS, UPGRADE } from '@/data/sets';
-import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, TRIAL } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
 import { markText } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
 import { RANKS } from '@/core/types';
@@ -98,6 +98,7 @@ const TOPICS: { title: string; lines: string[] }[] = [
       `For a hunter the board no longer troubles: ${ASCENSION_TOP} levels, each making every foe stronger and adding a rule of its own, on top of every rule below it. Each pays ${ASCENSION_PAY * 100}% more on a gate than the level below. Nothing makes you climb, and you can step back down any time.`,
       `A level opens when you prove the one below it: ${PROOF.gates} different gates of your grade cleared at it, and then the Trial. ${SHORT.map((g) => `${g}-Rank has only ${gatesOf(g)}, so there it is all of them`).join('; ')}${SHORT.length ? '. ' : ''}Clears count from ${ASCENSION_FROM}-Rank.`,
       `The Trial is a gate of the Chosen, one after another with no rest between them and no way out but through: ${TRIAL.extra} more of them than the level it proves. Each is one of your grade's bosses, stronger for every round before it. It is fought at the level it proves, and you can walk into it once a day.`,
+      `Winning a Trial sends its last Chosen out into the gates. Each day one of them holds the first gate of your grade on the board, and shows itself only to a hunter who walks in at its level or higher: then it stands in the boss’s place. The first time it falls it leaves a masterwork, a piece of the gate’s grade already perfect and as many steps past it as its level. Each level's Chosen guards a slot of its own: ${MASTERWORK_SLOTS.map((x, i) => `${i + 1}, ${x}`).join('; ')}. After that, felling it again pays ${WALKERS.bounty} clears’ worth of shards.`,
       ...rulesAt(ASCENSION_TOP).map((r) => `${r.level}. ${r.name}: ${r.rule}`),
       'The level you choose is fixed for a run when you walk in, and the brief’s assessment plays every rule it brings.',
       `Every level you open earns a mark. Set it on the Gates screen, for good, on one of ${MARKS.length}: ${MARKS.map((m) => `${m.name} (${markText(m)})`).join(', ')}. Up to ${MARK_MAX} can go on any one. The levels are built for a hunter who has set their marks.`,

@@ -11,7 +11,8 @@ import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialRounds } from '@/core/trial';
-import { ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, type Mark } from '@/data/ascension';
+import { ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
+import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME } from '@/data/spire';
 import { ContractsWindow } from '@/ui/contracts';
@@ -195,6 +196,7 @@ function AscensionCard() {
       )}
       {rules.length > 0 && <ol class="ascension__rules">{rules.map((r) => <li key={r.level}><b>{r.name}</b> {r.rule}</li>)}</ol>}
       {a.unlocked > 0 && <MarkList />}
+      {a.sent.length > 0 && <ChosenLine />}
       {a.unlocked < ASCENSION_TOP && !ascension.trialProved(s) && (
         <small class="ascension__proof">
           {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank gates
@@ -206,6 +208,46 @@ function AscensionCard() {
         ? <Btn kind="gold" block onClick={() => openBrief(trial)}>Face {trial.name} · {trialRounds(a.unlocked)} Chosen</Btn>
         : <small class="ascension__proof">The gates are proved. {trial.name} opens again tomorrow.</small>)}
     </Card>
+  );
+}
+
+/** One of the Chosen holding the gate in the brief: when it shows itself, and what felling it pays. */
+function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: number }) {
+  const s = useSave();
+  const pay = ascension.payShare(level);
+  const felled = s.ascension.felled.includes(w.level);
+  return (
+    <Card class="bosscard chosencard" tone="gold">
+      <Glyph name="crown" />
+      <div class="grow">
+        <span class="label">One of the Chosen holds this gate</span>
+        <b>{w.name}</b>
+        <small class="muted">{level >= w.level ? `You walk in at Ascension ${level}: it stands in the boss’s place, and the assessment fights it.`
+          : `It shows itself only at Ascension ${w.level} or higher. At ${level} you meet the gate’s own boss, and a clear closes the gate on it for today.`}</small>
+        <small>{felled ? `It has fallen to you before. Felled again, it pays ${shop.gateShards(d.rank, WALKERS.bounty * pay)} shards.`
+          : `The first time it falls, it leaves a masterwork: a ${RARITY[d.rank as Rank].name} ${walkers.slotOf(w.level)}, perfect and ${w.level} step${w.level === 1 ? '' : 's'} past it.`}</small>
+      </div>
+    </Card>
+  );
+}
+
+/** The Chosen sent into the world, and where one walks today. */
+function ChosenLine() {
+  const s = useSave();
+  const a = s.ascension;
+  const w = walkers.walking(s, dayKey());
+  const gate = w ? dungeonById(w.gateId) : undefined;
+  if (!w || !gate) return null;
+  const open = board(s).some((x) => x.id === gate.id);
+  return (
+    <div class="marks">
+      <span class="label">The Chosen in the world · {a.felled.length} of {a.sent.length} felled</span>
+      <small class="ascension__proof">
+        {open ? <>Today <b>{w.name}</b> holds {gate.name}. It shows itself at Ascension {w.level} or higher, and the first time it falls it leaves a masterwork.</>
+          : <>Today <b>{w.name}</b> held {gate.name}, and that gate is closed until tomorrow.</>}
+      </small>
+      {open && <Btn kind="ghost" size="sm" onClick={() => openBrief(gate)}>Brief: {gate.name}</Btn>}
+    </div>
   );
 }
 
@@ -243,6 +285,7 @@ function MarkList() {
 
 function GateRow({ d }: { d: Dungeon }) {
   const s = useSave();
+  const held = walkers.walking(s, dayKey())?.gateId === d.id;
   const block = entryBlock(s, d);
   const locked = block === 'licence';
   const known = bossKnown(s, d);
@@ -252,7 +295,7 @@ function GateRow({ d }: { d: Dungeon }) {
       <button type="button" class={`gaterow ${locked ? 'is-locked' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${isPractice(d) ? 'is-practice' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
         onClick={() => { sfx.tap(); if (locked) toast(`The Association will not license you for ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
         <RankPlate rank={d.rank} size={34} />
-        <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}</span>
+        <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}{held && <small class="chip chip--chosen">Chosen</small>}</span>
         <span class="gaterow__mark">
           {locked ? <Glyph name="lock" /> : <span title={known ? boss?.name : 'Unidentified'}><Glyph name={known ? 'skull' : 'unknown'} /></span>}
         </span>
@@ -288,6 +331,10 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const xp = isPractice(d) ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
   const tower = spire.isSpire(d);
   const first = !tower && !s.gates.cleared.includes(d.id);
+  // One of the Chosen may hold this gate today, and stand in the boss's place for a run entered high enough.
+  const walker = walkers.walking(s, dayKey());
+  const holds = walker?.gateId === d.id ? walker : null;
+  const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
   const hpNow = vitals.read(s);
 
   const enter = async () => {
@@ -313,13 +360,14 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
     <div class="stack">
       <p class="muted">{d.theme}</p>
       <Card class="bosscard" tour="boss">
-        <Glyph name={known ? 'skull' : 'unknown'} />
+        <Glyph name={known || met ? 'skull' : 'unknown'} />
         <div class="grow">
-          <span class="label">Gate boss{known ? '' : ' — unidentified'}</span>
-          <b>{known ? boss.name : '???'}</b>
-          <small class="muted">{known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · ${powerOf(boss.base)} power` : 'Nobody who has come back out has said.'}</small>
+          <span class="label">{met ? 'In the boss’s place' : `Gate boss${known ? '' : ' — unidentified'}`}</span>
+          <b>{met ? met.name : known ? boss.name : '???'}</b>
+          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · ${powerOf(met.base)} power` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · ${powerOf(boss.base)} power` : 'Nobody who has come back out has said.'}</small>
         </div>
       </Card>
+      {holds && <ChosenCard d={d} w={holds} level={level} />}
 
       <Section title="The assessment">
         <div class={`verdict verdict--${v.tone}`} data-tour="assess">

@@ -9,7 +9,7 @@
  */
 import type { Save } from './types';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -38,7 +38,7 @@ export function defaults(): Save {
     shop: { day: null, taken: [] },
     contracts: { day: null, grade: 'E', list: [], bonus: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
-    ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0, marks: {} },
+    ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0, marks: {}, sent: [], felled: [] },
     satchel: 0,
     log: [],
     story: [],
@@ -76,6 +76,13 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
       const lost = typeof raid.won === 'number' && typeof raid.at === 'number' && raid.won < raid.at;
       Object.assign(raid, { map: `${raid.dungeonId}|${raid.day}`, path: [], haul: [], purse: 0, blessings: [], lost, at: 0, orders: [] });
     }
+    return s;
+  },
+  // v3: a Trial won sends its last Chosen into the world. A hunter who opened levels before there were
+  // any to send has sent them all.
+  2: (s) => {
+    const a = isObj(s.ascension) ? s.ascension : null;
+    if (a && typeof a.unlocked === 'number' && !Array.isArray(a.sent)) a.sent = Array.from({ length: a.unlocked }, (_, i) => i + 1);
     return s;
   },
 };

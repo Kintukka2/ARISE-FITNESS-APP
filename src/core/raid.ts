@@ -19,6 +19,7 @@ import { licensedRank } from './licence';
 import * as asc from './ascension';
 import * as contracts from './contracts';
 import * as marks from './marks';
+import * as walkers from './walkers';
 import * as shadows from './shadows';
 import * as spire from './spire';
 import { isTrial } from './trial';
@@ -185,8 +186,13 @@ export function runChamber(d: Dungeon, seed: string, index: number, party: Unit[
 }
 
 /** The fight a node holds at an Ascension level: from Never Alone up, a boss stands with one of its gate's creatures. */
-export function chamberAt(d: Dungeon, x: MapNode, level = 0): Chamber {
-  const c = chamberOf(d, x);
+export function chamberAt(d: Dungeon, x: MapNode, level = 0, walker: number | null = null): Chamber {
+  let c = chamberOf(d, x);
+  // A Chosen holding the gate stands in the boss's place, for a run entered high enough to meet it.
+  if (c.boss && walker) {
+    const w = walkers.walkerOf(walker, d.rank as Rank);
+    c = { ...c, label: w.name, foes: [w.id] };
+  }
   if (!c.boss || !asc.bossGuarded(level) || !d.mobs.length) return c;
   return { ...c, foes: [...c.foes, d.mobs[x.layer % d.mobs.length]] };
 }
@@ -268,6 +274,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
     map: mapSeed(d, day), path: [], haul: [], purse: 0, blessings: [], lost: false, fatigue, ascension: level,
+    chosen: walkers.meets(s, d, day, level),
   };
   return s.gates.raid;
 }
@@ -405,7 +412,7 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const orders = run.orders ?? [];
   // The satchel has already paid for the potions this chamber's orders drank.
   const potions = s.satchel + orders.filter((o) => o?.use === 'Potion').length;
-  const ch = openChamber(d, run.seed, x.layer, party, chamberAt(d, x, asc.levelOf(run)), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run) });
+  const ch = openChamber(d, run.seed, x.layer, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run) });
   return { party, ch, node: x };
 }
 
@@ -479,8 +486,10 @@ export interface RaidResult {
   spire: { floor: number; best: boolean } | null;
   /** Shadows the run's kills promoted, and to what. */
   promoted: { id: string; rank: string }[];
-  /** An Ascension level the run's clear proved the way to, if it did. */
+  /** An Ascension level the run's clear proved the way to, if it did. Its Trial's last Chosen is sent into the world. */
   ascended: number | null;
+  /** A Chosen met in the boss's place and felled: its masterwork, or its bounty. */
+  chosen: walkers.Felled | null;
   /** The hunter's health afterwards, on the real (vitals) scale. */
   heroHp: number;
   heroMax: number;
@@ -594,7 +603,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       const e = enemyById(id);
       if (!e || seen.has(id) || shadows.isBound(s, id) || lingering.length >= 2) continue;
       seen.add(id);
-      const boss = id === d.boss;
+      const boss = id === d.boss || (!!run.chosen && id === walkers.walkerOf(run.chosen, d.rank as Rank).id);
       if (r() < shadows.lingerChance(s, boss)) lingering.push({ enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level)) });
     }
   }
@@ -635,9 +644,12 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       if (shadows.rankIndex(sh) > was) promoted.push({ id: sh.id, rank: shadows.rankOf(sh).name });
     }
   }
-  if (run.bossFaced && !tower && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
+  // A Chosen in the boss's place is not the gate's own boss: meeting it shows nothing of that one.
+  if (run.bossFaced && !tower && !run.chosen && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
   const climb = spire.isSpire(d) && outcome === 'cleared' ? spire.climbed(s, d, now) : null;
   const ascended = outcome === 'cleared' && !practice ? asc.prove(s, d, run) : null;
+  if (ascended) walkers.send(s, ascended);
+  const chosen = outcome === 'cleared' ? walkers.fell(s, d, run, pay) : null;
   if (outcome === 'cleared' && !tower) {
     if (!s.gates.cleared.includes(d.id)) s.gates.cleared.push(d.id);
     seal(s, d, dayKey(now));
@@ -649,7 +661,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth, contracts: deal, spire: climb, promoted, ascended,
+    steps: run.at, depth, contracts: deal, spire: climb, promoted, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }
@@ -677,6 +689,7 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
   const day = dayKey(now);
   // The run would be entered at the level chosen (a Trial, at its own): the projection plays every rule it brings.
   const level = asc.entryLevel(s, d, isPractice(d));
+  const walker = walkers.meets(s, d, day, level);
   const specs = partySpecs(s, d, day, undefined, now, level);
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   const m = build(d, mapSeed(d, day));
@@ -693,7 +706,7 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
     for (const x of road) {
       if (isFight(x)) {
         if (x.kind === 'boss') reached++;
-        won = runChamber(d, seed, x.layer, party, chamberAt(d, x, level), s.gates.tactic, level).won;
+        won = runChamber(d, seed, x.layer, party, chamberAt(d, x, level, walker), s.gates.tactic, level).won;
         if (!won) break;
       } else if (x.kind === 'rest') rest(party, level);
       else if (x.kind === 'shrine' && x.offer) {

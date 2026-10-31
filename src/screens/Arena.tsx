@@ -612,6 +612,13 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </section>
           );
         })}
+        {r.chosen && (
+          <section class="extract is-bound ascended">
+            <p class="grant">{r.chosen.name.toUpperCase()} FALLS</p>
+            {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="muted grow">It leaves a masterwork: {gear.defOf(r.chosen.item)?.name}, perfect and {r.chosen.level} step{r.chosen.level === 1 ? '' : 's'} past it. It will walk the gates again.</p></div>
+              : <p class="muted">It pays a bounty of <Shards n={r.chosen.shards} />. It will walk the gates again.</p>}
+          </section>
+        )}
         {r.ascended !== null && (
           <section class="extract is-bound ascended">
             <p class="grant">ASCENSION {r.ascended} OPENED — {ascension.levelInfo(r.ascended).name.toUpperCase()}</p>
