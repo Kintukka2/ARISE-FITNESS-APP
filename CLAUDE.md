@@ -18,6 +18,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - `npm run calibrate`, then `npm run balance` — after any change to combat, enemies, abilities,
   classes, gear, the party, the map or the attribute points a hunter earns. Commit the rewritten
   `src/data/gatetune.ts`.
+- `npm run campaign` — plays two hunters from Level 1 for 120 days through the real engine. Run it
+  after a change to what anything pays or costs; it takes about two minutes.
 
 ## Rules that matter
 
