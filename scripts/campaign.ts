@@ -83,11 +83,16 @@ function tidy(s: Save, now: number, t: Tally) {
   }
 }
 
-/** The gate a sensible hunter picks: one at their own grade they have not cleared, or any at their grade. */
+/**
+ * The gate a sensible hunter picks: one at their own grade they have not cleared, then one that counts
+ * toward proving the next Ascension level, then any at their grade.
+ */
 function pickGate(s: Save, day: string, now: number): Dungeon | null {
   const mine = licensedRank(s);
   const open = board(s, day).filter((d) => !isPractice(d) && d.rank === mine && !entryBlock(s, d, now));
-  return open.find((d) => !s.gates.cleared.includes(d.id)) ?? open[0] ?? null;
+  return open.find((d) => !s.gates.cleared.includes(d.id))
+    ?? open.find((d) => asc.proving(s) && !s.ascension.proof.gates.includes(d.id))
+    ?? open[0] ?? null;
 }
 
 /**

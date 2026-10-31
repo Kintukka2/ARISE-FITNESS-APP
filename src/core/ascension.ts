@@ -6,6 +6,7 @@
  * `raid.finish`, with everything else a run pays.
  */
 import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_TOP, PROOF, RULES } from '@/data/ascension';
+import { DUNGEONS } from '@/data/dungeons';
 import { ASCENSION_TUNE } from '@/data/gatetune';
 import { licensedRank } from './licence';
 import { isTrial, trialDungeon, trialLevel } from './trial';
@@ -71,8 +72,13 @@ export const entryLevel = (s: Save, d: Dungeon, practice: boolean) => (practice 
 
 /** The Trial the hunter would face next: the one that proves the highest level they have opened. */
 export const nextTrial = (s: Save) => trialDungeon(licensedRank(s), s.ascension.unlocked);
+/**
+ * How many different gates of the hunter's grade prove a level: the rule's number, or every gate of the
+ * grade, for a grade with fewer. S-Rank has three.
+ */
+export const proofNeeds = (s: Save) => Math.min(PROOF.gates, DUNGEONS.filter((d) => d.rank === licensedRank(s)).length);
 /** The gates are proved, so the Trial stands open; it can be walked into once a day. */
-export const trialProved = (s: Save) => proving(s) && s.ascension.proof.gates.length >= PROOF.gates;
+export const trialProved = (s: Save) => proving(s) && s.ascension.proof.gates.length >= proofNeeds(s);
 export const trialReady = (s: Save, day = dayKey()) => trialProved(s) && s.ascension.trialDay !== day;
 
 /** Walking into a Trial spends the day's attempt, whatever comes of it. Mutates. */
@@ -94,7 +100,7 @@ export function prove(s: Save, d: Dungeon, run: OpenRaid): number | null {
     if (d.rank === licensedRank(s) && !d.floor && !a.proof.gates.includes(d.id)) a.proof.gates.push(d.id);
     return null;
   }
-  if (trialLevel(d) !== a.unlocked || a.proof.gates.length < PROOF.gates) return null;
+  if (trialLevel(d) !== a.unlocked || a.proof.gates.length < proofNeeds(s)) return null;
   a.unlocked += 1;
   a.best = Math.max(a.best, a.unlocked);
   a.proof = { gates: [] };

@@ -244,7 +244,7 @@ What it says, and what to decide next:
    either calibrate against a hunter who keeps up (upgraded gear and a squad for their grade), so
    75% is what a playing hunter meets, or keep it and accept that investment makes the game easy.
    The first is harder on someone who never binds a Shadow.
-2. **Shards have nowhere to go at the top.** Gear is perfect by S-Rank, the shelf has nothing
+2. **Shards have nowhere to go at the top.** *Decided: past perfect, under Ascension.* Gear is perfect by S-Rank, the shelf has nothing
    better, and the purse grows without limit: 80,000 unspent for the three-session hunter.
    *Decision:* add a sink that keeps paying. The candidates are rerolling a piece's properties at the
    Exchange, or training a Shadow with shards toward its next rank.
@@ -276,8 +276,9 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
   A run keeps the level it walked in with, and the brief's assessment plays every rule it brings.
   The practice gate is always played at 0.
 - **Proving.** A level opens when the one below it is proved: four different gates of the hunter's
-  grade cleared at it (GM's league trophies), and then the Trial. Only clears at the highest level
-  opened count, and only from C-Rank.
+  grade cleared at it (GM's league trophies), and then the Trial. S-Rank has only three gates, so
+  there it is all three (`proofNeeds`). Only clears at the highest level opened count, and only from
+  C-Rank.
 - **The Trial** (`core/trial.ts`) is GM's Ascension tournament.
   - **The gauntlet:** proving level L means beating L+2 of the Chosen in a row, in a gate with one to a
     layer, no rest and nothing to withdraw to.
@@ -318,10 +319,19 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
   - **Campaign:** the three-session hunter, who ended 120 days on 37,485 shards with nothing to spend
     them on, now ends on 592. That hunter opens Ascension 8 instead of 7 and reaches Sovereign on day
     86 instead of 98. The one-evening hunter already spent everything, and plays as before.
-- **Next.** GM's Chosen sent into the world at each level are left for later: the Chosen live in the
-  Trial for now. A hunter who plays three sessions a day still settles at the highest level the brief
-  calls safe and clears nearly everything there. Whether the top of the ladder needs a reason to push
-  is the open question.
+- **S-Rank's proof.** S-Rank has three gates and the proof asked for four, so no S-Rank hunter
+  could open another level. The campaign's hunters sat at 7 and 8 for their last forty days, with the
+  Trial projecting 100%. The proof now takes every gate of a grade with fewer (`proofNeeds`), and the
+  campaign picks a gate that counts toward it.
+  - **Three sessions a day:** this hunter opens all ten levels by day 112. It clears 73% (90% in the
+    last four weeks) and reaches Sovereign on day 109. That is later than before, because it is
+    fighting the top of the ladder.
+  - **One evening a day:** this hunter opens 5. It pushes every proof run at an even chance from the
+    bottom of S-Rank, so it is carried out often and clears 37% in its last four weeks.
+- **Next.** The questions are now about pushing, not about reaching the top:
+  - Is the one-evening hunter's slump the fair price of pushing, or a wall to soften?
+  - GM's Chosen sent into the world at each level are still left for later: the Chosen live in the
+    Trial for now.
 
 ## What stays out
 

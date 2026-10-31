@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as asc from '@/core/ascension';
-import { dungeonById, PRACTICE_GATE } from '@/core/gates';
+import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
 import { build, mapSeed } from '@/core/map';
 import { GATE_XP } from '@/core/progression';
 import * as raid from '@/core/raid';
@@ -146,6 +146,20 @@ describe('proving a level', () => {
     expect(s.ascension.proof).toEqual({ gates: [] });
     // Opening a level does not choose it.
     expect(s.ascension.level).toBe(0);
+  });
+
+  it('takes every gate of a grade that has fewer than the proof asks for', () => {
+    const s = keptUpHunter(85, 'S', 'asc-s');
+    s.gates.cleared.push(PRACTICE_GATE.id);
+    s.ascension.unlocked = 2;
+    asc.choose(s, 2);
+    const top = ALL_DUNGEONS.filter((d) => d.rank === 'S');
+    expect(top.length).toBeLessThan(PROOF.gates);
+    expect(asc.proofNeeds(s)).toBe(top.length);
+    for (const d of top) clearAt(s, d.id);
+    expect(asc.trialReady(s, day)).toBe(true);
+    const trial = asc.nextTrial(s);
+    expect(raid.finish(s, trial, raid.begin(s, trial, now), 'cleared', now).ascended).toBe(3);
   });
 
   it('counts nothing below C-Rank', () => {
