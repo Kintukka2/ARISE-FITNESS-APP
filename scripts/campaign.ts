@@ -9,7 +9,10 @@
  *
  * Two hunters: one who plays one evening a day, and one who plays three
  * sessions. A session raids until the hunter is tired or hurt, then spends.
+ * Each reads the brief before a run, and climbs Ascension as far as the
+ * assessment says it will hold.
  */
+import * as asc from '@/core/ascension';
 import { contractsOpen, issue } from '@/core/contracts';
 import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
@@ -84,7 +87,25 @@ function pickGate(s: Save, day: string, now: number): Dungeon | null {
   return open.find((d) => !s.gates.cleared.includes(d.id)) ?? open[0] ?? null;
 }
 
+/**
+ * The level a hunter who reads the brief enters at: the highest opened that the assessment gives three in
+ * four or better. A run that would count toward proving the next level is worth an even chance at the top.
+ */
+const SAFE = 0.75;
+const PUSH = 0.5;
+function pickLevel(s: Save, d: Dungeon, now: number) {
+  const a = s.ascension;
+  const grade = licensedRank(s);
+  const counts = asc.proving(s) && d.rank === grade && (spire.isSpire(d) ? spire.lastFloor(spire.blockOf(d.floor ?? 1)) === asc.gradeTop(grade) && !a.proof.spire : !a.proof.gates.includes(d.id));
+  for (let L = a.unlocked; L > 0; L--) {
+    asc.choose(s, L);
+    if (raid.project(s, d, 8, now).rate >= (counts && L === a.unlocked ? PUSH : SAFE)) return;
+  }
+  asc.choose(s, 0);
+}
+
 function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally) {
+  pickLevel(s, d, now);
   const before = s.wallet.earned;
   const run = raid.begin(s, d, now);
   const { won } = walk(s, d, now);
@@ -109,6 +130,7 @@ function campaign(p: Profile) {
   let rank = rankFor(1).key;
   let now = START;
   let climbed = -1;
+  const late = { runs: 0, cleared: 0 };
   // The practice gate first, as every hunter does.
   raid.begin(s, PRACTICE_GATE, now);
   walk(s, PRACTICE_GATE, now);
@@ -128,7 +150,9 @@ function campaign(p: Profile) {
         if (tower) climbed = day;
         const d = tower ? spire.nextSpire(s, dayKey(now)) : pickGate(s, dayKey(now), now);
         if (!d) break;
+        const cleared = t.cleared;
         play(s, d, now, r, t);
+        if (day >= DAYS - 28) { late.runs++; late.cleared += t.cleared - cleared; }
         tidy(s, now, t);
         now += HOUR / 3;
       }
@@ -136,7 +160,7 @@ function campaign(p: Profile) {
       if (key !== rank) { rank = key; ranks.push(`${key}:${day + 1}d`); }
     }
     if ((day + 1) % 28 === 0) {
-      weekly.push(`  day ${String(day + 1).padStart(3)}  L${String(s.hunter.level).padStart(3)} ${licensedRank(s)}  shards ${String(s.wallet.shards).padStart(5)}  score ${String(Math.round(gear.power(s))).padStart(4)}  ` +
+      weekly.push(`  day ${String(day + 1).padStart(3)}  L${String(s.hunter.level).padStart(3)} ${licensedRank(s)}  Ascension ${String(s.ascension.level).padStart(2)}  shards ${String(s.wallet.shards).padStart(5)}  score ${String(Math.round(gear.power(s))).padStart(4)}  ` +
         `Shadows ${s.shadows.army.length} (best ${s.shadows.army.reduce((n, x) => Math.max(n, x.kills), 0)} kills, slots ${shadows.slots(s)})  ` +
         `sets ${[...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}  Spire best ${s.spire.top}`);
     }
@@ -148,6 +172,7 @@ function campaign(p: Profile) {
   console.log(`  contracts  ${(t.contracts / days).toFixed(2)} of 3 a day, all three on ${Math.round((t.bonusDays / days) * 100)}% of days${contractsOpen(s) ? '' : ' (never opened)'}`);
   console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} pieces bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
+  console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(weekly.join('\n'));
 }
 

@@ -2,13 +2,15 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { powerOf, TACTICS } from '@/core/combat';
-import { allies, board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
+import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
 import { GATE_XP, practiceAward } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
+import * as ascension from '@/core/ascension';
+import { ASCENSION_PAY, ASCENSION_TOP, PROOF } from '@/data/ascension';
 import { SPIRE_NAME } from '@/data/spire';
 import { ContractsWindow } from '@/ui/contracts';
 import { MapView } from '@/ui/map';
@@ -98,6 +100,7 @@ export function Gates() {
 
       <Contracts />
       <SpireCard />
+      <AscensionCard />
 
       <div class="bands" role="tablist" aria-label="Filter gates by grade" data-tour="bands">
         <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
@@ -166,6 +169,39 @@ function SpireCard() {
   );
 }
 
+/** Ascension: the level the next run is entered at, its rules, and the proof of the next. */
+function AscensionCard() {
+  const s = useSave();
+  if (!ascension.ascensionOpen(s)) return null;
+  const a = s.ascension;
+  const rules = ascension.rulesAt(a.level);
+  const top = ascension.gradeTop(licensedRank(s));
+  return (
+    <Card class="ascension" tone="gold" tour="ascension">
+      <div class="ascension__head">
+        <Glyph name="crown" />
+        <div class="grow">
+          <b>Ascension {a.level ? `${a.level} · ${ascension.levelInfo(a.level).name}` : '0'}</b>
+          <small class="muted">{a.level ? `Gates pay ${Math.round(ASCENSION_PAY * a.level * 100)}% more. The brief’s assessment plays every rule.` : 'The board as it stands. Choose a level to make every gate harder, and pay more.'}</small>
+        </div>
+      </div>
+      {a.unlocked > 0 && (
+        <div class="chips" role="radiogroup" aria-label="Ascension level">
+          {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => store.update((x) => ascension.choose(x, L))}>{L}</Chip>)}
+        </div>
+      )}
+      {rules.length > 0 && <ol class="ascension__rules">{rules.map((r) => <li key={r.level}><b>{r.name}</b> {r.rule}</li>)}</ol>}
+      {a.unlocked < ASCENSION_TOP && (
+        <small class="ascension__proof">
+          {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {PROOF.gates} different {licensedRank(s)}-Rank gates
+          {' '}(<b class="num">{a.proof.gates.length}/{PROOF.gates}</b>) and Floor {top} of the Pale Spire (<b>{a.proof.spire ? 'done' : 'not yet'}</b>).
+          {!ascension.proving(s) && ' Clears count from C-Rank.'}
+        </small>
+      )}
+    </Card>
+  );
+}
+
 function GateRow({ d }: { d: Dungeon }) {
   const s = useSave();
   const block = entryBlock(s, d);
@@ -197,17 +233,19 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   useNow();
   const known = bossKnown(s, d);
   const boss = enemyById(d.boss)!;
-  const party = allies(d, undefined, licensedRank(s));
+  const level = isPractice(d) ? 0 : s.ascension.level;
+  const party = raid.alliesAt(d, dayKey(), licensedRank(s), level);
   const squad = isPractice(d) ? [] : shadows.squad(s);
   const hero = raid.heroSpec(s);
   // The verdict is the engine answering for itself: the gate, run headlessly.
-  const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic]);
+  const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic, level]);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const map = useMemo(() => build(d, mapSeed(d, dayKey())), [d.id, dayKey()]);
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
-  const sh = shop.GATE_SHARDS[d.rank as Rank];
-  const xp = isPractice(d) ? practiceAward(s) : GATE_XP[d.rank as Rank];
+  const pay = ascension.payShare(level);
+  const sh = Math.round(shop.GATE_SHARDS[d.rank as Rank] * pay);
+  const xp = isPractice(d) ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
   const tower = spire.isSpire(d);
   const first = !tower && !s.gates.cleared.includes(d.id);
   const hpNow = vitals.read(s);
@@ -248,6 +286,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           <b>{v.text}</b>
           <small>The System ran this gate {proj.runs} times with this party down the marked road, fighting your turns and making your choices the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
+          {level > 0 && <small>At Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}. It pays {Math.round((pay - 1) * 100)}% more.</small>}
         </div>
         <div class="tiles">
           <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />

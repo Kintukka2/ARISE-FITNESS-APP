@@ -19,7 +19,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   classes, gear, the party, the map or the attribute points a hunter earns. Commit the rewritten
   `src/data/gatetune.ts`.
 - `npm run campaign` — plays two hunters from Level 1 for 120 days through the real engine. Run it
-  after a change to what anything pays or costs; it takes about two minutes.
+  after a change to what anything pays or costs. It reads the brief before every run, so it takes a few
+  minutes.
 
 ## Rules that matter
 
@@ -35,6 +36,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `gates.dungeonById` resolves it and the whole raid engine plays it. `npm run calibrate` tunes it
   after the gates; anything that needs recalibrating the gates needs the Spire recalibrated too, and
   the same run does both.
+- A run keeps the Ascension level it walked in with (`run.ascension`, read through `ascension.levelOf`).
+  Every rule inside a run reads that, never the level the hunter has chosen since. `npm run calibrate`
+  tunes the levels last, against hunters who keep up (`keptUpHunter`).
 - A gate's map is drawn from the gate and the day (`map.mapSeed`). Steps and choices are written to
   the open run (`raid.choose`, `raid.resolve`) before they play, and every roll a step makes is
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.

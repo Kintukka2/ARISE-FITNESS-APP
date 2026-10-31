@@ -148,6 +148,8 @@ export interface OpenRaid {
   lost: boolean;
   /** The hunter's fatigue as they walked in, before this gate added its own. */
   fatigue: number;
+  /** The Ascension level it was entered at. */
+  ascension?: number;
 }
 
 /** What a week on the Spire paid when it closed. */
@@ -271,6 +273,11 @@ export interface Save {
     seasons: number;
     last: SeasonPay | null;
   };
+  /**
+   * Ascension: the level the next run is entered at, the highest the hunter has opened and ever reached,
+   * and the proof of the highest so far: different gates of their grade cleared at it, and the Spire.
+   */
+  ascension: { level: number; unlocked: number; best: number; proof: { gates: string[]; spire: boolean } };
   /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */

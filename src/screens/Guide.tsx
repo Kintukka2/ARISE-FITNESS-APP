@@ -9,6 +9,8 @@ import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { SETS, UPGRADE } from '@/data/sets';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, PROOF } from '@/data/ascension';
+import { rulesAt } from '@/core/ascension';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
@@ -82,6 +84,15 @@ const TOPICS: { title: string; lines: string[] }[] = [
       `It opens once you have cleared ${SPIRE_OPENS} gates, and stands beside the board. It is climbed ${BLOCK} floors at a time: ${BLOCK - 2} floors of choices, a rest, then a boss. A block costs the fatigue of one gate of its grade, and pays like one, with no first-clear bounty.`,
       `Floor N is built for a hunter of Level N, up to Floor ${SPIRE_TOP}. Past it, every block is ${Math.round((SPIRE_GROWTH - 1) * 100)}% harder than the last, and it does not stop. Each grade’s floors begin at ${(Object.entries(SPIRE_FLOORS) as [string, number][]).map(([r, f]) => `${f} (${r})`).join(', ')}. You climb from your own grade’s, or from above your best this week, and as with any gate you can go one grade above your own.`,
       `Your best floor this week is kept. On Monday the week closes and pays ${SEASON_PAY.shards} clears’ worth of shards at the grade of your highest floor, and a piece of that grade’s gear: ${SEASON_PAY.step * 100}% more for every ${SEASON_PAY.beyond} floors past ${SPIRE_TOP}. Then the floors rearrange and everyone climbs again.`,
+    ],
+  },
+  {
+    title: 'Ascension',
+    lines: [
+      `For a hunter the board no longer troubles: ${ASCENSION_TOP} levels, each making every foe stronger and adding a rule of its own, on top of every rule below it. Each pays ${ASCENSION_PAY * 100}% more on a gate than the level below. Nothing makes you climb, and you can step back down any time.`,
+      `A level opens when you prove the one below it: ${PROOF.gates} different gates of your grade cleared at it, and the top of your grade's floors on the Pale Spire. Clears count from ${ASCENSION_FROM}-Rank.`,
+      ...rulesAt(ASCENSION_TOP).map((r) => `${r.level}. ${r.name}: ${r.rule}`),
+      'The level you choose is fixed for a run when you walk in, and the brief’s assessment plays every rule it brings.',
     ],
   },
   {

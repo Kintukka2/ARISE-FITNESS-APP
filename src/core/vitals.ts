@@ -118,10 +118,10 @@ export function canRaid(s: Save, now = Date.now()): { ok: true } | { ok: false; 
   return { ok: true };
 }
 
-/** Fatigue is charged once, on the way in. */
-export function addRaidFatigue(s: Save, rank: string, now = Date.now()) {
+/** Fatigue is charged once, on the way in: a gate's grade's worth, times `share` (Ascension's Heavy Legs). */
+export function addRaidFatigue(s: Save, rank: string, now = Date.now(), share = 1) {
   settle(s, now);
-  s.vitals.fatigue = Math.min(FATIGUE_MAX, s.vitals.fatigue + (RAID_FATIGUE[rank] ?? 10));
+  s.vitals.fatigue = Math.min(FATIGUE_MAX, s.vitals.fatigue + Math.round((RAID_FATIGUE[rank] ?? 10) * share));
 }
 
 /** Write the hunter's raid health back as a fraction of their real maximum. */

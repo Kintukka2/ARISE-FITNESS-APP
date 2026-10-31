@@ -468,6 +468,7 @@ function openDossier() {
             <KV k="Best run unbroken" v={`${s.gates.bestUnbroken} clears`} />
             <KV k="Cleared above your grade" v={s.stats.reachClears} />
             <KV k="Contracts completed" v={`${s.stats.contracts} (every one of the day’s, ${s.stats.contractDays} times)`} />
+            <KV k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best} opened` : 'None opened'} />
             <KV k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top} at best${weekBest(s) ? `, Floor ${weekBest(s)} this week` : ''}` : 'Not climbed'} />
             <KV k="Bosses faced" v={s.gates.bosses.length} />
             <KV k="Creatures felled" v={Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0).toLocaleString()} />
