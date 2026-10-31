@@ -237,7 +237,7 @@ upgrades.
 
 What it says, and what to decide next:
 
-1. **An invested hunter outgrows the calibration.** Gates are tuned to 75% for a typical hunter:
+1. **An invested hunter outgrows the calibration.** *Decided: Ascension, below.* Gates are tuned to 75% for a typical hunter:
    random gear at whatever quality it rolled, no Shadows, no sets. The campaign's hunters had
    perfect, upgraded gear by A-Rank, four to six Shadows and a set or two, and cleared 97%. The
    brief tells them so honestly, but from the middle of the climb nothing is hard. *Decision:*
@@ -259,6 +259,39 @@ What it says, and what to decide next:
    award", is not quite true.
 6. **Fatigue holds an S-Rank hunter to about one gate a session**, as intended. The Spire competes
    with the board for that fatigue, which is why the campaign climbs one block a day.
+
+## Ascension — the ladder built
+
+Gladiator Manager's answer to a late game that flattens is Ascension: a ladder of stacking, named
+rules, each level opened by proving the one below. ARISE takes the ladder but not the restart. GM
+plays each level as a new game, which suits turns a player can rattle through. ARISE is paced by the
+clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the hunter's own climb.
+
+- **Ten levels** (`data/ascension.ts`, `core/ascension.ts`). Every level makes every foe stronger
+  (`ASCENSION_TUNE`). From level 2 each adds one rule on top of all the rules below it: Thin Rest,
+  Short-Handed, Heavy Legs, Wardens Wake, Crooked Luck, Hungry Dark, Never Alone, Worn Thin and The
+  System Watches. At the top, Auto will not fight a boss. Each level pays 10% more on a gate than the
+  one below.
+- **Choosing.** The hunter chooses a level on the Gates screen, anywhere from 0 to the highest opened.
+  A run keeps the level it walked in with, and the brief's assessment plays every rule it brings.
+  The practice gate is always played at 0.
+- **Proving.** A level opens when the one below it is proved: four different gates of the hunter's
+  grade cleared at it, and the top of their grade's floors on the Pale Spire. This is GM's league
+  trophies and Spartacus. Only clears at the highest level opened count, and only from C-Rank.
+- **Calibration.** Level 0 is the board as it was. Each level above is tuned so a hunter who keeps up
+  (upgraded gear, a squad of Vanguard Shadows) clears from 85% at level 1 down to 53% at level 10. A
+  typical hunter who has not kept up falls far faster: from 68% at level 0 to 19% at level 5. The
+  ladder is for the hunter who has outgrown the board.
+- **What a campaign shows.** `npm run campaign` now reads the brief before each run. It climbs to the
+  highest level the assessment gives 75% or better, and takes an even chance on a run that counts
+  toward a proof. Over 120 days the invested hunters clear 73–82% instead of 97%, and open
+  Ascension 5 (one evening a day) and 7 (three sessions). They are carried out three to four times as
+  often, which slows the climb: S-Rank on day 87 instead of 63, and Sovereign on day 100 instead of 75.
+  A hunter who climbs without reading the brief is crushed (about 40% clears), which is the death
+  spiral GM's analysis warns about; the brief is what stops it.
+- **Next.** The Trial, GM's Ascension tournament: a boss gauntlet that opens each level, replacing the
+  proof's last step, and a named boss per level sent into the world. Then marks for each level won,
+  and an upgrade cap that rises past perfect, to give the top of the climb somewhere to spend.
 
 ## What stays out
 

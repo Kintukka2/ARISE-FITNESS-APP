@@ -109,3 +109,5 @@ export const BLOCK_TUNE: Record<string, number> = {
   'DNG-050': 0.81,
 };
 export const SPIRE_TUNE: number[] = [1.1, 0.9, 1.02, 1.07, 0.78, 0.93, 1.09, 0.93, 1.02, 0.94, 1.07, 1.06, 1.11, 1.18, 0.96, 0.95, 1.08, 1.04, 1, 1.14];
+// Ascension: how much stronger every foe is at each level from 1 up, so a hunter who keeps up clears its target.
+export const ASCENSION_TUNE: number[] = [1.42, 1.45, 1.48, 1.51, 1.53, 1.56, 1.58, 1.48, 1.5, 1.55];

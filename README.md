@@ -32,7 +32,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | `npm run screens` | Screenshots every screen from a seeded veteran save into `e2e/out/screens/` |
 | `npm run balance` | Clear rates per gate grade and days-to-rank, from the real engine |
 | `npm run calibrate` | Re-tunes every gate's difficulty by simulation and rewrites `src/data/gatetune.ts` |
-| `npm run campaign` | Plays two hunters from Level 1 for 120 days through the real engine and reports the climb, the economy, contracts and the Spire |
+| `npm run campaign` | Plays two hunters from Level 1 for 120 days through the real engine, reading the brief and climbing Ascension, and reports the climb, the economy, contracts and the Spire |
 | `npm run android` | Generates the Android project in `android/` (see [Android](#android)) |
 
 ## The loop
@@ -44,6 +44,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **The map** | A few layers of steps, a rest, then the boss. You pick each step: fights, gatekeepers, rests, caches, shrines, traps and events with stated odds. What you find is banked and paid when you walk out; carried out, you lose it. Only a rest lets you withdraw |
 | **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
 | **The Pale Spire** | The one Gate that never closed, beside the board. It is climbed five floors at a time (three of choices, a rest, a boss), each block costing and paying like a gate of its grade. Floor N is built for Level N up to Floor 100, and it keeps getting harder above that. Your best floor this week is kept; on Monday the week pays by the grade of your highest floor, the floors rearrange, and everyone climbs again |
+| **Ascension** | For a hunter the board no longer troubles: ten levels, each making every foe stronger and adding a rule of its own on top of the ones below, from thinner rests to bosses you must fight by hand. Each pays more. A level opens when you prove the one below it, and you choose the level before every gate |
 | **Contracts** | The System issues three a day for your grade: clear so many gates, fell so many of one family, beat a gatekeeper, walk off the marked road, clear one on tired legs. Each pays a clear's shards and a tenth of its experience, all three pay a bonus, and one left undone lapses at midnight for nothing |
 | **Experience** | Every gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
@@ -69,6 +70,7 @@ src/
     gates         the board and the hunters sent with you
     contracts     the System's three a day: drawing them, counting a run against them, paying them
     spire         the Pale Spire: its floors and blocks, the climb, and the week that pays for it
+    ascension     the ladder of harder rules: each level's rule, choosing a level, and proving the next
     gear, shop, vitals, shadows, missions, story, licence
   data/         content: enemies, abilities, dungeons, map steps and events, contracts, the Spire, equipment and its sets, classes, story text
   app/          the shell: routing, the top bar and nav, and flow.ts, which narrates results

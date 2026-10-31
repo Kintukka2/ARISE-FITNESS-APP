@@ -345,3 +345,15 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .pickcard__tag { align-self: flex-start; margin-top: 2px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
 .rung.is-shut .pickcard { opacity: 0.45; }
 .extract.promoted .grant { color: var(--arcane); }
+
+/* ------------------------------------------------------------------ Ascension: gold, for advancement */
+
+.ascension { gap: 10px; border-color: rgba(255, 203, 92, 0.45); background: linear-gradient(180deg, rgba(255, 203, 92, 0.07), var(--inset)); }
+.ascension__head { display: flex; align-items: center; gap: 12px; }
+.ascension__head > .ico { color: var(--gold); width: 28px; height: 28px; }
+.ascension__head > div { display: flex; flex-direction: column; min-width: 0; }
+.ascension__head b { font-size: 1.05rem; color: var(--gold); }
+.ascension__rules { display: flex; flex-direction: column; gap: 4px; margin: 0; padding-left: 18px; list-style: decimal; color: var(--ink-2); font-size: 0.85rem; }
+.ascension__rules b { color: var(--ink); }
+.ascension__proof { color: var(--ink-3); font-size: 0.8rem; }
+.extract.ascended .grant { color: var(--gold); }

@@ -14,6 +14,7 @@ import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
 import { BLOCK } from '@/data/spire';
+import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
@@ -131,6 +132,8 @@ export function Arena() {
   paceRef.current = pace;
   const autoRef = useRef(false);
   autoRef.current = auto;
+  /** From The System Watches up, Auto stands aside in a boss's chamber: every order there is the hunter's. */
+  const handRef = useRef(false);
   const aimRef = useRef<string | null>(null);
   aimRef.current = aim;
   /** Settles the turn waiting on the hunter. */
@@ -239,7 +242,7 @@ export function Arena() {
 
   /** Wait for the hunter to give an order, or for Auto to take the turn. */
   async function ask(t: Turn, local: UnitView[]): Promise<Order | null> {
-    if (autoRef.current) return null;
+    if (autoRef.current && !handRef.current) return null;
     const live = local.filter((u) => t.foes.includes(u.uid));
     if (!aimRef.current || !t.foes.includes(aimRef.current)) setAim(live.reduce((a, b) => (b.hp < a.hp ? b : a), live[0])?.uid ?? null);
     setTurn(t);
@@ -277,11 +280,13 @@ export function Arena() {
     const c = chamberOf(d, node);
     if (c.boss) music.set('boss');
     setRoom({ label: c.label, boss: c.boss, index: node.layer });
+    handRef.current = c.boss && ascension.bossByHand(ascension.levelOf(r));
     setWon(null);
     setPhase('fight');
     const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
     setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
     setFeed([{ text: c.boss ? `${c.label} rises.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
+    if (handRef.current) say([{ text: '▸ The System will not fight this one for you. Every order is yours.', tone: 'muted' }]);
     // Coming back mid-chamber: everything the saved orders already played is shown at once.
     let at = 0;
     if ((r.orders ?? []).length) {
@@ -353,7 +358,7 @@ export function Arena() {
   return (
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
       <header class="arena__head">
-        <div><span class="label">{d.name}</span><b>{head}</b></div>
+        <div><span class="label">{d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}</span><b>{head}</b></div>
         <span class="label num">{d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : `Step ${here} of ${depth}`}</span>
       </header>
       {onMap && run && m ? (
@@ -475,7 +480,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
       {waiting && ev && hero && (
         <div class="stack stack--tight">
           {ev.choices.map((c, i) => {
-            const odds = raid.oddsOf(c, hero);
+            const odds = raid.oddsOf(c, hero, ascension.levelOf(run));
             return (
               <button type="button" key={c.label} class="choice-row" onClick={() => onChoose(i)}>
                 <b>{c.label}</b><small>{odds < 1 ? `${Math.round(odds * 100)}% it goes well${c.check ? `, read off your ${c.check.stat}` : ''}` : 'Certain'}</small>
@@ -602,6 +607,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </section>
           );
         })}
+        {r.ascended !== null && (
+          <section class="extract is-bound ascended">
+            <p class="grant">ASCENSION {r.ascended} OPENED — {ascension.levelInfo(r.ascended).name.toUpperCase()}</p>
+            <p class="muted">{ascension.levelInfo(r.ascended).rule} Choose it on the Gates screen when you want it; until then, nothing changes.</p>
+          </section>
+        )}
         {r.promoted.map((p) => {
           const sh = s.shadows.army.find((x) => x.id === p.id);
           const e = sh && enemyById(sh.enemyId);

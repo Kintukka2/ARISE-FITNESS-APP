@@ -8,6 +8,7 @@
 import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
 import { BLOCK, SPIRE_OPENS } from './spire';
+import { ASCENSION_TOP } from './ascension';
 
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
@@ -76,6 +77,14 @@ export const BEATS: Beat[] = [
       `${SPIRE_OPENS} gates cleared. That is enough that I can tell you about the one that does not close.`,
       `The Pale Spire. It opened over the old reservoir before either of us held a licence, and every boss killed inside it opens another floor above. You climb it ${BLOCK} floors at a time, with a rest before each boss.`,
       'It rearranges itself every Monday, and everyone starts again from their own grade’s floors. The Association pays at the end of each week for how high you got. You will find it on the Gates screen.',
+    ],
+  },
+  {
+    id: 'ascension_open', when: (s) => s.ascension.unlocked >= 1, kind: 'gold', title: 'Ascension', center: true,
+    lines: [
+      'The System has noted that the gates no longer trouble you.',
+      `It offers <strong>Ascension</strong>: ${ASCENSION_TOP} levels, each harder than the last, each paying more. Every level keeps the rules of the levels below it.`,
+      'Choose a level on the Gates screen before you go in; the brief assesses the gate at it. Prove a level, and the next opens. <span class="warn">Nothing makes you climb.</span>',
     ],
   },
   {

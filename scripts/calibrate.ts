@@ -12,10 +12,12 @@ import { rankFor } from '@/core/progression';
 import { project } from '@/core/raid';
 import { blockFrom, blockOf, builtFor, seasonOf, spireBlock } from '@/core/spire';
 import { dayKey } from '@/core/util';
-import { BLOCK_TUNE, GATE_TUNE, SPIRE_TUNE } from '@/data/gatetune';
+import { ASCENSION_TUNE, BLOCK_TUNE, GATE_TUNE, SPIRE_TUNE } from '@/data/gatetune';
+import { ASCENSION_FROM, ASCENSION_TARGET, ASCENSION_TOP } from '@/data/ascension';
+import { RANKS } from '@/core/types';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
 import type { Dungeon, Rank } from '@/core/types';
-import { LEVELS, typicalHunter } from './hunters';
+import { keptUpHunter, LEVELS, typicalHunter } from './hunters';
 
 const TARGET = 0.75;
 const HUNTERS = 12;
@@ -88,9 +90,37 @@ for (let b = 0; b < SPIRE_TOP / BLOCK; b++) {
   console.log('SPIRE', `floors ${b * BLOCK + 1}-${(b + 1) * BLOCK}`, `level ${level}`, SPIRE_TUNE[b], (spireRate(b, level) * 100).toFixed(0) + '%');
 }
 
+// Ascension last: each level, so a hunter who keeps up, in the middle of a grade that proves levels, clears its target.
+// Two gates of each such grade, each tried by hunters on different days.
+const ASC_GATES = RANKS.slice(RANKS.indexOf(ASCENSION_FROM)).flatMap((g) => ALL_DUNGEONS.filter((d) => d.rank === g).slice(0, 2));
+function ascensionRate(level: number) {
+  let c = 0, n = 0;
+  for (const d of ASC_GATES) for (let h = 0; h < 3; h++) {
+    const s = keptUpHunter(LEVELS[d.rank as Rank][1], d.rank as Rank, `asc|${d.id}|${h}`);
+    s.ascension.unlocked = s.ascension.level = level;
+    const p = project(s, d, 8, Date.UTC(2026, 2, 1 + h * 9, 12));
+    c += p.cleared; n += p.runs;
+  }
+  return c / n;
+}
+ASCENSION_TUNE.length = 0;
+console.log('ASCENSION level 0, kept-up hunter', (ascensionRate(0) * 100).toFixed(0) + '%');
+for (let L = 1; L <= ASCENSION_TOP; L++) {
+  let lo = 0.5, hi = 8;
+  for (let i = 0; i < 10; i++) {
+    const mid = Math.sqrt(lo * hi);
+    ASCENSION_TUNE[L - 1] = mid;
+    if (ascensionRate(L) > ASCENSION_TARGET(L)) lo = mid; else hi = mid;
+  }
+  ASCENSION_TUNE[L - 1] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
+  console.log('ASCENSION level', L, ASCENSION_TUNE[L - 1], (ascensionRate(L) * 100).toFixed(0) + '%', 'target', (ASCENSION_TARGET(L) * 100).toFixed(0) + '%');
+}
+
 const body = Object.entries(out).map(([k, v]) => `  '${k}': ${v},`).join('\n');
 writeFileSync('src/data/gatetune.ts',
   `// Per-gate difficulty multipliers on enemy health and attack, written by \`npm run calibrate\`.\n// Each is set so a hunter in the middle of the gate's grade clears it about three times in four.\nexport const GATE_TUNE: Record<string, number> = {\n${body}\n};\n`
   + `// The Spire, written by the same run. A block takes the shape of one gate a week: BLOCK_TUNE sets each gate's\n// creatures so a block of them at the middle of their grade is cleared about as often, and SPIRE_TUNE then\n// sets block b so a hunter of the level of its middle floor does.\n`
   + `export const BLOCK_TUNE: Record<string, number> = {\n${Object.entries(BLOCK_TUNE).map(([k, v]) => `  '${k}': ${v},`).join('\n')}\n};\n`
-  + `export const SPIRE_TUNE: number[] = [${SPIRE_TUNE.join(', ')}];\n`);
+  + `export const SPIRE_TUNE: number[] = [${SPIRE_TUNE.join(', ')}];\n`
+  + `// Ascension: how much stronger every foe is at each level from 1 up, so a hunter who keeps up clears its target.\n`
+  + `export const ASCENSION_TUNE: number[] = [${ASCENSION_TUNE.join(', ')}];\n`);

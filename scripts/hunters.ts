@@ -1,6 +1,8 @@
 /** Synthetic hunters for the balance tools: a typical player at a given level. */
 import { defaults } from '@/core/save';
-import { grant, autoEquip, ofRank } from '@/core/gear';
+import { grant, autoEquip, ofRank, upgradeStep, worn } from '@/core/gear';
+import { ALL_DUNGEONS } from '@/core/gates';
+import * as shadows from '@/core/shadows';
 import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, syncClass } from '@/core/progression';
 import type { Rank } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
@@ -29,5 +31,21 @@ export function typicalHunter(level: number, gearRank: Rank, seed: string) {
     if (pool.length) grant(s, pool[Math.floor(r() * pool.length)].id, `${seed}|${t}|${s.items.length}`);
   }
   autoEquip(s);
+  return s;
+}
+
+/**
+ * A hunter who keeps up, as `npm run campaign` finds one: a typical hunter whose worn gear has been
+ * upgraded to perfect, with a full squad of Vanguard Shadows taken from their grade's gates.
+ */
+export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
+  const s = typicalHunter(level, gearRank, seed);
+  for (const it of worn(s)) {
+    const i = s.items.indexOf(it);
+    for (let k = 0; k < 20; k++) s.items[i] = upgradeStep(s.items[i]) ?? s.items[i];
+  }
+  const r = rng(seed + '|shadows');
+  const mobs = ALL_DUNGEONS.filter((d) => d.rank === gearRank).flatMap((d) => d.mobs);
+  for (let k = 0; k < shadows.slots(s); k++) shadows.bind(s, mobs[Math.floor(r() * mobs.length)]).kills = shadows.SHADOW_RANKS[2].kills;
   return s;
 }

@@ -63,6 +63,8 @@ going.got = Math.floor(going.need / 2);
 // A few weeks on the Spire, and this week's climb under way. Last week's pay has been told.
 const lastWeek = seasonOf(addDays(today, -7));
 s.spire = { season: seasonOf(today), best: 25, top: 40, seasons: 3, last: { season: lastWeek, best: 40, tier: 'B-Rank', shards: 168, item: null } };
+// Ascension: three levels open, the second chosen, and half the proof of the fourth.
+s.ascension = { level: 2, unlocked: 3, best: 3, proof: { gates: ['DNG-015', 'DNG-016'], spire: false } };
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);
