@@ -5,6 +5,7 @@
 import { DUNGEONS } from '@/data/dungeons';
 import { BEATS } from '@/data/narrative';
 import { ISSUED } from '@/data/equipment';
+import { SHADOW_RANKS } from '@/data/shadows';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
 import { defOf, power, setPieces, setsIn, SLOTS, worn } from './gear';
 import { gateRank, STAT_CAP } from './progression';
@@ -14,7 +15,7 @@ import { STATS } from './types';
 export type MissionTier = 'minor' | 'major' | 'legend' | 'myth';
 export const TIER_NAMES: Record<MissionTier, string> = { minor: 'Mission', major: 'Directive', legend: 'Edict', myth: 'Testament' };
 
-type Grant = Partial<Attrs> & { free?: number; all?: number };
+type Grant = Partial<Attrs> & { free?: number; all?: number; slot?: number };
 
 export interface Mission { id: string; name: string; tier: MissionTier; did: string; grant: Grant; check: (s: Save) => boolean }
 
@@ -37,6 +38,7 @@ export const MISSIONS: Mission[] = [
   { id: 'gatebreaker', name: 'Gatebreaker', tier: 'minor', did: 'Cleared a dungeon.', grant: { STR: 1 }, check: (s) => s.gates.clears >= 1 },
   { id: 'first_artifact', name: 'Salvage', tier: 'minor', did: 'Carried something out of a Gate that Hunter Training did not issue you.', grant: { AGI: 1 }, check: fromGate },
   { id: 'first_shadow', name: 'Something Followed You Home', tier: 'minor', did: 'Bound your first Shadow.', grant: { free: 1 }, check: (s) => s.shadows.army.length >= 1 },
+  { id: 'first_sworn', name: 'Sworn', tier: 'minor', did: `A Shadow of yours landed ${SHADOW_RANKS[1].kills} kills and was ${SHADOW_RANKS[1].name}. Another can stand beside it.`, grant: { slot: 1 }, check: (s) => bestShadow(s) >= SHADOW_RANKS[1].kills },
   { id: 'classified', name: 'Classified', tier: 'minor', did: 'Fought long enough for the System to put a name to what you are.', grant: { free: 1 }, check: (s) => !!s.hunter.classId },
   {
     id: 'standard_issue', name: 'Standard Issue', tier: 'minor', did: 'Wore the issued kit entire — the sword, the shield and the grey.', grant: { free: 1 },
@@ -62,6 +64,7 @@ export const MISSIONS: Mission[] = [
   { id: 'fully_kitted', name: 'Fully Kitted', tier: 'major', did: 'Filled every one of the ten equipment slots.', grant: { free: 2 }, check: (s) => worn(s).length >= SLOTS.length },
   { id: 'well_equipped', name: 'Kitted Properly', tier: 'major', did: 'Reached 300 Equipment Score. Filling the slots is not the same as filling them well.', grant: { STR: 1, VIT: 2 }, check: (s) => power(s) >= 300 },
   { id: 'shadow_army', name: 'An Army Of Your Own', tier: 'major', did: 'Bound five Shadows.', grant: { free: 3 }, check: (s) => s.shadows.army.length >= 5 },
+  { id: 'shadow_legion', name: 'A Legion', tier: 'major', did: 'Bound ten Shadows. The System makes room for one more of them at a time.', grant: { slot: 1 }, check: (s) => s.shadows.army.length >= 10 },
   { id: 'read_everything', name: 'The Whole Record', tier: 'major', did: 'Saw every transmission the System had to send. All of it.', grant: { INT: 2, PER: 1 }, check: (s) => BEATS.every((b) => s.story.includes(b.id)) },
   { id: 'regular_company', name: 'Regular Company', tier: 'major', did: 'Cleared ten Gates alongside the same hunter.', grant: { STR: 1, VIT: 1 }, check: (s) => Object.values(s.gates.together).some((n) => n >= 10) },
   { id: 'wide_acquaintance', name: 'A Wide Acquaintance', tier: 'major', did: 'Stood in a party with a hundred different hunters.', grant: { PER: 2, INT: 1 }, check: (s) => s.gates.met.length >= 100 },
@@ -76,6 +79,7 @@ export const MISSIONS: Mission[] = [
   { id: 's_rank', name: 'The Highest Grant', tier: 'legend', did: 'Reached S-Rank. The Association has run out of letters.', grant: { free: 4 }, check: (s) => gateRank(s) === 'S' },
   { id: 'sovereign', name: 'Beyond Classification', tier: 'legend', did: 'Reached Sovereign — Level 100. The System has nothing left to award.', grant: { all: 1 }, check: (s) => s.hunter.level >= 100 },
   { id: 'spire_top', name: 'The Top Floor', tier: 'legend', did: `Stood on Floor ${SPIRE_TOP} of the Pale Spire. Nothing above it is built for anyone.`, grant: { free: 4 }, check: (s) => s.spire.top >= SPIRE_TOP },
+  { id: 'shadow_ascendant', name: 'Ascendant', tier: 'legend', did: `A Shadow of yours landed ${SHADOW_RANKS[3].kills} kills and stands ${SHADOW_RANKS[3].name}.`, grant: { slot: 1 }, check: (s) => bestShadow(s) >= SHADOW_RANKS[3].kills },
   { id: 'walked_out_together', name: 'Someone To Walk Out With', tier: 'legend', did: 'Cleared twenty-five Gates alongside the same hunter.', grant: { PER: 2, VIT: 2 }, check: (s) => Object.values(s.gates.together).some((n) => n >= 25) },
 
   // Testament — 6 or more
@@ -95,6 +99,7 @@ export function deltaOf(m: Mission): Partial<Attrs> {
 export const freeOf = (m: Mission) => m.grant.free ?? 0;
 
 export function grantText(m: Mission): string {
+  if (m.grant.slot) return `+${m.grant.slot} Shadow slot${m.grant.slot === 1 ? '' : 's'}`;
   if (m.grant.free) return `+${m.grant.free} free attribute point${m.grant.free === 1 ? '' : 's'}`;
   if (m.grant.all) return `+${m.grant.all} to every attribute`;
   return Object.entries(deltaOf(m)).map(([k, v]) => `${v! < 0 ? '' : '+'}${v} ${k}`).join(' · ');

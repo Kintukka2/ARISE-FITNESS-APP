@@ -602,6 +602,19 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </section>
           );
         })}
+        {r.promoted.map((p) => {
+          const sh = s.shadows.army.find((x) => x.id === p.id);
+          const e = sh && enemyById(sh.enemyId);
+          if (!sh || !e) return null;
+          const second = shadows.rankIndex(sh) === shadows.SECOND_AT ? shadows.secondOf(e) : null;
+          return (
+            <section key={p.id} class="extract is-bound promoted">
+              <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
+              <p class="grant">PROMOTED — {p.rank.toUpperCase()}</p>
+              <p class="muted">{sh.kills} kills under your command. Its growth can reach +{Math.round(shadows.rankOf(sh).cap * 100)}% now{second ? `, and it remembers ${second}` : ''}.</p>
+            </section>
+          );
+        })}
         {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (
           <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)}>
             {deal.done.length > 0 && <p class="grant">{deal.done.length === 1 ? 'Contract complete' : `${deal.done.length} contracts complete`}{deal.bonus ? ', and the day’s bonus with it' : ''}: <Shards n={deal.shards} /> and {deal.xp} XP.</p>}

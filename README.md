@@ -48,10 +48,10 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Fatigue** | Each gate adds fatigue, and fatigue drags every attribute down until it fades, about five an hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). Three points per level, five per rank, spent by you |
 | **Classes** | From D-Rank you are named after your highest attribute (25 classes in five lines). A class adds flat points to that attribute and gives you combat skills: at D, C and A, with passives at B and S. Each of those ranks offers two and you keep one, until your next rank lets you choose again |
-| **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill |
+| **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill. Kills promote it, from Bound through Sworn and Vanguard to Ascendant, lifting how far it can grow; a Sworn Shadow remembers a second ability. Each can follow the party's standing orders or its own, and Secret Missions make room for more of them |
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat. Sixteen three-piece sets pay a bonus for two pieces worn and another for all three, and each has a home gate whose clears leave a piece you do not have yet. Anything you hold can be upgraded with shards, a step at a time, to perfect |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
-| **Secret Missions** | 46 unpublished citations that pay attributes. Nothing says one exists until you have done it |
+| **Secret Missions** | 49 unpublished citations that pay attributes. Nothing says one exists until you have done it |
 | **Story** | 18 beats gated on level and deeds, ending at the Hollow Throne |
 
 ## Layout
