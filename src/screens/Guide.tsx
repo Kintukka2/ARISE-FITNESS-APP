@@ -9,7 +9,8 @@ import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { SETS, UPGRADE } from '@/data/sets';
-import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, PROOF, TRIAL } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, TRIAL } from '@/data/ascension';
+import { markText } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
@@ -94,6 +95,8 @@ const TOPICS: { title: string; lines: string[] }[] = [
       `The Trial is a gate of the Chosen, one after another with no rest between them and no way out but through: ${TRIAL.extra} more of them than the level it proves. Each is one of your grade's bosses, stronger for every round before it. It is fought at the level it proves, and you can walk into it once a day.`,
       ...rulesAt(ASCENSION_TOP).map((r) => `${r.level}. ${r.name}: ${r.rule}`),
       'The level you choose is fixed for a run when you walk in, and the brief’s assessment plays every rule it brings.',
+      `Every level you open earns a mark. Set it on the Gates screen, for good, on one of ${MARKS.length}: ${MARKS.map((m) => `${m.name} (${markText(m)})`).join(', ')}. Up to ${MARK_MAX} can go on any one. The levels are built for a hunter who has set their marks.`,
+      `Every level you open also lets each piece of gear go ${OVERCHARGE.per === 1 ? 'one upgrade step' : `${OVERCHARGE.per} upgrade steps`} past perfect at the Exchange. A step past perfect raises it ${OVERCHARGE.share / UPGRADE.share === 0.5 ? 'half as far' : `${Math.round((OVERCHARGE.share / UPGRADE.share) * 100)}% as far`} as a step toward it, and each costs more than the last.`,
     ],
   },
   {
@@ -117,7 +120,7 @@ const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       'Ten slots, six rarities. Every piece rolls its core bonus between 75% and 125% of its design, plus its own properties. Auto Equip picks the best of what you hold.',
       `${SETS.length} sets of three pieces, Rare and up. Two pieces of a set worn together pay a bonus, and all three pay another; the piece’s sheet says what. Each set has a home gate, and every clear of it leaves one of the set’s pieces, one you do not hold yet while there is one. Auto Equip favours a set you hold two or more pieces of.`,
-      `Anything you hold can be upgraded from its sheet: each step moves its quality and every property ${UPGRADE.share * 100}% of the way across its design’s range, until it is perfect. A step costs ${UPGRADE.rate} shards for every point of score it adds: ${stepCost('C')} at Rare, ${stepCost('S')} at Legendary.`,
+      `Anything you hold can be upgraded from its sheet: each step moves its quality and every property ${UPGRADE.share * 100}% of the way across its design’s range, until it is perfect, and then on past it as far as your Ascension allows. A step costs ${UPGRADE.rate} shards for every point of score it adds: ${stepCost('C')} at Rare, ${stepCost('S')} at Legendary.`,
       `The Exchange redraws eight pieces at midnight, mostly at your grade. Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}, and the Field Potion ${FIELD_POTION.price} for the satchel.`,
     ],
   },

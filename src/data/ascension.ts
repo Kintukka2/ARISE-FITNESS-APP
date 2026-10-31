@@ -30,6 +30,29 @@ export const CHOSEN: string[] = [
   'The Unnamed King', 'The Ninth Door',
 ];
 
+/**
+ * Marks: what a hunter keeps from every level they open, after Gladiator Manager's reincarnation
+ * bonuses, without the reincarnation. Each level opened earns one mark, set for good on one of these.
+ * Each mark set adds its numbers once, up to `MARK_MAX` on any one. `hero` and `shadows` are bonuses
+ * as gear's are; `fatigue` is the share less fatigue a gate costs.
+ */
+export interface Mark { id: string; name: string; hero?: Record<string, number>; shadows?: Record<string, number>; fatigue?: number }
+export const MARKS: Mark[] = [
+  { id: 'edge', name: 'Mark of the Edge', hero: { patk: 0.04, mpow: 0.04 } },
+  { id: 'bulwark', name: 'Mark of the Bulwark', hero: { maxHp: 0.06 } },
+  { id: 'ward', name: 'Mark of the Ward', hero: { defense: 0.05, resist: 0.05 } },
+  { id: 'legion', name: 'Mark of the Legion', shadows: { patk: 0.05, mpow: 0.05, maxHp: 0.05 } },
+  { id: 'stride', name: 'Mark of the Long Stride', fatigue: 0.06 },
+];
+export const MARK_MAX = 4;
+
+/**
+ * Past perfect: every level opened lets a piece take one more upgrade step past its design's best.
+ * Each such step moves its quality and every property `share` of the way across the design's range,
+ * and the k-th costs (1 + k) times what the score it adds would cost at the usual rate.
+ */
+export const OVERCHARGE = { per: 1, share: 0.05 } as const;
+
 /** Each level pays this share more experience and shards on a gate than the level below. */
 export const ASCENSION_PAY = 0.1;
 

@@ -18,6 +18,7 @@ import { BOOST_CAP, classBonus, GATE_XP, grantXP, kitFor, practiceAward, type Xp
 import { licensedRank } from './licence';
 import * as asc from './ascension';
 import * as contracts from './contracts';
+import * as marks from './marks';
 import * as shadows from './shadows';
 import * as spire from './spire';
 import { isTrial } from './trial';
@@ -48,7 +49,7 @@ export function heroSpec(s: Save, now = Date.now(), level = 0): UnitSpec {
   const base = vitals.worn(boosted(s.hunter.attrs, items, classBonus(s), BOOST_CAP), Math.min(vitals.FATIGUE_MAX, vitals.read(s, now).fatigue * asc.dragShare(level)));
   const cls = classById(s.hunter.classId);
   const k = cls ? kitFor(cls.lead, cls.tier, s.hunter.picks) : { kit: [], passives: [] };
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, ...k, bonus: sumBonuses(rollBonuses(items), setBonuses(items)), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, ...k, bonus: sumBonuses(rollBonuses(items), setBonuses(items), marks.heroBonus(s)), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
@@ -58,9 +59,10 @@ export function allySpec(a: Ally, i: number): UnitSpec {
   return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id, atkMult: a.atkMult };
 }
 
-export function shadowSpec(sh: Shadow, i: number): UnitSpec {
+/** A Shadow as it fights. `bonus` is what the hunter's marks give every Shadow. */
+export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: e.shadow, side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
+  return { uid: `s${i}`, name: e.shadow, side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
 }
 
 /** The hunters the Association sends with you at an Ascension level. */
@@ -71,8 +73,12 @@ export function alliesAt(d: Dungeon, day: string, rank: Rank, level = 0): Ally[]
 
 export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[], now = Date.now(), level = 0): UnitSpec[] {
   const squad = squadIds ? squadIds.map((id) => s.shadows.army.find((x) => x.id === id)).filter((x): x is Shadow => !!x) : shadows.squad(s);
-  return [heroSpec(s, now, level), ...alliesAt(d, day, licensedRank(s), level).map(allySpec), ...(isPractice(d) ? [] : squad).map(shadowSpec)];
+  const bonus = marks.shadowBonus(s);
+  return [heroSpec(s, now, level), ...alliesAt(d, day, licensedRank(s), level).map(allySpec), ...(isPractice(d) ? [] : squad).map((sh, i) => shadowSpec(sh, i, bonus))];
 }
+
+/** The share of a gate's fatigue a run costs: more at Heavy Legs, less for every Mark of the Long Stride. */
+export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) * marks.fatigueShare(s);
 
 export interface RosterRow { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[] }
 
@@ -250,7 +256,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   // The practice gate is played as it is, and a Trial at the level it proves, whatever the hunter has chosen.
   const level = asc.entryLevel(s, d, isPractice(d));
   if (isTrial(d)) asc.enterTrial(s, day);
-  if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, asc.fatigueShare(level));
+  if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, fatigueShare(s, level));
   const specs = partySpecs(s, d, day, undefined, now, level);
   const party = buildParty(specs);
   const hero = party[0];

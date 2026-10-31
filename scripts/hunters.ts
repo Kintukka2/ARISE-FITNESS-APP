@@ -36,7 +36,8 @@ export function typicalHunter(level: number, gearRank: Rank, seed: string) {
 
 /**
  * A hunter who keeps up, as `npm run campaign` finds one: a typical hunter whose worn gear has been
- * upgraded to perfect, with a full squad of Vanguard Shadows taken from their grade's gates.
+ * upgraded to perfect, with a full squad of Vanguard Shadows taken from their grade's gates. Not past
+ * perfect: that is the edge a hunter with shards to spare buys. Calibration sets the marks.
  */
 export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
   const s = typicalHunter(level, gearRank, seed);
