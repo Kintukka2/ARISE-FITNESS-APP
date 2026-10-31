@@ -178,6 +178,7 @@ function AscensionCard() {
   const a = s.ascension;
   const rules = ascension.rulesAt(a.level);
   const trial = ascension.nextTrial(s);
+  const need = ascension.proofNeeds(s);
   return (
     <Card class="ascension" tone="gold" tour="ascension">
       <div class="ascension__head">
@@ -196,8 +197,8 @@ function AscensionCard() {
       {a.unlocked > 0 && <MarkList />}
       {a.unlocked < ASCENSION_TOP && !ascension.trialProved(s) && (
         <small class="ascension__proof">
-          {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {PROOF.gates} different {licensedRank(s)}-Rank gates
-          {' '}(<b class="num">{a.proof.gates.length}/{PROOF.gates}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
+          {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank gates
+          {' '}(<b class="num">{Math.min(need, a.proof.gates.length)}/{need}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
           {!ascension.proving(s) && ' Clears count from C-Rank.'}
         </small>
       )}
