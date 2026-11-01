@@ -159,7 +159,7 @@ function TrialQuest() {
   );
 }
 
-/** One of the Chosen, holding a Gate today. Its masterwork is advancement, so gold. */
+/** One of the Chosen, holding a Gate today, and how many of those sent have fallen. Its masterwork is advancement, so gold. */
 function ChosenQuest() {
   const s = useSave();
   const day = dayKey();
@@ -178,6 +178,7 @@ function ChosenQuest() {
       rewards={[felled
         ? <>Mana Shards <b class="num grant">+{group(shop.gateShards(gate.rank, WALKERS.bounty * ascension.payShare(at)))}</b> at Ascension {at}</>
         : <>Masterwork: {RARITY[gate.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>]}>
+      <p class="questinfo__note">Chosen felled: {s.ascension.felled.length}/{s.ascension.sent.length}</p>
       {open && <Btn kind="primary" block onClick={() => openBrief(gate)}>Brief: {gate.name}</Btn>}
     </QuestWindow>
   );

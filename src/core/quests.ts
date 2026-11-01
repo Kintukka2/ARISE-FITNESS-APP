@@ -1,15 +1,19 @@
 /**
  * Quests the Quests screen reads off the save rather than issues: the next rank, and what reaching
- * it brings. Nothing here writes and nothing here pays. A rank still pays through `grantXP`, and a
- * class still changes through `syncClass`, exactly as before; this only says what they will do.
+ * it brings, and what the Quests tab counts. Nothing here writes and nothing here pays. A rank still
+ * pays through `grantXP`, and a class still changes through `syncClass`, exactly as before; this only
+ * says what they will do.
  */
 import { CLASS_RANKS, classById, classFor } from '@/data/classes';
 import { HOLLOW_THRONE } from '@/data/special';
 import { SLOTS } from '@/data/shadows';
+import { trialReady } from './ascension';
+import { unseen } from './contracts';
 import { licenceRequired, licensedRank, UNLICENSED_CAP } from './licence';
 import { bankedXp, nextRank, optionsAt, RANK_UP_POINTS, rankFor, totalXpFor, type RankInfo } from './progression';
 import type { Rank, Save, Stat } from './types';
 import { RANKS } from './types';
+import { dayKey } from './util';
 
 export interface Reclass {
   from: RankInfo;
@@ -59,3 +63,9 @@ export function reclassification(s: Save): Reclass | null {
     throne: after === 'S' && grade !== 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id),
   };
 }
+
+/**
+ * What the Quests tab counts: today's Daily Quests until the screen has shown them, and the Trial while
+ * it stands open and today's attempt is unused, as the Inventory tab counts unspent points.
+ */
+export const waiting = (s: Save, day = dayKey()) => unseen(s, day) + (trialReady(s, day) ? 1 : 0);

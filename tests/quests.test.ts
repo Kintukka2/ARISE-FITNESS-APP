@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
-import { reclassification } from '@/core/quests';
+import { reclassification, waiting } from '@/core/quests';
+import * as ascension from '@/core/ascension';
+import * as contracts from '@/core/contracts';
+import { PRACTICE_GATE } from '@/core/gates';
 import { autoAllocate, grantXP, RANK_LADDER, RANK_UP_POINTS, syncClass, totalXpFor } from '@/core/progression';
 import { classById } from '@/data/classes';
 import { SLOTS } from '@/data/shadows';
@@ -47,5 +50,34 @@ describe('reclassification', () => {
     expect(reclassification(done)!.throne).toBe(false);
     // Sovereign assigns no class of its own.
     expect(reclassification(hunter(80))!.cls).toBeNull();
+  });
+});
+
+describe('the Quests tab', () => {
+  const day = '2026-02-02';
+
+  it('counts the day’s Daily Quests until shown, and the Trial while today’s attempt is unused', () => {
+    const s = hunter(25);
+    s.gates.cleared.push(PRACTICE_GATE.id);
+    const daily = contracts.unseen(s, day);
+    expect(daily).toBeGreaterThan(0);
+    expect(waiting(s, day)).toBe(daily);
+    // The Gates are proved: the Trial stands open.
+    s.ascension.proof.gates = Array.from({ length: ascension.proofNeeds(s) }, (_, i) => `DNG-P${i}`);
+    expect(ascension.trialReady(s, day)).toBe(true);
+    expect(waiting(s, day)).toBe(daily + 1);
+    contracts.show(s, day);
+    expect(waiting(s, day)).toBe(1);
+    // Walking into it spends the day's attempt, whatever comes of it.
+    ascension.enterTrial(s, day);
+    expect(waiting(s, day)).toBe(0);
+  });
+
+  it('counts nothing below C-Rank, where no proof counts yet', () => {
+    const s = hunter(15);
+    s.gates.cleared.push(PRACTICE_GATE.id);
+    contracts.show(s, day);
+    s.ascension.proof.gates = ['DNG-P0', 'DNG-P1', 'DNG-P2', 'DNG-P3'];
+    expect(waiting(s, day)).toBe(0);
   });
 });

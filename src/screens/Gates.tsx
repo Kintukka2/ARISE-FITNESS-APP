@@ -10,8 +10,8 @@ import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
-import { isTrial, trialRounds } from '@/core/trial';
-import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, PROOF, WALKERS, type Mark } from '@/data/ascension';
+import { isTrial } from '@/core/trial';
+import { ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME, SPIRE_TOP } from '@/data/spire';
@@ -163,14 +163,16 @@ function SpireCard() {
   );
 }
 
-/** Ascension: the level the next run is entered at, its rules, and the proof of the next. */
+/**
+ * Ascension: the level the next run is entered at, its rules, and the marks. It shows once Ascension 1
+ * is open, when there is a level to choose. Proving the next level, its Trial and the Chosen walking
+ * today are quests, on the Quests screen.
+ */
 function AscensionCard() {
   const s = useSave();
-  if (!ascension.ascensionOpen(s)) return null;
+  if (!s.ascension.unlocked) return null;
   const a = s.ascension;
   const rules = ascension.rulesAt(a.level);
-  const trial = ascension.nextTrial(s);
-  const need = ascension.proofNeeds(s);
   const choose = (L: number) => store.update((x) => ascension.choose(x, L));
   return (
     <Card class="ascension" tone="gold" tour="ascension">
@@ -181,7 +183,7 @@ function AscensionCard() {
           <small class="muted">{a.level ? `Gates pay ${Math.round(ASCENSION_PAY * a.level * 100)}% more. The brief’s assessment plays every rule.` : 'The board as it stands. Choose a level to make every Gate harder, and pay more.'}</small>
         </div>
       </div>
-      {a.unlocked > 0 && a.unlocked <= ASCENSION_RULED && (
+      {a.unlocked <= ASCENSION_RULED && (
         <div class="chips" role="radiogroup" aria-label="Ascension level">
           {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => choose(L)}>{L}</Chip>)}
         </div>
@@ -199,18 +201,7 @@ function AscensionCard() {
       {ascension.beyond(a.level) > 0 && (
         <small class="ascension__proof">Past Level {ASCENSION_RULED}: Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level · +{Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here</small>
       )}
-      {a.unlocked > 0 && <MarkList />}
-      {a.sent.length > 0 && <ChosenLine />}
-      {!ascension.trialProved(s) && (
-        <small class="ascension__proof">
-          {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank Gates
-          {' '}(<b class="num">{Math.min(need, a.proof.gates.length)}/{need}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
-          {!ascension.proving(s) && ` Clears count from ${ASCENSION_FROM}-Rank.`}
-        </small>
-      )}
-      {ascension.trialProved(s) && (ascension.trialReady(s)
-        ? <Btn kind="gold" block onClick={() => openBrief(trial)}>Face {trial.name} · {trialRounds(a.unlocked)} Chosen</Btn>
-        : <small class="ascension__proof">The Gates are proved. {trial.name} opens again tomorrow.</small>)}
+      <MarkList />
     </Card>
   );
 }
@@ -231,26 +222,6 @@ function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
           : `The first time it falls, it leaves a masterwork: a ${RARITY[d.rank as Rank].name} ${walkers.slotOf(w.level)}, perfect and ${w.level} step${w.level === 1 ? '' : 's'} past it.`}</small>
       </div>
     </Card>
-  );
-}
-
-/** The Chosen sent into the world, and where one walks today. */
-function ChosenLine() {
-  const s = useSave();
-  const a = s.ascension;
-  const w = walkers.walking(s, dayKey());
-  const gate = w ? dungeonById(w.gateId) : undefined;
-  if (!w || !gate) return null;
-  const open = board(s).some((x) => x.id === gate.id);
-  return (
-    <div class="marks">
-      <span class="label">The Chosen in the world · {a.felled.length} of {a.sent.length} felled</span>
-      <small class="ascension__proof">
-        {open ? <>Today <b>{w.name}</b> holds {gate.name}. Appears at Ascension {w.level} or higher.</>
-          : <>Today <b>{w.name}</b> held {gate.name}, and that Gate is closed until tomorrow.</>}
-      </small>
-      {open && <Btn kind="ghost" size="sm" onClick={() => openBrief(gate)}>Brief: {gate.name}</Btn>}
-    </div>
   );
 }
 
