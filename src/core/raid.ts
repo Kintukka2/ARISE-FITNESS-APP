@@ -723,10 +723,16 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
   return { runs, cleared, rate: cleared / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id) };
 }
 
+/** The System's assessment of a Gate, graded from its clear rate. It reports; it does not advise. */
+export const GRADES = [
+  { min: 0.9, text: 'Safe', tone: 'ready' },
+  { min: 0.7, text: 'Favourable', tone: 'ready' },
+  { min: 0.4, text: 'Even', tone: 'even' },
+  { min: 0.15, text: 'Unfavourable', tone: 'over' },
+  { min: 0, text: 'Lethal', tone: 'over' },
+] as const;
+
 export function verdict(rate: number): { tone: 'ready' | 'even' | 'over'; text: string } {
-  if (rate >= 0.9) return { tone: 'ready', text: 'The party will be fine.' };
-  if (rate >= 0.7) return { tone: 'ready', text: 'The party should be fine.' };
-  if (rate >= 0.4) return { tone: 'even', text: 'The party will struggle.' };
-  if (rate >= 0.15) return { tone: 'over', text: 'The party will most likely be defeated.' };
-  return { tone: 'over', text: 'The party is doomed.' };
+  const g = GRADES.find((x) => rate >= x.min) ?? GRADES[GRADES.length - 1];
+  return { tone: g.tone, text: g.text };
 }

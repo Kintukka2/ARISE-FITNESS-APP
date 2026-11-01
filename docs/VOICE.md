@@ -25,6 +25,24 @@ Each speaker sounds like itself. A line that would fit another speaker needs rew
 - **Valcorde teaches only what he can know:** Gates, ranks, the Association, fatigue, his own past.
   He gives judgement, never rules; see [Valcorde](#valcorde).
 
+## Surfaces
+
+Every surface a player reads has one speaker. A new surface gets a row here before it ships.
+
+| Surface | Speaker | Where it lives |
+|---|---|---|
+| System windows: Notification, Quest Info, Quest Rewards | The System | `src/ui/system.ts`, `src/app/flow.ts`, `data/narrative.ts` |
+| Cards: items, skills, classes, potions, stats | The System | `data/equipment.ts`, `data/classes.ts`, `data/abilities.ts`, `core/shop.ts`, `core/progression.ts` |
+| The brief's assessment | The System | `raid.verdict`, `GRADES` |
+| The fight log | The System | `lines()` in `screens/Arena.tsx` |
+| What an outcome inside a Gate cost or paid | The System | `system.outcome()` |
+| The extraction panel, promotions, the Chosen, Daily Quests | The System | `screens/Arena.tsx`, `ui/contracts.tsx` |
+| Onboarding dialogue, coach windows, the Gates screen line, the Gates tour | Valcorde | `data/narrative.ts` |
+| The `???` windows | Another voice | `data/narrative.ts` |
+| A Gate's description in the brief | The world: the Association's file | `data/dungeons.ts`, `data/special.ts`, `data/spire.ts` |
+| Map events, traps, caches, shrines, rests | The world: narration | `data/nodes.ts`, `NodePanel` in `screens/Arena.tsx` |
+| Buttons, labels, tabs, tiles, hints, toasts, empty states, results, tutorials, settings, the map legend, standing orders, Ascension rules, the Guide | The interface | `screens/`, `ui/`, `data/nodes.ts` (`NODE`), `core/combat.ts` (`TACTICS`), `core/ascension.ts` |
+
 ## The System
 
 The System speaks the way the System speaks in *Solo Leveling*. The anime is the main reference;
@@ -333,6 +351,39 @@ The panel after a clear, in a violet frame.
 | Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
 
 That INT raises the rate is a rule, so it goes in the Guide.
+
+### The fight log
+
+The fight log is the System keeping score, in the register of the source's combat messages
+(`[Effect: Paralysis has activated.]`). It is read mid-fight, so it is short and exact.
+
+```
+◆ Ghoul: Grave Strike → You -12
+✦ Ghoul: Grave Strike → You -24 (Critical)
+○ Ghoul: Grave Strike → You. Missed.
+✴ You: [Effect: Bleeding] has activated.
+● Ghoul HP -6 (Bleeding)
+✖ Ghoul has fallen.
+▸ [Goblin Den] cleared. Rounds: 4. Standing: 3. Condition: Grazed.
+```
+
+- **Actor, colon, act.** `{Who}: {Ability} → {Target} -{damage}`. No verbs of flourish ("swings",
+  "finds nothing", "the line is rallied").
+- **Damage and healing are signed numbers.** A status is a bracketed effect.
+- **The glyph at the front is the event's kind**, so a line can be read at a glance.
+
+### The assessment
+
+The brief's verdict is the System's assessment of the Gate, graded from the clear rate of its 24
+runs (`GRADES` in `core/raid.ts`): **Safe, Favourable, Even, Unfavourable, Lethal**.
+
+```
+Assessment: Safe
+Clear rate: 23/24 · Carried out: 1/24
+```
+
+It reports the grade and the numbers. It never says what the party "will" do, and it never
+explains how it ran the Gate; the Guide does.
 
 ### Screens
 

@@ -14,6 +14,7 @@ import { markText } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
 import { RANKS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
+import { GRADES } from '@/core/raid';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
@@ -96,7 +97,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `${OPEN_PER_DAY} Gates stand open at a time: one of every grade, at least two at yours.`,
       'You can enter up to one grade above your own.',
       'A cleared Gate is replaced by another of its grade. The board redraws at midnight.',
-      'The brief runs the Gate 24 times with your party. How often it cleared is the verdict.',
+      'The brief runs the Gate 24 times with your party and grades how often it cleared.',
+      `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade: ${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S. The first clear pays double, once.`,
       'A clear can also leave gear.',
       `Being carried out locks you out of Gates for ${WIPE_LOCK / 36e5} hours.`,

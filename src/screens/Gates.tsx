@@ -376,10 +376,10 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 
       <Section title="The assessment">
         <div class={`verdict verdict--${v.tone}`} data-tour="assess">
-          <b>{v.text}</b>
-          <small>The System ran this Gate {proj.runs} times with this party down the marked road, fighting your turns and making your choices the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
-          {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
-          {level > 0 && <small>At Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}. It pays {Math.round((pay - 1) * 100)}% more.</small>}
+          <b>Assessment: {v.text}</b>
+          <small>Clear rate: {proj.cleared}/{proj.runs}{proj.heroDown ? ` · Carried out: ${proj.heroDown}/${proj.runs}` : ''}</small>
+          {hpNow.hp < hpNow.hpMax * 0.9 && <small>HP: {hpNow.hp}/{hpNow.hpMax}</small>}
+          {level > 0 && <small>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')} · Pay +{Math.round((pay - 1) * 100)}%</small>}
         </div>
         <div class="tiles">
           <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />

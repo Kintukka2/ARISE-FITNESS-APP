@@ -33,62 +33,10 @@ import { ContractsWindow } from '@/ui/contracts';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
+import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, pushBack, sys } from '@/ui/overlays';
 
-type Beat = { kind: 'round' | 'act' | 'drain' | 'aura'; ev: Ev[] };
-
-function toBeats(log: Ev[]): Beat[] {
-  const out: Beat[] = [];
-  let cur: Beat | null = null;
-  const push = (b: Beat) => { out.push(b); cur = b; };
-  for (const e of log) {
-    if (e.t === 'round') push({ kind: 'round', ev: [e] });
-    else if (e.t === 'hit' || e.t === 'miss') {
-      const c = cur as Beat | null;
-      const head = c?.ev[0];
-      if (c && c.kind === 'act' && head && (head.t === 'hit' || head.t === 'miss') && head.a === e.a && head.ab === e.ab) c.ev.push(e);
-      else push({ kind: 'act', ev: [e] });
-    } else if (e.t === 'support' || e.t === 'stun' || e.t === 'guard' || e.t === 'heal') push({ kind: 'act', ev: [e] });
-    else if (e.t === 'tick' || e.t === 'expire') {
-      if (cur && (cur as Beat).kind === 'drain') (cur as Beat).ev.push(e);
-      else push({ kind: 'drain', ev: [e] });
-    } else if (e.t === 'passive' && e.k === 'aura') push({ kind: 'aura', ev: [e] });
-    else if (cur) (cur as Beat).ev.push(e);
-    else push({ kind: 'act', ev: [e] });
-  }
-  return out;
-}
-
 interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
-
-function lines(b: Beat, name: (uid: string) => string): { text: string; tone: string }[] {
-  const out: { text: string; tone: string }[] = [];
-  const side = (uid: string) => (uid.startsWith('e') ? 'foe' : 'ally');
-  const hits = b.ev.filter((e): e is Extract<Ev, { t: 'hit' }> => e.t === 'hit');
-  const first = b.ev[0];
-  if (first.t === 'round') return [{ text: `Round ${first.n}`, tone: 'round' }];
-  if (hits.length) {
-    const h = hits[0];
-    const crit = hits.some((x) => x.crit);
-    const targets = hits.map((x) => `${name(x.v)} ${x.dmg}${x.crit ? '!' : ''}`).join(', ');
-    out.push({ text: `${crit ? '✦' : '◆'} ${name(h.a)}: ${h.ab} → ${targets}`, tone: side(h.a) });
-  }
-  for (const e of b.ev) {
-    if (e.t === 'miss') out.push({ text: `○ ${name(e.a)} swings ${e.ab} at ${name(e.v)} and finds nothing.`, tone: 'muted' });
-    else if (e.t === 'support') out.push({ text: `✦ ${name(e.a)} calls ${e.ab}. The line is rallied.`, tone: side(e.a) });
-    else if (e.t === 'stun') out.push({ text: `✴ ${name(e.a)} is stunned and cannot act.`, tone: 'muted' });
-    else if (e.t === 'guard') out.push({ text: `◈ ${name(e.a)} raises a guard.`, tone: side(e.a) });
-    else if (e.t === 'heal') out.push({ text: `✚ ${name(e.a)} drinks a field potion. +${e.amt} HP.`, tone: side(e.a) });
-    else if (e.t === 'status') out.push({ text: `✴ ${name(e.v)} is ${e.s}.`, tone: 'status' });
-    else if (e.t === 'down') out.push({ text: `✖ ${name(e.v)} falls.`, tone: e.v.startsWith('e') ? 'kill' : 'loss' });
-    else if (e.t === 'tick') out.push({ text: `● ${name(e.v)} loses ${e.dmg} to ${e.s}.`, tone: 'status' });
-    else if (e.t === 'passive') {
-      const t = e.k === 'ward' ? `◉ ${name(e.u)}’s ${e.p} takes half of it.` : e.k === 'stand' ? `◉ ${name(e.u)} will not fall: ${e.p}.` : e.k === 'brace' ? `◉ ${name(e.u)} shrugs off the stagger.` : e.k === 'aura' ? `◉ ${name(e.u)} takes command. ${e.p}.` : `◉ ${e.p} lashes out.`;
-      out.push({ text: t, tone: 'passive' });
-    }
-  }
-  return out;
-}
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
@@ -289,7 +237,7 @@ export function Arena() {
     setPhase('fight');
     const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
     setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
-    setFeed([{ text: c.boss ? `${c.label} rises.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
+    setFeed([{ text: c.boss ? `[${c.label}] has appeared.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
     if (handRef.current) say([{ text: '▸ Auto is not available in this chamber.', tone: 'muted' }]);
     // Coming back mid-chamber: everything the saved orders already played is shown at once.
     let at = 0;
@@ -297,7 +245,7 @@ export function Arena() {
       for (const b of toBeats(ch.log)) apply(local, b);
       at = ch.log.length;
       setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
-      say([{ text: '▸ Back where you were.', tone: 'muted' }]);
+      say([{ text: '▸ Chamber resumed.', tone: 'muted' }]);
     }
     at = await show(ch.log, at, local);
     while (ch.turn) {
@@ -311,10 +259,10 @@ export function Arena() {
     store.update((x) => raid.record(x, d, x.gates.raid!, party, res));
     const hero = local.find((x) => x.uid === 'hero');
     const left = local.filter((x) => x.side === 'p' && x.hp > 0).length;
-    const band = !hero || hero.hp <= 0 ? 'down' : hero.hp >= hero.mx ? 'unhurt' : hero.hp / hero.mx >= 0.75 ? 'grazed' : hero.hp / hero.mx >= 0.45 ? 'wounded' : 'badly hurt';
+    const band = !hero || hero.hp <= 0 ? 'Down' : hero.hp >= hero.mx ? 'Unhurt' : hero.hp / hero.mx >= 0.75 ? 'Grazed' : hero.hp / hero.mx >= 0.45 ? 'Wounded' : 'Badly hurt';
     say(res.won
-      ? [{ text: `▸ ${res.label} is clear after ${res.rounds} round${res.rounds === 1 ? '' : 's'}. ${left} standing. You are ${band}.`, tone: 'outcome' }]
-      : [{ text: `▸ ${res.label} holds. The party is dragged out.`, tone: 'loss' }]);
+      ? [{ text: `▸ [${res.label}] cleared. Rounds: ${res.rounds}. Standing: ${left}. Condition: ${band}.`, tone: 'outcome' }]
+      : [{ text: `▸ [${res.label}] not cleared. The party has been carried out.`, tone: 'loss' }]);
     if (res.won) buzz(20);
     else { sfx.alarm(); flash('danger'); buzz([40, 60, 120]); }
     setWon(res.won);

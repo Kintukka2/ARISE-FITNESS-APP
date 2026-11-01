@@ -24,6 +24,9 @@ import { SPIRE_THEME } from '@/data/spire';
 import { ISSUED } from '@/data/equipment';
 import { ASSESSMENT, BEATS, GATES_LINE, GATES_TOUR, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as system from '@/ui/system';
+import { lines, toBeats } from '@/ui/log';
+import { GRADES, verdict } from '@/core/raid';
+import type { Ev } from '@/core/combat';
 import { TOPICS } from '@/screens/Guide';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
@@ -186,5 +189,29 @@ describe('the world', () => {
   it('puts the cost of every outcome that hurts, heals or weakens under it', () => {
     for (const o of outcomes) if (o.hurt || o.heal || o.status) expect(system.outcome(o).length, o.text).toBeGreaterThan(0);
     expect(system.outcome({ text: '', hurt: 0.25 }).map((l) => l.replace(/<[^>]+>/g, ''))).toEqual(['HP -25%']);
+  });
+});
+
+describe('the System keeping score', () => {
+  const name = (uid: string) => ({ hero: 'You', e0: 'Ghoul' } as Record<string, string>)[uid] ?? uid;
+  const log = [
+    { t: 'hit', a: 'e0', v: 'hero', ab: 'Grave Strike', dmg: 12, crit: false },
+    { t: 'miss', a: 'e0', v: 'hero', ab: 'Grave Strike' },
+    { t: 'status', v: 'hero', s: 'Bleeding' },
+    { t: 'tick', v: 'e0', dmg: 6, s: 'Bleeding' },
+    { t: 'down', v: 'e0' },
+  ] as unknown as Ev[];
+  const text = toBeats(log).flatMap((b) => lines(b, name)).map((l) => l.text);
+
+  it('writes the fight log as actor, act and signed numbers, with no flourish', () => {
+    expect(text).toContain('◆ Ghoul: Grave Strike → You -12');
+    expect(text).toContain('● Ghoul HP -6 (Bleeding)');
+    for (const t of text) expect(t, t).not.toMatch(/swings|finds nothing|rallied|lashes|shrugs|loses \d/);
+  });
+
+  it('grades the brief from Safe to Lethal and reports nothing else', () => {
+    expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Favourable', 'Even', 'Unfavourable', 'Lethal']);
+    expect(verdict(1).text).toBe('Safe');
+    expect(verdict(0).text).toBe('Lethal');
   });
 });
