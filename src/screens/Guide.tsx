@@ -214,7 +214,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 
 export function openGuide() {
   openSheet({
-    title: 'How ARISE Works',
+    title: 'How Arise Works',
     render: () => (
       <div class="stack">
         {TOPICS.map((t) => (

@@ -148,7 +148,7 @@ function Splash({ onDone }: { onDone: () => void }) {
           <path d="M60 36 79 72H41Z" fill="url(#sg)" />
         </svg>
       </div>
-      <h1 class="wordmark" aria-label="ARISE">ARISE</h1>
+      <h1 class="wordmark" aria-label="Arise">ARISE</h1>
       <p class="awaken__sub">Hunter Association · Awakening Assessment · Regional Office</p>
       <div class="awaken__type"><p>{a.shown}</p><p>{b.shown}</p></div>
     </main>

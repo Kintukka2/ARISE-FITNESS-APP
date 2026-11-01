@@ -31,7 +31,7 @@ function Settings() {
   const set = (fn: (x: typeof s) => void) => store.update(fn);
   return (
     <div class="stack">
-      <Btn kind="ghost" block onClick={openGuide}><Glyph name="help" /> How ARISE Works</Btn>
+      <Btn kind="ghost" block onClick={openGuide}><Glyph name="help" /> How Arise Works</Btn>
       <Section title="Sound and display">
         <div class="toggles">
           <Toggle label="Sound" on={s.settings.sound} onChange={(v) => set((x) => { x.settings.sound = v; })} />
@@ -45,7 +45,7 @@ function Settings() {
         <Section title="Reminder">
           <div class="toggles">
             <Toggle label="Tell me when I am rested" note="One notification when fatigue reaches 0 or the Gate lockout ends." on={s.settings.reminders.on} onChange={async (v) => {
-              if (v && !(await askNotifications())) { sfx.alarm(); toast('Notifications are blocked for ARISE. Allow them in Android settings.', 'warn'); return; }
+              if (v && !(await askNotifications())) { sfx.alarm(); toast('Notifications are blocked for Arise. Allow them in Android settings.', 'warn'); return; }
               set((x) => { x.settings.reminders.on = v; });
               void syncReminders(store.get());
             }} />
@@ -63,7 +63,7 @@ function Settings() {
           <Btn kind="danger" block onClick={erase}>Erase Everything</Btn>
         </div>
       </Section>
-      <small class="muted center">ARISE v{__APP_VERSION__} · Instructor Ryn Valcorde · all data stored on this device</small>
+      <small class="muted center">Arise v{__APP_VERSION__} · Instructor Ryn Valcorde · all data stored on this device</small>
     </div>
   );
 }
@@ -89,7 +89,7 @@ function importSave() {
     const file = input.files?.[0];
     if (!file) return;
     const next = parse(await file.text());
-    if (!next) return toast('That is not an ARISE save file.', 'bad');
+    if (!next) return toast('That is not an Arise save file.', 'bad');
     if (!(await confirm('Import Save', `Replace this hunter with <strong>${next.hunter.name.replace(/</g, '&lt;')}</strong>, Level ${next.hunter.level}? The current save is kept as a backup you can restore.`, 'Import', true))) return;
     store.replace(next);
     toast('Save imported.', 'xp');

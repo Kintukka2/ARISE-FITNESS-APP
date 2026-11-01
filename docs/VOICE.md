@@ -753,6 +753,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | stats | attributes | STR, VIT, AGI, PER and INT, as the source says it: "All stats -50%" |
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
+| Arise | ARISE | The app's name in prose: "How Arise Works". The splash wordmark and the extraction button set it in capitals. The store title is `Arise: Dungeon RPG` |
 | Mana Shards | | In System text, always in full. The interface may say "shards" |
 | Citation, Directive, Edict, Testament | Mission | Secret Quest tiers, lowest to highest |
 | item | artifact | Anything the hunter holds or buys, as the System's `[Item: …]` says. "Gear" and "equipment" name the category |
@@ -762,12 +763,14 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 British spelling throughout: Licence, defence, levelled. The source's lines are reused in British
 spelling.
 
-## Exceptions still to decide
+## Exceptions decided
 
-DESIGN.md keeps the source's named skills out of ARISE, but two are already in it, in three
-places: **Shadow Extraction** (a window title), and **ARISE** (the word the extraction button
-finishes on, and the app's name). Decide them with the public name, which DESIGN.md parks. Until then, write the
-skill as `Extraction`, and leave the button and the name alone.
+DESIGN.md keeps the source's named skills out of the game. Two were already in it, and the public
+name decided both:
+
+- **ARISE stays.** It is the app's name and the word the extraction button finishes on. It is the one
+  specific borrowed from the source; see DESIGN.md.
+- **Shadow Extraction does not come with it.** The skill is written `Extraction`.
 
 ## Rules that hold for every speaker
 

@@ -1,6 +1,6 @@
 {
   "appId": "com.ariserpg.app",
-  "appName": "ARISE",
+  "appName": "Arise",
   "webDir": "dist",
   "backgroundColor": "#04060f",
   "android": { "backgroundColor": "#04060f" },

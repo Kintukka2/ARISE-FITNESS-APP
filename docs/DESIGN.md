@@ -43,9 +43,16 @@ is ours: our gates, foes, gear, skills and numbers. docs/VOICE.md has the templa
 - A cleared gate is replaced by another of its grade. The board redraws at midnight.
 - The Association Licence stays as the one-time purchase that opens grades above D on Android.
 - The save key (`arise-rpg:save`) and the Android app id (`com.ariserpg.app`) are this game's own.
-- **Parked:** the public name. "ARISE" plus Solo Leveling plus a dungeon RPG sits right beside
-  Netmarble's *Solo Leveling: Arise* in the Play Store. Pick a new name before any store listing;
-  the save key and the app id do not need to change when it does.
+- **The public name is Arise: Dungeon RPG.** It is the store title, and "Arise" is the label under
+  the icon. The splash wordmark sets it as ARISE.
+  - **Why Arise stays:** "Solo Leveling" is Netmarble's brand, not "Arise". The Play Store already
+    lists many Solo-Leveling-inspired apps named "Arise: …", and the title collects the searches for
+    both "arise" and "dungeon rpg".
+  - **The one borrowed specific:** "Arise" is the exception to "borrow the tone, never the
+    specifics". Nothing else from the source comes with it.
+  - **Kept out of the listing:** "Solo", "Leveling" and "Monarch" stay out of the title, the
+    descriptions and the keywords.
+  - **What did not change:** the save key and the app id stay as they were.
 
 ## The roadmap
 

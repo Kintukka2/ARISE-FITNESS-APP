@@ -34,7 +34,7 @@ window.addEventListener('popstate', () => {
   if (route.get() !== 'gates' && store.get().onboarded) { go('gates'); return trap(); }
   if (!armed) {
     armed = true;
-    toast('Back again to leave ARISE.', 'warn');
+    toast('Back again to leave Arise.', 'warn');
     setTimeout(() => { armed = false; trap(); }, 2200);
   }
 });
