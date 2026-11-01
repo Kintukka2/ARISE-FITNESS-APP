@@ -1,4 +1,4 @@
-/** The day's System contracts, in a System window: on the board, and again when a run is settled. */
+/** The day's Daily Quests, in a QUEST INFO window: on the board, and again when a run is settled. */
 import type { ComponentChildren } from 'preact';
 import { bonusOf, contractHint, contractText, payOf, type Contracts } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
@@ -14,12 +14,14 @@ export function ContractsWindow({ c, fresh = [], children }: {
   const pay = payOf(c.grade);
   const bonus = bonusOf(c.grade);
   return (
-    <section class="sysbox contracts" aria-label="System contracts">
+    <section class="sysbox contracts" aria-label="Daily Quests">
       <header class="sysbox__head">
         <span class="sysbox__glyph" aria-hidden="true">!</span>
-        <span class="sysbox__title">Contracts</span>
+        <span class="sysbox__title">Quest Info</span>
       </header>
       <div class="sysbox__body">
+        <p class="contracts__name"><strong>[Daily Quests]</strong></p>
+        <span class="label">Goal</span>
         <ul class="contracts__list">
           {c.list.map((k) => (
             <li key={k.kind} class={`contract ${k.done ? 'is-done' : ''} ${fresh.includes(k.kind) ? 'is-fresh' : ''}`} data-contract={k.kind}>
@@ -33,10 +35,11 @@ export function ContractsWindow({ c, fresh = [], children }: {
             </li>
           ))}
         </ul>
-        <p class="contracts__pay">
-          Each pays <Shards n={pay.shards} /> and <b class="num">{pay.xp}</b> XP.
-          {' '}{c.bonus ? `All ${CONTRACTS_PER_DAY} done, and the bonus paid` : <>All {CONTRACTS_PER_DAY} pay <Shards n={bonus.shards} /> and <b class="num">{bonus.xp}</b> XP more</>}.
-        </p>
+        <span class="label">Rewards</span>
+        <ol class="contracts__pay">
+          <li>Each quest: <Shards n={pay.shards} /> · Experience <b class="num">+{pay.xp}</b></li>
+          <li>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <><Shards n={bonus.shards} /> · Experience <b class="num">+{bonus.xp}</b></>}</li>
+        </ol>
         {children}
       </div>
     </section>

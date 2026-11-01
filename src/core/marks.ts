@@ -50,6 +50,6 @@ export function markText(m: Mark, n = 1): string {
   const parts: string[] = [];
   if (m.hero) parts.push(bonusText(times(m.hero, n)));
   if (m.shadows) parts.push(`${bonusText(times(m.shadows, n))} for every Shadow`);
-  if (m.fatigue) parts.push(`${Math.round(m.fatigue * n * 100)}% less fatigue for every gate`);
+  if (m.fatigue) parts.push(`${Math.round(m.fatigue * n * 100)}% less fatigue for every Gate`);
   return parts.join('; ');
 }

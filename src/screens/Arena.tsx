@@ -69,7 +69,7 @@ function lines(b: Beat, name: (uid: string) => string): { text: string; tone: st
     const h = hits[0];
     const crit = hits.some((x) => x.crit);
     const targets = hits.map((x) => `${name(x.v)} ${x.dmg}${x.crit ? '!' : ''}`).join(', ');
-    out.push({ text: `${crit ? '✦' : '◆'} ${name(h.a)} — ${h.ab} → ${targets}`, tone: side(h.a) });
+    out.push({ text: `${crit ? '✦' : '◆'} ${name(h.a)}: ${h.ab} → ${targets}`, tone: side(h.a) });
   }
   for (const e of b.ev) {
     if (e.t === 'miss') out.push({ text: `○ ${name(e.a)} swings ${e.ab} at ${name(e.v)} and finds nothing.`, tone: 'muted' });
@@ -81,7 +81,7 @@ function lines(b: Beat, name: (uid: string) => string): { text: string; tone: st
     else if (e.t === 'down') out.push({ text: `✖ ${name(e.v)} falls.`, tone: e.v.startsWith('e') ? 'kill' : 'loss' });
     else if (e.t === 'tick') out.push({ text: `● ${name(e.v)} loses ${e.dmg} to ${e.s}.`, tone: 'status' });
     else if (e.t === 'passive') {
-      const t = e.k === 'ward' ? `◉ ${name(e.u)}’s ${e.p} takes half of it.` : e.k === 'stand' ? `◉ ${name(e.u)} will not fall — ${e.p}.` : e.k === 'brace' ? `◉ ${name(e.u)} shrugs off the stagger.` : e.k === 'aura' ? `◉ ${name(e.u)} takes command. ${e.p}.` : `◉ ${e.p} lashes out.`;
+      const t = e.k === 'ward' ? `◉ ${name(e.u)}’s ${e.p} takes half of it.` : e.k === 'stand' ? `◉ ${name(e.u)} will not fall: ${e.p}.` : e.k === 'brace' ? `◉ ${name(e.u)} shrugs off the stagger.` : e.k === 'aura' ? `◉ ${name(e.u)} takes command. ${e.p}.` : `◉ ${e.p} lashes out.`;
       out.push({ text: t, tone: 'passive' });
     }
   }
@@ -251,12 +251,12 @@ export function Arena() {
     setPhase('turn');
     if (store.update((x) => story.markOnce(x, 'turn-told'))) {
       await sys({
-        title: 'Your Turn', kind: 'system',
+        title: 'Your Turn', kind: 'app', actions: [{ label: 'Close', value: null }],
         lines: [
-          'The System waits on you. Tap a foe to aim at it, then act.',
+          'Tap a foe to aim at it, then act.',
           'Every foe shows what it will do next, and at whom. What it shows is what it does, unless its target falls first.',
           `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>field potion</em> restores ${FIELD_POTION_HEAL * 100}% of your health.`,
-          '<em>Auto</em> lets the System fight your turns and pick your way, as it does when it assesses a gate.',
+          '<em>Auto</em> lets the System fight your turns and pick your way, as it does when it assesses a Gate.',
         ],
       });
     }
@@ -288,7 +288,7 @@ export function Arena() {
     const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
     setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
     setFeed([{ text: c.boss ? `${c.label} rises.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
-    if (handRef.current) say([{ text: '▸ The System will not fight this one for you. Every order is yours.', tone: 'muted' }]);
+    if (handRef.current) say([{ text: '▸ Auto is not available in this chamber.', tone: 'muted' }]);
     // Coming back mid-chamber: everything the saved orders already played is shown at once.
     let at = 0;
     if ((r.orders ?? []).length) {
@@ -373,7 +373,7 @@ export function Arena() {
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)} />
               {raid.canWithdraw(d, run)
                 ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
-                : <small class="muted center">Tap a step that glows. Only a rest lets you leave the gate.</small>}
+                : <small class="muted center">Tap a step that glows. Only a rest lets you leave the Gate.</small>}
             </>}
         </div>
       ) : (
@@ -395,7 +395,7 @@ export function Arena() {
       <footer class="arena__foot">
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
-            <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? '—'}</b>; tap a foe to change.</small>
+            <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</small>
             <div class="turnbar__acts">
               {turn.skills.map((k) => (
                 <button type="button" key={k.ability.name} class="act" disabled={k.cd > 0} onClick={() => give({ use: k.ability.name, at: aim ?? undefined })}>
@@ -467,7 +467,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
       <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
       {x.kind === 'rest' && <p>The party catches its breath: everyone standing gets {REST_HEAL * 100}% of their health back, and what ails them lifts.</p>}
       {x.kind === 'treasure' && <p>{item ? <>Under the dust: <strong>{item.name}</strong>. It is banked, and comes out with you, unless you are carried out.</> : 'Someone got here first. Nothing left.'}</p>}
-      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one. The blessing lasts until you leave the gate.</p>}
+      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one. The blessing lasts until you leave the Gate.</p>}
       {ev && !p.done && <p>{ev.text}</p>}
       {p.done && <p class={p.done.won ? 'grant' : 'warn'}>{p.done.effect.text}{p.done.item ? ` ${gear.gearDef(p.done.item)?.name} is banked.` : ''}{p.done.blessing && x.kind !== 'shrine' ? ` ${blessingById(p.done.blessing)?.name}: ${blessingById(p.done.blessing)?.text}.` : ''}</p>}
       {waiting && x.kind === 'shrine' && (
@@ -541,27 +541,27 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   const v = vitals.read(s);
   const trial = isTrial(d);
-  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
-  const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `${deal.xp} for contracts` : ''].filter(Boolean).join(' · ');
-  const shardSub = [r.bounty > 0 ? `a first-clear bounty of ${r.bounty}` : r.banked > 0 ? `${r.banked} banked on the way` : '', deal.shards ? `${deal.shards} for contracts` : ''].filter(Boolean);
+  const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `${deal.xp} from Daily Quests` : ''].filter(Boolean).join(' · ');
+  const shardSub = [r.bounty > 0 ? `a first-clear bounty of ${r.bounty}` : r.banked > 0 ? `${r.banked} banked on the way` : '', deal.shards ? `${deal.shards} from Daily Quests` : ''].filter(Boolean);
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       <div class="arena__results stack">
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
-          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.'
+          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the Practice Gate off. It stays shut for whoever comes next; the real ones are waiting on the board.'
             : r.spire ? r.spire.best ? `The boss on Floor ${r.spire.floor} is down, and that is your best this week. The next ${BLOCK} floors open above you.` : `The boss on Floor ${r.spire.floor} is down. The week turned while you were inside, so it does not count toward this one.`
               : trial ? `The last of the Chosen is down. ${r.depth} of them, one after another, and you are still standing.`
-              : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
+              : `${d.name} cleared. The Gate begins to close, and another of its grade opens on the board.`
             : r.outcome === 'withdrawn' ? d.floor ? `You walked back down from the rest on Floor ${d.floor + r.steps - 1}. These floors stand as they are until Monday.` : `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
-              : trial ? 'The party was carried out before the last of the Chosen fell. The Trial opens again tomorrow, and the gates you proved stay proved.'
+              : trial ? 'The party was carried out before the last of the Chosen fell. The Trial opens again tomorrow, and the Gates you proved stay proved.'
               : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
         </header>
         <div class="tiles">
           <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>
-          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">includes {shardSub.join(' and ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
+          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">includes {shardSub.join(' and ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the Practice Gate pays in kit</small> : null}</div>
           <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `locked out ${Math.ceil(v.lockedFor / 36e5)}h` : 'recovers ~5% an hour'}</small></div>
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of 100</small></div>
         </div>
@@ -597,32 +597,34 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             <section key={l.enemyId} class={`extract ${out ? `is-${out}` : ''}`}>
               <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
               {!out && <>
-                <p>The power from the <strong>{e.name}</strong> you just defeated is lingering… It wants to continue to fight — under your command.</p>
-                <p class="muted">Reaching for it costs <b>{l.cost} MP</b> (you have {v.mp}). It holds {odds} times in 100, read off your Intelligence.</p>
+                <p>The mana of <strong>[{e.name}]</strong> lingers.</p>
+                <p class="muted">Extraction cost: <b>{l.cost} MP</b> ({v.mp} MP held)<br />Success rate: <b>{odds}%</b></p>
                 {v.mp >= l.cost
                   ? <HoldButton hold={{ label: 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE' }} onFire={() => {
                     const res = store.update((x) => raid.extract(x, l, Math.random()));
                     setReach({ ...reach, [i]: res });
                     if (res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); } else sfx.shadowLost();
                   }} />
-                  : <p class="hint">You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some.</p>}
+                  : <p class="warn">Not enough MP. ({v.mp}/{l.cost})</p>}
               </>}
-              {out === 'bound' && <p class="grant">SUCCESSFUL EXTRACTION — {e.shadow} answers to you now.</p>}
-              {out === 'lost' && <p class="warn">The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold.</p>}
+              {out === 'bound' && <><p class="grant">Extraction successful.</p><p><strong>[{e.shadow}]</strong> has joined your army.</p></>}
+              {out === 'lost' && <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>}
             </section>
           );
         })}
         {r.chosen && (
           <section class="extract is-bound ascended">
-            <p class="grant">{r.chosen.name.toUpperCase()} FALLS</p>
-            {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="muted grow">It leaves a masterwork: {gear.defOf(r.chosen.item)?.name}, perfect and {r.chosen.level} step{r.chosen.level === 1 ? '' : 's'} past it. It will walk the gates again.</p></div>
-              : <p class="muted">It pays a bounty of <Shards n={r.chosen.shards} />. It will walk the gates again.</p>}
+            <p>You have defeated<br /><span class="warn">[{r.chosen.name}]</span>.</p>
+            {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="grow">You have acquired <strong>[Item: {gear.defOf(r.chosen.item)?.name}]</strong>.<br /><span class="muted">Quality: Perfect +{r.chosen.level}</span></p></div>
+              : <p>Bounty: <Shards n={r.chosen.shards} /></p>}
+            <p class="muted">[{r.chosen.name}] will return to the Gates.</p>
           </section>
         )}
         {r.ascended !== null && (
           <section class="extract is-bound ascended">
-            <p class="grant">ASCENSION {r.ascended} OPENED — {ascension.levelInfo(r.ascended).name.toUpperCase()}</p>
-            <p class="muted">{ascension.levelInfo(r.ascended).rule} Choose it on the Gates screen when you want it; until then, nothing changes. A mark is yours to set there, and every piece you wear can go {OVERCHARGE.per === 1 ? 'a step' : `${OVERCHARGE.per} steps`} further past perfect.</p>
+            <p class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</p>
+            <p><strong>[{ascension.levelInfo(r.ascended).name}]</strong> {ascension.levelInfo(r.ascended).rule}</p>
+            <p class="muted">Gear can go {OVERCHARGE.per} more step{OVERCHARGE.per === 1 ? '' : 's'} past perfect. A mark can be set on the Gates screen.</p>
           </section>
         )}
         {r.promoted.map((p) => {
@@ -633,14 +635,15 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           return (
             <section key={p.id} class="extract is-bound promoted">
               <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
-              <p class="grant">PROMOTED — {p.rank.toUpperCase()}</p>
-              <p class="muted">{sh.kills} kills under your command. Its growth can reach +{Math.round(shadows.rankOf(sh).cap * 100)}% now{second ? `, and it remembers ${second}` : ''}.</p>
+              <p><strong>[{e.shadow}]</strong> has been promoted.</p>
+              <p class="grant">{shadows.SHADOW_RANKS[shadows.rankIndex(sh) - 1]?.name ?? 'Bound'} Rank → {p.rank} Rank</p>
+              <p class="muted">Kills: {sh.kills}<br />Growth limit: +{Math.round(shadows.rankOf(sh).cap * 100)}%{second ? <><br />Skill learned: <strong>[{second}]</strong></> : null}</p>
             </section>
           );
         })}
         {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (
           <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)}>
-            {deal.done.length > 0 && <p class="grant">{deal.done.length === 1 ? 'Contract complete' : `${deal.done.length} contracts complete`}{deal.bonus ? ', and the day’s bonus with it' : ''}: <Shards n={deal.shards} /> and {deal.xp} XP.</p>}
+            {deal.done.length > 0 && <p class="grant">{deal.done.length === 1 ? '[Daily Quest completed.]' : `[${deal.done.length} Daily Quests completed.]`}{deal.bonus ? ' Completion bonus included.' : ''}<br /><Shards n={deal.shards} /> · Experience +{deal.xp}</p>}
           </ContractsWindow>
         )}
         <Btn kind="primary" size="lg" block onClick={onDone} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>

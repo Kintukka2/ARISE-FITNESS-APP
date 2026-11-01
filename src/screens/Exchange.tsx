@@ -6,6 +6,7 @@ import { hhmmss, msUntilMidnight } from '@/core/util';
 import { checkAwards } from '@/app/flow';
 import { buy as buyShards, PRODUCTS, storeReady } from '@/platform/native';
 import * as store from '@/store';
+import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Btn, Chip, GearArt, Section, Shards, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
@@ -25,13 +26,13 @@ function Exchange() {
   const left = offers.filter((o) => !o.sold).length;
   const buy = async (o: shop.Offer) => {
     const it = store.update((x) => shop.buy(x, o.index));
-    if (!it) return toast('Not enough shards.', 'bad');
+    if (!it) return toast('Not enough Mana Shards.', 'bad');
     sfx.success();
     buzz([14, 30, 22, 30, 70]);
     const v = await sys({
-      title: 'Purchase Complete', kind: 'gear', typed: false,
-      lines: [`<strong>${gear.defOf(it)?.name}</strong> is yours.`, gear.coreText(it)],
-      actions: [{ label: 'Put In Inventory', value: false }, { label: 'Equip', value: true, primary: true }],
+      ...system.notify([...system.event('acquired', system.tag(gear.defOf(it)?.name ?? 'Item', 'Item')), system.gain(gear.coreText(it))], 'gear',
+        [{ label: 'Put In Inventory', value: false }, { label: 'Equip', value: true, primary: true }]),
+      typed: false,
     });
     if (v) store.update((x) => gear.equip(x, it.id));
     void checkAwards();

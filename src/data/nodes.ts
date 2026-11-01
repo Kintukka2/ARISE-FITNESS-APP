@@ -8,14 +8,14 @@ import type { Stat } from '@/core/types';
 export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'trap' | 'event' | 'boss';
 
 export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string }> = {
-  fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the gate. Shards for every one cleared, and sometimes gear.' },
+  fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the Gate. Shards for every one cleared, and sometimes gear.' },
   elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'Something stronger than the rest, guarding a piece of real gear.' },
   rest: { name: 'Rest', glyph: 'heart', desc: 'Catch your breath. The only place you can withdraw from.' },
-  treasure: { name: 'Cache', glyph: 'bag', desc: 'What the last party left behind. Gear, a grade below the gate.' },
-  shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the gate.' },
+  treasure: { name: 'Cache', glyph: 'bag', desc: 'What the last party left behind. Gear, a grade below the Gate.' },
+  shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate.' },
   trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check. Fail it and it costs you health.' },
   event: { name: 'Unknown', glyph: 'unknown', desc: 'Something you will have to decide about.' },
-  boss: { name: 'Boss', glyph: 'skull', desc: 'The thing holding the gate open.' },
+  boss: { name: 'Boss', glyph: 'skull', desc: 'The thing holding the Gate open.' },
 };
 
 /** A rest restores this share of everyone's maximum HP, and lifts what ails them. */

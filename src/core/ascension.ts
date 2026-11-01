@@ -41,11 +41,11 @@ export function ruleText(level: number): string {
     case 1: return 'Every foe is stronger, and every level above makes it more so.';
     case RULES.thinRest.at: return `A rest heals ${pct(RULES.thinRest.heal)} of what it would.`;
     case RULES.shortHanded.at: return `The Association sends ${RULES.shortHanded.allies} hunter fewer with you.`;
-    case RULES.heavyLegs.at: return `A gate costs ${pct(RULES.heavyLegs.fatigue - 1)} more fatigue to walk into.`;
+    case RULES.heavyLegs.at: return `A Gate costs ${pct(RULES.heavyLegs.fatigue - 1)} more fatigue to walk into.`;
     case RULES.wardens.at: return `A gatekeeper is ${pct(RULES.wardens.elite - 1)} stronger again.`;
     case RULES.crooked.at: return `Every choice that rolls goes well ${pct(RULES.crooked.odds)} less often.`;
     case RULES.hungryDark.at: return `Reaching for a lingering Shadow costs ${RULES.hungryDark.mana} times the mana.`;
-    case RULES.guarded.at: return 'A boss never fights alone: one of its gate’s creatures stands with it.';
+    case RULES.guarded.at: return 'A boss never fights alone: one of its Gate’s creatures stands with it.';
     case RULES.wornThin.at: return `Fatigue drags you down ${RULES.wornThin.drag} times as hard.`;
     case RULES.watched.at: return 'Auto will not fight a boss for you. Every order in its chamber is yours.';
     default: return '';
