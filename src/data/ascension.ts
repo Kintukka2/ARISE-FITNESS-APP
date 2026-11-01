@@ -13,7 +13,7 @@ import type { Rank } from '@/core/types';
 export const ASCENSION_RULED = 10;
 
 /** Past the ruled levels, every level makes every foe this many times as strong as the level below. */
-export const BEYOND = { growth: 1.05, name: 'Beyond' } as const;
+export const BEYOND = { growth: 1.08, name: 'Beyond' } as const;
 
 /** The grade from which a hunter's clears count toward proving a level. */
 export const ASCENSION_FROM: Rank = 'C';

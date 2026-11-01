@@ -355,9 +355,26 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
 
     By day 120 neither hunter wears more than one masterwork. Sets and pieces upgraded past perfect
     replace them by the top.
-- **Next.** The three-session hunter outgrows Ascension 10 about a month before day 120. It clears
-  everything there, at Level 119, wearing gear ten steps past perfect. GM's ladder has sixteen
-  levels. The question now is the top: more levels, or a ladder with no top, as the Spire has.
+- **No top.** The three-session hunter outgrew Ascension 10 about a month before day 120. GM's
+  ladder stops at sixteen levels. ARISE's now goes on, as the Spire does past floor 100.
+  - **Past the ten:** the ten levels with a rule of their own (`ASCENSION_RULED`) stay calibrated
+    as they were. Every level past them makes every foe 8% stronger than the level below
+    (`BEYOND.growth`). It adds no rule and pays 10% more, and every rule below stays in force.
+  - **The Trial:** it holds the last twelve Chosen of its gauntlet (`TRIAL.most`), ending with the one
+    it sends into the world. Past the twelfth, the Chosen come round again with a numeral ("The
+    Gatewatcher II"). Their round makes them no stronger past the twelfth; the level's growth does.
+  - **Marks** stop once every mark is full, at Ascension 20. Upgrades past perfect and the Chosen's
+    masterworks go on: level 11's Chosen guards the Weapon slot again, eleven steps past perfect.
+  - **The screen:** past ten levels open, the level chips become a stepper.
+  - **Tuning, with the campaign:** I tried 5% first. At 5% a level's growth is matched by what opening
+    it gives the hunter: another step past perfect, a mark, and 10% more pay. The three-session
+    hunter climbed from 11 on day 84 to 22 by day 120, three levels in its last eight days. At 8%
+    it reaches 11 by day 84, 17 by day 112 and 18 by day 120, still climbing slowly. It clears 82%,
+    90% in its last four weeks, and fells 23 Chosen for 15 masterworks. The one-evening hunter
+    never passes 10 and plays exactly as before.
+- **Next.** Ascension is done unless the campaign says otherwise. The design doc's other open
+  findings remain: the days-to-rank formula assumes 75% clears, and levels past 100 keep paying
+  points (Sovereign's "nothing left to award" is not quite true).
 
 ## What stays out
 
