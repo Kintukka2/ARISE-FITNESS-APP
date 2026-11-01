@@ -10,7 +10,7 @@ import type { Effect } from '@/data/nodes';
 import type { Action, Kind, WinOpts } from './overlays';
 
 /** The only headers a System window may carry. Cards carry their own name instead. */
-export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Skills', 'Inventory'] as const;
+export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Skills', 'Inventory', 'Exchange'] as const;
 export type Header = (typeof HEADERS)[number];
 
 /** The window kinds the System speaks in. The others belong to Valcorde, the app and the `???` voice. */
@@ -71,11 +71,18 @@ export function levelUp(levels: number, to: number, points: number): WinOpts {
   return notify(lines, 'gold', [{ label: 'Close', value: null }, { label: 'Allocate', value: 'profile', primary: true }]);
 }
 
+/**
+ * A numbered list of rewards, each in a hairline box of its own inside one box, as the source sets
+ * them. `<Rewards>` in `frame.tsx` draws the same list on a screen.
+ */
+export const rewardList = (rewards: string[]) =>
+  `<span class="sysrewards">${rewards.map((r, i) => `<span class="sysbox sysreward">${i + 1}. ${r}</span>`).join('<br>')}</span>`;
+
 /** What a finished quest paid. The engine has already paid it, so the window only reports. */
 export function questRewards(rewards: string[], kind: Kind = 'system'): WinOpts {
   return {
     title: 'Quest Rewards', kind, center: true,
-    lines: ['You got rewards.', ...rewards.map((r, i) => `${i + 1}. ${r}`)],
+    lines: ['You got rewards.', rewardList(rewards)],
     actions: CLOSE,
   };
 }

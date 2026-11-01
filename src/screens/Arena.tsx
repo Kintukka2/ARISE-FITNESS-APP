@@ -30,7 +30,7 @@ import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { ContractsWindow } from '@/ui/contracts';
-import { SysFrame } from '@/ui/frame';
+import { Rewards, SysFrame } from '@/ui/frame';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
@@ -602,9 +602,14 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           );
         })}
         {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (
-          <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)}>
-            {deal.done.length > 0 && <p class="grant">{deal.done.length === 1 ? '[Daily Quest completed.]' : `[${deal.done.length} Daily Quests completed.]`}{deal.bonus ? ' Completion bonus included.' : ''}<br />Mana Shards +{deal.shards} · Experience +{deal.xp}</p>}
-          </ContractsWindow>
+          <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)} />
+        )}
+        {!isPractice(d) && deal.done.length > 0 && (
+          <SysFrame title="Quest Rewards" class="questrewards">
+            <p>You got rewards.</p>
+            <Rewards items={[<>Mana Shards <span class="grant">+{deal.shards}</span></>, <>Experience <span class="grant">+{deal.xp}</span></>]} />
+            {deal.bonus && <p class="muted">Completion bonus included.</p>}
+          </SysFrame>
         )}
         <Btn kind="primary" size="lg" block onClick={onDone} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>

@@ -74,3 +74,12 @@ export function Field({ k, v, wide }: { k: string; v: ComponentChildren; wide?: 
     </div>
   );
 }
+
+/** A numbered list of rewards, each in a hairline box of its own inside one box (`system.rewardList` in a window). */
+export function Rewards({ items }: { items: ComponentChildren[] }) {
+  return (
+    <ol class="sysrewards">
+      {items.map((r, i) => <li key={i} class="sysbox sysreward">{i + 1}. {r}</li>)}
+    </ol>
+  );
+}

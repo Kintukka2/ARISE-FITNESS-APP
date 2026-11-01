@@ -160,15 +160,21 @@
 
 /* ------------------------------------------------------------------ exchange */
 
-.purse { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid rgba(72, 245, 168, 0.4); border-radius: var(--r-md); background: var(--inset); }
-.purse div { display: flex; flex-direction: column; }
-.purse__right { align-items: flex-end; }
-.purse__right b { font-size: 1.3rem; }
-.shoprow { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); }
-.shoprow.is-idle, .shoprow.is-sold { opacity: 0.55; }
-.shoprow__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.shoprow__text small { font-size: 0.8rem; }
-.shoprow__text .chip { align-self: flex-start; margin-top: 3px; }
+/* The Exchange: the System's shop. Each row a hairline box, the icon in a box of its own, the price at its foot. */
+.shoplist { display: flex; flex-direction: column; gap: 8px; }
+.shoprow { display: flex; align-items: stretch; gap: 12px; width: 100%; padding: 8px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); color: inherit; text-align: left; transition: border-color 160ms, transform 120ms; }
+.shoprow:active { transform: scale(0.99); }
+@media (hover: hover) { .shoprow:not([disabled]):hover { border-color: var(--sys-hair-hot); } }
+.shoprow.is-off { opacity: 0.55; }
+.shoprow__icon { display: grid; place-items: center; flex: none; width: 60px; min-height: 60px; border: 1px solid var(--sys-hair); }
+.shoprow__text { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 2px 0; }
+.shoprow__text b { font-size: 0.95rem; font-weight: 600; text-shadow: var(--sys-glow); }
+.shoprow__text small { font-size: 0.76rem; line-height: 1.35; }
+.shoprow__text small.grant { font-size: 0.8rem; }
+.shoprow__price { align-self: flex-end; flex: none; padding: 0 2px 2px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.shoprow.is-short .shoprow__price .shards { color: var(--sysred); }
+.exchange .sysfield .shards { font-size: 1.05rem; }
+.exchange > p.muted { font-size: 0.82rem; }
 .potion { display: grid; place-items: center; width: 44px; height: 44px; flex: none; }
 .potion .ico { width: 30px; height: 30px; }
 .potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--elixir { color: var(--arcane); } .potion--field { color: var(--verdant); }

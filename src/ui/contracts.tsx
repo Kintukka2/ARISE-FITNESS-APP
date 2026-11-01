@@ -3,7 +3,7 @@ import type { ComponentChildren } from 'preact';
 import { bonusOf, contractHint, contractText, payOf, type Contracts } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
 import { Bar } from './components';
-import { SysFrame } from './frame';
+import { Rewards, SysFrame } from './frame';
 import { Glyph } from './icons';
 
 export function ContractsWindow({ c, fresh = [], children }: {
@@ -32,10 +32,10 @@ export function ContractsWindow({ c, fresh = [], children }: {
         ))}
       </ul>
       <span class="label">Rewards</span>
-      <ol class="sysbox contracts__pay">
-        <li>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · Experience <b class="num grant">+{pay.xp}</b></li>
-        <li>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · Experience <b class="num grant">+{bonus.xp}</b></>}</li>
-      </ol>
+      <Rewards items={[
+        <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · Experience <b class="num grant">+{pay.xp}</b></>,
+        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · Experience <b class="num grant">+{bonus.xp}</b></>}</>,
+      ]} />
       {children}
     </SysFrame>
   );
