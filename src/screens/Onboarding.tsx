@@ -77,7 +77,7 @@ function Licence({ name, reg }: { name?: string; reg?: string }) {
       </header>
       <dl>
         <dt>Name</dt><dd>{name || '-- --'}</dd>
-        <dt>Guild</dt><dd class="is-none">None</dd>
+        <dt>Guild</dt><dd class="is-none">-- --</dd>
         <dt>Registry No.</dt><dd class="num">{reg || '-- --'}</dd>
       </dl>
     </div>
@@ -181,7 +181,7 @@ function Cut() {
         lines: ['You have acquired the qualifications to be a <em>Player</em>. Will you accept?'],
         hold: { label: 'Hold To Accept', ms: 5000, ticks: 5, holding: 'Accepting…', done: 'Accepted', tick: sfx.awakenGong, seal: sfx.awakenSeal, after: 1500 },
       });
-      await sys({ title: 'Notification', kind: 'system', center: true, lines: ['Congratulations on becoming a <em>Player</em>.'], actions: [{ label: 'Continue', value: true, primary: true }] });
+      await sys({ title: 'Notification', kind: 'system', center: true, lines: ['Congratulations on becoming a <em>Player</em>.'], actions: [{ label: 'Close', value: true, primary: true }] });
       store.update((x) => { x.onboarded = true; });
     })();
     return () => { live = false; };

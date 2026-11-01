@@ -2,7 +2,7 @@
 import type { ComponentChildren } from 'preact';
 import { bonusOf, contractHint, contractText, payOf, type Contracts } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
-import { Bar, Shards } from './components';
+import { Bar } from './components';
 import { Glyph } from './icons';
 
 export function ContractsWindow({ c, fresh = [], children }: {
@@ -37,8 +37,8 @@ export function ContractsWindow({ c, fresh = [], children }: {
         </ul>
         <span class="label">Rewards</span>
         <ol class="contracts__pay">
-          <li>Each quest: <Shards n={pay.shards} /> · Experience <b class="num">+{pay.xp}</b></li>
-          <li>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <><Shards n={bonus.shards} /> · Experience <b class="num">+{bonus.xp}</b></>}</li>
+          <li>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · Experience <b class="num grant">+{pay.xp}</b></li>
+          <li>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · Experience <b class="num grant">+{bonus.xp}</b></>}</li>
         </ol>
         {children}
       </div>

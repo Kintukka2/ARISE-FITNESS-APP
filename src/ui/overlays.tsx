@@ -83,7 +83,7 @@ export function sys(o: WinOpts): Promise<unknown> {
 
 export async function confirm(title: string, html: string, ok = 'Confirm', danger = false): Promise<boolean> {
   const v = await sys({
-    title, kind: danger ? 'danger' : 'app', lines: [html], typed: false,
+    title, kind: 'app', lines: [html], typed: false,
     actions: [{ label: 'Cancel', value: false }, { label: ok, value: true, primary: !danger, danger }],
   });
   return v === true;
@@ -382,7 +382,7 @@ function TourView({ t }: { t: Tour & { resolve: () => void } }) {
       <div class={`tour__card tour__card--${t.who}`} style={rect ? { top: cardTop, bottom: cardBottom } : { bottom: 'calc(var(--nav-h) + 24px)' }}>
         <header class="tour__head">
           {t.who === 'coach' ? <CoachPortrait size={28} /> : <SystemMark size={28} />}
-          <b>{t.who === 'coach' ? 'Ryn Valcorde' : 'System'}</b>
+          <b>{t.who === 'coach' ? 'Ryn Valcorde' : 'Notification'}</b>
           {t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}
         </header>
         <h3 class="tour__title">{t.title}</h3>

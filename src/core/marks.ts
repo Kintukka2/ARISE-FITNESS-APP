@@ -51,5 +51,5 @@ export function markText(m: Mark, n = 1): string {
   if (m.hero) parts.push(bonusText(times(m.hero, n)));
   if (m.shadows) parts.push(`${bonusText(times(m.shadows, n))} for every Shadow`);
   if (m.fatigue) parts.push(`Fatigue -${Math.round(m.fatigue * n * 100)}% for every Gate`);
-  return parts.join('; ');
+  return parts.join(' · ');
 }

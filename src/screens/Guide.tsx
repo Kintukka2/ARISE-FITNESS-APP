@@ -14,6 +14,7 @@ import { markText } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
 import { RANKS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
+import { GRADES } from '@/core/raid';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
@@ -96,7 +97,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `${OPEN_PER_DAY} Gates stand open at a time: one of every grade, at least two at yours.`,
       'You can enter up to one grade above your own.',
       'A cleared Gate is replaced by another of its grade. The board redraws at midnight.',
-      'The brief runs the Gate 24 times with your party. How often it cleared is the verdict.',
+      'The brief runs the Gate 24 times with your party and grades how often it cleared.',
+      `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade: ${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S. The first clear pays double, once.`,
       'A clear can also leave gear.',
       `Being carried out locks you out of Gates for ${WIPE_LOCK / 36e5} hours.`,
@@ -159,10 +161,10 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Health, mana and fatigue',
     lines: [
-      `Health and mana carry between Gates and recover about ${Math.round(PCT_PER_HOUR * 100)}% an hour.`,
+      `Health and mana carry between Gates and recover about ${Math.round(PCT_PER_HOUR * 100)}% each hour.`,
       `Each Gate adds fatigue: ${RAID_FATIGUE.E} at E to ${RAID_FATIGUE.S} at S, out of ${FATIGUE_MAX}.`,
       `Fatigue lowers every stat, to half strength at ${FATIGUE_MAX}.`,
-      `It fades about ${FATIGUE_PER_HOUR} an hour.`,
+      `It fades about ${FATIGUE_PER_HOUR} each hour.`,
       'It is the only limit on how much you can raid.',
     ],
   },
@@ -202,7 +204,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Your data',
     lines: [
       'Everything is stored on this device. Nothing is sent anywhere.',
-      'Export your save from the System Console now and then.',
+      'Export your save from Settings now and then.',
       'Importing keeps the previous save as a backup.',
     ],
   },

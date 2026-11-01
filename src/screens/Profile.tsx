@@ -44,7 +44,7 @@ export function Profile() {
             <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'There is nothing above this.'}{licenceHolding(s) ? ' The Association holds your Gate grade at D without a licence.' : ''}</small>
           </div>
         </div>
-        {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose at your class’s new rung · {waiting(s).length}</Btn>}
+        {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose New Skills · {waiting(s).length}</Btn>}
         <VitalsBlock />
         <Attributes />
       </Panel>
@@ -62,7 +62,7 @@ function ClassSheet() {
   const s = useSave();
   const cls = classById(s.hunter.classId);
   if (!cls) {
-    return <Empty title="Unclassified">Classes are assigned from D-Rank.</Empty>;
+    return <Empty title="Unclassified">No class yet.</Empty>;
   }
   return (
     <div class="stack">
@@ -105,7 +105,7 @@ function Rung({ rung, lead, tier }: { rung: number; lead: string; tier: number }
             <button type="button" key={n} class={`pickcard ${isKept ? 'is-kept' : ''}`} disabled={!can || (isKept && !!chosen)} aria-pressed={isKept}
               onClick={async () => {
                 const next = CLASS_RANKS[tier + 1];
-                if (!(await confirm(`Keep ${n}?`, next ? `You can change it again at <strong>${next}-Rank</strong>.` : 'At S-Rank the choice is for good.', 'Keep it'))) return;
+                if (!(await confirm(`Keep ${n}?`, next ? `You can change it again at <strong>${next}-Rank</strong>.` : 'At S-Rank the choice is for good.', 'Keep'))) return;
                 if (store.update((x) => pick(x, rung, n))) { sfx.rankUp(); toast(`${n} kept.`, 'good'); }
               }}>
               <b>{n}</b>
@@ -138,7 +138,7 @@ export function VitalsBlock() {
     <div class="vitals" data-tour="vitals">
       <div class="vrow"><Glyph name="hp" /><span class="label">HP</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" />{pip('hp')}</div>
       <div class="vrow"><Glyph name="mp" /><span class="label">MP</span><HpBar cur={v.mp} max={v.mpMax} tone="mp" />{pip('mp')}</div>
-      <div class="vrow" title={`Every stat fights at ×${v.drag.toFixed(2)} while fatigue stands. It fades about five an hour.`}>
+      <div class="vrow" title={`Stats ×${v.drag.toFixed(2)} · Fatigue -${vitals.FATIGUE_PER_HOUR} each hour`}>
         <Glyph name="bolt" /><span class="label">FTG</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={ftone} />{pip('fatigue')}
       </div>
       {v.locked && <div class="vrow vrow--locked"><Glyph name="warn" /><small class="grow">Carried out. Fit to raid in {Math.ceil(v.lockedFor / 36e5)}h.</small>{pip('elixir')}</div>}
@@ -151,7 +151,8 @@ export async function drinkFlow(id: shop.PotionId) {
   const p = shop.POTIONS.find((x) => x.id === id)!;
   const idle = shop.potionIdle(s, id);
   if (idle) {
-    await sys(system.refuse([`${system.tag(p.name, 'Item')} would have no effect.`, `Status: ${idle}`], 'gear'));
+    const why = { hp: 'HP is full.', mp: 'MP is full.', fatigue: 'Fatigue is 0.', elixir: 'There is no lockout.' }[id];
+    await sys(system.refuse([why, `${system.tag(p.name, 'Item')} is not available.`], 'gear'));
     return;
   }
   if (s.wallet.shards < p.price) {
@@ -161,12 +162,12 @@ export async function drinkFlow(id: shop.PotionId) {
   const buy = await sys(system.offer([
     'Would you like to purchase?',
     system.tag(p.name, 'Item'),
-    `${p.effect}.`,
+    system.gain(p.effect),
     `Price: ${p.price} Mana Shards · Held: ${s.wallet.shards}`,
   ], 'gear', 'Buy and Drink', 'Cancel'));
   if (buy !== true) return;
   const moved = store.update((x) => shop.drink(x, id));
-  if (moved == null) return toast('That did nothing.', 'bad');
+  if (moved == null) return toast('The potion was not used.', 'bad');
   sfx.success();
   buzz([16, 26, 22]);
   toast(id === 'elixir' ? `${p.name} · lockout lifted` : id === 'fatigue' ? `${p.name} · Fatigue -${moved}` : `${p.name} · ${id.toUpperCase()} +${moved}`, 'xp');
@@ -181,7 +182,7 @@ function Attributes() {
     if (!s.hunter.points) {
       const a = ATTRS.find((x) => x.key === k)!;
       void sys({
-        title: a.name, kind: 'system', typed: false, actions: [{ label: 'Close', value: null }],
+        title: `Stat: ${a.name}`, kind: 'system', typed: false, actions: [{ label: 'Close', value: null }],
         lines: [
           a.desc,
           `Base: <strong>${s.hunter.attrs[k]}</strong>${total[k] !== s.hunter.attrs[k] ? ` · With class and gear: <strong>${Math.round(total[k])}</strong>` : ''}`,
@@ -217,11 +218,11 @@ function Attributes() {
         </button>
       ))}
       <div class={`attr attr--points ${s.hunter.points ? 'is-hot' : ''}`}>
-        <span class="label">Unspent points</span><b class="num">{s.hunter.points}</b>
+        <span class="label">Ability Points</span><b class="num">{s.hunter.points}</b>
       </div>
       {s.hunter.points > 0 && (
         <div class="attrs__alloc">
-          <small class="muted">Tap a stat to spend an Ability Point. Points do nothing until they are spent.</small>
+          <small class="muted">Tap a stat to spend an Ability Point.</small>
           <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate · {s.hunter.points}</Btn>
         </div>
       )}
@@ -325,7 +326,7 @@ function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
         buzz([14, 24]);
         toast(`${gear.defOf(it)?.name} upgraded.`, 'good');
         void checkAwards();
-      }}>{short ? `Short ${cost - s.wallet.shards} shards` : <>Upgrade · <Shards n={cost} /></>}</Btn>
+      }}>{short ? `Mana Shards ${s.wallet.shards}/${cost}` : <>Upgrade · <Shards n={cost} /></>}</Btn>
     </Section>
   );
 }
@@ -481,7 +482,7 @@ function openDossier() {
             <small class="muted">Sealed: {MISSIONS.length - held.length}</small>
           </Fold>
           <Fold title="Active effects">
-            <KV k="Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
+            <KV k="Ability Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
             {Object.entries(classBonus(s)).map(([k, v]) => <KV key={k} k="Class" v={`${k} +${v}`} />)}
           </Fold>
           <Fold title="Lifetime record">
@@ -495,7 +496,7 @@ function openDossier() {
             <KV k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top} at best${weekBest(s) ? `, Floor ${weekBest(s)} this week` : ''}` : 'Not climbed'} />
             <KV k="Bosses faced" v={s.gates.bosses.length} />
             <KV k="Creatures felled" v={Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0).toLocaleString()} />
-            <KV k="Shadows bound" v={`${s.shadows.army.length} (${s.stats.extractionsWon} of ${s.stats.extractions} reaches held)`} />
+            <KV k="Shadows bound" v={`${s.shadows.army.length} (${s.stats.extractionsWon}/${s.stats.extractions} extractions successful)`} />
             <KV k="Lifetime experience" v={s.stats.xpTotal.toLocaleString()} />
             <KV k="Shards earned" v={s.wallet.earned.toLocaleString()} />
           </Fold>

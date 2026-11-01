@@ -13,6 +13,7 @@ import * as marks from '@/core/marks';
 import { grantText, MISSIONS, TIER_NAMES } from '@/core/missions';
 import { ATTRS, RANK_LADDER } from '@/core/progression';
 import { POTIONS } from '@/core/shop';
+import { STATUS_TEXT, TACTICS } from '@/core/combat';
 import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASSES } from '@/data/classes';
 import { MARKS } from '@/data/ascension';
@@ -24,6 +25,9 @@ import { SPIRE_THEME } from '@/data/spire';
 import { ISSUED } from '@/data/equipment';
 import { ASSESSMENT, BEATS, GATES_LINE, GATES_TOUR, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as system from '@/ui/system';
+import { lines, toBeats } from '@/ui/log';
+import { GRADES, verdict } from '@/core/raid';
+import type { Ev } from '@/core/combat';
 import { TOPICS } from '@/screens/Guide';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
@@ -138,8 +142,8 @@ describe('the words', () => {
   });
 
   it('writes a stat name before its value', () => {
-    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2), ...BLESSINGS.map((b) => b.text)];
-    for (const t of lines) expect(t, t).not.toMatch(/[+-]\d[\d.]*%?\s+(STR|VIT|AGI|PER|INT|[a-z]+)\b/);
+    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2), ...BLESSINGS.map((b) => b.text), ...Object.values(STATUS_TEXT), ...POTIONS.map((p) => p.effect)];
+    for (const t of lines) expect(t, t).not.toMatch(/[+-]\d+(?:\.\d+)?%?\s+(STR|VIT|AGI|PER|INT|HP|MP|XP|Mana Shards|shards|attack|magic|defence|resistance|accuracy|evasion|initiative|critical|maximum|fatigue|health|price|grades?)\b/i);
   });
 
   it('puts no dash or old word in a line a player reads', () => {
@@ -160,6 +164,7 @@ describe('the words', () => {
         const code = line.replace(/\s\/\/\s.*$/, '');
         if (/[—–]/.test(code)) found.push(`${f}:${i + 1} dash`);
         if (/(?<!first_)\b[Aa]rtifacts?\b|Secret Missions?\b/.test(code)) found.push(`${f}:${i + 1} old word`);
+        if (/[\d}%] (a|an|per) (round|hour|turn|day)\b/.test(code)) found.push(`${f}:${i + 1} rate not written "each"`);
         if (/toast\(\s*[`'"]\+|\+\$\{[^}]*\}\s*(Mana Shards|shards)/.test(code)) found.push(`${f}:${i + 1} gain written value first`);
         for (const m of code.matchAll(/<Empty(?:\s[^>]*)?>([^<{]+)<\/Empty>/g)) if (m[1].length > 40) found.push(`${f}:${i + 1} empty state says more than the fact`);
       });
@@ -186,5 +191,46 @@ describe('the world', () => {
   it('puts the cost of every outcome that hurts, heals or weakens under it', () => {
     for (const o of outcomes) if (o.hurt || o.heal || o.status) expect(system.outcome(o).length, o.text).toBeGreaterThan(0);
     expect(system.outcome({ text: '', hurt: 0.25 }).map((l) => l.replace(/<[^>]+>/g, ''))).toEqual(['HP -25%']);
+  });
+});
+
+describe('the System keeping score', () => {
+  const name = (uid: string) => ({ hero: 'You', e0: 'Ghoul' } as Record<string, string>)[uid] ?? uid;
+  const log = [
+    { t: 'hit', a: 'e0', v: 'hero', ab: 'Grave Strike', dmg: 12, crit: false },
+    { t: 'miss', a: 'e0', v: 'hero', ab: 'Grave Strike' },
+    { t: 'status', v: 'hero', s: 'Bleeding' },
+    { t: 'tick', v: 'e0', dmg: 6, s: 'Bleeding' },
+    { t: 'down', v: 'e0' },
+  ] as unknown as Ev[];
+  const text = toBeats(log).flatMap((b) => lines(b, name)).map((l) => l.text);
+
+  it('writes the fight log as actor, act and signed numbers, with no flourish', () => {
+    expect(text).toContain('◆ Ghoul: Grave Strike → You -12');
+    expect(text).toContain('● Ghoul HP -6 (Bleeding)');
+    for (const t of text) expect(t, t).not.toMatch(/swings|finds nothing|rallied|lashes|shrugs|loses \d/);
+  });
+
+  it('writes a status that ticks as a rate each round', () => {
+    const ticking = Object.values(STATUS_TEXT).filter((t) => /round/.test(t));
+    expect(ticking.length).toBeGreaterThan(0);
+    for (const t of ticking) expect(t, t).toMatch(/% each round/);
+  });
+
+  it('grades the brief from Safe to Lethal and reports nothing else', () => {
+    expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Favourable', 'Even', 'Unfavourable', 'Lethal']);
+    expect(verdict(1).text).toBe('Safe');
+    expect(verdict(0).text).toBe('Lethal');
+  });
+});
+
+describe('the full sweep', () => {
+  it('describes every status from the engine, and every standing order as the engine plays it', () => {
+    for (const [k, v] of Object.entries(STATUS_TEXT)) expect(v, k).not.toBe('');
+    expect(TACTICS.find((t) => t.key === 'protect')?.desc).toMatch(/about to hit you/);
+  });
+
+  it('never lets the System name itself, even in a level name', () => {
+    for (const line of [...Object.values(STATUS_TEXT), ...TACTICS.map((t) => t.desc)]) expect(line).not.toMatch(/\bSystem\b/);
   });
 });

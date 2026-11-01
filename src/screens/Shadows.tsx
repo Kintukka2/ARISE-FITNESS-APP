@@ -23,7 +23,7 @@ export function Shadows() {
       <Voice who="system">{fresh.length ? (fresh.length === 1 ? `[${enemyById(s.shadows.army.find((x) => x.id === fresh[0])?.enemyId ?? '')?.shadow ?? 'Shadow'}] has joined your army.` : `[${fresh.length} Shadows have joined your army.]`) : `Shadows deployed: ${shadows.squad(s).length}/${shadows.slots(s)}`}</Voice>
       <Panel title="Shadows" tone="arcane">
         <div class="tiles tiles--3">
-          <Tile label="Extractions" value={s.stats.extractions} sub={`${s.stats.extractionsWon} held`} />
+          <Tile label="Extractions" value={s.stats.extractions} sub={`${s.stats.extractionsWon} successful`} />
           <Tile label="Bound" value={s.shadows.army.length} />
           <Tile label="Deployed" value={`${squad.length}/${slots}`} />
         </div>
@@ -43,7 +43,7 @@ export function Shadows() {
                   <RankPlate rank={e.rank} size={30} />
                   <span class="grow">
                     <b>{e.shadow} {fresh.includes(sh.id) && <span class="chip" data-tone="arcane">New</span>}</b>
-                    <small class="muted">{shadows.rankOf(sh).name} · {e.family} · {powerOf(shadows.statsOf(sh))} power{sh.kills ? ` · ${sh.kills} kills` : ''}{sh.tactic ? ` · ${TACTICS.find((x) => x.key === sh.tactic)?.name}` : ''}</small>
+                    <small class="muted">{shadows.rankOf(sh).name} · {e.family} · Power {powerOf(shadows.statsOf(sh))}{sh.kills ? ` · Kills ${sh.kills}` : ''}{sh.tactic ? ` · ${TACTICS.find((x) => x.key === sh.tactic)?.name}` : ''}</small>
                   </span>
                 </button>
                 <Btn size="sm" kind={on ? 'primary' : 'ghost'} disabled={full} onClick={() => store.update((x) => shadows.toggleDeploy(x, sh.id))}>{on ? 'Deployed' : full ? 'Squad Full' : 'Deploy'}</Btn>
@@ -52,7 +52,7 @@ export function Shadows() {
           })}
         </ul>
       </Section>
-      <p class="muted center">{ALL_ENEMIES.length - s.shadows.army.length} Shadows are yet to be taken from their host.</p>
+      <p class="muted center">Shadows not yet bound: {ALL_ENEMIES.length - s.shadows.army.length}</p>
     </div>
   );
 }

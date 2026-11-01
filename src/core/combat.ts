@@ -72,21 +72,20 @@ export const STATUS: Record<string, { turns: number; dot?: number; pdef?: number
   Guarded: { turns: 2, good: true },
 };
 
-export const STATUS_TEXT: Record<string, string> = {
-  Bleeding: 'Loses 6% of maximum HP a round.',
-  Poisoned: 'Loses 5% of maximum HP a round.',
-  Burning: 'Loses 7% of maximum HP a round.',
-  Staggered: 'Physical defence down a quarter.',
-  Cursed: 'Magical resistance down a quarter.',
-  Marked: 'Easier to hit.',
-  Rooted: 'Slower and easier to hit.',
-  Corroded: 'Accuracy down.',
-  Stunned: 'Loses its next action.',
-  Weakened: 'Hits a quarter softer.',
-  Chilled: 'Acts later.',
-  Rallied: 'Acts sooner and hits more often.',
-  Guarded: 'Takes half damage until its next turn.',
-};
+const pctOf = (x: number) => Math.round(Math.abs(1 - x) * 100);
+/** What a status does, read from STATUS, name before value (docs/VOICE.md). */
+export const STATUS_TEXT: Record<string, string> = Object.fromEntries(Object.entries(STATUS).map(([k, st]) => {
+  const parts: string[] = [];
+  if (st.dot) parts.push(`HP -${Math.round(st.dot * 100)}% each round`);
+  if (st.pdef) parts.push(`Physical defence -${pctOf(st.pdef)}%`);
+  if (st.mdef) parts.push(`Magical resistance -${pctOf(st.mdef)}%`);
+  if (st.eva) parts.push(`Evasion -${pctOf(st.eva)}%`);
+  if (st.acc) parts.push(`Accuracy ${st.acc > 1 ? '+' : '-'}${pctOf(st.acc)}%`);
+  if (st.atk) parts.push(`Attack -${pctOf(st.atk)}%`);
+  if (st.ini) parts.push(`Initiative ${st.ini > 1 ? '+' : '-'}${pctOf(st.ini)}%`);
+  if (st.skip) parts.push('Next action lost');
+  return [k, parts.join(' · ')];
+}));
 
 const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0 };
 /** How many an ability reaches, by its profile. */
@@ -100,6 +99,7 @@ const STRIKE: Ability = { name: 'Strike', type: 'physical', profile: 'single', m
 export { STRIKE };
 /** What a guarding unit takes of every hit. */
 export const GUARD = 0.5;
+STATUS_TEXT.Guarded = `Damage taken -${(1 - GUARD) * 100}% until its next turn`;
 /** A field potion restores this share of the drinker's maximum HP. */
 export const FIELD_POTION_HEAL = 0.3;
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS].map((a) => [a.name, a]));
@@ -260,7 +260,7 @@ function ordered(u: Unit, o: Order): Ability | null {
 export const TACTICS: { key: Tactic; name: string; desc: string; one: string }[] = [
   { key: 'default', name: 'As They See Fit', desc: 'Everyone picks their own targets.', one: 'It picks its own targets.' },
   { key: 'finish', name: 'Finish The Weakest', desc: 'Every ally and Shadow goes for the foe nearest to falling.', one: 'It goes for the foe nearest to falling.' },
-  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for whatever last hit you, and until something has, whatever hits hardest.', one: 'It goes for whatever last hit you, and until something has, whatever hits hardest.' },
+  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for what is about to hit you, then what last hit you, then what hits hardest.', one: 'It goes for what is about to hit you, then what last hit you, then what hits hardest.' },
   { key: 'spread', name: 'Spread The Pain', desc: 'They aim their bleeds, curses and stuns at foes not already carrying them.', one: 'It aims its bleeds, curses and stuns at foes not already carrying them.' },
 ];
 
