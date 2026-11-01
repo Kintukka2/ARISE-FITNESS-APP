@@ -1,0 +1,283 @@
+# ARISE — voice
+
+How ARISE speaks to the player. Every word a player reads follows this file: System windows,
+Valcorde, buttons, labels, the Guide, item and enemy text. Read it before writing or changing any
+of them.
+
+The System is written. Valcorde, the interface and the world's own text are still to come; until
+they are, keep to the existing rules at the end of this file.
+
+## Speakers
+
+| Speaker | Who it is | Where it appears |
+|---|---|---|
+| **The System** | The program that chose the hunter. Reports, never explains. | System windows, item and skill cards, the Status sheet |
+| **Valcorde** | Ryn Valcorde, the Association's instructor. Does not know the System exists. | Coach windows, the first gates, the Gates screen |
+| **The interface** | The app: buttons, labels, tabs, empty states, settings. | Everywhere outside a window |
+| **The world** | The Association's records, the bestiary, gear. | Enemy, gate and gear descriptions |
+| **Other voices** | Things that are not the System and should not be in its windows. | The `???` window, nothing else yet |
+
+Each speaker sounds like itself. A line that would fit another speaker needs rewriting.
+
+## The System
+
+The System speaks the way the System speaks in *Solo Leveling*. The anime is the main reference;
+the manhwa fills in where the anime shows less (the Status sheet, item and skill cards). DESIGN.md
+allows reusing the source's templates and stock lines word for word. What fills them is ours.
+
+### How it speaks
+
+1. **It reports what happened.** "has arrived", "has been slain", "has activated", "has failed",
+   "is not available". It never says why.
+2. **One fact per line, a few lines per window.** Two lines is normal; four is long. Several
+   events are several windows, or several lines of the same shape, never a paragraph.
+3. **Every name wears its type.** `[Daily Quest: …]`, `[Item: …]`, `[Skill: …]`, `[Effect: …]`,
+   `[Class: …]`. The label does the explaining.
+4. **Numbers are exact and bare.** `+25`, `-20%`, `0/3`, `60 MP`. Never "about", never
+   "34 times in 100". Every number is read from the engine's constants, as everywhere else.
+5. **It is flat.** Threats get no adjectives. Rewards get no praise.
+6. **It is a little stiff.** The source reads like a translation: "You got rewards." "Accept this
+   rewards?" Keep that stiffness. Do not smooth a System line into natural English.
+7. **It calls the hunter "Player"**, and only the System does. "[Welcome, Player.]"
+8. **Warmth is rationed.** The source allows itself "Good luck." at a turning point. ARISE gets the
+   same: rare, short, never a joke.
+
+### It never
+
+- refers to itself. "The System has counted…", "The System does not punish…" are out.
+- explains the world, a rule or its reasons. What a Gate is and why fatigue matters belong in the
+  Guide, a card or a label, never in a System window.
+- gives advice or orders about how to play. "Spend them." "Do not treat this as permission." are out.
+- comments, jokes, or ends on a remark.
+- uses dashes, rhetorical questions, or "not X but Y".
+
+### Windows
+
+The header is one of a closed set. Anything not on this list is a NOTIFICATION.
+
+| Header | For |
+|---|---|
+| NOTIFICATION | Every announcement, event, warning and offer |
+| QUEST INFO | One quest: name, brief, goal, rewards |
+| QUEST REWARDS | What a finished quest paid |
+| STATUS | The hunter's sheet |
+| SKILLS | Skills, passive and active |
+| INVENTORY | What the hunter holds |
+
+Cards have no header word. Their header box is the name: `ITEM: …`, `SKILL: …`, `CLASS: …`.
+
+Windows written by other speakers are not System windows: Valcorde's carry his name, the app's
+own (settings, data, confirmations) carry a plain label, and the `???` voice carries `???`.
+
+### Colour and emphasis
+
+The frame follows CLAUDE.md's colour rules: cyan for the System, violet for anything Shadow, gold
+for advancement, orange for Gates. The text inside follows these:
+
+- **A name** sits in brackets and stands out. An enemy or boss name is red.
+- **A gain or an effect's value** is green: `+25`, `ALL ABILITIES +40%`.
+- **A warning** reddens only its key word: in "You will be transferred to the penalty zone.",
+  only "penalty zone" is red.
+- **A failure or refusal** reddens the whole message and keeps the frame of its subject.
+
+In markup today: `.warn` is red, `.grant` is green, `<strong>` lifts a name. The visual pass may add
+a class for bracketed names.
+
+### Brackets
+
+- A window that is one announcement brackets the whole line: `[Daily Quests have arrived.]`
+- A name inside a longer sentence brackets the name only: `[Skill: Extraction] has failed.`
+- When a sentence ends on a name, the name takes its own line:
+
+  ```
+  You have defeated
+  [The Hollow Monarch].
+  ```
+
+### Buttons
+
+Buttons answer the window, so they change with what it says.
+
+- A yes-or-no question gets **Yes / No**. "Would you like to enter the Gate?"
+- A window that offers one act names the act: **Sell / Cancel**, **Allocate / Close**.
+- A window that only reports gets one button, **Close**, or the open and dismiss icons on a
+  one-line notice.
+- Never ask the player to accept something the engine has already paid. Rewards are settled in
+  `raid.finish` and on completion, so a rewards window reports; it does not ask.
+
+### Templates
+
+Each template gives its shape, the source line it comes from, and ARISE's version. `{…}` is filled
+from the engine.
+
+**Arrival.** Something has appeared for the player.
+
+```
+[{Type}: {Name} has arrived.]
+```
+Source: `[Daily Quest: Strength Training has arrived.]`
+ARISE: `[Daily Quests have arrived.]` replaces "The System has issued you 3 contracts. They are
+posted on the Gates screen. … The System does not punish what it did not get."
+
+**Event with a name.** The player did something to a named thing.
+
+```
+You have {defeated | discovered | acquired | completed}
+[{Type}: {Name}].
+```
+Source: `You have defeated [Knight Commander Igris the Bloodred].` `You have discovered [Rune Stone: Stealth].`
+ARISE: `You have completed` / `[Secret Quest: {name}].` replaces the "Secret Mission Complete" window.
+
+**State change.** A named thing changed.
+
+```
+[{Type}: {Name}] has {activated | failed | faded}.
+[{Type}: {Name}] is not available.
+```
+Source: `[Skill: Shadow Extraction] has failed.` `[Effect: Paralysis has activated.]`
+
+**One-line event.** Something happened with no name to carry.
+
+```
+[{Event}.]
+```
+Source: `[The Dungeon Boss has been slain.]` `[You leveled up!]`
+ARISE level up, one line per level gained, then the points:
+
+```
+NOTIFICATION
+[You have levelled up!]
+Ability Points +{points}
+                         Allocate   Close
+```
+replaces "You have reached Level 12. +3 attribute points are available for allocation. Unspent
+points do nothing. Spend them."
+
+**Not possible.** A reason, then the result. All red.
+
+```
+{Reason}.
+[{Type}: {Name}] is not available.
+```
+Source: `The mana is contaminated.` / `[Job-Exclusive Skill: Shadow Extraction] is not available.`
+`Your level is not high enough to buy from the store.`
+ARISE: `Not enough MP. ({have}/{cost})` replaces "You have nothing left to reach with. Mana comes
+back on its own — walk out of the next one with some."
+
+**Counter.** A label, then the count.
+
+```
+{Label}: {n}/{m}
+```
+Source: `Number of extractions possible: 0/3` `Enemies killed: 7`
+
+**Warning.** The consequence, flat, with only its key word red.
+
+```
+You will be {consequence}.
+```
+Source: `You will be transferred to the penalty zone.` `If this quest is not completed your heart will stop.`
+
+**Offer.** A question the player answers.
+
+```
+Would you like to {act}?
+                    Yes   No
+```
+Source: `Would you like to accept the job-change quest?` `Would you like to sell [Item: Raikan's Fang]?`
+
+**Rank line.** A rank shown on its own line.
+
+```
+{Rank} Rank
+```
+Source: `LV.7 Knight Rank` / `You may bestow a name.`
+ARISE: `[Shadow {name}] has been promoted.` / `Sworn Rank` replaces "PROMOTED — SWORN".
+
+**Quest Info.**
+
+```
+QUEST INFO
+[Daily Quest: {name}]
+{One or two sentences of brief, only if the goal needs it.}
+GOAL
+{Goal}                                  [{n}/{m}]
+REWARDS
+1. Mana Shards +{n}
+2. Experience +{n}
+```
+Source: `[Daily: Collect Demon Souls! 3]`, a two-sentence brief, `GOAL`, numbered `REWARDS`.
+ARISE's Daily Quests have no penalty, so the window has no warning line, and no line mentions
+that there is none.
+
+**Quest Rewards.**
+
+```
+QUEST REWARDS
+You got rewards.
+1. {Reward} +{n}
+                                   Close
+```
+Source: `You got rewards.` / `1. Ability Points+5` / `Accept this rewards?`
+
+**Cards.** Items, skills, classes.
+
+```
+{TYPE}: {Name}
+{FIELD}: {value}      {FIELD}: {value}
+{What it is, in one sentence.}
+{How it works or what it needs, smaller, if it needs saying.}
+- Effect '{name}': {what it does}
+{Condition}: {EFFECT +N%}
+```
+Source: `ITEM: Purified Blood of Demon Monarch`, `ACQUISITION DIFFICULTY: -- --`, `CATEGORY: Material`,
+a one-sentence lead, a smaller detail paragraph. `[Title: Wolf Assassin]` / `A title given to those
+skilled at hunting wolves.` / `Animal-Type Monsters: ALL ABILITIES +40%`.
+A value the player has not found yet shows as `?` or `-- --`, never an explanation.
+ARISE class: `CLASS: Brawler` / `A class given to hunters who lead with STR.` / `STR +2` replaces
+"Your fists speak the oldest battle-language, and every blow writes it in bone."
+
+### Worked example: extraction
+
+The panel after a clear, in a violet frame.
+
+| | Now | System |
+|---|---|---|
+| Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | `The mana of [{foe}] lingers.` / `Extraction cost: 60 MP` / `Success rate: 34%` |
+| No mana | "You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some." | `Not enough MP. (40/60)` |
+| Failed | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Extraction] has failed.` / `The mana has dispersed.` (all red) |
+| Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
+
+That INT raises the rate is a rule, so it goes in the Guide.
+
+## Words
+
+| Say | Not | Note |
+|---|---|---|
+| Notification | Alarm, Notice | The default System window header |
+| Daily Quest | contract | Code keeps `contracts`; only the words change |
+| Secret Quest | Secret Mission | Code keeps `missions` |
+| Ability Points | attribute points, stat points | Code keeps `points` |
+| Player | | The System's name for the hunter. No one else uses it |
+| Gate | gate | Capitalised everywhere, as a game term |
+| Mana Shards, MP, HP | | As now |
+| STR, VIT, AGI, PER, INT | | As now |
+
+British spelling throughout: Licence, defence, levelled. The source's lines are reused in British
+spelling.
+
+## Exceptions still to decide
+
+DESIGN.md keeps the source's named skills out of ARISE, but two are already in it, in three
+places: **Shadow Extraction** (a window title), and **ARISE** (the word the extraction button
+finishes on, and the app's name). Decide them with the public name, which DESIGN.md parks. Until then, write the
+skill as `Extraction`, and leave the button and the name alone.
+
+## Rules that hold for every speaker
+
+- Copy that quotes a number reads it from the engine's constants (see `screens/Guide.tsx`).
+- Valcorde never references the System or anything only it shows: its windows, Ability Points,
+  Daily and Secret Quests, the Player.
+- Colour has the meaning CLAUDE.md gives it.
+- No dashes inside a sentence in player-facing text. Use a full stop or a colon. A hyphen that
+  starts an effect line on a card is a list mark, not a dash.
