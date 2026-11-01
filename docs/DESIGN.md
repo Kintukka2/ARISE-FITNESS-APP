@@ -260,12 +260,25 @@ What it says, and what to decide next:
 3. **Contracts are a choice, as designed.** Auto completes one or two a day: the clears and the
    kills. The rest ask for what Auto will not do: leave the road, take on a gatekeeper, walk in
    tired. All three fall on 3–13% of an Auto hunter's days, and more for a player who chases them.
-4. **The climb is quicker than the formula says.** Clears run near 97% rather than the 75% the
+4. **The climb is quicker than the formula says.** *Settled: the formula is the typical hunter's
+   baseline, and the campaign measures real play.* Clears run near 97% rather than the 75% the
    days-to-rank model assumes. One evening a day reaches S-Rank in nine weeks, and three sessions
    reach Sovereign in eleven.
-5. **Levels do not stop at 100.** They keep paying points until every stat is capped. That
-   predates v7 and suits the endless Spire, but Sovereign's line, "the System has nothing left to
-   award", is not quite true.
+   - **Now:** with Ascension the campaign's hunters clear 82-86%, and `npm run balance` shows the
+     days to each rank at 85% beside 75%.
+   - **What the clear rate explains:** at three Gates a day with every Daily Quest, the higher rate
+     brings S-Rank from day 61 to day 56.
+   - **What it does not:** the campaign's three-session hunter, at under two board Gates a day plus
+     the Spire, reaches S-Rank on day 48. The rest of the gap is Ascension's pay, 10% more a level,
+     and the Spire's runs. The formula counts neither, on purpose: it is what calibration's typical
+     hunter gets.
+5. **Levels do not stop at 100.** *Settled: they keep paying.* They pay Ability Points until every
+   stat is capped, at about Level 150 (sooner with Secret Quests).
+   - **The line:** the voice sweep replaced Sovereign's "the System has nothing left to award" with
+     "Further ranks: none.", which is true.
+   - **Why keep paying:** the 8% growth past Ascension 10 was tuned against the campaign's hunters.
+     The three-session hunter is Level 120 on day 120 and still spending points. Ending them at
+     Sovereign would change what that tuning measured.
 6. **Fatigue holds an S-Rank hunter to about one gate a session**, as intended. The Spire competes
    with the board for that fatigue, which is why the campaign climbs one block a day.
 
