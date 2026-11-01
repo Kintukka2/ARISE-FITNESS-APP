@@ -51,7 +51,7 @@ function Exchange() {
         <div><span class="label">Mana Shards</span><Shards n={s.wallet.shards} big /></div>
         <div class="purse__right"><span class="label">New stock in</span><b class="num">{hhmmss(msUntilMidnight())}</b></div>
       </div>
-      <p class="muted">Mana Shards come from cleared Gates and recycled items. Most stock is at your grade. Some is higher, at a higher price.</p>
+      <p class="muted">Most stock is at your grade.</p>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -72,7 +72,7 @@ function Exchange() {
             <span class="potion potion--field"><Glyph name="potion" /></span>
             <span class="shoprow__text">
               <b>Field Potion</b>
-              <small>Carried into a Gate. Drink it on your turn: {shop.FIELD_POTION.heal * 100}% of your health back.</small>
+              <small>Carried into a Gate. HP +{shop.FIELD_POTION.heal * 100}% on your turn.</small>
               <small class="muted">The satchel holds {shop.FIELD_POTION.max}. You are carrying {s.satchel}.</small>
             </span>
             {s.satchel >= shop.FIELD_POTION.max
@@ -81,7 +81,8 @@ function Exchange() {
                 const want = await sys(system.offer([
                   'Would you like to purchase?',
                   system.tag('Field Potion', 'Item'),
-                  `Restores ${shop.FIELD_POTION.heal * 100}% of HP. Drunk on your turn in a Gate.`,
+                  system.gain(`HP +${shop.FIELD_POTION.heal * 100}%`),
+                  'Used on your turn in a Gate.',
                   `Price: ${shop.FIELD_POTION.price} Mana Shards · Held: ${store.get().wallet.shards}`,
                 ], 'gear', 'Buy', 'Cancel'));
                 if (want !== true) return;
@@ -115,7 +116,7 @@ function Exchange() {
                   <b>{d.name} {!o.sold && gear.beatsWorn(s, o.item) && <span class="up">▲</span>}</b>
                   <small>{gear.coreText(o.item)}{gear.rollText(o.item).length ? ` · ${gear.rollText(o.item).join(' · ')}` : ''}</small>
                   <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(o.item))}{o.reach ? '' : ''}</small>
-                  {o.reach > 0 && <span class="chip" data-tone="gold">+{o.reach + 1} grades · +{o.reach * 50}% price</span>}
+                  {o.reach > 0 && <span class="chip" data-tone="gold">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span>}
                 </span>
                 {o.sold ? <Chip>Bought</Chip> : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < o.price} onClick={() => buy(o)}><Shards n={o.price} /></Btn>}
               </div>

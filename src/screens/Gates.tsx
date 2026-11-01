@@ -5,16 +5,16 @@ import { powerOf, TACTICS } from '@/core/combat';
 import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { overCap, RARITY } from '@/core/gear';
-import { GATE_XP, practiceAward } from '@/core/progression';
+import { GATE_XP, PRACTICE_LEVEL, practiceAward } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialRounds } from '@/core/trial';
-import { ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
-import { SPIRE_NAME } from '@/data/spire';
+import { SPIRE_NAME, SPIRE_TOP } from '@/data/spire';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import { ContractsWindow } from '@/ui/contracts';
 import * as system from '@/ui/system';
@@ -90,8 +90,8 @@ export function Gates() {
 
       {open && run && (
         <Card hot tone="ember">
-          <b>{open.name} is still standing.</b>
-          <p class="muted">You are {run.at} of {raid.mapOf(open, run).layers.length} steps in. Walk away now and it counts as a defeat.</p>
+          <b>{open.name} is still open.</b>
+          <p class="muted">You are {run.at} of {raid.mapOf(open, run).layers.length} steps in. Abandoning it counts as being carried out.</p>
           <div class="row">
             <Btn kind="ghost" onClick={async () => {
               if (await confirm('Abandon the run?', 'You will be carried out. Nothing banked on this run is kept.', 'Abandon', true)) {
@@ -162,7 +162,7 @@ function SpireCard() {
         <RankPlate rank={d.rank} size={34} />
         <div class="grow">
           <b>{SPIRE_NAME}</b>
-          <small class="muted">Floors {spire.firstFloor(b)} to {spire.lastFloor(b)} next · {built <= 100 ? `built for Level ${built}` : 'built for nobody'}</small>
+          <small class="muted">Floors {spire.firstFloor(b)} to {spire.lastFloor(b)} next · {built <= SPIRE_TOP ? `built for Level ${built}` : `built past Level ${SPIRE_TOP}`}</small>
         </div>
         <Glyph name={locked ? 'lock' : 'up'} />
       </div>
@@ -203,7 +203,7 @@ function AscensionCard() {
         <small class="ascension__proof">
           {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank Gates
           {' '}(<b class="num">{Math.min(need, a.proof.gates.length)}/{need}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
-          {!ascension.proving(s) && ' Clears count from C-Rank.'}
+          {!ascension.proving(s) && ` Clears count from ${ASCENSION_FROM}-Rank.`}
         </small>
       )}
       {ascension.trialProved(s) && (ascension.trialReady(s)
@@ -224,8 +224,7 @@ function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
       <div class="grow">
         <span class="label">One of the Chosen holds this Gate</span>
         <b>{w.name}</b>
-        <small class="muted">{level >= w.level ? `You walk in at Ascension ${level}: it stands in the boss’s place, and the assessment fights it.`
-          : `It shows itself only at Ascension ${w.level} or higher. At ${level} you meet the Gate’s own boss, and a clear closes the Gate on it for today.`}</small>
+        <small class="muted">{level >= w.level ? `At Ascension ${level}, it stands in the boss’s place.` : `Appears at Ascension ${w.level} or higher.`}</small>
         <small>{felled ? `It has fallen to you before. Felled again, it pays ${shop.gateShards(d.rank, WALKERS.bounty * pay)} shards.`
           : `The first time it falls, it leaves a masterwork: a ${RARITY[d.rank as Rank].name} ${walkers.slotOf(w.level)}, perfect and ${w.level} step${w.level === 1 ? '' : 's'} past it.`}</small>
       </div>
@@ -245,7 +244,7 @@ function ChosenLine() {
     <div class="marks">
       <span class="label">The Chosen in the world · {a.felled.length} of {a.sent.length} felled</span>
       <small class="ascension__proof">
-        {open ? <>Today <b>{w.name}</b> holds {gate.name}. It shows itself at Ascension {w.level} or higher, and the first time it falls it leaves a masterwork.</>
+        {open ? <>Today <b>{w.name}</b> holds {gate.name}. Appears at Ascension {w.level} or higher.</>
           : <>Today <b>{w.name}</b> held {gate.name}, and that Gate is closed until tomorrow.</>}
       </small>
       {open && <Btn kind="ghost" size="sm" onClick={() => openBrief(gate)}>Brief: {gate.name}</Btn>}
@@ -280,7 +279,7 @@ function MarkList() {
           );
         })}
       </ul>
-      <small class="ascension__proof">One mark for every level opened. Every level opened also lets each piece of gear go {OVERCHARGE.per === 1 ? 'one upgrade step' : `${OVERCHARGE.per} upgrade steps`} further past perfect, at the Exchange: {overCap(s)} now.</small>
+      <small class="ascension__proof">Upgrade limit: Perfect +{overCap(s)}</small>
     </div>
   );
 }
@@ -347,8 +346,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         ...system.notify([
           system.counter('Fatigue', f),
           `You will fight at ${system.red(`${Math.round(vitals.drag(f) * 100)}%`)} strength.`,
-          `This Gate adds ${cost} fatigue.`,
-        ], 'gates', [{ label: 'Rest First', value: false }, { label: 'Fatigue Potion', value: 'drink' }, { label: 'Enter Anyway', value: true, primary: true }]),
+          `Fatigue on entry: +${cost}`,
+        ], 'gates', [{ label: 'Rest First', value: false }, { label: 'Drink Fatigue Potion', value: 'drink' }, { label: 'Enter Anyway', value: true, primary: true }]),
         glyph: 'warn', typed: false,
       });
       if (want === 'drink') { await drinkFlow('fatigue'); return; }
@@ -368,8 +367,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <Glyph name={known || met ? 'skull' : 'unknown'} />
         <div class="grow">
           <span class="label">{met ? 'In the boss’s place' : `Gate boss${known ? '' : ': unidentified'}`}</span>
-          <b>{met ? met.name : known ? boss.name : '???'}</b>
-          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · ${powerOf(met.base)} power` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · ${powerOf(boss.base)} power` : '?'}</small>
+          <b>{met ? met.name : known ? boss.name : '?'}</b>
+          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
         </div>
       </Card>
       {holds && <ChosenCard d={d} w={holds} level={level} />}
@@ -382,7 +381,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           {level > 0 && <small>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')} · Pay +{Math.round((pay - 1) * 100)}%</small>}
         </div>
         <div class="tiles">
-          <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />
+          <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? `enough for Level ${PRACTICE_LEVEL}` : <>and <Shards n={sh} /></>} />
           {isTrial(d)
             ? <Tile label="Opens" value={`Ascension ${s.ascension.unlocked + 1}`} sub="if you win it" />
             : tower
@@ -395,21 +394,21 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 
       <Section title="Today’s map" right="the System’s road is marked">
         <MapView m={map} road={proj.road} compact />
-        <p class="muted">The map is the same all day. Inside, you pick each step; only a rest lets you leave.</p>
+        <p class="muted">The map is fixed until midnight.</p>
       </Section>
 
       <Section title="Standing orders" right={party.length + squad.length ? 'allies and Shadows' : undefined}>
         <div class="chips" aria-label="Standing orders" data-tour="orders">
           {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
         </div>
-        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc} The assessment above already fights with these orders.{squad.filter((x) => x.tactic).length ? ` ${squad.filter((x) => x.tactic).length === 1 ? 'One Shadow keeps' : `${squad.filter((x) => x.tactic).length} Shadows keep`} orders of its own.` : ''}</p>
+        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc} The assessment above already fights with these orders.{squad.filter((x) => x.tactic).length ? ` ${squad.filter((x) => x.tactic).length === 1 ? 'One Shadow keeps its own orders.' : `${squad.filter((x) => x.tactic).length} Shadows keep their own orders.`}` : ''}</p>
       </Section>
 
       <Section title="Satchel" right={`${s.satchel} of ${shop.FIELD_POTION.max} field potions`}>
         <p class="muted">{s.satchel
           ? `Drink one on your turn for ${shop.FIELD_POTION.heal * 100}% of your health back. What you do not drink stays in the satchel.`
-          : 'Empty. Field potions are carried in and drunk on your turn; the Exchange sells them.'}
-        {s.satchel < shop.FIELD_POTION.max && <> <button type="button" class="linkish" onClick={() => { close(); openExchange(); }}>To the Exchange</button></>}</p>
+          : 'Empty.'}
+        {s.satchel < shop.FIELD_POTION.max && <> <button type="button" class="linkish" onClick={() => { close(); openExchange(); }}>To The Exchange</button></>}</p>
       </Section>
 
       {block === 'open' ? open?.id === d.id
@@ -427,7 +426,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             <li key={a.id}><RankPlate rank={a.rank} size={22} /><b>{a.name}</b><small>{a.note ?? a.role}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small><span class="num">{powerOf(a.base)}</span></li>
           ))}
           {squad.map((x) => (
-            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={22} /><b>{enemyById(x.enemyId)!.shadow}</b><small>shadow</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>
+            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={22} /><b>{enemyById(x.enemyId)!.shadow}</b><small>Shadow</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>
           ))}
         </ul>
         {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">{shadows.freeSlots(s)} Shadow slot{shadows.freeSlots(s) === 1 ? '' : 's'} empty. Deploy from the Shadows screen.</p>}
@@ -440,6 +439,6 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 
 async function intro() {
   await tour({
-    who: 'coach', title: 'What am I looking at?', steps: GATES_TOUR,
+    who: 'coach', title: 'The Gates', steps: GATES_TOUR,
   });
 }

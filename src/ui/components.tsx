@@ -133,7 +133,7 @@ export function Voice({ who, children, tour }: { who: 'coach' | 'system'; childr
     <div class={`voice voice--${who}`} data-tour={tour}>
       <div class="voice__face">{who === 'coach' ? <CoachPortrait size={36} /> : <SystemMark size={26} />}</div>
       <div class="voice__body">
-        <b class="voice__name">{who === 'coach' ? 'Ryn Valcorde' : 'System'}</b>
+        <b class="voice__name">{who === 'coach' ? 'Ryn Valcorde' : 'Notification'}</b>
         <p class="voice__line">{children}</p>
       </div>
     </div>

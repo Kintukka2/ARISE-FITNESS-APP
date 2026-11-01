@@ -1,4 +1,4 @@
-/** The System Console: settings, the reminder and the save itself. */
+/** Settings: sound, display, the reminder and the save itself. */
 import { useEffect, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import { defaults, parse } from '@/core/save';
@@ -11,7 +11,7 @@ import { Glyph } from '@/ui/icons';
 import { openGuide } from './Guide';
 
 export function openSettings() {
-  openSheet({ title: 'System Console', render: () => <Settings /> });
+  openSheet({ title: 'Settings', render: () => <Settings /> });
 }
 
 function Toggle({ label, note, on, onChange }: { label: string; note?: string; on: boolean; onChange: (v: boolean) => void }) {
@@ -32,7 +32,7 @@ function Settings() {
   return (
     <div class="stack">
       <Btn kind="ghost" block onClick={openGuide}><Glyph name="help" /> How ARISE Works</Btn>
-      <Section title="System settings">
+      <Section title="Sound and display">
         <div class="toggles">
           <Toggle label="Sound" on={s.settings.sound} onChange={(v) => set((x) => { x.settings.sound = v; })} />
           <Toggle label="Music" note="Plays quietly and changes with the screen." on={s.settings.music} onChange={(v) => { set((x) => { x.settings.music = v; }); music.refresh(); }} />
@@ -44,7 +44,7 @@ function Settings() {
       {remindersAvailable() && (
         <Section title="Reminder">
           <div class="toggles">
-            <Toggle label="Tell me when I am rested" note="One notification when your fatigue has faded, or when the medics sign you off after a wipe." on={s.settings.reminders.on} onChange={async (v) => {
+            <Toggle label="Tell me when I am rested" note="One notification when fatigue reaches 0 or the Gate lockout ends." on={s.settings.reminders.on} onChange={async (v) => {
               if (v && !(await askNotifications())) { sfx.alarm(); toast('Notifications are blocked for ARISE. Allow them in Android settings.', 'warn'); return; }
               set((x) => { x.settings.reminders.on = v; });
               void syncReminders(store.get());
@@ -109,7 +109,7 @@ async function restoreBackup() {
 
 async function erase() {
   if (!(await confirm('Erase Save', 'Every level, Shadow, stat and item is deleted. A single backup is kept until the next import or erase.', 'Erase', true))) return;
-  const v = await sys({ title: 'Confirm Erasure', kind: 'danger', typed: false, lines: ['Last chance.'], actions: [{ label: 'Cancel', value: false }, { label: 'Erase Everything', value: true, danger: true }] });
+  const v = await sys({ title: 'Confirm Erasure', kind: 'app', typed: false, lines: ['This cannot be undone.'], actions: [{ label: 'Cancel', value: false }, { label: 'Erase Everything', value: true, danger: true }] });
   if (!v) return;
   store.replace(defaults());
   location.reload();

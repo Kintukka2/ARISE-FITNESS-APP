@@ -45,8 +45,8 @@ async function autoToResults() {
     await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin, .arena__map, .arena__field', { timeout: 30000 });
     if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
     if (await page.locator('.syswin').first().isVisible().catch(() => false)) { await drain(); continue; }
-    if (await page.locator('text=Claim The Gate').isVisible()) { await page.locator('text=Claim The Gate').click(); break; }
-    if (await page.locator('text=Carried Out').isVisible()) { await page.locator('text=Carried Out').click(); break; }
+    if (await page.locator('.arena__foot >> text=Claim The Gate').isVisible()) { await page.locator('.arena__foot >> text=Claim The Gate').click(); break; }
+    if (await page.locator('.arena__foot >> text=Carried Out').isVisible()) { await page.locator('.arena__foot >> text=Carried Out').click(); break; }
     await sleep(800);
   }
   await page.waitForSelector('.arena--results');

@@ -204,7 +204,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Your data',
     lines: [
       'Everything is stored on this device. Nothing is sent anywhere.',
-      'Export your save from the System Console now and then.',
+      'Export your save from Settings now and then.',
       'Importing keeps the previous save as a backup.',
     ],
   },

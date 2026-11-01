@@ -278,8 +278,8 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
 
 - **Ten levels** (`data/ascension.ts`, `core/ascension.ts`). Every level makes every foe stronger
   (`ASCENSION_TUNE`). From level 2 each adds one rule on top of all the rules below it: Thin Rest,
-  Short-Handed, Heavy Legs, Wardens Wake, Crooked Luck, Hungry Dark, Never Alone, Worn Thin and The
-  System Watches. At the top, Auto will not fight a boss. Each level pays 10% more on a gate than the
+  Short-Handed, Heavy Legs, Wardens Wake, Crooked Luck, Hungry Dark, Never Alone, Worn Thin and By
+  Hand. At the top, Auto will not fight a boss. Each level pays 10% more on a gate than the
   one below.
 - **Choosing.** The hunter chooses a level on the Gates screen, anywhere from 0 to the highest opened.
   A run keeps the level it walked in with, and the brief's assessment plays every rule it brings.

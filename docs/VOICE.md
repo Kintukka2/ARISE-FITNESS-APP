@@ -42,6 +42,15 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | A Gate's description in the brief | The world: the Association's file | `data/dungeons.ts`, `data/special.ts`, `data/spire.ts` |
 | Map events, traps, caches, shrines, rests | The world: narration | `data/nodes.ts`, `NodePanel` in `screens/Arena.tsx` |
 | Buttons, labels, tabs, tiles, hints, toasts, empty states, results, tutorials, settings, the map legend, standing orders, Ascension rules, the Guide | The interface | `screens/`, `ui/`, `data/nodes.ts` (`NODE`), `core/combat.ts` (`TACTICS`), `core/ascension.ts` |
+| A locked feature's notice (the Shadows tab before the first Shadow) | The System | `app/router.ts` |
+| Status tooltips and foes' intent on unit cards | The System | `STATUS_TEXT` in `core/combat.ts`, `screens/Arena.tsx` |
+| Spire reward tiers, rank blurbs | The System | `core/spire.ts`, `core/progression.ts` |
+| The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
+| Speaker labels on voice boxes and tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
+| Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
+
+Ascension rule text belongs to the interface (the Gates screen, the Guide). When the System announces
+a new level it names the level and what it opened, never the rule.
 
 ## The System
 
@@ -154,6 +163,10 @@ Buttons answer the window, so they change with what it says.
 - A window that offers one act names the act: **Sell / Cancel**, **Allocate / Close**.
 - A window that only reports gets one button, **Close**, or the open and dismiss icons on a
   one-line notice.
+- A hold-to-confirm button names the act, then its progress, then the result: **Hold To
+  Extract**, **Extracting…**. The extraction button finishes on **ARISE** (see the exceptions).
+- An app confirmation is the interface's (`confirm()`, kind `app`). A destructive act turns only
+  its button red; the red frame belongs to another voice.
 - Never ask the player to accept something the engine has already paid. Rewards are settled in
   `raid.finish` and on completion, so a rewards window reports; it does not ask.
 
