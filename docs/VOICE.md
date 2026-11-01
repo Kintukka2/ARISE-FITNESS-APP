@@ -46,7 +46,8 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | Status tooltips and foes' intent on unit cards | The System | `STATUS_TEXT` in `core/combat.ts`, `screens/Arena.tsx` |
 | Spire reward tiers, rank blurbs | The System | `core/spire.ts`, `core/progression.ts` |
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
-| Speaker labels on voice boxes and tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
+| Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
+| A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
 | The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Profile.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
 
@@ -90,6 +91,9 @@ Built only with `src/ui/frame.tsx` (`SysFrame`, `SysHead`, `Field`), a sheet ope
   `S-Rank`.
 - **A button** is a hairline box with its label as written, not in capitals. The act the window
   offers is lit; the way out is not.
+- **A System line set into a screen is a notice:** the frame, smaller, headed `NOTIFICATION`
+  (`SysFrame` with `class="sysnotice"`). It shows only when there is news, and holds for the visit.
+  The voice box at the top of a screen is Valcorde's alone (`Voice`); the System never speaks in it.
 - **A list of rewards** is one box with each reward in a hairline box of its own inside it:
   `system.rewardList()` in a window, `<Rewards>` on a screen. Quest Info's REWARDS and every Quest
   Rewards window are set this way.
@@ -669,6 +673,10 @@ out of the way. The art, the System and Valcorde carry the mood.
 8. **A tutorial is the interface teaching**, short and direct: "Tap a foe to aim at it, then act."
 9. **No contractions.** The interface is as plain as the System, without its stiffness; Valcorde is
    the only one who contracts.
+10. **A screen shows a number once.** If a tile already shows it, nothing beside it repeats it: not
+    a tile's sub-label, not a section header, not a notice. On Shadows, Bound is every successful
+    extraction, so the Extractions tile does not add "3 successful", and the list header does not
+    add "3 commanded".
 
 | Was | Is |
 |---|---|

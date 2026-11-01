@@ -6,11 +6,11 @@ import * as shadows from '@/core/shadows';
 import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Chip, Empty, KV, Panel, RankPlate, Section, Tile, Voice } from '@/ui/components';
-import { Field } from '@/ui/frame';
+import { Btn, Chip, Empty, KV, Panel, RankPlate, Section, Tile } from '@/ui/components';
+import { Field, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { openSheet, toast } from '@/ui/overlays';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 export function Shadows() {
   const s = useSave();
@@ -19,19 +19,26 @@ export function Shadows() {
   useEffect(() => { if (!story.seen(s, 'shadows-visited')) store.update((x) => story.markOnce(x, 'shadows-visited')); }, []);
   const army = s.shadows.army.slice().sort((a, b) => Number(squad.includes(b)) - Number(squad.includes(a)) || powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
   const fresh = s.shadows.fresh;
+  // What joined since the last visit, held for this visit: the router clears `fresh` a few seconds in.
+  const [news] = useState(() => [...fresh]);
+  const joined = news.length === 1 ? enemyById(s.shadows.army.find((x) => x.id === news[0])?.enemyId ?? '')?.shadow : null;
   return (
     <div class="stack">
-      <Voice who="system">{fresh.length ? (fresh.length === 1 ? `[${enemyById(s.shadows.army.find((x) => x.id === fresh[0])?.enemyId ?? '')?.shadow ?? 'Shadow'}] has joined your army.` : `[${fresh.length} Shadows have joined your army.]`) : `Shadows deployed: ${shadows.squad(s).length}/${shadows.slots(s)}`}</Voice>
+      {news.length > 0 && (
+        <SysFrame title="Notification" kind="shadow" class="sysnotice">
+          <p>{joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}</p>
+        </SysFrame>
+      )}
       <Panel title="Shadows" tone="arcane">
         <div class="tiles tiles--3">
-          <Tile label="Extractions" value={s.stats.extractions} sub={`${s.stats.extractionsWon} successful`} />
+          <Tile label="Extractions" value={s.stats.extractions} />
           <Tile label="Bound" value={s.shadows.army.length} />
           <Tile label="Deployed" value={`${squad.length}/${slots}`} />
         </div>
         <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Quests` : ''}.</small>
         {squad.length > 0 && <Btn kind="ghost" block onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall Shadows ({squad.length})</Btn>}
       </Panel>
-      <Section title="Bound Shadows" right={`${s.shadows.army.length} commanded`}>
+      <Section title="Bound Shadows">
         {!army.length && <Empty>No Shadows yet.</Empty>}
         <ul class="army">
           {army.map((sh) => {
