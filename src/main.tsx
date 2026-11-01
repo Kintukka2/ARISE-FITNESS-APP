@@ -10,7 +10,7 @@ import './styles/theme.css';
 import './styles/ui.css';
 import './styles/screens.css';
 
-store.init({ onWriteFail: () => toast('Save failed — storage unavailable.', 'bad') });
+store.init({ onWriteFail: () => toast('Save failed: storage unavailable.', 'bad') });
 void store.durable();
 configure({ sound: () => store.get().settings.sound, music: () => store.get().settings.music });
 armAudio();

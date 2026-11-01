@@ -20,18 +20,18 @@ export function Shadows() {
   const fresh = s.shadows.fresh;
   return (
     <div class="stack">
-      <Voice who="system">{fresh.length ? (fresh.length === 1 ? `A new Shadow has entered your command. ${enemyById(s.shadows.army.find((x) => x.id === fresh[0])?.enemyId ?? '')?.shadow ?? ''} is marked below.` : `${fresh.length} new Shadows have entered your command. They are marked below.`) : 'Every Shadow you deploy walks into the next Gate beside you. They never make a fight harder — only easier.'}</Voice>
+      <Voice who="system">{fresh.length ? (fresh.length === 1 ? `[${enemyById(s.shadows.army.find((x) => x.id === fresh[0])?.enemyId ?? '')?.shadow ?? 'Shadow'}] has joined your army.` : `[${fresh.length} Shadows have joined your army.]`) : `Shadows deployed: ${shadows.squad(s).length}/${shadows.slots(s)}`}</Voice>
       <Panel title="Shadows" tone="arcane">
         <div class="tiles tiles--3">
           <Tile label="Extractions" value={s.stats.extractions} sub={`${s.stats.extractionsWon} held`} />
           <Tile label="Bound" value={s.shadows.army.length} />
           <Tile label="Deployed" value={`${squad.length}/${slots}`} />
         </div>
-        <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Missions` : ''}. A Shadow grows with every kill it lands, as far as its rank allows, and enough kills promote it.</small>
+        <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Quests` : ''}. A Shadow grows with every kill it lands, as far as its rank allows, and enough kills promote it.</small>
         {squad.length > 0 && <Btn kind="ghost" block onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall Shadows ({squad.length})</Btn>}
       </Panel>
       <Section title="Bound Shadows" right={`${s.shadows.army.length} commanded`}>
-        {!army.length && <Empty>No Shadows have followed you home yet. Keep clearing gates — an extraction is rare, and rarer still if you are out of mana when it offers.</Empty>}
+        {!army.length && <Empty>No Shadows have followed you home yet. Keep clearing Gates. An extraction is rare, and rarer still if you are out of mana when it offers.</Empty>}
         <ul class="army">
           {army.map((sh) => {
             const e = enemyById(sh.enemyId)!;
@@ -78,7 +78,7 @@ function openShadow(id: string) {
                 const a = ability(n);
                 const known = shadows.kitOf(sh).includes(n);
                 const learned = !e.kit.includes(n);
-                return <KV key={n} k={n} v={!known ? `remembered at ${shadows.SHADOW_RANKS[shadows.SECOND_AT].name}` : a ? `${a.type}, ${REACH_TEXT[a.profile] ?? 'one target'} · ×${a.mult}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}${learned ? ' · from its kin' : ''}` : '—'} />;
+                return <KV key={n} k={n} v={!known ? `remembered at ${shadows.SHADOW_RANKS[shadows.SECOND_AT].name}` : a ? `${a.type}, ${REACH_TEXT[a.profile] ?? 'one target'} · ×${a.mult}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}${learned ? ' · from its kin' : ''}` : '-- --'} />;
               })}
             </div>
           </Section>
@@ -87,7 +87,7 @@ function openShadow(id: string) {
               <Chip on={!sh.tactic} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, null))}>Party’s orders</Chip>
               {TACTICS.map((t) => <Chip key={t.key} on={sh.tactic === t.key} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, t.key))}>{t.name}</Chip>)}
             </div>
-            <p class="muted">{sh.tactic ? TACTICS.find((t) => t.key === sh.tactic)?.one : 'It follows the standing orders you set in each brief.'} Orders change from the next gate.</p>
+            <p class="muted">{sh.tactic ? TACTICS.find((t) => t.key === sh.tactic)?.one : 'It follows the standing orders you set in each brief.'} Orders change from the next Gate.</p>
           </Section>
           {e.passive && <Section title="Passive"><KV k={e.passive} v={passiveText(e.passive)} /></Section>}
           {(e.imm.length > 0 || e.res.length > 0) && <div class="chips">{e.imm.map((x) => <Chip key={x} tone="verdant">Immune: {x}</Chip>)}{e.res.map((x) => <Chip key={x}>Resists: {x}</Chip>)}</div>}

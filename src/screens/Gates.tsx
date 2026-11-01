@@ -16,6 +16,7 @@ import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME } from '@/data/spire';
 import { ContractsWindow } from '@/ui/contracts';
+import * as system from '@/ui/system';
 import { MapView } from '@/ui/map';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -40,8 +41,8 @@ function coachLine(s = store.get()) {
   const v = vitals.read(s);
   if (v.locked) return 'You were carried out of the last one. Sit down. The board will have turned over by the time you are fit anyway.';
   if (v.fatigue > 50) return 'You are running on nothing. Whatever you clear like this, you will clear badly and pay for twice.';
-  if (!s.gates.clears) return 'Pick something at your own grade and go in with people. Nobody clears their first gate alone, and nobody sensible tries.';
-  return 'Clear one and it closes, and something else opens in its place. The board never runs dry. You do — read the assessment, and watch your fatigue.';
+  if (!s.gates.clears) return 'Pick something at your own grade and go in with people. Nobody clears their first Gate alone, and nobody sensible tries.';
+  return 'Clear one and it closes, and something else opens in its place. The board never runs dry. You do. Read the assessment, and watch your fatigue.';
 }
 
 export function Gates() {
@@ -105,15 +106,15 @@ export function Gates() {
       <SpireCard />
       <AscensionCard />
 
-      <div class="bands" role="tablist" aria-label="Filter gates by grade" data-tour="bands">
+      <div class="bands" role="tablist" aria-label="Filter Gates by grade" data-tour="bands">
         <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
         {RANKS.map((r) => {
           const any = gates.some((d) => d.rank === r);
-          return <button type="button" role="tab" key={r} aria-selected={band === r} data-rank={r} class={`band ${band === r ? 'is-on' : ''} ${any ? '' : 'is-empty'}`} onClick={() => { sfx.tap(); if (any) setBand(r); else toast(`No ${r}-Rank gate opened today.`, 'warn'); }}>{r}</button>;
+          return <button type="button" role="tab" key={r} aria-selected={band === r} data-rank={r} class={`band ${band === r ? 'is-on' : ''} ${any ? '' : 'is-empty'}`} onClick={() => { sfx.tap(); if (any) setBand(r); else toast(`No ${r}-Rank Gate opened today.`, 'warn'); }}>{r}</button>;
         })}
       </div>
       <div class="boardhead">
-        <span class="label">{band === 'all' ? 'Open gates' : `${band}-Rank gates`}</span>
+        <span class="label">{band === 'all' ? 'Open Gates' : `${band}-Rank Gates`}</span>
         <span class="label">Redraw <b class="num countdown">{hhmmss(msUntilMidnight())}</b></span>
         <span class="label">{s.gates.sealed.day === dayKey() ? s.gates.sealed.ids.length : 0} closed today</span>
       </div>
@@ -134,7 +135,7 @@ function Contracts() {
   if (!contracts.contractsOpen(s)) return null;
   return (
     <ContractsWindow c={contracts.today(s, day)}>
-      <small class="contracts__when">Reissued in <b class="num countdown">{hhmmss(msUntilMidnight())}</b>. One left undone lapses, and costs nothing.</small>
+      <small class="contracts__when">New Daily Quests in: <b class="num countdown">{hhmmss(msUntilMidnight())}</b></small>
     </ContractsWindow>
   );
 }
@@ -153,14 +154,14 @@ function SpireCard() {
   const built = spire.builtFor(b);
   return (
     <Card class={`spirecard ${locked ? 'is-locked' : ''}`} tone="ember" onClick={() => {
-      if (locked) toast(`Floors ${spire.firstFloor(b)}–${spire.lastFloor(b)} are ${d.rank}-Rank. The Association will not license you for them yet.`, 'warn');
+      if (locked) toast(`Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} are ${d.rank}-Rank. The Association will not license you for them yet.`, 'warn');
       else openBrief(d);
     }}>
       <div class="spirecard__head">
         <RankPlate rank={d.rank} size={34} />
         <div class="grow">
           <b>{SPIRE_NAME}</b>
-          <small class="muted">Floors {spire.firstFloor(b)}–{spire.lastFloor(b)} next · {built <= 100 ? `built for Level ${built}` : 'built for nobody'}</small>
+          <small class="muted">Floors {spire.firstFloor(b)} to {spire.lastFloor(b)} next · {built <= 100 ? `built for Level ${built}` : 'built for nobody'}</small>
         </div>
         <Glyph name={locked ? 'lock' : 'up'} />
       </div>
@@ -186,7 +187,7 @@ function AscensionCard() {
         <Glyph name="crown" />
         <div class="grow">
           <b>Ascension {a.level ? `${a.level} · ${ascension.levelInfo(a.level).name}` : '0'}</b>
-          <small class="muted">{a.level ? `Gates pay ${Math.round(ASCENSION_PAY * a.level * 100)}% more. The brief’s assessment plays every rule.` : 'The board as it stands. Choose a level to make every gate harder, and pay more.'}</small>
+          <small class="muted">{a.level ? `Gates pay ${Math.round(ASCENSION_PAY * a.level * 100)}% more. The brief’s assessment plays every rule.` : 'The board as it stands. Choose a level to make every Gate harder, and pay more.'}</small>
         </div>
       </div>
       {a.unlocked > 0 && (
@@ -199,14 +200,14 @@ function AscensionCard() {
       {a.sent.length > 0 && <ChosenLine />}
       {a.unlocked < ASCENSION_TOP && !ascension.trialProved(s) && (
         <small class="ascension__proof">
-          {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank gates
+          {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank Gates
           {' '}(<b class="num">{Math.min(need, a.proof.gates.length)}/{need}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
           {!ascension.proving(s) && ' Clears count from C-Rank.'}
         </small>
       )}
       {ascension.trialProved(s) && (ascension.trialReady(s)
         ? <Btn kind="gold" block onClick={() => openBrief(trial)}>Face {trial.name} · {trialRounds(a.unlocked)} Chosen</Btn>
-        : <small class="ascension__proof">The gates are proved. {trial.name} opens again tomorrow.</small>)}
+        : <small class="ascension__proof">The Gates are proved. {trial.name} opens again tomorrow.</small>)}
     </Card>
   );
 }
@@ -220,10 +221,10 @@ function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
     <Card class="bosscard chosencard" tone="gold">
       <Glyph name="crown" />
       <div class="grow">
-        <span class="label">One of the Chosen holds this gate</span>
+        <span class="label">One of the Chosen holds this Gate</span>
         <b>{w.name}</b>
         <small class="muted">{level >= w.level ? `You walk in at Ascension ${level}: it stands in the boss’s place, and the assessment fights it.`
-          : `It shows itself only at Ascension ${w.level} or higher. At ${level} you meet the gate’s own boss, and a clear closes the gate on it for today.`}</small>
+          : `It shows itself only at Ascension ${w.level} or higher. At ${level} you meet the Gate’s own boss, and a clear closes the Gate on it for today.`}</small>
         <small>{felled ? `It has fallen to you before. Felled again, it pays ${shop.gateShards(d.rank, WALKERS.bounty * pay)} shards.`
           : `The first time it falls, it leaves a masterwork: a ${RARITY[d.rank as Rank].name} ${walkers.slotOf(w.level)}, perfect and ${w.level} step${w.level === 1 ? '' : 's'} past it.`}</small>
       </div>
@@ -244,7 +245,7 @@ function ChosenLine() {
       <span class="label">The Chosen in the world · {a.felled.length} of {a.sent.length} felled</span>
       <small class="ascension__proof">
         {open ? <>Today <b>{w.name}</b> holds {gate.name}. It shows itself at Ascension {w.level} or higher, and the first time it falls it leaves a masterwork.</>
-          : <>Today <b>{w.name}</b> held {gate.name}, and that gate is closed until tomorrow.</>}
+          : <>Today <b>{w.name}</b> held {gate.name}, and that Gate is closed until tomorrow.</>}
       </small>
       {open && <Btn kind="ghost" size="sm" onClick={() => openBrief(gate)}>Brief: {gate.name}</Btn>}
     </div>
@@ -342,9 +343,12 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
     if (f > 20 && !isPractice(d)) {
       const cost = Math.round((vitals.RAID_FATIGUE[d.rank] ?? 10) * raid.fatigueShare(store.get(), level));
       const want = await sys({
-        title: 'Warning', kind: 'gates', glyph: 'warn', typed: false,
-        lines: [`<strong>Fatigue ${f}.</strong> You are carrying the last run into this one.`, `You will fight at <strong>${Math.round(vitals.drag(f) * 100)}%</strong> of yourself. This gate adds ${cost} more.`],
-        actions: [{ label: 'Rest First', value: false }, { label: 'Fatigue Potion', value: 'drink' }, { label: 'Enter Anyway', value: true, primary: true }],
+        ...system.notify([
+          system.counter('Fatigue', f),
+          `You will fight at ${system.red(`${Math.round(vitals.drag(f) * 100)}%`)} strength.`,
+          `This Gate adds ${cost} fatigue.`,
+        ], 'gates', [{ label: 'Rest First', value: false }, { label: 'Fatigue Potion', value: 'drink' }, { label: 'Enter Anyway', value: true, primary: true }]),
+        glyph: 'warn', typed: false,
       });
       if (want === 'drink') { await drinkFlow('fatigue'); return; }
       if (!want) return;
@@ -362,7 +366,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Card class="bosscard" tour="boss">
         <Glyph name={known || met ? 'skull' : 'unknown'} />
         <div class="grow">
-          <span class="label">{met ? 'In the boss’s place' : `Gate boss${known ? '' : ' — unidentified'}`}</span>
+          <span class="label">{met ? 'In the boss’s place' : `Gate boss${known ? '' : ': unidentified'}`}</span>
           <b>{met ? met.name : known ? boss.name : '???'}</b>
           <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · ${powerOf(met.base)} power` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · ${powerOf(boss.base)} power` : 'Nobody who has come back out has said.'}</small>
         </div>
@@ -372,7 +376,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Section title="The assessment">
         <div class={`verdict verdict--${v.tone}`} data-tour="assess">
           <b>{v.text}</b>
-          <small>The System ran this gate {proj.runs} times with this party down the marked road, fighting your turns and making your choices the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
+          <small>The System ran this Gate {proj.runs} times with this party down the marked road, fighting your turns and making your choices the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
           {level > 0 && <small>At Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}. It pays {Math.round((pay - 1) * 100)}% more.</small>}
         </div>
@@ -382,7 +386,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             ? <Tile label="Opens" value={`Ascension ${s.ascension.unlocked + 1}`} sub="if you win it" />
             : tower
             ? <Tile label="This week" value={`Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`} sub="a new best, if you clear it" />
-            : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '—'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
+            : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '-- --'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
           <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={raid.homeSets(d).length ? `and a ${raid.homeSets(d).map((x) => x.id).join(' or ')} piece on a clear` : d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
           <Tile label="Depth" value={`${map.layers.length} ${isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}`} sub={isTrial(d) ? 'no rest between them' : 'a rest, then the boss'} />
         </div>
@@ -436,10 +440,10 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 async function intro() {
   await tour({
     who: 'coach', title: 'What am I looking at?', steps: [
-      { at: 'licence', say: 'Your Association grade. It rises with your level, and your level rises with every gate you clear. You can always go one grade above it, if you are brave.' },
-      { at: 'vitals', say: 'Health and mana carry between runs and come back on their own, about five per cent an hour. Fatigue builds with every gate and drags everything you are worth down until it fades.' },
-      { at: 'bands', say: 'Ten gates at a time: one of every grade, so you can see the whole ladder, and at least two at your own. Clear one and another opens in its place. The whole board redraws at midnight.' },
-      { at: 'board', say: 'The one at the top is mine. The Association keeps a practice gate shut for exactly this, and I have signed us both in. Open it, read the brief, then go in.' },
+      { at: 'licence', say: 'Your Association grade. It rises with your level, and your level rises with every Gate you clear. You can always go one grade above it, if you are brave.' },
+      { at: 'vitals', say: 'Health and mana carry between runs and come back on their own, about five per cent an hour. Fatigue builds with every Gate and drags everything you are worth down until it fades.' },
+      { at: 'bands', say: 'Ten Gates at a time: one of every grade, so you can see the whole ladder, and at least two at your own. Clear one and another opens in its place. The whole board redraws at midnight.' },
+      { at: 'board', say: 'The one at the top is mine. The Association keeps a practice Gate shut for exactly this, and I have signed us both in. Open it, read the brief, then go in.' },
     ],
   });
 }

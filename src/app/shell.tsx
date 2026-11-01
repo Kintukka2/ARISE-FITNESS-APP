@@ -75,7 +75,7 @@ export function TopBar() {
             <div class="xpbar__fill" style={{ transform: `scaleX(${Math.min(1, s.hunter.xp / need)})` }} />
             <span class="xpbar__label num">LV {s.hunter.level} · {s.hunter.xp} / {need}</span>
           </div>
-          <button type="button" class="topbar__purse" aria-label={`${s.wallet.shards} Mana Shards — open the Exchange`} onClick={() => { sfx.blip(); openExchange(); }}>
+          <button type="button" class="topbar__purse" aria-label={`${s.wallet.shards} Mana Shards. Open the Exchange`} onClick={() => { sfx.blip(); openExchange(); }}>
             <Shard size={15} /><span class="num">{compact(s.wallet.shards)}</span>
           </button>
           <button type="button" class="topbar__cog" aria-label="Settings" onClick={() => { sfx.blip(); openSettings(); }}>
@@ -112,7 +112,7 @@ export function NavBar() {
         <button type="button" key={t.key} data-nav={t.key}
           class={`nav__btn ${r === t.key ? 'is-active' : ''} ${lock(t.key) ? 'is-locked' : ''} ${beckon(t.key) ? 'is-beckon' : ''}`}
           aria-current={r === t.key ? 'page' : undefined}
-          aria-label={lock(t.key) ? `${t.label} — locked` : t.label}
+          aria-label={lock(t.key) ? `${t.label}, locked` : t.label}
           onClick={() => { sfx.tap(); go(t.key); }}>
           <Glyph name={t.icon} />
           {lock(t.key) && <Glyph name="lock" class="nav__lock" />}

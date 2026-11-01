@@ -657,7 +657,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   if (outcome === 'defeated' && !practice) vitals.wipe(s, now);
   const v = vitals.read(s, now);
   s.gates.raid = null;
-  s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name} — ${outcome}`, xp: xp?.gained ?? 0 });
+  s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}: ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,

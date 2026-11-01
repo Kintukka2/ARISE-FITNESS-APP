@@ -76,9 +76,9 @@ function Licence({ name, reg }: { name?: string; reg?: string }) {
         <Sigil rank="E" size={40} />
       </header>
       <dl>
-        <dt>Name</dt><dd>{name || '— — — — —'}</dd>
+        <dt>Name</dt><dd>{name || '-- --'}</dd>
         <dt>Guild</dt><dd class="is-none">None</dd>
-        <dt>Registry No.</dt><dd class="num">{reg || '—'}</dd>
+        <dt>Registry No.</dt><dd class="num">{reg || '-- --'}</dd>
       </dl>
     </div>
   );

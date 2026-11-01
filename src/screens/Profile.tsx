@@ -20,6 +20,7 @@ import { useSave } from '@/store';
 import { weekBest } from '@/core/spire';
 import { dungeonById } from '@/core/gates';
 import { setById, type GearSet } from '@/data/sets';
+import * as system from '@/ui/system';
 import { Btn, Card, Chip, Empty, Fold, GearArt, HpBar, IconBtn, KV, Panel, Section, Shards, Tile, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
@@ -61,14 +62,14 @@ function ClassSheet() {
   const s = useSave();
   const cls = classById(s.hunter.classId);
   if (!cls) {
-    return <Empty title="Unclassified">The System classifies hunters from D-Rank, Level 10, off the attribute you have raised highest, and renames you at every rank above that. Until then you are unclassified, which costs you nothing.</Empty>;
+    return <Empty title="Unclassified">Classes are assigned from D-Rank.</Empty>;
   }
   return (
     <div class="stack">
       <div>
         <b class="big">{cls.name}</b>
         <p class="muted">{cls.desc}</p>
-        <small class="muted">Effect: <b>+{cls.bonus} {cls.lead}</b>. Class follows your highest attribute: spend differently and the System reclassifies you, and the choices you made for another line wait for you there.</small>
+        <small class="muted">{cls.lead} <b class="grant">+{cls.bonus}</b><br />Reassigned when another stat is highest. Choices made in other lines are kept.</small>
       </div>
       {rungsOf(cls.lead).map((r) => <Rung key={r} rung={r} lead={cls.lead} tier={cls.tier} />)}
     </div>
@@ -137,7 +138,7 @@ export function VitalsBlock() {
     <div class="vitals" data-tour="vitals">
       <div class="vrow"><Glyph name="hp" /><span class="label">HP</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" />{pip('hp')}</div>
       <div class="vrow"><Glyph name="mp" /><span class="label">MP</span><HpBar cur={v.mp} max={v.mpMax} tone="mp" />{pip('mp')}</div>
-      <div class="vrow" title={`Every attribute fights at ×${v.drag.toFixed(2)} while fatigue stands. It fades about five an hour.`}>
+      <div class="vrow" title={`Every stat fights at ×${v.drag.toFixed(2)} while fatigue stands. It fades about five an hour.`}>
         <Glyph name="bolt" /><span class="label">FTG</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={ftone} />{pip('fatigue')}
       </div>
       {v.locked && <div class="vrow vrow--locked"><Glyph name="warn" /><small class="grow">Carried out. Fit to raid in {Math.ceil(v.lockedFor / 36e5)}h.</small>{pip('elixir')}</div>}
@@ -150,14 +151,20 @@ export async function drinkFlow(id: shop.PotionId) {
   const p = shop.POTIONS.find((x) => x.id === id)!;
   const idle = shop.potionIdle(s, id);
   if (idle) {
-    await sys({ title: 'Not Needed', kind: 'app', typed: false, lines: [`${p.name} would do nothing right now — ${idle.toLowerCase()}.`, 'It stays here for when it is worth drinking.'] });
+    await sys(system.refuse([`${system.tag(p.name, 'Item')} would have no effect.`, `Status: ${idle}`], 'gear'));
     return;
   }
   if (s.wallet.shards < p.price) {
-    await sys({ title: 'Not Enough', kind: 'app', typed: false, lines: [`${p.name} costs <strong>${p.price}</strong> shards. You have <strong>${s.wallet.shards}</strong>.`, 'Shards come from Gates and from recycled artifacts.'] });
+    await sys(system.refuse([`Not enough Mana Shards. (${s.wallet.shards}/${p.price})`], 'gear'));
     return;
   }
-  if (!(await confirm(p.name, `${p.effect}. <strong>${p.price}</strong> of your ${s.wallet.shards} shards.`, 'Drink It'))) return;
+  const buy = await sys(system.offer([
+    'Would you like to purchase?',
+    system.tag(p.name, 'Item'),
+    `${p.effect}.`,
+    `Price: ${p.price} Mana Shards · Held: ${s.wallet.shards}`,
+  ], 'gear', 'Buy and Drink', 'Cancel'));
+  if (buy !== true) return;
   const moved = store.update((x) => shop.drink(x, id));
   if (moved == null) return toast('That did nothing.', 'bad');
   sfx.success();
@@ -173,7 +180,14 @@ function Attributes() {
   const spend = (k: Stat) => {
     if (!s.hunter.points) {
       const a = ATTRS.find((x) => x.key === k)!;
-      void sys({ title: a.name, kind: 'system', typed: false, lines: [a.desc, total[k] !== s.hunter.attrs[k] ? `Raised to <strong>${s.hunter.attrs[k]}</strong>; class and equipment carry it to <strong>${Math.round(total[k])}</strong>.` : 'Raised by spending a point, or by a Secret Mission.', `Points take it to ${STAT_CAP}. Class and equipment stack on top, as far as ${BOOST_CAP}.`] });
+      void sys({
+        title: a.name, kind: 'system', typed: false, actions: [{ label: 'Close', value: null }],
+        lines: [
+          a.desc,
+          `Base: <strong>${s.hunter.attrs[k]}</strong>${total[k] !== s.hunter.attrs[k] ? ` · With class and gear: <strong>${Math.round(total[k])}</strong>` : ''}`,
+          `Limit: ${STAT_CAP} from Ability Points, ${BOOST_CAP} with class and gear.`,
+        ],
+      });
       return;
     }
     const ok = store.update((x) => spendPoint(x, k));
@@ -186,7 +200,7 @@ function Attributes() {
     const preview = structuredClone(s);
     autoAllocate(preview);
     const plan = STATS.filter((k) => preview.hunter.attrs[k] > s.hunter.attrs[k]).map((k) => `<strong>+${preview.hunter.attrs[k] - s.hunter.attrs[k]} ${k}</strong>`).join(' · ');
-    if (!(await confirm('Auto-Allocate', `${plan}. A third of the points go to your leading attribute; the rest lift your weakest.`, 'Allocate'))) return;
+    if (!(await confirm('Auto-Allocate', `${plan}. A third of the points go to your leading stat; the rest lift your weakest.`, 'Allocate'))) return;
     store.update(autoAllocate);
     sfx.levelUp();
     void checkAwards();
@@ -207,7 +221,7 @@ function Attributes() {
       </div>
       {s.hunter.points > 0 && (
         <div class="attrs__alloc">
-          <small class="muted">Tap an attribute to spend a point. Points do nothing until they are spent.</small>
+          <small class="muted">Tap a stat to spend an Ability Point. Points do nothing until they are spent.</small>
           <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate · {s.hunter.points}</Btn>
         </div>
       )}
@@ -281,7 +295,7 @@ function SetBlock({ set, s }: { set: GearSet; s: Save }) {
       </ul>
       <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b>2 worn</b><span>{gear.bonusText(set.two)}</span></div>
       <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b>3 worn</b><span>{gear.bonusText(set.three)}</span></div>
-      {home && <p class="hint">Its home is {home.name}, a {home.rank}-Rank gate. Every clear there leaves a piece of it, one you do not hold yet while there is one.</p>}
+      {home && <p class="hint">Its home is {home.name}, a {home.rank}-Rank Gate. Every clear there leaves a piece of it, one you do not hold yet while there is one.</p>}
     </Section>
   );
 }
@@ -425,7 +439,7 @@ function Recycle({ initial, onChange, onDone }: { initial: string[]; onChange: (
     <div class="stack">
       <p class="muted">Everything of the chosen grades is broken down for shards. Anything you are wearing, the issued kit, and anything you have starred are never included.</p>
       <div class="chips">{(['E', 'D', 'C', 'B', 'A', 'S'] as const).map((r) => <Chip key={r} on={ranks.includes(r)} tone={`rank-${r}`} onClick={() => { const n = ranks.includes(r) ? ranks.filter((x) => x !== r) : [...ranks, r]; setRanks(n); onChange(n); }}>{gear.RARITY[r].name}</Chip>)}</div>
-      <p><b>{matches.length}</b> artifact{matches.length === 1 ? '' : 's'} match — worth <Shards n={worth} /></p>
+      <p><b>{matches.length}</b> artifact{matches.length === 1 ? '' : 's'} match, worth <Shards n={worth} /></p>
       <Btn kind="danger" block disabled={!matches.length} onClick={async () => {
         if (!(await confirm('Recycle Artifacts', `Break down <strong>${matches.length}</strong> artifacts for <strong>${worth}</strong> shards? There is no way to get them back.`, `Recycle ${matches.length}`, true))) return;
         const r = store.update((x) => shop.recycleAll(x, ranks));
@@ -448,23 +462,23 @@ function openDossier() {
           <Card>
             <div class="row"><Sigil rank={rankFor(s.hunter.level).key === 'N' ? 'N' : licensedRank(s)} size={48} /><div>
               <b class="big">{s.hunter.name}</b>
-              <small class="muted num">Licence {s.hunter.regNo || '—'} · Awakened {new Date(s.createdAt).toLocaleDateString()}</small>
+              <small class="muted num">Licence {s.hunter.regNo || '-- --'} · Awakened {new Date(s.createdAt).toLocaleDateString()}</small>
             </div></div>
           </Card>
-          <Fold title="Secret Missions" right={`${held.length} / ${MISSIONS.length}`} open>
+          <Fold title="Secret Quests" right={`${held.length} / ${MISSIONS.length}`} open>
             {held.length ? (
               <ul class="missions">
                 {held.map((m) => (
                   <li key={m.id} class={`mission mission--${m.tier}`}>
                     <span class="mission__tier">{TIER_NAMES[m.tier]}</span>
                     <b>{m.name}</b>
-                    <small>{m.did}</small>
+                    <small>Goal: {m.did}</small>
                     <small class="mission__grant">{grantText(m)}</small>
                   </li>
                 ))}
               </ul>
-            ) : <Empty>The System has issued no citations. It does not publish what it is watching for.</Empty>}
-            <small class="muted">{MISSIONS.length - held.length} still sealed. The System does not publish these. It tells you afterwards.</small>
+            ) : <Empty>Secret Quests completed: 0</Empty>}
+            <small class="muted">Sealed: {MISSIONS.length - held.length}</small>
           </Fold>
           <Fold title="Active effects">
             <KV k="Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
@@ -476,7 +490,7 @@ function openDossier() {
             <KV k="Carried out" v={s.gates.fails} />
             <KV k="Best run unbroken" v={`${s.gates.bestUnbroken} clears`} />
             <KV k="Cleared above your grade" v={s.stats.reachClears} />
-            <KV k="Contracts completed" v={`${s.stats.contracts} (every one of the day’s, ${s.stats.contractDays} times)`} />
+            <KV k="Daily Quests completed" v={`${s.stats.contracts} (all of a day’s: ${s.stats.contractDays} times)`} />
             <KV k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best} opened` : 'None opened'} />
             <KV k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top} at best${weekBest(s) ? `, Floor ${weekBest(s)} this week` : ''}` : 'Not climbed'} />
             <KV k="Bosses faced" v={s.gates.bosses.length} />
@@ -486,7 +500,7 @@ function openDossier() {
             <KV k="Shards earned" v={s.wallet.earned.toLocaleString()} />
           </Fold>
           <Fold title="Activity log" right={`${s.log.length}`}>
-            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '—'}</span></li>)}</ul> : <Empty>Nothing logged yet. Clear a Gate.</Empty>}
+            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul> : <Empty>Nothing logged yet. Clear a Gate.</Empty>}
           </Fold>
         </div>
       );

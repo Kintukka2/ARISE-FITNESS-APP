@@ -218,11 +218,11 @@ function SysWindow({ w }: { w: Queued }) {
   useBack(() => {
     if (!typedDone) { skip.current(); return; }
     if (w.hold) return;
-    const acts = w.actions ?? [{ label: 'Accept', value: true }];
+    const acts = w.actions ?? [{ label: 'Close', value: true }];
     const out = acts.find((a) => a.value === false) ?? (acts.length === 1 ? acts[0] : null);
     if (out) close(out.value);
   });
-  const actions = w.actions ?? [{ label: 'Accept', value: true, primary: true }];
+  const actions = w.actions ?? [{ label: 'Close', value: true, primary: true }];
   return (
     <div class="sysgate" role="dialog" aria-modal="true" aria-label={w.title ?? 'Notification'}>
       <div class="sysgate__scrim" />

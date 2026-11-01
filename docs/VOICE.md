@@ -25,6 +25,12 @@ The System speaks the way the System speaks in *Solo Leveling*. The anime is the
 the manhwa fills in where the anime shows less (the Status sheet, item and skill cards). DESIGN.md
 allows reusing the source's templates and stock lines word for word. What fills them is ours.
 
+The templates below are code: `src/ui/system.ts` builds every System window from them (`notify`,
+`refuse`, `offer`, `levelUp`, `questRewards`) and marks names, foes and gains (`tag`, `foe`, `gain`,
+`red`). A screen that shows the System speaking calls these rather than writing the window.
+`tests/voice.test.ts` holds the rules a test can check: the closed list of headers, no
+self-reference, Valcorde's silence about the System, the decided words, and no dashes.
+
 ### How it speaks
 
 1. **It reports what happened.** "has arrived", "has been slain", "has activated", "has failed",
@@ -186,6 +192,13 @@ Would you like to {act}?
 ```
 Source: `Would you like to accept the job-change quest?` `Would you like to sell [Item: Raikan's Fang]?`
 
+**Unlock.** A feature opening, in green capitals. ARISE's own; the source has none.
+
+```
+ACCESS GRANTED: {FEATURE}
+```
+ARISE: `[A Shadow has joined your army.]` / `ACCESS GRANTED: SHADOWS`.
+
 **Rank line.** A rank shown on its own line.
 
 ```
@@ -234,7 +247,7 @@ Source: `ITEM: Purified Blood of Demon Monarch`, `ACQUISITION DIFFICULTY: -- --`
 a one-sentence lead, a smaller detail paragraph. `[Title: Wolf Assassin]` / `A title given to those
 skilled at hunting wolves.` / `Animal-Type Monsters: ALL ABILITIES +40%`.
 A value the player has not found yet shows as `?` or `-- --`, never an explanation.
-ARISE class: `CLASS: Brawler` / `A class given to hunters who lead with STR.` / `STR +2` replaces
+ARISE class: `CLASS: Brawler` / `A class given to hunters who fight with their hands.` / `STR +2` replaces
 "Your fists speak the oldest battle-language, and every blow writes it in bone."
 
 **Card text.** Every card is the System's, so its description is flat too: no jokes, no opinions,
@@ -343,6 +356,7 @@ Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`.
 | Daily Quest | contract | Code keeps `contracts`; only the words change |
 | Secret Quest | Secret Mission | Code keeps `missions` |
 | Ability Points | attribute points, stat points | Code keeps `points` |
+| stats | attributes | STR, VIT, AGI, PER and INT, as the source says it: "All stats -50%" |
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
 | Mana Shards, MP, HP | | As now |

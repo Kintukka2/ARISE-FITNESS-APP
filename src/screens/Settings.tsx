@@ -55,7 +55,7 @@ function Settings() {
       )}
 
       <Section title="Your save">
-        <p class="muted">Everything lives on this device. Save storage: <b>{durable === null ? 'unknown' : durable ? 'persistent' : 'best-effort'}</b>{durable === false ? ' — the browser may clear it under storage pressure, so export now and then.' : '.'}</p>
+        <p class="muted">Everything lives on this device. Save storage: <b>{durable === null ? 'unknown' : durable ? 'persistent' : 'best-effort'}</b>{durable === false ? '. The browser may clear it under storage pressure, so export now and then.' : '.'}</p>
         <div class="stack stack--tight">
           <Btn kind="ghost" block onClick={exportSave}>Export Save</Btn>
           <Btn kind="ghost" block onClick={importSave}>Import Save</Btn>

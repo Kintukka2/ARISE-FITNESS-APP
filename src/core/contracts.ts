@@ -163,7 +163,7 @@ export function contractText(c: Contract, grade: Rank): string {
     case 'shadows': return `Let your Shadows land ${c.need} kills.`;
     case 'tired': return `Clear a Gate you walked into carrying ${c.at} fatigue or more.`;
     case 'gatekeeper': return 'Defeat a Gatekeeper.';
-    case 'offroad': return 'Clear a Gate off the road the System marked.';
+    case 'offroad': return 'Clear a Gate off the marked road.';
   }
 }
 
@@ -171,10 +171,10 @@ export function contractText(c: Contract, grade: Rank): string {
 export function contractHint(c: Contract): string {
   switch (c.kind) {
     case 'clear': return 'Only a clear counts.';
-    case 'fell': return `${names(c.where)} opened with them this morning. A kill in any gate counts, cleared or not.`;
-    case 'shadows': return 'Kills by any Shadow you deploy, cleared or not.';
-    case 'tired': return `Read as you walk in, before the gate adds its own. At ${c.at} you fight at ${Math.round(drag(c.at ?? 0) * 100)}% of yourself.`;
-    case 'gatekeeper': return `This morning’s map of ${names(c.where)} holds one. The System’s road goes around it.`;
-    case 'offroad': return 'Take any step the brief’s marked road does not.';
+    case 'fell': return `Found in: ${names(c.where)}. Kills in any Gate count, cleared or not.`;
+    case 'shadows': return 'Kills by any deployed Shadow count, cleared or not.';
+    case 'tired': return `Fatigue is read on entry. At ${c.at} fatigue you fight at ${Math.round(drag(c.at ?? 0) * 100)}% strength.`;
+    case 'gatekeeper': return `Found in: ${names(c.where)}. It is off the marked road.`;
+    case 'offroad': return 'Any step off the marked road counts.';
   }
 }

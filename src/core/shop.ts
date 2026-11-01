@@ -156,10 +156,10 @@ export function upgrade(s: Save, itemId: string): boolean {
 export type PotionId = 'hp' | 'mp' | 'fatigue' | 'elixir';
 
 export const POTIONS: { id: PotionId; name: string; price: number; effect: string; desc: string }[] = [
-  { id: 'hp', name: 'Health Potion', price: 30, effect: 'Restores 25% of maximum HP', desc: 'Sealed field ration issue. Tastes of iron and does not care.' },
-  { id: 'mp', name: 'Mana Potion', price: 30, effect: 'Restores 25% of maximum MP', desc: 'Distilled from a Gate’s own residue. The Association sells it back to you.' },
-  { id: 'fatigue', name: 'Fatigue Potion', price: 45, effect: 'Removes 20 Fatigue', desc: 'It does not rest you. It persuades your body it has rested.' },
-  { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Lifts the lockout after being downed', desc: 'The only argument the Association accepts for walking back into a Gate the same day one carried you out of it.' },
+  { id: 'hp', name: 'Health Potion', price: 30, effect: 'Restores 25% of maximum HP', desc: 'A sealed field ration sold by the Hunter Association.' },
+  { id: 'mp', name: 'Mana Potion', price: 30, effect: 'Restores 25% of maximum MP', desc: 'Distilled from Gate residue. Sold by the Hunter Association.' },
+  { id: 'fatigue', name: 'Fatigue Potion', price: 45, effect: 'Removes 20 Fatigue', desc: 'A tonic that removes fatigue without rest.' },
+  { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Lifts the lockout after being downed', desc: 'Accepted by the Hunter Association as proof of recovery.' },
 ];
 
 /** Field potions are carried, not drunk: into a Gate, for the hunter's own turn. */
