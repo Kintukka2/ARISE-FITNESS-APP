@@ -14,12 +14,12 @@ The world, characters, ranks and bestiary are original and stay that way. Borrow
 the specifics: no named characters, places, monarchs, items, skills, quests or story beats from the
 source material.
 
-The System is the exception. It speaks the way the source's System speaks, and its windows may
-reuse the source's message templates and stock lines word for word: the window types (Alarm,
-Message, Quest Info, Quest Reward, Status, Skills, Inventory), one-line bracketed notices such as
-"[You have leveled up!]" and "[The Dungeon Boss has been slain.]", the item, skill and status card
-layouts, and the accept-or-refuse prompts. What fills a template is ours: our gates, foes, gear,
-skills and numbers.
+The System is the exception. It speaks the way the source's System speaks, with the anime as the
+main reference, and its windows may reuse the source's message templates and stock lines word for
+word: the window types (Notification, Quest Info, Quest Rewards, Status, Skills, Inventory),
+one-line bracketed notices such as "[You have levelled up!]" and "[The Dungeon Boss has been
+slain.]", the item, skill and status card layouts, and the yes-or-no prompts. What fills a template
+is ours: our gates, foes, gear, skills and numbers. docs/VOICE.md has the templates.
 
 ## Pillars
 
