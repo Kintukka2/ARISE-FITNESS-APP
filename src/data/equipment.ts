@@ -3,11 +3,11 @@ import type { GearDef } from '@/core/types';
 
 /** Issued with the licence, at the Association desk. Never sold or scrapped. */
 export const ISSUED: GearDef[] = [
-  {"id":"RECRUIT_SHIRT","name":"Hunter Recruit Shirt","rank":"E","slot":"Chest","core":{"VIT":1},"issued":true,"desc":"Association grey, reinforced at the shoulders, and issued in one size that fits nobody. Every hunter alive owned one of these first."},
-  {"id":"RECRUIT_TROUSERS","name":"Hunter Recruit Trousers","rank":"E","slot":"Legs","core":{"VIT":1},"issued":true,"desc":"Hard-wearing, unflattering, and cut for crouching in. Valcorde will tell you the last part is not an accident."},
-  {"id":"RECRUIT_BOOTS","name":"Hunter Recruit Boots","rank":"E","slot":"Feet","core":{"PER":1},"issued":true,"desc":"Flat, stiff, and honest. You will feel the ground through them, which is the only thing a boot has to do."},
-  {"id":"TRAINING_SHIELD","name":"Training Shield","rank":"D","slot":"Off-Hand","core":{"VIT":2},"issued":true,"desc":"Battered plywood over a steel rim, and heavier than it looks. Handed out because a recruit who has never held a shield puts it in the wrong place."},
-  {"id":"TRAINING_SWORD","name":"Training Sword","rank":"D","slot":"Weapon","core":{"STR":2},"issued":true,"desc":"Blunt, nose-heavy, and deliberately worse than a real blade. Valcorde issues it with the licence and tells every recruit the same thing: the sword is not the point, the swinging is."},
+  {"id":"RECRUIT_SHIRT","name":"Hunter Recruit Shirt","rank":"E","slot":"Chest","core":{"VIT":1},"issued":true,"desc":"A shirt issued by the Hunter Association. Reinforced at the shoulders. Cannot be recycled."},
+  {"id":"RECRUIT_TROUSERS","name":"Hunter Recruit Trousers","rank":"E","slot":"Legs","core":{"VIT":1},"issued":true,"desc":"Trousers issued by the Hunter Association. Cut for crouching. Cannot be recycled."},
+  {"id":"RECRUIT_BOOTS","name":"Hunter Recruit Boots","rank":"E","slot":"Feet","core":{"PER":1},"issued":true,"desc":"Boots issued by the Hunter Association. Thin-soled. Cannot be recycled."},
+  {"id":"TRAINING_SHIELD","name":"Training Shield","rank":"D","slot":"Off-Hand","core":{"VIT":2},"issued":true,"desc":"A training shield of plywood over a steel rim, issued by the Hunter Association. Cannot be recycled."},
+  {"id":"TRAINING_SWORD","name":"Training Sword","rank":"D","slot":"Weapon","core":{"STR":2},"issued":true,"desc":"A blunt training sword issued by the Hunter Association. Cannot be recycled."},
 ];
 
 export const EQUIPMENT: GearDef[] = [

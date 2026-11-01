@@ -11,10 +11,10 @@ they are, keep to the existing rules at the end of this file.
 
 | Speaker | Who it is | Where it appears |
 |---|---|---|
-| **The System** | The program that chose the hunter. Reports, never explains. | System windows, item and skill cards, the Status sheet |
+| **The System** | The program that chose the hunter. Reports, never explains. | System windows, every card (gear, potions, skills, classes), the Status sheet |
 | **Valcorde** | Ryn Valcorde, the Association's instructor. Does not know the System exists. | Coach windows, the first gates, the Gates screen |
 | **The interface** | The app: buttons, labels, tabs, empty states, settings. | Everywhere outside a window |
-| **The world** | The Association's records, the bestiary, gear. | Enemy, gate and gear descriptions |
+| **The world** | The Association's records, the bestiary, the gates. | Enemy and gate descriptions |
 | **Other voices** | Things that are not the System and should not be in its windows. | The `???` window, nothing else yet |
 
 Each speaker sounds like itself. A line that would fit another speaker needs rewriting.
@@ -237,6 +237,26 @@ A value the player has not found yet shows as `?` or `-- --`, never an explanati
 ARISE class: `CLASS: Brawler` / `A class given to hunters who lead with STR.` / `STR +2` replaces
 "Your fists speak the oldest battle-language, and every blow writes it in bone."
 
+**Card text.** Every card is the System's, so its description is flat too: no jokes, no opinions,
+no Valcorde. What it is, where it comes from, one physical fact if it matters, and what can be done
+with it.
+
+```
+{A thing} {issued by | made from | found in} {source}. {One fact.} {What can be done with it.}
+```
+Source: `A dagger made from Rasaka's fang. Able to paralyze due to leftover venom. Can be equipped,
+stored or sold.` `This key unlocks the door to the Demon's Castle. You can acquire this only when
+you kill the gatekeeper.` `A large and sharp fang of a Raikan. You can keep it in your inventory or
+sell it in the store.`
+
+| Item | Was | Is |
+|---|---|---|
+| Hunter Recruit Shirt | Association grey, reinforced at the shoulders, and issued in one size that fits nobody. Every hunter alive owned one of these first. | A shirt issued by the Hunter Association. Reinforced at the shoulders. Cannot be recycled. |
+| Hunter Recruit Trousers | Hard-wearing, unflattering, and cut for crouching in. Valcorde will tell you the last part is not an accident. | Trousers issued by the Hunter Association. Cut for crouching. Cannot be recycled. |
+| Hunter Recruit Boots | Flat, stiff, and honest. You will feel the ground through them, which is the only thing a boot has to do. | Boots issued by the Hunter Association. Thin-soled. Cannot be recycled. |
+| Training Shield | Battered plywood over a steel rim, and heavier than it looks. Handed out because a recruit who has never held a shield puts it in the wrong place. | A training shield of plywood over a steel rim, issued by the Hunter Association. Cannot be recycled. |
+| Training Sword | Blunt, nose-heavy, and deliberately worse than a real blade. Valcorde issues it with the licence and tells every recruit the same thing: the sword is not the point, the swinging is. | A blunt training sword issued by the Hunter Association. Cannot be recycled. |
+
 ### Worked example: extraction
 
 The panel after a clear, in a violet frame.
@@ -249,6 +269,71 @@ The panel after a clear, in a violet frame.
 | Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
 
 That INT raises the rate is a rule, so it goes in the Guide.
+
+### Screens
+
+The System's recurring screens, laid out the way the source lays them out. Every field reads the
+engine. Each element of a screen sits in its own box: the icon, the header, each row, each button.
+
+**Item card.** The gear sheet.
+
+```
+[icon]  ITEM: {name}
+        ACQUISITION DIFFICULTY: {rank}-rank      CATEGORY: {slot}
+        RARITY: {rarity}                         SET: {set}
+{Card text.}
+{Core}         INT +3   PER +1
+{Property}     Status Chance +4%
+Set '{set}' (2/3): {bonus}
+Quality: {quality}
+```
+Source: `ITEM: Castle Door Key` / `ACQUISITION DIFFICULTY A-rank` / `CATEGORY Key`, a plain
+description, then green stat lines with icons (`AGI +20`, `PER +20`, `Physical Damage -20%`).
+The rank is the acquisition difficulty and the slot is the category; both already exist on every
+design. Stat lines are green. A set bonus is a condition and an effect.
+
+**Purchase.** The Exchange and potions.
+
+```
+Would you like to purchase?
+[{item}]
+[icon] ×{qty}      {price} [shard icon]
+                     Cancel   Buy
+                                   {balance} [shard icon]
+```
+Source: `Would you like to purchase?` / `[Knight Killer]`, the icon, a quantity, the price, `CANCEL`
+/ `BUY`, and the balance in its own box. When the balance is short, the window is the Not possible
+template: `Not enough Mana Shards. ({have}/{price})`.
+
+**Change.** A skill, a class or a Shadow moving up.
+
+```
+SKILLS
+Skill level increased.
+{name}  Lv.1  →  Lv.2
+```
+Source: `SKILLS` / `Skill level increased.` / `Dash Lv.1 → Lv.2`.
+ARISE class: `Class upgraded.` / `Brawler → Berserker` / `STR +5`.
+ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
+
+**Status.** The hunter's sheet.
+
+```
+STATUS
+NAME: {name}          LEVEL: {level}
+CLASS: {class}        FATIGUE: {fatigue}
+HP: {hp}
+MP: {mp}
+STR: {n}   VIT: {n}
+AGI: {n}   INT: {n}
+PER: {n}
+                      ABILITY POINTS: {n}
+```
+Source: `NAME`, `LEVEL`, `JOB`, `FATIGUE`, `TITLE`, `HP`, `MP`, the five stats, `REMAINING POINTS`.
+ARISE has no titles, so the row is left out rather than shown empty. `JOB` is `CLASS`.
+
+**Inventory.** A grid of icons under tabs, with the count of what is held.
+Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`.
 
 ## Words
 
