@@ -362,6 +362,9 @@ Spire. Every quest's name wears its type, and these are the names:
   C-Rank`.
 - **Secret Quests stay sealed.** The screen lists those done, with their tier, goal and reward, and
   counts the rest as `Sealed: {n}`. It never names one that is not done.
+- **The Trial and the Chosen are only quests.** Their windows here are the one place that reports the
+  proof, opens the Trial or counts the Chosen felled (`Chosen felled: {n}/{m}`). The Gates screen's
+  Ascension card holds the level, its rules and the marks, and shows once Ascension 1 is open.
 
 **Quest Rewards.**
 

@@ -54,7 +54,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat. Sixteen three-piece sets pay a bonus for two pieces worn and another for all three, and each has a home Gate whose clears leave a piece you do not have yet. Anything you hold can be upgraded with shards, a step at a time, to perfect |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
 | **Secret Quests** | 49 unpublished quests that pay stats, Ability Points or Shadow slots, in four tiers from Citation to Testament. Nothing says one exists until you have done it |
-| **Quests** | One screen for every quest: the day's Daily Quests, your next rank and what it brings, the Pale Spire's week, the proof of your next Ascension level and its Trial, the Chosen walking today, and every Secret Quest you have done. The board marks each Gate a Daily Quest names |
+| **Quests** | One screen for every quest: the day's Daily Quests, your next rank and what it brings, the Pale Spire's week, the proof of your next Ascension level and its Trial, the Chosen walking today, and every Secret Quest you have done. The Trial is entered from here. The tab counts the day's Daily Quests until you open it, and the Trial while today's attempt is unused. The board marks each Gate a Daily Quest names |
 | **Story** | 19 beats gated on level and deeds, ending at the Hollow Throne |
 
 ## Layout

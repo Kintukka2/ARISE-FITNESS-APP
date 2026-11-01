@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import { upgradeCount } from '@/core/gear';
-import { unseen } from '@/core/contracts';
 import { rankFor, waiting, xpToNext } from '@/core/progression';
+import { waiting as questsWaiting } from '@/core/quests';
 import { licensedRank } from '@/core/licence';
 import { compact } from '@/core/util';
 import { useSave } from '@/store';
@@ -103,8 +103,8 @@ export function NavBar() {
       const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0) + waiting(s).length;
       return n > 0 ? String(n) : null;
     }
-    // The day's Daily Quests, until the Quests screen has shown them.
-    if (k === 'quests' && unseen(s)) return String(unseen(s));
+    // The day's Daily Quests until the Quests screen has shown them, and a Trial with today's attempt unused.
+    if (k === 'quests' && questsWaiting(s)) return String(questsWaiting(s));
     if (k === 'shadows' && s.shadows.fresh.length) return String(s.shadows.fresh.length);
     return null;
   };

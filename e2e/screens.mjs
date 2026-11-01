@@ -68,9 +68,14 @@ try {
 
   await nav('quests');
   await snap('quests', true);
+  // The veteran has opened Ascension and sent a Chosen out: both are quests, and only quests.
+  if (!(await page.locator('.sysframe.quest-trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN');
+  if (!(await page.locator('.sysframe.quest-chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN');
 
   await nav('gates');
   await snap('gates', true);
+  if (!(await page.locator('.ascension').isVisible())) throw new Error('THE ASCENSION CARD IS MISSING FROM THE GATES SCREEN');
+  if (await page.locator('.ascension', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS STILL ON THE GATES SCREEN');
   // The Pale Spire's next block, beside the board.
   await page.locator('.spirecard').click(); await sleep(800); await snap('spire-brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess'); await close();

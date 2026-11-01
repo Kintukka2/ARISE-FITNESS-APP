@@ -141,10 +141,16 @@ gate a contract names with a Quest chip, and the Quests tab counts the day's unt
 the day's contracts; *Reclassification*, the next rank, the level it needs and what it brings (the
 Ability Points, the class and its choice, Shadow slots, the Hollow Throne); the Pale Spire's week as
 a *Weekly Quest*, set at the next floor that raises what the week pays (`spire.tierGoal`); the
-proof of the next Ascension level and its Trial; and the Chosen walking today. Under them is the
-record of every Secret Quest completed. None of it pays: each quest is settled where it always was,
-and the screen reads where it stands (`core/quests.ts`, `contracts.unseen`). The tab opens with the
-practice gate cleared, when the contracts do.
+proof of the next Ascension level and its Trial; and the Chosen walking today, with how many of
+those sent have fallen. Under them is the record of every Secret Quest completed. None of it pays:
+each quest is settled where it always was, and the screen reads where it stands (`core/quests.ts`,
+`contracts.unseen`). The tab opens with the practice gate cleared, when the contracts do. Its badge
+counts the day's contracts until the screen has shown them, and the Trial while it stands open with
+today's attempt unused (`quests.waiting`), as the Inventory tab counts unspent points.
+
+The Trial and the Chosen live only here. The Gates screen keeps what bears on the next run: its
+Ascension card (the level, its rules and the marks) shows once Ascension 1 is open, the board tags
+the gate a Chosen holds, and that gate's brief says when it stands in the boss's place.
 
 **What changed from the plan.** *Bind a Shadow* is not a contract: binding hangs on a creature
 lingering, which a contract cannot promise, so it became Shadow kills instead. Nothing asks for a
@@ -312,12 +318,14 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
   Hand. At the top, Auto will not fight a boss. Each level pays 10% more on a gate than the
   one below.
 - **Choosing.** The hunter chooses a level on the Gates screen, anywhere from 0 to the highest opened.
+  The card that chooses it shows once Ascension 1 is open; until then, the way in is the Trial
+  quest on the Quests screen.
   A run keeps the level it walked in with, and the brief's assessment plays every rule it brings.
   The practice gate is always played at 0.
 - **Proving.** A level opens when the one below it is proved: four different gates of the hunter's
   grade cleared at it (GM's league trophies), and then the Trial. S-Rank has only three gates, so
   there it is all three (`proofNeeds`). Only clears at the highest level opened count, and only from
-  C-Rank.
+  C-Rank. The proof, the Trial and the way into it are on the Quests screen.
 - **The Trial** (`core/trial.ts`) is GM's Ascension tournament.
   - **The gauntlet:** proving level L means beating L+2 of the Chosen in a row, in a gate with one to a
     layer, no rest and nothing to withdraw to.
