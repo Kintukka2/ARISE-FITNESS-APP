@@ -108,7 +108,7 @@ async function restoreBackup() {
 }
 
 async function erase() {
-  if (!(await confirm('Erase Save', 'Every level, Shadow, attribute and artifact is deleted. A single backup is kept until the next import or erase.', 'Erase', true))) return;
+  if (!(await confirm('Erase Save', 'Every level, Shadow, stat and item is deleted. A single backup is kept until the next import or erase.', 'Erase', true))) return;
   const v = await sys({ title: 'Confirm Erasure', kind: 'danger', typed: false, lines: ['Last chance.'], actions: [{ label: 'Cancel', value: false }, { label: 'Erase Everything', value: true, danger: true }] });
   if (!v) return;
   store.replace(defaults());

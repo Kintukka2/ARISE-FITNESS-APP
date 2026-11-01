@@ -52,7 +52,7 @@ export const MISSIONS: Mission[] = [
   // Directive: 2 to 3 points
   { id: 'thirty_unbroken', name: 'Thirty Unbroken', tier: 'major', did: 'Clear 30 Gates in a row without being carried out.', grant: { STR: 1, VIT: 1 }, check: (s) => s.gates.bestUnbroken >= 30 },
   { id: 'reaching', name: 'Reaching', tier: 'major', did: 'Clear 10 Gates one grade above your own.', grant: { INT: 1, PER: 1 }, check: (s) => s.stats.reachClears >= 10 },
-  { id: 'well_rounded', name: 'No Weak Side', tier: 'major', did: 'Raise all five stats to 20 or more.', grant: { INT: 2 }, check: (s) => STATS.every((k) => s.hunter.attrs[k] >= 20) },
+  { id: 'well_rounded', name: 'No Weak Side', tier: 'major', did: `Raise all ${STATS.length} stats to 20 or more.`, grant: { INT: 2 }, check: (s) => STATS.every((k) => s.hunter.attrs[k] >= 20) },
   { id: 'specialist', name: 'Specialist', tier: 'major', did: 'Raise one stat to 50.', grant: { free: 3 }, check: (s) => STATS.some((k) => s.hunter.attrs[k] >= 50) },
   { id: 'two_thousand_down', name: 'Two Thousand Down', tier: 'major', did: 'Fell 2,000 creatures.', grant: { STR: 3 }, check: (s) => felled(s) >= 2000 },
   { id: 'whole_bestiary', name: 'The Whole Bestiary', tier: 'major', did: 'Fell creatures of 10 different families.', grant: { AGI: 2, VIT: 1 }, check: (s) => families(s) >= 10 },

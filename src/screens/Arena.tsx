@@ -579,7 +579,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                     sfx.window('gear');
                     buzz([14, 30, 22]);
                   }}>
-                    {open ? <><GearArt item={it} size={52} /><small>{def?.name}</small></> : <span class="flip__back" aria-label="Face-down artifact">?</span>}
+                    {open ? <><GearArt item={it} size={52} /><small>{def?.name}</small></> : <span class="flip__back" aria-label="Face-down item">?</span>}
                   </button>
                 );
               })}

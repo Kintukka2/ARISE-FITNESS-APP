@@ -88,7 +88,7 @@ layer is all fights and every layer holds at least one.
 - **Steps** (`data/nodes.ts`): fight (banks shards, sometimes gear), gatekeeper (a sure piece of
   gear), rest (heals, and is the only place to withdraw from), cache (gear a grade below the gate),
   shrine (one of two blessings for the run), trap (a Perception check) and five events, each a
-  choice with its odds stated, some read off an attribute.
+  choice with its odds stated, some read off a stat.
 - **What the run finds is banked on it** (`haul`, `purse`, `blessings`) and paid in `finish`: kept
   walking out, at the end or from a rest; lost when carried out.
 - **The brief's verdict walks the System's road**, marked on the map: fight first, rest when it
@@ -105,9 +105,10 @@ only withdraw right before the boss. That makes every gate a commitment; whether
 one is a question for playing it. Calibration now samples twelve days per gate, because a gate's
 difficulty moves a little with its map.
 
-### 3. System contracts — built
+### 3. Daily Quests — built
 
-The System issues three contracts a day, replacing what the Daily Quest used to be. They sit in a
+The player sees these as Daily Quests; the code and this section call them contracts. The System
+issues three a day, replacing what the exercise Daily Quest used to be. They sit in a
 System window on the Gates screen, and again on the results of every run.
 
 - **Drawn** (`core/contracts.ts`, table in `data/contracts.ts`) from the day and the hunter's grade,
@@ -156,7 +157,7 @@ everyone knows the Spire is there.
 - **Calibrated like the gates.** `npm run calibrate` tunes each gate's creatures as a block at the
   middle of their grade (`BLOCK_TUNE`), then each block up to Floor 100 for the level of its middle
   floor (`SPIRE_TUNE`). Both land near 75%.
-- **Records and Missions:** the best floor ever and this week, two new Secret Missions (*Up* and *The
+- **Records and Secret Quests:** the best floor ever and this week, two new Secret Quests (*Up* and *The
   Top Floor*), and a Profile record. A Spire block counts as a gate for the gate records and the
   contracts. It does not count for the board's distinct gates cleared or bosses on file.
 
@@ -213,7 +214,7 @@ fight was tried and did not narrow it.
     the second in its own kit or, for the 58 creatures that have only one, the first ability of
     its kin it lacks (its family's, or its role's for a family that shares one).
   - Promotions are counted in `raid.finish` and shown on the results.
-- **More slots through Secret Missions.** Three new ones each make room for one more Shadow: a
+- **More slots through Secret Quests.** Three new ones each make room for one more Shadow: a
   first Sworn Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions'
   (`shadows.slots`).
 - **Standing orders per Shadow.** A Shadow can keep orders of its own, set on its sheet, over the
@@ -262,7 +263,7 @@ What it says, and what to decide next:
 4. **The climb is quicker than the formula says.** Clears run near 97% rather than the 75% the
    days-to-rank model assumes. One evening a day reaches S-Rank in nine weeks, and three sessions
    reach Sovereign in eleven.
-5. **Levels do not stop at 100.** They keep paying points until every attribute is capped. That
+5. **Levels do not stop at 100.** They keep paying points until every stat is capped. That
    predates v7 and suits the endless Spire, but Sovereign's line, "the System has nothing left to
    award", is not quite true.
 6. **Fatigue holds an S-Rank hunter to about one gate a session**, as intended. The Spire competes

@@ -169,7 +169,7 @@ export async function drinkFlow(id: shop.PotionId) {
   if (moved == null) return toast('That did nothing.', 'bad');
   sfx.success();
   buzz([16, 26, 22]);
-  toast(id === 'elixir' ? `${p.name} · lockout lifted` : id === 'fatigue' ? `${p.name} · −${moved} Fatigue` : `${p.name} · +${moved} ${id.toUpperCase()}`, 'xp');
+  toast(id === 'elixir' ? `${p.name} · lockout lifted` : id === 'fatigue' ? `${p.name} · Fatigue -${moved}` : `${p.name} · ${id.toUpperCase()} +${moved}`, 'xp');
 }
 
 function Attributes() {
@@ -199,7 +199,7 @@ function Attributes() {
   const auto = async () => {
     const preview = structuredClone(s);
     autoAllocate(preview);
-    const plan = STATS.filter((k) => preview.hunter.attrs[k] > s.hunter.attrs[k]).map((k) => `<strong>+${preview.hunter.attrs[k] - s.hunter.attrs[k]} ${k}</strong>`).join(' · ');
+    const plan = STATS.filter((k) => preview.hunter.attrs[k] > s.hunter.attrs[k]).map((k) => `<strong>${k} +${preview.hunter.attrs[k] - s.hunter.attrs[k]}</strong>`).join(' · ');
     if (!(await confirm('Auto-Allocate', `${plan}. A third of the points go to your leading stat; the rest lift your weakest.`, 'Allocate'))) return;
     store.update(autoAllocate);
     sfx.levelUp();
@@ -361,8 +361,8 @@ function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: strin
     <div class="stack">
       <div class="chips">{types.map((t) => <Chip key={t} on={f === t} onClick={() => { setF(t); onFilter(t); }}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
       <small class="muted">Designs discovered: {s.found.length} of {gear.ALL_GEAR.length + gear.ISSUED.length}.</small>
-      {s.items.length >= 6 && <Btn kind="ghost" size="sm" onClick={openRecycle}>Recycle Artifacts</Btn>}
-      {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No artifacts yet. They are recovered from cleared Gates and bought at the Exchange.'}</Empty>}
+      {s.items.length >= 6 && <Btn kind="ghost" size="sm" onClick={openRecycle}>Recycle Items</Btn>}
+      {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No items yet. They are recovered from cleared Gates and bought at the Exchange.'}</Empty>}
       <div class="stack stack--tight">{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => openItem(it.id)} />)}</div>
     </div>
   );
@@ -370,10 +370,10 @@ function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: strin
 
 export function openItem(id: string) {
   const close = openSheet({
-    title: 'Artifact', render: () => {
+    title: 'Item', render: () => {
       const s = store.get();
       const it = s.items.find((x) => x.id === id);
-      if (!it) return <Empty>That artifact is gone.</Empty>;
+      if (!it) return <Empty>That item is gone.</Empty>;
       const d = gear.defOf(it)!;
       const worn = gear.slotOf(s, it);
       const tag = gear.rollTag(it);
@@ -399,7 +399,7 @@ export function openItem(id: string) {
           {!d.issued && !worn && (
             <Btn kind="ghost" onClick={async () => {
               const v = shop.scrapValue(it);
-              if (!(await confirm('Recycle Artifact', `Break <em>${d.name}</em> down for <strong>${v} Mana Shards</strong>?`, 'Recycle', true))) return;
+              if (!(await confirm('Recycle Item', `Break <em>${d.name}</em> down for <strong>${v} Mana Shards</strong>?`, 'Recycle', true))) return;
               store.update((x) => shop.recycle(x, it.id));
               toast(`${d.name} broken down. +${v} shards.`, 'xp');
               close();
@@ -417,7 +417,7 @@ function openSlot(k: SlotKey) {
     title: slot.name, render: () => {
       const s = store.get();
       const list = s.items.filter((it) => gear.defOf(it)?.slot === slot.accepts && !gear.slotOf(s, it)).sort((a, b) => gear.score(b) - gear.score(a));
-      if (!list.length) return <Empty>Nothing for this slot yet. Artifacts are recovered from cleared Gates and bought at the Exchange.</Empty>;
+      if (!list.length) return <Empty>Nothing for this slot yet. Items are recovered from cleared Gates and bought at the Exchange.</Empty>;
       return <div class="stack stack--tight"><small class="muted">Tap to equip.</small>{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => { store.update((x) => gear.equip(x, it.id, k)); sfx.success(); toast(`${gear.defOf(it)?.name} equipped.`, 'xp'); close(); void checkAwards(); }} />)}</div>;
     },
   });
@@ -426,7 +426,7 @@ function openSlot(k: SlotKey) {
 function openRecycle() {
   let ranks = ['E'];
   const close = openSheet({
-    title: 'Recycle Artifacts', tone: 'ember', render: () => <Recycle initial={ranks} onChange={(r) => { ranks = r; }} onDone={close} />,
+    title: 'Recycle Items', tone: 'ember', render: () => <Recycle initial={ranks} onChange={(r) => { ranks = r; }} onDone={close} />,
   });
 }
 
@@ -439,9 +439,9 @@ function Recycle({ initial, onChange, onDone }: { initial: string[]; onChange: (
     <div class="stack">
       <p class="muted">Everything of the chosen grades is broken down for shards. Anything you are wearing, the issued kit, and anything you have starred are never included.</p>
       <div class="chips">{(['E', 'D', 'C', 'B', 'A', 'S'] as const).map((r) => <Chip key={r} on={ranks.includes(r)} tone={`rank-${r}`} onClick={() => { const n = ranks.includes(r) ? ranks.filter((x) => x !== r) : [...ranks, r]; setRanks(n); onChange(n); }}>{gear.RARITY[r].name}</Chip>)}</div>
-      <p><b>{matches.length}</b> artifact{matches.length === 1 ? '' : 's'} match, worth <Shards n={worth} /></p>
+      <p><b>{matches.length}</b> item{matches.length === 1 ? '' : 's'} match, worth <Shards n={worth} /></p>
       <Btn kind="danger" block disabled={!matches.length} onClick={async () => {
-        if (!(await confirm('Recycle Artifacts', `Break down <strong>${matches.length}</strong> artifacts for <strong>${worth}</strong> shards? There is no way to get them back.`, `Recycle ${matches.length}`, true))) return;
+        if (!(await confirm('Recycle Items', `Break down <strong>${matches.length}</strong> items for <strong>${worth}</strong> shards? There is no way to get them back.`, `Recycle ${matches.length}`, true))) return;
         const r = store.update((x) => shop.recycleAll(x, ranks));
         toast(`${r.count} broken down. +${r.paid} shards.`, 'xp');
         onDone();
@@ -482,7 +482,7 @@ function openDossier() {
           </Fold>
           <Fold title="Active effects">
             <KV k="Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
-            {Object.entries(classBonus(s)).map(([k, v]) => <KV key={k} k="Class" v={`+${v} ${k}`} />)}
+            {Object.entries(classBonus(s)).map(([k, v]) => <KV key={k} k="Class" v={`${k} +${v}`} />)}
           </Fold>
           <Fold title="Lifetime record">
             <KV k="Gates cleared" v={`${s.gates.clears} (${s.gates.cleared.length} distinct)`} />

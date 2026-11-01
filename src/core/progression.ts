@@ -6,6 +6,7 @@
  */
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { classById, classFor } from '@/data/classes';
+import { SLOTS } from '@/data/shadows';
 import type { Attrs, Rank, Save, Stat } from './types';
 import { STATS } from './types';
 
@@ -25,7 +26,7 @@ export const RANK_LADDER: RankInfo[] = [
   { key: 'D', name: 'D-Rank', min: 10, tier: 2, blurb: 'Classes are assigned from this rank.' },
   { key: 'C', name: 'C-Rank', min: 20, tier: 2, blurb: 'Classified.' },
   { key: 'B', name: 'B-Rank', min: 35, tier: 3, blurb: 'Top 2% of the Awakened.' },
-  { key: 'A', name: 'A-Rank', min: 50, tier: 4, blurb: 'Shadow slots: 3.' },
+  { key: 'A', name: 'A-Rank', min: 50, tier: 4, blurb: `Shadow slots: ${SLOTS.A}.` },
   { key: 'S', name: 'S-Rank', min: 70, tier: 4, blurb: 'The highest rank the Association grants.' },
   { key: 'N', name: 'Sovereign', min: 100, tier: 4, blurb: 'Beyond classification.' },
 ];

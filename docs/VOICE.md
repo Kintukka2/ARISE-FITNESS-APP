@@ -12,12 +12,18 @@ they are, keep to the existing rules at the end of this file.
 | Speaker | Who it is | Where it appears |
 |---|---|---|
 | **The System** | The program that chose the hunter. Reports, never explains. | System windows, every card (gear, potions, skills, classes), the Status sheet |
-| **Valcorde** | Ryn Valcorde, the Association's instructor. Does not know the System exists. | Coach windows, the first gates, the Gates screen |
-| **The interface** | The app: buttons, labels, tabs, empty states, settings. | Everywhere outside a window |
-| **The world** | The Association's records, the bestiary, the gates. | Enemy and gate descriptions |
+| **Valcorde** | Ryn Valcorde, the Association's instructor. Does not know the System exists. | Coach windows, the first Gates, the Gates screen |
+| **The interface** | The app: buttons, labels, tabs, empty states, settings, tutorials, the Guide. | Everywhere outside a System or coach window |
+| **The world** | The Association's records, the bestiary, the Gates. | Enemy and Gate descriptions |
 | **Other voices** | Things that are not the System and should not be in its windows. | The `???` window, nothing else yet |
 
 Each speaker sounds like itself. A line that would fit another speaker needs rewriting.
+
+- **Any speaker may name the System. Only the System may not refer to itself.** The Guide says "the
+  System issues 3 Daily Quests a day"; a System window never says "the System".
+- **Teaching belongs to the interface.** A tutorial window is the app speaking (kind `app`, a plain
+  title such as "Your Turn"), and the Guide holds every rule. Neither is a System window.
+- **Valcorde teaches only what he can know:** Gates, ranks, the Association, fatigue, his own past.
 
 ## The System
 
@@ -29,7 +35,9 @@ The templates below are code: `src/ui/system.ts` builds every System window from
 `refuse`, `offer`, `levelUp`, `questRewards`) and marks names, foes and gains (`tag`, `foe`, `gain`,
 `red`). A screen that shows the System speaking calls these rather than writing the window.
 `tests/voice.test.ts` holds the rules a test can check: the closed list of headers, no
-self-reference, Valcorde's silence about the System, the decided words, and no dashes.
+self-reference, Valcorde's silence about the System, the decided words (no "contract", "Secret
+Mission", "attribute", lowercase "gate" or old tier names), counts as digits, name before value,
+and no dashes.
 
 ### How it speaks
 
@@ -41,6 +49,10 @@ self-reference, Valcorde's silence about the System, the decided words, and no d
    `[Class: …]`. The label does the explaining.
 4. **Numbers are exact and bare.** `+25`, `-20%`, `0/3`, `60 MP`. Never "about", never
    "34 times in 100". Every number is read from the engine's constants, as everywhere else.
+   Every count is a digit: "Clear 7 Gates", "Earn 1,000 Mana Shards", never "seven" or "a
+   thousand". "One" as a word only ever means "a": "Raise one stat to 50." A number is never
+   dropped because the text cannot reach its constant; move the constant to `src/data/` where
+   the text can import it, as the Shadow slots were.
 5. **It is flat.** Threats get no adjectives. Rewards get no praise.
 6. **It is a little stiff.** The source reads like a translation: "You got rewards." "Accept this
    rewards?" Keep that stiffness. Do not smooth a System line into natural English.
@@ -56,6 +68,18 @@ self-reference, Valcorde's silence about the System, the decided words, and no d
 - gives advice or orders about how to play. "Spend them." "Do not treat this as permission." are out.
 - comments, jokes, or ends on a remark.
 - uses dashes, rhetorical questions, or "not X but Y".
+
+### Announcements
+
+- **One event, one announcement.** When two windows would report the same moment, keep the one
+  that carries more and cut the other. Clearing the Practice Gate completes the Secret Quest
+  `First Light`, so there is no second "You have cleared [The Practice Gate]."
+- **A payout is reported once, in the window that pays it.** The level-up window's Ability Points
+  already include the rank-up bonus, so a rank window never repeats them. Daily Quest pay is shown
+  in the run's results, where `raid.finish` settled it.
+- **Order follows the engine:** the Spire's week, level-ups, Secret Quests and class changes, then
+  story beats (`rewardChain` in `src/app/flow.ts`). A beat never announces what an earlier window
+  already did.
 
 ### Windows
 
@@ -73,7 +97,9 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 Cards have no header word. Their header box is the name: `ITEM: …`, `SKILL: …`, `CLASS: …`.
 
 Windows written by other speakers are not System windows: Valcorde's carry his name, the app's
-own (settings, data, confirmations) carry a plain label, and the `???` voice carries `???`.
+own (settings, data, confirmations, tutorials) carry a plain label, and another voice carries
+`???` until the game has named it, then its name (`The Hollow Monarch`). Only another voice uses
+the red `danger` frame.
 
 ### Colour and emphasis
 
@@ -205,23 +231,29 @@ ARISE: `[A Shadow has joined your army.]` / `ACCESS GRANTED: SHADOWS`.
 {Rank} Rank
 ```
 Source: `LV.7 Knight Rank` / `You may bestow a name.`
-ARISE: `[Shadow {name}] has been promoted.` / `Sworn Rank` replaces "PROMOTED — SWORN".
+ARISE: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank` replaces "PROMOTED — SWORN".
 
 **Quest Info.**
 
 ```
 QUEST INFO
-[Daily Quest: {name}]
-{One or two sentences of brief, only if the goal needs it.}
+[Daily Quests]
 GOAL
-{Goal}                                  [{n}/{m}]
+{Goal.}                                 {n}/{m}
+{Hint, smaller.}
 REWARDS
-1. Mana Shards +{n}
-2. Experience +{n}
+1. Each quest: {shards} · Experience +{n}
+2. All 3: {shards} · Experience +{n}
+New Daily Quests in: {countdown}
 ```
 Source: `[Daily: Collect Demon Souls! 3]`, a two-sentence brief, `GOAL`, numbered `REWARDS`.
 ARISE's Daily Quests have no penalty, so the window has no warning line, and no line mentions
 that there is none.
+
+- **A goal is an order in the imperative:** "Clear 2 Gates of D-Rank or higher." "Defeat a
+  Gatekeeper." Secret Quest goals read the same way.
+- **A hint says where or how, flat:** `Found in: {places}.`, `Kills in any Gate count, cleared or
+  not.`, `It is off the marked road.` A hint never explains why.
 
 **Quest Rewards.**
 
@@ -232,6 +264,22 @@ You got rewards.
                                    Close
 ```
 Source: `You got rewards.` / `1. Ability Points+5` / `Accept this rewards?`
+For a quest whose rewards arrive apart from the moment it completes. No ARISE window needs it yet:
+a Secret Quest reports its reward in its own completion window, and Daily Quests report theirs in
+the run's results.
+
+**Secret Quest.** The completion window.
+
+```
+NOTIFICATION
+You have completed
+[Secret Quest: {name}].
+Goal: {goal}
+Reward: {reward}
+```
+ARISE: `You have completed` / `[Secret Quest: Seven Straight].` / `Goal: Clear 7 Gates in a row
+without being carried out.` / `Reward: AGI +1`. A reward is a stat or a count and its sign:
+`STR +1 · VIT +1`, `All stats +1`, `Ability Points +3`, `Shadow slots +1`.
 
 **Cards.** Items, skills, classes.
 
@@ -246,7 +294,8 @@ Source: `You got rewards.` / `1. Ability Points+5` / `Accept this rewards?`
 Source: `ITEM: Purified Blood of Demon Monarch`, `ACQUISITION DIFFICULTY: -- --`, `CATEGORY: Material`,
 a one-sentence lead, a smaller detail paragraph. `[Title: Wolf Assassin]` / `A title given to those
 skilled at hunting wolves.` / `Animal-Type Monsters: ALL ABILITIES +40%`.
-A value the player has not found yet shows as `?` or `-- --`, never an explanation.
+A value the player has not found yet shows as `?`; an empty one shows as `-- --`. Never an
+explanation.
 ARISE class: `CLASS: Brawler` / `A class given to hunters who fight with their hands.` / `STR +2` replaces
 "Your fists speak the oldest battle-language, and every blow writes it in bone."
 
@@ -287,6 +336,8 @@ That INT raises the rate is a rule, so it goes in the Guide.
 
 The System's recurring screens, laid out the way the source lays them out. Every field reads the
 engine. Each element of a screen sits in its own box: the icon, the header, each row, each button.
+The item card, Status and Inventory layouts land with the visual pass; until then the words on
+those screens follow these layouts, and the Quest Info, Purchase and Change windows already do.
 
 **Item card.** The gear sheet.
 
@@ -309,14 +360,19 @@ design. Stat lines are green. A set bonus is a condition and an effect.
 
 ```
 Would you like to purchase?
-[{item}]
-[icon] ×{qty}      {price} [shard icon]
+[Item: {name}]
+{What it gives, green for stats.}
+Price: {price} Mana Shards · Held: {balance}
                      Cancel   Buy
-                                   {balance} [shard icon]
 ```
 Source: `Would you like to purchase?` / `[Knight Killer]`, the icon, a quantity, the price, `CANCEL`
 / `BUY`, and the balance in its own box. When the balance is short, the window is the Not possible
 template: `Not enough Mana Shards. ({have}/{price})`.
+
+Every purchase with Mana Shards asks first: gear, the Field Potion and potions. A potion is drunk as
+it is bought, so its button names both acts: **Buy and Drink**. A Google Play purchase (shard packs,
+the Licence) uses Google Play's own confirmation, not this window. After a purchase the System
+reports it: `You have acquired` / `[Item: {name}].` / its stats in green.
 
 **Change.** A skill, a class or a Shadow moving up.
 
@@ -326,7 +382,9 @@ Skill level increased.
 {name}  Lv.1  →  Lv.2
 ```
 Source: `SKILLS` / `Skill level increased.` / `Dash Lv.1 → Lv.2`.
-ARISE class: `Class upgraded.` / `Brawler → Berserker` / `STR +5`.
+ARISE class, the first time: `Class assigned.` / `[Class: Brawler]` / `STR +2`. After that:
+`Class changed.` / `Brawler → [Class: Berserker]` / `STR +5`. "Changed", because spending
+differently can move a hunter sideways to another line, not only up.
 ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
 
 **Status.** The hunter's sheet.
@@ -359,7 +417,10 @@ Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`.
 | stats | attributes | STR, VIT, AGI, PER and INT, as the source says it: "All stats -50%" |
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
-| Mana Shards, MP, HP | | As now |
+| Mana Shards | | In System text, always in full. The interface may say "shards" |
+| Citation, Directive, Edict, Testament | Mission | Secret Quest tiers, lowest to highest |
+| item | artifact | Anything the hunter holds or buys, as the System's `[Item: …]` says. "Gear" and "equipment" name the category |
+| MP, HP | | As now |
 | STR, VIT, AGI, PER, INT | | As now |
 
 British spelling throughout: Licence, defence, levelled. The source's lines are reused in British
@@ -379,4 +440,13 @@ skill as `Extraction`, and leave the button and the name alone.
   Daily and Secret Quests, the Player.
 - Colour has the meaning CLAUDE.md gives it.
 - No dashes inside a sentence in player-facing text. Use a full stop or a colon. A hyphen that
-  starts an effect line on a card is a list mark, not a dash.
+  starts an effect line on a card is a list mark, not a dash. A range is "Floors 1 to 5", never
+  "1–5".
+- An empty value shows as `-- --` anywhere: a missing licence number, a tile with nothing to show.
+  Something not yet discovered shows as `?`.
+- A stat, effect or reward is written name first, signed value after: `STR +1`, `Defence +10%`,
+  `Attack and magic +8%`, `Ability Points +3`, `Fatigue -20`. Several on one line join with ` · `.
+  This holds on cards, in System windows and everywhere gear and bonuses are listed
+  (`gear.coreText`, `gear.rollText`, `gear.bonusText`). The one place still open is a toast's
+  currency gain (`+40 Mana Shards.`), which is settled with the interface's voice.
+- A decision made while writing that will come up again is written here before the change ships.
