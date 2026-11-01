@@ -31,6 +31,17 @@ import type { Ev } from '@/core/combat';
 import { TOPICS } from '@/screens/Guide';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
+
+/** Every source file a player's text or a screen's markup can live in. */
+const srcFiles: string[] = [];
+const walk = (dir: string) => {
+  for (const f of readdirSync(dir)) {
+    const p = join(dir, f);
+    if (statSync(p).isDirectory()) walk(p);
+    else if (/\.tsx?$/.test(f)) srcFiles.push(p);
+  }
+};
+walk(join(__dirname, '..', 'src'));
 const systemBeats = BEATS.filter((b) => system.SYSTEM_KINDS.includes(b.kind));
 /** One of each Daily Quest, to read its goal and hint. */
 const quests = CONTRACT_KINDS.map(({ kind }) => ({ kind, need: 3, got: 0, family: 'Undead', at: 30, where: [] }) as unknown as Parameters<typeof contractText>[0]);
@@ -147,17 +158,8 @@ describe('the words', () => {
   });
 
   it('puts no dash or old word in a line a player reads', () => {
-    const files: string[] = [];
-    const walk = (dir: string) => {
-      for (const f of readdirSync(dir)) {
-        const p = join(dir, f);
-        if (statSync(p).isDirectory()) walk(p);
-        else if (/\.tsx?$/.test(f)) files.push(p);
-      }
-    };
-    walk(join(__dirname, '..', 'src'));
     const found: string[] = [];
-    for (const f of files) {
+    for (const f of srcFiles) {
       readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
         const t = line.trim();
         if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return;
@@ -221,6 +223,31 @@ describe('the System keeping score', () => {
     expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Favourable', 'Even', 'Unfavourable', 'Lethal']);
     expect(verdict(1).text).toBe('Safe');
     expect(verdict(0).text).toBe('Lethal');
+  });
+});
+
+describe('the look', () => {
+  it('heads every System frame with a header from the closed list, or a card name', () => {
+    const titles: string[] = [];
+    for (const f of srcFiles) {
+      const code = readFileSync(f, 'utf8');
+      for (const m of code.matchAll(/<SysFrame[^>]*\btitle="([^"]+)"/g)) titles.push(m[1]);
+      for (const m of code.matchAll(/title: (['`])(.*?)\1,\s*system:/g)) titles.push(m[2]);
+    }
+    expect(titles.length).toBeGreaterThanOrEqual(8);
+    const allowed = new RegExp(`^(${system.HEADERS.join('|')})$|^[A-Z][a-z]+: \\S`);
+    for (const t of titles) expect(t, t).toMatch(allowed);
+  });
+
+  it('draws the System frame only through its components', () => {
+    const found: string[] = [];
+    for (const f of srcFiles) {
+      if (/ui[\\/]frame\.tsx$|ui[\\/]overlays\.tsx$/.test(f)) continue;
+      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+        if (/class(Name)?=["{`][^"]*\bsys(frame|rail|head)\b/.test(line)) found.push(`${f}:${i + 1} draws the frame by hand`);
+      });
+    }
+    expect(found).toEqual([]);
   });
 });
 

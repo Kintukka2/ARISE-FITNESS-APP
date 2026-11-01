@@ -357,6 +357,11 @@ export function rollText(it: Item): string[] {
   return (d?.rolls ?? []).map((r, i) => `${r.stat === 'Defense' ? 'Defence' : r.stat} +${(it.rolls[i] ?? r.min).toFixed(r.pct ? 1 : 0)}${r.pct ? '%' : ''}`);
 }
 
+/** Each core stat as its own line, name first: `["INT", "INT +5.5"]`. The item card lists them one to a line. */
+export function coreLines(it: Item): [Stat, string][] {
+  return (Object.entries(coreOf(it)) as [Stat, number][]).map(([k, v]) => [k, `${k} +${(v ?? 0).toFixed(1).replace(/\.0$/, '')}`]);
+}
+
 export function coreText(it: Item): string {
-  return Object.entries(coreOf(it)).map(([k, v]) => `${k} +${(v ?? 0).toFixed(1).replace(/\.0$/, '')}`).join(' · ');
+  return coreLines(it).map(([, t]) => t).join(' · ');
 }

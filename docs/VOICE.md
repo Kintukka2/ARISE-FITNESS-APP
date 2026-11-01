@@ -1,8 +1,8 @@
 # ARISE — voice
 
-How ARISE speaks to the player. Every word a player reads follows this file: System windows,
-Valcorde, buttons, labels, the Guide, item and enemy text. Read it before writing or changing any
-of them.
+How ARISE speaks to the player, and how each speaker is drawn. Every word a player reads follows
+this file: System windows, Valcorde, buttons, labels, the Guide, item and enemy text. So does every
+frame they sit in ([The look](#the-look)). Read it before writing or changing any of them.
 
 Every speaker is written: the System, Valcorde, the interface and the world.
 
@@ -48,9 +48,48 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
 | Speaker labels on voice boxes and tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
+| The Status sheet, Skills, Inventory, item and Shadow cards | The System | `screens/Profile.tsx`, `screens/Shadows.tsx` |
 
 Ascension rule text belongs to the interface (the Gates screen, the Guide). When the System announces
 a new level it names the level and what it opened, never the rule.
+
+## The look
+
+The look follows the speaker, as the words do. A surface is drawn in the frame of the one speaker
+the table above gives it, so a player can tell who is talking before reading a word.
+
+| Speaker | Frame |
+|---|---|
+| **The System** | The anime's window, below. Every System window, and every System surface on a screen: the Status sheet, Skills, Inventory, item and Shadow cards, Quest Info, the notices after a run |
+| **Valcorde** | His own window: a plain frame in his blue, his portrait and his name |
+| **The interface** | The app's panels, tiles and buttons: rounded corners, corner brackets, Rajdhani in capitals |
+| **Other voices** | The red `danger` frame. Nothing else uses it |
+
+### The System's frame
+
+Built only with `src/ui/frame.tsx` (`SysFrame`, `SysHead`, `Field`), a sheet opened with `system`, or
+`sys()` with a System kind. Never drawn by hand.
+
+- **The colour lives on the frame.** The frame is lit along the top and the bottom, with a raised
+  plate at the centre and thin rails down the sides. Cyan for the System, gold for advancement,
+  orange for Gates, violet for Shadows, by CLAUDE.md's rules. Gear and potions are the System's
+  own, so they take cyan.
+- **The glass is dark and scratched**, ruled with one pale hairline. Nothing inside it takes
+  colour except by [Colour and emphasis](#colour-and-emphasis).
+- **Every element sits in its own hairline box:** the icon, the header, each field, each stat, each
+  button, each tab. Corners are square; nothing inside the frame is rounded.
+- **The icon box** holds the circled `!` on a window, and the item's or the Shadow's own icon on a
+  card. Status, Skills and Inventory carry their header alone, as the source does.
+- **The header box** holds a header word in capitals (`NOTIFICATION`, `STATUS`), or a card's name
+  with its type set small in front of it (`ITEM:` Warden Plate). `SysHead` reads which from the
+  title: `Item: Warden Plate` is a card.
+- **The type is Montserrat** (`--font-sys`), the geometric sans the anime sets its windows in:
+  white, with a soft glow of the frame's colour. A bracketed name is set bold and italic and glows
+  brighter. No other speaker uses Montserrat.
+- **A field** sets its label small, in capitals, above its value: `ACQUISITION DIFFICULTY:` /
+  `S-Rank`.
+- **A button** is a hairline box with its label as written, not in capitals. The act the window
+  offers is lit; the way out is not.
 
 ## The System
 
@@ -141,8 +180,9 @@ for advancement, orange for Gates. The text inside follows these:
   only "penalty zone" is red.
 - **A failure or refusal** reddens the whole message and keeps the frame of its subject.
 
-In markup today: `.warn` is red, `.grant` is green, `<strong>` lifts a name. The visual pass may add
-a class for bracketed names.
+In markup: `.warn` is red, `.grant` is green, and `<strong>` is a name, which the System's frame sets
+bold and italic. A gain is green in every System frame, whatever the frame's colour: a promotion in
+a violet frame still reads `Bound Rank → Sworn Rank` in green.
 
 ### Brackets
 
@@ -401,27 +441,27 @@ explains how it ran the Gate; the Guide does.
 
 ### Screens
 
-The System's recurring screens, laid out the way the source lays them out. Every field reads the
-engine. Each element of a screen sits in its own box: the icon, the header, each row, each button.
-The item card, Status and Inventory layouts land with the visual pass; until then the words on
-those screens follow these layouts, and the Quest Info, Purchase and Change windows already do.
+The System's recurring screens, laid out the way the source lays them out, in the frame from
+[The look](#the-look). Every field reads the engine.
 
-**Item card.** The gear sheet.
+**Item card.** The gear sheet (`openItem`).
 
 ```
 [icon]  ITEM: {name}
-        ACQUISITION DIFFICULTY: {rank}-rank      CATEGORY: {slot}
-        RARITY: {rarity}                         SET: {set}
+ACQUISITION DIFFICULTY: {rank}-Rank      CATEGORY: {slot}
+RARITY: {rarity}                         QUALITY: {quality}
+SCORE: {score}                           SET: {set, or -- --}
 {Card text.}
-{Core}         INT +3   PER +1
-{Property}     Status Chance +4%
-Set '{set}' (2/3): {bonus}
-Quality: {quality}
+[STR icon]  STR +3
+[+]         Status Chance +4%
+{Upgrade, the set and its bonuses, Equip, Recycle}
 ```
 Source: `ITEM: Castle Door Key` / `ACQUISITION DIFFICULTY A-rank` / `CATEGORY Key`, a plain
 description, then green stat lines with icons (`AGI +20`, `PER +20`, `Physical Damage -20%`).
-The rank is the acquisition difficulty and the slot is the category; both already exist on every
-design. Stat lines are green. A set bonus is a condition and an effect.
+The rank is the acquisition difficulty and the slot is the category. Each stat takes a line of its
+own, in green, with its stat's icon; a property takes a plus. ARISE adds rarity, quality, score and
+set as fields, because a hunter compares pieces by them. The item's icon fills the icon box, framed
+by its grade. The same card holds a Shadow (`Shadow: {name}`, its rank plate in the icon box).
 
 **Purchase.** The Exchange and potions.
 
@@ -454,24 +494,31 @@ ARISE class, the first time: `Class assigned.` / `[Class: Brawler]` / `STR +2`. 
 differently can move a hunter sideways to another line, not only up.
 ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
 
-**Status.** The hunter's sheet.
+**Status.** The hunter's sheet, at the top of Profile.
 
 ```
-STATUS
-NAME: {name}          LEVEL: {level}
-CLASS: {class}        FATIGUE: {fatigue}
-HP: {hp}
-MP: {mp}
-STR: {n}   VIT: {n}
-AGI: {n}   INT: {n}
-PER: {n}
-                      ABILITY POINTS: {n}
+                 STATUS                  [dossier]
+NAME: {name}                LEVEL: {level}
+CLASS: {class}              RANK: {rank}
+HP       {hp}/{max}         [potion]
+MP       {mp}/{max}         [potion]
+FTG      {fatigue}/100      [potion]
+STR {n}   VIT {n}
+AGI {n}   INT {n}
+PER {n}   ABILITY POINTS: {n}
 ```
 Source: `NAME`, `LEVEL`, `JOB`, `FATIGUE`, `TITLE`, `HP`, `MP`, the five stats, `REMAINING POINTS`.
-ARISE has no titles, so the row is left out rather than shown empty. `JOB` is `CLASS`.
+`JOB` is `CLASS`. ARISE has no titles, so `RANK` takes that place. Fatigue sits with HP and MP as a
+bar, because it falls over time and a potion lowers it. Tapping the class opens Skills.
+
+**Skills.** The class card (`[Class: {name}]`, its text, its stat bonus), then each rank's choice
+of skill or passive, the kept one lit in gold. The frame is gold, because a choice here is
+advancement.
 
 **Inventory.** A grid of icons under tabs, with the count of what is held.
-Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`.
+Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`. ARISE holds only gear, so the tabs are
+`All · {count}` and the slots. Each square is the item's icon in its grade's frame, its score, and
+`WORN` when it is worn; the item card holds the rest.
 
 ## Valcorde
 

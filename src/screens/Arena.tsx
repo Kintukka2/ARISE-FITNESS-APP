@@ -30,6 +30,7 @@ import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { ContractsWindow } from '@/ui/contracts';
+import { SysFrame } from '@/ui/frame';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
@@ -553,8 +554,8 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           const out = reach[i];
           const odds = Math.round(shadows.holdChance(s) * 100);
           return (
-            <section key={l.enemyId} class={`extract ${out ? `is-${out}` : ''}`}>
-              <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
+            <SysFrame key={l.enemyId} title="Notification" kind="shadow" class={`extract ${out ? `is-${out}` : ''}`}>
+              <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
               {!out && <>
                 <p>The mana of <strong>[{e.name}]</strong> lingers.</p>
                 <p class="muted">Extraction cost: <b>{l.cost} MP</b> ({v.mp} MP held)<br />Success rate: <b>{odds}%</b></p>
@@ -568,23 +569,23 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               </>}
               {out === 'bound' && <><p class="grant">Extraction successful.</p><p><strong>[{e.shadow}]</strong> has joined your army.</p></>}
               {out === 'lost' && <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>}
-            </section>
+            </SysFrame>
           );
         })}
         {r.chosen && (
-          <section class="extract is-bound ascended">
+          <SysFrame title="Notification" kind="gates" class="extract is-bound">
             <p>You have defeated<br /><span class="warn">[{r.chosen.name}]</span>.</p>
             {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="grow">You have acquired <strong>[Item: {gear.defOf(r.chosen.item)?.name}]</strong>.<br /><span class="muted">Quality: Perfect +{r.chosen.level}</span></p></div>
               : <p>Mana Shards <span class="grant">+{r.chosen.shards}</span></p>}
             <p class="muted">[{r.chosen.name}] will return to the Gates.</p>
-          </section>
+          </SysFrame>
         )}
         {r.ascended !== null && (
-          <section class="extract is-bound ascended">
+          <SysFrame title="Notification" kind="gold" class="extract is-bound">
             <p class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</p>
             <p><strong>[Ascension {r.ascended}: {ascension.levelInfo(r.ascended).name}]</strong></p>
             <p class="muted">Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span><br />Marks <span class="grant">+1</span></p>
-          </section>
+          </SysFrame>
         )}
         {r.promoted.map((p) => {
           const sh = s.shadows.army.find((x) => x.id === p.id);
@@ -592,12 +593,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           if (!sh || !e) return null;
           const second = shadows.rankIndex(sh) === shadows.SECOND_AT ? shadows.secondOf(e) : null;
           return (
-            <section key={p.id} class="extract is-bound promoted">
-              <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
+            <SysFrame key={p.id} title="Notification" kind="shadow" class="extract is-bound">
+              <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
               <p><strong>[{e.shadow}]</strong> has been promoted.</p>
               <p class="grant">{shadows.SHADOW_RANKS[shadows.rankIndex(sh) - 1]?.name ?? 'Bound'} Rank → {p.rank} Rank</p>
               <p class="muted">Kills: {sh.kills}<br />Growth limit: +{Math.round(shadows.rankOf(sh).cap * 100)}%{second ? <><br />Skill learned: <strong>[{second}]</strong></> : null}</p>
-            </section>
+            </SysFrame>
           );
         })}
         {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (

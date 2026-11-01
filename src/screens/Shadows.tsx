@@ -7,6 +7,7 @@ import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Chip, Empty, KV, Panel, RankPlate, Section, Tile, Voice } from '@/ui/components';
+import { Field } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { openSheet, toast } from '@/ui/overlays';
 import { useEffect } from 'preact/hooks';
@@ -58,8 +59,12 @@ export function Shadows() {
 }
 
 function openShadow(id: string) {
+  const at = store.get().shadows.army.find((x) => x.id === id);
+  const was = at && enemyById(at.enemyId);
   openSheet({
-    title: 'Shadow', tone: 'arcane', render: () => {
+    title: `Shadow: ${was?.shadow ?? 'Unknown'}`,
+    system: { icon: was ? <RankPlate rank={was.rank} size={44} /> : null, kind: 'shadow' },
+    render: () => {
       const s = store.get();
       const sh = s.shadows.army.find((x) => x.id === id);
       if (!sh) return <Empty>That Shadow is gone.</Empty>;
@@ -67,9 +72,13 @@ function openShadow(id: string) {
       const st = shadows.statsOf(sh);
       return (
         <div class="stack">
-          <div class="row"><RankPlate rank={e.rank} size={44} /><div><b class="big">{e.shadow}</b><small class="muted">{e.rank}-Rank {e.family} · {e.role}. Was a {e.name}.</small></div></div>
+          <div class="sysfields">
+            <Field k="Rank" v={shadows.rankOf(sh).name} />
+            <Field k="Grade" v={`${e.rank}-Rank`} />
+            <Field k="Category" v={`${e.family} · ${e.role}`} />
+            <Field k="Was" v={e.name} />
+          </div>
           <div class="tiles tiles--5">{(['STR', 'VIT', 'AGI', 'INT', 'PER'] as const).map((k) => <Tile key={k} label={k} value={st[k]} />)}</div>
-          <KV k="Rank" v={shadows.rankOf(sh).name} />
           <KV k="Growth" v={`+${Math.round(shadows.growth(sh) * 100)}% from kills, of +${Math.round(shadows.rankOf(sh).cap * 100)}% at this rank`} />
           {shadows.nextRank(sh) && <p class="hint">{shadows.nextRank(sh)!.kills - sh.kills} more kills to {shadows.nextRank(sh)!.name}, which lifts its growth to +{Math.round(shadows.nextRank(sh)!.cap * 100)}%{shadows.rankIndex(sh) + 1 === shadows.SECOND_AT && shadows.secondOf(e) ? `, and it remembers ${shadows.secondOf(e)}` : ''}.</p>}
           <Section title="Skills">
@@ -91,7 +100,7 @@ function openShadow(id: string) {
           </Section>
           {e.passive && <Section title="Passive"><KV k={e.passive} v={passiveText(e.passive)} /></Section>}
           {(e.imm.length > 0 || e.res.length > 0) && <div class="chips">{e.imm.map((x) => <Chip key={x} tone="verdant">Immune: {x}</Chip>)}{e.res.map((x) => <Chip key={x}>Resists: {x}</Chip>)}</div>}
-          <div class="tiles"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
+          <div class="tiles tiles--3"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
         </div>
       );
     },

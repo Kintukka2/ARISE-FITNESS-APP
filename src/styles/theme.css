@@ -16,7 +16,9 @@
 @font-face { font-family: 'Rajdhani'; font-weight: 600; font-display: swap; src: url(../assets/fonts/rajdhani-600.woff2) format('woff2'); }
 @font-face { font-family: 'Rajdhani'; font-weight: 700; font-display: swap; src: url(../assets/fonts/rajdhani-700.woff2) format('woff2'); }
 @font-face { font-family: 'JetBrains Mono'; font-weight: 400 700; font-display: swap; src: url(../assets/fonts/jetbrains-mono.woff2) format('woff2'); }
-@font-face { font-family: 'Trueno Round'; font-weight: 700; font-display: block; src: url(../assets/fonts/trueno-round-700.woff2) format('woff2'); }
+/* Montserrat is the System's type: the geometric sans the anime sets its windows in. Nothing else uses it. */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(../assets/fonts/montserrat.woff2) format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-style: italic; font-weight: 100 900; font-display: swap; src: url(../assets/fonts/montserrat-italic.woff2) format('woff2'); }
 
 :root {
   color-scheme: dark;
@@ -48,6 +50,11 @@
   --ink-2: #a9c4e2;
   --ink-3: #6d87a6;
 
+  /* The System's window: white type and pale hairlines on dark glass. Its colour lives on the frame. */
+  --sys-ink: #eaf6ff;
+  --sys-hair: rgba(214, 236, 255, 0.5);
+  --sys-hair-hot: rgba(236, 248, 255, 0.9);
+
   --rank-E: #8a99b0; --rank-D: #4fd6ff; --rank-C: #48f5a8; --rank-B: #9b6bff; --rank-A: #ffcb5c; --rank-S: #ff4d6d; --rank-N: #ffffff;
 
   --accent: var(--mana);
@@ -58,7 +65,7 @@
   --r-lg: 14px;
   --font: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-num: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-display: 'Trueno Round', 'Rajdhani', system-ui, sans-serif;
+  --font-sys: 'Montserrat', 'Rajdhani', system-ui, sans-serif;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --topbar-h: 64px;
@@ -144,7 +151,7 @@ strong { color: var(--ink); font-weight: 700; }
 .fx-flash.is-shadow { background: radial-gradient(60% 50% at 50% 50%, var(--arcane), transparent 70%); }
 @keyframes flash { 12% { opacity: 0.5; } 100% { opacity: 0; } }
 
-/* ------------------------------------------------------------------ panel: the System's frame */
+/* ------------------------------------------------------------------ panel: the interface's frame (the System's is .sysframe in ui.css) */
 
 .panel {
   position: relative;
