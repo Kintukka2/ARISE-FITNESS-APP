@@ -276,6 +276,8 @@
 .fold { border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); }
 .fold__head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.86rem; }
 .fold__head span:first-child { flex: 1; }
+.guide__list { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); font-size: 0.9rem; }
+.guide__list li::marker { color: var(--accent); }
 .fold__right { color: var(--ink-3); text-transform: none; letter-spacing: 0; }
 .fold__chev { transition: transform 200ms; color: var(--mana); }
 .fold.is-open .fold__chev { transform: rotate(90deg); }

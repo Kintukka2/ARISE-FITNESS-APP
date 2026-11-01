@@ -7,25 +7,28 @@
  */
 import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
-import { BLOCK, SPIRE_OPENS } from './spire';
+import { SPIRE_OPENS } from './spire';
 import { ASCENSION_TOP } from './ascension';
 import { SLOTS } from './shadows';
 import { arrival, change, counter, event, foe, tag, unlock } from '@/ui/system';
 
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
-  'Sit. This takes four minutes and most of it is paperwork.',
-  'You registered an Awakening. The scan picked it up this morning. It is faint. Traces of mana, barely over the threshold, but over it.',
-  'Measured rank: E. Lowest classification the Association issues.',
-  'Before you ask: it does not go up. An Awakening fixes your rank for life. Anyone selling you otherwise is selling you something.',
-  'What it does get you is a licence. Official status, legal entry to a Gate, and access to Association facilities.',
+  'Sit down. This takes four minutes, and three of them are paperwork.',
+  'The scan picked up your Awakening this morning. It’s faint. Barely over the line, but over it.',
+  'Measured rank: E. That’s the lowest grade the Association issues.',
+  'Before you ask, it doesn’t go up. An Awakening fixes your rank for life. I’ve watched people spend a fortune trying to change that.',
+  'What it does get you is a licence. You can walk into a Gate legally, and the Association patches you up afterwards.',
 ];
 
+/** Valcorde asks for the name on the licence, after the assessment. */
+export const NAME_PROMPT = 'Right. What name goes on the licence? Spell it properly. The Association doesn’t do reprints.';
+
 export const HANDOVER = [
-  'There. You are a hunter, on paper. The grey kit on the counter is yours. It is not much, and it is not meant to be.',
-  'Your power is fixed. Your competence is not. Only one of the two is decided for you.',
-  'I run Hunter Training. The Association keeps one Gate shut for first-timers, and I walk every new licence through it once.',
-  'Nothing in there is dangerous. Go in with me, watch what the party does, and read the brief before you read anything else.',
+  'There. You’re a hunter, on paper. The grey kit on the counter is yours. It’s not much. It’s not meant to be.',
+  'I’m Valcorde. I run Hunter Training. C-Rank, thirty years in, and not retired, whatever the Association would prefer.',
+  'There’s one Gate the Association keeps shut for first-timers. I take every new licence through it once.',
+  'Nothing in there gets past me. Read the brief first, then we go in, when you’re ready.',
 ];
 
 export type WindowKind = 'system' | 'coach' | 'danger' | 'gold' | 'gates' | 'shadow';
@@ -52,16 +55,16 @@ export const BEATS: Beat[] = [
   {
     id: 'lv3', when: (s) => s.gates.clears >= 3, kind: 'coach', title: 'Valcorde',
     lines: [
-      'Three Gates and you are still walking. Good. Here is the part the brochure leaves out.',
-      'The board will always have something on it. Your body will not. Fatigue is what kills hunters at your grade. Not the boss: the fourth Gate of the afternoon.',
+      'Three Gates, and you’re still walking. Good.',
+      'Here’s what the Association’s leaflet leaves out. Most of the hunters I’ve lost at your grade went into one more Gate than they had in them. Know when to stop for the day.',
     ],
   },
   {
     id: 'spire_open', when: (s) => s.gates.clears >= SPIRE_OPENS, kind: 'coach', title: 'Valcorde',
     lines: [
-      `${SPIRE_OPENS} Gates cleared. That is enough that I can tell you about the one that does not close.`,
-      `The Pale Spire. It opened over the old reservoir before either of us held a licence, and every boss killed inside it opens another floor above. You climb it ${BLOCK} floors at a time, with a rest before each boss.`,
-      'It rearranges itself every Monday, and everyone starts again from their own grade’s floors. The Association pays at the end of each week for how high you got. You will find it on the Gates screen.',
+      `${SPIRE_OPENS} Gates cleared. Then you’re ready to hear about the one that never closes.`,
+      'The Pale Spire. It opened over the old reservoir before I had a licence, and every boss killed inside opens another floor above it. I got as far as the thirties, once.',
+      'It rearranges itself every Monday. The Association pays at the end of the week for how high you got. It’s on the Gates screen when you want it.',
     ],
   },
   {
@@ -71,9 +74,9 @@ export const BEATS: Beat[] = [
   {
     id: 'first_defeat', when: (s) => s.gates.fails >= 1, kind: 'coach', title: 'Valcorde',
     lines: [
-      'The party could not hold. The ones who could still walk dragged you out.',
-      'The medics will not let you back into a Gate until they are satisfied. That is not a punishment. It is the reason they still have hunters.',
-      'Read the assessment next time. It was not lying.',
+      'The party couldn’t hold. The ones still standing dragged you out.',
+      'The medics won’t let you back in until they’re satisfied. Let them.',
+      'I’ve been carried out too. More than once.',
     ],
   },
   {
@@ -102,12 +105,19 @@ export const BEATS: Beat[] = [
     lines: ['Reclassification approved.', `Rank: ${change('D', 'C')}`],
   },
   {
+    id: 'valcorde_grade', when: (s) => s.hunter.level >= 20, kind: 'coach', title: 'Valcorde',
+    lines: [
+      'C-Rank. That’s my grade. It took me eleven years.',
+      'I’m not going to ask how you’re doing it. Whatever it is, keep it to yourself. People talk.',
+    ],
+  },
+  {
     id: 'valcorde_past', when: (s) => s.hunter.level >= 25, kind: 'coach', title: 'Valcorde',
     lines: [
-      'You are past the point where most people stop, so you get the real version.',
-      'I did not retire. My last Gate collapsed with nine of us inside and I was the only one still moving at hour six.',
-      'Not the strongest. Not the best kitted. The one who had paced himself, and had something left when the walls came in.',
-      'That is the whole trade. Everything else is decoration.',
+      'You get the real version now.',
+      'Twenty years ago I led ten hunters into a Gate posted as D-Rank. It wasn’t. I didn’t wait for the Association to reassess it. The pay was good and I was sure.',
+      'At hour six I was the only one still moving. I carried three of them out.',
+      'That’s the knee. I’ve never let the healers fix it. And it’s why I don’t lead raids anymore.',
     ],
   },
   {
@@ -146,7 +156,7 @@ export const BEATS: Beat[] = [
       `Rank: ${change('A', 'S')}`,
       `${tag('The Hollow Throne')} has opened. It does not close at midnight.`,
       `You have received a message from ${tag('Ryn Valcorde')}.`,
-      '“Do not go in tired. Go in with something left.”',
+      '“Don’t go in tired. Go in with something left.”',
     ],
   },
   {

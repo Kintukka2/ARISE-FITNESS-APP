@@ -27,11 +27,11 @@ export function Shadows() {
           <Tile label="Bound" value={s.shadows.army.length} />
           <Tile label="Deployed" value={`${squad.length}/${slots}`} />
         </div>
-        <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Quests` : ''}. A Shadow grows with every kill it lands, as far as its rank allows, and enough kills promote it.</small>
+        <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Quests` : ''}.</small>
         {squad.length > 0 && <Btn kind="ghost" block onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall Shadows ({squad.length})</Btn>}
       </Panel>
       <Section title="Bound Shadows" right={`${s.shadows.army.length} commanded`}>
-        {!army.length && <Empty>No Shadows have followed you home yet. Keep clearing Gates. An extraction is rare, and rarer still if you are out of mana when it offers.</Empty>}
+        {!army.length && <Empty>No Shadows yet.</Empty>}
         <ul class="army">
           {army.map((sh) => {
             const e = enemyById(sh.enemyId)!;
@@ -62,7 +62,7 @@ function openShadow(id: string) {
     title: 'Shadow', tone: 'arcane', render: () => {
       const s = store.get();
       const sh = s.shadows.army.find((x) => x.id === id);
-      if (!sh) return <Empty>Gone.</Empty>;
+      if (!sh) return <Empty>That Shadow is gone.</Empty>;
       const e = enemyById(sh.enemyId)!;
       const st = shadows.statsOf(sh);
       return (

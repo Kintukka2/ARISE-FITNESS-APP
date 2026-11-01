@@ -8,7 +8,7 @@ import { sfx } from '@/audio/audio';
 import { regNo } from '@/core/gates';
 import { issueKit } from '@/core/gear';
 import * as story from '@/core/story';
-import { ASSESSMENT, HANDOVER } from '@/data/narrative';
+import { ASSESSMENT, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn } from '@/ui/components';
@@ -99,7 +99,7 @@ export function Awakening() {
   if (step === 'assess' || step === 'name') {
     return (
       <main class="awaken">
-        <Coach hot lines={[...ASSESSMENT, 'Right. What name am I putting on this thing? It goes on the licence, and the Association does not do reprints.']}
+        <Coach hot lines={[...ASSESSMENT, NAME_PROMPT]}
           onLine={(i) => { if (i === 2) { setShowCard(true); sfx.ping(); flash(); } }}
           onDone={() => setStep('name')} />
         {showCard && <Licence />}

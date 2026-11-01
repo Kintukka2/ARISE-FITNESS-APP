@@ -20,6 +20,7 @@ import { CONTRACT_KINDS } from '@/data/contracts';
 import { ISSUED } from '@/data/equipment';
 import { ASSESSMENT, BEATS, HANDOVER } from '@/data/narrative';
 import * as system from '@/ui/system';
+import { TOPICS } from '@/screens/Guide';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
 const systemBeats = BEATS.filter((b) => system.SYSTEM_KINDS.includes(b.kind));
@@ -67,6 +68,24 @@ describe('Valcorde', () => {
   it('never mentions the System or anything only it shows', () => {
     for (const l of coachLines) expect(l, l).not.toMatch(/System|Player|Ability Point|Daily Quest|Secret Quest/);
   });
+
+  it('talks like a person: always contracts', () => {
+    const stiff = /\b(do not|does not|did not|is not|are not|was not|were not|will not|would not|cannot|could not|have not|has not|had not|I am|I have|I will|you are|you have|you will|it is|that is|there is|here is|we are|they are)\b(?![,.;:!?])/i;
+    for (const l of coachLines) expect(l, l).not.toMatch(stiff);
+  });
+
+  it('is C-Rank, not an elite', () => {
+    expect(coachLines.some((l) => l.includes('C-Rank'))).toBe(true);
+  });
+});
+
+describe('the interface', () => {
+  it('keeps the Guide to one or two short sentences a line, with no contractions', () => {
+    const long = TOPICS.flatMap((t) => t.lines).filter((l) => l.split(/[.!?]\s+(?=[A-Z0-9])/).length > 2);
+    const contracted = TOPICS.flatMap((t) => t.lines).filter((l) => /\b\w+(’|')(t|re|ve|ll|d|m)\b/.test(l));
+    expect(long).toEqual([]);
+    expect(contracted).toEqual([]);
+  });
 });
 
 describe('the words', () => {
@@ -107,6 +126,8 @@ describe('the words', () => {
         const code = line.replace(/\s\/\/\s.*$/, '');
         if (/[—–]/.test(code)) found.push(`${f}:${i + 1} dash`);
         if (/(?<!first_)\b[Aa]rtifacts?\b|Secret Missions?\b/.test(code)) found.push(`${f}:${i + 1} old word`);
+        if (/toast\(\s*[`'"]\+|\+\$\{[^}]*\}\s*(Mana Shards|shards)/.test(code)) found.push(`${f}:${i + 1} gain written value first`);
+        for (const m of code.matchAll(/<Empty(?:\s[^>]*)?>([^<{]+)<\/Empty>/g)) if (m[1].length > 40) found.push(`${f}:${i + 1} empty state says more than the fact`);
       });
     }
     expect(found).toEqual([]);

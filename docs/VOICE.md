@@ -4,8 +4,8 @@ How ARISE speaks to the player. Every word a player reads follows this file: Sys
 Valcorde, buttons, labels, the Guide, item and enemy text. Read it before writing or changing any
 of them.
 
-The System is written. Valcorde, the interface and the world's own text are still to come; until
-they are, keep to the existing rules at the end of this file.
+The System, Valcorde and the interface are written. The world's own text (enemy and Gate
+descriptions) is still to come; until it is, keep to the rules at the end of this file.
 
 ## Speakers
 
@@ -24,6 +24,7 @@ Each speaker sounds like itself. A line that would fit another speaker needs rew
 - **Teaching belongs to the interface.** A tutorial window is the app speaking (kind `app`, a plain
   title such as "Your Turn"), and the Guide holds every rule. Neither is a System window.
 - **Valcorde teaches only what he can know:** Gates, ranks, the Association, fatigue, his own past.
+  He gives judgement, never rules; see [Valcorde](#valcorde).
 
 ## The System
 
@@ -77,6 +78,8 @@ and no dashes.
 - **A payout is reported once, in the window that pays it.** The level-up window's Ability Points
   already include the rank-up bonus, so a rank window never repeats them. Daily Quest pay is shown
   in the run's results, where `raid.finish` settled it.
+- **A character may react to what the System announced**, without repeating its numbers: the
+  System reports C-Rank, then Valcorde says it took him eleven years.
 - **Order follows the engine:** the Spire's week, level-ups, Secret Quests and class changes, then
   story beats (`rewardChain` in `src/app/flow.ts`). A beat never announces what an earlier window
   already did.
@@ -406,6 +409,138 @@ ARISE has no titles, so the row is left out rather than shown empty. `JOB` is `C
 **Inventory.** A grid of icons under tabs, with the count of what is held.
 Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`.
 
+## Valcorde
+
+### Who he is
+
+Ryn Valcorde, sixty-one. **C-Rank**: a working hunter's grade, not an elite one. S-Ranks don't run
+training courses. Thirty years in the Gates, all of them independent. He never joined a guild, and
+the hunters who know him say one would have taken him if he'd been twenty years younger.
+
+He boxed before he Awakened, and the Awakening made him a Warden: built to stand between people and
+harm, not to throw the punch. He decided that meant something.
+
+Twenty years ago he led ten hunters into a Gate posted as D-Rank. It wasn't. He didn't wait for the
+Association to reassess it, because the pay was good and he was sure. At hour six he was the only
+one still moving, and he carried three of them out. He kept the ruined knee from that day. The
+healers have offered to fix it and he says no. He doesn't lead raids anymore. He won't retire
+either, so the Association gave him Hunter Training, and he spends what he has left keeping new
+hunters alive.
+
+He is modelled on Song Chi-Yul from the source: the veteran mid-rank hunter, the leader's guilt kept
+as a wound, the warmth under the sarcasm, the choice he never forces, the friend who notices and
+doesn't pry. None of Song Chi-Yul's own story is used: no kumdo, no lost arm, no temple, no named
+people.
+
+### How he is
+
+- **Lively and sarcastic, warm underneath.** He jokes about himself, the Association and the
+  situation, never about the hunter.
+- **He cares, and it shows in what he does:** he signs you in, he stands in front, he tells you to
+  let the medics do their job.
+- **He prefers a plan** (read the brief) and knows hunters go in anyway.
+- **He never forces.** He gives his judgement and leaves the call: "Your call, but I'd rest before
+  the next one."
+- **He carries his failure without self-pity.** He tells it once, plainly, when you've earned it.
+- **He notices the hunter changing faster than anyone should, and chooses not to ask.** He protects
+  them: "Keep it to yourself. People talk." He never learns about the System.
+- **As the hunter passes his grade, he stops teaching and starts watching**, proud and a little
+  worried.
+
+### How he speaks
+
+1. **Contractions, always.** He talks like a person: "It doesn't go up." The System never
+   contracts, and the contrast is part of how a player tells them apart.
+2. **Short spoken sentences, plain words.** Two or three lines a window. No speeches.
+3. **Judgement, not rules.** He says what matters and what gets people killed. Numbers and mechanics
+   belong to the Guide and the interface. "Watch the bottom bar. Fatigue. It builds with every
+   Gate, and it's what kills hunters at your grade."
+4. **Concrete over clever.** A detail from his own past beats a maxim: "I've been carried out too.
+   More than once."
+5. **Humour is a passing aside inside a line** ("three of them are paperwork"), never the last word
+   of a scene.
+6. **He says "you".** No pet names.
+
+### He never
+
+- mentions the System, its windows, Ability Points, Daily or Secret Quests, or the Player.
+- recites rules, numbers or percentages the Guide holds.
+- ends on an aphorism, a "not X but Y", or a triad ("Not the strongest. Not the best kitted.").
+- orders the hunter, except to get them out of danger.
+- explains the hunter's growth. He sees it and leaves it alone.
+
+### His lines
+
+| Was | Is |
+|---|---|
+| Before you ask: it does not go up. An Awakening fixes your rank for life. Anyone selling you otherwise is selling you something. | Before you ask, it doesn't go up. An Awakening fixes your rank for life. I've watched people spend a fortune trying to change that. |
+| Your power is fixed. Your competence is not. Only one of the two is decided for you. | I'm Valcorde. I run Hunter Training. C-Rank, thirty years in, and not retired, whatever the Association would prefer. |
+| Health and mana carry between runs and come back on their own, about five per cent an hour. Fatigue builds with every Gate and drags everything you are worth down until it fades. | Watch the bottom bar. Fatigue. It builds with every Gate, and it's what kills hunters at your grade. |
+| Read the assessment next time. It was not lying. | I've been carried out too. More than once. |
+| Not the strongest. Not the best kitted. The one who had paced himself, and had something left when the walls came in. That is the whole trade. Everything else is decoration. | At hour six I was the only one still moving. I carried three of them out. That's the knee. I've never let the healers fix it. And it's why I don't lead raids anymore. |
+
+### His arc
+
+| When | What he says |
+|---|---|
+| The Awakening Assessment and the handover | He assesses you, licenses you, introduces himself, and takes you through the Practice Gate |
+| 3 Gates cleared | When to stop for the day |
+| The Pale Spire opens | What it is, and how far he once got |
+| First time carried out | He's been there |
+| C-Rank, his grade | It took him eleven years. He won't ask how you did it |
+| Level 25 | The real version of his last raid |
+| S-Rank | One message, delivered by the System: "Don't go in tired. Go in with something left." |
+
+In the Practice Gate he fights in your party at C-Rank, holding back (`INSTRUCTOR_RESTRAINT` in
+`core/gates.ts`) so the kills are yours.
+
+## The interface
+
+The app itself: buttons, labels, tabs, hints, toasts, empty states, results, the brief, tutorials,
+settings and the Guide. It has no character. It says what is true and what to do, plainly, and gets
+out of the way. The art, the System and Valcorde carry the mood.
+
+### Rules
+
+1. **Plain facts.** A result says what changed: "Goblin Embercamp is closed. A new D-Rank Gate has
+   opened on the board." No atmosphere, no commentary.
+2. **An empty state states the fact and stops:** "No Shadows yet." "Nothing logged yet." How to
+   fill it is the Guide's job.
+3. **Gains are written name first, like the System:** "Mana Shards +40", "Field Potion · Satchel
+   2/3", "Health Potion · HP +120".
+4. **A hint says what to do in one line:** "Tap a step that glows." A rule longer than a line goes
+   in the Guide.
+5. **A refusal or limit is a fact:** "Your licence does not cover C-Rank yet." "Locked out until you
+   recover." No character speaks in a toast.
+6. **Buttons name the act:** "Enter The Gate", "Recycle", "Buy". Title Case in the code; the style
+   sets the capitals on screen.
+7. **The interface may name the System as a thing:** "The System ran this Gate 24 times."
+8. **A tutorial is the interface teaching**, short and direct: "Tap a foe to aim at it, then act."
+9. **No contractions.** The interface is as plain as the System, without its stiffness; Valcorde is
+   the only one who contracts.
+
+| Was | Is |
+|---|---|
+| Goblin Embercamp cleared. The Gate begins to close, and another of its grade opens on the board. | Goblin Embercamp is closed. A new D-Rank Gate has opened on the board. |
+| The party was carried out. The Association medics will not let you back in for a while. | The party was carried out. You are locked out of Gates for 12 hours. |
+| No Shadows have followed you home yet. Keep clearing Gates. An extraction is rare, and rarer still if you are out of mana when it offers. | No Shadows yet. |
+| `+40 Mana Shards.` | `Mana Shards +40` |
+| Licence issued. The Association reads your real grade now. | Licence issued. Gates above D-Rank are open. |
+| Nobody who has come back out has said. | `?` |
+
+### The Guide
+
+One fact per line, numbers up front, scannable like a manual. Each topic is a list (`TOPICS` in
+`screens/Guide.tsx`). Every number reads the engine's constants. A line that explains two things is
+two lines.
+
+```
+LEVELS, RANKS AND STATS
+- A clear pays experience by grade: 6 at E to 50 at S.
+- The first clear of each Gate pays double.
+- Withdrawing pays a share of what you cleared. Being carried out pays a little.
+```
+
 ## Words
 
 | Say | Not | Note |
@@ -446,7 +581,6 @@ skill as `Extraction`, and leave the button and the name alone.
   Something not yet discovered shows as `?`.
 - A stat, effect or reward is written name first, signed value after: `STR +1`, `Defence +10%`,
   `Attack and magic +8%`, `Ability Points +3`, `Fatigue -20`. Several on one line join with ` · `.
-  This holds on cards, in System windows and everywhere gear and bonuses are listed
-  (`gear.coreText`, `gear.rollText`, `gear.bonusText`). The one place still open is a toast's
-  currency gain (`+40 Mana Shards.`), which is settled with the interface's voice.
+  This holds on cards, in System windows, in toasts and everywhere gear and bonuses are listed
+  (`gear.coreText`, `gear.rollText`, `gear.bonusText`).
 - A decision made while writing that will come up again is written here before the change ships.

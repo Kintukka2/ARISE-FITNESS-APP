@@ -51,7 +51,7 @@ function Exchange() {
         <div><span class="label">Mana Shards</span><Shards n={s.wallet.shards} big /></div>
         <div class="purse__right"><span class="label">New stock in</span><b class="num">{hhmmss(msUntilMidnight())}</b></div>
       </div>
-      <p class="muted">Shards come from cleared Gates and recycled items. Most of the shelf answers your grade; now and again something far above it turns up, at a price that says so.</p>
+      <p class="muted">Mana Shards come from cleared Gates and recycled items. Most stock is at your grade. Some is higher, at a higher price.</p>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -59,7 +59,7 @@ function Exchange() {
             {PRODUCTS.shards.map((p) => (
               <Btn key={p.id} kind="ghost" class="grow" onClick={async () => {
                 const ok = await buyShards(p.id);
-                toast(ok ? `+${p.amount} Mana Shards.` : 'The purchase did not complete. You have not been charged.', ok ? 'xp' : 'bad');
+                toast(ok ? `Mana Shards +${p.amount}` : 'The purchase did not complete. You have not been charged.', ok ? 'xp' : 'bad');
               }}><Shards n={p.amount} /></Btn>
             ))}
           </div>
@@ -88,7 +88,7 @@ function Exchange() {
                 if (!store.update(shop.buyField)) return void sys(system.refuse([`Not enough Mana Shards. (${store.get().wallet.shards}/${shop.FIELD_POTION.price})`], 'gear'));
                 sfx.success();
                 buzz([14, 30, 22]);
-                toast(`Field Potion · ${store.get().satchel} of ${shop.FIELD_POTION.max} in the satchel`, 'xp');
+                toast(`Field Potion · Satchel ${store.get().satchel}/${shop.FIELD_POTION.max}`, 'xp');
               }}><Shards n={shop.FIELD_POTION.price} /></Btn>}
           </div>
           {shop.POTIONS.map((p) => {
@@ -121,7 +121,7 @@ function Exchange() {
               </div>
             );
           })}
-          {!left && <p class="muted center">You have cleared the shelf. Nothing more until it is redrawn.</p>}
+          {!left && <p class="muted center">Sold out until midnight.</p>}
         </div>
       </Section>
     </div>
