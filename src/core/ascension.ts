@@ -5,7 +5,7 @@
  * hunter's grade, played at that level, and then the Trial. Settled in
  * `raid.finish`, with everything else a run pays.
  */
-import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_TOP, PROOF, RULES } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_RULED, BEYOND, PROOF, RULES } from '@/data/ascension';
 import { DUNGEONS } from '@/data/dungeons';
 import { ASCENSION_TUNE } from '@/data/gatetune';
 import { licensedRank } from './licence';
@@ -16,8 +16,10 @@ import { dayKey } from './util';
 
 const on = (level: number, rule: { at: number }) => level >= rule.at;
 
-/** How much stronger every foe is at a level, from calibration. */
-export const ascensionTune = (level: number) => (level > 0 ? ASCENSION_TUNE[level - 1] ?? 1 : 1);
+/** How many levels past the ruled ones a level is. */
+export const beyond = (level: number) => Math.max(0, level - ASCENSION_RULED);
+/** How much stronger every foe is at a level: from calibration up to the ruled levels, then growing by a rule. */
+export const ascensionTune = (level: number) => (level > 0 ? (ASCENSION_TUNE[Math.min(level, ASCENSION_RULED) - 1] ?? 1) * BEYOND.growth ** beyond(level) : 1);
 export const restShare = (level: number) => (on(level, RULES.thinRest) ? RULES.thinRest.heal : 1);
 export const alliesCut = (level: number) => (on(level, RULES.shortHanded) ? RULES.shortHanded.allies : 0);
 export const fatigueShare = (level: number) => (on(level, RULES.heavyLegs) ? RULES.heavyLegs.fatigue : 1);
@@ -48,17 +50,17 @@ export function ruleText(level: number): string {
     case RULES.guarded.at: return 'A boss never fights alone: one of its gate’s creatures stands with it.';
     case RULES.wornThin.at: return `Fatigue drags you down ${RULES.wornThin.drag} times as hard.`;
     case RULES.watched.at: return 'Auto will not fight a boss for you. Every order in its chamber is yours.';
-    default: return '';
+    default: return level > ASCENSION_RULED ? `Every foe is ${pct(BEYOND.growth - 1)} stronger than at the level below. Every rule below is already in force.` : '';
   }
 }
 
 export interface Level { level: number; name: string; rule: string }
-export const levelInfo = (level: number): Level => ({ level, name: ASCENSION_NAMES[level - 1] ?? '', rule: ruleText(level) });
-/** Every rule a level plays: its own and all below it. */
-export const rulesAt = (level: number): Level[] => Array.from({ length: level }, (_, i) => levelInfo(i + 1));
+export const levelInfo = (level: number): Level => ({ level, name: ASCENSION_NAMES[level - 1] ?? BEYOND.name, rule: ruleText(level) });
+/** Every rule a level plays: its own and all below it. Past the ruled levels there are no more. */
+export const rulesAt = (level: number): Level[] => Array.from({ length: Math.min(level, ASCENSION_RULED) }, (_, i) => levelInfo(i + 1));
 
-/** Whether the hunter's clears count toward a proof yet. */
-export const proving = (s: Save) => RANKS.indexOf(licensedRank(s)) >= RANKS.indexOf(ASCENSION_FROM) && s.ascension.unlocked < ASCENSION_TOP;
+/** Whether the hunter's clears count toward a proof yet. The ladder has no top, so from C-Rank they always do. */
+export const proving = (s: Save) => RANKS.indexOf(licensedRank(s)) >= RANKS.indexOf(ASCENSION_FROM);
 /** Whether Ascension shows at all: a level is open, or the hunter is proving one. */
 export const ascensionOpen = (s: Save) => s.ascension.unlocked > 0 || proving(s);
 

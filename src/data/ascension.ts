@@ -2,12 +2,18 @@
  * Ascension: a ladder of harder rules for a hunter who has outgrown the board.
  * Level L plays its own rule and every rule below it. Every level also makes
  * the foes stronger, by a share calibration sets (`ASCENSION_TUNE`), and pays
- * more. A hunter opens each level by proving the one below it. Numbers here are
- * rules; the screens quote them.
+ * more. A hunter opens each level by proving the one below it. The ladder has
+ * no top: past the levels with a rule of their own, each makes every foe
+ * `BEYOND.growth` times as strong as the level below. Numbers here are rules;
+ * the screens quote them.
  */
 import type { Rank } from '@/core/types';
 
-export const ASCENSION_TOP = 10;
+/** The levels with a rule of their own, each calibrated. Above them the ladder goes on. */
+export const ASCENSION_RULED = 10;
+
+/** Past the ruled levels, every level makes every foe this many times as strong as the level below. */
+export const BEYOND = { growth: 1.05, name: 'Beyond' } as const;
 
 /** The grade from which a hunter's clears count toward proving a level. */
 export const ASCENSION_FROM: Rank = 'C';
@@ -17,11 +23,11 @@ export const PROOF = { gates: 4 } as const;
 
 /**
  * The Trial: the gauntlet that opens each level. Proving level L means beating `L + 2` of the Chosen
- * in a row, with no rest between them and no way out but through. Each Chosen is one of the hunter's
- * grade's gate bosses, weakest first, made this much stronger for every round before it. The Trial
- * can be entered once a day.
+ * in a row, with no rest between them and no way out but through: the last `most` of them, once there
+ * are more. Each Chosen is one of the hunter's grade's gate bosses, weakest first, made `step` stronger
+ * for every round before it, up to the `most`-th. The Trial can be entered once a day.
  */
-export const TRIAL = { extra: 2, step: 0.06 } as const;
+export const TRIAL = { extra: 2, step: 0.06, most: 12 } as const;
 
 /** The Chosen, round by round. Each takes the shape of a boss of the hunter's own grade. */
 export const CHOSEN: string[] = [

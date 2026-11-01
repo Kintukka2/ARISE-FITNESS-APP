@@ -3,9 +3,10 @@ import * as asc from '@/core/ascension';
 import { dungeonById, enemyById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import { build, mapSeed } from '@/core/map';
 import * as raid from '@/core/raid';
-import { chosen, isTrial, trialDungeon, trialRounds } from '@/core/trial';
+import { chosen, chosenName, isTrial, trialDungeon, trialFirst, trialLast, trialRounds } from '@/core/trial';
+import { walkerOf } from '@/core/walkers';
 import { RANKS } from '@/core/types';
-import { PROOF, TRIAL } from '@/data/ascension';
+import { CHOSEN, PROOF, TRIAL } from '@/data/ascension';
 import { keptUpHunter } from '../scripts/hunters';
 
 const now = Date.parse('2026-02-04T12:00:00');
@@ -62,5 +63,27 @@ describe('the Trial', () => {
     expect(entryBlock(s, trial, now)).toBe('spent');
     expect(entryBlock(s, trial, now + 864e5)).toBeNull();
     expect(s.ascension.trials).toBe(1);
+  });
+});
+
+describe('the Trial past its most rounds', () => {
+  it('holds the last of the gauntlet, and ends with the Chosen it sends into the world', () => {
+    const level = TRIAL.most + 3;
+    expect(trialRounds(level)).toBe(TRIAL.most);
+    expect(trialFirst(level)).toBe(trialLast(level) - TRIAL.most + 1);
+    const d = trialDungeon('S', level);
+    const m = build(d, mapSeed(d, day));
+    expect(m.layers).toHaveLength(TRIAL.most);
+    expect(m.layers[0][0].foes).toEqual([`CHO-${trialFirst(level)}-S`]);
+    expect(m.layers[TRIAL.most - 1][0].foes).toEqual([d.boss]);
+    expect(d.boss).toBe(walkerOf(level + 1, 'S').id);
+  });
+
+  it('names the Chosen past the last again, with a numeral, and makes them no stronger for their round past the most', () => {
+    expect(chosenName(TRIAL.most)).toBe(CHOSEN[TRIAL.most - 1]);
+    expect(chosenName(CHOSEN.length + 1)).toBe(`${CHOSEN[0]} II`);
+    expect(chosenName(2 * CHOSEN.length + 2)).toBe(`${CHOSEN[1]} III`);
+    // S-Rank has three bosses, so past them only the round could grow a Chosen, and it stops at the most.
+    expect(chosen(TRIAL.most + 5, 'S').base).toEqual(chosen(TRIAL.most, 'S').base);
   });
 });

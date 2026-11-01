@@ -11,7 +11,7 @@ import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialRounds } from '@/core/trial';
-import { ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
+import { ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME } from '@/data/spire';
@@ -180,6 +180,7 @@ function AscensionCard() {
   const rules = ascension.rulesAt(a.level);
   const trial = ascension.nextTrial(s);
   const need = ascension.proofNeeds(s);
+  const choose = (L: number) => store.update((x) => ascension.choose(x, L));
   return (
     <Card class="ascension" tone="gold" tour="ascension">
       <div class="ascension__head">
@@ -189,15 +190,27 @@ function AscensionCard() {
           <small class="muted">{a.level ? `Gates pay ${Math.round(ASCENSION_PAY * a.level * 100)}% more. The brief’s assessment plays every rule.` : 'The board as it stands. Choose a level to make every gate harder, and pay more.'}</small>
         </div>
       </div>
-      {a.unlocked > 0 && (
+      {a.unlocked > 0 && a.unlocked <= ASCENSION_RULED && (
         <div class="chips" role="radiogroup" aria-label="Ascension level">
-          {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => store.update((x) => ascension.choose(x, L))}>{L}</Chip>)}
+          {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => choose(L)}>{L}</Chip>)}
+        </div>
+      )}
+      {a.unlocked > ASCENSION_RULED && (
+        <div class="stepper" role="group" aria-label="Ascension level">
+          <Btn size="sm" disabled={a.level === 0} onClick={() => choose(a.level - 1)}>−</Btn>
+          <b class="num">{a.level}</b>
+          <Btn size="sm" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}>+</Btn>
+          <Btn size="sm" kind="ghost" onClick={() => choose(0)}>0</Btn>
+          <Btn size="sm" kind="ghost" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
         </div>
       )}
       {rules.length > 0 && <ol class="ascension__rules">{rules.map((r) => <li key={r.level}><b>{r.name}</b> {r.rule}</li>)}</ol>}
+      {ascension.beyond(a.level) > 0 && (
+        <small class="ascension__proof">{BEYOND.name} the {ASCENSION_RULED}: every foe {Math.round((BEYOND.growth - 1) * 100)}% stronger for each level past {ASCENSION_RULED}, {Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% at this one.</small>
+      )}
       {a.unlocked > 0 && <MarkList />}
       {a.sent.length > 0 && <ChosenLine />}
-      {a.unlocked < ASCENSION_TOP && !ascension.trialProved(s) && (
+      {!ascension.trialProved(s) && (
         <small class="ascension__proof">
           {a.unlocked === 0 ? 'To open Ascension 1, clear' : `To open Ascension ${a.unlocked + 1}, at Ascension ${a.unlocked} clear`} {need < PROOF.gates ? `all ${need}` : `${need} different`} {licensedRank(s)}-Rank gates
           {' '}(<b class="num">{Math.min(need, a.proof.gates.length)}/{need}</b>), then win the Trial: {trialRounds(a.unlocked)} of the Chosen in a row.
@@ -374,7 +387,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           <b>{v.text}</b>
           <small>The System ran this gate {proj.runs} times with this party down the marked road, fighting your turns and making your choices the way it would. Cleared {proj.cleared}.{proj.heroDown ? ` You were carried out ${proj.heroDown} times.` : ''}</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>You are walking in on {hpNow.hp} of {hpNow.hpMax} HP.</small>}
-          {level > 0 && <small>At Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}. It pays {Math.round((pay - 1) * 100)}% more.</small>}
+          {level > 0 && <small>At Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? `, and ${ascension.beyond(level)} level${ascension.beyond(level) === 1 ? '' : 's'} beyond` : ''}. It pays {Math.round((pay - 1) * 100)}% more.</small>}
         </div>
         <div class="tiles">
           <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? 'enough for Level 5' : <>and <Shards n={sh} /></>} />

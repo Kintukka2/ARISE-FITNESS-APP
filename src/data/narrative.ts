@@ -8,7 +8,7 @@
 import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
 import { BLOCK, SPIRE_OPENS } from './spire';
-import { ASCENSION_TOP } from './ascension';
+import { ASCENSION_RULED } from './ascension';
 
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
@@ -83,7 +83,7 @@ export const BEATS: Beat[] = [
     id: 'ascension_open', when: (s) => s.ascension.unlocked >= 1, kind: 'gold', title: 'Ascension', center: true,
     lines: [
       'The System has noted that the gates no longer trouble you.',
-      `It offers <strong>Ascension</strong>: ${ASCENSION_TOP} levels, each harder than the last, each paying more. Every level keeps the rules of the levels below it.`,
+      `It offers <strong>Ascension</strong>: a ladder with no top, each level harder than the last and paying more. The first ${ASCENSION_RULED} each add a rule, and every level keeps the rules of the levels below it.`,
       'Choose a level on the Gates screen before you go in; the brief assesses the gate at it. Prove a level and face its Trial, and the next opens. <span class="warn">Nothing makes you climb.</span>',
     ],
   },

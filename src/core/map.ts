@@ -48,7 +48,7 @@ function trialMap(d: Dungeon): GateMap {
   const n = d.trial ?? 1;
   const layers: MapNode[][] = Array.from({ length: n }, (_, k) => [{
     id: `${k}-0`, layer: k, kind: k === n - 1 ? 'boss' : 'elite', next: k === n - 1 ? [] : [`${k + 1}-0`],
-    foes: [`CHO-${k + 1}-${d.rank}`],
+    foes: [`CHO-${(d.trialFrom ?? 1) + k}-${d.rank}`],
   }]);
   const byId: Record<string, MapNode> = {};
   for (const row of layers) for (const x of row) byId[x.id] = x;

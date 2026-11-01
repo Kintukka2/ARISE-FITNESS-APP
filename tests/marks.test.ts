@@ -8,7 +8,7 @@ import { defaults } from '@/core/save';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import { RAID_FATIGUE } from '@/core/vitals';
-import { ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE } from '@/data/ascension';
+import { ASCENSION_RULED, MARK_MAX, MARKS, OVERCHARGE } from '@/data/ascension';
 import { UPGRADE } from '@/data/sets';
 import { typicalHunter } from '../scripts/hunters';
 
@@ -32,12 +32,12 @@ describe('marks', () => {
 
   it('the System spreads them: the mark with the fewest set, the first of them on a tie', () => {
     const s = defaults();
-    s.ascension.unlocked = ASCENSION_TOP;
+    s.ascension.unlocked = ASCENSION_RULED;
     marks.setAllBySystem(s);
     expect(marks.unset(s)).toBe(0);
     const each = MARKS.map((m) => marks.setOn(s, m.id));
     expect(Math.max(...each) - Math.min(...each)).toBeLessThanOrEqual(1);
-    expect(each.reduce((n, v) => n + v, 0)).toBe(ASCENSION_TOP);
+    expect(each.reduce((n, v) => n + v, 0)).toBe(ASCENSION_RULED);
     const one = defaults();
     one.ascension.unlocked = 1;
     marks.setAllBySystem(one);
@@ -77,6 +77,15 @@ describe('marks', () => {
     expect(walkIn(0)).toBe(RAID_FATIGUE.C);
     expect(walkIn(MARK_MAX)).toBe(Math.round(RAID_FATIGUE.C * (1 - mark('stride').fatigue! * MARK_MAX)));
     expect(walkIn(MARK_MAX)).toBeLessThan(walkIn(0));
+  });
+
+  it('stop once every mark is full', () => {
+    const s = defaults();
+    s.ascension.unlocked = marks.MARKS_MOST + 7;
+    expect(marks.unset(s)).toBe(marks.MARKS_MOST);
+    marks.setAllBySystem(s);
+    expect(marks.unset(s)).toBe(0);
+    for (const m of MARKS) expect(marks.setOn(s, m.id)).toBe(MARK_MAX);
   });
 
   it('read their numbers in words', () => {

@@ -5,7 +5,7 @@ import { CLASS_RANKS, classById } from '@/data/classes';
 import * as gear from '@/core/gear';
 import { ascensionOpen } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
-import { ASCENSION_TOP, OVERCHARGE } from '@/data/ascension';
+import { OVERCHARGE } from '@/data/ascension';
 import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
 import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
 import { ability, passiveText, REACH_TEXT } from '@/core/combat';
@@ -293,8 +293,7 @@ function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
   const cost = shop.upgradeCost(it, cap);
   if (!next || cost === null) {
     const over = it.over ?? 0;
-    return <p class="hint">{over >= OVERCHARGE.per * ASCENSION_TOP ? 'As far past its design’s best as anything goes.'
-      : !ascensionOpen(s) ? 'At its design’s best. There is nothing left to raise.'
+    return <p class="hint">{!ascensionOpen(s) ? 'At its design’s best. There is nothing left to raise.'
       : `At its design’s best${over ? `, and ${over} step${over === 1 ? '' : 's'} past it` : ''}. Every level of Ascension you open lets it go ${OVERCHARGE.per === 1 ? 'one step' : `${OVERCHARGE.per} steps`} further.`}</p>;
   }
   const short = s.wallet.shards < cost;
