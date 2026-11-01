@@ -20,6 +20,12 @@ import { LEVELS, typicalHunter } from './hunters';
 const RUNS = Number(process.argv[2] ?? 12);
 /** What `npm run calibrate` tunes a gate to, for a hunter in the middle of its grade. */
 const CLEAR_RATE = 0.75;
+/**
+ * What an invested hunter clears over a campaign: `npm run campaign`'s two hunters clear 82-86%. The
+ * days to each rank are shown at both rates. Neither counts Ascension's pay or the Spire's runs,
+ * which is most of why the campaign climbs faster still.
+ */
+const INVESTED_RATE = 0.85;
 
 console.log(`Clear rate, typical hunter (floor / middle / top of the grade). ${RUNS} sims × 4 hunters per gate.\n`);
 console.log('grade  floor  middle  top   | middle vs one grade up');
@@ -59,30 +65,34 @@ console.log(`\nThe Spire: a hunter on the block holding the floor of their own l
 for (const rank of RANKS) console.log(`  ${rank}   ${LEVELS[rank].map((l) => `L${l} ${spireRate(l, l)}`.padEnd(10)).join('  ').trimEnd()}`);
 console.log(`  Level 100, above Floor ${SPIRE_TOP}:  ${[0, 2, 4, 6, 10].map((k) => { const f = firstFloor(blockOf(SPIRE_TOP) + 1 + k); return `F${f} ${spireRate(100, f)}`; }).join('  ')}`);
 
-// A hunter who raids at their own grade, clears three in four, and takes every first-clear bounty the grade offers.
-// The second line of each pair also finishes all of the day's System contracts, every day.
-console.log(`\nDays to each rank (N gates a day at your own grade, ${CLEAR_RATE * 100}% cleared, first clears counted):`);
-for (const perDay of [3, 6, 10]) for (const withContracts of [false, true]) {
-  let level = PRACTICE_LEVEL, xp = 0, day = 0, runs = 0;
-  const firsts: Record<string, number> = {};
-  const hit: string[] = [];
-  let next = 1;
-  const gradeOf = (): Rank => { const key = rankFor(level).key; return key === 'N' ? 'S' : key; };
-  const settle = () => { while (xp >= xpToNext(level)) { xp -= xpToNext(level); level++; } };
-  while (next < RANK_LADDER.length && day < 2000) {
-    day++;
-    const issued = gradeOf();
-    for (let k = 0; k < perDay; k++, runs++) {
-      const grade = gradeOf();
-      const pay = GATE_XP[grade];
-      // Every fourth run fails, so a day's gates pay their expected value without randomness.
-      if (runs % 4 === 3) { xp += Math.round(pay * FAIL_SHARE); continue; }
-      xp += pay;
-      if ((firsts[grade] ?? 0) < ALL_DUNGEONS.filter((d) => d.rank === grade).length) { firsts[grade] = (firsts[grade] ?? 0) + 1; xp += pay; }
-      settle();
+// A hunter who raids at their own grade, clears a share of what they enter, and takes every first-clear bounty the
+// grade offers. The second line of each pair also finishes all of the day's Daily Quests, every day.
+function daysToRank(rate: number) {
+  console.log(`\nDays to each rank (N Gates a day at your own grade, ${Math.round(rate * 100)}% cleared, first clears counted):`);
+  for (const perDay of [3, 6, 10]) for (const withContracts of [false, true]) {
+    let level = PRACTICE_LEVEL, xp = 0, day = 0, runs = 0;
+    const firsts: Record<string, number> = {};
+    const hit: string[] = [];
+    let next = 1;
+    const gradeOf = (): Rank => { const key = rankFor(level).key; return key === 'N' ? 'S' : key; };
+    const settle = () => { while (xp >= xpToNext(level)) { xp -= xpToNext(level); level++; } };
+    while (next < RANK_LADDER.length && day < 2000) {
+      day++;
+      const issued = gradeOf();
+      for (let k = 0; k < perDay; k++, runs++) {
+        const grade = gradeOf();
+        const pay = GATE_XP[grade];
+        // Failures fall evenly at the rate's share, so a day's Gates pay their expected value without randomness.
+        if (Math.floor((runs + 1) * (1 - rate) + 1e-9) > Math.floor(runs * (1 - rate) + 1e-9)) { xp += Math.round(pay * FAIL_SHARE); continue; }
+        xp += pay;
+        if ((firsts[grade] ?? 0) < ALL_DUNGEONS.filter((d) => d.rank === grade).length) { firsts[grade] = (firsts[grade] ?? 0) + 1; xp += pay; }
+        settle();
+      }
+      if (withContracts) { xp += CONTRACTS_PER_DAY * payOf(issued).xp + bonusOf(issued).xp; settle(); }
+      while (next < RANK_LADDER.length && level >= RANK_LADDER[next].min) hit.push(`${RANK_LADDER[next++].key}:${day}d`);
     }
-    if (withContracts) { xp += CONTRACTS_PER_DAY * payOf(issued).xp + bonusOf(issued).xp; settle(); }
-    while (next < RANK_LADDER.length && level >= RANK_LADDER[next].min) hit.push(`${RANK_LADDER[next++].key}:${day}d`);
+    console.log(`  ${withContracts ? '+ Daily Quests' : `${String(perDay).padStart(2)} Gates/day  `}  ${hit.join('  ')}`);
   }
-  console.log(`  ${withContracts ? ' + contracts' : `${String(perDay).padStart(2)} gates/day`}  ${hit.join('  ')}`);
 }
+daysToRank(CLEAR_RATE);
+daysToRank(INVESTED_RATE);
