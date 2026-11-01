@@ -116,7 +116,8 @@ difficulty moves a little with its map.
 
 The player sees these as Daily Quests; the code and this section call them contracts. The System
 issues three a day, replacing what the exercise Daily Quest used to be. They sit in a
-System window on the Gates screen, and again on the results of every run.
+System window on the Quests screen, and again on the results of every run. The board marks each
+gate a contract names with a Quest chip, and the Quests tab counts the day's until they are seen.
 
 - **Drawn** (`core/contracts.ts`, table in `data/contracts.ts`) from the day and the hunter's grade,
   and written to the save the first time the day's are shown, so a level-up at noon cannot redraw
@@ -135,6 +136,15 @@ System window on the Gates screen, and again on the results of every run.
 - **The balance report** shows days to each rank with every contract done every day. It saves a
   three-a-day hunter about a sixth of the climb to Sovereign, and a ten-a-day hunter about a
   twentieth.
+
+**The Quests screen.** A fourth tab, beside the Gates, holds every quest as a QUEST INFO window:
+the day's contracts; *Reclassification*, the next rank, the level it needs and what it brings (the
+Ability Points, the class and its choice, Shadow slots, the Hollow Throne); the Pale Spire's week as
+a *Weekly Quest*, set at the next floor that raises what the week pays (`spire.tierGoal`); the
+proof of the next Ascension level and its Trial; and the Chosen walking today. Under them is the
+record of every Secret Quest completed. None of it pays: each quest is settled where it always was,
+and the screen reads where it stands (`core/quests.ts`, `contracts.unseen`). The tab opens with the
+practice gate cleared, when the contracts do.
 
 **What changed from the plan.** *Bind a Shadow* is not a contract: binding hangs on a creature
 lingering, which a contract cannot promise, so it became Shadow kills instead. Nothing asks for a
@@ -165,7 +175,7 @@ everyone knows the Spire is there.
   middle of their grade (`BLOCK_TUNE`), then each block up to Floor 100 for the level of its middle
   floor (`SPIRE_TUNE`). Both land near 75%.
 - **Records and Secret Quests:** the best floor ever and this week, two new Secret Quests (*Up* and *The
-  Top Floor*), and a Profile record. A Spire block counts as a gate for the gate records and the
+  Top Floor*), and a record in the dossier. A Spire block counts as a gate for the gate records and the
   contracts. It does not count for the board's distinct gates cleared or bosses on file.
 
 **What playing it showed.** A single block's odds swing as much from day to day as a gate's do, with
@@ -192,8 +202,8 @@ fight was tried and did not narrow it.
   - **Holding a choice:** a choice holds until the hunter's next rank. Then every earlier choice can
     be made again, and at S-Rank it is for good. Choices are kept per line, so a hunter reclassified
     away and back finds theirs waiting. An open run keeps the party it walked in with.
-  - **Where:** the class sheet on the Profile holds the choices. The class window at a rank-up names
-    the two options, and the Profile tab counts the rungs still to choose.
+  - **Where:** the class sheet on the Inventory screen holds the choices. The class window at a
+    rank-up names the two options, and the Inventory tab counts the rungs still to choose.
   - **Balance:** a hunter on every second option, against the same hunter on every first, lands
     within seven points of the clear rate at C, A and S for every line. They are trades, not upgrades.
 - **Gear sets — built.** All sixteen sets in `data/equipment.ts` have three pieces, so the bonuses

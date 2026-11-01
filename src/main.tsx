@@ -14,7 +14,8 @@ store.init({ onWriteFail: () => toast('Save failed: storage unavailable.', 'bad'
 void store.durable();
 configure({ sound: () => store.get().settings.sound, music: () => store.get().settings.music });
 armAudio();
-document.documentElement.dataset.screen = route.get();
+// A screen retints the accent. The Awakening is no screen's, so it keeps the System's cyan.
+if (store.get().onboarded) document.documentElement.dataset.screen = route.get();
 
 void initBilling();
 onReminderTap(() => { if (!arena.get() && store.get().onboarded) go('gates'); });

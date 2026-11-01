@@ -160,3 +160,29 @@ describe('the week', () => {
     expect(s.spire.best).toBe(0);
   });
 });
+
+describe('the week as a quest', () => {
+  it('sets the first floor of the next tier, and the tier it pays is above the one already reached', () => {
+    for (let best = 0; best <= SPIRE_TOP + SEASON_PAY.beyond * 4; best += BLOCK) {
+      const goal = spire.nextTier(best);
+      expect(goal).toBeGreaterThan(best);
+      expect(spire.seasonTier(goal)!.tier).not.toBe(spire.seasonTier(best)?.tier);
+      // Nothing below the goal pays more than the week already does.
+      for (let f = best + 1; f < goal; f++) expect(spire.seasonTier(f)!.tier).toBe(spire.seasonTier(best)?.tier ?? spire.seasonTier(f)!.tier);
+    }
+    expect(spire.nextTier(0)).toBe(SPIRE_FLOORS.E);
+    expect(spire.nextTier(SPIRE_FLOORS.D)).toBe(SPIRE_FLOORS.C);
+    expect(spire.nextTier(SPIRE_FLOORS.S)).toBe(SPIRE_TOP + 1);
+    expect(spire.nextTier(SPIRE_TOP + 1)).toBe(SPIRE_TOP + SEASON_PAY.beyond + 1);
+  });
+
+  it('counts from where the hunter climbs from, so it never sets a floor below their first block', () => {
+    const s = hunter(25);
+    s.spire = { ...s.spire, season: spire.seasonOf(day), best: 0 };
+    const first = spire.firstFloor(spire.nextBlock(s, day));
+    expect(first).toBe(SPIRE_FLOORS.C);
+    expect(spire.tierGoal(s, day)).toBe(SPIRE_FLOORS.C);
+    s.spire.best = first + BLOCK - 1;
+    expect(spire.tierGoal(s, day)).toBe(SPIRE_FLOORS.B);
+  });
+});

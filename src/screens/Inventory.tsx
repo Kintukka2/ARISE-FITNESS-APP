@@ -1,4 +1,4 @@
-/** Profile: who you are — level, class, attributes, vitals — and what you are wearing. */
+/** Inventory: who you are (the Status sheet), what you are wearing, and everything you hold. */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { CLASS_RANKS, classById } from '@/data/classes';
@@ -6,7 +6,6 @@ import * as gear from '@/core/gear';
 import { ascensionOpen } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
-import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
 import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
 import { ability, passiveText, REACH_TEXT } from '@/core/combat';
 import { licenceHolding, licensedRank } from '@/core/licence';
@@ -29,7 +28,7 @@ import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { openExchange } from './Exchange';
 
-export function Profile() {
+export function Inventory() {
   const s = useSave();
   useNow(5000);
   const r = rankFor(s.hunter.level);
@@ -50,6 +49,9 @@ export function Profile() {
         <Attributes />
       </SysFrame>
       <Equipment />
+      <SysFrame title="Inventory" icon={null} class="inventory">
+        <ItemGrid />
+      </SysFrame>
     </div>
   );
 }
@@ -250,7 +252,7 @@ function Equipment() {
     );
   };
   return (
-    <Panel title="Equipment" tools={<IconBtn icon="bag" label="Inventory" badge={s.items.length || undefined} onClick={openInventory} />}>
+    <Panel title="Equipment">
       <div class="row between">
         <div><span class="label">Equipment score</span><b class="num big">{Math.round(gear.power(s))}</b></div>
         <Btn kind={ups ? 'gold' : 'ghost'} size="sm" disabled={!ups} onClick={() => { const n = store.update(gear.autoEquip); sfx.success(); buzz([16, 26, 22]); toast(`${n} slot${n === 1 ? '' : 's'} improved.`, 'good'); void checkAwards(); }}>
@@ -263,10 +265,7 @@ function Equipment() {
         <div class="doll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
       </div>
       <ActiveSets s={s} />
-      <div class="row">
-        <Btn kind="ghost" class="grow" onClick={openInventory}><Glyph name="bag" /> Inventory · {s.items.length}</Btn>
-        <Btn kind="ghost" class="grow" onClick={openExchange}><Shards n={s.wallet.shards} /> Exchange</Btn>
-      </div>
+      <Btn kind="ghost" block onClick={openExchange}><Shards n={s.wallet.shards} /> Exchange</Btn>
     </Panel>
   );
 }
@@ -347,13 +346,6 @@ export function ItemLine({ it, s, onClick }: { it: Item; s: Save; onClick?: () =
   );
 }
 
-function openInventory() {
-  let filter = 'All';
-  openSheet({
-    title: 'Inventory', system: { icon: null }, render: () => <Inventory initial={filter} onFilter={(f) => { filter = f; }} />,
-  });
-}
-
 /** One square of the Inventory: the item's icon, framed by its grade, and nothing else. */
 function ItemTile({ it, s }: { it: Item; s: Save }) {
   const d = gear.defOf(it)!;
@@ -369,14 +361,15 @@ function ItemTile({ it, s }: { it: Item; s: Save }) {
   );
 }
 
-function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: string) => void }) {
+/** Everything the hunter holds, best first, under a tab for each slot. */
+function ItemGrid() {
   const s = useSave();
-  const [f, setF] = useState(initial);
+  const [f, setF] = useState('All');
   const types = ['All', 'Weapon', 'Off-Hand', 'Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Amulet', 'Ring'];
   const list = s.items.filter((it) => f === 'All' || gear.defOf(it)?.slot === f).sort((a, b) => gear.score(b) - gear.score(a));
   return (
     <div class="stack">
-      <div class="chips invtabs" role="tablist">{types.map((t) => <Chip key={t} on={f === t} onClick={() => { setF(t); onFilter(t); }}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
+      <div class="chips invtabs" role="tablist">{types.map((t) => <Chip key={t} on={f === t} onClick={() => setF(t)}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
       {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No items yet.'}</Empty>}
       {list.length > 0 && <div class="invgrid">{list.map((it) => <ItemTile key={it.id} it={it} s={s} />)}</div>}
       <small class="muted">Designs discovered: {s.found.length}/{gear.ALL_GEAR.length + gear.ISSUED.length}</small>
@@ -486,7 +479,6 @@ function openDossier() {
   openSheet({
     title: 'Hunter Dossier', render: () => {
       const s = store.get();
-      const held = MISSIONS.filter((m) => s.hunter.missions.includes(m.id));
       return (
         <div class="stack">
           <Card>
@@ -495,21 +487,6 @@ function openDossier() {
               <small class="muted num">Licence {s.hunter.regNo || '-- --'} · Awakened {new Date(s.createdAt).toLocaleDateString()}</small>
             </div></div>
           </Card>
-          <Fold title="Secret Quests" right={`${held.length} / ${MISSIONS.length}`} open>
-            {held.length ? (
-              <ul class="missions">
-                {held.map((m) => (
-                  <li key={m.id} class={`mission mission--${m.tier}`}>
-                    <span class="mission__tier">{TIER_NAMES[m.tier]}</span>
-                    <b>{m.name}</b>
-                    <small>Goal: {m.did}</small>
-                    <small class="mission__grant">{grantText(m)}</small>
-                  </li>
-                ))}
-              </ul>
-            ) : <Empty>Secret Quests completed: 0</Empty>}
-            <small class="muted">Sealed: {MISSIONS.length - held.length}</small>
-          </Fold>
           <Fold title="Active effects">
             <KV k="Ability Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
             {Object.entries(classBonus(s)).map(([k, v]) => <KV key={k} k="Class" v={`${k} +${v}`} />)}

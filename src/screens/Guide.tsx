@@ -2,6 +2,7 @@
 import { FIELD_POTION, GATE_SHARDS, POTIONS, stepCost } from '@/core/shop';
 import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
+import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { SLOTS as SQUAD, EXTRACT_MP, GROWTH_PER_KILL, SECOND_AT, SHADOW_RANKS } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
@@ -105,10 +106,22 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
+    title: 'Quests',
+    lines: [
+      'The Quests screen opens once the Practice Gate is cleared.',
+      'It holds the day’s Daily Quests, your next rank, the Pale Spire’s week, the Trial and the Chosen.',
+      'Reclassification: your next rank, the level it needs, and what it brings.',
+      'Weekly Quest: the next floor of the Pale Spire that raises what the week pays.',
+      'The Trial and the Chosen appear once Ascension opens.',
+      `There are ${MISSIONS.length} Secret Quests. None is shown until it is done.`,
+    ],
+  },
+  {
     title: 'Daily Quests',
     lines: [
       `The System issues ${CONTRACTS_PER_DAY} Daily Quests a day, for your grade when they are issued.`,
-      'They are on the Gates screen. Each one says where it can be done.',
+      'They are on the Quests screen. Each one says where it can be done.',
+      'A Gate on the board that a Daily Quest names is marked Quest.',
       `Each pays ${CONTRACT_PAY.shards === 1 ? 'a clear’s' : `${CONTRACT_PAY.shards} clears’`} shards at that grade and ${CONTRACT_PAY.xp * 100}% of a clear’s experience.`,
       `All ${CONTRACTS_PER_DAY} together pay ${CONTRACT_BONUS.shards} clears’ shards and ${CONTRACT_BONUS.xp * 100}% of a clear’s experience on top.`,
       'A run counts once it is settled, however it ends.',

@@ -292,8 +292,11 @@ export interface Save {
     level: number; unlocked: number; best: number; proof: { gates: string[] }; trialDay: string | null; trials: number;
     marks: Record<string, number>; sent: number[]; felled: number[];
   };
-  /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
-  contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
+  /**
+   * Today's System contracts, as issued: for the grade the hunter held when they were first shown.
+   * `seen` is whether the Quests screen has shown them yet; a new day's arrive unseen.
+   */
+  contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean; seen?: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */
   satchel: number;
 

@@ -65,7 +65,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: 'contracts_issued', when: (s) => s.gates.cleared.includes('DNG-000'), kind: 'system', title: 'Notification', center: true,
-    lines: [arrival('Daily Quests', true), counter('Daily Quests completed', 0, CONTRACTS_PER_DAY)],
+    lines: [arrival('Daily Quests', true), counter('Daily Quests completed', 0, CONTRACTS_PER_DAY), unlock('Quests')],
   },
   {
     id: 'lv3', when: (s) => s.gates.clears >= 3, kind: 'coach', title: 'Valcorde',

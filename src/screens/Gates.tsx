@@ -16,7 +16,6 @@ import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME, SPIRE_TOP } from '@/data/spire';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
-import { ContractsWindow } from '@/ui/contracts';
 import * as system from '@/ui/system';
 import { MapView } from '@/ui/map';
 import * as raid from '@/core/raid';
@@ -35,7 +34,7 @@ import { Btn, Card, Chip, Panel, RankPlate, Section, Shards, Tile, useNow, Voice
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
-import { drinkFlow, VitalsBlock } from './Profile';
+import { drinkFlow, VitalsBlock } from './Inventory';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -55,6 +54,9 @@ export function Gates() {
   const shown = gates.filter((d) => band === 'all' || d.rank === band);
   const run = s.gates.raid;
   const open = run && dungeonById(run.dungeonId);
+  const day = dayKey();
+  // The board marks the Gates today's Daily Quests name, so showing it issues them, if nothing has yet.
+  const named = contracts.named(s, day);
 
   useEffect(() => {
     if (!story.seen(s, 'gates-visited')) {
@@ -62,6 +64,9 @@ export function Gates() {
       setTimeout(() => void intro(), 500);
     }
   }, []);
+  useEffect(() => {
+    if (contracts.contractsOpen(store.get()) && store.get().contracts.day !== day) store.update((x) => { contracts.issue(x, day); });
+  }, [day, contracts.contractsOpen(s)]);
 
   return (
     <div class="stack">
@@ -103,7 +108,6 @@ export function Gates() {
         </Card>
       )}
 
-      <Contracts />
       <SpireCard />
       <AscensionCard />
 
@@ -120,24 +124,9 @@ export function Gates() {
         <span class="label">{s.gates.sealed.day === dayKey() ? s.gates.sealed.ids.length : 0} closed today</span>
       </div>
       <ul class="board" data-tour="board">
-        {shown.map((d) => <GateRow key={d.id} d={d} />)}
+        {shown.map((d) => <GateRow key={d.id} d={d} quest={named.has(d.id)} />)}
       </ul>
     </div>
-  );
-}
-
-/** Today's contracts, written to the save the first time they are shown, so nothing can redraw them. */
-function Contracts() {
-  const s = useSave();
-  const day = dayKey();
-  useEffect(() => {
-    if (contracts.contractsOpen(store.get()) && store.get().contracts.day !== day) store.update((x) => { contracts.issue(x, day); });
-  }, [day, contracts.contractsOpen(s)]);
-  if (!contracts.contractsOpen(s)) return null;
-  return (
-    <ContractsWindow c={contracts.today(s, day)}>
-      <small class="contracts__when">New Daily Quests in: <b class="num countdown">{hhmmss(msUntilMidnight())}</b></small>
-    </ContractsWindow>
   );
 }
 
@@ -297,7 +286,8 @@ function MarkList() {
   );
 }
 
-function GateRow({ d }: { d: Dungeon }) {
+/** One Gate on the board. `quest`: one of today's Daily Quests names it. */
+function GateRow({ d, quest }: { d: Dungeon; quest: boolean }) {
   const s = useSave();
   const held = walkers.walking(s, dayKey())?.gateId === d.id;
   const block = entryBlock(s, d);
@@ -309,7 +299,7 @@ function GateRow({ d }: { d: Dungeon }) {
       <button type="button" class={`gaterow ${locked ? 'is-locked' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${isPractice(d) ? 'is-practice' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
         onClick={() => { sfx.tap(); if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
         <RankPlate rank={d.rank} size={34} />
-        <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}{held && <small class="chip chip--chosen">Chosen</small>}</span>
+        <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}{held && <small class="chip chip--chosen">Chosen</small>}{quest && <small class="chip chip--quest">Quest</small>}</span>
         <span class="gaterow__mark">
           {locked ? <Glyph name="lock" /> : <span title={known ? boss?.name : 'Unidentified'}><Glyph name={known ? 'skull' : 'unknown'} /></span>}
         </span>

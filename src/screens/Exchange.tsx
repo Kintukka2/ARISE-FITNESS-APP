@@ -14,7 +14,7 @@ import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
 import { openSheet, sys, toast } from '@/ui/overlays';
-import { drinkFlow } from './Profile';
+import { drinkFlow } from './Inventory';
 
 export function openExchange() {
   if (!store.get().seen.includes('shop-visited')) store.update((x) => { x.seen.push('shop-visited'); });
