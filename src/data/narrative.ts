@@ -16,13 +16,29 @@ import { arrival, change, counter, event, foe, tag, unlock } from '@/ui/system';
 export const ASSESSMENT = [
   'Sit down. This takes four minutes, and three of them are paperwork.',
   'The scan picked up your Awakening this morning. It’s faint. Barely over the line, but over it.',
-  'Measured rank: E. That’s the lowest grade the Association issues.',
+  'Measured rank: E. Lowest grade the Association issues.',
   'Before you ask, it doesn’t go up. An Awakening fixes your rank for life. I’ve watched people spend a fortune trying to change that.',
-  'What it does get you is a licence. You can walk into a Gate legally, and the Association patches you up afterwards.',
+  'What it does get you is a licence. You can enter a Gate legally, and the Association patches you up afterwards.',
 ];
 
 /** Valcorde asks for the name on the licence, after the assessment. */
 export const NAME_PROMPT = 'Right. What name goes on the licence? Spell it properly. The Association doesn’t do reprints.';
+
+/** Valcorde on the Gates screen: one line, picked by how the hunter is doing. */
+export const GATES_LINE = {
+  locked: 'You were carried out of the last one. Rest up. The board’ll turn over before you’re fit anyway.',
+  tired: 'You’re running on empty. Your call, but I’d rest before the next one.',
+  first: 'Pick something at your own grade, and take a party with you.',
+  settled: 'Check your fatigue before every Gate. I still check mine.',
+};
+
+/** Valcorde's tour of the Gates screen, the first time it opens. */
+export const GATES_TOUR = [
+  { at: 'licence', say: 'Your grade. You can take on one grade above it. I wouldn’t, not yet.' },
+  { at: 'vitals', say: 'Watch the bottom bar. Fatigue. It builds with every Gate, and it’s what kills hunters at your grade.' },
+  { at: 'bands', say: 'Every grade has a Gate up there, so you can see what’s ahead. Stay at your own for now.' },
+  { at: 'board', say: 'The one at the top is the practice Gate. I’ve signed us both in. Open it when you’re ready.' },
+];
 
 export const HANDOVER = [
   'There. You’re a hunter, on paper. The grey kit on the counter is yours. It’s not much. It’s not meant to be.',
@@ -156,7 +172,7 @@ export const BEATS: Beat[] = [
       `Rank: ${change('A', 'S')}`,
       `${tag('The Hollow Throne')} has opened. It does not close at midnight.`,
       `You have received a message from ${tag('Ryn Valcorde')}.`,
-      '“Don’t go in tired. Go in with something left.”',
+      '“Do not go in tired. Go in with something left.”',
     ],
   },
   {

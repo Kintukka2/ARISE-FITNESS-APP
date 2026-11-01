@@ -449,8 +449,10 @@ people.
 
 ### How he speaks
 
-1. **Contractions, always.** He talks like a person: "It doesn't go up." The System never
-   contracts, and the contrast is part of how a player tells them apart.
+1. **Contractions by default.** He talks like a person: "It doesn't go up." The System never
+   contracts, and the contrast is part of how a player tells them apart. He drops a contraction
+   only for weight, at most once in a scene: a warning, or the line he means most. His last message
+   reads "Do not go in tired."
 2. **Short spoken sentences, plain words.** Two or three lines a window. No speeches.
 3. **Judgement, not rules.** He says what matters and what gets people killed. Numbers and mechanics
    belong to the Guide and the interface. "Watch the bottom bar. Fatigue. It builds with every
@@ -460,6 +462,10 @@ people.
 5. **Humour is a passing aside inside a line** ("three of them are paperwork"), never the last word
    of a scene.
 6. **He says "you".** No pet names.
+7. **No catchphrases.** Once he has said a thing, he finds a new way to say the next one.
+   "Read the brief" is said once, in the handover. No four-word phrase appears in two of his
+   lines, and no sentence opener ("That's…", "Sit down.") more than twice. Repeated phrases wear
+   thin long before contractions do.
 
 ### He never
 
@@ -489,7 +495,10 @@ people.
 | First time carried out | He's been there |
 | C-Rank, his grade | It took him eleven years. He won't ask how you did it |
 | Level 25 | The real version of his last raid |
-| S-Rank | One message, delivered by the System: "Don't go in tired. Go in with something left." |
+| S-Rank | One message, delivered by the System: "Do not go in tired. Go in with something left." |
+
+Every line he says lives in `src/data/narrative.ts` (`ASSESSMENT`, `NAME_PROMPT`, `HANDOVER`,
+`GATES_LINE`, `GATES_TOUR` and the `coach` beats), so the tests read all of it.
 
 In the Practice Gate he fights in your party at C-Rank, holding back (`INSTRUCTOR_RESTRAINT` in
 `core/gates.ts`) so the kills are yours.
