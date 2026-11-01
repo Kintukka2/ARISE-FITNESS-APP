@@ -11,7 +11,15 @@ System has picked you anyway. The game is the climb: deeper Gates, sharper choic
 Shadow army, and a fixed world that slowly takes you seriously.
 
 The world, characters, ranks and bestiary are original and stay that way. Borrow the tone, never
-the specifics: no named characters, places, monarchs or story beats from the source material.
+the specifics: no named characters, places, monarchs, items, skills, quests or story beats from the
+source material.
+
+The System is the exception. It speaks the way the source's System speaks, and its windows may
+reuse the source's message templates and stock lines word for word: the window types (Alarm,
+Message, Quest Info, Quest Reward, Status, Skills, Inventory), one-line bracketed notices such as
+"[You have leveled up!]" and "[The Dungeon Boss has been slain.]", the item, skill and status card
+layouts, and the accept-or-refuse prompts. What fills a template is ours: our gates, foes, gear,
+skills and numbers.
 
 ## Pillars
 
