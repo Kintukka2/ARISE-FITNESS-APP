@@ -6,10 +6,11 @@ import * as shadows from '@/core/shadows';
 import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Chip, Empty, KV, Panel, RankPlate, Section, Tile, Voice } from '@/ui/components';
+import { Btn, Chip, Empty, KV, Panel, RankPlate, Section, Tile } from '@/ui/components';
+import { Field, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { openSheet, toast } from '@/ui/overlays';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 export function Shadows() {
   const s = useSave();
@@ -18,20 +19,27 @@ export function Shadows() {
   useEffect(() => { if (!story.seen(s, 'shadows-visited')) store.update((x) => story.markOnce(x, 'shadows-visited')); }, []);
   const army = s.shadows.army.slice().sort((a, b) => Number(squad.includes(b)) - Number(squad.includes(a)) || powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
   const fresh = s.shadows.fresh;
+  // What joined since the last visit, held for this visit: the router clears `fresh` a few seconds in.
+  const [news] = useState(() => [...fresh]);
+  const joined = news.length === 1 ? enemyById(s.shadows.army.find((x) => x.id === news[0])?.enemyId ?? '')?.shadow : null;
   return (
     <div class="stack">
-      <Voice who="system">{fresh.length ? (fresh.length === 1 ? `A new Shadow has entered your command. ${enemyById(s.shadows.army.find((x) => x.id === fresh[0])?.enemyId ?? '')?.shadow ?? ''} is marked below.` : `${fresh.length} new Shadows have entered your command. They are marked below.`) : 'Every Shadow you deploy walks into the next Gate beside you. They never make a fight harder — only easier.'}</Voice>
+      {news.length > 0 && (
+        <SysFrame title="Notification" kind="shadow" class="sysnotice">
+          <p>{joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}</p>
+        </SysFrame>
+      )}
       <Panel title="Shadows" tone="arcane">
         <div class="tiles tiles--3">
-          <Tile label="Extractions" value={s.stats.extractions} sub={`${s.stats.extractionsWon} held`} />
+          <Tile label="Extractions" value={s.stats.extractions} />
           <Tile label="Bound" value={s.shadows.army.length} />
           <Tile label="Deployed" value={`${squad.length}/${slots}`} />
         </div>
-        <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Missions` : ''}. A Shadow grows with every kill it lands, as far as its rank allows, and enough kills promote it.</small>
+        <small class="muted">Squad size grows with your grade: {shadows.SLOTS.E} at E and D, {shadows.SLOTS.C} at C and B, {shadows.SLOTS.A} at A and S{shadows.missionSlots(s) ? `, and ${shadows.missionSlots(s)} more from Secret Quests` : ''}.</small>
         {squad.length > 0 && <Btn kind="ghost" block onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall Shadows ({squad.length})</Btn>}
       </Panel>
-      <Section title="Bound Shadows" right={`${s.shadows.army.length} commanded`}>
-        {!army.length && <Empty>No Shadows have followed you home yet. Keep clearing gates — an extraction is rare, and rarer still if you are out of mana when it offers.</Empty>}
+      <Section title="Bound Shadows">
+        {!army.length && <Empty>No Shadows yet.</Empty>}
         <ul class="army">
           {army.map((sh) => {
             const e = enemyById(sh.enemyId)!;
@@ -43,7 +51,7 @@ export function Shadows() {
                   <RankPlate rank={e.rank} size={30} />
                   <span class="grow">
                     <b>{e.shadow} {fresh.includes(sh.id) && <span class="chip" data-tone="arcane">New</span>}</b>
-                    <small class="muted">{shadows.rankOf(sh).name} · {e.family} · {powerOf(shadows.statsOf(sh))} power{sh.kills ? ` · ${sh.kills} kills` : ''}{sh.tactic ? ` · ${TACTICS.find((x) => x.key === sh.tactic)?.name}` : ''}</small>
+                    <small class="muted">{shadows.rankOf(sh).name} · {e.family} · Power {powerOf(shadows.statsOf(sh))}{sh.kills ? ` · Kills ${sh.kills}` : ''}{sh.tactic ? ` · ${TACTICS.find((x) => x.key === sh.tactic)?.name}` : ''}</small>
                   </span>
                 </button>
                 <Btn size="sm" kind={on ? 'primary' : 'ghost'} disabled={full} onClick={() => store.update((x) => shadows.toggleDeploy(x, sh.id))}>{on ? 'Deployed' : full ? 'Squad Full' : 'Deploy'}</Btn>
@@ -52,24 +60,32 @@ export function Shadows() {
           })}
         </ul>
       </Section>
-      <p class="muted center">{ALL_ENEMIES.length - s.shadows.army.length} Shadows are yet to be taken from their host.</p>
+      <p class="muted center">Shadows not yet bound: {ALL_ENEMIES.length - s.shadows.army.length}</p>
     </div>
   );
 }
 
 function openShadow(id: string) {
+  const at = store.get().shadows.army.find((x) => x.id === id);
+  const was = at && enemyById(at.enemyId);
   openSheet({
-    title: 'Shadow', tone: 'arcane', render: () => {
+    title: `Shadow: ${was?.shadow ?? 'Unknown'}`,
+    system: { icon: was ? <RankPlate rank={was.rank} size={44} /> : null, kind: 'shadow' },
+    render: () => {
       const s = store.get();
       const sh = s.shadows.army.find((x) => x.id === id);
-      if (!sh) return <Empty>Gone.</Empty>;
+      if (!sh) return <Empty>That Shadow is gone.</Empty>;
       const e = enemyById(sh.enemyId)!;
       const st = shadows.statsOf(sh);
       return (
         <div class="stack">
-          <div class="row"><RankPlate rank={e.rank} size={44} /><div><b class="big">{e.shadow}</b><small class="muted">{e.rank}-Rank {e.family} · {e.role}. Was a {e.name}.</small></div></div>
+          <div class="sysfields">
+            <Field k="Rank" v={shadows.rankOf(sh).name} />
+            <Field k="Grade" v={`${e.rank}-Rank`} />
+            <Field k="Category" v={`${e.family} · ${e.role}`} />
+            <Field k="Was" v={e.name} />
+          </div>
           <div class="tiles tiles--5">{(['STR', 'VIT', 'AGI', 'INT', 'PER'] as const).map((k) => <Tile key={k} label={k} value={st[k]} />)}</div>
-          <KV k="Rank" v={shadows.rankOf(sh).name} />
           <KV k="Growth" v={`+${Math.round(shadows.growth(sh) * 100)}% from kills, of +${Math.round(shadows.rankOf(sh).cap * 100)}% at this rank`} />
           {shadows.nextRank(sh) && <p class="hint">{shadows.nextRank(sh)!.kills - sh.kills} more kills to {shadows.nextRank(sh)!.name}, which lifts its growth to +{Math.round(shadows.nextRank(sh)!.cap * 100)}%{shadows.rankIndex(sh) + 1 === shadows.SECOND_AT && shadows.secondOf(e) ? `, and it remembers ${shadows.secondOf(e)}` : ''}.</p>}
           <Section title="Skills">
@@ -78,7 +94,7 @@ function openShadow(id: string) {
                 const a = ability(n);
                 const known = shadows.kitOf(sh).includes(n);
                 const learned = !e.kit.includes(n);
-                return <KV key={n} k={n} v={!known ? `remembered at ${shadows.SHADOW_RANKS[shadows.SECOND_AT].name}` : a ? `${a.type}, ${REACH_TEXT[a.profile] ?? 'one target'} · ×${a.mult}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}${learned ? ' · from its kin' : ''}` : '—'} />;
+                return <KV key={n} k={n} v={!known ? `remembered at ${shadows.SHADOW_RANKS[shadows.SECOND_AT].name}` : a ? `${a.type}, ${REACH_TEXT[a.profile] ?? 'one target'} · ×${a.mult}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}${learned ? ' · from its kin' : ''}` : '-- --'} />;
               })}
             </div>
           </Section>
@@ -87,11 +103,11 @@ function openShadow(id: string) {
               <Chip on={!sh.tactic} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, null))}>Party’s orders</Chip>
               {TACTICS.map((t) => <Chip key={t.key} on={sh.tactic === t.key} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, t.key))}>{t.name}</Chip>)}
             </div>
-            <p class="muted">{sh.tactic ? TACTICS.find((t) => t.key === sh.tactic)?.one : 'It follows the standing orders you set in each brief.'} Orders change from the next gate.</p>
+            <p class="muted">{sh.tactic ? TACTICS.find((t) => t.key === sh.tactic)?.one : 'It follows the standing orders you set in each brief.'} Orders change from the next Gate.</p>
           </Section>
           {e.passive && <Section title="Passive"><KV k={e.passive} v={passiveText(e.passive)} /></Section>}
           {(e.imm.length > 0 || e.res.length > 0) && <div class="chips">{e.imm.map((x) => <Chip key={x} tone="verdant">Immune: {x}</Chip>)}{e.res.map((x) => <Chip key={x}>Resists: {x}</Chip>)}</div>}
-          <div class="tiles"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
+          <div class="tiles tiles--3"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
         </div>
       );
     },

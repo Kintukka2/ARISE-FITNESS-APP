@@ -8,7 +8,7 @@ import { sfx } from '@/audio/audio';
 import { regNo } from '@/core/gates';
 import { issueKit } from '@/core/gear';
 import * as story from '@/core/story';
-import { ASSESSMENT, HANDOVER } from '@/data/narrative';
+import { ASSESSMENT, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn } from '@/ui/components';
@@ -76,9 +76,9 @@ function Licence({ name, reg }: { name?: string; reg?: string }) {
         <Sigil rank="E" size={40} />
       </header>
       <dl>
-        <dt>Name</dt><dd>{name || '— — — — —'}</dd>
-        <dt>Guild</dt><dd class="is-none">None</dd>
-        <dt>Registry No.</dt><dd class="num">{reg || '—'}</dd>
+        <dt>Name</dt><dd>{name || '-- --'}</dd>
+        <dt>Guild</dt><dd class="is-none">-- --</dd>
+        <dt>Registry No.</dt><dd class="num">{reg || '-- --'}</dd>
       </dl>
     </div>
   );
@@ -99,7 +99,7 @@ export function Awakening() {
   if (step === 'assess' || step === 'name') {
     return (
       <main class="awaken">
-        <Coach hot lines={[...ASSESSMENT, 'Right. What name am I putting on this thing? It goes on the licence, and the Association does not do reprints.']}
+        <Coach hot lines={[...ASSESSMENT, NAME_PROMPT]}
           onLine={(i) => { if (i === 2) { setShowCard(true); sfx.ping(); flash(); } }}
           onDone={() => setStep('name')} />
         {showCard && <Licence />}
@@ -181,7 +181,7 @@ function Cut() {
         lines: ['You have acquired the qualifications to be a <em>Player</em>. Will you accept?'],
         hold: { label: 'Hold To Accept', ms: 5000, ticks: 5, holding: 'Accepting…', done: 'Accepted', tick: sfx.awakenGong, seal: sfx.awakenSeal, after: 1500 },
       });
-      await sys({ title: 'Notification', kind: 'system', center: true, lines: ['Congratulations on becoming a <em>Player</em>.'], actions: [{ label: 'Continue', value: true, primary: true }] });
+      await sys({ title: 'Notification', kind: 'system', center: true, lines: ['Congratulations on becoming a <em>Player</em>.'], actions: [{ label: 'Close', value: true, primary: true }] });
       store.update((x) => { x.onboarded = true; });
     })();
     return () => { live = false; };

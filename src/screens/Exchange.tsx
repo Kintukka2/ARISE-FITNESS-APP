@@ -1,13 +1,16 @@
-/** The Exchange: eight pieces a day and the potions, paid for in Mana Shards. */
+/** The Exchange: the System's shop. Eight pieces a day and the potions, paid for in Mana Shards. */
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
 import * as shop from '@/core/shop';
-import { hhmmss, msUntilMidnight } from '@/core/util';
+import { group, hhmmss, msUntilMidnight } from '@/core/util';
 import { checkAwards } from '@/app/flow';
 import { buy as buyShards, PRODUCTS, storeReady } from '@/platform/native';
 import * as store from '@/store';
+import * as system from '@/ui/system';
 import { useSave } from '@/store';
-import { Btn, Chip, GearArt, Section, Shards, useNow } from '@/ui/components';
+import type { ComponentChildren } from 'preact';
+import { Btn, GearArt, Section, Shards, useNow } from '@/ui/components';
+import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
 import { openSheet, sys, toast } from '@/ui/overlays';
@@ -15,7 +18,35 @@ import { drinkFlow } from './Profile';
 
 export function openExchange() {
   if (!store.get().seen.includes('shop-visited')) store.update((x) => { x.seen.push('shop-visited'); });
-  openSheet({ title: 'The Exchange', tone: 'verdant', render: () => <Exchange /> });
+  openSheet({ title: 'Exchange', system: { icon: null }, render: () => <Exchange /> });
+}
+
+/** Not enough Mana Shards for it: the System's refusal, with the count. */
+const short = (price: number) => sys(system.refuse([`Not enough Mana Shards. (${store.get().wallet.shards}/${price})`], 'gear'));
+
+/**
+ * One row of the shop, as the source lays it out: the icon in its own box, the name, what it gives,
+ * and the price at the foot of the row. The whole row is the button; it asks before it buys.
+ */
+function ShopRow({ icon, name, gives, note, price, off, onBuy }: {
+  icon: ComponentChildren; name: ComponentChildren; gives?: string; note?: ComponentChildren; price: number;
+  /** Why it cannot be bought now ("Bought", "Full"), shown where the price would be. */
+  off?: string | null;
+  onBuy: () => void;
+}) {
+  const s = useSave();
+  return (
+    <button type="button" class={`shoprow ${off ? 'is-off' : ''} ${!off && s.wallet.shards < price ? 'is-short' : ''}`} disabled={!!off}
+      onClick={() => { sfx.tap(); onBuy(); }}>
+      <span class="shoprow__icon">{icon}</span>
+      <span class="shoprow__text">
+        <b>{name}</b>
+        {gives && <small class="grant">{gives}</small>}
+        {note && <small class="muted">{note}</small>}
+      </span>
+      <span class="shoprow__price">{off ?? <Shards n={price} />}</span>
+    </button>
+  );
 }
 
 function Exchange() {
@@ -24,25 +55,50 @@ function Exchange() {
   const offers = shop.shelf(s);
   const left = offers.filter((o) => !o.sold).length;
   const buy = async (o: shop.Offer) => {
+    if (store.get().wallet.shards < o.price) return void short(o.price);
+    const d = gear.defOf(o.item);
+    const want = await sys(system.offer([
+      'Would you like to purchase?',
+      system.tag(d?.name ?? 'Item', 'Item'),
+      system.gain(gear.coreText(o.item)),
+      `Price: ${group(o.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
     const it = store.update((x) => shop.buy(x, o.index));
-    if (!it) return toast('Not enough shards.', 'bad');
+    if (!it) return void short(o.price);
     sfx.success();
     buzz([14, 30, 22, 30, 70]);
     const v = await sys({
-      title: 'Purchase Complete', kind: 'gear', typed: false,
-      lines: [`<strong>${gear.defOf(it)?.name}</strong> is yours.`, gear.coreText(it)],
-      actions: [{ label: 'Put In Inventory', value: false }, { label: 'Equip', value: true, primary: true }],
+      ...system.notify([...system.event('acquired', system.tag(gear.defOf(it)?.name ?? 'Item', 'Item')), system.gain(gear.coreText(it))], 'gear',
+        [{ label: 'Put In Inventory', value: false }, { label: 'Equip', value: true, primary: true }]),
+      typed: false,
     });
     if (v) store.update((x) => gear.equip(x, it.id));
     void checkAwards();
   };
+  const buyField = async () => {
+    const f = shop.FIELD_POTION;
+    if (store.get().wallet.shards < f.price) return void short(f.price);
+    const want = await sys(system.offer([
+      'Would you like to purchase?',
+      system.tag('Field Potion', 'Item'),
+      system.gain(`HP +${f.heal * 100}%`),
+      'Used on your turn in a Gate.',
+      `Price: ${group(f.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
+    if (!store.update(shop.buyField)) return void short(f.price);
+    sfx.success();
+    buzz([14, 30, 22]);
+    toast(`Field Potion · Satchel ${store.get().satchel}/${f.max}`, 'xp');
+  };
   return (
-    <div class="stack">
-      <div class="purse">
-        <div><span class="label">Mana Shards</span><Shards n={s.wallet.shards} big /></div>
-        <div class="purse__right"><span class="label">New stock in</span><b class="num">{hhmmss(msUntilMidnight())}</b></div>
+    <div class="stack exchange">
+      <div class="sysfields">
+        <Field k="Mana Shards" v={<Shards n={s.wallet.shards} />} />
+        <Field k="New stock in" v={<span class="num">{hhmmss(msUntilMidnight())}</span>} />
       </div>
-      <p class="muted">Shards come from cleared Gates and recycled artifacts. Most of the shelf answers your grade; now and again something far above it turns up, at a price that says so.</p>
+      <p class="muted">Most stock is at your grade.</p>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -50,7 +106,7 @@ function Exchange() {
             {PRODUCTS.shards.map((p) => (
               <Btn key={p.id} kind="ghost" class="grow" onClick={async () => {
                 const ok = await buyShards(p.id);
-                toast(ok ? `+${p.amount} Mana Shards.` : 'The purchase did not complete. You have not been charged.', ok ? 'xp' : 'bad');
+                toast(ok ? `Mana Shards +${p.amount}` : 'The purchase did not complete. You have not been charged.', ok ? 'xp' : 'bad');
               }}><Shards n={p.amount} /></Btn>
             ))}
           </div>
@@ -58,54 +114,32 @@ function Exchange() {
       )}
 
       <Section title="Potions" right="Always in stock">
-        <div class="stack stack--tight">
-          <div class={`shoprow ${s.satchel >= shop.FIELD_POTION.max ? 'is-idle' : ''}`}>
-            <span class="potion potion--field"><Glyph name="potion" /></span>
-            <span class="shoprow__text">
-              <b>Field Potion</b>
-              <small>Carried into a Gate. Drink it on your turn: {shop.FIELD_POTION.heal * 100}% of your health back.</small>
-              <small class="muted">The satchel holds {shop.FIELD_POTION.max}. You are carrying {s.satchel}.</small>
-            </span>
-            {s.satchel >= shop.FIELD_POTION.max
-              ? <Chip>Satchel full</Chip>
-              : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < shop.FIELD_POTION.price} onClick={() => {
-                if (!store.update(shop.buyField)) return toast('Not enough shards.', 'bad');
-                sfx.success();
-                buzz([14, 30, 22]);
-                toast(`Field Potion · ${store.get().satchel} of ${shop.FIELD_POTION.max} in the satchel`, 'xp');
-              }}><Shards n={shop.FIELD_POTION.price} /></Btn>}
-          </div>
-          {shop.POTIONS.map((p) => {
-            const idle = shop.potionIdle(s, p.id);
-            return (
-              <div key={p.id} class={`shoprow ${idle ? 'is-idle' : ''}`}>
-                <span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>
-                <span class="shoprow__text"><b>{p.name}</b><small>{p.effect}</small><small class="muted">{p.desc}</small></span>
-                {idle ? <Chip>{idle}</Chip> : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < p.price} onClick={() => drinkFlow(p.id)}><Shards n={p.price} /></Btn>}
-              </div>
-            );
-          })}
+        <div class="shoplist">
+          <ShopRow icon={<span class="potion potion--field"><Glyph name="potion" /></span>} name="Field Potion"
+            gives={`HP +${shop.FIELD_POTION.heal * 100}%`}
+            note={`Carried into a Gate, used on your turn. Satchel: ${s.satchel}/${shop.FIELD_POTION.max}`}
+            price={shop.FIELD_POTION.price} off={s.satchel >= shop.FIELD_POTION.max ? 'Satchel full' : null} onBuy={buyField} />
+          {shop.POTIONS.map((p) => (
+            <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
+              gives={p.effect} note={p.desc} price={p.price} off={shop.potionIdle(s, p.id)}
+              onBuy={() => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); }} />
+          ))}
         </div>
       </Section>
 
-      <Section title="The Manifest" right={`${left} of ${offers.length} left`}>
-        <div class="stack stack--tight">
+      <Section title="The Manifest" right={`Left: ${left}/${offers.length}`}>
+        <div class="shoplist">
           {offers.map((o) => {
             const d = gear.defOf(o.item)!;
             return (
-              <div key={o.index} class={`shoprow ${o.sold ? 'is-sold' : ''}`}>
-                <GearArt item={o.item} size={48} />
-                <span class="shoprow__text">
-                  <b>{d.name} {!o.sold && gear.beatsWorn(s, o.item) && <span class="up">▲</span>}</b>
-                  <small>{gear.coreText(o.item)}{gear.rollText(o.item).length ? ` · ${gear.rollText(o.item).join(' · ')}` : ''}</small>
-                  <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(o.item))}{o.reach ? '' : ''}</small>
-                  {o.reach > 0 && <span class="chip" data-tone="gold">+{o.reach + 1} grades · +{o.reach * 50}% price</span>}
-                </span>
-                {o.sold ? <Chip>Bought</Chip> : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < o.price} onClick={() => buy(o)}><Shards n={o.price} /></Btn>}
-              </div>
+              <ShopRow key={o.index} icon={<GearArt item={o.item} size={52} />}
+                name={<>{d.name}{!o.sold && gear.beatsWorn(s, o.item) && <span class="up" title="Better than what you are wearing"> ▲</span>}</>}
+                gives={[gear.coreText(o.item), ...gear.rollText(o.item)].join(' · ')}
+                note={<>{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(o.item))}{o.reach > 0 && <><br /><span class="hint">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span></>}</>}
+                price={o.price} off={o.sold ? 'Bought' : null} onBuy={() => void buy(o)} />
             );
           })}
-          {!left && <p class="muted center">You have cleared the shelf. Nothing more until it is redrawn.</p>}
+          {!left && <p class="muted center">Sold out until midnight.</p>}
         </div>
       </Section>
     </div>

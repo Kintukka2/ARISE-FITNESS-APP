@@ -4,20 +4,19 @@
  * and grows a little with every kill it lands, as far as its rank allows;
  * enough kills promote it, and a Sworn Shadow remembers a second ability.
  */
-import { SECOND_AT, SHADOW_RANKS } from '@/data/shadows';
+import { SECOND_AT, SHADOW_RANKS, SLOTS } from '@/data/shadows';
 import { ALL_ENEMIES, enemyById } from './gates';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
-import type { Attrs, Enemy, Rank, Save, Shadow, Tactic } from './types';
+import type { Attrs, Enemy, Save, Shadow, Tactic } from './types';
 import { STATS } from './types';
 import { clamp, dayKey, uid } from './util';
 
-export const SLOTS: Record<Rank, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 3 };
 export const EXTRACT_MP: Record<string, number> = { E: 50, D: 60, C: 70, B: 80, A: 90, S: 100 };
 /** +1% to every attribute per kill, up to its rank's cap. */
 export const GROWTH_PER_KILL = 0.01;
 
-export { SECOND_AT, SHADOW_RANKS };
+export { SECOND_AT, SHADOW_RANKS, SLOTS };
 
 export const rankIndex = (sh: Shadow) => SHADOW_RANKS.reduce((n, r, i) => (sh.kills >= r.kills ? i : n), 0);
 export const rankOf = (sh: Shadow) => SHADOW_RANKS[rankIndex(sh)];

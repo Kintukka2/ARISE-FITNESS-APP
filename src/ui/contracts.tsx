@@ -1,8 +1,9 @@
-/** The day's System contracts, in a System window: on the board, and again when a run is settled. */
+/** The day's Daily Quests, in a QUEST INFO window: on the board, and again when a run is settled. */
 import type { ComponentChildren } from 'preact';
 import { bonusOf, contractHint, contractText, payOf, type Contracts } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
-import { Bar, Shards } from './components';
+import { Bar } from './components';
+import { Rewards, SysFrame } from './frame';
 import { Glyph } from './icons';
 
 export function ContractsWindow({ c, fresh = [], children }: {
@@ -14,31 +15,28 @@ export function ContractsWindow({ c, fresh = [], children }: {
   const pay = payOf(c.grade);
   const bonus = bonusOf(c.grade);
   return (
-    <section class="sysbox contracts" aria-label="System contracts">
-      <header class="sysbox__head">
-        <span class="sysbox__glyph" aria-hidden="true">!</span>
-        <span class="sysbox__title">Contracts</span>
-      </header>
-      <div class="sysbox__body">
-        <ul class="contracts__list">
-          {c.list.map((k) => (
-            <li key={k.kind} class={`contract ${k.done ? 'is-done' : ''} ${fresh.includes(k.kind) ? 'is-fresh' : ''}`} data-contract={k.kind}>
-              <span class="contract__mark" aria-hidden="true">{k.done && <Glyph name="check" />}</span>
-              <div class="contract__body">
-                <b>{contractText(k, c.grade)}</b>
-                {!k.done && <small>{contractHint(k)}</small>}
-                {!k.done && k.need > 1 && <Bar pct={(k.got / k.need) * 100} thin label={`${k.got} of ${k.need}`} />}
-              </div>
-              <span class="contract__count num">{k.done ? (fresh.includes(k.kind) ? 'Done' : 'Paid') : `${k.got}/${k.need}`}</span>
-            </li>
-          ))}
-        </ul>
-        <p class="contracts__pay">
-          Each pays <Shards n={pay.shards} /> and <b class="num">{pay.xp}</b> XP.
-          {' '}{c.bonus ? `All ${CONTRACTS_PER_DAY} done, and the bonus paid` : <>All {CONTRACTS_PER_DAY} pay <Shards n={bonus.shards} /> and <b class="num">{bonus.xp}</b> XP more</>}.
-        </p>
-        {children}
-      </div>
-    </section>
+    <SysFrame title="Quest Info" class="contracts" label="Daily Quests">
+      <p class="contracts__name"><strong>[Daily Quests]</strong></p>
+      <span class="label">Goal</span>
+      <ul class="contracts__list">
+        {c.list.map((k) => (
+          <li key={k.kind} class={`contract ${k.done ? 'is-done' : ''} ${fresh.includes(k.kind) ? 'is-fresh' : ''}`} data-contract={k.kind}>
+            <span class="contract__mark" aria-hidden="true">{k.done && <Glyph name="check" />}</span>
+            <div class="contract__body">
+              <b>{contractText(k, c.grade)}</b>
+              {!k.done && <small>{contractHint(k)}</small>}
+              {!k.done && k.need > 1 && <Bar pct={(k.got / k.need) * 100} thin label={`${k.got} of ${k.need}`} />}
+            </div>
+            <span class="contract__count num">{k.done ? (fresh.includes(k.kind) ? 'Done' : 'Paid') : `${k.got}/${k.need}`}</span>
+          </li>
+        ))}
+      </ul>
+      <span class="label">Rewards</span>
+      <Rewards items={[
+        <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · Experience <b class="num grant">+{pay.xp}</b></>,
+        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · Experience <b class="num grant">+{bonus.xp}</b></>}</>,
+      ]} />
+      {children}
+    </SysFrame>
   );
 }

@@ -30,7 +30,7 @@ export function MapView({ m, path = [], at = 0, options = [], road = [], onPick,
     return ia >= 0 && path[ia + 1] === b;
   };
   return (
-    <div class={`gmap ${compact ? 'gmap--compact' : ''}`} style={{ '--rows': rows } as Record<string, number>} role="group" aria-label="Map of the gate">
+    <div class={`gmap ${compact ? 'gmap--compact' : ''}`} style={{ '--rows': rows } as Record<string, number>} role="group" aria-label="Map of the Gate">
       <svg class="gmap__lines" viewBox={`0 0 100 ${rows * 10}`} preserveAspectRatio="none" aria-hidden="true">
         {m.layers.slice(0, -1).flatMap((row, k) => row.flatMap((a, i) => a.next.map((id) => {
           const b = m.byId[id];

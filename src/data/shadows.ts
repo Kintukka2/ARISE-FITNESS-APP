@@ -1,3 +1,8 @@
+import type { Rank } from '@/core/types';
+
+/** Shadows a hunter can deploy at each grade, before Secret Quests add more. */
+export const SLOTS: Record<Rank, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 3 };
+
 /**
  * The ranks of the Shadow army. A Shadow is promoted by the kills it lands,
  * and each rank lifts how far those kills can grow it. Numbers here are rules;

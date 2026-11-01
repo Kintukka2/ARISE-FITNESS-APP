@@ -97,7 +97,7 @@ export const RULES = {
 /** The levels' names, one to a rule. Level 1 adds no rule but the stronger foes. */
 export const ASCENSION_NAMES: string[] = [
   'Heavier Air', 'Thin Rest', 'Short-Handed', 'Heavy Legs', 'Wardens Wake',
-  'Crooked Luck', 'Hungry Dark', 'Never Alone', 'Worn Thin', 'The System Watches',
+  'Crooked Luck', 'Hungry Dark', 'Never Alone', 'Worn Thin', 'By Hand',
 ];
 
 /**

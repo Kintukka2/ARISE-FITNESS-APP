@@ -18,7 +18,7 @@ import { licensedRank } from './licence';
 export const STOCK = 8;
 export const GATE_SHARDS: Record<Rank, number> = { E: 10, D: 16, C: 26, B: 42, A: 68, S: 110 };
 const PRICE_PER_SCORE = 10;
-const REACH_PREMIUM = 0.5;
+export const REACH_PREMIUM = 0.5;
 const RECYCLE_SHARE = 0.05;
 
 /** How far from the hunter's grade an offer lands, and how often. */
@@ -155,11 +155,15 @@ export function upgrade(s: Save, itemId: string): boolean {
 
 export type PotionId = 'hp' | 'mp' | 'fatigue' | 'elixir';
 
+/** What the Health and Mana Potions restore, as a share of the maximum, and what the Fatigue Potion takes off. */
+export const POTION_RESTORE = 0.25;
+export const POTION_EASE = 20;
+
 export const POTIONS: { id: PotionId; name: string; price: number; effect: string; desc: string }[] = [
-  { id: 'hp', name: 'Health Potion', price: 30, effect: 'Restores 25% of maximum HP', desc: 'Sealed field ration issue. Tastes of iron and does not care.' },
-  { id: 'mp', name: 'Mana Potion', price: 30, effect: 'Restores 25% of maximum MP', desc: 'Distilled from a Gate’s own residue. The Association sells it back to you.' },
-  { id: 'fatigue', name: 'Fatigue Potion', price: 45, effect: 'Removes 20 Fatigue', desc: 'It does not rest you. It persuades your body it has rested.' },
-  { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Lifts the lockout after being downed', desc: 'The only argument the Association accepts for walking back into a Gate the same day one carried you out of it.' },
+  { id: 'hp', name: 'Health Potion', price: 30, effect: `HP +${POTION_RESTORE * 100}%`, desc: 'A sealed field ration sold by the Hunter Association.' },
+  { id: 'mp', name: 'Mana Potion', price: 30, effect: `MP +${POTION_RESTORE * 100}%`, desc: 'Distilled from Gate residue. Sold by the Hunter Association.' },
+  { id: 'fatigue', name: 'Fatigue Potion', price: 45, effect: `Fatigue -${POTION_EASE}`, desc: 'A tonic that removes fatigue without rest.' },
+  { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Gate lockout lifted', desc: 'Accepted by the Hunter Association as proof of recovery.' },
 ];
 
 /** Field potions are carried, not drunk: into a Gate, for the hunter's own turn. */
@@ -184,8 +188,8 @@ export function potionIdle(s: Save, id: PotionId, now = Date.now()): string | nu
 export function drink(s: Save, id: PotionId, now = Date.now()): number | null {
   const p = POTIONS.find((x) => x.id === id)!;
   if (potionIdle(s, id, now) || !pay(s, p.price)) return null;
-  if (id === 'hp') return vitals.heal(s, 0.25, now);
-  if (id === 'mp') return vitals.restore(s, 0.25, now);
-  if (id === 'fatigue') return vitals.ease(s, 20, now);
+  if (id === 'hp') return vitals.heal(s, POTION_RESTORE, now);
+  if (id === 'mp') return vitals.restore(s, POTION_RESTORE, now);
+  if (id === 'fatigue') return vitals.ease(s, POTION_EASE, now);
   return vitals.unlock(s, now);
 }

@@ -88,19 +88,32 @@
   max-height: 86dvh;
   display: flex;
   flex-direction: column;
+  animation: windowIn 360ms var(--ease) both;
+}
+@keyframes windowIn { 0% { opacity: 0; transform: scaleY(0.12); filter: brightness(2.2); } 60% { opacity: 1; transform: scaleY(1.02); } 100% { transform: none; filter: none; } }
+.syswin__body { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; overflow-y: auto; }
+.syswin__line { color: var(--ink-2); font-size: 1rem; }
+.syswin.is-center .syswin__line { text-align: center; }
+.syswin__foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 4px 18px 18px; animation: fadein 300ms both; }
+.syswin__foot .btn { flex: 1 1 120px; }
+
+/* The System's window: the frame from .sysframe, its glass scrolling inside. */
+.syswin.sysframe { max-height: calc(86dvh - 20px); margin: 10px 0; }
+.syswin__glass { gap: 0; padding: 14px 12px 14px; }
+.syswin.sysframe .syswin__body { gap: 8px; padding: 18px 8px 16px; }
+.syswin.sysframe .syswin__line { color: var(--sys-ink); font-size: 0.94rem; line-height: 1.55; }
+.syswin.sysframe .syswin__foot { padding: 2px 8px 2px; gap: 12px; }
+.syswin.sysframe .syswin__foot .btn { flex: 1 1 0; max-width: 176px; }
+
+/* Valcorde's window, the app's, and the other voices': a plain frame of their own. */
+.syswin:not(.sysframe) {
   background: linear-gradient(180deg, rgba(10, 26, 56, 0.97), rgba(4, 10, 24, 0.98));
   border: 1px solid color-mix(in srgb, var(--win) 70%, transparent);
   border-radius: var(--r-sm);
   box-shadow: 0 0 0 1px rgba(4, 10, 24, 0.9) inset, 0 0 40px var(--win-glow), 0 18px 60px rgba(0, 0, 0, 0.7);
-  animation: windowIn 360ms var(--ease) both;
 }
-.syswin::before { content: ''; position: absolute; inset: 5px; border: 1px solid color-mix(in srgb, var(--win) 22%, transparent); pointer-events: none; }
-@keyframes windowIn { 0% { opacity: 0; transform: scaleY(0.12); filter: brightness(2.2); } 60% { opacity: 1; transform: scaleY(1.02); } 100% { transform: none; filter: none; } }
+.syswin:not(.sysframe)::before { content: ''; position: absolute; inset: 5px; border: 1px solid color-mix(in srgb, var(--win) 22%, transparent); pointer-events: none; }
 .syswin--danger { --win: var(--sysred); --win-glow: rgba(255, 47, 62, 0.5); }
-.syswin--gold { --win: var(--gold); --win-glow: var(--gold-glow); }
-.syswin--gates { --win: var(--ember); --win-glow: var(--ember-glow); }
-.syswin--shadow { --win: var(--arcane); --win-glow: var(--arcane-glow); }
-.syswin--gear { --win: #c9a7ff; --win-glow: rgba(201, 167, 255, 0.4); }
 .syswin--coach { --win: #7fb6ff; --win-glow: rgba(127, 182, 255, 0.35); }
 .syswin--app { --win: #7fdcff; --win-glow: rgba(127, 220, 255, 0.3); }
 .syswin__head { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid color-mix(in srgb, var(--win) 30%, transparent); }
@@ -110,14 +123,9 @@
 .syswin__who { display: flex; align-items: center; gap: 10px; padding: 12px 18px 0; }
 .syswin__who div { display: flex; flex-direction: column; }
 .syswin__who small { color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; }
-.syswin__body { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; overflow-y: auto; }
-.syswin__line { color: var(--ink-2); font-size: 1rem; }
 .syswin__line em { color: var(--win); }
-.syswin.is-center .syswin__line { text-align: center; }
 .syswin__line .warn { color: var(--sysred); font-weight: 700; }
-.syswin__foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 4px 18px 18px; animation: fadein 300ms both; }
-.syswin__foot .btn { flex: 1 1 120px; }
-.syswin .btn--primary { --accent: var(--win); --accent-glow: var(--win-glow); }
+.syswin:not(.sysframe) .btn--primary { --accent: var(--win); --accent-glow: var(--win-glow); }
 
 .holdbtn {
   position: relative;
@@ -276,18 +284,18 @@
 .fold { border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); }
 .fold__head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.86rem; }
 .fold__head span:first-child { flex: 1; }
+.guide__list { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); font-size: 0.9rem; }
+.guide__list li::marker { color: var(--accent); }
 .fold__right { color: var(--ink-3); text-transform: none; letter-spacing: 0; }
 .fold__chev { transition: transform 200ms; color: var(--mana); }
 .fold.is-open .fold__chev { transform: rotate(90deg); }
 .fold.is-open { border-color: rgba(72, 245, 168, 0.45); }
 .fold__body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
 
-.voice { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-left: 2px solid var(--mana); background: linear-gradient(90deg, rgba(79, 214, 255, 0.08), transparent); border-radius: 0 var(--r-md) var(--r-md) 0; }
-.voice--coach { border-left-color: #7fb6ff; background: linear-gradient(90deg, rgba(127, 182, 255, 0.08), transparent); }
-.voice__face { flex: none; color: var(--mana); }
+.voice { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-left: 2px solid #7fb6ff; background: linear-gradient(90deg, rgba(127, 182, 255, 0.08), transparent); border-radius: 0 var(--r-md) var(--r-md) 0; }
+.voice__face { flex: none; }
 .voice__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.voice__name { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mana); }
-.voice--coach .voice__name { color: #9cc7ff; }
+.voice__name { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: #9cc7ff; }
 .voice__line { color: var(--ink-2); font-size: 0.95rem; }
 
 .input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(4, 10, 24, 0.75); color: var(--ink); font-size: 1rem; }
@@ -389,34 +397,198 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysmark { color: var(--mana); filter: drop-shadow(0 0 6px var(--mana-glow)); }
 .shard { flex: none; }
 
-/* ------------------------------------------------------------------ System contracts: a System window set into the page */
+/* ------------------------------------------------------------------ the System's frame
+ * What the anime draws, and only for the System (src/ui/frame.tsx): a coloured frame lit along the
+ * top and the bottom, a dark glass panel inside it ruled with a pale hairline, and every element in
+ * a hairline box of its own. The colour lives on the frame; the type inside is white and glows it.
+ */
 
-.sysbox {
+.sysframe {
   --win: var(--mana);
   --win-glow: var(--mana-glow);
+  --sys-glow: 0 0 2px rgba(255, 255, 255, 0.55), 0 0 10px var(--win-glow);
   position: relative;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(10, 26, 56, 0.92), rgba(4, 10, 24, 0.94));
-  border: 1px solid color-mix(in srgb, var(--win) 60%, transparent);
-  border-radius: var(--r-sm);
-  box-shadow: 0 0 0 1px rgba(4, 10, 24, 0.9) inset, 0 0 24px color-mix(in srgb, var(--win) 22%, transparent);
+  min-height: 0;
+  padding: 13px 9px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--win) 24%, transparent), transparent 7%, transparent 93%, color-mix(in srgb, var(--win) 24%, transparent)),
+    color-mix(in srgb, var(--win) 6%, rgba(2, 5, 14, 0.95));
+  border-left: 2px solid color-mix(in srgb, var(--win) 70%, transparent);
+  border-right: 2px solid color-mix(in srgb, var(--win) 70%, transparent);
+  box-shadow: -2px 0 12px -4px var(--win-glow), 2px 0 12px -4px var(--win-glow), 0 16px 44px rgba(0, 0, 0, 0.55);
+  color: var(--sys-ink);
+  font-family: var(--font-sys);
+  font-weight: 500;
 }
-.sysbox::before { content: ''; position: absolute; inset: 4px; border: 1px solid color-mix(in srgb, var(--win) 18%, transparent); pointer-events: none; }
-.sysbox__head { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 16px 10px; border-bottom: 1px solid color-mix(in srgb, var(--win) 30%, transparent); }
-.sysbox__glyph { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--win); border-radius: 50%; color: var(--win); font-weight: 700; font-size: 0.8rem; box-shadow: 0 0 10px var(--win-glow); }
-.sysbox__title { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.24em; text-indent: 0.24em; text-transform: uppercase; color: var(--ink); text-shadow: 0 0 12px var(--win-glow); }
-.sysbox__body { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.sysframe--gold { --win: var(--gold); --win-glow: var(--gold-glow); }
+.sysframe--gates { --win: var(--ember); --win-glow: var(--ember-glow); }
+.sysframe--shadow { --win: var(--arcane); --win-glow: var(--arcane-glow); }
+
+/* The lit rails: a bright bar running past the frame, hooked down at the ends, a raised plate at its centre. */
+.sysrail { position: absolute; z-index: 1; left: -6px; right: -6px; height: 10px; pointer-events: none; filter: drop-shadow(0 0 3px var(--win)) drop-shadow(0 0 9px var(--win-glow)); }
+.sysrail--top { top: -4px; }
+.sysrail--bottom { bottom: -4px; transform: scaleY(-1); }
+.sysrail > i {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--win), color-mix(in srgb, var(--win) 30%, white) 50%, var(--win));
+  clip-path: polygon(0 100%, 7px 35%, calc(50% - 46px) 35%, calc(50% - 38px) 0, calc(50% + 38px) 0, calc(50% + 46px) 35%, calc(100% - 7px) 35%, 100% 100%, calc(100% - 9px) 100%, calc(100% - 12px) 72%, 12px 72%, 9px 100%);
+}
+
+/* The glass: dark, scratched, ruled with one pale hairline. */
+.sysframe__glass {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  padding: 16px 14px;
+  border: 1px solid var(--sys-hair);
+  background:
+    repeating-linear-gradient(116deg, transparent 0 26px, rgba(170, 215, 255, 0.035) 26px 27px),
+    repeating-linear-gradient(62deg, transparent 0 41px, rgba(170, 215, 255, 0.025) 41px 42px),
+    rgba(1, 4, 10, 0.6);
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.55), 0 0 6px color-mix(in srgb, var(--win) 22%, transparent);
+}
+
+/* A hairline box: every element of a System surface sits in one. */
+.sysbox { border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+
+.syshead { position: relative; display: flex; align-items: stretch; justify-content: center; gap: 8px; }
+.syshead.has-tools { padding-right: 50px; }
+.syshead.has-tools:not(.is-card) { padding-left: 50px; }
+.syshead.is-card .syshead__icon { padding: 0; min-width: 0; }
+
+/* A System screen in a sheet: the frame floats a little clear of the screen's edges. */
+.sheet__panel.sysframe {
+  width: calc(100% - 14px);
+  margin: 0 7px calc(10px + var(--safe-b));
+  max-height: calc(100dvh - var(--safe-t) - 40px);
+  padding: 13px 9px;
+  border-top: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--win) 24%, transparent), transparent 7%, transparent 93%, color-mix(in srgb, var(--win) 24%, transparent)),
+    color-mix(in srgb, var(--win) 6%, rgba(2, 5, 14, 0.97));
+}
+.sheet__glass { gap: 0; padding: 12px 12px 4px; }
+.sheet__glass .sheet__body { flex: 1; min-height: 0; padding: 14px 2px 12px; }
+.syshead__icon { display: grid; place-items: center; flex: none; min-width: 46px; min-height: 46px; padding: 4px; }
+.syshead__icon > .ico { width: 24px; height: 24px; filter: drop-shadow(0 0 4px var(--win-glow)); }
+.syshead__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 6px 18px;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-shadow: var(--sys-glow);
+}
+.syshead__title.is-card { flex: 1; flex-wrap: wrap; column-gap: 7px; row-gap: 0; padding: 6px 12px; font-size: 1rem; letter-spacing: 0.02em; text-transform: none; }
+.syshead__title.is-card small { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+.syshead__tools { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; }
+.sysbang {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--sys-ink);
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: var(--sys-glow);
+  box-shadow: 0 0 8px var(--win-glow), inset 0 0 6px var(--win-glow);
+}
+
+/* The type: white, a soft glow of the frame's colour; a name in its brackets lifts and leans. */
+.sysframe p, .sysframe li { text-shadow: 0 0 7px color-mix(in srgb, var(--win) 38%, transparent); }
+.sysframe strong, .sysframe em { color: #fff; font-weight: 700; font-style: italic; text-shadow: 0 0 3px rgba(255, 255, 255, 0.7), 0 0 12px var(--win-glow); }
+.sysframe em { font-style: normal; }
+.sysframe .warn { color: #ff3b4b; text-shadow: 0 0 8px rgba(255, 47, 62, 0.55); }
+.sysframe .warn strong { color: inherit; }
+.sysframe .grant { color: var(--verdant); letter-spacing: 0.02em; text-shadow: 0 0 8px var(--verdant-glow); }
+.sysframe .label { font-family: var(--font-sys); font-size: 0.62rem; letter-spacing: 0.16em; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.sysframe .muted { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.sysframe .hint { color: color-mix(in srgb, var(--gold) 85%, white); }
+.sysframe .num { font-family: var(--font-sys); letter-spacing: 0; }
+.sysframe .caret { background: var(--sys-ink); box-shadow: 0 0 6px var(--win-glow); }
+
+/* Buttons are hairline boxes too. The act the window offers is lit; the way out is not. */
+.sysframe .btn {
+  min-height: 44px;
+  border: 1px solid var(--sys-hair);
+  border-radius: 0;
+  background: rgba(3, 8, 20, 0.45);
+  color: var(--sys-ink);
+  font-family: var(--font-sys);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  text-shadow: var(--sys-glow);
+  box-shadow: none;
+}
+.sysframe .btn::after { background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--win) 30%, transparent) 50%, transparent 70%); }
+@media (hover: hover) { .sysframe .btn:hover { border-color: var(--sys-hair-hot); box-shadow: 0 0 12px color-mix(in srgb, var(--win) 30%, transparent); } }
+.sysframe .btn--primary { border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 16%, rgba(3, 8, 20, 0.5)); color: #fff; box-shadow: 0 0 14px color-mix(in srgb, var(--win) 30%, transparent), inset 0 0 14px color-mix(in srgb, var(--win) 24%, transparent); }
+.sysframe .btn--gold { border-color: color-mix(in srgb, var(--gold) 75%, transparent); background: rgba(255, 203, 92, 0.08); color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.sysframe .btn--sm { min-height: 38px; font-size: 0.82rem; }
+.sysframe .holdbtn { border-color: var(--sys-hair-hot); border-radius: 0; font-family: var(--font-sys); font-size: 0.92rem; font-weight: 600; letter-spacing: 0.06em; text-transform: none; text-shadow: var(--sys-glow); background: rgba(3, 8, 20, 0.45); }
+.sysframe .holdbtn__fill { background: linear-gradient(90deg, color-mix(in srgb, var(--win) 25%, transparent), color-mix(in srgb, var(--win) 70%, transparent)); }
+.sysframe .iconbtn { border-radius: 0; border-color: var(--sys-hair); background: rgba(3, 8, 20, 0.45); color: var(--sys-ink); }
+
+/* Tiles, rows and sections set inside the frame take its hairline and its type. */
+.sysframe .tile { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
+.sysframe .tile .label { font-size: 0.58rem; }
+.sysframe .tile__v { font-family: var(--font-sys); font-weight: 600; text-shadow: var(--sys-glow); }
+.sysframe .tile__sub { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+
+/* Fields: the label small above, the value under it. */
+.sysfields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sysfield { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 8px 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.sysfield.is-wide { grid-column: 1 / -1; }
+.sysfield > span { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.sysfield > b { min-width: 0; font-weight: 600; font-size: 0.95rem; line-height: 1.25; overflow-wrap: anywhere; text-shadow: var(--sys-glow); }
+
+/* Stat lines: green, an icon in front, as the source lists what an item gives. */
+.sysstats { display: flex; flex-direction: column; gap: 6px; }
+.sysstat { display: flex; align-items: center; gap: 10px; color: var(--verdant); font-size: 0.94rem; font-weight: 700; text-shadow: 0 0 8px var(--verdant-glow); }
+.sysstat > .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 4px var(--verdant-glow)); }
+.sysstat small { margin-left: auto; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-shadow: none; }
+
+/* Quest Info: the day's Daily Quests. */
+.contracts__name { margin: 0; text-align: center; }
+.contracts > .sysframe__glass > .label { text-align: center; text-decoration: underline; text-underline-offset: 4px; }
 .contracts__list { margin: 0; display: flex; flex-direction: column; gap: 12px; }
 .contract { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: start; }
-.contract__mark { display: grid; place-items: center; width: 18px; height: 18px; margin-top: 2px; border: 1px solid color-mix(in srgb, var(--win) 70%, transparent); border-radius: 50%; }
+.contract__mark { display: grid; place-items: center; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--sys-hair-hot); }
 .contract__mark .ico { width: 13px; height: 13px; }
 .contract__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.contract__body small { color: var(--ink-3); font-size: 0.8rem; line-height: 1.35; }
-.contract__count { font-size: 0.85rem; color: var(--ink-2); padding-top: 2px; }
-.contract.is-done b { color: var(--ink-2); }
+.contract__body b { font-size: 0.9rem; font-weight: 600; line-height: 1.35; text-shadow: var(--sys-glow); }
+.contract__body small { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.78rem; line-height: 1.35; }
+.contract__count { font-size: 0.85rem; padding-top: 2px; }
+.contract.is-done b { color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 .contract.is-done .contract__mark { border-color: var(--verdant); color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); }
 .contract.is-done .contract__count { color: var(--verdant); }
 .contract.is-fresh b { color: var(--verdant); }
-.contracts__pay { margin: 0; color: var(--ink-2); font-size: 0.88rem; }
-.contracts__when { color: var(--ink-3); font-size: 0.78rem; }
+
+/* Rewards: one box, each reward in a box of its own inside it, as the source sets Quest Rewards. */
+.sysrewards { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 8px; border: 1px solid var(--sys-hair); list-style: none; text-align: left; }
+.sysrewards > br { display: none; }
+.sysreward { display: block; padding: 7px 10px; font-size: 0.86rem; line-height: 1.4; }
+.syswin__line .sysrewards { margin: 4px 0; }
+.questrewards .sysframe__glass { text-align: center; }
+
+/* A System notice set into a screen, above its panels: the window, smaller. */
+.sysnotice .sysframe__glass { gap: 10px; padding: 12px; }
+.sysnotice p { font-size: 0.92rem; text-align: center; }
+.contracts__when { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.76rem; }

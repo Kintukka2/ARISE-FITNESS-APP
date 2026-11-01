@@ -21,72 +21,23 @@ import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
+import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
 import { rewardChain } from '@/app/flow';
 import { arena } from '@/app/router';
 import * as store from '@/store';
+import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { ContractsWindow } from '@/ui/contracts';
+import { Rewards, SysFrame } from '@/ui/frame';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
+import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, pushBack, sys } from '@/ui/overlays';
 
-type Beat = { kind: 'round' | 'act' | 'drain' | 'aura'; ev: Ev[] };
-
-function toBeats(log: Ev[]): Beat[] {
-  const out: Beat[] = [];
-  let cur: Beat | null = null;
-  const push = (b: Beat) => { out.push(b); cur = b; };
-  for (const e of log) {
-    if (e.t === 'round') push({ kind: 'round', ev: [e] });
-    else if (e.t === 'hit' || e.t === 'miss') {
-      const c = cur as Beat | null;
-      const head = c?.ev[0];
-      if (c && c.kind === 'act' && head && (head.t === 'hit' || head.t === 'miss') && head.a === e.a && head.ab === e.ab) c.ev.push(e);
-      else push({ kind: 'act', ev: [e] });
-    } else if (e.t === 'support' || e.t === 'stun' || e.t === 'guard' || e.t === 'heal') push({ kind: 'act', ev: [e] });
-    else if (e.t === 'tick' || e.t === 'expire') {
-      if (cur && (cur as Beat).kind === 'drain') (cur as Beat).ev.push(e);
-      else push({ kind: 'drain', ev: [e] });
-    } else if (e.t === 'passive' && e.k === 'aura') push({ kind: 'aura', ev: [e] });
-    else if (cur) (cur as Beat).ev.push(e);
-    else push({ kind: 'act', ev: [e] });
-  }
-  return out;
-}
-
 interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
-
-function lines(b: Beat, name: (uid: string) => string): { text: string; tone: string }[] {
-  const out: { text: string; tone: string }[] = [];
-  const side = (uid: string) => (uid.startsWith('e') ? 'foe' : 'ally');
-  const hits = b.ev.filter((e): e is Extract<Ev, { t: 'hit' }> => e.t === 'hit');
-  const first = b.ev[0];
-  if (first.t === 'round') return [{ text: `Round ${first.n}`, tone: 'round' }];
-  if (hits.length) {
-    const h = hits[0];
-    const crit = hits.some((x) => x.crit);
-    const targets = hits.map((x) => `${name(x.v)} ${x.dmg}${x.crit ? '!' : ''}`).join(', ');
-    out.push({ text: `${crit ? '✦' : '◆'} ${name(h.a)} — ${h.ab} → ${targets}`, tone: side(h.a) });
-  }
-  for (const e of b.ev) {
-    if (e.t === 'miss') out.push({ text: `○ ${name(e.a)} swings ${e.ab} at ${name(e.v)} and finds nothing.`, tone: 'muted' });
-    else if (e.t === 'support') out.push({ text: `✦ ${name(e.a)} calls ${e.ab}. The line is rallied.`, tone: side(e.a) });
-    else if (e.t === 'stun') out.push({ text: `✴ ${name(e.a)} is stunned and cannot act.`, tone: 'muted' });
-    else if (e.t === 'guard') out.push({ text: `◈ ${name(e.a)} raises a guard.`, tone: side(e.a) });
-    else if (e.t === 'heal') out.push({ text: `✚ ${name(e.a)} drinks a field potion. +${e.amt} HP.`, tone: side(e.a) });
-    else if (e.t === 'status') out.push({ text: `✴ ${name(e.v)} is ${e.s}.`, tone: 'status' });
-    else if (e.t === 'down') out.push({ text: `✖ ${name(e.v)} falls.`, tone: e.v.startsWith('e') ? 'kill' : 'loss' });
-    else if (e.t === 'tick') out.push({ text: `● ${name(e.v)} loses ${e.dmg} to ${e.s}.`, tone: 'status' });
-    else if (e.t === 'passive') {
-      const t = e.k === 'ward' ? `◉ ${name(e.u)}’s ${e.p} takes half of it.` : e.k === 'stand' ? `◉ ${name(e.u)} will not fall — ${e.p}.` : e.k === 'brace' ? `◉ ${name(e.u)} shrugs off the stagger.` : e.k === 'aura' ? `◉ ${name(e.u)} takes command. ${e.p}.` : `◉ ${e.p} lashes out.`;
-      out.push({ text: t, tone: 'passive' });
-    }
-  }
-  return out;
-}
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
@@ -134,7 +85,7 @@ export function Arena() {
   paceRef.current = pace;
   const autoRef = useRef(false);
   autoRef.current = auto;
-  /** From The System Watches up, Auto stands aside in a boss's chamber: every order there is the hunter's. */
+  /** From By Hand up, Auto stands aside in a boss's chamber: every order there is the hunter's. */
   const handRef = useRef(false);
   const aimRef = useRef<string | null>(null);
   aimRef.current = aim;
@@ -251,12 +202,12 @@ export function Arena() {
     setPhase('turn');
     if (store.update((x) => story.markOnce(x, 'turn-told'))) {
       await sys({
-        title: 'Your Turn', kind: 'system',
+        title: 'Your Turn', kind: 'app', actions: [{ label: 'Close', value: null }],
         lines: [
-          'The System waits on you. Tap a foe to aim at it, then act.',
-          'Every foe shows what it will do next, and at whom. What it shows is what it does, unless its target falls first.',
+          'Tap a foe to aim at it, then act.',
+          'Each foe shows its next move and its target.',
           `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>field potion</em> restores ${FIELD_POTION_HEAL * 100}% of your health.`,
-          '<em>Auto</em> lets the System fight your turns and pick your way, as it does when it assesses a gate.',
+          '<em>Auto</em> lets the System fight your turns and pick your way, as it does when it assesses a Gate.',
         ],
       });
     }
@@ -287,15 +238,15 @@ export function Arena() {
     setPhase('fight');
     const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
     setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
-    setFeed([{ text: c.boss ? `${c.label} rises.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
-    if (handRef.current) say([{ text: '▸ The System will not fight this one for you. Every order is yours.', tone: 'muted' }]);
+    setFeed([{ text: c.boss ? `[${c.label}] has appeared.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
+    if (handRef.current) say([{ text: '▸ Auto is not available in this chamber.', tone: 'muted' }]);
     // Coming back mid-chamber: everything the saved orders already played is shown at once.
     let at = 0;
     if ((r.orders ?? []).length) {
       for (const b of toBeats(ch.log)) apply(local, b);
       at = ch.log.length;
       setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
-      say([{ text: '▸ Back where you were.', tone: 'muted' }]);
+      say([{ text: '▸ Chamber resumed.', tone: 'muted' }]);
     }
     at = await show(ch.log, at, local);
     while (ch.turn) {
@@ -309,10 +260,10 @@ export function Arena() {
     store.update((x) => raid.record(x, d, x.gates.raid!, party, res));
     const hero = local.find((x) => x.uid === 'hero');
     const left = local.filter((x) => x.side === 'p' && x.hp > 0).length;
-    const band = !hero || hero.hp <= 0 ? 'down' : hero.hp >= hero.mx ? 'unhurt' : hero.hp / hero.mx >= 0.75 ? 'grazed' : hero.hp / hero.mx >= 0.45 ? 'wounded' : 'badly hurt';
+    const band = !hero || hero.hp <= 0 ? 'Down' : hero.hp >= hero.mx ? 'Unhurt' : hero.hp / hero.mx >= 0.75 ? 'Grazed' : hero.hp / hero.mx >= 0.45 ? 'Wounded' : 'Badly hurt';
     say(res.won
-      ? [{ text: `▸ ${res.label} is clear after ${res.rounds} round${res.rounds === 1 ? '' : 's'}. ${left} standing. You are ${band}.`, tone: 'outcome' }]
-      : [{ text: `▸ ${res.label} holds. The party is dragged out.`, tone: 'loss' }]);
+      ? [{ text: `▸ [${res.label}] cleared. Rounds: ${res.rounds}. Standing: ${left}. Condition: ${band}.`, tone: 'outcome' }]
+      : [{ text: `▸ [${res.label}] not cleared. The party has been carried out.`, tone: 'loss' }]);
     if (res.won) buzz(20);
     else { sfx.alarm(); flash('danger'); buzz([40, 60, 120]); }
     setWon(res.won);
@@ -373,7 +324,7 @@ export function Arena() {
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)} />
               {raid.canWithdraw(d, run)
                 ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
-                : <small class="muted center">Tap a step that glows. Only a rest lets you leave the gate.</small>}
+                : <small class="muted center">Tap a step that glows.</small>}
             </>}
         </div>
       ) : (
@@ -395,7 +346,7 @@ export function Arena() {
       <footer class="arena__foot">
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
-            <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? '—'}</b>; tap a foe to change.</small>
+            <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</small>
             <div class="turnbar__acts">
               {turn.skills.map((k) => (
                 <button type="button" key={k.ability.name} class="act" disabled={k.cd > 0} onClick={() => give({ use: k.ability.name, at: aim ?? undefined })}>
@@ -403,9 +354,9 @@ export function Arena() {
                 </button>
               ))}
               <button type="button" class="act" onClick={() => give({ use: 'Strike', at: aim ?? undefined })}><b>Strike</b><small>{REACH_TEXT.single}</small></button>
-              <button type="button" class="act act--guard" onClick={() => give({ use: 'Guard' })}><b>Guard</b><small>take {GUARD * 100}% till your turn</small></button>
+              <button type="button" class="act act--guard" onClick={() => give({ use: 'Guard' })}><b>Guard</b><small>Damage taken -{(1 - GUARD) * 100}%</small></button>
               <button type="button" class="act act--potion" disabled={!turn.potions || !hero || hero.hp >= hero.mx} onClick={() => give({ use: 'Potion' })}>
-                <b>Potion · {turn.potions}</b><small>+{FIELD_POTION_HEAL * 100}% HP</small>
+                <b>Potion · {turn.potions}</b><small>HP +{FIELD_POTION_HEAL * 100}%</small>
               </button>
             </div>
           </div>
@@ -440,7 +391,7 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
     <div class="runstrip">
       <div class="runstrip__hp"><span class="label">You</span><HpBar cur={Math.round(Math.max(0, hero.hp))} max={hero.maxHp} tone="hp" /></div>
       <div class="runstrip__row">
-        <small>{up} of {party.length - 1} beside you standing</small>
+        <small>Allies standing: {up}/{party.length - 1}</small>
         <small><Shards n={run.purse ?? 0} /> · {(run.haul ?? []).length} found</small>
       </div>
       {(run.blessings ?? []).length > 0 && (
@@ -465,11 +416,20 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
   return (
     <section class={`nodepanel nodepanel--${x.kind}`}>
       <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
-      {x.kind === 'rest' && <p>The party catches its breath: everyone standing gets {REST_HEAL * 100}% of their health back, and what ails them lifts.</p>}
-      {x.kind === 'treasure' && <p>{item ? <>Under the dust: <strong>{item.name}</strong>. It is banked, and comes out with you, unless you are carried out.</> : 'Someone got here first. Nothing left.'}</p>}
-      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one. The blessing lasts until you leave the gate.</p>}
+      {x.kind === 'rest' && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{REST_HEAL * 100}%</span> · Debuffs cleared</p></>}
+      {x.kind === 'treasure' && (item ? <><p>Something lies under the dust. You take it.</p><p class="muted" dangerouslySetInnerHTML={{ __html: system.outcome({ text: '' }, { item: item.name }).join('<br />') }} /></> : <p>The cache is empty.</p>)}
+      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one.</p>}
       {ev && !p.done && <p>{ev.text}</p>}
-      {p.done && <p class={p.done.won ? 'grant' : 'warn'}>{p.done.effect.text}{p.done.item ? ` ${gear.gearDef(p.done.item)?.name} is banked.` : ''}{p.done.blessing && x.kind !== 'shrine' ? ` ${blessingById(p.done.blessing)?.name}: ${blessingById(p.done.blessing)?.text}.` : ''}</p>}
+      {p.done && <p>{x.kind === 'shrine' ? 'You take the offering.' : p.done.effect.text}</p>}
+      {p.done && (() => {
+        const b = p.done.blessing ? blessingById(p.done.blessing) : undefined;
+        const lines = system.outcome(p.done.effect, {
+          shards: p.done.effect.shards && !isPractice(d) ? shop.gateShards(d.rank, p.done.effect.shards) : undefined,
+          item: p.done.item ? gear.gearDef(p.done.item)?.name : undefined,
+          blessing: b ? { name: b.name, text: b.text } : undefined,
+        });
+        return lines.length ? <p class="muted" dangerouslySetInnerHTML={{ __html: lines.join('<br />') }} /> : null;
+      })()}
       {waiting && x.kind === 'shrine' && (
         <div class="stack stack--tight">
           {(x.offer ?? []).map((b, i) => (
@@ -485,7 +445,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
             const odds = raid.oddsOf(c, hero, ascension.levelOf(run));
             return (
               <button type="button" key={c.label} class="choice-row" onClick={() => onChoose(i)}>
-                <b>{c.label}</b><small>{odds < 1 ? `${Math.round(odds * 100)}% it goes well${c.check ? `, read off your ${c.check.stat}` : ''}` : 'Certain'}</small>
+                <b>{c.label}</b><small>{odds < 1 ? `Success rate: ${Math.round(odds * 100)}%${c.check ? ` (${c.check.stat})` : ''}` : 'Certain'}</small>
               </button>
             );
           })}
@@ -541,29 +501,29 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   const v = vitals.read(s);
   const trial = isTrial(d);
-  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Dungeon Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
-  const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `${deal.xp} for contracts` : ''].filter(Boolean).join(' · ');
-  const shardSub = [r.bounty > 0 ? `a first-clear bounty of ${r.bounty}` : r.banked > 0 ? `${r.banked} banked on the way` : '', deal.shards ? `${deal.shards} for contracts` : ''].filter(Boolean);
+  const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `Daily Quests +${deal.xp}` : ''].filter(Boolean).join(' · ');
+  const shardSub = [r.bounty > 0 ? `First-clear bounty +${r.bounty}` : r.banked > 0 ? `Banked +${r.banked}` : '', deal.shards ? `Daily Quests +${deal.shards}` : ''].filter(Boolean);
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       <div class="arena__results stack">
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
-          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the practice gate off. It stays shut for whoever comes next; the real ones are waiting on the board.'
-            : r.spire ? r.spire.best ? `The boss on Floor ${r.spire.floor} is down, and that is your best this week. The next ${BLOCK} floors open above you.` : `The boss on Floor ${r.spire.floor} is down. The week turned while you were inside, so it does not count toward this one.`
-              : trial ? `The last of the Chosen is down. ${r.depth} of them, one after another, and you are still standing.`
-              : `${d.name} cleared. The gate begins to close, and another of its grade opens on the board.`
-            : r.outcome === 'withdrawn' ? d.floor ? `You walked back down from the rest on Floor ${d.floor + r.steps - 1}. These floors stand as they are until Monday.` : `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
-              : trial ? 'The party was carried out before the last of the Chosen fell. The Trial opens again tomorrow, and the gates you proved stay proved.'
-              : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
+          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'The Practice Gate is closed.'
+            : r.spire ? r.spire.best ? `Floor ${r.spire.floor} cleared: your best this week. The next ${BLOCK} floors are open.` : `Floor ${r.spire.floor} cleared. The week closed while you were inside, so it does not count this week.`
+              : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
+              : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
+            : r.outcome === 'withdrawn' ? d.floor ? `Withdrawn from the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.` : `Withdrawn at step ${r.steps} of ${r.depth}. The Gate is still open.`
+              : trial ? 'The party was carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
+              : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
         </header>
         <div class="tiles">
           <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>
-          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">includes {shardSub.join(' and ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the practice gate pays in kit</small> : null}</div>
-          <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `locked out ${Math.ceil(v.lockedFor / 36e5)}h` : 'recovers ~5% an hour'}</small></div>
-          <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of 100</small></div>
+          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">{shardSub.join(' · ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the Practice Gate pays in kit</small> : null}</div>
+          <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small></div>
+          <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of {vitals.FATIGUE_MAX}</small></div>
         </div>
         {r.loot.length > 0 && (
           <section>
@@ -579,13 +539,13 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                     sfx.window('gear');
                     buzz([14, 30, 22]);
                   }}>
-                    {open ? <><GearArt item={it} size={52} /><small>{def?.name}</small></> : <span class="flip__back" aria-label="Face-down artifact">?</span>}
+                    {open ? <><GearArt item={it} size={52} /><small>{def?.name}</small></> : <span class="flip__back" aria-label="Face-down item">?</span>}
                   </button>
                 );
               })}
             </div>
             {flipped.length === r.loot.length && gear.upgradeCount(s) > 0 && (
-              <Btn kind="gold" size="sm" onClick={() => { store.update(gear.autoEquip); sfx.success(); }}>Auto Equip the upgrades</Btn>
+              <Btn kind="gold" size="sm" onClick={() => { store.update(gear.autoEquip); sfx.success(); }}>Auto Equip Upgrades</Btn>
             )}
           </section>
         )}
@@ -594,36 +554,38 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           const out = reach[i];
           const odds = Math.round(shadows.holdChance(s) * 100);
           return (
-            <section key={l.enemyId} class={`extract ${out ? `is-${out}` : ''}`}>
-              <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
+            <SysFrame key={l.enemyId} title="Notification" kind="shadow" class={`extract ${out ? `is-${out}` : ''}`}>
+              <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
               {!out && <>
-                <p>The power from the <strong>{e.name}</strong> you just defeated is lingering… It wants to continue to fight — under your command.</p>
-                <p class="muted">Reaching for it costs <b>{l.cost} MP</b> (you have {v.mp}). It holds {odds} times in 100, read off your Intelligence.</p>
+                <p>The mana of <strong>[{e.name}]</strong> lingers.</p>
+                <p class="muted">Extraction cost: <b>{l.cost} MP</b> ({v.mp} MP held)<br />Success rate: <b>{odds}%</b></p>
                 {v.mp >= l.cost
                   ? <HoldButton hold={{ label: 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE' }} onFire={() => {
                     const res = store.update((x) => raid.extract(x, l, Math.random()));
                     setReach({ ...reach, [i]: res });
                     if (res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); } else sfx.shadowLost();
                   }} />
-                  : <p class="hint">You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some.</p>}
+                  : <p class="warn">Not enough MP. ({v.mp}/{l.cost})</p>}
               </>}
-              {out === 'bound' && <p class="grant">SUCCESSFUL EXTRACTION — {e.shadow} answers to you now.</p>}
-              {out === 'lost' && <p class="warn">The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold.</p>}
-            </section>
+              {out === 'bound' && <><p class="grant">Extraction successful.</p><p><strong>[{e.shadow}]</strong> has joined your army.</p></>}
+              {out === 'lost' && <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>}
+            </SysFrame>
           );
         })}
         {r.chosen && (
-          <section class="extract is-bound ascended">
-            <p class="grant">{r.chosen.name.toUpperCase()} FALLS</p>
-            {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="muted grow">It leaves a masterwork: {gear.defOf(r.chosen.item)?.name}, perfect and {r.chosen.level} step{r.chosen.level === 1 ? '' : 's'} past it. It will walk the gates again.</p></div>
-              : <p class="muted">It pays a bounty of <Shards n={r.chosen.shards} />. It will walk the gates again.</p>}
-          </section>
+          <SysFrame title="Notification" kind="gates" class="extract is-bound">
+            <p>You have defeated<br /><span class="warn">[{r.chosen.name}]</span>.</p>
+            {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="grow">You have acquired <strong>[Item: {gear.defOf(r.chosen.item)?.name}]</strong>.<br /><span class="muted">Quality: Perfect +{r.chosen.level}</span></p></div>
+              : <p>Mana Shards <span class="grant">+{r.chosen.shards}</span></p>}
+            <p class="muted">[{r.chosen.name}] will return to the Gates.</p>
+          </SysFrame>
         )}
         {r.ascended !== null && (
-          <section class="extract is-bound ascended">
-            <p class="grant">ASCENSION {r.ascended} OPENED — {ascension.levelInfo(r.ascended).name.toUpperCase()}</p>
-            <p class="muted">{ascension.levelInfo(r.ascended).rule} Choose it on the Gates screen when you want it; until then, nothing changes. A mark is yours to set there, and every piece you wear can go {OVERCHARGE.per === 1 ? 'a step' : `${OVERCHARGE.per} steps`} further past perfect.</p>
-          </section>
+          <SysFrame title="Notification" kind="gold" class="extract is-bound">
+            <p class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</p>
+            <p><strong>[Ascension {r.ascended}: {ascension.levelInfo(r.ascended).name}]</strong></p>
+            <p class="muted">Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span><br />Marks <span class="grant">+1</span></p>
+          </SysFrame>
         )}
         {r.promoted.map((p) => {
           const sh = s.shadows.army.find((x) => x.id === p.id);
@@ -631,17 +593,23 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           if (!sh || !e) return null;
           const second = shadows.rankIndex(sh) === shadows.SECOND_AT ? shadows.secondOf(e) : null;
           return (
-            <section key={p.id} class="extract is-bound promoted">
-              <div class="row"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
-              <p class="grant">PROMOTED — {p.rank.toUpperCase()}</p>
-              <p class="muted">{sh.kills} kills under your command. Its growth can reach +{Math.round(shadows.rankOf(sh).cap * 100)}% now{second ? `, and it remembers ${second}` : ''}.</p>
-            </section>
+            <SysFrame key={p.id} title="Notification" kind="shadow" class="extract is-bound">
+              <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
+              <p><strong>[{e.shadow}]</strong> has been promoted.</p>
+              <p class="grant">{shadows.SHADOW_RANKS[shadows.rankIndex(sh) - 1]?.name ?? 'Bound'} Rank → {p.rank} Rank</p>
+              <p class="muted">Kills: {sh.kills}<br />Growth limit: +{Math.round(shadows.rankOf(sh).cap * 100)}%{second ? <><br />Skill learned: <strong>[{second}]</strong></> : null}</p>
+            </SysFrame>
           );
         })}
         {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (
-          <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)}>
-            {deal.done.length > 0 && <p class="grant">{deal.done.length === 1 ? 'Contract complete' : `${deal.done.length} contracts complete`}{deal.bonus ? ', and the day’s bonus with it' : ''}: <Shards n={deal.shards} /> and {deal.xp} XP.</p>}
-          </ContractsWindow>
+          <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)} />
+        )}
+        {!isPractice(d) && deal.done.length > 0 && (
+          <SysFrame title="Quest Rewards" class="questrewards">
+            <p>You got rewards.</p>
+            <Rewards items={[<>Mana Shards <span class="grant">+{deal.shards}</span></>, <>Experience <span class="grant">+{deal.xp}</span></>]} />
+            {deal.bonus && <p class="muted">Completion bonus included.</p>}
+          </SysFrame>
         )}
         <Btn kind="primary" size="lg" block onClick={onDone} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>

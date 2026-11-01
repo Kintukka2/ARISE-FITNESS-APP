@@ -20,7 +20,7 @@ export function go(to: Route) {
   if (to === 'shadows' && !shadowsOpen(s)) {
     if (shutOpen) return;
     shutOpen = true;
-    void sys({ title: 'Notification', kind: 'shadow', lines: ['Shadow…? I’m not sure what this is…'], actions: [{ label: 'Continue', value: false, primary: true }] })
+    void sys({ title: 'Notification', kind: 'shadow', lines: ['<span class="warn">[Shadows] is not available.</span>'], actions: [{ label: 'Close', value: false, primary: true }] })
       .then(() => { shutOpen = false; });
     return;
   }

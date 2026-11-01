@@ -164,7 +164,7 @@ export const PARTY_MAX = 3;
 export function allies(d: Dungeon, day = dayKey(), yours: Rank = d.rank as Rank): Ally[] {
   if (isPractice(d)) {
     return [
-      { ...hunter('HTR-RYN', 'S', 0, 0.5), id: 'HTR-RYN', name: 'Ryn Valcorde', role: 'Leader', note: 'Your instructor', atkMult: INSTRUCTOR_RESTRAINT },
+      { ...hunter('HTR-RYN', 'C', 0, 0.5), id: 'HTR-RYN', name: 'Ryn Valcorde', role: 'Leader', note: 'Your instructor', atkMult: INSTRUCTOR_RESTRAINT },
       hunter('HTR-PRACTICE-1', 'E'),
     ];
   }

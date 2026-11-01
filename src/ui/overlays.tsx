@@ -9,7 +9,9 @@ import { sfx } from '@/audio/audio';
 import { createStore } from '@/store';
 import * as store from '@/store';
 import { buzz, flash } from './feedback';
+import { Rail, SysHead, type FrameKind } from './frame';
 import { CoachPortrait, Glyph, SystemMark } from './icons';
+import { SYSTEM_KINDS } from './system';
 
 // ------------------------------------------------------------------ back stack
 
@@ -83,7 +85,7 @@ export function sys(o: WinOpts): Promise<unknown> {
 
 export async function confirm(title: string, html: string, ok = 'Confirm', danger = false): Promise<boolean> {
   const v = await sys({
-    title, kind: danger ? 'danger' : 'app', lines: [html], typed: false,
+    title, kind: 'app', lines: [html], typed: false,
     actions: [{ label: 'Cancel', value: false }, { label: ok, value: true, primary: !danger, danger }],
   });
   return v === true;
@@ -218,39 +220,60 @@ function SysWindow({ w }: { w: Queued }) {
   useBack(() => {
     if (!typedDone) { skip.current(); return; }
     if (w.hold) return;
-    const acts = w.actions ?? [{ label: 'Accept', value: true }];
+    const acts = w.actions ?? [{ label: 'Close', value: true }];
     const out = acts.find((a) => a.value === false) ?? (acts.length === 1 ? acts[0] : null);
     if (out) close(out.value);
   });
-  const actions = w.actions ?? [{ label: 'Accept', value: true, primary: true }];
+  const actions = w.actions ?? [{ label: 'Close', value: true, primary: true }];
+  const body = (
+    <>
+      <div class="syswin__body">
+        {w.typed === false
+          ? (w.lines ?? []).map((l, i) => <p key={i} class="syswin__line" dangerouslySetInnerHTML={{ __html: l }} />)
+          : <Typed lines={w.lines ?? []} fast={fast} onDone={() => setTypedDone(true)} skipRef={skip} />}
+        {typedDone && w.body?.(close)}
+      </div>
+      {typedDone && (
+        <footer class="syswin__foot">
+          {w.hold
+            ? <HoldButton hold={w.hold} onFire={() => close(w.hold!.value ?? true)} />
+            : actions.map((a) => (
+              <button type="button" key={a.label} class={`btn ${a.primary ? 'btn--primary' : ''} ${a.danger ? 'btn--danger' : ''}`}
+                onClick={(e) => { e.stopPropagation(); sfx.tap(); close(a.value); }}>{a.label}</button>
+            ))}
+        </footer>
+      )}
+    </>
+  );
+  const skipTyping = () => !typedDone && skip.current();
   return (
     <div class="sysgate" role="dialog" aria-modal="true" aria-label={w.title ?? 'Notification'}>
       <div class="sysgate__scrim" />
-      <div class={`syswin syswin--${kind} ${w.center ? 'is-center' : ''}`} onClick={() => !typedDone && skip.current()}>
-        <header class="syswin__head">
-          <span class="syswin__glyph" aria-hidden="true">{w.glyph ? <Glyph name={w.glyph} /> : '!'}</span>
-          <h2 class="syswin__title">{w.title ?? 'Notification'}</h2>
-        </header>
-        {kind === 'coach' && (
-          <div class="syswin__who"><CoachPortrait size={40} /><div><b>Ryn Valcorde</b><small>Instructor · Hunter Training</small></div></div>
+      {SYSTEM_KINDS.includes(kind)
+        // The System's own window: its frame, its icon box and header box, its glass.
+        ? (
+          <div class={`syswin sysframe sysframe--${kind} ${w.center ? 'is-center' : ''}`} onClick={skipTyping}>
+            <Rail at="top" />
+            <div class="sysframe__glass syswin__glass">
+              <SysHead title={w.title ?? 'Notification'} icon={w.glyph ? <Glyph name={w.glyph} /> : undefined} />
+              {body}
+            </div>
+            <Rail at="bottom" />
+          </div>
+        )
+        // Valcorde, the app and the other voices keep frames of their own.
+        : (
+          <div class={`syswin syswin--${kind} ${w.center ? 'is-center' : ''}`} onClick={skipTyping}>
+            <header class="syswin__head">
+              <span class="syswin__glyph" aria-hidden="true">{w.glyph ? <Glyph name={w.glyph} /> : '!'}</span>
+              <h2 class="syswin__title">{w.title ?? 'Notification'}</h2>
+            </header>
+            {kind === 'coach' && (
+              <div class="syswin__who"><CoachPortrait size={40} /><div><b>Ryn Valcorde</b><small>Instructor · Hunter Training</small></div></div>
+            )}
+            {body}
+          </div>
         )}
-        <div class="syswin__body">
-          {w.typed === false
-            ? (w.lines ?? []).map((l, i) => <p key={i} class="syswin__line" dangerouslySetInnerHTML={{ __html: l }} />)
-            : <Typed lines={w.lines ?? []} fast={fast} onDone={() => setTypedDone(true)} skipRef={skip} />}
-          {typedDone && w.body?.(close)}
-        </div>
-        {typedDone && (
-          <footer class="syswin__foot">
-            {w.hold
-              ? <HoldButton hold={w.hold} onFire={() => close(w.hold!.value ?? true)} />
-              : actions.map((a) => (
-                <button type="button" key={a.label} class={`btn ${a.primary ? 'btn--primary' : ''} ${a.danger ? 'btn--danger' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); sfx.tap(); close(a.value); }}>{a.label}</button>
-              ))}
-          </footer>
-        )}
-      </div>
     </div>
   );
 }
@@ -271,6 +294,11 @@ interface SheetOpts {
   render: (close: () => void) => ComponentChildren;
   onClose?: () => void;
   action?: { label: string; icon: string; onClick: () => void };
+  /**
+   * A System screen (Inventory, an item card) is drawn in the System's frame, its title in a header
+   * box. `icon` fills the icon box beside it; null leaves the box out.
+   */
+  system?: { icon?: ComponentChildren; kind?: FrameKind };
 }
 interface OpenSheet extends SheetOpts { id: number }
 
@@ -296,14 +324,34 @@ function Sheet({ s, top }: { s: OpenSheet; top: boolean }) {
   useBack(close, top);
   // Re-render with the save so sheet contents stay live.
   store.useSave();
+  const tools = (
+    <>
+      {s.action && <button type="button" class="iconbtn" aria-label={s.action.label} title={s.action.label} onClick={s.action.onClick}><Glyph name={s.action.icon} /></button>}
+      <button type="button" class="iconbtn" aria-label="Close" onClick={close}><Glyph name="close" /></button>
+    </>
+  );
+  if (s.system) {
+    return (
+      <div class={`sheet ${top ? 'is-top' : ''}`} role="dialog" aria-modal="true" aria-label={s.title}>
+        <div class="sheet__scrim" onClick={close} />
+        <section class={`sheet__panel sysframe sysframe--${s.system.kind ?? 'system'}`}>
+          <Rail at="top" />
+          <div class="sysframe__glass sheet__glass">
+            <SysHead title={s.title} icon={s.system.icon} tools={tools} />
+            <div class="sheet__body">{s.render(close)}</div>
+          </div>
+          <Rail at="bottom" />
+        </section>
+      </div>
+    );
+  }
   return (
     <div class={`sheet ${top ? 'is-top' : ''}`} data-tone={s.tone ?? 'mana'} role="dialog" aria-modal="true" aria-label={s.title}>
       <div class="sheet__scrim" onClick={close} />
       <section class="sheet__panel">
         <header class="sheet__head">
           <h2 class="sheet__title">{s.title}</h2>
-          {s.action && <button type="button" class="iconbtn" aria-label={s.action.label} title={s.action.label} onClick={s.action.onClick}><Glyph name={s.action.icon} /></button>}
-          <button type="button" class="iconbtn" aria-label="Close" onClick={close}><Glyph name="close" /></button>
+          {tools}
         </header>
         <div class="sheet__body">{s.render(close)}</div>
       </section>
@@ -382,7 +430,7 @@ function TourView({ t }: { t: Tour & { resolve: () => void } }) {
       <div class={`tour__card tour__card--${t.who}`} style={rect ? { top: cardTop, bottom: cardBottom } : { bottom: 'calc(var(--nav-h) + 24px)' }}>
         <header class="tour__head">
           {t.who === 'coach' ? <CoachPortrait size={28} /> : <SystemMark size={28} />}
-          <b>{t.who === 'coach' ? 'Ryn Valcorde' : 'System'}</b>
+          <b>{t.who === 'coach' ? 'Ryn Valcorde' : 'Notification'}</b>
           {t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}
         </header>
         <h3 class="tour__title">{t.title}</h3>

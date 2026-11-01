@@ -61,11 +61,57 @@
 
 /* ------------------------------------------------------------------ profile */
 
-.hero { display: flex; align-items: center; gap: 18px; }
-.hero__level { display: flex; flex-direction: column; align-items: center; }
-.hero__level b { font-size: 3.4rem; line-height: 1; text-shadow: 0 0 18px rgba(255, 255, 255, 0.25); }
-.hero__rows { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.hero__rows .kv { padding: 5px 0; }
+/* The Status sheet: the System's frame (ui.css), its fields, vitals and stats each in a hairline box. */
+.status__level { font-size: 1.7rem; line-height: 1; }
+.status__rank { gap: 6px; }
+.status .linkish { text-decoration-color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.sysframe .vitals { border: 1px solid var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
+.sysframe .vrow > .ico { color: var(--sys-ink); filter: drop-shadow(0 0 4px var(--win-glow)); }
+.sysframe .vrow .num { font-size: 0.92rem; }
+.sysframe .pip { border-radius: 0; font-family: var(--font-sys); font-size: 0.72rem; }
+.sysframe .attr { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
+/* Montserrat runs wide: the base value goes under the stat's name, so the + keeps inside the box. */
+.sysframe .attr:not(.attr--points) { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; grid-template-rows: auto auto; column-gap: 6px; row-gap: 0; align-content: center; padding: 8px 8px 8px 10px; }
+.sysframe .attr:not(.attr--points) > .ico { grid-row: 1 / 3; }
+.sysframe .attr__k { grid-column: 2; grid-row: 1; }
+.sysframe .attr__base { grid-column: 2; grid-row: 2; line-height: 1.1; }
+.sysframe .attr__v { grid-column: 3; grid-row: 1 / 3; margin-left: 0; }
+.sysframe .attr__plus { grid-column: 4; grid-row: 1 / 3; width: 26px; height: 26px; }
+.sysframe .attr > .ico { color: var(--sys-ink); filter: drop-shadow(0 0 4px var(--win-glow)); }
+.sysframe .attr__k { font-size: 0.92rem; font-weight: 700; letter-spacing: 0.06em; text-shadow: var(--sys-glow); }
+.sysframe .attr__base { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.7rem; }
+.sysframe .attr__v { font-size: 1.25rem; font-weight: 600; text-shadow: var(--sys-glow); }
+.sysframe .attr--points { border-style: solid; }
+.sysframe .attr--points .label { color: inherit; }
+.sysframe .attr--points b { font-size: 1.5rem; font-weight: 600; }
+.sysframe .attrs__alloc small { text-align: center; }
+
+/* The Inventory: a grid of icons under tabs. The item card holds the rest. */
+.sysframe .chip { border-radius: 0; border-color: var(--sys-hair); font-family: var(--font-sys); font-size: 0.78rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); background: rgba(3, 8, 20, 0.45); }
+.sysframe .chip--btn.is-on { border-color: var(--sys-hair-hot); color: #fff; background: color-mix(in srgb, var(--win) 16%, rgba(3, 8, 20, 0.5)); text-shadow: var(--sys-glow); }
+.invgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.invtile { position: relative; display: grid; place-items: center; aspect-ratio: 1; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); transition: border-color 160ms, transform 120ms; }
+.invtile:active { transform: scale(0.96); }
+@media (hover: hover) { .invtile:hover { border-color: var(--sys-hair-hot); } }
+.invtile__fav { position: absolute; left: 3px; bottom: 3px; width: 13px; height: 13px; color: var(--gold); filter: drop-shadow(0 0 3px var(--gold-glow)); }
+.invtile__up { position: absolute; right: 4px; bottom: 2px; color: var(--verdant); font-size: 0.7rem; text-shadow: 0 0 6px var(--verdant-glow); }
+
+/* Skills: the class card, then a rung of choices per rank. */
+.classcard { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); text-align: center; font-size: 0.9rem; }
+.sysframe .pickcard { border-radius: 0; border-color: var(--sys-hair); background: rgba(3, 8, 20, 0.45); font-family: var(--font-sys); }
+.sysframe .pickcard b { font-weight: 600; text-shadow: var(--sys-glow); }
+.sysframe .pickcard small { font-size: 0.78rem; }
+.sysframe .rung__head small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+
+/* The item card: fields, its text, its stat lines in green. */
+.itemsheet__text { font-size: 0.9rem; line-height: 1.55; }
+.itemsheet__tags { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; font-weight: 600; }
+.sysframe .section__right { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-family: var(--font-sys); font-size: 0.72rem; }
+.sysframe .kv { border-bottom-color: color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.sysframe .kv > span { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.86rem; }
+.sysframe .kv > b { font-weight: 600; font-size: 0.9rem; }
+.sysframe .setbonus b { font-family: var(--font-sys); font-size: 0.66rem; }
+.sysframe .setpieces li { font-size: 0.88rem; }
 .vitals { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); }
 .vrow { display: flex; align-items: center; gap: 8px; }
 .vrow > .ico { width: 18px; height: 18px; color: var(--ink-2); }
@@ -114,15 +160,21 @@
 
 /* ------------------------------------------------------------------ exchange */
 
-.purse { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid rgba(72, 245, 168, 0.4); border-radius: var(--r-md); background: var(--inset); }
-.purse div { display: flex; flex-direction: column; }
-.purse__right { align-items: flex-end; }
-.purse__right b { font-size: 1.3rem; }
-.shoprow { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); }
-.shoprow.is-idle, .shoprow.is-sold { opacity: 0.55; }
-.shoprow__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.shoprow__text small { font-size: 0.8rem; }
-.shoprow__text .chip { align-self: flex-start; margin-top: 3px; }
+/* The Exchange: the System's shop. Each row a hairline box, the icon in a box of its own, the price at its foot. */
+.shoplist { display: flex; flex-direction: column; gap: 8px; }
+.shoprow { display: flex; align-items: stretch; gap: 12px; width: 100%; padding: 8px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); color: inherit; text-align: left; transition: border-color 160ms, transform 120ms; }
+.shoprow:active { transform: scale(0.99); }
+@media (hover: hover) { .shoprow:not([disabled]):hover { border-color: var(--sys-hair-hot); } }
+.shoprow.is-off { opacity: 0.55; }
+.shoprow__icon { display: grid; place-items: center; flex: none; width: 60px; min-height: 60px; border: 1px solid var(--sys-hair); }
+.shoprow__text { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 2px 0; }
+.shoprow__text b { font-size: 0.95rem; font-weight: 600; text-shadow: var(--sys-glow); }
+.shoprow__text small { font-size: 0.76rem; line-height: 1.35; }
+.shoprow__text small.grant { font-size: 0.8rem; }
+.shoprow__price { align-self: flex-end; flex: none; padding: 0 2px 2px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.shoprow.is-short .shoprow__price .shards { color: var(--sysred); }
+.exchange .sysfield .shards { font-size: 1.05rem; }
+.exchange > p.muted { font-size: 0.82rem; }
 .potion { display: grid; place-items: center; width: 44px; height: 44px; flex: none; }
 .potion .ico { width: 30px; height: 30px; }
 .potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--elixir { color: var(--arcane); } .potion--field { color: var(--verdant); }
@@ -236,10 +288,11 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .flip { cursor: pointer; }
 .flip__back { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid rgba(255, 154, 60, 0.5); border-radius: var(--r-sm); background: repeating-linear-gradient(45deg, rgba(255, 154, 60, 0.08) 0 6px, transparent 6px 12px); color: var(--ember); font-size: 1.4rem; font-weight: 700; }
 .flip.is-open { animation: windowIn 360ms var(--ease) both; }
-.extract { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--arcane); border-radius: var(--r-md); background: rgba(30, 14, 60, 0.6); box-shadow: 0 0 30px var(--arcane-glow); }
-.extract .holdbtn { border-color: var(--arcane); }
-.extract .holdbtn__fill { background: linear-gradient(90deg, rgba(155, 107, 255, 0.3), rgba(155, 107, 255, 0.85)); }
-.extract.is-lost { opacity: 0.7; box-shadow: none; border-color: var(--edge); }
+/* The System's notices after a run (extraction, the Chosen, Ascension, promotions): its frame, set into the results. */
+.extract .sysframe__glass { gap: 10px; text-align: center; font-size: 0.92rem; }
+.extract__who { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; text-shadow: var(--sys-glow); }
+.extract .row { text-align: left; }
+.extract.is-lost { opacity: 0.75; }
 
 /* ------------------------------------------------------------------ the gate's map */
 
@@ -344,7 +397,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .pickcard:disabled:not(.is-kept) { opacity: 0.6; }
 .pickcard__tag { align-self: flex-start; margin-top: 2px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
 .rung.is-shut .pickcard { opacity: 0.45; }
-.extract.promoted .grant { color: var(--arcane); }
 
 /* ------------------------------------------------------------------ Ascension: gold, for advancement */
 
@@ -356,7 +408,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ascension__rules { display: flex; flex-direction: column; gap: 4px; margin: 0; padding-left: 18px; list-style: decimal; color: var(--ink-2); font-size: 0.85rem; }
 .ascension__rules b { color: var(--ink); }
 .ascension__proof { color: var(--ink-3); font-size: 0.8rem; }
-.extract.ascended .grant { color: var(--gold); }
 .marks { display: flex; flex-direction: column; gap: 6px; }
 .marks__list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .marks__list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--edge); border-radius: 8px; }
