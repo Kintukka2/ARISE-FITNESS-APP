@@ -392,10 +392,11 @@ runs (`GRADES` in `core/raid.ts`): **Safe, Favourable, Even, Unfavourable, Letha
 
 ```
 Assessment: Safe
-Clear rate: 23/24 · Carried out: 1/24
+Clear rate: 96% · Carried out: 4%
 ```
 
-It reports the grade and the numbers. It never says what the party "will" do, and it never
+The rates are percentages of those runs, never a count of them. It reports the grade and the
+numbers. It never says what the party "will" do, and it never
 explains how it ran the Gate; the Guide does.
 
 ### Screens
@@ -697,4 +698,8 @@ skill as `Extraction`, and leave the button and the name alone.
   `Attack and magic +8%`, `Ability Points +3`, `Fatigue -20`. Several on one line join with ` · `.
   This holds on cards, in System windows, in toasts and everywhere gear and bonuses are listed
   (`gear.coreText`, `gear.rollText`, `gear.bonusText`).
+- A rate over time reads "each": `HP -6% each round`, `HP +5% each hour`, `Fatigue -5 each hour`.
+  Never "a round", "an hour" or "per".
+- A share of attempts is a percentage: `Clear rate: 96%`, `Success rate: 34%`. A fraction is only
+  ever a counter towards a ceiling: `0/3`, `HP: 140/200`.
 - A decision made while writing that will come up again is written here before the change ships.

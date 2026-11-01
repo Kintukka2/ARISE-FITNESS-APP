@@ -76,7 +76,7 @@ const pctOf = (x: number) => Math.round(Math.abs(1 - x) * 100);
 /** What a status does, read from STATUS, name before value (docs/VOICE.md). */
 export const STATUS_TEXT: Record<string, string> = Object.fromEntries(Object.entries(STATUS).map(([k, st]) => {
   const parts: string[] = [];
-  if (st.dot) parts.push(`HP -${Math.round(st.dot * 100)}% a round`);
+  if (st.dot) parts.push(`HP -${Math.round(st.dot * 100)}% each round`);
   if (st.pdef) parts.push(`Physical defence -${pctOf(st.pdef)}%`);
   if (st.mdef) parts.push(`Magical resistance -${pctOf(st.mdef)}%`);
   if (st.eva) parts.push(`Evasion -${pctOf(st.eva)}%`);

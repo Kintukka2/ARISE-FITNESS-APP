@@ -164,6 +164,7 @@ describe('the words', () => {
         const code = line.replace(/\s\/\/\s.*$/, '');
         if (/[—–]/.test(code)) found.push(`${f}:${i + 1} dash`);
         if (/(?<!first_)\b[Aa]rtifacts?\b|Secret Missions?\b/.test(code)) found.push(`${f}:${i + 1} old word`);
+        if (/[\d}%] (a|an|per) (round|hour|turn|day)\b/.test(code)) found.push(`${f}:${i + 1} rate not written "each"`);
         if (/toast\(\s*[`'"]\+|\+\$\{[^}]*\}\s*(Mana Shards|shards)/.test(code)) found.push(`${f}:${i + 1} gain written value first`);
         for (const m of code.matchAll(/<Empty(?:\s[^>]*)?>([^<{]+)<\/Empty>/g)) if (m[1].length > 40) found.push(`${f}:${i + 1} empty state says more than the fact`);
       });
@@ -208,6 +209,12 @@ describe('the System keeping score', () => {
     expect(text).toContain('◆ Ghoul: Grave Strike → You -12');
     expect(text).toContain('● Ghoul HP -6 (Bleeding)');
     for (const t of text) expect(t, t).not.toMatch(/swings|finds nothing|rallied|lashes|shrugs|loses \d/);
+  });
+
+  it('writes a status that ticks as a rate each round', () => {
+    const ticking = Object.values(STATUS_TEXT).filter((t) => /round/.test(t));
+    expect(ticking.length).toBeGreaterThan(0);
+    for (const t of ticking) expect(t, t).toMatch(/% each round/);
   });
 
   it('grades the brief from Safe to Lethal and reports nothing else', () => {

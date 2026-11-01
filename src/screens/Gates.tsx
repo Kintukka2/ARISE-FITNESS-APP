@@ -376,7 +376,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Section title="The assessment">
         <div class={`verdict verdict--${v.tone}`} data-tour="assess">
           <b>Assessment: {v.text}</b>
-          <small>Clear rate: {proj.cleared}/{proj.runs}{proj.heroDown ? ` · Carried out: ${proj.heroDown}/${proj.runs}` : ''}</small>
+          <small>Clear rate: {Math.round(proj.rate * 100)}%{proj.heroDown ? ` · Carried out: ${Math.round((proj.heroDown / proj.runs) * 100)}%` : ''}</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>HP: {hpNow.hp}/{hpNow.hpMax}</small>}
           {level > 0 && <small>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')} · Pay +{Math.round((pay - 1) * 100)}%</small>}
         </div>

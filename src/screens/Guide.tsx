@@ -161,10 +161,10 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Health, mana and fatigue',
     lines: [
-      `Health and mana carry between Gates and recover about ${Math.round(PCT_PER_HOUR * 100)}% an hour.`,
+      `Health and mana carry between Gates and recover about ${Math.round(PCT_PER_HOUR * 100)}% each hour.`,
       `Each Gate adds fatigue: ${RAID_FATIGUE.E} at E to ${RAID_FATIGUE.S} at S, out of ${FATIGUE_MAX}.`,
       `Fatigue lowers every stat, to half strength at ${FATIGUE_MAX}.`,
-      `It fades about ${FATIGUE_PER_HOUR} an hour.`,
+      `It fades about ${FATIGUE_PER_HOUR} each hour.`,
       'It is the only limit on how much you can raid.',
     ],
   },
