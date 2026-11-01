@@ -4,6 +4,7 @@ import { reclassification, waiting } from '@/core/quests';
 import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
 import { PRACTICE_GATE } from '@/core/gates';
+import { deltaOf, earned, freeOf, MISSIONS } from '@/core/missions';
 import { autoAllocate, grantXP, RANK_LADDER, RANK_UP_POINTS, syncClass, totalXpFor } from '@/core/progression';
 import { classById } from '@/data/classes';
 import { SLOTS } from '@/data/shadows';
@@ -79,5 +80,20 @@ describe('the Quests tab', () => {
     contracts.show(s, day);
     s.ascension.proof.gates = ['DNG-P0', 'DNG-P1', 'DNG-P2', 'DNG-P3'];
     expect(waiting(s, day)).toBe(0);
+  });
+});
+
+describe('the Secret Quests window', () => {
+  it('adds up what every Secret Quest held has paid, and nothing it has not', () => {
+    const s = defaults();
+    expect(earned(s)).toEqual({ stats: {}, free: 0, slot: 0 });
+    const held = MISSIONS.filter((_, i) => i % 3 === 0);
+    s.hunter.missions = held.map((m) => m.id);
+    const e = earned(s);
+    expect(e.free).toBe(held.reduce((n, m) => n + freeOf(m), 0));
+    expect(e.slot).toBe(held.reduce((n, m) => n + (m.grant.slot ?? 0), 0));
+    for (const k of ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const) {
+      expect(e.stats[k] ?? 0).toBe(held.reduce((n, m) => n + (deltaOf(m)[k] ?? 0), 0));
+    }
   });
 });

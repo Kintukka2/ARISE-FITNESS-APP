@@ -567,7 +567,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 /* Quest Info: one quest, its goals and its rewards. The Daily Quests are one; the Quests screen holds the rest. */
 .questinfo__name { margin: 0; text-align: center; }
-.questinfo > .sysframe__glass > .label { text-align: center; text-decoration: underline; text-underline-offset: 4px; }
+.questinfo__head { text-align: center; text-decoration: underline; text-underline-offset: 4px; }
+/* In a sheet the frame is the sheet's: the window's parts stack as they would inside its glass. */
+.questinfo--bare { display: flex; flex-direction: column; gap: 14px; }
 .questinfo__goals { margin: 0; display: flex; flex-direction: column; gap: 12px; }
 .contract { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: start; }
 .contract__mark { display: grid; place-items: center; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--sys-hair-hot); }

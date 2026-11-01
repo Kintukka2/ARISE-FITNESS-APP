@@ -1,7 +1,7 @@
 /**
  * QUEST INFO windows: one quest each, its name, its goals and what it pays, as the source sets them.
- * The day's Daily Quests are one, on the Quests screen and again when a run is settled; the Quests
- * screen builds every other quest from the same pieces.
+ * The day's Daily Quests are one, opened from the Quests screen and again when a run is settled; the
+ * Quests screen builds every other quest from the same pieces.
  */
 import type { ComponentChildren } from 'preact';
 import { bonusOf, contractHint, contractText, payOf, type Contracts } from '@/core/contracts';
@@ -39,41 +39,55 @@ export function QuestGoal({ id, text, hint, got, need, done, fresh, count, pct }
   );
 }
 
-/** A QUEST INFO window: the quest's bracketed name, GOAL, REWARDS, then whatever follows them. */
-export function QuestWindow({ name, kind = 'system', goals, rewards, class: cls, label, tour, children }: {
+/**
+ * A QUEST INFO window: the quest's bracketed name, GOAL, REWARDS, then whatever follows them. `bare`
+ * leaves the frame off, for a sheet opened with `system`, which draws the frame and its header itself.
+ */
+export function QuestWindow({ name, kind = 'system', goals, rewards, rewardsLead, class: cls, label, tour, bare, children }: {
   /** The quest's name with its type, as the window brackets it: `Daily Quests`, `Reclassification: D-Rank`. */
   name: string;
   kind?: FrameKind;
   goals: ComponentChildren;
   rewards: ComponentChildren[];
+  /** A line between REWARDS and the list, as Quest Rewards sets `You got rewards.` */
+  rewardsLead?: string;
   class?: string;
   label?: string;
   tour?: string;
+  bare?: boolean;
   children?: ComponentChildren;
 }) {
-  return (
-    <SysFrame title="Quest Info" kind={kind} class={`questinfo ${cls ?? ''}`} label={label ?? name} tour={tour}>
+  const body = (
+    <>
       <p class="questinfo__name"><strong>[{name}]</strong></p>
-      <span class="label">Goal</span>
+      <span class="label questinfo__head">Goal</span>
       <ul class="questinfo__goals">{goals}</ul>
-      <span class="label">Rewards</span>
+      <span class="label questinfo__head">Rewards</span>
+      {rewardsLead && <p class="questinfo__note">{rewardsLead}</p>}
       <Rewards items={rewards} />
       {children}
+    </>
+  );
+  if (bare) return <div class={`questinfo questinfo--bare ${cls ?? ''}`} aria-label={label ?? name}>{body}</div>;
+  return (
+    <SysFrame title="Quest Info" kind={kind} class={`questinfo ${cls ?? ''}`} label={label ?? name} tour={tour}>
+      {body}
     </SysFrame>
   );
 }
 
 /** The day's Daily Quests. */
-export function ContractsWindow({ c, fresh = [], children }: {
+export function ContractsWindow({ c, fresh = [], bare, children }: {
   c: Contracts;
   /** Kinds the run just settled completed. */
   fresh?: string[];
+  bare?: boolean;
   children?: ComponentChildren;
 }) {
   const pay = payOf(c.grade);
   const bonus = bonusOf(c.grade);
   return (
-    <QuestWindow name="Daily Quests" class="contracts" label="Daily Quests"
+    <QuestWindow name="Daily Quests" class="contracts" label="Daily Quests" bare={bare}
       goals={c.list.map((k) => (
         <QuestGoal key={k.kind} id={k.kind} text={contractText(k, c.grade)} hint={contractHint(k)} got={k.got} need={k.need} done={k.done}
           fresh={fresh.includes(k.kind)} count={k.done ? (fresh.includes(k.kind) ? 'Done' : 'Paid') : undefined} />

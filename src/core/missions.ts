@@ -105,6 +105,20 @@ export function grantText(m: Mission): string {
   return Object.entries(deltaOf(m)).map(([k, v]) => `${k} ${v! < 0 ? '' : '+'}${v}`).join(' · ');
 }
 
+/** What every Secret Quest the hunter holds has paid, added up: stats, free Ability Points and Shadow slots. */
+export function earned(s: Save): { stats: Partial<Attrs>; free: number; slot: number } {
+  const stats: Partial<Attrs> = {};
+  let free = 0;
+  let slot = 0;
+  for (const m of MISSIONS) {
+    if (!s.hunter.missions.includes(m.id)) continue;
+    for (const [k, v] of Object.entries(deltaOf(m)) as [Stat, number][]) stats[k] = (stats[k] ?? 0) + v;
+    free += freeOf(m);
+    slot += m.grant.slot ?? 0;
+  }
+  return { stats, free, slot };
+}
+
 /** Check every unheld mission. Grants and returns the ones just completed. Mutates. */
 export function sweep(s: Save): Mission[] {
   const fresh: Mission[] = [];

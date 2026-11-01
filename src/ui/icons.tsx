@@ -47,6 +47,8 @@ const P: Record<string, string> = {
   unknown: 'M12 2.2c-4.6 0-8.3 3.3-8.3 7.6 0 2.1.9 4 2.3 5.4L5.4 21l3-1.5.9 2.3 1.5-2 1.2 1.9 1.2-1.9 1.5 2 .9-2.3 3 1.5-.6-5.8c1.4-1.4 2.3-3.3 2.3-5.4 0-4.3-3.7-7.6-8.3-7.6zm1 13.8h-2v-2h2zm1.8-6.4-.8.8c-.6.6-1 1.1-1 2.4h-2v-.4c0-1 .4-1.8 1-2.4l1-1.1a1.6 1.6 0 1 0-2.7-1.2H8.5a3.5 3.5 0 1 1 6.3 1.9z',
   warn: 'M12 2 1 21h22zm1 16h-2v-2h2zm0-4h-2v-5h2z',
   crown: 'M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5zm2.4 13.5h13.2V22H5.4z',
+  // The Pale Spire: a tower narrowing to its point, on a base.
+  spire: 'M12 1.5 15.5 7H14v6h2v7h3v2H5v-2h3v-7h2V7H8.5z',
   // gear slots
   Weapon: 'M12 1.5l2 4v7.5h-4V5.5zM6.5 13h11v2h-11zM11 15h2v5h-2zM9.5 20h5v2h-5z',
   'Off-Hand': 'M12 2l8 3v6c0 4.5-3.4 8.2-8 11-4.6-2.8-8-6.5-8-11V5z',

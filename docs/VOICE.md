@@ -37,8 +37,8 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The fight log | The System | `lines()` in `screens/Arena.tsx` |
 | What an outcome inside a Gate cost or paid | The System | `system.outcome()` |
 | The extraction panel, promotions, the Chosen, Daily Quests | The System | `screens/Arena.tsx`, `ui/contracts.tsx` |
-| The Quests screen's QUEST INFO windows: Daily Quests, Reclassification, the Weekly Quest, the Trial, the Chosen | The System | `screens/Quests.tsx`, `ui/contracts.tsx` |
-| The Quests screen's tiles, the Secret Quests record, and the Quest chip on the board | The interface | `screens/Quests.tsx`, `screens/Gates.tsx` |
+| The Quests screen: its tiles, and the QUEST INFO window each opens (Daily Quests, Reclassification, the Weekly Quest, the Trial, the Chosen, the Secret Quests) | The System | `screens/Quests.tsx`, `ui/contracts.tsx` |
+| The Quest chip on the board | The interface | `screens/Gates.tsx` |
 | Onboarding dialogue, coach windows, the Gates screen line, the Gates tour | Valcorde | `data/narrative.ts` |
 | The `???` windows | Another voice | `data/narrative.ts` |
 | A Gate's description in the brief | The world: the Association's file | `data/dungeons.ts`, `data/special.ts`, `data/spire.ts` |
@@ -63,7 +63,7 @@ the table above gives it, so a player can tell who is talking before reading a w
 
 | Speaker | Frame |
 |---|---|
-| **The System** | The anime's window, below. Every System window, and every System surface on a screen: the Status sheet, Skills, Inventory, the Exchange, item and Shadow cards, Quest Info, Quest Rewards, the notices after a run |
+| **The System** | The anime's window, below. Every System window, and every System surface on a screen: the Status sheet, Skills, Inventory, the Exchange, item and Shadow cards, Quest Info, Quest Rewards, the Quests screen's tiles, the notices after a run |
 | **Valcorde** | His own window: a plain frame in his blue, his portrait and his name |
 | **The interface** | The app's panels, tiles and buttons: rounded corners, corner brackets, Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
@@ -340,9 +340,10 @@ that there is none.
 - **A hint says where or how, flat:** `Found in: {places}.`, `Kills in any Gate count, cleared or
   not.`, `It is off the marked road.` A hint never explains why.
 
-**The Quests screen.** One QUEST INFO window to a quest, in the frame of its subject: cyan for the
-Daily Quests, gold for advancement (Reclassification, the Trial, the Chosen), orange for the Pale
-Spire. Every quest's name wears its type, and these are the names:
+**The Quests screen.** One page: a grid of tiles, one to a quest, each in the frame of its subject:
+cyan for the System's own (the Daily Quests, the Secret Quests), gold for advancement
+(Reclassification, the Trial, the Chosen), orange for the Pale Spire. Tapping a tile opens the
+quest's QUEST INFO window in a sheet. Every quest's name wears its type, and these are the names:
 
 | Quest | Name | Goals |
 |---|---|---|
@@ -351,6 +352,18 @@ Spire. Every quest's name wears its type, and these are the names:
 | The Spire's week | `[Weekly Quest: The Pale Spire]` | `Clear Floor 36.` / `Floors 26 to 30 next.` |
 | The next Ascension level | `[Trial: Ascension 4]` | `Clear 4 different C-Rank Gates at Ascension 3.` / `Win The Trial of Ascension 4: 5 of the Chosen in a row.` |
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Fell [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
+| Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
+
+- **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
+  the bracketed name, one line under it, and the count in a hairline box: `5/10`, `0/3`, `Closed`.
+  A tile says nothing its window does not; the window holds the goals, the hints and the rewards.
+  The picture is drawn from the engine, as the words are: the Daily Quests' own rows, the rank's
+  sigils, the Spire's storeys lit to the week's best, the Trial's Gates and Chosen, the Secret
+  Quests done drifting past with the sealed ones as `?`.
+- **The Secret Quests' REWARDS are what they have paid.** The window opens the list with the
+  source's `You got rewards.` and adds every Secret Quest held: `VIT +1 · AGI +1`, `Ability Points
+  +1`, `Shadow slots +1`. With none held, the list is `-- --`. The tiers are fields under it:
+  `CITATION:` / `3/18`.
 
 - **A reward that opens something is the Unlock template:** `ACCESS GRANTED: CLASS`, `ACCESS
   GRANTED: ASCENSION 4`. A change is `{from} → {to}`: `Rank: C → B`, `Shadow slots: 2 → 3`.
@@ -360,8 +373,8 @@ Spire. Every quest's name wears its type, and these are the names:
 - **The Weekly Quest's goal is the next floor that raises the week's tier.** It is never done, only
   raised; under its rewards it reports the tier already reached: `This week: Floor 25 · Reward tier:
   C-Rank`.
-- **Secret Quests stay sealed.** The screen lists those done, with their tier, goal and reward, and
-  counts the rest as `Sealed: {n}`. It never names one that is not done.
+- **Secret Quests stay sealed.** The window lists those done, with their tier, goal and reward, and
+  counts the rest as `Sealed: {n}`; the tile shows them as `?`. Nothing names one that is not done.
 - **The Trial and the Chosen are only quests.** Their windows here are the one place that reports the
   proof, opens the Trial or counts the Chosen felled (`Chosen felled: {n}/{m}`). The Gates screen's
   Ascension card holds the level, its rules and the marks, and shows once Ascension 1 is open.
