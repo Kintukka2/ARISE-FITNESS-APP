@@ -58,7 +58,7 @@
   right: 0;
   z-index: var(--z-chrome);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   height: calc(var(--nav-h) + var(--safe-b));
   padding-bottom: var(--safe-b);
   background: linear-gradient(0deg, rgba(4, 8, 20, 0.98), rgba(4, 8, 20, 0.86));
@@ -565,10 +565,10 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysstat > .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 4px var(--verdant-glow)); }
 .sysstat small { margin-left: auto; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-shadow: none; }
 
-/* Quest Info: the day's Daily Quests. */
-.contracts__name { margin: 0; text-align: center; }
-.contracts > .sysframe__glass > .label { text-align: center; text-decoration: underline; text-underline-offset: 4px; }
-.contracts__list { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+/* Quest Info: one quest, its goals and its rewards. The Daily Quests are one; the Quests screen holds the rest. */
+.questinfo__name { margin: 0; text-align: center; }
+.questinfo > .sysframe__glass > .label { text-align: center; text-decoration: underline; text-underline-offset: 4px; }
+.questinfo__goals { margin: 0; display: flex; flex-direction: column; gap: 12px; }
 .contract { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: start; }
 .contract__mark { display: grid; place-items: center; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--sys-hair-hot); }
 .contract__mark .ico { width: 13px; height: 13px; }
@@ -591,4 +591,6 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 /* A System notice set into a screen, above its panels: the window, smaller. */
 .sysnotice .sysframe__glass { gap: 10px; padding: 12px; }
 .sysnotice p { font-size: 0.92rem; text-align: center; }
-.contracts__when { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.76rem; }
+/* What follows a quest's rewards: when it changes, where it stands, and the way to it. */
+.questinfo__when { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.76rem; }
+.questinfo__note { color: color-mix(in srgb, var(--sys-ink) 78%, transparent); font-size: 0.82rem; text-align: center; }

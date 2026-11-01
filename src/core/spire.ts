@@ -88,6 +88,20 @@ export function seasonTier(best: number): { tier: string; rank: Rank; shards: nu
   };
 }
 
+/** The first floor whose week pays a tier above one that reached `best`: the next grade's floors, then every `beyond` past the top. */
+export function nextTier(best: number): number {
+  const up = RANKS.find((r) => SPIRE_FLOORS[r] > best);
+  if (up) return SPIRE_FLOORS[up];
+  const past = best > SPIRE_TOP ? Math.ceil((best - SPIRE_TOP) / SEASON_PAY.beyond) : 0;
+  return SPIRE_TOP + past * SEASON_PAY.beyond + 1;
+}
+
+/**
+ * The week's next goal: the floor where the next tier begins, counted from where the hunter climbs
+ * from this week, so a hunter who starts above the first floors is never set one below them.
+ */
+export const tierGoal = (s: Save, day = dayKey()) => nextTier(Math.max(weekBest(s, day), firstFloor(nextBlock(s, day)) - 1));
+
 /**
  * Close the week if a new one has begun: pay what the last one reached, once,
  * and start the climb over. Null when nothing closed. Mutates.

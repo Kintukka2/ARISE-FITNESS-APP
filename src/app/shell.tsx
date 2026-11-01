@@ -3,13 +3,14 @@ import { useEffect, useRef } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import { upgradeCount } from '@/core/gear';
-import { rankFor, shadowsOpen, waiting, xpToNext } from '@/core/progression';
+import { unseen } from '@/core/contracts';
+import { rankFor, waiting, xpToNext } from '@/core/progression';
 import { licensedRank } from '@/core/licence';
 import { compact } from '@/core/util';
 import { useSave } from '@/store';
 import { reducedMotion } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
-import { go, route, type Route } from './router';
+import { go, isOpen, route, type Route } from './router';
 import { openExchange } from '@/screens/Exchange';
 import { openSettings } from '@/screens/Settings';
 
@@ -65,7 +66,7 @@ export function TopBar() {
   const shown = rank === 'N' ? 'N' : licensedRank(s);
   return (
     <header class="topbar">
-      <button type="button" class="topbar__rank" aria-label="Open profile" onClick={() => { sfx.tap(); go('profile'); }}>
+      <button type="button" class="topbar__rank" aria-label="Open Status" onClick={() => { sfx.tap(); go('inventory'); }}>
         <Sigil rank={shown} size={44} />
       </button>
       <div class="topbar__mid">
@@ -88,8 +89,9 @@ export function TopBar() {
 }
 
 const TABS: { key: Route; label: string; icon: string }[] = [
-  { key: 'profile', label: 'Profile', icon: 'profile' },
+  { key: 'inventory', label: 'Inventory', icon: 'bag' },
   { key: 'gates', label: 'Gates', icon: 'gates' },
+  { key: 'quests', label: 'Quests', icon: 'quest' },
   { key: 'shadows', label: 'Shadows', icon: 'shadows' },
 ];
 
@@ -97,15 +99,17 @@ export function NavBar() {
   const s = useSave();
   const r = route.use();
   const badge = (k: Route): string | null => {
-    if (k === 'profile') {
+    if (k === 'inventory') {
       const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0) + waiting(s).length;
       return n > 0 ? String(n) : null;
     }
+    // The day's Daily Quests, until the Quests screen has shown them.
+    if (k === 'quests' && unseen(s)) return String(unseen(s));
     if (k === 'shadows' && s.shadows.fresh.length) return String(s.shadows.fresh.length);
     return null;
   };
-  const lock = (k: Route) => k === 'shadows' && !shadowsOpen(s);
-  const beckon = (k: Route) => (k === 'gates' && !s.seen.includes('gates-visited')) || (k === 'shadows' && shadowsOpen(s) && !s.seen.includes('shadows-visited'));
+  const lock = (k: Route) => !isOpen(s, k);
+  const beckon = (k: Route) => (k === 'gates' && !s.seen.includes('gates-visited')) || (k === 'shadows' && isOpen(s, k) && !s.seen.includes('shadows-visited'));
   return (
     <nav class="navbar" aria-label="Main">
       {TABS.map((t) => (

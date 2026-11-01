@@ -70,13 +70,31 @@ export function draw(day: string, grade: Rank, shadowsOut: number): Contract[] {
 export function today(s: Save, day = dayKey()): Contracts {
   if (s.contracts.day === day) return s.contracts;
   const grade = licensedRank(s);
-  return { day, grade, list: draw(day, grade, shadows.squad(s).length), bonus: false };
+  return { day, grade, list: draw(day, grade, shadows.squad(s).length), bonus: false, seen: false };
 }
 
 /** Write today's contracts to the save, if they are not there yet. Mutates. */
 export function issue(s: Save, day = dayKey()): Contracts {
   if (contractsOpen(s) && s.contracts.day !== day) s.contracts = today(s, day);
   return s.contracts;
+}
+
+/** The Quests screen has shown today's contracts: issue them, and mark them seen. Mutates. */
+export function show(s: Save, day = dayKey()) {
+  if (!contractsOpen(s)) return;
+  issue(s, day).seen = true;
+}
+
+/** How many of today's contracts are undone and not yet shown on the Quests screen: 0 once they have been. */
+export function unseen(s: Save, day = dayKey()): number {
+  if (!contractsOpen(s) || (s.contracts.day === day && s.contracts.seen)) return 0;
+  return today(s, day).list.filter((k) => !k.done).length;
+}
+
+/** The gates today's undone contracts name as where they can be done. */
+export function named(s: Save, day = dayKey()): Set<string> {
+  if (!contractsOpen(s)) return new Set();
+  return new Set(today(s, day).list.filter((k) => !k.done).flatMap((k) => k.where ?? []));
 }
 
 /** What one finished run did, as the contracts count it. */

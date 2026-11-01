@@ -186,3 +186,34 @@ describe('in a run', () => {
     expect(s.contracts.list[0].got).toBe(0);
   });
 });
+
+describe('on the Quests screen', () => {
+  it('a new day’s arrive unseen, and showing them issues them and clears the count', () => {
+    const s = hunter(5);
+    expect(contracts.unseen(s, day)).toBe(CONTRACTS_PER_DAY);
+    contracts.issue(s, day);
+    expect(contracts.unseen(s, day)).toBe(CONTRACTS_PER_DAY);
+    contracts.show(s, day);
+    expect(s.contracts.day).toBe(day);
+    expect(contracts.unseen(s, day)).toBe(0);
+    expect(contracts.unseen(s, addDays(day, 1))).toBe(CONTRACTS_PER_DAY);
+  });
+
+  it('showing them draws nothing new: the day’s stand as issued', () => {
+    const s = hunter(5);
+    const issued = structuredClone(contracts.issue(s, day).list);
+    contracts.show(s, day);
+    expect(s.contracts.list).toEqual(issued);
+  });
+
+  it('counts only what is undone, and nothing before the practice gate', () => {
+    const s = hunter(5);
+    give(s, [{ kind: 'clear', done: true }, { kind: 'fell', where: ['DNG-001'] }, { kind: 'gatekeeper', where: ['DNG-002'], done: true }]);
+    expect(contracts.unseen(s, day)).toBe(1);
+    expect([...contracts.named(s, day)]).toEqual(['DNG-001']);
+    const fresh = defaults();
+    expect(contracts.unseen(fresh, day)).toBe(0);
+    contracts.show(fresh, day);
+    expect(fresh.contracts.day).toBeNull();
+  });
+});

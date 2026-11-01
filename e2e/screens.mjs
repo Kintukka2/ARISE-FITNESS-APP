@@ -57,14 +57,17 @@ try {
   await sleep(1200);
   await drain();
 
-  await nav('profile');
-  await snap('profile', true);
+  await nav('inventory');
+  await snap('inventory', true);
   await page.locator('.status .linkish').click(); await sleep(400); await snap('class', true); await close();
-  await page.locator('[aria-label="Inventory"]').first().click(); await sleep(400); await snap('inventory');
+  await page.locator('.sysframe.inventory').scrollIntoViewIfNeeded(); await sleep(300); await snap('inventory-grid');
   await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();
   await page.locator('.invtile[aria-label^="Warden"]').first().click(); await sleep(400);
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close(); await close();
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close();
   await page.locator('[aria-label="Hunter dossier"]').click(); await sleep(400); await snap('dossier', true); await close();
+
+  await nav('quests');
+  await snap('quests', true);
 
   await nav('gates');
   await snap('gates', true);

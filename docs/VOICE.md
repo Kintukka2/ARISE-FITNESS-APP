@@ -37,19 +37,21 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The fight log | The System | `lines()` in `screens/Arena.tsx` |
 | What an outcome inside a Gate cost or paid | The System | `system.outcome()` |
 | The extraction panel, promotions, the Chosen, Daily Quests | The System | `screens/Arena.tsx`, `ui/contracts.tsx` |
+| The Quests screen's QUEST INFO windows: Daily Quests, Reclassification, the Weekly Quest, the Trial, the Chosen | The System | `screens/Quests.tsx`, `ui/contracts.tsx` |
+| The Quests screen's tiles, the Secret Quests record, and the Quest chip on the board | The interface | `screens/Quests.tsx`, `screens/Gates.tsx` |
 | Onboarding dialogue, coach windows, the Gates screen line, the Gates tour | Valcorde | `data/narrative.ts` |
 | The `???` windows | Another voice | `data/narrative.ts` |
 | A Gate's description in the brief | The world: the Association's file | `data/dungeons.ts`, `data/special.ts`, `data/spire.ts` |
 | Map events, traps, caches, shrines, rests | The world: narration | `data/nodes.ts`, `NodePanel` in `screens/Arena.tsx` |
 | Buttons, labels, tabs, tiles, hints, toasts, empty states, results, tutorials, settings, the map legend, standing orders, Ascension rules, the Guide | The interface | `screens/`, `ui/`, `data/nodes.ts` (`NODE`), `core/combat.ts` (`TACTICS`), `core/ascension.ts` |
-| A locked feature's notice (the Shadows tab before the first Shadow) | The System | `app/router.ts` |
+| A locked feature's notice (the Quests tab before the Practice Gate, the Shadows tab before the first Shadow) | The System | `app/router.ts` |
 | Status tooltips and foes' intent on unit cards | The System | `STATUS_TEXT` in `core/combat.ts`, `screens/Arena.tsx` |
 | Spire reward tiers, rank blurbs | The System | `core/spire.ts`, `core/progression.ts` |
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
 | Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
-| The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Profile.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
+| The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Inventory.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
 
 Ascension rule text belongs to the interface (the Gates screen, the Guide). When the System announces
 a new level it names the level and what it opened, never the rule.
@@ -338,6 +340,29 @@ that there is none.
 - **A hint says where or how, flat:** `Found in: {places}.`, `Kills in any Gate count, cleared or
   not.`, `It is off the marked road.` A hint never explains why.
 
+**The Quests screen.** One QUEST INFO window to a quest, in the frame of its subject: cyan for the
+Daily Quests, gold for advancement (Reclassification, the Trial, the Chosen), orange for the Pale
+Spire. Every quest's name wears its type, and these are the names:
+
+| Quest | Name | Goals |
+|---|---|---|
+| The day's | `[Daily Quests]` | As above |
+| The next rank | `[Reclassification: D-Rank]`, `[Reclassification: Sovereign]` | `Reach Level 10.` / `Experience needed: {n}` |
+| The Spire's week | `[Weekly Quest: The Pale Spire]` | `Clear Floor 36.` / `Floors 26 to 30 next.` |
+| The next Ascension level | `[Trial: Ascension 4]` | `Clear 4 different C-Rank Gates at Ascension 3.` / `Win The Trial of Ascension 4: 5 of the Chosen in a row.` |
+| The Chosen walking today | `[Chosen: The Iron Penitent]` | `Fell [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
+
+- **A reward that opens something is the Unlock template:** `ACCESS GRANTED: CLASS`, `ACCESS
+  GRANTED: ASCENSION 4`. A change is `{from} → {to}`: `Rank: C → B`, `Shadow slots: 2 → 3`.
+- **A quest is never a new payout.** Each pays where it always did (a rank through its level-up
+  window, the week through the Spire's reset), so the screen reports where it stands and never
+  says "claim".
+- **The Weekly Quest's goal is the next floor that raises the week's tier.** It is never done, only
+  raised; under its rewards it reports the tier already reached: `This week: Floor 25 · Reward tier:
+  C-Rank`.
+- **Secret Quests stay sealed.** The screen lists those done, with their tier, goal and reward, and
+  counts the rest as `Sealed: {n}`. It never names one that is not done.
+
 **Quest Rewards.**
 
 ```
@@ -529,7 +554,7 @@ ARISE class, the first time: `Class assigned.` / `[Class: Brawler]` / `STR +2`. 
 differently can move a hunter sideways to another line, not only up.
 ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
 
-**Status.** The hunter's sheet, at the top of Profile.
+**Status.** The hunter's sheet, at the top of the Inventory screen.
 
 ```
                  STATUS                  [dossier]
@@ -550,7 +575,8 @@ bar, because it falls over time and a potion lowers it. Tapping the class opens 
 of skill or passive, the kept one lit in gold. The frame is gold, because a choice here is
 advancement.
 
-**Inventory.** A grid of icons under tabs, with the count of what is held.
+**Inventory.** A grid of icons under tabs, with the count of what is held, on the Inventory screen
+under Status and the equipment. The tab is named for it.
 Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`. ARISE holds only gear, so the tabs are
 `All · {count}` and the slots. Each square is the item's icon in its grade's frame, its score, and
 `WORN` when it is worn; the item card holds the rest.
@@ -749,6 +775,9 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Notification | Alarm, Notice | The default System window header |
 | Daily Quest | contract | Code keeps `contracts`; only the words change |
 | Secret Quest | Secret Mission | Code keeps `missions` |
+| Weekly Quest | season, weekly contract | The Pale Spire's week, on the Quests screen. Code keeps `season` |
+| Reclassification | rank-up quest, job change | The quest for the next rank, as the rank windows say: "Reclassification approved." |
+| Inventory | Profile | The tab with Status, the equipment and everything held. Code keeps the route `inventory` |
 | Ability Points | attribute points, stat points | Code keeps `points` |
 | stats | attributes | STR, VIT, AGI, PER and INT, as the source says it: "All stats -50%" |
 | Player | | The System's name for the hunter. No one else uses it |

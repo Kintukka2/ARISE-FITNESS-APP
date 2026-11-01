@@ -36,7 +36,7 @@ export function defaults(): Save {
     },
     shadows: { army: [], squad: [], fresh: [] },
     shop: { day: null, taken: [] },
-    contracts: { day: null, grade: 'E', list: [], bonus: false },
+    contracts: { day: null, grade: 'E', list: [], bonus: false, seen: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
     ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0, marks: {}, sent: [], felled: [] },
     satchel: 0,

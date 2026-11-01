@@ -154,6 +154,8 @@ try {
   await snap('splash');
   await page.locator('.awaken--splash').click();
 
+  // The Awakening is no screen's, so it keeps the System's cyan rather than the Gates' orange.
+  if (await page.evaluate(() => document.documentElement.dataset.screen)) throw new Error('THE AWAKENING TOOK A SCREEN’S COLOUR');
   await tapCoachUntil('#hunter-name');
   await page.fill('#hunter-name', 'Kintukka');
   await snap('licence');
@@ -171,26 +173,36 @@ try {
   await page.waitForSelector('.gaterow.is-practice', { timeout: 10000 });
   await drain();
   await snap('gates');
+  // Quests open with the practice gate cleared, not before.
+  if (!(await page.locator('[data-nav="quests"].is-locked').isVisible())) throw new Error('THE QUESTS TAB OPENED BEFORE THE PRACTICE GATE');
   await raidGate('.gaterow.is-practice', 'practice');
   if (!(await page.locator('.xpbar__label').innerText()).includes('LV 5')) throw new Error('THE PRACTICE GATE DID NOT LAND ON LEVEL 5');
 
   // Spend the points it paid.
-  await nav('profile');
+  await nav('inventory');
   await sleep(400);
   await drain();
-  await snap('profile-points');
+  await snap('inventory-points');
   await page.locator('text=Auto-Allocate').click();
   await page.locator('.syswin__foot .btn--primary').click();
   await drain();
-  await snap('profile');
+  await snap('inventory');
 
-  // A real gate, at E. The practice gate is behind the hunter, so the System has issued the day's contracts.
-  await nav('gates');
+  // The practice gate is behind the hunter, so the System has issued the day's contracts, on the Quests screen.
+  if (!(await page.locator('[data-nav="quests"] .badge').isVisible())) throw new Error('THE QUESTS TAB DID NOT SAY THE DAILY QUESTS HAD ARRIVED');
+  await nav('quests');
   await sleep(400);
   await drain();
   if ((await page.locator('.sysframe.contracts .contract').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
-  await page.locator('.sysframe.contracts').scrollIntoViewIfNeeded();
-  await snap('contracts');
+  if (!(await visible('.sysframe.quest-rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
+  await snap('quests');
+  if (await page.locator('[data-nav="quests"] .badge').isVisible()) throw new Error('THE QUESTS BADGE OUTLIVED THE VISIT');
+
+  // A real gate, at E.
+  await nav('gates');
+  await sleep(400);
+  await drain();
+  if (await visible('.sysframe.contracts')) throw new Error('THE DAILY QUESTS ARE STILL ON THE GATES SCREEN');
   const before = await page.locator('.xpbar__label').innerText();
   // Win or lose it pays: a defeat still pays a share. The System fights this one.
   await raidGate('.gaterow:not(.is-locked):not(.is-practice)', 'first-gate', true);

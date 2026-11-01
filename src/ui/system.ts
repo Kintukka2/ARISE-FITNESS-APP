@@ -63,12 +63,12 @@ export function offer(lines: string[], kind: Kind = 'system', yes = 'Yes', no = 
   return { ...notify(lines, kind, [{ label: no, value: false }, { label: yes, value: true, primary: true }]), typed: false };
 }
 
-/** Levels gained, then the Ability Points they paid. Resolves 'profile' for Allocate. */
+/** Levels gained, then the Ability Points they paid. Resolves 'inventory', the screen with the Status sheet, for Allocate. */
 export function levelUp(levels: number, to: number, points: number): WinOpts {
   const lines = Array.from({ length: Math.min(levels, 3) }, () => '[You have levelled up!]');
   if (levels > 3) lines.push(counter('Level', to));
   lines.push(`Ability Points ${gain(signed(points))}`);
-  return notify(lines, 'gold', [{ label: 'Close', value: null }, { label: 'Allocate', value: 'profile', primary: true }]);
+  return notify(lines, 'gold', [{ label: 'Close', value: null }, { label: 'Allocate', value: 'inventory', primary: true }]);
 }
 
 /**
