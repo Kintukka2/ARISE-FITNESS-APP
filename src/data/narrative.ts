@@ -9,6 +9,7 @@ import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
 import { BLOCK, SPIRE_OPENS } from './spire';
 import { ASCENSION_TOP } from './ascension';
+import { SLOTS } from './shadows';
 import { arrival, change, counter, event, foe, tag, unlock } from '@/ui/system';
 
 /** The Awakening Assessment at the Association desk. */
@@ -133,7 +134,7 @@ export const BEATS: Beat[] = [
     lines: [
       'Reclassification approved.',
       `Rank: ${change('B', 'A')}`,
-      '[A Shadow slot has been added.]',
+      `Shadow slots: ${change(SLOTS.B, SLOTS.A)}`,
       '[A Gate of unprecedented density is forming.]',
       'Required rank: S',
     ],

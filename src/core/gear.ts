@@ -297,23 +297,24 @@ const BONUS_NAMES: Record<string, string> = {
   crit: 'critical chance', accuracy: 'accuracy', evasion: 'evasion', initiative: 'initiative', statusChance: 'status chance', statusSave: 'status save',
 };
 const FRACTION = new Set(['patk', 'mpow', 'defense', 'resist', 'maxHp', 'recovery']);
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /** Pairs that read as one when they are equal. */
 const PAIRS: [string, string][] = [['patk', 'mpow'], ['defense', 'resist']];
 
-/** A bonus in words, read from its numbers: "+8% attack and magic", "+6 critical chance". */
+/** A bonus in words, name then value, read from its numbers: "Attack and magic +8%", "Critical chance +6". */
 export function bonusText(b: Record<string, number>): string {
   const amount = (k: string, v: number) => (FRACTION.has(k) ? `+${Math.round(v * 100)}%` : `+${v}`);
   const left = { ...b };
   const parts: string[] = [];
   for (const [x, y] of PAIRS) {
     if (left[x] === undefined || left[x] !== left[y]) continue;
-    parts.push(`${amount(x, left[x])} ${BONUS_NAMES[x]} and ${BONUS_NAMES[y]}`);
+    parts.push(`${cap(BONUS_NAMES[x])} and ${BONUS_NAMES[y]} ${amount(x, left[x])}`);
     delete left[x];
     delete left[y];
   }
-  for (const [k, v] of Object.entries(left)) parts.push(`${amount(k, v)} ${BONUS_NAMES[k] ?? k}`);
-  return parts.join(', ');
+  for (const [k, v] of Object.entries(left)) parts.push(`${cap(BONUS_NAMES[k] ?? k)} ${amount(k, v)}`);
+  return parts.join(' · ');
 }
 
 // ------------------------------------------------------------------ upgrades
@@ -353,9 +354,9 @@ export function pastPerfect(it: Item, over: number): Item {
 
 export function rollText(it: Item): string[] {
   const d = defOf(it);
-  return (d?.rolls ?? []).map((r, i) => `+${(it.rolls[i] ?? r.min).toFixed(r.pct ? 1 : 0)}${r.pct ? '%' : ''} ${r.stat}`);
+  return (d?.rolls ?? []).map((r, i) => `${r.stat === 'Defense' ? 'Defence' : r.stat} +${(it.rolls[i] ?? r.min).toFixed(r.pct ? 1 : 0)}${r.pct ? '%' : ''}`);
 }
 
 export function coreText(it: Item): string {
-  return Object.entries(coreOf(it)).map(([k, v]) => `+${(v ?? 0).toFixed(1).replace(/\.0$/, '')} ${k}`).join(' · ');
+  return Object.entries(coreOf(it)).map(([k, v]) => `${k} +${(v ?? 0).toFixed(1).replace(/\.0$/, '')}`).join(' · ');
 }

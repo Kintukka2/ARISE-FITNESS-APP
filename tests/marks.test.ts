@@ -80,8 +80,8 @@ describe('marks', () => {
   });
 
   it('read their numbers in words', () => {
-    expect(marks.markText(mark('edge'), 2)).toBe(`+${Math.round(mark('edge').hero!.patk * 200)}% attack and magic`);
-    expect(marks.markText(mark('stride'))).toContain(`${Math.round(mark('stride').fatigue! * 100)}% less fatigue`);
+    expect(marks.markText(mark('edge'), 2)).toBe(`Attack and magic +${Math.round(mark('edge').hero!.patk * 200)}%`);
+    expect(marks.markText(mark('stride'))).toContain(`Fatigue -${Math.round(mark('stride').fatigue! * 100)}%`);
   });
 });
 

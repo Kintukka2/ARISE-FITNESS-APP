@@ -1,22 +1,30 @@
 /**
  * The voice rules in docs/VOICE.md that a test can hold: System windows come from the closed list
  * of headers and never refer to the System, Valcorde never mentions it, the decided words are the
- * only ones used, and no player-facing line carries a dash.
+ * only ones used, counts are digits, a stat's name comes before its value, and no player-facing line
+ * carries a dash.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { grantText, MISSIONS } from '@/core/missions';
+import { contractHint, contractText } from '@/core/contracts';
+import * as gear from '@/core/gear';
+import * as marks from '@/core/marks';
+import { grantText, MISSIONS, TIER_NAMES } from '@/core/missions';
 import { ATTRS, RANK_LADDER } from '@/core/progression';
 import { POTIONS } from '@/core/shop';
 import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASSES } from '@/data/classes';
+import { MARKS } from '@/data/ascension';
+import { CONTRACT_KINDS } from '@/data/contracts';
 import { ISSUED } from '@/data/equipment';
 import { ASSESSMENT, BEATS, HANDOVER } from '@/data/narrative';
 import * as system from '@/ui/system';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
 const systemBeats = BEATS.filter((b) => system.SYSTEM_KINDS.includes(b.kind));
+/** One of each Daily Quest, to read its goal and hint. */
+const quests = CONTRACT_KINDS.map(({ kind }) => ({ kind, need: 3, got: 0, family: 'Undead', at: 30, where: [] }) as unknown as Parameters<typeof contractText>[0]);
 const coachLines = [...ASSESSMENT, ...HANDOVER, ...BEATS.filter((b) => b.kind === 'coach').flatMap((b) => b.lines)];
 
 /** Every card and System line the data holds. */
@@ -29,6 +37,7 @@ const systemText = [
   ...RANK_LADDER.map((r) => r.blurb),
   ...ISSUED.map((d) => d.desc ?? ''),
   ...POTIONS.map((p) => p.desc),
+  ...quests.flatMap((q) => [contractText(q, 'D'), contractHint(q)]),
 ].map(plain);
 
 describe('the System', () => {
@@ -63,11 +72,24 @@ describe('Valcorde', () => {
 describe('the words', () => {
   it('uses the decided terms', () => {
     for (const t of [...systemText, ...coachLines.map(plain)]) {
-      expect(t, t).not.toMatch(/\b[Cc]ontracts?\b|Secret Mission|[Aa]ttribute point|\bgates?\b/);
+      expect(t, t).not.toMatch(/\b[Cc]ontracts?\b|Secret Mission|\b[Aa]ttributes?\b|\bgates?\b/);
     }
   });
 
-  it('puts no dash in a line a player reads', () => {
+  it('names the Secret Quest tiers, not Missions', () => {
+    expect(Object.values(TIER_NAMES)).toEqual(['Citation', 'Directive', 'Edict', 'Testament']);
+  });
+
+  it('writes every count in System text as a digit', () => {
+    for (const t of systemText) expect(t, t).not.toMatch(/\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred|thousand)\b/i);
+  });
+
+  it('writes a stat name before its value', () => {
+    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2)];
+    for (const t of lines) expect(t, t).not.toMatch(/[+-]\d[\d.]*%?\s+(STR|VIT|AGI|PER|INT|[a-z]+)\b/);
+  });
+
+  it('puts no dash or old word in a line a player reads', () => {
     const files: string[] = [];
     const walk = (dir: string) => {
       for (const f of readdirSync(dir)) {
@@ -82,7 +104,9 @@ describe('the words', () => {
       readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
         const t = line.trim();
         if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return;
-        if (/[—–]/.test(line.replace(/\s\/\/\s.*$/, ''))) found.push(`${f}:${i + 1}`);
+        const code = line.replace(/\s\/\/\s.*$/, '');
+        if (/[—–]/.test(code)) found.push(`${f}:${i + 1} dash`);
+        if (/(?<!first_)\b[Aa]rtifacts?\b|Secret Missions?\b/.test(code)) found.push(`${f}:${i + 1} old word`);
       });
     }
     expect(found).toEqual([]);

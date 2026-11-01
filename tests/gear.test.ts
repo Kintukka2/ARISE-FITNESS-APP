@@ -50,9 +50,9 @@ describe('sets', () => {
   });
 
   it('reads its bonus from the numbers', () => {
-    expect(gear.bonusText({ patk: 0.08, mpow: 0.08 })).toBe('+8% attack and magic');
-    expect(gear.bonusText({ crit: 6, accuracy: 6 })).toBe('+6 critical chance, +6 accuracy');
-    expect(gear.bonusText({ maxHp: 0.12, resist: 0.1 })).toBe('+12% maximum HP, +10% resistance');
+    expect(gear.bonusText({ patk: 0.08, mpow: 0.08 })).toBe('Attack and magic +8%');
+    expect(gear.bonusText({ crit: 6, accuracy: 6 })).toBe('Critical chance +6 · Accuracy +6');
+    expect(gear.bonusText({ maxHp: 0.12, resist: 0.1 })).toBe('Maximum HP +12% · Resistance +10%');
   });
 
   it('Auto Equip keeps a set together, unless something is a good deal better', () => {

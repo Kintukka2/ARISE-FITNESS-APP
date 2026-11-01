@@ -25,8 +25,16 @@ function Exchange() {
   const offers = shop.shelf(s);
   const left = offers.filter((o) => !o.sold).length;
   const buy = async (o: shop.Offer) => {
+    const d = gear.defOf(o.item);
+    const want = await sys(system.offer([
+      'Would you like to purchase?',
+      system.tag(d?.name ?? 'Item', 'Item'),
+      system.gain(gear.coreText(o.item)),
+      `Price: ${o.price} Mana Shards · Held: ${store.get().wallet.shards}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
     const it = store.update((x) => shop.buy(x, o.index));
-    if (!it) return toast('Not enough Mana Shards.', 'bad');
+    if (!it) return void sys(system.refuse([`Not enough Mana Shards. (${store.get().wallet.shards}/${o.price})`], 'gear'));
     sfx.success();
     buzz([14, 30, 22, 30, 70]);
     const v = await sys({
@@ -43,7 +51,7 @@ function Exchange() {
         <div><span class="label">Mana Shards</span><Shards n={s.wallet.shards} big /></div>
         <div class="purse__right"><span class="label">New stock in</span><b class="num">{hhmmss(msUntilMidnight())}</b></div>
       </div>
-      <p class="muted">Shards come from cleared Gates and recycled artifacts. Most of the shelf answers your grade; now and again something far above it turns up, at a price that says so.</p>
+      <p class="muted">Shards come from cleared Gates and recycled items. Most of the shelf answers your grade; now and again something far above it turns up, at a price that says so.</p>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -69,8 +77,15 @@ function Exchange() {
             </span>
             {s.satchel >= shop.FIELD_POTION.max
               ? <Chip>Satchel full</Chip>
-              : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < shop.FIELD_POTION.price} onClick={() => {
-                if (!store.update(shop.buyField)) return toast('Not enough shards.', 'bad');
+              : <Btn size="sm" kind="ghost" disabled={s.wallet.shards < shop.FIELD_POTION.price} onClick={async () => {
+                const want = await sys(system.offer([
+                  'Would you like to purchase?',
+                  system.tag('Field Potion', 'Item'),
+                  `Restores ${shop.FIELD_POTION.heal * 100}% of HP. Drunk on your turn in a Gate.`,
+                  `Price: ${shop.FIELD_POTION.price} Mana Shards · Held: ${store.get().wallet.shards}`,
+                ], 'gear', 'Buy', 'Cancel'));
+                if (want !== true) return;
+                if (!store.update(shop.buyField)) return void sys(system.refuse([`Not enough Mana Shards. (${store.get().wallet.shards}/${shop.FIELD_POTION.price})`], 'gear'));
                 sfx.success();
                 buzz([14, 30, 22]);
                 toast(`Field Potion · ${store.get().satchel} of ${shop.FIELD_POTION.max} in the satchel`, 'xp');
