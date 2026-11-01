@@ -5,7 +5,7 @@ import { sfx } from '@/audio/audio';
 import { defOf, RARITY, rollTag, score } from '@/core/gear';
 import type { Item, Rank } from '@/core/types';
 import { compact } from '@/core/util';
-import { CoachPortrait, Glyph, Shard, Sigil, SystemMark } from './icons';
+import { CoachPortrait, Glyph, Shard, Sigil } from './icons';
 
 type Sound = 'tap' | 'blip' | 'success' | 'gate' | 'none';
 
@@ -127,13 +127,16 @@ export function Fold({ title, right, children, open: initial = false, onOpen }: 
   );
 }
 
-/** Ryn Valcorde, or the System, speaking inline at the top of a screen. */
-export function Voice({ who, children, tour }: { who: 'coach' | 'system'; children: ComponentChildren; tour?: string }) {
+/**
+ * Ryn Valcorde speaking inline at the top of a screen. The System never speaks here: a System line on
+ * a screen is a `SysFrame` (docs/VOICE.md, "The look").
+ */
+export function Voice({ children, tour }: { children: ComponentChildren; tour?: string }) {
   return (
-    <div class={`voice voice--${who}`} data-tour={tour}>
-      <div class="voice__face">{who === 'coach' ? <CoachPortrait size={36} /> : <SystemMark size={26} />}</div>
+    <div class="voice voice--coach" data-tour={tour}>
+      <div class="voice__face"><CoachPortrait size={36} /></div>
       <div class="voice__body">
-        <b class="voice__name">{who === 'coach' ? 'Ryn Valcorde' : 'Notification'}</b>
+        <b class="voice__name">Ryn Valcorde</b>
         <p class="voice__line">{children}</p>
       </div>
     </div>

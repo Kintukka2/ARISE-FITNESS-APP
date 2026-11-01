@@ -65,7 +65,7 @@ export function Gates() {
 
   return (
     <div class="stack">
-      <Voice who="coach">{coachLine(s)}</Voice>
+      <Voice>{coachLine(s)}</Voice>
       <Panel title="Gates" tone="ember">
         <div class="licencecard" data-tour="licence">
           <Sigil rank={mine} size={46} />
