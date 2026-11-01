@@ -18,7 +18,7 @@ import { CLASSES } from '@/data/classes';
 import { MARKS } from '@/data/ascension';
 import { CONTRACT_KINDS } from '@/data/contracts';
 import { ISSUED } from '@/data/equipment';
-import { ASSESSMENT, BEATS, HANDOVER } from '@/data/narrative';
+import { ASSESSMENT, BEATS, GATES_LINE, GATES_TOUR, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as system from '@/ui/system';
 import { TOPICS } from '@/screens/Guide';
 
@@ -26,7 +26,10 @@ const plain = (html: string) => html.replace(/<[^>]+>/g, '');
 const systemBeats = BEATS.filter((b) => system.SYSTEM_KINDS.includes(b.kind));
 /** One of each Daily Quest, to read its goal and hint. */
 const quests = CONTRACT_KINDS.map(({ kind }) => ({ kind, need: 3, got: 0, family: 'Undead', at: 30, where: [] }) as unknown as Parameters<typeof contractText>[0]);
-const coachLines = [...ASSESSMENT, ...HANDOVER, ...BEATS.filter((b) => b.kind === 'coach').flatMap((b) => b.lines)];
+const coachLines = [
+  ...ASSESSMENT, NAME_PROMPT, ...HANDOVER, ...Object.values(GATES_LINE), ...GATES_TOUR.map((t) => t.say),
+  ...BEATS.filter((b) => b.kind === 'coach').flatMap((b) => b.lines),
+];
 
 /** Every card and System line the data holds. */
 const systemText = [
@@ -69,9 +72,36 @@ describe('Valcorde', () => {
     for (const l of coachLines) expect(l, l).not.toMatch(/System|Player|Ability Point|Daily Quest|Secret Quest/);
   });
 
-  it('talks like a person: always contracts', () => {
-    const stiff = /\b(do not|does not|did not|is not|are not|was not|were not|will not|would not|cannot|could not|have not|has not|had not|I am|I have|I will|you are|you have|you will|it is|that is|there is|here is|we are|they are)\b(?![,.;:!?])/i;
-    for (const l of coachLines) expect(l, l).not.toMatch(stiff);
+  it('contracts by default, and keeps the full form for weight', () => {
+    const stiff = /\b(do not|does not|did not|is not|are not|was not|were not|will not|would not|cannot|could not|have not|has not|had not|I am|I have|I will|you are|you have|you will|it is|that is|there is|here is|we are|they are)\b(?![,.;:!?])/gi;
+    const contracted = /\b\w+(’|')(t|re|ve|ll|d|m|s)\b/gi;
+    const text = coachLines.join(' ');
+    const full = text.match(stiff)?.length ?? 0;
+    expect((text.match(contracted)?.length ?? 0)).toBeGreaterThanOrEqual(full * 5);
+  });
+
+  it('has no catchphrases: no four-word phrase in two of his lines', () => {
+    const words = (l: string) => l.toLowerCase().match(/[a-z’'-]+/g) ?? [];
+    const seen = new Map<string, number>();
+    coachLines.forEach((l, i) => {
+      const w = words(l);
+      for (let j = 0; j + 4 <= w.length; j++) {
+        const g = w.slice(j, j + 4).join(' ');
+        if (!seen.has(g)) seen.set(g, i);
+        else expect(seen.get(g), `"${g}" in two lines`).toBe(i);
+      }
+    });
+  });
+
+  it('opens no more than two lines the same way', () => {
+    const openers = new Map<string, number>();
+    for (const l of coachLines) {
+      for (const sentence of l.split(/(?<=[.?!])\s+/)) {
+        const first = sentence.split(/\s+/).slice(0, 2).join(' ').toLowerCase();
+        openers.set(first, (openers.get(first) ?? 0) + 1);
+      }
+    }
+    expect([...openers].filter(([, n]) => n > 2)).toEqual([]);
   });
 
   it('is C-Rank, not an elite', () => {

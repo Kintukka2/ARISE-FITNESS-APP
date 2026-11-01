@@ -15,6 +15,7 @@ import { ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKE
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME } from '@/data/spire';
+import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import { ContractsWindow } from '@/ui/contracts';
 import * as system from '@/ui/system';
 import { MapView } from '@/ui/map';
@@ -39,10 +40,10 @@ import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
   const v = vitals.read(s);
-  if (v.locked) return 'You were carried out of the last one. Sit down. The board’ll turn over before you’re fit anyway.';
-  if (v.fatigue > 50) return 'You’re running on empty. Your call, but I’d rest before the next one.';
-  if (!s.gates.clears) return 'Pick something at your own grade, and go in with a party. Read the brief before you go.';
-  return 'Read the brief, and keep an eye on your fatigue. I’ll stop saying it when you stop needing it.';
+  if (v.locked) return GATES_LINE.locked;
+  if (v.fatigue > 50) return GATES_LINE.tired;
+  if (!s.gates.clears) return GATES_LINE.first;
+  return GATES_LINE.settled;
 }
 
 export function Gates() {
@@ -439,11 +440,6 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 
 async function intro() {
   await tour({
-    who: 'coach', title: 'What am I looking at?', steps: [
-      { at: 'licence', say: 'That’s your grade. You can walk into a Gate one grade above it. I wouldn’t, not yet.' },
-      { at: 'vitals', say: 'Watch the bottom bar. Fatigue. It builds with every Gate, and it’s what kills hunters at your grade.' },
-      { at: 'bands', say: 'Every grade has a Gate up there, so you can see what’s ahead. Stay at your own for now.' },
-      { at: 'board', say: 'The one at the top is the practice Gate. I’ve signed us both in. Open it, and read the brief before anything else.' },
-    ],
+    who: 'coach', title: 'What am I looking at?', steps: GATES_TOUR,
   });
 }
