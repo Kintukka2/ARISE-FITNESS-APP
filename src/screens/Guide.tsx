@@ -9,8 +9,8 @@ import { CLASS_RANKS, CLASSES } from '@/data/classes';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { SETS, UPGRADE } from '@/data/sets';
-import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_TOP, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
-import { markText } from '@/core/marks';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
+import { markText, MARKS_MOST } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
 import { RANKS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
@@ -136,13 +136,14 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Ascension',
     lines: [
-      `${ASCENSION_TOP} levels. Each makes every foe stronger and adds a rule, on top of every rule below it.`,
+      `The first ${ASCENSION_RULED} levels each make every foe stronger and add a rule, on top of every rule below it.`,
+      `Past them the ladder has no top. Each level makes every foe ${Math.round((BEYOND.growth - 1) * 100)}% stronger than the one below, and adds no rule.`,
       `Each level pays ${ASCENSION_PAY * 100}% more on a Gate than the level below.`,
       'You can step back down at any time.',
       `A level opens when you prove the one below it: ${PROOF.gates} different Gates of your grade cleared at it, then the Trial.`,
       ...SHORT.map((g) => `${g}-Rank has only ${gatesOf(g)} Gates, so there the proof is all of them.`),
       `Clears count from ${ASCENSION_FROM}-Rank.`,
-      `The Trial is a Gate of the Chosen, fought back to back with no rest and no way out: ${TRIAL.extra} more than the level it proves.`,
+      `The Trial is a Gate of the Chosen, fought back to back with no rest and no way out: ${TRIAL.extra} more than the level it proves, up to ${TRIAL.most}.`,
       'Each of the Chosen is one of your grade’s bosses, stronger for every round before it.',
       'The Trial is fought at the level it proves. You can enter it once a day.',
       'Winning a Trial sends its last Chosen into the Gates.',
@@ -150,10 +151,11 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'The first time it falls it leaves a masterwork: a piece of the Gate’s grade, perfect, as many steps past it as its level.',
       `Each level’s Chosen guards its own slot: ${MASTERWORK_SLOTS.map((x, i) => `${i + 1}, ${x}`).join('; ')}.`,
       `After that, felling it again pays ${WALKERS.bounty} clears’ shards.`,
-      ...rulesAt(ASCENSION_TOP).map((r) => `Level ${r.level}, ${r.name}: ${r.rule}`),
+      ...rulesAt(ASCENSION_RULED).map((r) => `Level ${r.level}, ${r.name}: ${r.rule}`),
       'The level you choose is fixed for a run when you walk in. The brief plays every rule it brings.',
       `Every level you open earns a mark. Set it on the Gates screen, for good, on one of ${MARKS.length}: ${MARKS.map((m) => `${m.name} (${markText(m)})`).join(', ')}.`,
       `Up to ${MARK_MAX} marks can go on any one. The levels are built for a hunter who has set theirs.`,
+      `Every mark is full by Ascension ${MARKS_MOST}. Levels above it earn none.`,
       `Every level opened lets each piece of gear go ${OVERCHARGE.per === 1 ? 'one upgrade step' : `${OVERCHARGE.per} upgrade steps`} past perfect.`,
       `A step past perfect raises it ${OVERCHARGE.share / UPGRADE.share === 0.5 ? 'half as far' : `${Math.round((OVERCHARGE.share / UPGRADE.share) * 100)}% as far`} as a step toward it. Each costs more than the last.`,
     ],

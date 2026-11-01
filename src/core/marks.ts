@@ -14,8 +14,10 @@ export const markById = (id: string) => MARKS.find((m) => m.id === id);
 /** How many marks are set on one mark. */
 export const setOn = (s: Save, id: string) => s.ascension.marks[id] ?? 0;
 const setAll = (s: Save) => MARKS.reduce((n, m) => n + setOn(s, m.id), 0);
-/** Marks earned and not yet set: one for every level opened. */
-export const unset = (s: Save) => Math.max(0, s.ascension.unlocked - setAll(s));
+/** Every mark full: past this many levels, a level opened earns none. */
+export const MARKS_MOST = MARKS.length * MARK_MAX;
+/** Marks earned and not yet set: one for every level opened, until every mark is full. */
+export const unset = (s: Save) => Math.max(0, Math.min(s.ascension.unlocked, MARKS_MOST) - setAll(s));
 export const canSet = (s: Save, id: string) => !!markById(id) && unset(s) > 0 && setOn(s, id) < MARK_MAX;
 
 /** Set one earned mark on a mark, for good. False if none is waiting or that mark is full. Mutates. */

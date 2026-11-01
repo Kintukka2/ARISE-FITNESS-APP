@@ -91,8 +91,9 @@ export interface Dungeon {
   floor?: number;
   scale?: number;
   shape?: string;
-  /** A Trial of Ascension: how many of the Chosen stand in it, one to a layer. */
+  /** A Trial of Ascension: how many of the Chosen stand in it, one to a layer, and the round of the first. */
   trial?: number;
+  trialFrom?: number;
 }
 
 // ------------------------------------------------------------------ orders

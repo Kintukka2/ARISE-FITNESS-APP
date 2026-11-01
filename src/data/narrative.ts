@@ -8,7 +8,6 @@
 import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
 import { SPIRE_OPENS } from './spire';
-import { ASCENSION_TOP } from './ascension';
 import { SLOTS } from './shadows';
 import { arrival, change, counter, event, foe, tag, unlock } from '@/ui/system';
 
@@ -85,7 +84,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: 'ascension_open', when: (s) => s.ascension.unlocked >= 1, kind: 'gold', title: 'Notification', center: true,
-    lines: [unlock('Ascension'), counter('Ascension levels unlocked', 1, ASCENSION_TOP)],
+    lines: [unlock('Ascension'), counter('Ascension levels unlocked', 1)],
   },
   {
     id: 'first_defeat', when: (s) => s.gates.fails >= 1, kind: 'coach', title: 'Valcorde',

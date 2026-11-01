@@ -419,3 +419,5 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .chosencard { border-color: rgba(255, 203, 92, 0.45); }
 .chosencard > .ico { color: var(--gold); }
 .chip--chosen { color: var(--gold); border-color: rgba(255, 203, 92, 0.5); }
+.stepper { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stepper > b { min-width: 2.5ch; text-align: center; font-size: 1.15rem; color: var(--gold); }

@@ -15,7 +15,7 @@ import { dayKey } from '@/core/util';
 import { ASCENSION_TUNE, BLOCK_TUNE, GATE_TUNE, SPIRE_TUNE, TRIAL_TUNE } from '@/data/gatetune';
 import { trialDungeon } from '@/core/trial';
 import { setAllBySystem } from '@/core/marks';
-import { ASCENSION_FROM, ASCENSION_TARGET, ASCENSION_TOP } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_TARGET, ASCENSION_RULED } from '@/data/ascension';
 import { RANKS } from '@/core/types';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
 import type { Dungeon, Rank } from '@/core/types';
@@ -109,7 +109,7 @@ function ascensionRate(level: number) {
 }
 ASCENSION_TUNE.length = 0;
 console.log('ASCENSION level 0, kept-up hunter', (ascensionRate(0) * 100).toFixed(0) + '%');
-for (let L = 1; L <= ASCENSION_TOP; L++) {
+for (let L = 1; L <= ASCENSION_RULED; L++) {
   let lo = 0.5, hi = 8;
   for (let i = 0; i < 10; i++) {
     const mid = Math.sqrt(lo * hi);
@@ -134,7 +134,7 @@ function trialRate(level: number) {
   return c / n;
 }
 TRIAL_TUNE.length = 0;
-for (let L = 0; L < ASCENSION_TOP; L++) {
+for (let L = 0; L < ASCENSION_RULED; L++) {
   let lo = 0.1, hi = 6;
   for (let i = 0; i < 10; i++) {
     const mid = Math.sqrt(lo * hi);
