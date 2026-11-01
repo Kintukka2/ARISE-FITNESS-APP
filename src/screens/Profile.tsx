@@ -4,6 +4,7 @@ import { sfx } from '@/audio/audio';
 import { CLASS_RANKS, classById } from '@/data/classes';
 import * as gear from '@/core/gear';
 import { ascensionOpen } from '@/core/ascension';
+import { walkerOf } from '@/core/walkers';
 import { ASCENSION_TOP, OVERCHARGE } from '@/data/ascension';
 import { MISSIONS, TIER_NAMES, grantText } from '@/core/missions';
 import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
@@ -324,7 +325,7 @@ export function ItemLine({ it, s, onClick }: { it: Item; s: Save; onClick?: () =
       <span class="itemrow__text">
         <b>{d.name} {s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}{gear.beatsWorn(s, it) && <span class="up" title="Better than what you are wearing">▲</span>}</b>
         <small>{gear.coreText(it)}</small>
-        <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(it))}{d.set ? ` · ${d.set} set` : ''}{it.up ? ` · upgraded ${it.up}` : ''}</small>
+        <small class="muted">{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(it))}{d.set ? ` · ${d.set} set` : ''}{it.master ? ' · masterwork' : ''}{it.up ? ` · upgraded ${it.up}` : ''}</small>
       </span>
     </button>
   );
@@ -366,7 +367,7 @@ export function openItem(id: string) {
         <div class="stack itemsheet">
           <div class="row"><GearArt item={it} size={84} equipped={!!worn} /><div class="grow">
             <b class="big">{d.name}</b>
-            <div class="chips"><Chip tone={`rank-${d.rank}`}>{gear.RARITY[d.rank].name}</Chip><Chip>{d.slot}</Chip>{d.set && <Chip>{d.set} set</Chip>}{tag && <Chip tone={tag === 'perfect' ? 'gold' : 'blood'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ' roll'}` : '✕ Dead roll'}</Chip>}</div>
+            <div class="chips"><Chip tone={`rank-${d.rank}`}>{gear.RARITY[d.rank].name}</Chip><Chip>{d.slot}</Chip>{d.set && <Chip>{d.set} set</Chip>}{it.master && <Chip tone="gold">Masterwork of {walkerOf(it.master, d.rank).name}</Chip>}{tag && <Chip tone={tag === 'perfect' ? 'gold' : 'blood'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ' roll'}` : '✕ Dead roll'}</Chip>}</div>
           </div></div>
           <div class="tiles">
             <Tile label="Score" value={Math.round(gear.score(it))} />

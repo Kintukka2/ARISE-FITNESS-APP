@@ -39,6 +39,8 @@ export interface Item {
   up?: number;
   /** Of those, the steps taken past its design's best. */
   over?: number;
+  /** A masterwork: the Ascension level of the Chosen that left it. */
+  master?: number;
 }
 
 // ------------------------------------------------------------------ combat data
@@ -154,6 +156,8 @@ export interface OpenRaid {
   fatigue: number;
   /** The Ascension level it was entered at. */
   ascension?: number;
+  /** The level of the Chosen met in the boss's place, if one held the gate and the run was entered high enough. */
+  chosen?: number | null;
 }
 
 /** What a week on the Spire paid when it closed. */
@@ -280,9 +284,13 @@ export interface Save {
   /**
    * Ascension: the level the next run is entered at, the highest the hunter has opened and ever reached,
    * the proof of the highest so far (different gates of their grade cleared at it), the day they last
-   * walked into a Trial, and the marks set from the levels opened, by mark.
+   * walked into a Trial, the marks set from the levels opened, by mark, the levels whose Chosen have been
+   * sent into the world, and those whose Chosen have fallen to the hunter.
    */
-  ascension: { level: number; unlocked: number; best: number; proof: { gates: string[] }; trialDay: string | null; trials: number; marks: Record<string, number> };
+  ascension: {
+    level: number; unlocked: number; best: number; proof: { gates: string[] }; trialDay: string | null; trials: number;
+    marks: Record<string, number>; sent: number[]; felled: number[];
+  };
   /** Today's System contracts, as issued: for the grade the hunter held when they were first shown. */
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */

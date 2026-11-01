@@ -335,11 +335,19 @@ export function upgradeStep(it: Item, cap = 0): Item | null {
   if (q !== it.q || rolls.some((v, i) => v !== it.rolls[i])) return { ...it, q, rolls, up: (it.up ?? 0) + 1 };
   const over = (it.over ?? 0) + 1;
   if (over > cap) return null;
-  // Past perfect, everything is read from the steps taken, so rounding never builds up.
+  return { ...pastPerfect(it, over), up: (it.up ?? 0) + 1 };
+}
+
+/**
+ * A piece perfect and `over` steps past it. Everything is read from the steps, so rounding never builds
+ * up from one step to the next.
+ */
+export function pastPerfect(it: Item, over: number): Item {
+  const d = defOf(it);
   return {
     ...it, q: Math.round((Q_HIGH + (Q_HIGH - Q_LOW) * OVERCHARGE.share * over) * 1000) / 1000,
-    rolls: (d.rolls ?? []).map((r) => round2(r.max + (r.max - r.min) * OVERCHARGE.share * over)),
-    up: (it.up ?? 0) + 1, over,
+    rolls: (d?.rolls ?? []).map((r) => round2(r.max + (r.max - r.min) * OVERCHARGE.share * over)),
+    over,
   };
 }
 

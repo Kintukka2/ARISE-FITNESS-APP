@@ -328,10 +328,36 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
     fighting the top of the ladder.
   - **One evening a day:** this hunter opens 5. It pushes every proof run at an even chance from the
     bottom of S-Rank, so it is carried out often and clears 37% in its last four weeks.
-- **Next.** The questions are now about pushing, not about reaching the top:
-  - Is the one-evening hunter's slump the fair price of pushing, or a wall to soften?
-  - GM's Chosen sent into the world at each level are still left for later: the Chosen live in the
-    Trial for now.
+- **The Chosen in the world** (`core/walkers.ts`) are GM's: at set points in a run, each Ascension
+  level sends a named Chosen carrying a masterwork into the world.
+  - **Sent:** in ARISE, winning the Trial that opens level L sends that Trial's last Chosen out into
+    the gates.
+  - **Walking:** each day one of them holds the first gate of the hunter's grade in the day's order,
+    marked on the board. Those not yet felled walk first. It shows itself only to a hunter who walks
+    in at Ascension L or higher, and then it stands in the boss's place. The brief says which, and its
+    assessment fights it. A clear of the gate, met or not, closes it on the Chosen for the day.
+  - **Rewards:** the first time it falls it leaves a masterwork. That is a piece of the gate's grade,
+    perfect and L steps past it, for the slot that level's Chosen guards (`MASTERWORK_SLOTS`), so the
+    ten Chosen fill the ten slots. After that it pays a bounty of two clears' worth of shards.
+  - **Calibration:** none. Calibration's hunters have won no Trial, so no Chosen walks for them, and
+    `gatetune.ts` came out identical. A save from before (v3 migration) has sent the Chosen of every
+    level it had opened.
+  - **Campaign:** both hunters hunt a Chosen when the brief gives an even chance at its level. The
+    masterworks arrive mid-climb, a perfect piece of the hunter's grade, so both climb faster:
+
+    | | One evening a day | Three sessions a day |
+    |---|---|---|
+    | Cleared | 85% (was 69%) | 86% (was 73%) |
+    | S-Rank | day 61 (was 79) | day 48 (was 59) |
+    | Ascension opened | 9 (was 5) | 10, by day 84 (was 112) |
+    | Last four weeks cleared | 88% (was 37%) | 100% (was 90%) |
+    | Chosen felled / masterworks | 11 / 6 | 57 / 10 |
+
+    By day 120 neither hunter wears more than one masterwork. Sets and pieces upgraded past perfect
+    replace them by the top.
+- **Next.** The three-session hunter outgrows Ascension 10 about a month before day 120. It clears
+  everything there, at Level 119, wearing gear ten steps past perfect. GM's ladder has sixteen
+  levels. The question now is the top: more levels, or a ladder with no top, as the Spire has.
 
 ## What stays out
 

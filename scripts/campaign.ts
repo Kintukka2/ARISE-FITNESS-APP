@@ -16,6 +16,7 @@ import * as asc from '@/core/ascension';
 import { isTrial } from '@/core/trial';
 import { contractsOpen, issue } from '@/core/contracts';
 import { setAllBySystem } from '@/core/marks';
+import * as walkers from '@/core/walkers';
 import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
 import { sweep } from '@/core/missions';
@@ -47,7 +48,7 @@ const PROFILES: Profile[] = [
 ];
 
 interface Tally {
-  runs: number; cleared: number; defeated: number; spire: number;
+  runs: number; cleared: number; defeated: number; spire: number; chosen: number; masterworks: number;
   contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number;
 }
 
@@ -101,20 +102,37 @@ function pickGate(s: Save, day: string, now: number): Dungeon | null {
  */
 const SAFE = 0.75;
 const PUSH = 0.5;
-function pickLevel(s: Save, d: Dungeon, now: number) {
+function pickLevel(s: Save, d: Dungeon, now: number, floor = 0) {
   const a = s.ascension;
   const grade = licensedRank(s);
   const counts = asc.proving(s) && d.rank === grade && !spire.isSpire(d) && !a.proof.gates.includes(d.id);
-  for (let L = a.unlocked; L > 0; L--) {
+  for (let L = a.unlocked; L > floor; L--) {
     asc.choose(s, L);
     if (raid.project(s, d, 8, now).rate >= (counts && L === a.unlocked ? PUSH : SAFE)) return;
   }
-  asc.choose(s, 0);
+  asc.choose(s, floor);
 }
 
-function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally) {
-  // A Trial is fought at the level it proves; everything else at the level the brief can stand.
-  if (!isTrial(d)) pickLevel(s, d, now);
+/**
+ * The gate one of the Chosen holds today, if a hunter who reads the brief would hunt it: open to them,
+ * at a level they have opened, and an even chance or better at the Chosen's own level.
+ */
+function huntGate(s: Save, day: string, now: number): { d: Dungeon; level: number } | null {
+  const w = walkers.walking(s, day);
+  if (!w || w.level > s.ascension.unlocked) return null;
+  const d = board(s, day).find((x) => x.id === w.gateId);
+  if (!d || entryBlock(s, d, now)) return null;
+  const was = s.ascension.level;
+  asc.choose(s, w.level);
+  const even = raid.project(s, d, 8, now).rate >= PUSH;
+  asc.choose(s, was);
+  return even ? { d, level: w.level } : null;
+}
+
+function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor = 0) {
+  // A Trial is fought at the level it proves; everything else at the level the brief can stand, and a
+  // Chosen's gate at no lower than its level.
+  if (!isTrial(d)) pickLevel(s, d, now, floor);
   const before = s.wallet.earned;
   const run = raid.begin(s, d, now);
   const { won } = walk(s, d, now);
@@ -126,6 +144,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally) {
   t[outcome]++;
   t.contracts += res.contracts.done.length;
   if (res.contracts.bonus) t.bonusDays++;
+  if (res.chosen) { t.chosen++; if (res.chosen.item) t.masterworks++; }
   for (const l of res.lingering) if (vitals.read(s, now).mp >= l.cost) raid.extract(s, l, r(), now);
   t.shardsIn += s.wallet.earned - before;
 }
@@ -133,7 +152,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally) {
 function campaign(p: Profile) {
   const s = newHunter();
   const r = rng('campaign|' + p.name);
-  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0 };
+  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0 };
   const ranks: string[] = [];
   const weekly: string[] = [];
   let rank = rankFor(1).key;
@@ -159,10 +178,12 @@ function campaign(p: Profile) {
         const trial = asc.trialReady(s, dayKey(now)) && raid.project(s, asc.nextTrial(s), 8, now).rate >= PUSH ? asc.nextTrial(s) : null;
         const tower = !trial && spire.spireOpen(s) && climbed !== day && !entryBlock(s, spire.nextSpire(s, dayKey(now)), now);
         if (tower) climbed = day;
-        const d = trial ?? (tower ? spire.nextSpire(s, dayKey(now)) : pickGate(s, dayKey(now), now));
+        // Then one of the Chosen, when it holds an open gate and the brief gives it an even chance.
+        const hunt = !trial && !tower ? huntGate(s, dayKey(now), now) : null;
+        const d = trial ?? (tower ? spire.nextSpire(s, dayKey(now)) : hunt?.d ?? pickGate(s, dayKey(now), now));
         if (!d) break;
         const cleared = t.cleared;
-        play(s, d, now, r, t);
+        play(s, d, now, r, t, hunt?.level ?? 0);
         if (day >= DAYS - 28) { late.runs++; late.cleared += t.cleared - cleared; }
         tidy(s, now, t);
         now += HOUR / 3;
@@ -184,6 +205,7 @@ function campaign(p: Profile) {
   console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} pieces bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
+  console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);
   console.log(weekly.join('\n'));
 }
 

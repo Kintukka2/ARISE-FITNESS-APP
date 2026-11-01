@@ -365,3 +365,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .marks__name { display: flex; align-items: baseline; gap: 8px; }
 .marks__list li.is-set { border-color: rgba(255, 203, 92, 0.4); }
 .marks__list li.is-set b { color: var(--gold); }
+.chosencard { border-color: rgba(255, 203, 92, 0.45); }
+.chosencard > .ico { color: var(--gold); }
+.chip--chosen { color: var(--gold); border-color: rgba(255, 203, 92, 0.5); }
