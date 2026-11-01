@@ -1,7 +1,7 @@
 {
-  "name": "ARISE — The System",
-  "short_name": "ARISE",
-  "description": "A dungeon RPG. Clear Gates, raise your attributes, and bind what you kill into a Shadow army.",
+  "name": "Arise: Dungeon RPG",
+  "short_name": "Arise",
+  "description": "A dungeon RPG. Clear Gates, climb the ranks and bind a Shadow army.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

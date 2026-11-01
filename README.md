@@ -1,4 +1,4 @@
-# ARISE — The System
+# Arise: Dungeon RPG
 
 A dungeon RPG for the phone. You Awaken at E-Rank, the lowest grade the Hunter Association issues,
 and are told it will never go up. Then the System offers you the qualifications to be a
