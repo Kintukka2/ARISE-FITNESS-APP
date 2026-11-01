@@ -13,6 +13,7 @@ import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
 import type { Item, Save, SlotKey, Stat } from '@/core/types';
 import { STATS } from '@/core/types';
+import { group } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
@@ -164,7 +165,7 @@ export async function drinkFlow(id: shop.PotionId) {
     'Would you like to purchase?',
     system.tag(p.name, 'Item'),
     system.gain(p.effect),
-    `Price: ${p.price} Mana Shards · Held: ${s.wallet.shards}`,
+    `Price: ${group(p.price)} Mana Shards · Held: ${group(s.wallet.shards)}`,
   ], 'gear', 'Buy and Drink', 'Cancel'));
   if (buy !== true) return;
   const moved = store.update((x) => shop.drink(x, id));

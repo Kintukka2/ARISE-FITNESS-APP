@@ -48,7 +48,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
 | Speaker labels on voice boxes and tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
-| The Status sheet, Skills, Inventory, item and Shadow cards | The System | `screens/Profile.tsx`, `screens/Shadows.tsx` |
+| The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Profile.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
 
 Ascension rule text belongs to the interface (the Gates screen, the Guide). When the System announces
 a new level it names the level and what it opened, never the rule.
@@ -60,7 +60,7 @@ the table above gives it, so a player can tell who is talking before reading a w
 
 | Speaker | Frame |
 |---|---|
-| **The System** | The anime's window, below. Every System window, and every System surface on a screen: the Status sheet, Skills, Inventory, item and Shadow cards, Quest Info, the notices after a run |
+| **The System** | The anime's window, below. Every System window, and every System surface on a screen: the Status sheet, Skills, Inventory, the Exchange, item and Shadow cards, Quest Info, Quest Rewards, the notices after a run |
 | **Valcorde** | His own window: a plain frame in his blue, his portrait and his name |
 | **The interface** | The app's panels, tiles and buttons: rounded corners, corner brackets, Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
@@ -79,7 +79,7 @@ Built only with `src/ui/frame.tsx` (`SysFrame`, `SysHead`, `Field`), a sheet ope
 - **Every element sits in its own hairline box:** the icon, the header, each field, each stat, each
   button, each tab. Corners are square; nothing inside the frame is rounded.
 - **The icon box** holds the circled `!` on a window, and the item's or the Shadow's own icon on a
-  card. Status, Skills and Inventory carry their header alone, as the source does.
+  card. Status, Skills, Inventory and the Exchange carry their header alone, as the source does.
 - **The header box** holds a header word in capitals (`NOTIFICATION`, `STATUS`), or a card's name
   with its type set small in front of it (`ITEM:` Warden Plate). `SysHead` reads which from the
   title: `Item: Warden Plate` is a card.
@@ -90,6 +90,9 @@ Built only with `src/ui/frame.tsx` (`SysFrame`, `SysHead`, `Field`), a sheet ope
   `S-Rank`.
 - **A button** is a hairline box with its label as written, not in capitals. The act the window
   offers is lit; the way out is not.
+- **A list of rewards** is one box with each reward in a hairline box of its own inside it:
+  `system.rewardList()` in a window, `<Rewards>` on a screen. Quest Info's REWARDS and every Quest
+  Rewards window are set this way.
 
 ## The System
 
@@ -161,6 +164,7 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | STATUS | The hunter's sheet |
 | SKILLS | Skills, passive and active |
 | INVENTORY | What the hunter holds |
+| EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
 
 Cards have no header word. Their header box is the name: `ITEM: …`, `SKILL: …`, `CLASS: …`.
 
@@ -315,8 +319,10 @@ GOAL
 {Goal.}                                 {n}/{m}
 {Hint, smaller.}
 REWARDS
-1. Each quest: {shards} · Experience +{n}
-2. All 3: {shards} · Experience +{n}
+┌──────────────────────────────────────────────┐
+│ 1. Each quest: {shards} · Experience +{n}    │
+│ 2. All 3: {shards} · Experience +{n}         │
+└──────────────────────────────────────────────┘
 New Daily Quests in: {countdown}
 ```
 Source: `[Daily: Collect Demon Souls! 3]`, a two-sentence brief, `GOAL`, numbered `REWARDS`.
@@ -333,13 +339,17 @@ that there is none.
 ```
 QUEST REWARDS
 You got rewards.
-1. {Reward} +{n}
-                                   Close
+┌──────────────────────────┐
+│ 1. Mana Shards +{n}      │
+│ 2. Experience +{n}       │
+└──────────────────────────┘
+                     Close
 ```
-Source: `You got rewards.` / `1. Ability Points+5` / `Accept this rewards?`
-For a quest whose rewards arrive apart from the moment it completes. No ARISE window needs it yet:
-a Secret Quest reports its reward in its own completion window, and Daily Quests report theirs in
-the run's results.
+Source: `You got rewards.` / `1. Ability Points+5` in a box of its own / `Accept this rewards?`
+ARISE drops the question: the engine has already paid, so the window reports. A run's results show
+it under Quest Info when the run completed Daily Quests, with `Completion bonus included.` under the
+list when the day's last one paid the bonus. `system.questRewards()` builds the window form. A
+Secret Quest still reports its reward in its own completion window.
 
 **Secret Quest.** The completion window.
 
@@ -474,12 +484,33 @@ Price: {price} Mana Shards · Held: {balance}
 ```
 Source: `Would you like to purchase?` / `[Knight Killer]`, the icon, a quantity, the price, `CANCEL`
 / `BUY`, and the balance in its own box. When the balance is short, the window is the Not possible
-template: `Not enough Mana Shards. ({have}/{price})`.
+template: `Not enough Mana Shards. ({have}/{price})`. Prices and balances of 1,000 or more take
+their comma.
 
 Every purchase with Mana Shards asks first: gear, the Field Potion and potions. A potion is drunk as
 it is bought, so its button names both acts: **Buy and Drink**. A Google Play purchase (shard packs,
 the Licence) uses Google Play's own confirmation, not this window. After a purchase the System
 reports it: `You have acquired` / `[Item: {name}].` / its stats in green.
+
+**Exchange.** The shop the purchase window opens from.
+
+```
+                 EXCHANGE                    [close]
+MANA SHARDS: {balance}       NEW STOCK IN: {countdown}
+POTIONS                              Always in stock
+[icon]  {Name}
+        {What it gives, green}
+        {Card text}                         ◆ {price}
+THE MANIFEST                           Left: {n}/{m}
+[icon]  {Name} ▲
+        {Stats, green}
+        {Rarity} · {Slot} · Score {n}        ◆ {price}
+```
+Source: a list of rows, each in its own box: the item's icon in a box, its name, its price at the
+foot of the row (`Knight Killer` / `2,800,000G`). The whole row is the button: tapping it opens the
+purchase window, or the Not possible window when the balance is short. A row that cannot be bought
+(`Bought`, `Satchel full`, `Full`) shows why where its price would be. The balance and the
+restock sit in boxes of their own at the top.
 
 **Change.** A skill, a class or a Shadow moving up.
 
