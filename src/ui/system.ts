@@ -6,6 +6,7 @@
  * and every number comes in from the engine. The System reports. It never explains, advises or
  * refers to itself; what it would explain belongs in the Guide.
  */
+import type { Effect } from '@/data/nodes';
 import type { Action, Kind, WinOpts } from './overlays';
 
 /** The only headers a System window may carry. Cards carry their own name instead. */
@@ -77,4 +78,19 @@ export function questRewards(rewards: string[], kind: Kind = 'system'): WinOpts 
     lines: ['You got rewards.', ...rewards.map((r, i) => `${i + 1}. ${r}`)],
     actions: CLOSE,
   };
+}
+
+/**
+ * What an event inside a Gate did, as System lines under its narration: the cost in red, the gain
+ * in green. The narration says what happened; this says what it was worth.
+ */
+export function outcome(e: Effect, got: { shards?: number; item?: string; blessing?: { name: string; text: string } } = {}): string[] {
+  const out: string[] = [];
+  if (e.hurt) out.push(red(`HP ${signed(-Math.round(e.hurt * 100), '%')}`));
+  if (e.heal) out.push(gain(`Party HP ${signed(Math.round(e.heal * 100), '%')}`));
+  if (got.shards) out.push(`Mana Shards ${gain(signed(got.shards))} banked`);
+  if (got.item) out.push(`${tag(got.item, 'Item')} banked`);
+  if (got.blessing) out.push(`${tag(got.blessing.name, 'Blessing')} ${gain(got.blessing.text)}`);
+  if (e.status) out.push(red(`[Debuff: ${e.status}]`));
+  return out;
 }

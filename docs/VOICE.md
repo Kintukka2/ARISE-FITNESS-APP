@@ -4,8 +4,7 @@ How ARISE speaks to the player. Every word a player reads follows this file: Sys
 Valcorde, buttons, labels, the Guide, item and enemy text. Read it before writing or changing any
 of them.
 
-The System, Valcorde and the interface are written. The world's own text (enemy and Gate
-descriptions) is still to come; until it is, keep to the rules at the end of this file.
+Every speaker is written: the System, Valcorde, the interface and the world.
 
 ## Speakers
 
@@ -14,7 +13,7 @@ descriptions) is still to come; until it is, keep to the rules at the end of thi
 | **The System** | The program that chose the hunter. Reports, never explains. | System windows, every card (gear, potions, skills, classes), the Status sheet |
 | **Valcorde** | Ryn Valcorde, the Association's instructor. Does not know the System exists. | Coach windows, the first Gates, the Gates screen |
 | **The interface** | The app: buttons, labels, tabs, empty states, settings, tutorials, the Guide. | Everywhere outside a System or coach window |
-| **The world** | The Association's records, the bestiary, the Gates. | Enemy and Gate descriptions |
+| **The world** | The Association's file on each Gate, and the narration inside one. | The brief's Gate description, map events, traps, caches, shrines, rests |
 | **Other voices** | Things that are not the System and should not be in its windows. | The `???` window, nothing else yet |
 
 Each speaker sounds like itself. A line that would fit another speaker needs rewriting.
@@ -549,6 +548,48 @@ LEVELS, RANKS AND STATS
 - The first clear of each Gate pays double.
 - Withdrawing pays a share of what you cleared. Being carried out pays a little.
 ```
+
+## The world
+
+The world speaks in two registers, one on each side of the Gate.
+
+### Outside: the Association's file
+
+The brief shows what the Association has on file for a Gate (`theme` in `data/dungeons.ts`,
+`data/special.ts` and `data/spire.ts`). It reads like a field record: dry, factual, terse.
+
+1. **The site, then what holds it.** A fragment naming the place, then its occupants or its
+   threat: "Collapsed burial storage. Undead scavenge among broken ossuaries."
+2. **Two or three short sentences.** Fragments are fine. Field labels are fine: "Threat:
+   contained."
+3. **No "you".** The file was written before the hunter arrived and doesn't know who's reading it.
+4. **Tactical facts are welcome; feelings aren't.** "Hostiles tempt, curse and weaken." tells a
+   hunter what to expect. "Terrifying" tells them nothing.
+5. **Menace by omission.** The special Gates get the same flat file, and the menace is in what the
+   file can't say: "Density: beyond measurement. Entry: S-Rank. Parties sent: 4. Parties
+   returned: 0."
+
+### Inside: the narration
+
+Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as they happen.
+
+1. **Second person, present tense, close.** "Light leaks through a crack in the wall. Something
+   glints on the far side, within reach."
+2. **What you see and what happens. No commentary.** "The dungeon does not usually offer anything
+   for free" is out.
+3. **No punchlines.** An outcome is one or two plain sentences: "The seam closes on your arm. You
+   pull it free." It never ends on a joke ("You get your arm back, most of it.").
+4. **The cost or the gain is a System line under it**, built by `system.outcome()`: `HP -25%` in
+   red, `Mana Shards +18 banked` in green, `[Item: …] banked`, `[Blessing: …]`, `[Debuff: …]`.
+   The narration says what happened; the System says what it was worth.
+
+| Was | Is |
+|---|---|
+| A collapsed training cellar the Association keeps shut. Nothing in it is dangerous, which is the only reason a hunter is allowed in on their first day. | Collapsed training cellar, kept shut by the Association for first-day licences. Threat: contained. |
+| A Gate of impossible density. Every hunter who ever stopped climbing is in here, and it has been waiting for you specifically. | Density: beyond measurement. Entry: S-Rank. Parties sent: 4. Parties returned: 0. |
+| The seam bites down. You get your arm back, most of it. | The seam closes on your arm. You pull it free. / `HP -25%` |
+| It does not give. Your shoulder does. | The bands hold. You wrench your shoulder. / `HP -10%` |
+| Mana Shards, wrapped in a licence nobody will be renewing. | Mana Shards, wrapped in its owner's licence. / `Mana Shards +18 banked` |
 
 ## Words
 
