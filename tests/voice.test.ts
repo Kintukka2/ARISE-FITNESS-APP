@@ -17,6 +17,10 @@ import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASSES } from '@/data/classes';
 import { MARKS } from '@/data/ascension';
 import { CONTRACT_KINDS } from '@/data/contracts';
+import { DUNGEONS } from '@/data/dungeons';
+import { BLESSINGS, EVENTS, TRAP } from '@/data/nodes';
+import { HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
+import { SPIRE_THEME } from '@/data/spire';
 import { ISSUED } from '@/data/equipment';
 import { ASSESSMENT, BEATS, GATES_LINE, GATES_TOUR, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as system from '@/ui/system';
@@ -134,7 +138,7 @@ describe('the words', () => {
   });
 
   it('writes a stat name before its value', () => {
-    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2)];
+    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2), ...BLESSINGS.map((b) => b.text)];
     for (const t of lines) expect(t, t).not.toMatch(/[+-]\d[\d.]*%?\s+(STR|VIT|AGI|PER|INT|[a-z]+)\b/);
   });
 
@@ -161,5 +165,26 @@ describe('the words', () => {
       });
     }
     expect(found).toEqual([]);
+  });
+});
+
+describe('the world', () => {
+  const files = [...DUNGEONS, HOLLOW_THRONE, PRACTICE_GATE].map((d) => d.theme).concat(SPIRE_THEME);
+  const choices = [...EVENTS, TRAP].flatMap((e) => e.choices);
+  const outcomes = choices.flatMap((c) => [c.win, ...(c.lose ? [c.lose] : [])]);
+
+  it('files a Gate as the Association would: short, factual, and never to you', () => {
+    const bad = files.filter((f) => /\byou(r)?\b/i.test(f) || f.length > 140 || f.split(/(?<=[.!?])\s+/).length > 4);
+    expect(bad).toEqual([]);
+  });
+
+  it('narrates an outcome in one or two plain sentences', () => {
+    const long = outcomes.map((o) => o.text).filter((t) => t.split(/(?<=[.!?])\s+/).length > 2);
+    expect(long).toEqual([]);
+  });
+
+  it('puts the cost of every outcome that hurts, heals or weakens under it', () => {
+    for (const o of outcomes) if (o.hurt || o.heal || o.status) expect(system.outcome(o).length, o.text).toBeGreaterThan(0);
+    expect(system.outcome({ text: '', hurt: 0.25 }).map((l) => l.replace(/<[^>]+>/g, ''))).toEqual(['HP -25%']);
   });
 });

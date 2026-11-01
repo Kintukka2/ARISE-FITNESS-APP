@@ -21,10 +21,12 @@ import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
+import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
 import { rewardChain } from '@/app/flow';
 import { arena } from '@/app/router';
 import * as store from '@/store';
+import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { ContractsWindow } from '@/ui/contracts';
@@ -465,11 +467,20 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
   return (
     <section class={`nodepanel nodepanel--${x.kind}`}>
       <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
-      {x.kind === 'rest' && <p>The party catches its breath: everyone standing gets {REST_HEAL * 100}% of their health back, and what ails them lifts.</p>}
-      {x.kind === 'treasure' && <p>{item ? <>Under the dust: <strong>{item.name}</strong>. It is banked, and comes out with you, unless you are carried out.</> : 'Someone got here first. Nothing left.'}</p>}
-      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one. The blessing lasts until you leave the Gate.</p>}
+      {x.kind === 'rest' && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{REST_HEAL * 100}%</span> · Debuffs cleared</p></>}
+      {x.kind === 'treasure' && (item ? <><p>Under the dust, something worth carrying.</p><p class="muted" dangerouslySetInnerHTML={{ __html: system.outcome({ text: '' }, { item: item.name }).join('<br />') }} /></> : <p>Someone got here first. Nothing left.</p>)}
+      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one.</p>}
       {ev && !p.done && <p>{ev.text}</p>}
-      {p.done && <p class={p.done.won ? 'grant' : 'warn'}>{p.done.effect.text}{p.done.item ? ` ${gear.gearDef(p.done.item)?.name} is banked.` : ''}{p.done.blessing && x.kind !== 'shrine' ? ` ${blessingById(p.done.blessing)?.name}: ${blessingById(p.done.blessing)?.text}.` : ''}</p>}
+      {p.done && <p>{x.kind === 'shrine' ? 'You take the offering.' : p.done.effect.text}</p>}
+      {p.done && (() => {
+        const b = p.done.blessing ? blessingById(p.done.blessing) : undefined;
+        const lines = system.outcome(p.done.effect, {
+          shards: p.done.effect.shards && !isPractice(d) ? shop.gateShards(d.rank, p.done.effect.shards) : undefined,
+          item: p.done.item ? gear.gearDef(p.done.item)?.name : undefined,
+          blessing: b ? { name: b.name, text: b.text } : undefined,
+        });
+        return lines.length ? <p class="muted" dangerouslySetInnerHTML={{ __html: lines.join('<br />') }} /> : null;
+      })()}
       {waiting && x.kind === 'shrine' && (
         <div class="stack stack--tight">
           {(x.offer ?? []).map((b, i) => (

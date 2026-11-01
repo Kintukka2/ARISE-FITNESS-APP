@@ -5,7 +5,7 @@
 import type { Rank } from '@/core/types';
 
 export const SPIRE_NAME = 'The Pale Spire';
-export const SPIRE_THEME = 'The one Gate that has never closed. It opened upward over the old reservoir the year the first hunters Awakened, and every boss killed inside it opens another floor above. Its floors rearrange themselves every Monday.';
+export const SPIRE_THEME = 'The one Gate that has never closed, over the old reservoir. Each boss killed opens a floor above. Floors rearrange every Monday.';
 
 /** Floors to a block: three of choices, a rest, then a boss. A block costs the fatigue of one gate of its grade. */
 export const BLOCK = 5;

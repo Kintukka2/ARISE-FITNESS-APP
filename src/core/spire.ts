@@ -47,7 +47,7 @@ export function shapeOf(season: string, b: number): Dungeon {
 export function blockFrom(season: string, b: number, g: Dungeon): Dungeon {
   return {
     id: `SPR-${season}-${b}`, rank: floorGrade(firstFloor(b)), name: `${SPIRE_NAME} · Floors ${firstFloor(b)} to ${lastFloor(b)}`,
-    theme: `${SPIRE_THEME} This week, Floors ${firstFloor(b)} to ${lastFloor(b)} have taken the shape of ${g.name}.`, identity: g.identity,
+    theme: `${SPIRE_THEME} This week, Floors ${firstFloor(b)} to ${lastFloor(b)} match ${g.name}.`, identity: g.identity,
     mobs: g.mobs, elite: g.elite, boss: g.boss,
     // Choices, then the rest and the boss the map always ends on: a block's worth of floors.
     mobRounds: BLOCK - 2 - (g.elite ? 1 : 0),
