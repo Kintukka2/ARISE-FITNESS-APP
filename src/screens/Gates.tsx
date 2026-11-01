@@ -39,10 +39,10 @@ import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
   const v = vitals.read(s);
-  if (v.locked) return 'You were carried out of the last one. Sit down. The board will have turned over by the time you are fit anyway.';
-  if (v.fatigue > 50) return 'You are running on nothing. Whatever you clear like this, you will clear badly and pay for twice.';
-  if (!s.gates.clears) return 'Pick something at your own grade and go in with people. Nobody clears their first Gate alone, and nobody sensible tries.';
-  return 'Clear one and it closes, and something else opens in its place. The board never runs dry. You do. Read the assessment, and watch your fatigue.';
+  if (v.locked) return 'You were carried out of the last one. Sit down. The board’ll turn over before you’re fit anyway.';
+  if (v.fatigue > 50) return 'You’re running on empty. Your call, but I’d rest before the next one.';
+  if (!s.gates.clears) return 'Pick something at your own grade, and go in with a party. Read the brief before you go.';
+  return 'Read the brief, and keep an eye on your fatigue. I’ll stop saying it when you stop needing it.';
 }
 
 export function Gates() {
@@ -75,7 +75,7 @@ export function Gates() {
           </div>
         </div>
         {licenceRequired(s) && licenceHolding(s) && storeReady() && (
-          <Btn kind="light" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. The Association reads your real grade now.', 'good'); } }}>
+          <Btn kind="light" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
             Association Licence · {priceOf('licence') ?? 'Buy'}
           </Btn>
         )}
@@ -93,7 +93,7 @@ export function Gates() {
           <p class="muted">You are {run.at} of {raid.mapOf(open, run).layers.length} steps in. Walk away now and it counts as a defeat.</p>
           <div class="row">
             <Btn kind="ghost" onClick={async () => {
-              if (await confirm('Abandon the run?', 'The party is dragged out. Nothing is banked for the chambers you cleared, and you are carried out.', 'Abandon', true)) {
+              if (await confirm('Abandon the run?', 'You will be carried out. Nothing banked on this run is kept.', 'Abandon', true)) {
                 store.update((x) => raid.finish(x, open, x.gates.raid!, 'defeated'));
               }
             }}>Abandon</Btn>
@@ -154,7 +154,7 @@ function SpireCard() {
   const built = spire.builtFor(b);
   return (
     <Card class={`spirecard ${locked ? 'is-locked' : ''}`} tone="ember" onClick={() => {
-      if (locked) toast(`Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} are ${d.rank}-Rank. The Association will not license you for them yet.`, 'warn');
+      if (locked) toast(`Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
       else openBrief(d);
     }}>
       <div class="spirecard__head">
@@ -294,7 +294,7 @@ function GateRow({ d }: { d: Dungeon }) {
   return (
     <li>
       <button type="button" class={`gaterow ${locked ? 'is-locked' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${isPractice(d) ? 'is-practice' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
-        onClick={() => { sfx.tap(); if (locked) toast(`The Association will not license you for ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
+        onClick={() => { sfx.tap(); if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
         <RankPlate rank={d.rank} size={34} />
         <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}{held && <small class="chip chip--chosen">Chosen</small>}</span>
         <span class="gaterow__mark">
@@ -368,7 +368,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <div class="grow">
           <span class="label">{met ? 'In the boss’s place' : `Gate boss${known ? '' : ': unidentified'}`}</span>
           <b>{met ? met.name : known ? boss.name : '???'}</b>
-          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · ${powerOf(met.base)} power` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · ${powerOf(boss.base)} power` : 'Nobody who has come back out has said.'}</small>
+          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · ${powerOf(met.base)} power` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · ${powerOf(boss.base)} power` : '?'}</small>
         </div>
       </Card>
       {holds && <ChosenCard d={d} w={holds} level={level} />}
@@ -416,7 +416,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
         : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
         : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
-          : block === 'down' ? <Btn block disabled>You are in no condition to enter anything.</Btn>
+          : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
             : <Btn kind="primary" size="lg" block onClick={enter} sound="none" tour="enter">Enter The Gate</Btn>}
 
       <Section title="Your party" right={`${1 + party.length} hunters${squad.length ? ` · ${squad.length} Shadow${squad.length === 1 ? '' : 's'}` : ''}`}>
@@ -430,7 +430,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           ))}
         </ul>
         {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">{shadows.freeSlots(s)} Shadow slot{shadows.freeSlots(s) === 1 ? '' : 's'} empty. Deploy from the Shadows screen.</p>}
-        {isPractice(d) && <p class="hint">Valcorde has signed you both in. Nothing in here is dangerous; everything on this sheet is.</p>}
+        {isPractice(d) && <p class="hint">Valcorde is in your party for this one.</p>}
       </Section>
 
     </div>
@@ -440,10 +440,10 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 async function intro() {
   await tour({
     who: 'coach', title: 'What am I looking at?', steps: [
-      { at: 'licence', say: 'Your Association grade. It rises with your level, and your level rises with every Gate you clear. You can always go one grade above it, if you are brave.' },
-      { at: 'vitals', say: 'Health and mana carry between runs and come back on their own, about five per cent an hour. Fatigue builds with every Gate and drags everything you are worth down until it fades.' },
-      { at: 'bands', say: 'Ten Gates at a time: one of every grade, so you can see the whole ladder, and at least two at your own. Clear one and another opens in its place. The whole board redraws at midnight.' },
-      { at: 'board', say: 'The one at the top is mine. The Association keeps a practice Gate shut for exactly this, and I have signed us both in. Open it, read the brief, then go in.' },
+      { at: 'licence', say: 'That’s your grade. You can walk into a Gate one grade above it. I wouldn’t, not yet.' },
+      { at: 'vitals', say: 'Watch the bottom bar. Fatigue. It builds with every Gate, and it’s what kills hunters at your grade.' },
+      { at: 'bands', say: 'Every grade has a Gate up there, so you can see what’s ahead. Stay at your own for now.' },
+      { at: 'board', say: 'The one at the top is the practice Gate. I’ve signed us both in. Open it, and read the brief before anything else.' },
     ],
   });
 }

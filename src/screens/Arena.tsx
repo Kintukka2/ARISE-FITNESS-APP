@@ -551,13 +551,13 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
-          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'Valcorde signs the Practice Gate off. It stays shut for whoever comes next; the real ones are waiting on the board.'
-            : r.spire ? r.spire.best ? `The boss on Floor ${r.spire.floor} is down, and that is your best this week. The next ${BLOCK} floors open above you.` : `The boss on Floor ${r.spire.floor} is down. The week turned while you were inside, so it does not count toward this one.`
-              : trial ? `The last of the Chosen is down. ${r.depth} of them, one after another, and you are still standing.`
-              : `${d.name} cleared. The Gate begins to close, and another of its grade opens on the board.`
-            : r.outcome === 'withdrawn' ? d.floor ? `You walked back down from the rest on Floor ${d.floor + r.steps - 1}. These floors stand as they are until Monday.` : `You walked back out from the rest, ${r.steps} of ${r.depth} steps in. It is still open.`
-              : trial ? 'The party was carried out before the last of the Chosen fell. The Trial opens again tomorrow, and the Gates you proved stay proved.'
-              : 'The party was carried out. The Association medics will not let you back in for a while.'}</p>
+          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'The Practice Gate is closed. The real Gates are on the board.'
+            : r.spire ? r.spire.best ? `Floor ${r.spire.floor} cleared: your best this week. The next ${BLOCK} floors are open.` : `Floor ${r.spire.floor} cleared. The week closed while you were inside, so it does not count this week.`
+              : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
+              : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
+            : r.outcome === 'withdrawn' ? d.floor ? `Withdrawn from the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.` : `Withdrawn at step ${r.steps} of ${r.depth}. The Gate is still open.`
+              : trial ? 'The party was carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
+              : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
         </header>
         <div class="tiles">
           <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>

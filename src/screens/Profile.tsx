@@ -191,7 +191,7 @@ function Attributes() {
       return;
     }
     const ok = store.update((x) => spendPoint(x, k));
-    if (!ok) return toast(`${k} is as high as points can take it.`, 'warn');
+    if (!ok) return toast(`${k} is at its Ability Point limit.`, 'warn');
     sfx.blip();
     buzz(12);
     void checkAwards();
@@ -295,7 +295,7 @@ function SetBlock({ set, s }: { set: GearSet; s: Save }) {
       </ul>
       <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b>2 worn</b><span>{gear.bonusText(set.two)}</span></div>
       <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b>3 worn</b><span>{gear.bonusText(set.three)}</span></div>
-      {home && <p class="hint">Its home is {home.name}, a {home.rank}-Rank Gate. Every clear there leaves a piece of it, one you do not hold yet while there is one.</p>}
+      {home && <p class="hint">Home Gate: {home.name} ({home.rank}-Rank). Each clear there leaves a piece you do not hold yet.</p>}
     </Section>
   );
 }
@@ -307,9 +307,9 @@ function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
   const cost = shop.upgradeCost(it, cap);
   if (!next || cost === null) {
     const over = it.over ?? 0;
-    return <p class="hint">{over >= OVERCHARGE.per * ASCENSION_TOP ? 'As far past its design’s best as anything goes.'
-      : !ascensionOpen(s) ? 'At its design’s best. There is nothing left to raise.'
-      : `At its design’s best${over ? `, and ${over} step${over === 1 ? '' : 's'} past it` : ''}. Every level of Ascension you open lets it go ${OVERCHARGE.per === 1 ? 'one step' : `${OVERCHARGE.per} steps`} further.`}</p>;
+    return <p class="hint">{over >= OVERCHARGE.per * ASCENSION_TOP ? `Perfect +${over}. At the limit.`
+      : !ascensionOpen(s) ? 'Perfect. Nothing left to raise.'
+      : `Perfect${over ? ` +${over}` : ''}. Each Ascension level opened allows ${OVERCHARGE.per === 1 ? '1 more step' : `${OVERCHARGE.per} more steps`}.`}</p>;
   }
   const short = s.wallet.shards < cost;
   return (
@@ -362,7 +362,7 @@ function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: strin
       <div class="chips">{types.map((t) => <Chip key={t} on={f === t} onClick={() => { setF(t); onFilter(t); }}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
       <small class="muted">Designs discovered: {s.found.length} of {gear.ALL_GEAR.length + gear.ISSUED.length}.</small>
       {s.items.length >= 6 && <Btn kind="ghost" size="sm" onClick={openRecycle}>Recycle Items</Btn>}
-      {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No items yet. They are recovered from cleared Gates and bought at the Exchange.'}</Empty>}
+      {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No items yet.'}</Empty>}
       <div class="stack stack--tight">{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => openItem(it.id)} />)}</div>
     </div>
   );
@@ -401,7 +401,7 @@ export function openItem(id: string) {
               const v = shop.scrapValue(it);
               if (!(await confirm('Recycle Item', `Break <em>${d.name}</em> down for <strong>${v} Mana Shards</strong>?`, 'Recycle', true))) return;
               store.update((x) => shop.recycle(x, it.id));
-              toast(`${d.name} broken down. +${v} shards.`, 'xp');
+              toast(`${d.name} recycled · Mana Shards +${v}`, 'xp');
               close();
             }}>Recycle · <Shards n={shop.scrapValue(it)} /></Btn>
           )}
@@ -417,7 +417,7 @@ function openSlot(k: SlotKey) {
     title: slot.name, render: () => {
       const s = store.get();
       const list = s.items.filter((it) => gear.defOf(it)?.slot === slot.accepts && !gear.slotOf(s, it)).sort((a, b) => gear.score(b) - gear.score(a));
-      if (!list.length) return <Empty>Nothing for this slot yet. Items are recovered from cleared Gates and bought at the Exchange.</Empty>;
+      if (!list.length) return <Empty>Nothing for this slot yet.</Empty>;
       return <div class="stack stack--tight"><small class="muted">Tap to equip.</small>{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => { store.update((x) => gear.equip(x, it.id, k)); sfx.success(); toast(`${gear.defOf(it)?.name} equipped.`, 'xp'); close(); void checkAwards(); }} />)}</div>;
     },
   });
@@ -443,7 +443,7 @@ function Recycle({ initial, onChange, onDone }: { initial: string[]; onChange: (
       <Btn kind="danger" block disabled={!matches.length} onClick={async () => {
         if (!(await confirm('Recycle Items', `Break down <strong>${matches.length}</strong> items for <strong>${worth}</strong> shards? There is no way to get them back.`, `Recycle ${matches.length}`, true))) return;
         const r = store.update((x) => shop.recycleAll(x, ranks));
-        toast(`${r.count} broken down. +${r.paid} shards.`, 'xp');
+        toast(`${r.count} items recycled · Mana Shards +${r.paid}`, 'xp');
         onDone();
       }}>Recycle {matches.length}</Btn>
     </div>
@@ -500,7 +500,7 @@ function openDossier() {
             <KV k="Shards earned" v={s.wallet.earned.toLocaleString()} />
           </Fold>
           <Fold title="Activity log" right={`${s.log.length}`}>
-            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul> : <Empty>Nothing logged yet. Clear a Gate.</Empty>}
+            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul> : <Empty>Nothing logged yet.</Empty>}
           </Fold>
         </div>
       );

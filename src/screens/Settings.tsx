@@ -89,7 +89,7 @@ function importSave() {
     const file = input.files?.[0];
     if (!file) return;
     const next = parse(await file.text());
-    if (!next) return toast('That is not an ARISE save. Use a file Export Save wrote.', 'bad');
+    if (!next) return toast('That is not an ARISE save file.', 'bad');
     if (!(await confirm('Import Save', `Replace this hunter with <strong>${next.hunter.name.replace(/</g, '&lt;')}</strong>, Level ${next.hunter.level}? The current save is kept as a backup you can restore.`, 'Import', true))) return;
     store.replace(next);
     toast('Save imported.', 'xp');
