@@ -21,7 +21,8 @@ import { weekBest } from '@/core/spire';
 import { dungeonById } from '@/core/gates';
 import { setById, type GearSet } from '@/data/sets';
 import * as system from '@/ui/system';
-import { Btn, Card, Chip, Empty, Fold, GearArt, HpBar, IconBtn, KV, Panel, Section, Shards, Tile, useNow } from '@/ui/components';
+import { Btn, Card, Chip, Empty, Fold, GearArt, HpBar, IconBtn, KV, Panel, Section, Shards, useNow } from '@/ui/components';
+import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
@@ -35,19 +36,18 @@ export function Profile() {
   const nr = nextRank(s.hunter.level);
   return (
     <div class="stack">
-      <Panel title="Profile" tools={<IconBtn icon="book" label="Hunter dossier" onClick={openDossier} />}>
-        <div class="hero">
-          <div class="hero__level"><b class="num">{s.hunter.level}</b><span class="label">Level</span></div>
-          <div class="hero__rows">
-            <KV k="Rank" v={<span class="row"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
-            <KV k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
-            <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'There is nothing above this.'}{licenceHolding(s) ? ' The Association holds your Gate grade at D without a licence.' : ''}</small>
-          </div>
+      <SysFrame title="Status" icon={null} class="status" tools={<IconBtn icon="book" label="Hunter dossier" onClick={openDossier} />}>
+        <div class="sysfields">
+          <Field k="Name" v={s.hunter.name} />
+          <Field k="Level" v={<span class="status__level">{s.hunter.level}</span>} />
+          <Field k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
+          <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
         </div>
+        <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'There is nothing above this.'}{licenceHolding(s) ? ' The Association holds your Gate grade at D without a licence.' : ''}</small>
         {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose New Skills · {waiting(s).length}</Btn>}
         <VitalsBlock />
         <Attributes />
-      </Panel>
+      </SysFrame>
       <Equipment />
     </div>
   );
@@ -55,7 +55,7 @@ export function Profile() {
 
 /** The class, and the choice at each of its rungs. */
 export function openClass() {
-  openSheet({ title: 'Class', tone: 'gold', render: () => <ClassSheet /> });
+  openSheet({ title: 'Skills', system: { icon: null, kind: 'gold' }, render: () => <ClassSheet /> });
 }
 
 function ClassSheet() {
@@ -66,10 +66,11 @@ function ClassSheet() {
   }
   return (
     <div class="stack">
-      <div>
-        <b class="big">{cls.name}</b>
-        <p class="muted">{cls.desc}</p>
-        <small class="muted">{cls.lead} <b class="grant">+{cls.bonus}</b><br />Reassigned when another stat is highest. Choices made in other lines are kept.</small>
+      <div class="classcard">
+        <p><strong>[Class: {cls.name}]</strong></p>
+        <p>{cls.desc}</p>
+        <p class="grant">{cls.lead} +{cls.bonus}</p>
+        <small class="muted">Reassigned when another stat is highest. Choices made in other lines are kept.</small>
       </div>
       {rungsOf(cls.lead).map((r) => <Rung key={r} rung={r} lead={cls.lead} tier={cls.tier} />)}
     </div>
@@ -349,8 +350,23 @@ export function ItemLine({ it, s, onClick }: { it: Item; s: Save; onClick?: () =
 function openInventory() {
   let filter = 'All';
   openSheet({
-    title: 'Inventory', render: () => <Inventory initial={filter} onFilter={(f) => { filter = f; }} />,
+    title: 'Inventory', system: { icon: null }, render: () => <Inventory initial={filter} onFilter={(f) => { filter = f; }} />,
   });
+}
+
+/** One square of the Inventory: the item's icon, framed by its grade, and nothing else. */
+function ItemTile({ it, s }: { it: Item; s: Save }) {
+  const d = gear.defOf(it)!;
+  const worn = gear.slotOf(s, it);
+  const up = gear.beatsWorn(s, it);
+  return (
+    <button type="button" class="invtile" onClick={() => { sfx.tap(); openItem(it.id); }}
+      aria-label={`${d.name}, ${gear.RARITY[d.rank].name} ${d.slot}, score ${Math.round(gear.score(it))}${worn ? ', worn' : ''}${up ? ', better than what you are wearing' : ''}`}>
+      <GearArt item={it} size={60} equipped={!!worn} />
+      {s.favourites.includes(it.id) && <Glyph name="star" class="invtile__fav" />}
+      {up && <span class="invtile__up" aria-hidden="true">▲</span>}
+    </button>
+  );
 }
 
 function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: string) => void }) {
@@ -360,18 +376,22 @@ function Inventory({ initial, onFilter }: { initial: string; onFilter: (f: strin
   const list = s.items.filter((it) => f === 'All' || gear.defOf(it)?.slot === f).sort((a, b) => gear.score(b) - gear.score(a));
   return (
     <div class="stack">
-      <div class="chips">{types.map((t) => <Chip key={t} on={f === t} onClick={() => { setF(t); onFilter(t); }}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
-      <small class="muted">Designs discovered: {s.found.length} of {gear.ALL_GEAR.length + gear.ISSUED.length}.</small>
-      {s.items.length >= 6 && <Btn kind="ghost" size="sm" onClick={openRecycle}>Recycle Items</Btn>}
+      <div class="chips invtabs" role="tablist">{types.map((t) => <Chip key={t} on={f === t} onClick={() => { setF(t); onFilter(t); }}>{t === 'All' ? `All · ${s.items.length}` : t}</Chip>)}</div>
       {!list.length && <Empty>{s.items.length ? 'Nothing matches that filter.' : 'No items yet.'}</Empty>}
-      <div class="stack stack--tight">{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => openItem(it.id)} />)}</div>
+      {list.length > 0 && <div class="invgrid">{list.map((it) => <ItemTile key={it.id} it={it} s={s} />)}</div>}
+      <small class="muted">Designs discovered: {s.found.length}/{gear.ALL_GEAR.length + gear.ISSUED.length}</small>
+      {s.items.length >= 6 && <Btn kind="ghost" size="sm" onClick={openRecycle}>Recycle Items</Btn>}
     </div>
   );
 }
 
 export function openItem(id: string) {
+  const at = store.get().items.find((x) => x.id === id);
+  const named = at ? gear.defOf(at) : undefined;
   const close = openSheet({
-    title: 'Item', render: () => {
+    title: `Item: ${named?.name ?? 'Unknown'}`,
+    system: { icon: at ? <GearArt item={at} size={58} /> : null },
+    render: () => {
       const s = store.get();
       const it = s.items.find((x) => x.id === id);
       if (!it) return <Empty>That item is gone.</Empty>;
@@ -380,17 +400,26 @@ export function openItem(id: string) {
       const tag = gear.rollTag(it);
       return (
         <div class="stack itemsheet">
-          <div class="row"><GearArt item={it} size={84} equipped={!!worn} /><div class="grow">
-            <b class="big">{d.name}</b>
-            <div class="chips"><Chip tone={`rank-${d.rank}`}>{gear.RARITY[d.rank].name}</Chip><Chip>{d.slot}</Chip>{d.set && <Chip>{d.set} set</Chip>}{it.master && <Chip tone="gold">Masterwork of {walkerOf(it.master, d.rank).name}</Chip>}{tag && <Chip tone={tag === 'perfect' ? 'gold' : 'blood'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ' roll'}` : '✕ Dead roll'}</Chip>}</div>
-          </div></div>
-          <div class="tiles">
-            <Tile label="Score" value={Math.round(gear.score(it))} />
-            <Tile label="Quality" value={d.issued ? 'Issued' : gear.qualityText(it)} sub={d.issued ? 'to specification' : it.over ? 'steps past its best' : 'of the design’s range'} />
+          <div class="sysfields">
+            <Field k="Acquisition difficulty" v={`${d.rank}-Rank`} />
+            <Field k="Category" v={d.slot} />
+            <Field k="Rarity" v={gear.RARITY[d.rank].name} />
+            <Field k="Quality" v={d.issued ? 'Issued' : gear.qualityText(it)} />
+            <Field k="Score" v={Math.round(gear.score(it))} />
+            <Field k="Set" v={d.set ?? '-- --'} />
           </div>
-          <KV k="Core" v={gear.coreText(it)} />
-          {gear.rollText(it).map((t) => <KV key={t} k="Property" v={t} />)}
-          {d.desc && <p class="muted">{d.desc}</p>}
+          {d.desc && <p class="itemsheet__text">{d.desc}</p>}
+          <ul class="sysstats">
+            {gear.coreLines(it).map(([k, t]) => <li key={k} class="sysstat"><Glyph name={STAT_ICON[k]} />{t}</li>)}
+            {gear.rollText(it).map((t) => <li key={t} class="sysstat"><Glyph name="plus" />{t}</li>)}
+          </ul>
+          {(worn || it.master || tag) && (
+            <p class="itemsheet__tags">
+              {worn && <span>Worn</span>}
+              {it.master && <span class="hint">Masterwork of {walkerOf(it.master, d.rank).name}</span>}
+              {tag && <span class={tag === 'perfect' ? 'hint' : 'warn'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ' roll'}` : '✕ Dead roll'}</span>}
+            </p>
+          )}
           {!d.issued && <UpgradeBlock it={it} s={s} />}
           {d.set && setById(d.set) && <SetBlock set={setById(d.set)!} s={s} />}
           <div class="row">

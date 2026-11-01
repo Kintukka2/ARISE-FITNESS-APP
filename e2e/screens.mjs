@@ -34,7 +34,7 @@ async function drain() {
     quiet++;
   }
 }
-const close = () => page.locator('.sheet.is-top .sheet__head .iconbtn[aria-label="Close"]').click();
+const close = () => page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click();
 const nav = async (k) => { await page.locator(`[data-nav="${k}"]`).click(); await sleep(400); await drain(); };
 
 /** Hand the rest of a run to the System and wait for its results. */
@@ -59,10 +59,10 @@ try {
 
   await nav('profile');
   await snap('profile', true);
-  await page.locator('.hero__rows .linkish').click(); await sleep(400); await snap('class', true); await close();
+  await page.locator('.status .linkish').click(); await sleep(400); await snap('class', true); await close();
   await page.locator('[aria-label="Inventory"]').first().click(); await sleep(400); await snap('inventory');
-  await page.locator('.itemrow').first().click(); await sleep(400); await snap('item'); await close();
-  await page.locator('.itemrow', { hasText: 'Warden' }).first().click(); await sleep(400);
+  await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();
+  await page.locator('.invtile[aria-label^="Warden"]').first().click(); await sleep(400);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close(); await close();
   await page.locator('[aria-label="Hunter dossier"]').click(); await sleep(400); await snap('dossier', true); await close();
 
