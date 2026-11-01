@@ -67,10 +67,17 @@ try {
   await page.locator('[aria-label="Hunter dossier"]').click(); await sleep(400); await snap('dossier', true); await close();
 
   await nav('quests');
-  await snap('quests', true);
+  await sleep(800);
+  await snap('quests');
+  await snap('quests-full', true);
   // The veteran has opened Ascension and sent a Chosen out: both are quests, and only quests.
-  if (!(await page.locator('.sysframe.quest-trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN');
-  if (!(await page.locator('.sysframe.quest-chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN');
+  if (!(await page.locator('.questtile--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN');
+  if (!(await page.locator('.questtile--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN');
+  for (const k of ['rank', 'spire', 'trial', 'chosen', 'secret']) {
+    await page.locator(`.questtile--${k} .questtile__hit`).click(); await sleep(450);
+    if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} TILE DID NOT OPEN ITS WINDOW`);
+    await snap(`quest-${k}`); await close(); await sleep(250);
+  }
 
   await nav('gates');
   await snap('gates', true);

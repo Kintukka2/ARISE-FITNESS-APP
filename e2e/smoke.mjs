@@ -193,9 +193,24 @@ try {
   await nav('quests');
   await sleep(400);
   await drain();
-  if ((await page.locator('.sysframe.contracts .contract').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
-  if (!(await visible('.sysframe.quest-rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
+  // One page of tiles: the day's quests, the next rank and the Secret Quests, each opening its window.
+  if ((await page.locator('.questtile--daily .qa-row').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
+  if (!(await visible('.questtile--rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
+  if (!(await visible('.questtile--secret'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE SECRET QUESTS');
+  await sleep(800);
   await snap('quests');
+  await page.locator('.questtile--daily .questtile__hit').click();
+  await sleep(500);
+  if ((await page.locator('.sheet.is-top .contracts .contract').count()) !== 3) throw new Error('THE DAILY QUESTS TILE DID NOT OPEN ITS WINDOW');
+  await snap('quests-daily');
+  await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').click();
+  await sleep(300);
+  await page.locator('.questtile--secret .questtile__hit').click();
+  await sleep(500);
+  if (!(await visible('.sheet.is-top .quest-secret .contract.is-done'))) throw new Error('THE SECRET QUESTS TILE DID NOT OPEN ITS WINDOW');
+  await snap('quests-secret');
+  await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').click();
+  await sleep(300);
   if (await page.locator('[data-nav="quests"] .badge').isVisible()) throw new Error('THE QUESTS BADGE OUTLIVED THE VISIT');
 
   // A real gate, at E.

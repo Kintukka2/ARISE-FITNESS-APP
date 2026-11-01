@@ -109,12 +109,14 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Quests',
     lines: [
       'The Quests screen opens once the Practice Gate is cleared.',
-      'It holds the day’s Daily Quests, your next rank, the Pale Spire’s week, the Trial and the Chosen.',
+      'It holds the day’s Daily Quests, your next rank, the Pale Spire’s week, the Trial, the Chosen and the Secret Quests.',
+      'Each quest is a tile that shows where it stands. Tap one to open its window.',
       'Reclassification: your next rank, the level it needs, and what it brings.',
       'Weekly Quest: the next floor of the Pale Spire that raises what the week pays.',
       `The Trial appears from ${ASCENSION_FROM}-Rank. The Chosen appear once a Trial is won.`,
       'The tab counts the day’s Daily Quests until you open it, and the Trial while today’s attempt is unused.',
       `There are ${MISSIONS.length} Secret Quests. None is shown until it is done.`,
+      'The Secret Quests window adds up everything they have paid.',
     ],
   },
   {

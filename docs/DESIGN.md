@@ -137,12 +137,16 @@ gate a contract names with a Quest chip, and the Quests tab counts the day's unt
   three-a-day hunter about a sixth of the climb to Sovereign, and a ten-a-day hunter about a
   twentieth.
 
-**The Quests screen.** A fourth tab, beside the Gates, holds every quest as a QUEST INFO window:
-the day's contracts; *Reclassification*, the next rank, the level it needs and what it brings (the
-Ability Points, the class and its choice, Shadow slots, the Hollow Throne); the Pale Spire's week as
-a *Weekly Quest*, set at the next floor that raises what the week pays (`spire.tierGoal`); the
-proof of the next Ascension level and its Trial; and the Chosen walking today, with how many of
-those sent have fallen. Under them is the record of every Secret Quest completed. None of it pays:
+**The Quests screen.** A fourth tab, beside the Gates, holds every quest on one page, as a grid of
+tiles (after Magic UI's bento grid): each in its subject's frame with a picture of where it stands,
+and each opening its QUEST INFO window in a sheet. The quests are the day's contracts;
+*Reclassification*, the next rank, the level it needs and what it brings (the Ability Points, the
+class and its choice, Shadow slots, the Hollow Throne); the Pale Spire's week as a *Weekly Quest*,
+set at the next floor that raises what the week pays (`spire.tierGoal`); the proof of the next
+Ascension level and its Trial; the Chosen walking today, with how many of those sent have fallen;
+and the Secret Quests, whose window ticks off each one done and adds up what they have paid
+(`missions.earned`). The day's contracts and the Secret Quests span the grid; the climbs pair up
+beside each other, and the last of an odd number spans it too. None of it pays:
 each quest is settled where it always was, and the screen reads where it stands (`core/quests.ts`,
 `contracts.unseen`). The tab opens with the practice gate cleared, when the contracts do. Its badge
 counts the day's contracts until the screen has shown them, and the Trial while it stands open with
