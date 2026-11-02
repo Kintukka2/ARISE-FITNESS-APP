@@ -112,7 +112,9 @@ export function SystemMark({ size = 28 }: { size?: number }) {
 
 // ------------------------------------------------------------------ rank sigils: an engraved plate per grade
 
-const RUNE: Record<string, string> = {
+/** The plate's outline and each grade's rune, in the 24-unit box. The Arrival draws them on its canvas. */
+export const PLATE_FRAME = 'M7 2.5h10l4.5 4.5v10L17 21.5H7L2.5 17v-10z';
+export const RUNE: Record<string, string> = {
   E: 'M8.4 6.5V17.5M8.4 6.5h6.8M8.4 12h5.2M8.4 17.5h6.8',
   D: 'M8.4 6.5V17.5M8.4 6.5h4.3l3.3 3.3v4.4l-3.3 3.3H8.4',
   C: 'M15.6 8.6 13.5 6.5H10L7.9 8.6v6.8L10 17.5h3.5l2.1-2.1',
@@ -136,7 +138,7 @@ export function Sigil({ rank, size = 40 }: { rank: string; size?: number }) {
   if (nodes > 4) nd += node(5.2, 5.2, 1.3) + node(18.8, 5.2, 1.3) + node(5.2, 18.8, 1.3) + node(18.8, 18.8, 1.3);
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} class="sigil" data-rank={rank} role="img" aria-label={rank === 'N' ? 'Sovereign' : `${rank}-Rank`}>
-      <path class="sig__frame" d="M7 2.5h10l4.5 4.5v10L17 21.5H7L2.5 17v-10z" />
+      <path class="sig__frame" d={PLATE_FRAME} />
       {outer && <path class="sig__outer" d="M6.4 1h11.2l5.4 5.4v11.2L17.6 23H6.4L1 17.6V6.4z" />}
       {inner && <path class="sig__inner" d="M8 5h8l3 3v8l-3 3H8l-3-3V8z" />}
       {nd && <path class="sig__node" d={nd} />}

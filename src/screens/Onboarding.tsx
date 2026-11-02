@@ -1,9 +1,10 @@
 /**
  * The opening, in two acts.
  *   1. The Association desk: assessment, name, licence, kit. Valcorde does not know the System exists.
- *   2. The cut: the System speaks for the first time, and the practice gate is waiting.
+ *   2. The cut: the Arrival (ui/arrival.ts) takes the office away, and the System speaks for the
+ *      first time.
  */
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { regNo } from '@/core/gates';
 import { issueKit } from '@/core/gear';
@@ -11,6 +12,7 @@ import * as story from '@/core/story';
 import { ASSESSMENT, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
+import { arrival, T, type ArrivalCtl } from '@/ui/arrival';
 import { Btn, CoachHead } from '@/ui/components';
 import { useTyped } from '@/ui/typed';
 import { flash } from '@/ui/feedback';
@@ -39,9 +41,10 @@ function Coach({ lines, onDone, onLine, hot }: { lines: string[]; onDone: () => 
   );
 }
 
-function Licence({ name, reg }: { name?: string; reg?: string }) {
+/** `lifted` hides the rank plate while the Arrival carries its copy away. */
+function Licence({ name, reg, lifted }: { name?: string; reg?: string; lifted?: boolean }) {
   return (
-    <div class="licence reveal">
+    <div class={`licence reveal ${lifted ? 'is-lifted' : ''}`}>
       <header>
         <div><span class="label">Hunter Association</span><b>Hunter Licence</b></div>
         <Sigil rank="E" size={40} />
@@ -64,6 +67,8 @@ export function Awakening() {
   const [step, setStep] = useState<Step>(story.seen(s, 'ob-licence') ? 'handover' : 'splash');
   const [showCard, setShowCard] = useState(false);
   const [name, setName] = useState('');
+  // Once the Arrival's dark has closed over the office, the office goes.
+  const [dark, setDark] = useState(false);
 
   if (step === 'splash') return <Splash onDone={() => setStep('assess')} />;
 
@@ -95,10 +100,13 @@ export function Awakening() {
     );
   }
 
-  if (step === 'handover') {
-    return <Handover name={s.hunter.name} reg={s.hunter.regNo} onDone={() => setStep('cut')} />;
-  }
-  return <Cut />;
+  // The office stays under the cut until the dark has covered it, so the plate lifts off a real licence.
+  return (
+    <>
+      {!dark && <Handover name={s.hunter.name} reg={s.hunter.regNo} leaving={step === 'cut'} onDone={() => setStep('cut')} />}
+      {step === 'cut' && <Cut onDark={() => setDark(true)} />}
+    </>
+  );
 }
 
 function Splash({ onDone }: { onDone: () => void }) {
@@ -126,36 +134,55 @@ function Splash({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Handover({ name, reg, onDone }: { name: string; reg: string; onDone: () => void }) {
+function Handover({ name, reg, leaving, onDone }: { name: string; reg: string; leaving: boolean; onDone: () => void }) {
   const [ready, setReady] = useState(false);
   useEffect(() => { sfx.success(); flash(); }, []);
   return (
     <main class="awaken">
-      <Licence name={name} reg={reg} />
+      <Licence name={name} reg={reg} lifted={leaving} />
       <Coach lines={HANDOVER} onDone={() => setReady(true)} />
-      {ready && <Btn kind="primary" size="lg" block class="reveal" sound="gate" onClick={onDone}>Leave The Office</Btn>}
+      {ready && <Btn kind="primary" size="lg" block class="reveal" disabled={leaving} onClick={onDone}>Leave The Office</Btn>}
     </main>
   );
 }
 
-function Cut() {
-  useEffect(() => {
+/**
+ * The Arrival, then the System's first two windows over what it leaves behind. The hold drives the
+ * light: each gong brightens the lock, the seal blows it apart. A hunter who has watched it to the
+ * end once may tap through it to the breach.
+ */
+function Cut({ onDark }: { onDark: () => void }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const ctl = useRef<ArrivalCtl | null>(null);
+  // Before paint, so the plate on the licence and the one the Arrival lifts never show together or not at all.
+  useLayoutEffect(() => {
+    const plate = document.querySelector('.licence .sigil')?.getBoundingClientRect();
+    const from = plate?.width ? { x: plate.left + plate.width / 2, y: plate.top + plate.height / 2, size: plate.width } : null;
+    const a = arrival(ref.current!, { from, skippable: story.seen(store.get(), 'ob-arrival') });
+    ctl.current = a;
+    const gone = setTimeout(onDark, T.dark);
     let live = true;
     (async () => {
-      await new Promise((r) => setTimeout(r, 1400));
+      await a.ready;
       if (!live) return;
-      sfx.gate();
-      flash();
-      await new Promise((r) => setTimeout(r, 500));
+      store.update((x) => { story.markOnce(x, 'ob-arrival'); });
       await sys({
         title: 'Notification', kind: 'system', center: true,
         lines: ['You have acquired the qualifications to be a <em>Player</em>. Will you accept?'],
-        hold: { label: 'Hold To Accept', ms: 5000, ticks: 5, holding: 'Accepting…', done: 'Accepted', tick: sfx.awakenGong, seal: sfx.awakenSeal, after: 1500 },
+        hold: {
+          label: 'Hold To Accept', ms: 5000, ticks: 5, holding: 'Accepting…', done: 'Accepted', after: 1500,
+          tick: (n, of) => { sfx.awakenGong(n, of); a.charge(n, of); },
+          seal: () => { sfx.awakenSeal(); a.seal(); },
+        },
       });
+      if (!live) return;
       await sys({ title: 'Notification', kind: 'system', center: true, lines: ['Congratulations on becoming a <em>Player</em>.'], actions: [{ label: 'Close', value: true, primary: true }] });
+      if (!live) return;
+      await a.leave();
+      if (!live) return;
       store.update((x) => { x.onboarded = true; });
     })();
-    return () => { live = false; };
+    return () => { live = false; clearTimeout(gone); a.stop(); };
   }, []);
-  return <main class="awaken" />;
+  return <canvas ref={ref} class="arrival" aria-hidden="true" onPointerDown={() => ctl.current?.skip()} />;
 }

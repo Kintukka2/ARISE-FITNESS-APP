@@ -32,6 +32,13 @@
 }
 .awaken__sub { max-width: 320px; font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-3); }
 .awaken__type { min-height: 3.2em; color: var(--ink-2); }
+
+/* The Arrival (ui/arrival.ts): the cut between the office and the System's first window. */
+.arrival { position: fixed; inset: 0; z-index: var(--z-arrival); display: block; width: 100%; height: 100%; touch-action: none; transition: opacity 700ms var(--ease); }
+.arrival.is-leaving { opacity: 0; }
+.licence.is-lifted .sigil { visibility: hidden; }
+/* While it glows behind a window, the window's scrim thins and drops its blur so the light still reads. */
+:root[data-arrival] .sysgate__scrim { background: rgba(1, 4, 12, 0.34); backdrop-filter: none; }
 .coachcard {
   position: relative;
   display: flex;
