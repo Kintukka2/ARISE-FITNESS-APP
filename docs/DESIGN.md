@@ -152,6 +152,17 @@ each quest is settled where it always was, and the screen reads where it stands 
 counts the day's contracts until the screen has shown them, and the Trial while it stands open with
 today's attempt unused (`quests.waiting`), as the Inventory tab counts unspent points.
 
+**Every main screen is one page of tiles.** After the Quests screen, Inventory, Gates and Shadows
+were laid out the same way (`ui/bento.tsx`): a grid of System tiles, each with a picture drawn from
+the engine and opening its window. Inventory holds Status, a radar of the five stats, Skills,
+Equipment, what is held, the Exchange and the hunter's card; Equipment became a System window of its
+own (`EQUIPMENT`, added to the closed list of headers). Gates keeps Valcorde's line above tiles for
+the open run, the grade and its licence, the hunter's condition, the record, the Spire and
+Ascension, and the board is a grid of Gate tiles, each a portal in its grade's colour. Shadows holds
+the squad's slots, then a tile to every Shadow ringed by its kills toward the next rank. The brief,
+the dossier, the slot picker and recycling moved into the System's frame; Settings and the Guide
+keep the interface's frame, now drawn with the System's geometry.
+
 The Trial and the Chosen live only here. The Gates screen keeps what bears on the next run: its
 Ascension card (the level, its rules and the marks) shows once Ascension 1 is open, the board tags
 the gate a Chosen holds, and that gate's brief says when it stands in the boss's place.

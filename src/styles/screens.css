@@ -134,15 +134,6 @@
 .attr--points.is-hot { border-color: rgba(255, 203, 92, 0.6); color: var(--gold); }
 .attr--points b { font-size: 1.6rem; }
 .attrs__alloc { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding-top: 4px; }
-.doll { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
-.doll__col { display: flex; flex-direction: column; gap: 8px; }
-.doll__figure { position: relative; display: grid; place-items: center; width: 70px; height: 210px; color: rgba(79, 214, 255, 0.25); }
-.doll__figure > .ico { width: 64px; height: 64px; }
-.doll__ring { position: absolute; width: 70px; height: 70px; border: 1px dashed rgba(79, 214, 255, 0.35); border-radius: 50%; animation: halo 20s linear infinite; }
-.dollslot { position: relative; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(4, 10, 24, 0.6); text-align: left; }
-.dollslot small { font-size: 0.72rem; color: var(--ink-2); line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.dollslot__ghost { display: grid; place-items: center; width: 44px; height: 44px; color: rgba(138, 153, 176, 0.35); border: 1px dashed rgba(138, 153, 176, 0.3); }
-.dollslot .badge { top: -6px; right: -6px; }
 .itemrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); text-align: left; }
 .itemrow__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .itemrow__text small { font-size: 0.8rem; }
@@ -175,9 +166,6 @@
 
 .countdown { color: var(--gold); font-size: 1.05rem; }
 .countdown.is-critical { color: var(--blood); }
-.licencecard { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid rgba(255, 154, 60, 0.35); border-radius: var(--r-md); background: var(--inset); }
-.licencecard > div { display: flex; flex-direction: column; }
-.licencecard b { font-size: 1.3rem; }
 .bands { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .band {
   --rc: var(--ink-2);
@@ -197,17 +185,6 @@
 .band.is-empty { opacity: 0.35; }
 .boardhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .boardhead .countdown { margin-left: 4px; }
-.board { display: flex; flex-direction: column; gap: 8px; }
-.gaterow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 10px 12px; border: 1px solid rgba(255, 154, 60, 0.25); border-radius: var(--r-md); background: linear-gradient(90deg, rgba(40, 20, 8, 0.55), rgba(8, 10, 20, 0.7)); text-align: left; transition: border-color 160ms, transform 120ms; }
-.gaterow:hover { border-color: rgba(255, 154, 60, 0.6); }
-.gaterow:active { transform: scale(0.99); }
-.gaterow__name { flex: 1; min-width: 0; font-weight: 700; font-size: 1.02rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.gaterow__mark { color: var(--ink-2); }
-.gaterow__mark .ico { width: 26px; height: 26px; }
-.gaterow.is-cleared .gaterow__name { color: var(--verdant); }
-.gaterow.is-locked { opacity: 0.42; }
-.gaterow.is-practice { border-color: rgba(127, 182, 255, 0.5); background: linear-gradient(90deg, rgba(20, 40, 80, 0.6), rgba(8, 10, 20, 0.7)); }
-.gaterow.is-monarch { border-color: var(--blood); box-shadow: 0 0 22px var(--blood-glow); animation: beckon 2.4s ease-in-out infinite; }
 .bosscard { flex-direction: row; align-items: center; gap: 12px; }
 .bosscard > .ico { width: 40px; height: 40px; color: var(--ember); }
 .bosscard > div { display: flex; flex-direction: column; }
@@ -329,11 +306,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 
 /* ------------------------------------------------------------------ shadows */
 
-.army { display: flex; flex-direction: column; gap: 6px; }
-.shadowrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(155, 107, 255, 0.25); border-radius: var(--r-md); background: rgba(20, 10, 40, 0.55); }
-.shadowrow.is-on { border-color: var(--arcane); box-shadow: inset 3px 0 0 var(--arcane); }
-.shadowrow__main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; }
-.shadowrow__main > span { display: flex; flex-direction: column; }
 
 @media (min-width: 720px) {
   .screen { padding-left: 20px; padding-right: 20px; }
@@ -342,8 +314,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 }
 @media (max-width: 360px) {
   .tiles--5 { grid-template-columns: repeat(3, 1fr); }
-  .doll__figure { display: none; }
-  .doll { grid-template-columns: 1fr 1fr; }
 }
 .unit--hero .unit__name { color: var(--mana); }
 .unit--shadow .unit__name { color: #c9a7ff; }
@@ -351,21 +321,9 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 
 /* ------------------------------------------------------------------ the Pale Spire, beside the board */
 
-.spirecard { gap: 10px; border-color: rgba(255, 154, 60, 0.45); background: linear-gradient(180deg, rgba(255, 154, 60, 0.08), var(--inset)); }
-.spirecard__head { display: flex; align-items: center; gap: 12px; }
-.spirecard__head > div { display: flex; flex-direction: column; min-width: 0; }
-.spirecard__head b { font-size: 1.1rem; }
-.spirecard__head .ico { color: var(--ember); }
-.spirecard__week { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 154, 60, 0.2); font-size: 0.85rem; color: var(--ink-2); }
-.spirecard__week .num { color: var(--ink-3); }
-.spirecard.is-locked { opacity: 0.72; }
 
 /* ------------------------------------------------------------------ gear sets and upgrades */
 
-.setlist { display: flex; flex-direction: column; gap: 6px; }
-.setlist li { display: grid; grid-template-columns: auto auto 1fr; gap: 4px 10px; align-items: baseline; padding: 8px 10px; border: 1px solid rgba(72, 245, 168, 0.35); border-radius: var(--r-sm); background: rgba(72, 245, 168, 0.06); }
-.setlist li .num { color: var(--verdant); font-size: 0.8rem; }
-.setlist li small { grid-column: 1 / -1; color: var(--ink-2); }
 .setpieces { display: flex; flex-direction: column; gap: 4px; }
 .setpieces li { display: flex; align-items: center; gap: 8px; color: var(--ink-3); }
 .setpieces li small { margin-left: auto; color: var(--ink-3); font-size: 0.75rem; }
@@ -393,10 +351,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 /* ------------------------------------------------------------------ Ascension: gold, for advancement */
 
 .ascension { gap: 10px; border-color: rgba(255, 203, 92, 0.45); background: linear-gradient(180deg, rgba(255, 203, 92, 0.07), var(--inset)); }
-.ascension__head { display: flex; align-items: center; gap: 12px; }
-.ascension__head > .ico { color: var(--gold); width: 28px; height: 28px; }
-.ascension__head > div { display: flex; flex-direction: column; min-width: 0; }
-.ascension__head b { font-size: 1.05rem; color: var(--gold); }
 .ascension__rules { display: flex; flex-direction: column; gap: 4px; margin: 0; padding-left: 18px; list-style: decimal; color: var(--ink-2); font-size: 0.85rem; }
 .ascension__rules b { color: var(--ink); }
 .ascension__proof { color: var(--ink-3); font-size: 0.8rem; }
@@ -416,22 +370,22 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .stepper { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .stepper > b { min-width: 2.5ch; text-align: center; font-size: 1.15rem; color: var(--gold); }
 
-/* ------------------------------------------------------------------ quests
- * One page: a grid of tiles, one to a quest, each in the frame of its subject (cyan for the System's
- * own, gold for advancement, orange for the Spire). A tile shows a picture of where the quest stands;
- * tapping it opens the quest's QUEST INFO window in a sheet.
+/* ------------------------------------------------------------------ the bento grid
+ * Every main screen is one page of tiles (ui/bento.tsx), each a System frame in its subject's colour:
+ * cyan for the System's own, gold for advancement, orange for Gates, violet for Shadows. A tile shows a
+ * picture of where it stands; tapping it opens its window in a sheet.
  */
-.questgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; padding: 4px 2px 0; }
-.questtile { min-width: 0; padding: 8px 5px; }
-.questtile.is-wide { grid-column: 1 / -1; }
-.questtile > .sysframe__glass { flex: 1; gap: 0; padding: 0; }
-.questtile.is-hot { animation: questHot 1.8s ease-in-out infinite; }
-@keyframes questHot { 50% { box-shadow: -2px 0 20px -2px var(--win-glow), 2px 0 20px -2px var(--win-glow), 0 0 30px var(--win-glow); } }
+.bento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; padding: 4px 2px 0; }
+.btile { min-width: 0; padding: 8px 5px; }
+.btile.is-wide { grid-column: 1 / -1; }
+.btile > .sysframe__glass { flex: 1; gap: 0; padding: 0; }
+.btile.is-hot { animation: btileHot 1.8s ease-in-out infinite; }
+@keyframes btileHot { 50% { box-shadow: -2px 0 20px -2px var(--win-glow), 2px 0 20px -2px var(--win-glow), 0 0 30px var(--win-glow); } }
 
-.questtile__hit { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 178px; overflow: hidden; color: inherit; text-align: left; transition: background 200ms; }
-.questtile.is-wide .questtile__hit { min-height: 150px; }
-.questtile__hit:active { background: color-mix(in srgb, var(--win) 9%, transparent); }
-.questtile__art {
+.btile__hit { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 178px; overflow: hidden; color: inherit; text-align: left; transition: background 200ms; }
+.btile.is-wide .btile__hit { min-height: 150px; }
+.btile__hit:active { background: color-mix(in srgb, var(--win) 9%, transparent); }
+.btile__art {
   position: relative;
   display: grid;
   place-items: center;
@@ -439,33 +393,40 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
   min-height: 100px;
   padding: 14px 10px 4px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 64%, transparent);
-  mask-image: linear-gradient(to bottom, #000 64%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent);
   transition: transform 450ms var(--ease);
 }
 @media (hover: hover) {
-  .questtile__hit:hover .questtile__art { transform: scale(1.05); }
-  .questtile__hit:hover .questtile__go { opacity: 1; transform: translateX(3px); }
+  .btile__hit:hover .btile__art { transform: scale(1.05); }
+  .btile__hit:hover .btile__go { opacity: 1; transform: translateX(3px); }
 }
-.questtile__foot { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 8px 8px 9px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
-.questtile__icon { display: grid; place-items: center; width: 30px; height: 30px; }
-.questtile__icon .ico { width: 17px; height: 17px; filter: drop-shadow(0 0 4px var(--win-glow)); }
-.questtile__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.questtile__text strong { font-size: 0.76rem; line-height: 1.25; overflow-wrap: break-word; }
-.questtile__text small { font-size: 0.66rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
-.questtile__count { padding: 3px 7px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; text-shadow: var(--sys-glow); }
-.questtile.is-done .questtile__count { color: var(--verdant); border-color: color-mix(in srgb, var(--verdant) 70%, transparent); text-shadow: 0 0 8px var(--verdant-glow); }
-.questtile__go { width: 14px; height: 14px; opacity: 0.55; transition: opacity 200ms, transform 200ms var(--ease); }
+.btile__foot { display: flex; align-items: center; gap: 8px; padding: 8px 8px 9px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.btile__icon, .btile__count, .btile__go { flex: none; }
+.btile__icon { display: grid; place-items: center; width: 30px; height: 30px; }
+.btile__icon .ico { width: 17px; height: 17px; filter: drop-shadow(0 0 4px var(--win-glow)); }
+.btile__text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.btile__text strong { font-size: 0.76rem; line-height: 1.25; overflow-wrap: break-word; }
+.btile__text small { font-size: 0.66rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.btile__count { padding: 3px 7px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; text-shadow: var(--sys-glow); }
+.btile.is-done .btile__count { color: var(--verdant); border-color: color-mix(in srgb, var(--verdant) 70%, transparent); text-shadow: 0 0 8px var(--verdant-glow); }
+.btile__go { width: 14px; height: 14px; opacity: 0.55; transition: opacity 200ms, transform 200ms var(--ease); }
 /* A half-width tile gives its name the whole foot: the icon and the count take the top corners, over the picture. */
-.questtile:not(.is-wide) .questtile__foot { grid-template-columns: minmax(0, 1fr); }
-.questtile:not(.is-wide) .questtile__icon { position: absolute; top: 8px; left: 8px; }
-.questtile:not(.is-wide) .questtile__count { position: absolute; top: 8px; right: 8px; }
-.questtile:not(.is-wide) .questtile__go { display: none; }
-.questtile:not(.is-wide) .questtile__art { padding-top: 48px; }
-.questtile:not(.is-wide) .questtile__text strong { font-size: 0.74rem; }
+.btile:not(.is-wide) .btile__icon { position: absolute; top: 8px; left: 8px; }
+.btile:not(.is-wide) .btile__count { position: absolute; top: 8px; right: 8px; }
+.btile:not(.is-wide) .btile__go { display: none; }
+.btile:not(.is-wide) .btile__art { padding-top: 48px; }
+.btile:not(.is-wide) .btile__text strong { font-size: 0.74rem; }
+/* A header word, as a window's: capitals, spaced, upright. */
+.btile__text strong.is-head { font-style: normal; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+/* A tile not open to the hunter: the frame stays, the glass dims. */
+.btile.is-shut { opacity: 0.5; filter: saturate(0.5); }
+.btile.is-shut .btile__hit { cursor: not-allowed; }
+
+/* ------------------------------------------------------------------ the Quests screen's pictures */
 
 /* The Daily Quests: the day's three, arriving one after another. */
-.questtile--daily .questtile__art { place-items: start stretch; padding-top: 12px; -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
+.btile--daily .btile__art { place-items: start stretch; padding-top: 12px; -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
 .qa-list { display: flex; flex-direction: column; gap: 6px; width: 100%; padding-right: 2px; }
 .qa-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 8px; font-size: 0.72rem; animation: qaIn 560ms var(--ease) both; }
 .qa-row__mark { display: grid; place-items: center; width: 13px; height: 13px; border: 1px solid var(--sys-hair-hot); }
@@ -505,10 +466,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .qa-chosen__halo + .qa-chosen__halo { inset: 13px; border-style: dotted; animation-duration: 11s; animation-direction: reverse; }
 
 /* The Secret Quests: every one done drifting past, and the sealed ones, which say nothing. */
-.questtile--secret .questtile__art { padding: 12px 0 4px; }
+.btile--secret .btile__art { padding: 12px 0 4px; }
 .qa-marquee { width: 100%; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
 .qa-marquee__track { display: flex; gap: 10px; width: max-content; animation: qaMarquee var(--dur, 30s) linear infinite; }
-@media (hover: hover) { .questtile__hit:hover .qa-marquee__track { animation-play-state: paused; } }
+@media (hover: hover) { .btile__hit:hover .qa-marquee__track { animation-play-state: paused; } }
 @keyframes qaMarquee { to { transform: translateX(calc(-50% - 5px)); } }
 .qa-card { display: flex; flex-direction: column; gap: 3px; width: 132px; padding: 8px 10px; }
 .qa-card small { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
@@ -524,3 +485,205 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .quest-secret .contract__count { padding-top: 4px; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-shadow: none; }
 .quest-secret .contract.is-done .contract__count { color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
 .nowrap { white-space: nowrap; }
+
+/* ------------------------------------------------------------------ the Inventory screen's pictures */
+
+/* Status: the hunter, their rank, and the three bars they live by. */
+.ia-status { display: flex; flex-direction: column; gap: 12px; width: 100%; align-self: start; }
+.ia-status__who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ia-status__who .sigil { flex: none; filter: drop-shadow(0 0 8px var(--win-glow)); }
+.ia-status__name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ia-status__name b { overflow: hidden; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.08em; white-space: nowrap; text-overflow: ellipsis; text-shadow: var(--sys-glow); }
+.ia-status__name small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.ia-bars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ia-bar { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ia-bar__top { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
+.ia-bar__top small { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.14em; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.ia-bar__top .num { font-size: 0.74rem; font-weight: 600; text-shadow: var(--sys-glow); }
+.ia-bar__track { position: relative; height: 5px; overflow: hidden; border: 1px solid var(--sys-hair); }
+.ia-bar__track > i { position: absolute; inset: 0; transform-origin: left; background: #eaf6ff; box-shadow: 0 0 6px rgba(234, 246, 255, 0.6); animation: iaFill 900ms var(--ease) both; }
+.ia-bar[data-tone='mp'] .ia-bar__track > i { background: var(--mana); box-shadow: 0 0 6px var(--mana-glow); }
+.ia-bar[data-tone='ftg'] .ia-bar__track > i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+@keyframes iaFill { from { transform: scaleX(0); } }
+
+/* Stats: the hunter's shape across the five, growing in. */
+.ia-radar { width: 108px; height: 108px; overflow: visible; }
+.ia-radar__ring { fill: none; stroke: var(--sys-hair); stroke-width: 0.5; }
+.ia-radar__axis { stroke: color-mix(in srgb, var(--sys-ink) 22%, transparent); stroke-width: 0.5; }
+.ia-radar__shape { fill: color-mix(in srgb, var(--win) 30%, transparent); stroke: var(--win); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--win-glow)); transform-origin: 50px 50px; animation: iaGrow 900ms var(--ease) both; }
+.ia-radar__label { fill: color-mix(in srgb, var(--sys-ink) 78%, transparent); font-family: var(--font-sys); font-size: 6.5px; font-weight: 600; letter-spacing: 0.04em; text-anchor: middle; dominant-baseline: middle; }
+@keyframes iaGrow { from { opacity: 0; transform: scale(0.15); } }
+
+/* Skills: what the hunter fights with, one hairline box each. */
+.ia-skills { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.ia-skills__one { overflow: hidden; padding: 5px 8px; font-size: 0.66rem; font-weight: 600; text-align: center; white-space: nowrap; text-overflow: ellipsis; text-shadow: var(--sys-glow); animation: qaIn 560ms var(--ease) both; }
+.ia-skills__one:nth-child(2) { animation-delay: 110ms; }
+.ia-skills__one:nth-child(3) { animation-delay: 220ms; }
+.ia-skills__one:nth-child(4) { animation-delay: 330ms; }
+.ia-skills.is-none b { font-size: 2rem; opacity: 0.45; }
+
+/* Equipment: the ten slots, worn or waiting. */
+.ia-doll { display: grid; grid-template-columns: repeat(5, 42px); gap: 9px; justify-content: center; }
+.ia-doll__slot { display: grid; place-items: center; width: 42px; height: 42px; animation: qaIn 520ms var(--ease) both; }
+.ia-doll__slot:nth-child(n + 6) { animation-delay: 120ms; }
+.ia-doll__slot.is-empty { border: 1px dashed var(--sys-hair); color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.ia-doll__slot.is-empty .ico { width: 18px; height: 18px; }
+
+/* Inventory: the best three held, fanned out; they spread under a finger. */
+.ia-fan { position: relative; display: block; width: 120px; height: 78px; }
+.ia-fan__card { position: absolute; left: 50%; top: 10px; transform: translateX(-50%) translateX(calc(var(--i) * 30px)) rotate(calc(var(--i) * 12deg)); transition: transform 450ms var(--ease); }
+.ia-fan__card:nth-child(2) { z-index: 1; }
+@media (hover: hover) { .btile__hit:hover .ia-fan__card { transform: translateX(-50%) translateX(calc(var(--i) * 38px)) rotate(calc(var(--i) * 18deg)); } }
+
+/* Exchange: a Mana Shard turning under its ring. */
+.ia-shard { position: relative; display: grid; place-items: center; width: 92px; height: 92px; color: var(--verdant); }
+.ia-shard .shard, .ia-shard > .ico { width: 50px; height: 50px; filter: drop-shadow(0 0 12px var(--verdant-glow)); animation: floaty 3.4s ease-in-out infinite; }
+.ia-shard__ring { position: absolute; inset: 6px; border: 1px dashed color-mix(in srgb, var(--verdant) 55%, transparent); border-radius: 50%; animation: halo 16s linear infinite; }
+
+/* The hunter's record: their licence, catching the light. */
+.ia-licence { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; max-width: 300px; overflow: hidden; padding: 12px 14px; border: 1px solid var(--sys-hair); background: linear-gradient(180deg, rgba(12, 28, 58, 0.65), rgba(4, 10, 24, 0.65)); }
+.ia-licence::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(180, 235, 255, 0.18), transparent); animation: travel 4.5s ease-in-out infinite; }
+.ia-licence__head { display: flex; flex-direction: column; gap: 3px; }
+.ia-licence__head small { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.ia-licence__head b { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; text-shadow: var(--sys-glow); }
+
+/* ------------------------------------------------------------------ EQUIPMENT, in its window */
+
+.eqdoll { display: grid; grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr); gap: 7px; align-items: stretch; }
+.eqdoll__col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.eqslot { position: relative; display: flex; align-items: center; gap: 7px; min-height: 54px; padding: 5px; color: var(--sys-ink); font-family: var(--font-sys); text-align: left; transition: border-color 160ms, background 160ms; }
+@media (hover: hover) { .eqslot:hover { border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 8%, rgba(3, 8, 20, 0.45)); } }
+.eqslot:active { transform: scale(0.98); }
+.eqslot__ghost { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border: 1px dashed var(--sys-hair); color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.eqslot__ghost .ico { width: 20px; height: 20px; }
+.eqslot__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eqslot__text small { font-size: 0.5rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.eqslot__text b { display: -webkit-box; overflow: hidden; font-size: 0.64rem; overflow-wrap: anywhere; font-weight: 600; line-height: 1.2; text-shadow: var(--sys-glow); -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.eqslot:not(.is-filled) .eqslot__text b { opacity: 0.5; text-shadow: none; }
+.eqslot .badge { top: -6px; right: -6px; }
+.eqdoll__figure { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow: hidden; color: var(--win); }
+.eqdoll__figure > .ico { width: 34px; height: 34px; opacity: 0.85; filter: drop-shadow(0 0 10px var(--win-glow)); }
+.eqdoll__figure::after { content: ''; position: absolute; left: 0; right: 0; height: 30%; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--win) 22%, transparent), transparent); animation: eqScan 3.8s ease-in-out infinite; }
+@keyframes eqScan { from { top: -30%; } to { top: 100%; } }
+.eqdoll__ring { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -40px 0 0 -20px; border: 1px dashed color-mix(in srgb, var(--win) 50%, transparent); border-radius: 50%; animation: halo 20s linear infinite; }
+.eqdoll__ring--in { width: 28px; height: 28px; margin: -34px 0 0 -14px; border-style: dotted; animation-duration: 12s; animation-direction: reverse; }
+.eqsets { display: flex; flex-direction: column; gap: 8px; }
+.eqsets__one { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; font-size: 0.84rem; }
+
+/* The hunter's log, a hairline box to an entry. */
+.syslog { display: flex; flex-direction: column; gap: 6px; }
+.syslog li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 10px; font-size: 0.78rem; }
+.syslog li > :first-child { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+
+/* An item row in a System window: a hairline box, square. */
+.sysframe .itemrow { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); font-family: var(--font-sys); }
+.sysframe .itemrow__text b { font-weight: 600; font-size: 0.86rem; text-shadow: var(--sys-glow); }
+
+/* ------------------------------------------------------------------ the Gates screen's pictures */
+
+/* The run left open: its steps, walked and waiting. */
+.ga-steps { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 9px; }
+.ga-steps > i { display: block; width: 14px; height: 14px; transform: rotate(45deg); border: 1px solid var(--sys-hair-hot); background: rgba(3, 8, 20, 0.45); }
+.ga-steps > i.is-on { border-color: #fff; background: var(--win); box-shadow: 0 0 8px var(--win-glow); }
+.ga-steps > i.is-here { border-color: var(--win); animation: qaCall 1.4s ease-in-out infinite; }
+
+/* The hunter's grade: the rank plate under two slow rings. */
+.ga-emblem { position: relative; display: grid; place-items: center; width: 86px; height: 86px; }
+.ga-emblem .sigil { position: relative; filter: drop-shadow(0 0 10px var(--win-glow)); }
+.ga-emblem__ring { position: absolute; inset: 0; border: 1px dashed color-mix(in srgb, var(--win) 60%, transparent); border-radius: 50%; animation: halo 20s linear infinite; }
+.ga-emblem__ring + .ga-emblem__ring { inset: 10px; border-style: dotted; animation-duration: 12s; animation-direction: reverse; }
+
+/* Condition: the three bars, stacked. */
+.ia-bars--stack { grid-template-columns: minmax(0, 1fr); gap: 9px; width: 100%; }
+
+/* The record: three counts, a hairline box each. */
+.ga-record { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.ga-record > span { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 5px 9px; animation: qaIn 520ms var(--ease) both; }
+.ga-record > span:nth-child(2) { animation-delay: 110ms; }
+.ga-record > span:nth-child(3) { animation-delay: 220ms; }
+.ga-record small { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.ga-record b { font-size: 0.9rem; font-weight: 600; text-shadow: var(--sys-glow); }
+
+/* Ascension: the level, and the ten rules lit as far as it reaches. */
+.ga-ascend { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ga-ascend > b { font-size: 2.6rem; font-weight: 700; line-height: 1; color: var(--win); text-shadow: 0 0 16px var(--win-glow); }
+.ga-ascend__rules { display: flex; gap: 5px; }
+.ga-ascend__rules > i { display: block; width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--sys-hair); }
+.ga-ascend__rules > i.is-open { border-color: color-mix(in srgb, var(--win) 75%, transparent); }
+.ga-ascend__rules > i.is-on { border-color: #fff; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+
+/* A Gate: its grade's portal turning, the rank plate at its heart. */
+.btile.is-gate .btile__hit { min-height: 0; }
+.btile.is-gate:not(.is-wide) .btile__art { min-height: 0; padding-top: 42px; }
+.btile.is-gate.is-wide .btile__art { min-height: 104px; }
+.ga-portal { position: relative; display: grid; place-items: center; width: 80px; height: 80px; }
+.ga-portal__swirl {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 8%, color-mix(in srgb, var(--rc) 90%, transparent) 24%, transparent 44%, color-mix(in srgb, var(--rc) 65%, transparent) 70%, transparent 90%);
+  -webkit-mask: radial-gradient(circle, transparent 44%, #000 48%, #000 63%, transparent 67%);
+  mask: radial-gradient(circle, transparent 44%, #000 48%, #000 63%, transparent 67%);
+  animation: halo 5s linear infinite;
+}
+.ga-portal__core { position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rc) 42%, transparent), transparent 70%); animation: gaPulse 2.8s ease-in-out infinite; }
+@keyframes gaPulse { 50% { opacity: 0.55; transform: scale(1.16); } }
+.ga-portal .rankplate { position: relative; }
+.btile.is-shut .ga-portal__swirl, .btile.is-shut .ga-portal__core { animation: none; opacity: 0.35; }
+.btile.is-cleared .btile__text strong { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.btile.is-quest .btile__count { color: var(--mana); border-color: rgba(79, 214, 255, 0.6); }
+.btile.is-chosen .btile__count { color: var(--gold); border-color: rgba(255, 203, 92, 0.6); }
+.btile.is-gate .btile__icon .ico { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+
+/* ------------------------------------------------------------------ the interface's parts, set inside the System's frame */
+
+.sysframe .card { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
+.sysframe .bosscard > .ico { color: #ff3b4b; filter: drop-shadow(0 0 8px rgba(255, 47, 62, 0.5)); }
+.sysframe .bosscard b { font-size: 1rem; font-weight: 600; text-shadow: var(--sys-glow); }
+.sysframe .bosscard small { font-size: 0.78rem; }
+.sysframe .chosencard { border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
+.sysframe .chosencard > .ico { color: var(--gold); filter: drop-shadow(0 0 8px var(--gold-glow)); }
+.sysframe .verdict { border-radius: 0; }
+.sysframe .verdict b { font-weight: 600; text-shadow: 0 0 8px currentColor; }
+.sysframe .verdict small { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.sysframe .partylist { gap: 6px; }
+.sysframe .partylist li { padding: 7px 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.sysframe .partylist li b { font-weight: 600; font-size: 0.86rem; }
+.sysframe .partylist li small { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.74rem; }
+.sysframe .gnode { border-color: var(--sys-hair); border-radius: 0; }
+.sysframe .empty { border-color: var(--sys-hair); border-radius: 0; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.sysframe .linkish { color: var(--sys-ink); }
+.brief__file .sysfield > b { font-size: 0.84rem; font-weight: 500; line-height: 1.5; text-shadow: none; }
+.sysframe .ascension__rules { gap: 6px; padding-left: 0; list-style: none; color: var(--sys-ink); }
+.sysframe .ascension__rules li { padding: 7px 10px; font-size: 0.82rem; }
+.sysframe .ascension__proof { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.sysframe .marks__list li { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
+.sysframe .marks__list li b { font-weight: 600; color: var(--sys-ink); }
+.sysframe .marks__list li.is-set { border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
+.sysframe .marks__list li.is-set b { color: var(--gold); }
+.sysframe .stepper > b { color: var(--win); }
+
+/* ------------------------------------------------------------------ the Shadows screen's pictures */
+
+/* The squad: a slot to each Shadow that can walk in, filled or waiting. */
+.sa-squad { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; }
+.sa-squad__slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 92px; height: 78px; padding: 6px; border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); animation: qaIn 520ms var(--ease) both; }
+.sa-squad__slot:nth-child(2) { animation-delay: 110ms; }
+.sa-squad__slot:nth-child(3) { animation-delay: 220ms; }
+.sa-squad__slot:nth-child(4) { animation-delay: 330ms; }
+.sa-squad__slot.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 70%, transparent); color: var(--sys-ink); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 25%, transparent), 0 0 10px var(--win-glow); }
+.sa-squad__slot small { display: -webkit-box; overflow: hidden; font-size: 0.6rem; font-weight: 600; line-height: 1.2; text-align: center; text-shadow: var(--sys-glow); -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sa-squad__slot > .ico { width: 18px; height: 18px; }
+
+/* A Shadow: its shape in smoke, ringed by the kills toward its next rank. */
+.sa-shade { position: relative; display: grid; place-items: center; width: 92px; height: 92px; color: var(--win); }
+.sa-shade__ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.sa-shade__track { fill: none; stroke: var(--sys-hair); stroke-width: 2; }
+.sa-shade__fill { fill: none; stroke: var(--win); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--win-glow)); animation: saFill 1100ms var(--ease) both; }
+@keyframes saFill { from { stroke-dasharray: 0 999; } }
+.sa-shade__smoke { position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 48%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; }
+@keyframes saSmoke { 50% { opacity: 0.6; transform: scale(1.22) translateY(-3px); } }
+.sa-shade > .ico { position: relative; width: 34px; height: 34px; filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
+.sa-shade > b { position: absolute; bottom: 13px; font-size: 0.68rem; font-weight: 600; color: var(--sys-ink); text-shadow: var(--sys-glow); }
+.btile.is-shadow:not(.is-deployed) .sa-shade { opacity: 0.72; }
+.btile.is-deployed { box-shadow: -2px 0 16px -2px var(--win-glow), 2px 0 16px -2px var(--win-glow), 0 0 26px color-mix(in srgb, var(--win) 35%, transparent); }

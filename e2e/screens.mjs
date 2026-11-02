@@ -35,7 +35,13 @@ async function drain() {
   }
 }
 const close = () => page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click();
-const nav = async (k) => { await page.locator(`[data-nav="${k}"]`).click(); await sleep(400); await drain(); };
+/** Use the nav bar as a player would: close whatever sheet is over it first (a level-up's Allocate opens Status). */
+const nav = async (k) => {
+  for (let i = 0; i < 5 && (await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().isVisible().catch(() => false)); i++) {
+    await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click(); await sleep(250);
+  }
+  await page.locator(`[data-nav="${k}"]`).click(); await sleep(400); await drain();
+};
 
 /** Hand the rest of a run to the System and wait for its results. */
 async function autoToResults() {
@@ -58,35 +64,41 @@ try {
   await drain();
 
   await nav('inventory');
-  await snap('inventory', true);
-  await page.locator('.status .linkish').click(); await sleep(400); await snap('class', true); await close();
-  await page.locator('.sysframe.inventory').scrollIntoViewIfNeeded(); await sleep(300); await snap('inventory-grid');
+  await sleep(900);
+  await snap('inventory');
+  await snap('inventory-full', true);
+  await page.locator('.btile--status .btile__hit').click(); await sleep(400); await snap('status', true);
+  await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
+  await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
+  await page.locator('.btile--inventory .btile__hit').click(); await sleep(400); await snap('inventory-grid');
   await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();
   await page.locator('.invtile[aria-label^="Warden"]').first().click(); await sleep(400);
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close();
-  await page.locator('[aria-label="Hunter dossier"]').click(); await sleep(400); await snap('dossier', true); await close();
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close(); await close();
+  await page.locator('.btile--dossier .btile__hit').click(); await sleep(400); await snap('dossier'); await close();
 
   await nav('quests');
   await sleep(800);
   await snap('quests');
   await snap('quests-full', true);
   // The veteran has opened Ascension and sent a Chosen out: both are quests, and only quests.
-  if (!(await page.locator('.questtile--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN');
-  if (!(await page.locator('.questtile--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN');
+  if (!(await page.locator('.btile--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN');
+  if (!(await page.locator('.btile--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN');
   for (const k of ['rank', 'spire', 'trial', 'chosen', 'secret']) {
-    await page.locator(`.questtile--${k} .questtile__hit`).click(); await sleep(450);
+    await page.locator(`.btile--${k} .btile__hit`).click(); await sleep(450);
     if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} TILE DID NOT OPEN ITS WINDOW`);
     await snap(`quest-${k}`); await close(); await sleep(250);
   }
 
   await nav('gates');
   await snap('gates', true);
-  if (!(await page.locator('.ascension').isVisible())) throw new Error('THE ASCENSION CARD IS MISSING FROM THE GATES SCREEN');
-  if (await page.locator('.ascension', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS STILL ON THE GATES SCREEN');
+  if (!(await page.locator('.btile--ascension').isVisible())) throw new Error('THE ASCENSION TILE IS MISSING FROM THE GATES SCREEN');
+  if (await page.locator('.gatesgrid', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS STILL ON THE GATES SCREEN');
+  await page.locator('.btile--ascension .btile__hit').click(); await sleep(400); await snap('ascension'); await close();
+  await page.locator('.btile--grade .btile__hit').click(); await sleep(400); await snap('grade'); await close();
   // The Pale Spire's next block, beside the board.
-  await page.locator('.spirecard').click(); await sleep(800); await snap('spire-brief', true);
+  await page.locator('.btile--spire .btile__hit').click(); await sleep(800); await snap('spire-brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess'); await close();
-  await page.locator('.gaterow:not(.is-locked):not(.is-practice)').first().click(); await sleep(800); await snap('brief', true);
+  await page.locator('.btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit').first().click(); await sleep(800); await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-orders');
   await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
   await page.waitForSelector('.arena', { timeout: 10000 });
@@ -102,7 +114,7 @@ try {
   await page.locator('text=Leave The Gate').click(); await drain();
 
   // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in.
-  await page.locator('.spirecard').click(); await sleep(600);
+  await page.locator('.btile--spire .btile__hit').click(); await sleep(600);
   if (await page.locator('text=Enter The Gate').isVisible()) {
     await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
     await page.waitForSelector('.arena', { timeout: 10000 });
@@ -119,7 +131,9 @@ try {
 
   await nav('shadows');
   await snap('shadows', true);
-  await page.locator('.shadowrow__main').first().click(); await sleep(400); await snap('shadow-detail'); await close();
+  await sleep(600);
+  await page.locator('.btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail'); await close();
+  await page.locator('.btile--squad .btile__hit').click(); await sleep(400); await snap('squad'); await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
 

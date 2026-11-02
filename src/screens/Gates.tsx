@@ -5,7 +5,7 @@ import { powerOf, TACTICS } from '@/core/combat';
 import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { overCap, RARITY } from '@/core/gear';
-import { GATE_XP, PRACTICE_LEVEL, practiceAward } from '@/core/progression';
+import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankFor } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
@@ -14,7 +14,7 @@ import { isTrial } from '@/core/trial';
 import { ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
-import { SPIRE_NAME, SPIRE_TOP } from '@/data/spire';
+import { SPIRE_NAME } from '@/data/spire';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import * as system from '@/ui/system';
 import { MapView } from '@/ui/map';
@@ -22,19 +22,21 @@ import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as story from '@/core/story';
-import type { Dungeon, Rank } from '@/core/types';
+import type { Dungeon, Rank, Save } from '@/core/types';
 import { RANKS } from '@/core/types';
-import { dayKey, hhmmss, msUntilMidnight, msUntilWeek } from '@/core/util';
+import { dayKey, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Card, Chip, Panel, RankPlate, Section, Shards, Tile, useNow, Voice } from '@/ui/components';
+import { Btn, Card, Chip, RankPlate, Section, Shards, Tile, useNow, Voice } from '@/ui/components';
+import { BentoGrid, type Tile as BTile } from '@/ui/bento';
+import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
-import { drinkFlow, VitalsBlock } from './Inventory';
+import { drinkFlow, MiniBar, openDossier, openStatus } from './Inventory';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -50,10 +52,7 @@ export function Gates() {
   useNow();
   const [band, setBand] = useState<'all' | Rank>('all');
   const gates = board(s);
-  const mine = licensedRank(s);
   const shown = gates.filter((d) => band === 'all' || d.rank === band);
-  const run = s.gates.raid;
-  const open = run && dungeonById(run.dungeonId);
   const day = dayKey();
   // The board marks the Gates today's Daily Quests name, so showing it issues them, if nothing has yet.
   const named = contracts.named(s, day);
@@ -71,46 +70,7 @@ export function Gates() {
   return (
     <div class="stack">
       <Voice>{coachLine(s)}</Voice>
-      <Panel title="Gates" tone="ember">
-        <div class="licencecard" data-tour="licence">
-          <Sigil rank={mine} size={46} />
-          <div class="grow">
-            <span class="label">Association grade</span>
-            <b>{mine}-Rank</b>
-            <small class="muted">{licenceHolding(s) ? 'Held at D without the Association Licence.' : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank are open to you. Your grade rises with your level.`}</small>
-          </div>
-        </div>
-        {licenceRequired(s) && licenceHolding(s) && storeReady() && (
-          <Btn kind="light" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
-            Association Licence · {priceOf('licence') ?? 'Buy'}
-          </Btn>
-        )}
-        <VitalsBlock />
-        <div class="tiles tiles--3" data-tour="raidstats">
-          <Tile label="Entered" value={s.gates.clears + s.gates.fails + s.gates.withdrawn} />
-          <Tile label="Cleared" value={s.gates.clears} />
-          <Tile label="Gates taken" value={s.gates.cleared.filter((id) => id !== 'DNG-000').length} />
-        </div>
-      </Panel>
-
-      {open && run && (
-        <Card hot tone="ember">
-          <b>{open.name} is still open.</b>
-          <p class="muted">You are {run.at} of {raid.mapOf(open, run).layers.length} steps in. Abandoning it counts as being carried out.</p>
-          <div class="row">
-            <Btn kind="ghost" onClick={async () => {
-              if (await confirm('Abandon the run?', 'You will be carried out. Nothing banked on this run is kept.', 'Abandon', true)) {
-                store.update((x) => raid.finish(x, open, x.gates.raid!, 'defeated'));
-              }
-            }}>Abandon</Btn>
-            <Btn kind="primary" class="grow" sound="gate" onClick={() => arena.set(open.id)}>Go Back In</Btn>
-          </div>
-        </Card>
-      )}
-
-      <SpireCard />
-      <AscensionCard />
-
+      <BentoGrid class="gatesgrid" tiles={topTiles(s)} label="Gates" />
       <div class="bands" role="tablist" aria-label="Filter Gates by grade" data-tour="bands">
         <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
         {RANKS.map((r) => {
@@ -121,67 +81,169 @@ export function Gates() {
       <div class="boardhead">
         <span class="label">{band === 'all' ? 'Open Gates' : `${band}-Rank Gates`}</span>
         <span class="label">Redraw <b class="num countdown">{hhmmss(msUntilMidnight())}</b></span>
-        <span class="label">{s.gates.sealed.day === dayKey() ? s.gates.sealed.ids.length : 0} closed today</span>
+        <span class="label">{s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0} closed today</span>
       </div>
-      <ul class="board" data-tour="board">
-        {shown.map((d) => <GateRow key={d.id} d={d} quest={named.has(d.id)} />)}
-      </ul>
+      <BentoGrid class="board" tour="board" tiles={shown.map((d) => gateTile(s, d, named.has(d.id), day))} label="Open Gates" />
     </div>
   );
 }
 
-/** The Pale Spire, beside the board: the next block up, and how the week stands. */
-function SpireCard() {
-  const s = useSave();
-  if (!spire.spireOpen(s)) return null;
-  const d = spire.nextSpire(s);
-  const b = spire.blockOf(d.floor ?? 1);
-  const best = spire.weekBest(s);
-  const tier = spire.seasonTier(best);
-  const locked = entryBlock(s, d) === 'licence';
-  const left = msUntilWeek();
-  const days = Math.floor(left / 864e5);
-  const built = spire.builtFor(b);
-  return (
-    <Card class={`spirecard ${locked ? 'is-locked' : ''}`} tone="ember" onClick={() => {
-      if (locked) toast(`Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
-      else openBrief(d);
-    }}>
-      <div class="spirecard__head">
-        <RankPlate rank={d.rank} size={34} />
-        <div class="grow">
-          <b>{SPIRE_NAME}</b>
-          <small class="muted">Floors {spire.firstFloor(b)} to {spire.lastFloor(b)} next · {built <= SPIRE_TOP ? `built for Level ${built}` : `built past Level ${SPIRE_TOP}`}</small>
-        </div>
-        <Glyph name={locked ? 'lock' : 'up'} />
-      </div>
-      <div class="spirecard__week">
-        <span>{best ? <>This week: <b>Floor {best}</b>{tier ? `, pays at ${tier.tier}` : ''}</> : 'Not climbed this week'}</span>
-        <span class="num">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</span>
-      </div>
-    </Card>
-  );
+/** What stands above the board: the run left open, the hunter's grade and condition, their record, the Spire and Ascension. */
+function topTiles(s: Save): BTile[] {
+  const out: BTile[] = [];
+  const run = s.gates.raid;
+  const open = run && dungeonById(run.dungeonId);
+  if (open && run) {
+    const steps = raid.mapOf(open, run).layers.length;
+    out.push({
+      key: 'run', kind: 'gates', name: open.name, wide: true, hot: true, icon: <Glyph name="gates" />,
+      count: `${run.at}/${steps}`, status: 'Go Back In',
+      art: <span class="ga-steps">{Array.from({ length: steps }, (_, i) => <i key={i} class={i < run.at ? 'is-on' : i === run.at ? 'is-here' : ''} />)}</span>,
+      // A run left open is one tap from where it stopped; its brief, from the board, holds Abandon.
+      open: () => { sfx.gate(); arena.set(open.id); },
+    });
+  }
+  const mine = licensedRank(s);
+  const holding = licenceHolding(s);
+  out.push({
+    key: 'grade', kind: 'gates', name: 'Grade', head: true, tour: 'licence', icon: <Glyph name="cert" />, hot: holding && licenceRequired(s) && storeReady(),
+    count: `${mine}-Rank`,
+    status: holding ? `Held at ${mine}-Rank.` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank.`,
+    art: <span class="ga-emblem"><i class="ga-emblem__ring" /><i class="ga-emblem__ring" /><Sigil rank={mine} size={50} /></span>,
+    open: openGrade,
+  });
+  const v = vitals.read(s);
+  out.push({
+    key: 'condition', kind: 'system', name: 'Condition', head: true, tour: 'vitals', icon: <Glyph name="bolt" />, hot: v.locked,
+    count: `FTG ${Math.round(v.fatigue)}`,
+    status: v.locked ? `Carried out. Fit in ${Math.ceil(v.lockedFor / 36e5)}h.` : `Strength: ${Math.round(v.drag * 100)}%`,
+    art: (
+      <span class="ia-bars ia-bars--stack">
+        <MiniBar label="HP" cur={v.hp} max={v.hpMax} tone="hp" />
+        <MiniBar label="MP" cur={v.mp} max={v.mpMax} tone="mp" />
+        <MiniBar label="FTG" cur={v.fatigue} max={vitals.FATIGUE_MAX} tone="ftg" />
+      </span>
+    ),
+    open: openStatus,
+  });
+  const entered = s.gates.clears + s.gates.fails + s.gates.withdrawn;
+  out.push({
+    key: 'record', kind: 'gates', name: 'Record', head: true, icon: <Glyph name="chart" />,
+    status: `Best run unbroken: ${s.gates.bestUnbroken}`,
+    art: (
+      <span class="ga-record">
+        <span class="sysbox"><small>Entered</small><b class="num">{entered}</b></span>
+        <span class="sysbox"><small>Cleared</small><b class="num">{s.gates.clears}</b></span>
+        <span class="sysbox"><small>Gates taken</small><b class="num">{s.gates.cleared.filter((id) => id !== 'DNG-000').length}</b></span>
+      </span>
+    ),
+    open: openDossier,
+  });
+  if (spire.spireOpen(s)) {
+    const d = spire.nextSpire(s);
+    const b = spire.blockOf(d.floor ?? 1);
+    const best = spire.weekBest(s);
+    const goal = spire.tierGoal(s);
+    const lit = Math.min(6, Math.floor((7 * best) / goal));
+    const locked = entryBlock(s, d) === 'licence';
+    out.push({
+      key: 'spire', kind: 'gates', name: SPIRE_NAME, icon: <Glyph name="spire" />, shut: locked,
+      count: `${best}/${goal}`,
+      status: `Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} next.`,
+      art: <span class="qa-tower">{Array.from({ length: 7 }, (_, i) => <i key={i} class={i < lit ? 'is-lit' : i === lit ? 'is-next' : ''} style={{ width: `${72 - i * 7}px` }} />)}</span>,
+      open: () => {
+        if (locked) toast(`Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
+        else openBrief(d);
+      },
+    });
+  }
+  const a = s.ascension;
+  if (a.unlocked) {
+    out.push({
+      key: 'ascension', kind: 'gold', name: `Ascension ${a.level}`, icon: <Glyph name="crown" />, hot: marks.unset(s) > 0,
+      count: `${a.level}/${a.unlocked}`,
+      status: a.level ? ascension.levelInfo(a.level).name : 'The board as it stands.',
+      art: (
+        <span class="ga-ascend">
+          <b class="num">{a.level}</b>
+          <span class="ga-ascend__rules">{Array.from({ length: ASCENSION_RULED }, (_, i) => <i key={i} class={i < Math.min(a.level, ASCENSION_RULED) ? 'is-on' : i < a.unlocked ? 'is-open' : ''} />)}</span>
+        </span>
+      ),
+      open: openAscension,
+    });
+  }
+  return out;
 }
 
-/**
- * Ascension: the level the next run is entered at, its rules, and the marks. It shows once Ascension 1
- * is open, when there is a level to choose. Proving the next level, its Trial and the Chosen walking
- * today are quests, on the Quests screen.
- */
-function AscensionCard() {
+/** A Gate on the board: its grade's portal, its name, and what stands at its end. */
+function gateTile(s: Save, d: Dungeon, quest: boolean, day: string): BTile {
+  const held = walkers.walking(s, day)?.gateId === d.id;
+  const locked = entryBlock(s, d) === 'licence';
+  const known = bossKnown(s, d);
+  const boss = enemyById(d.boss);
+  const practice = isPractice(d);
+  const tag = practice ? 'Training' : held ? 'Chosen' : quest ? 'Quest' : undefined;
+  return {
+    key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, hot: practice, shut: locked,
+    class: `is-gate ${practice ? 'is-practice' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''} ${tag ? `is-${tag.toLowerCase()}` : ''}`,
+    icon: <Glyph name={locked ? 'lock' : known ? 'skull' : 'unknown'} />,
+    count: tag,
+    status: locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?',
+    art: (
+      <span class="ga-portal" style={`--rc: var(--rank-${d.rank})`}>
+        <i class="ga-portal__swirl" /><i class="ga-portal__core" />
+        <RankPlate rank={d.rank} size={40} />
+      </span>
+    ),
+    open: () => { if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); },
+  };
+}
+
+/** The hunter's grade with the Association: what it opens, and the licence that lifts the hold, where there is one to buy. */
+function openGrade() {
+  const s = store.get();
+  openSheet({
+    title: `Licence: ${s.hunter.regNo || '-- --'}`, system: { icon: <Sigil rank={licensedRank(s)} size={40} />, kind: 'gates' },
+    render: () => {
+      const s = store.get();
+      const mine = licensedRank(s);
+      return (
+        <div class="stack">
+          <div class="sysfields">
+            <Field k="Association grade" v={`${mine}-Rank`} />
+            <Field k="Gates open" v={`Up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank`} />
+            <Field k="Rank" v={rankFor(s.hunter.level).name} />
+            <Field k="Association Licence" v={licenceRequired(s) ? (s.licence.granted ? 'Issued' : '-- --') : 'Issued'} />
+          </div>
+          {licenceHolding(s) && <p class="hint">Gate grade held at {mine}-Rank.</p>}
+          {licenceRequired(s) && licenceHolding(s) && storeReady() && (
+            <Btn kind="primary" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
+              Association Licence · {priceOf('licence') ?? 'Buy'}
+            </Btn>
+          )}
+        </div>
+      );
+    },
+  });
+}
+
+/** Ascension: the level the next run is entered at, its rules, and the marks. Advancement, so gold. */
+function openAscension() {
+  openSheet({ title: `Ascension: ${store.get().ascension.level}`, system: { icon: <Glyph name="crown" />, kind: 'gold' }, render: () => <AscensionSheet /> });
+}
+
+function AscensionSheet() {
   const s = useSave();
-  if (!s.ascension.unlocked) return null;
   const a = s.ascension;
   const rules = ascension.rulesAt(a.level);
   const choose = (L: number) => store.update((x) => ascension.choose(x, L));
   return (
-    <Card class="ascension" tone="gold" tour="ascension">
-      <div class="ascension__head">
-        <Glyph name="crown" />
-        <div class="grow">
-          <b>Ascension {a.level ? `${a.level} · ${ascension.levelInfo(a.level).name}` : '0'}</b>
-          <small class="muted">{a.level ? `Gates pay ${Math.round(ASCENSION_PAY * a.level * 100)}% more. The brief’s assessment plays every rule.` : 'The board as it stands. Choose a level to make every Gate harder, and pay more.'}</small>
-        </div>
+    <div class="stack ascension">
+      <div class="sysfields">
+        <Field k="Level" v={<span class="status__level">{a.level}</span>} />
+        <Field k="Pay" v={<span class="grant">+{Math.round(ASCENSION_PAY * a.level * 100)}%</span>} />
+        <Field k="Name" v={a.level ? ascension.levelInfo(a.level).name : '-- --'} />
+        <Field k="Highest opened" v={a.unlocked} />
       </div>
       {a.unlocked <= ASCENSION_RULED && (
         <div class="chips" role="radiogroup" aria-label="Ascension level">
@@ -193,16 +255,20 @@ function AscensionCard() {
           <Btn size="sm" disabled={a.level === 0} onClick={() => choose(a.level - 1)}>−</Btn>
           <b class="num">{a.level}</b>
           <Btn size="sm" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}>+</Btn>
-          <Btn size="sm" kind="ghost" onClick={() => choose(0)}>0</Btn>
-          <Btn size="sm" kind="ghost" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
+          <Btn size="sm" onClick={() => choose(0)}>0</Btn>
+          <Btn size="sm" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
         </div>
       )}
-      {rules.length > 0 && <ol class="ascension__rules">{rules.map((r) => <li key={r.level}><b>{r.name}</b> {r.rule}</li>)}</ol>}
+      {rules.length > 0 && (
+        <Section title="Rules in force">
+          <ol class="ascension__rules">{rules.map((r) => <li key={r.level} class="sysbox"><strong>[{r.name}]</strong> {r.rule}</li>)}</ol>
+        </Section>
+      )}
       {ascension.beyond(a.level) > 0 && (
         <small class="ascension__proof">Past Level {ASCENSION_RULED}: Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level · +{Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here</small>
       )}
       <MarkList />
-    </Card>
+    </div>
   );
 }
 
@@ -215,11 +281,11 @@ function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
     <Card class="bosscard chosencard" tone="gold">
       <Glyph name="crown" />
       <div class="grow">
-        <span class="label">One of the Chosen holds this Gate</span>
-        <b>{w.name}</b>
-        <small class="muted">{level >= w.level ? `At Ascension ${level}, it stands in the boss’s place.` : `Appears at Ascension ${w.level} or higher.`}</small>
-        <small>{felled ? `It has fallen to you before. Felled again, it pays ${shop.gateShards(d.rank, WALKERS.bounty * pay)} shards.`
-          : `The first time it falls, it leaves a masterwork: a ${RARITY[d.rank as Rank].name} ${walkers.slotOf(w.level)}, perfect and ${w.level} step${w.level === 1 ? '' : 's'} past it.`}</small>
+        <span class="label">Chosen</span>
+        <b class="warn">[{w.name}]</b>
+        <small class="muted">{level >= w.level ? `In the boss’s place at Ascension ${level}.` : `Appears at Ascension ${w.level} or higher.`}</small>
+        <small>{felled ? <>Bounty: Mana Shards <span class="grant">+{shop.gateShards(d.rank, WALKERS.bounty * pay)}</span></>
+          : <>Masterwork: {RARITY[d.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>}</small>
       </div>
     </Card>
   );
@@ -257,32 +323,11 @@ function MarkList() {
   );
 }
 
-/** One Gate on the board. `quest`: one of today's Daily Quests names it. */
-function GateRow({ d, quest }: { d: Dungeon; quest: boolean }) {
-  const s = useSave();
-  const held = walkers.walking(s, dayKey())?.gateId === d.id;
-  const block = entryBlock(s, d);
-  const locked = block === 'licence';
-  const known = bossKnown(s, d);
-  const boss = enemyById(d.boss);
-  return (
-    <li>
-      <button type="button" class={`gaterow ${locked ? 'is-locked' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${isPractice(d) ? 'is-practice' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
-        onClick={() => { sfx.tap(); if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
-        <RankPlate rank={d.rank} size={34} />
-        <span class="gaterow__name">{d.name}{isPractice(d) && <small class="chip">Training</small>}{held && <small class="chip chip--chosen">Chosen</small>}{quest && <small class="chip chip--quest">Quest</small>}</span>
-        <span class="gaterow__mark">
-          {locked ? <Glyph name="lock" /> : <span title={known ? boss?.name : 'Unidentified'}><Glyph name={known ? 'skull' : 'unknown'} /></span>}
-        </span>
-      </button>
-    </li>
-  );
-}
-
 // ------------------------------------------------------------------ the brief
 
+/** The brief: the System's card on a Gate, in the Gates' orange. */
 export function openBrief(d: Dungeon) {
-  openSheet({ title: d.name, tone: 'ember', render: (close) => <Brief d={d} close={close} /> });
+  openSheet({ title: `Gate: ${d.name}`, system: { icon: <RankPlate rank={d.rank} size={40} />, kind: 'gates' }, render: (close) => <Brief d={d} close={close} /> });
 }
 
 function Brief({ d, close }: { d: Dungeon; close: () => void }) {
@@ -334,9 +379,16 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
     arena.set(d.id);
   };
 
+  const abandon = async () => {
+    const run = store.get().gates.raid;
+    if (!run || !(await confirm('Abandon the run?', 'You will be carried out. Nothing banked on this run is kept.', 'Abandon', true))) return;
+    store.update((x) => raid.finish(x, d, x.gates.raid!, 'defeated'));
+    close();
+  };
+
   return (
-    <div class="stack">
-      <p class="muted">{d.theme}</p>
+    <div class="stack brief">
+      <div class="sysfields brief__file"><Field k="Association file" v={d.theme} wide /></div>
       <Card class="bosscard" tour="boss">
         <Glyph name={known || met ? 'skull' : 'unknown'} />
         <div class="grow">
@@ -366,34 +418,32 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
       </Section>
 
-      <Section title="Today’s map" right="the System’s road is marked">
+      <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
         <MapView m={map} road={proj.road} compact />
-        <p class="muted">The map is fixed until midnight.</p>
       </Section>
 
       <Section title="Standing orders" right={party.length + squad.length ? 'allies and Shadows' : undefined}>
         <div class="chips" aria-label="Standing orders" data-tour="orders">
           {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
         </div>
-        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc} The assessment above already fights with these orders.{squad.filter((x) => x.tactic).length ? ` ${squad.filter((x) => x.tactic).length === 1 ? 'One Shadow keeps its own orders.' : `${squad.filter((x) => x.tactic).length} Shadows keep their own orders.`}` : ''}</p>
+        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc}</p>
+        {squad.some((x) => x.tactic) && <small class="muted">Shadows on their own orders: {squad.filter((x) => x.tactic).length}</small>}
       </Section>
 
-      <Section title="Satchel" right={`${s.satchel} of ${shop.FIELD_POTION.max} field potions`}>
-        <p class="muted">{s.satchel
-          ? `Drink one on your turn for ${shop.FIELD_POTION.heal * 100}% of your health back. What you do not drink stays in the satchel.`
-          : 'Empty.'}
-        {s.satchel < shop.FIELD_POTION.max && <> <button type="button" class="linkish" onClick={() => { close(); openExchange(); }}>To The Exchange</button></>}</p>
+      <Section title="Satchel" right={`${s.satchel}/${shop.FIELD_POTION.max}`}>
+        <p><strong>[Item: Field Potion]</strong> <span class="grant">HP +{shop.FIELD_POTION.heal * 100}%</span></p>
+        {s.satchel < shop.FIELD_POTION.max && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
       </Section>
 
       {block === 'open' ? open?.id === d.id
-        ? <Btn kind="primary" size="lg" block sound="gate" onClick={() => { close(); arena.set(d.id); }}>Go Back In</Btn>
+        ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { close(); arena.set(d.id); }}>Go Back In</Btn></div>
         : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
         : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
         : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
           : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
             : <Btn kind="primary" size="lg" block onClick={enter} sound="none" tour="enter">Enter The Gate</Btn>}
 
-      <Section title="Your party" right={`${1 + party.length} hunters${squad.length ? ` · ${squad.length} Shadow${squad.length === 1 ? '' : 's'}` : ''}`}>
+      <Section title="Your party" right={`Hunters: ${1 + party.length}${squad.length ? ` · Shadows: ${squad.length}` : ''}`}>
         <ul class="partylist" data-tour="party">
           <li class="is-you"><RankPlate rank={licensedRank(s)} size={22} /><b>{s.hunter.name}</b><small>you</small><span class="num">{powerOf(hero.base)}</span></li>
           {party.map((a) => (
@@ -403,8 +453,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={22} /><b>{enemyById(x.enemyId)!.shadow}</b><small>Shadow</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>
           ))}
         </ul>
-        {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">{shadows.freeSlots(s)} Shadow slot{shadows.freeSlots(s) === 1 ? '' : 's'} empty. Deploy from the Shadows screen.</p>}
-        {isPractice(d) && <p class="hint">Valcorde is in your party for this one.</p>}
+        {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">Shadow slots empty: {shadows.freeSlots(s)}</p>}
+        {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
       </Section>
 
     </div>

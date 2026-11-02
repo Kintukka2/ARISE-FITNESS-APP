@@ -7,7 +7,6 @@
  */
 import type { ComponentChildren, FunctionComponent } from 'preact';
 import { useEffect } from 'preact/hooks';
-import { sfx } from '@/audio/audio';
 import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
 import { board, dungeonById, entryBlock } from '@/core/gates';
@@ -29,27 +28,14 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, useNow } from '@/ui/components';
 import { ContractsWindow, QuestGoal, QuestWindow } from '@/ui/contracts';
-import { Field, SysFrame, type FrameKind } from '@/ui/frame';
+import { BentoGrid, type Tile } from '@/ui/bento';
+import { Field } from '@/ui/frame';
 import { Glyph, Sigil } from '@/ui/icons';
 import { openSheet, toast } from '@/ui/overlays';
 import { openBrief } from './Gates';
 
 /** A quest as the grid shows it: its tile, and the window its sheet opens. */
-interface Tile {
-  key: 'daily' | 'rank' | 'spire' | 'trial' | 'chosen' | 'secret';
-  kind: FrameKind;
-  /** The quest's name with its type, bracketed on the tile and in its window. */
-  name: string;
-  icon: ComponentChildren;
-  /** One line under the name. */
-  status: ComponentChildren;
-  count: ComponentChildren;
-  /** The picture of where it stands. */
-  art: ComponentChildren;
-  wide: boolean;
-  /** Something can be done about it now. */
-  hot?: boolean;
-  done?: boolean;
+interface QuestTile extends Omit<Tile, 'open'> {
   Body: FunctionComponent<{ close: () => void }>;
 }
 
@@ -62,46 +48,21 @@ export function Quests() {
     const now = store.get();
     if (contracts.contractsOpen(now) && !(now.contracts.day === day && now.contracts.seen)) store.update((x) => contracts.show(x, day));
   }, [day]);
-  return <div class="questgrid">{tiles(s, day).map((t) => <QuestTile key={t.key} t={t} />)}</div>;
+  return <BentoGrid class="questgrid" tiles={tiles(s, day)} label="Quests" />;
 }
 
-/**
- * Every quest that stands, in the grid's order: the day's first, then the climbs, then the record.
- * A tile on its own in a row would leave a hole beside it, so the last of an odd number spans both.
- */
+/** Every quest that stands, in the grid's order: the day's first, then the climbs, then the record. */
 function tiles(s: Save, day: string): Tile[] {
-  const singles = [rankTile(s), spireTile(s, day), trialTile(s, day), chosenTile(s, day)].filter((t): t is Tile => !!t);
-  if (singles.length % 2) singles[singles.length - 1].wide = true;
-  return [dailyTile(s, day), ...singles, secretTile(s)].filter((t): t is Tile => !!t);
-}
-
-/** A name with its hyphenated words kept whole, so a narrow tile wraps `B-Rank` onto one line, never across it. */
-const whole = (name: string) => name.split(' ').flatMap((w, i) => [i ? ' ' : '', w.includes('-') ? <span class="nowrap">{w}</span> : w]);
-
-function QuestTile({ t }: { t: Tile }) {
-  const open = () => {
-    sfx.tap();
-    openSheet({ title: 'Quest Info', system: { kind: t.kind }, render: (close) => <t.Body close={close} /> });
-  };
-  return (
-    <SysFrame kind={t.kind} label={t.name}
-      class={`questtile questtile--${t.key} ${t.wide ? 'is-wide' : ''} ${t.hot ? 'is-hot' : ''} ${t.done ? 'is-done' : ''}`}>
-      <button type="button" class="questtile__hit" onClick={open}>
-        <span class="questtile__art" aria-hidden="true">{t.art}</span>
-        <span class="questtile__foot">
-          <span class="sysbox questtile__icon" aria-hidden="true">{t.icon}</span>
-          <span class="questtile__text"><strong>[{whole(t.name)}]</strong><small>{t.status}</small></span>
-          <span class="sysbox questtile__count num">{t.count}</span>
-          <Glyph name="chevron" class="questtile__go" />
-        </span>
-      </button>
-    </SysFrame>
-  );
+  const list = [dailyTile(s, day), rankTile(s), spireTile(s, day), trialTile(s, day), chosenTile(s, day), secretTile(s)].filter((t): t is QuestTile => !!t);
+  return list.map(({ Body, ...t }) => ({
+    ...t,
+    open: () => openSheet({ title: 'Quest Info', system: { kind: t.kind }, render: (close) => <Body close={close} /> }),
+  }));
 }
 
 // ------------------------------------------------------------------ the Daily Quests
 
-function dailyTile(s: Save, day: string): Tile | null {
+function dailyTile(s: Save, day: string): QuestTile | null {
   if (!contracts.contractsOpen(s)) return null;
   const c = contracts.today(s, day);
   const done = c.list.filter((k) => k.done).length;
@@ -139,7 +100,7 @@ function DailyBody() {
 // ------------------------------------------------------------------ the next rank
 
 /** The next rank: a choice of rank is advancement, so the frame is gold. */
-function rankTile(s: Save): Tile | null {
+function rankTile(s: Save): QuestTile | null {
   const q = reclassification(s);
   if (!q) return null;
   return {
@@ -186,7 +147,7 @@ function RankBody() {
 const STOREYS = 7;
 
 /** The Spire's week: Gates are orange. */
-function spireTile(s: Save, day: string): Tile | null {
+function spireTile(s: Save, day: string): QuestTile | null {
   if (!spire.spireOpen(s)) return null;
   const best = spire.weekBest(s, day);
   const goal = spire.tierGoal(s, day);
@@ -241,7 +202,7 @@ function SpireBody({ close }: { close: () => void }) {
 // ------------------------------------------------------------------ the Trial
 
 /** Proving the next Ascension level: the Gates, then the Trial. Advancement, so gold. */
-function trialTile(s: Save, day: string): Tile | null {
+function trialTile(s: Save, day: string): QuestTile | null {
   if (!ascension.ascensionOpen(s)) return null;
   const a = s.ascension;
   const need = ascension.proofNeeds(s);
@@ -300,7 +261,7 @@ function TrialBody({ close }: { close: () => void }) {
 // ------------------------------------------------------------------ the Chosen
 
 /** One of the Chosen, holding a Gate today. Its masterwork is advancement, so gold. */
-function chosenTile(s: Save, day: string): Tile | null {
+function chosenTile(s: Save, day: string): QuestTile | null {
   const w = walkers.walking(s, day);
   const gate = w ? dungeonById(w.gateId) : undefined;
   if (!w || !gate) return null;
@@ -352,7 +313,7 @@ const heldOf = (s: Save) => s.hunter.missions.map((id) => MISSIONS.find((m) => m
 const SEALED_SHOWN = 4;
 
 /** Every Secret Quest done, drifting past, and the sealed ones as `?`. The System's own record, so cyan. */
-function secretTile(s: Save): Tile {
+function secretTile(s: Save): QuestTile {
   const held = heldOf(s);
   const sealed = MISSIONS.length - held.length;
   const cards = [

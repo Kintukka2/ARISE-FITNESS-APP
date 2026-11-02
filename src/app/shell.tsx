@@ -13,6 +13,7 @@ import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { go, isOpen, route, type Route } from './router';
 import { openExchange } from '@/screens/Exchange';
 import { openSettings } from '@/screens/Settings';
+import { openStatus } from '@/screens/Inventory';
 
 /** Drifting motes on a canvas, throttled, and off entirely under reduced motion. */
 function Motes() {
@@ -66,7 +67,7 @@ export function TopBar() {
   const shown = rank === 'N' ? 'N' : licensedRank(s);
   return (
     <header class="topbar">
-      <button type="button" class="topbar__rank" aria-label="Open Status" onClick={() => { sfx.tap(); go('inventory'); }}>
+      <button type="button" class="topbar__rank" aria-label="Open Status" onClick={() => { sfx.tap(); go('inventory'); openStatus(); }}>
         <Sigil rank={shown} size={44} />
       </button>
       <div class="topbar__mid">

@@ -10,7 +10,7 @@ import type { Effect } from '@/data/nodes';
 import type { Action, Kind, WinOpts } from './overlays';
 
 /** The only headers a System window may carry. Cards carry their own name instead. */
-export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Skills', 'Inventory', 'Exchange'] as const;
+export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Skills', 'Equipment', 'Inventory', 'Exchange'] as const;
 export type Header = (typeof HEADERS)[number];
 
 /** The window kinds the System speaks in. The others belong to Valcorde, the app and the `???` voice. */
@@ -63,7 +63,7 @@ export function offer(lines: string[], kind: Kind = 'system', yes = 'Yes', no = 
   return { ...notify(lines, kind, [{ label: no, value: false }, { label: yes, value: true, primary: true }]), typed: false };
 }
 
-/** Levels gained, then the Ability Points they paid. Resolves 'inventory', the screen with the Status sheet, for Allocate. */
+/** Levels gained, then the Ability Points they paid. Resolves 'inventory' for Allocate: the screen opens on its Status sheet. */
 export function levelUp(levels: number, to: number, points: number): WinOpts {
   const lines = Array.from({ length: Math.min(levels, 3) }, () => '[You have levelled up!]');
   if (levels > 3) lines.push(counter('Level', to));
