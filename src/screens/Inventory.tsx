@@ -1,4 +1,7 @@
-/** Inventory: who you are (the Status sheet), what you are wearing, and everything you hold. */
+/**
+ * Inventory: the hunter's page, as a bento grid. Status, the stats, the skills, the equipment, what
+ * is held, the Exchange and the hunter's record each take a tile, and each tile opens its window.
+ */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { CLASS_RANKS, classById } from '@/data/classes';
@@ -6,13 +9,13 @@ import * as gear from '@/core/gear';
 import { ascensionOpen } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
-import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
+import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, kitFor, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
 import { ability, passiveText, REACH_TEXT } from '@/core/combat';
 import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
 import type { Item, Save, SlotKey, Stat } from '@/core/types';
 import { STATS } from '@/core/types';
-import { group } from '@/core/util';
+import { compact, group, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
@@ -21,37 +24,187 @@ import { weekBest } from '@/core/spire';
 import { dungeonById } from '@/core/gates';
 import { setById, type GearSet } from '@/data/sets';
 import * as system from '@/ui/system';
-import { Btn, Card, Chip, Empty, Fold, GearArt, HpBar, IconBtn, KV, Panel, Section, Shards, useNow } from '@/ui/components';
-import { Field, SysFrame } from '@/ui/frame';
+import { Btn, Chip, Empty, GearArt, HpBar, IconBtn, KV, Section, Shards, useNow } from '@/ui/components';
+import { BentoGrid, type Tile } from '@/ui/bento';
+import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
-import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
+import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { openExchange } from './Exchange';
 
 export function Inventory() {
   const s = useSave();
   useNow(5000);
+  return <BentoGrid class="invscreen" tiles={tiles(s)} label="Inventory" />;
+}
+
+/** The hunter's page: who they are, what they can do, what they wear, what they hold, and their record. */
+function tiles(s: Save): Tile[] {
+  const r = rankFor(s.hunter.level);
+  const shown = r.key === 'N' ? 'N' : licensedRank(s);
+  const cls = classById(s.hunter.classId);
+  const v = vitals.read(s);
+  const total = statsNow(s);
+  const lead = STATS.reduce((a, b) => (total[b] > total[a] ? b : a));
+  const choose = waiting(s).length;
+  const ups = gear.upgradeCount(s);
+  // The three best pieces held, fanned out with the best in the middle.
+  const best = s.items.slice().sort((a, b) => gear.score(b) - gear.score(a)).slice(0, 3);
+  const top = best.length === 3 ? [best[1], best[0], best[2]] : best;
+  const nr = nextRank(s.hunter.level);
+  return [
+    {
+      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0,
+      count: `LV ${s.hunter.level}`,
+      status: s.hunter.points ? <>Ability Points: <b class="num">{s.hunter.points}</b></> : nr ? `Level ${nr.min} for ${nr.name}.` : r.name,
+      art: (
+        <span class="ia-status">
+          <span class="ia-status__who">
+            <Sigil rank={shown} size={44} />
+            <span class="ia-status__name"><b>{s.hunter.name}</b><small>{cls?.name ?? 'Unclassified'} · {r.name}</small></span>
+          </span>
+          <span class="ia-bars">
+            <MiniBar label="HP" cur={v.hp} max={v.hpMax} tone="hp" />
+            <MiniBar label="MP" cur={v.mp} max={v.mpMax} tone="mp" />
+            <MiniBar label="FTG" cur={v.fatigue} max={vitals.FATIGUE_MAX} tone="ftg" />
+          </span>
+        </span>
+      ),
+      open: openStatus,
+    },
+    {
+      key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />,
+      count: `${lead} ${Math.round(total[lead])}`,
+      status: s.hunter.points ? <>Ability Points: <b class="num">{s.hunter.points}</b></> : `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
+      art: <Radar values={total} />,
+      open: openStatus,
+    },
+    {
+      key: 'skills', kind: 'gold', name: 'Skills', head: true, icon: <Glyph name="bolt" />, hot: choose > 0,
+      count: choose ? `${choose} new` : cls ? `${cls.rank}-Rank` : '-- --',
+      status: cls ? `[Class: ${cls.name}]` : 'Unclassified',
+      art: <SkillArt s={s} />,
+      open: openClass,
+    },
+    {
+      key: 'equipment', kind: 'gear', name: 'Equipment', head: true, wide: true, icon: <Glyph name="Chest" />, hot: ups > 0,
+      count: Math.round(gear.power(s)),
+      status: ups ? <>Auto Equip: <b class="num">{ups}</b></> : setLine(s) ?? `Slots filled: ${gear.worn(s).length}/${gear.SLOTS.length}`,
+      art: (
+        <span class="ia-doll">
+          {gear.SLOTS.map((x) => {
+            const it = gear.equippedIn(s, x.key);
+            return <span key={x.key} class={`ia-doll__slot ${it ? '' : 'is-empty'}`}>{it ? <GearArt item={it} size={36} /> : <Glyph name={x.accepts} />}</span>;
+          })}
+        </span>
+      ),
+      open: openEquipment,
+    },
+    {
+      key: 'inventory', kind: 'gear', name: 'Inventory', head: true, icon: <Glyph name="bag" />,
+      count: s.items.length,
+      status: `Designs: ${s.found.length}/${gear.ALL_GEAR.length + gear.ISSUED.length}`,
+      art: top.length
+        ? <span class="ia-fan">{top.map((it, i) => <span key={it.id} class="ia-fan__card" style={`--i: ${i - (top.length - 1) / 2}`}><GearArt item={it} size={50} /></span>)}</span>
+        : <span class="ia-shard"><Glyph name="bag" /></span>,
+      open: openInventory,
+    },
+    {
+      key: 'exchange', kind: 'gear', name: 'Exchange', head: true, icon: <Shard size={18} />,
+      count: compact(s.wallet.shards),
+      status: <>New stock in: <b class="num">{hhmmss(msUntilMidnight())}</b></>,
+      art: <span class="ia-shard"><i class="ia-shard__ring" /><Shard size={54} /></span>,
+      open: openExchange,
+    },
+    {
+      key: 'dossier', kind: 'system', name: `Hunter: ${s.hunter.name}`, icon: <Glyph name="book" />,
+      count: s.hunter.regNo || '-- --',
+      status: `Gates cleared: ${s.gates.clears}`,
+      art: (
+        <span class="ia-licence">
+          <span class="ia-licence__head"><small>Hunter Association</small><b>Hunter Licence</b></span>
+          <Sigil rank={shown} size={34} />
+        </span>
+      ),
+      open: openDossier,
+    },
+  ];
+}
+
+/** Every stat as it fights: Ability Points, class and gear together. */
+const statsNow = (s: Save) => gear.boosted(s.hunter.attrs, gear.worn(s), classBonus(s), BOOST_CAP);
+
+/** One vital as a thin bar with its count, for a tile. */
+export function MiniBar({ label, cur, max, tone }: { label: string; cur: number; max: number; tone: string }) {
+  return (
+    <span class="ia-bar" data-tone={tone}>
+      <span class="ia-bar__top"><small>{label}</small><span class="num">{Math.round(cur)}</span></span>
+      <span class="ia-bar__track"><i style={`transform: scaleX(${Math.max(0, Math.min(1, cur / Math.max(1, max)))})`} /></span>
+    </span>
+  );
+}
+
+/** The five stats as a figure: each axis out to the highest of them, the hunter's shape drawn inside. */
+function Radar({ values }: { values: Record<Stat, number> }) {
+  const order: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
+  const top = Math.max(1, ...order.map((k) => values[k]));
+  const at = (i: number, r: number) => {
+    const a = (-90 + i * 72) * (Math.PI / 180);
+    return [50 + Math.cos(a) * r, 50 + Math.sin(a) * r];
+  };
+  const ring = (r: number) => order.map((_, i) => at(i, r).join(',')).join(' ');
+  const shape = order.map((k, i) => at(i, 8 + 30 * (values[k] / top)).join(',')).join(' ');
+  return (
+    <svg viewBox="0 0 100 100" class="ia-radar">
+      {[13, 25.5, 38].map((r) => <polygon key={r} points={ring(r)} class="ia-radar__ring" />)}
+      {order.map((_, i) => { const [x, y] = at(i, 38); return <line key={i} x1="50" y1="50" x2={x} y2={y} class="ia-radar__axis" />; })}
+      <polygon points={shape} class="ia-radar__shape" />
+      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class="ia-radar__label">{k}</text>; })}
+    </svg>
+  );
+}
+
+/** The skills and passives the hunter fights with, kept or defaulted, as hairline boxes. */
+function SkillArt({ s }: { s: Save }) {
+  const cls = classById(s.hunter.classId);
+  if (!cls) return <span class="ia-skills is-none"><b>?</b></span>;
+  const { kit, passives } = kitFor(cls.lead, cls.tier, s.hunter.picks);
+  return (
+    <span class="ia-skills">
+      {[...kit, ...passives].slice(0, 4).map((n) => <span key={n} class="sysbox ia-skills__one">{n}</span>)}
+    </span>
+  );
+}
+
+/** The fullest set worn, as the Equipment tile names it. */
+function setLine(s: Save): string | null {
+  const on = [...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]);
+  return on.length ? `[Set: ${on[0][0]}] ${on[0][1]}/${gear.setPieces(on[0][0]).length}` : null;
+}
+
+/** The Status sheet: the hunter's fields, vitals and stats, and where Ability Points are spent. */
+export function openStatus() {
+  openSheet({ title: 'Status', system: { icon: null }, render: () => <StatusSheet /> });
+}
+
+function StatusSheet() {
+  const s = useSave();
+  useNow(5000);
   const r = rankFor(s.hunter.level);
   const cls = classById(s.hunter.classId);
   const nr = nextRank(s.hunter.level);
   return (
-    <div class="stack">
-      <SysFrame title="Status" icon={null} class="status" tools={<IconBtn icon="book" label="Hunter dossier" onClick={openDossier} />}>
-        <div class="sysfields">
-          <Field k="Name" v={s.hunter.name} />
-          <Field k="Level" v={<span class="status__level">{s.hunter.level}</span>} />
-          <Field k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
-          <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
-        </div>
-        <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'There is nothing above this.'}{licenceHolding(s) ? ' The Association holds your Gate grade at D without a licence.' : ''}</small>
-        {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose New Skills · {waiting(s).length}</Btn>}
-        <VitalsBlock />
-        <Attributes />
-      </SysFrame>
-      <Equipment />
-      <SysFrame title="Inventory" icon={null} class="inventory">
-        <ItemGrid />
-      </SysFrame>
+    <div class="stack status">
+      <div class="sysfields">
+        <Field k="Name" v={s.hunter.name} />
+        <Field k="Level" v={<span class="status__level">{s.hunter.level}</span>} />
+        <Field k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
+        <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
+      </div>
+      <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'Further ranks: none.'}{licenceHolding(s) ? ` Gate grade: ${licensedRank(s)}-Rank without the Association Licence.` : ''}</small>
+      {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose New Skills · {waiting(s).length}</Btn>}
+      <VitalsBlock />
+      <Attributes />
     </div>
   );
 }
@@ -236,51 +389,73 @@ function Attributes() {
 
 // ------------------------------------------------------------------ equipment
 
-function Equipment() {
+/** EQUIPMENT: what the hunter wears, slot by slot around them, the score, and the sets it makes. Gear is the System's own, so cyan. */
+export function openEquipment() {
+  openSheet({ title: 'Equipment', system: { icon: null, kind: 'gear' }, render: () => <EquipmentSheet /> });
+}
+
+function EquipmentSheet() {
   const s = useSave();
   const ups = gear.upgradeCount(s);
   const offers = gear.offers(s);
+  const r = rankFor(s.hunter.level);
   const slot = (k: SlotKey) => {
     const it = gear.equippedIn(s, k);
     const def = gear.SLOTS.find((x) => x.key === k)!;
+    const d = it ? gear.defOf(it) : undefined;
     return (
-      <button type="button" key={k} class={`dollslot ${it ? 'is-filled' : ''}`} onClick={() => { sfx.tap(); if (it) openItem(it.id); else openSlot(k); }} aria-label={it ? `${def.name}: ${gear.defOf(it)?.name}` : `${def.name}: empty`}>
-        {it ? <GearArt item={it} size={44} /> : <span class="dollslot__ghost"><Glyph name={def.accepts} /></span>}
-        <small>{it ? gear.defOf(it)?.name : def.name}</small>
+      <button type="button" key={k} class={`sysbox eqslot ${it ? 'is-filled' : ''}`} onClick={() => { sfx.tap(); if (it) openItem(it.id); else openSlot(k); }}
+        aria-label={it ? `${def.name}: ${d?.name}` : `${def.name}: empty`}>
+        {it ? <GearArt item={it} size={38} /> : <span class="eqslot__ghost"><Glyph name={def.accepts} /></span>}
+        <span class="eqslot__text">
+          <small>{def.name}</small>
+          <b>{d?.name ?? '-- --'}</b>
+        </span>
         {!it && offers.includes(k) && <span class="badge badge--gold">+</span>}
       </button>
     );
   };
   return (
-    <Panel title="Equipment">
-      <div class="row between">
-        <div><span class="label">Equipment score</span><b class="num big">{Math.round(gear.power(s))}</b></div>
-        <Btn kind={ups ? 'gold' : 'ghost'} size="sm" disabled={!ups} onClick={() => { const n = store.update(gear.autoEquip); sfx.success(); buzz([16, 26, 22]); toast(`${n} slot${n === 1 ? '' : 's'} improved.`, 'good'); void checkAwards(); }}>
-          Auto Equip{ups ? ` · ${ups}` : ''}
-        </Btn>
+    <div class="stack equip">
+      <div class="sysfields">
+        <Field k="Equipment score" v={<span class="status__level">{Math.round(gear.power(s))}</span>} />
+        <Field k="Slots filled" v={`${gear.worn(s).length}/${gear.SLOTS.length}`} />
       </div>
-      <div class="doll">
-        <div class="doll__col">{gear.SLOTS.filter((x) => x.side === 'l').map((x) => slot(x.key))}</div>
-        <div class="doll__figure" aria-hidden="true"><Glyph name="profile" /><span class="doll__ring" /></div>
-        <div class="doll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
+      <div class="eqdoll">
+        <div class="eqdoll__col">{gear.SLOTS.filter((x) => x.side === 'l').map((x) => slot(x.key))}</div>
+        <div class="sysbox eqdoll__figure" aria-hidden="true">
+          <span class="eqdoll__ring" /><span class="eqdoll__ring eqdoll__ring--in" />
+          <Glyph name="profile" />
+          <Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={26} />
+        </div>
+        <div class="eqdoll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
       </div>
+      <Btn kind={ups ? 'primary' : undefined} block disabled={!ups} onClick={() => { const n = store.update(gear.autoEquip); sfx.success(); buzz([16, 26, 22]); toast(`${n} slot${n === 1 ? '' : 's'} improved.`, 'good'); void checkAwards(); }}>
+        Auto Equip{ups ? ` · ${ups}` : ''}
+      </Btn>
       <ActiveSets s={s} />
-      <Btn kind="ghost" block onClick={openExchange}><Shards n={s.wallet.shards} /> Exchange</Btn>
-    </Panel>
+    </div>
   );
 }
 
-/** The sets the hunter is wearing two or more pieces of, and what they pay. */
+/** The sets the hunter is wearing two or more pieces of, and what they pay, each in a hairline box. */
 function ActiveSets({ s }: { s: Save }) {
   const on = [...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2);
   if (!on.length) return null;
   return (
-    <ul class="setlist" aria-label="Set bonuses">
-      {on.map(([id, n]) => {
-        const set = setById(id)!;
-        return <li key={id}><b>{id}</b><span class="num">{n} of {gear.setPieces(id).length}</span><small>{gear.bonusText(gear.sumBonuses(set.two, n >= 3 ? set.three : {}))}</small></li>;
-      })}
-    </ul>
+    <Section title="Sets worn">
+      <ul class="eqsets" aria-label="Set bonuses">
+        {on.map(([id, n]) => {
+          const set = setById(id)!;
+          return (
+            <li key={id} class="sysbox eqsets__one">
+              <span><strong>[Set: {id}]</strong> <span class="num">{n}/{gear.setPieces(id).length}</span></span>
+              <span class="grant">{gear.bonusText(gear.sumBonuses(set.two, n >= 3 ? set.three : {}))}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
   );
 }
 
@@ -361,6 +536,11 @@ function ItemTile({ it, s }: { it: Item; s: Save }) {
   );
 }
 
+/** INVENTORY: everything the hunter holds, best first, under a tab for each slot. */
+export function openInventory() {
+  openSheet({ title: 'Inventory', system: { icon: null, kind: 'gear' }, render: () => <ItemGrid /> });
+}
+
 /** Everything the hunter holds, best first, under a tab for each slot. */
 function ItemGrid() {
   const s = useSave();
@@ -437,11 +617,11 @@ export function openItem(id: string) {
 function openSlot(k: SlotKey) {
   const slot = gear.SLOTS.find((x) => x.key === k)!;
   const close = openSheet({
-    title: slot.name, render: () => {
+    title: `Equipment: ${slot.name}`, system: { icon: <Glyph name={slot.accepts} />, kind: 'gear' }, render: () => {
       const s = store.get();
       const list = s.items.filter((it) => gear.defOf(it)?.slot === slot.accepts && !gear.slotOf(s, it)).sort((a, b) => gear.score(b) - gear.score(a));
-      if (!list.length) return <Empty>Nothing for this slot yet.</Empty>;
-      return <div class="stack stack--tight"><small class="muted">Tap to equip.</small>{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => { store.update((x) => gear.equip(x, it.id, k)); sfx.success(); toast(`${gear.defOf(it)?.name} equipped.`, 'xp'); close(); void checkAwards(); }} />)}</div>;
+      if (!list.length) return <Empty>Items held: 0</Empty>;
+      return <div class="stack stack--tight">{list.map((it) => <ItemLine key={it.id} it={it} s={s} onClick={() => { store.update((x) => gear.equip(x, it.id, k)); sfx.success(); toast(`${gear.defOf(it)?.name} equipped.`, 'xp'); close(); void checkAwards(); }} />)}</div>;
     },
   });
 }
@@ -449,7 +629,7 @@ function openSlot(k: SlotKey) {
 function openRecycle() {
   let ranks = ['E'];
   const close = openSheet({
-    title: 'Recycle Items', tone: 'ember', render: () => <Recycle initial={ranks} onChange={(r) => { ranks = r; }} onDone={close} />,
+    title: 'Inventory', system: { icon: null, kind: 'gear' }, render: () => <Recycle initial={ranks} onChange={(r) => { ranks = r; }} onDone={close} />,
   });
 }
 
@@ -460,9 +640,13 @@ function Recycle({ initial, onChange, onDone }: { initial: string[]; onChange: (
   const worth = matches.reduce((n, it) => n + shop.scrapValue(it), 0);
   return (
     <div class="stack">
-      <p class="muted">Everything of the chosen grades is broken down for shards. Anything you are wearing, the issued kit, and anything you have starred are never included.</p>
+      <p class="questinfo__name"><strong>[Recycle]</strong></p>
+      <small class="muted">Worn, issued and starred items are kept.</small>
       <div class="chips">{(['E', 'D', 'C', 'B', 'A', 'S'] as const).map((r) => <Chip key={r} on={ranks.includes(r)} tone={`rank-${r}`} onClick={() => { const n = ranks.includes(r) ? ranks.filter((x) => x !== r) : [...ranks, r]; setRanks(n); onChange(n); }}>{gear.RARITY[r].name}</Chip>)}</div>
-      <p><b>{matches.length}</b> item{matches.length === 1 ? '' : 's'} match, worth <Shards n={worth} /></p>
+      <div class="sysfields">
+        <Field k="Items" v={matches.length} />
+        <Field k="Mana Shards" v={<span class="grant">+{group(worth)}</span>} />
+      </div>
       <Btn kind="danger" block disabled={!matches.length} onClick={async () => {
         if (!(await confirm('Recycle Items', `Break down <strong>${matches.length}</strong> items for <strong>${worth}</strong> shards? There is no way to get them back.`, `Recycle ${matches.length}`, true))) return;
         const r = store.update((x) => shop.recycleAll(x, ranks));
@@ -475,40 +659,50 @@ function Recycle({ initial, onChange, onDone }: { initial: string[]; onChange: (
 
 // ------------------------------------------------------------------ dossier
 
-function openDossier() {
+/** The System's card on the hunter: the licence, what is in force, the lifetime record, and the log. */
+export function openDossier() {
+  const s = store.get();
   openSheet({
-    title: 'Hunter Dossier', render: () => {
+    title: `Hunter: ${s.hunter.name}`, system: { icon: <Sigil rank={rankFor(s.hunter.level).key === 'N' ? 'N' : licensedRank(s)} size={40} /> },
+    render: () => {
       const s = store.get();
+      const felled = Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
       return (
-        <div class="stack">
-          <Card>
-            <div class="row"><Sigil rank={rankFor(s.hunter.level).key === 'N' ? 'N' : licensedRank(s)} size={48} /><div>
-              <b class="big">{s.hunter.name}</b>
-              <small class="muted num">Licence {s.hunter.regNo || '-- --'} · Awakened {new Date(s.createdAt).toLocaleDateString()}</small>
-            </div></div>
-          </Card>
-          <Fold title="Active effects">
-            <KV k="Ability Points per level" v={`${POINTS_PER_LEVEL}, plus ${RANK_UP_POINTS} per rank`} />
-            {Object.entries(classBonus(s)).map(([k, v]) => <KV key={k} k="Class" v={`${k} +${v}`} />)}
-          </Fold>
-          <Fold title="Lifetime record">
-            <KV k="Gates cleared" v={`${s.gates.clears} (${s.gates.cleared.length} distinct)`} />
-            <KV k="Withdrawn" v={s.gates.withdrawn} />
-            <KV k="Carried out" v={s.gates.fails} />
-            <KV k="Best run unbroken" v={`${s.gates.bestUnbroken} clears`} />
-            <KV k="Cleared above your grade" v={s.stats.reachClears} />
-            <KV k="Daily Quests completed" v={`${s.stats.contracts} (all of a day’s: ${s.stats.contractDays} times)`} />
-            <KV k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best} opened` : 'None opened'} />
-            <KV k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top} at best${weekBest(s) ? `, Floor ${weekBest(s)} this week` : ''}` : 'Not climbed'} />
-            <KV k="Bosses faced" v={s.gates.bosses.length} />
-            <KV k="Creatures felled" v={Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0).toLocaleString()} />
-            <KV k="Shadows bound" v={`${s.shadows.army.length} (${s.stats.extractionsWon}/${s.stats.extractions} extractions successful)`} />
-            <KV k="Lifetime experience" v={s.stats.xpTotal.toLocaleString()} />
-            <KV k="Shards earned" v={s.wallet.earned.toLocaleString()} />
-          </Fold>
-          <Fold title="Activity log" right={`${s.log.length}`}>
-            {s.log.length ? <ul class="history">{s.log.slice(0, 40).map((e, i) => <li key={i}><span>{e.day}</span><span>{e.name}</span><span class="num">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul> : <Empty>Nothing logged yet.</Empty>}
-          </Fold>
+        <div class="stack dossier">
+          <div class="sysfields">
+            <Field k="Licence" v={<span class="num">{s.hunter.regNo || '-- --'}</span>} />
+            <Field k="Awakened" v={new Date(s.createdAt).toLocaleDateString()} />
+            <Field k="Rank" v={rankFor(s.hunter.level).name} />
+            <Field k="Guild" v="-- --" />
+          </div>
+          <Section title="In force">
+            <div class="sysfields">
+              <Field k="Ability Points" v={`${POINTS_PER_LEVEL} each level · ${RANK_UP_POINTS} each rank`} wide />
+              {Object.entries(classBonus(s)).map(([k, v]) => <Field key={k} k="Class" v={<span class="grant">{k} +{v}</span>} />)}
+            </div>
+          </Section>
+          <Section title="Record">
+            <div class="sysfields">
+              <Field k="Gates cleared" v={`${s.gates.clears} · ${s.gates.cleared.length} distinct`} />
+              <Field k="Best run unbroken" v={s.gates.bestUnbroken} />
+              <Field k="Withdrawn" v={s.gates.withdrawn} />
+              <Field k="Carried out" v={s.gates.fails} />
+              <Field k="Cleared above grade" v={s.stats.reachClears} />
+              <Field k="Bosses faced" v={s.gates.bosses.length} />
+              <Field k="Daily Quests" v={`${s.stats.contracts} · ${s.stats.contractDays} full days`} />
+              <Field k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best}` : '-- --'} />
+              <Field k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top}${weekBest(s) ? ` · this week ${weekBest(s)}` : ''}` : '-- --'} wide />
+              <Field k="Creatures felled" v={group(felled)} />
+              <Field k="Shadows bound" v={`${s.shadows.army.length} · ${s.stats.extractionsWon}/${s.stats.extractions}`} />
+              <Field k="Experience" v={group(s.stats.xpTotal)} />
+              <Field k="Mana Shards earned" v={group(s.wallet.earned)} />
+            </div>
+          </Section>
+          <Section title="Log" right={`${s.log.length}`}>
+            {s.log.length
+              ? <ul class="syslog">{s.log.slice(0, 40).map((e, i) => <li key={i} class="sysbox"><span class="num">{e.day}</span><span>{e.name}</span><span class="num grant">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul>
+              : <Empty>Nothing logged yet.</Empty>}
+          </Section>
         </div>
       );
     },

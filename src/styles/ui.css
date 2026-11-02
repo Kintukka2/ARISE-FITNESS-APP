@@ -389,9 +389,6 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 .ledger { display: flex; flex-direction: column; gap: 8px; }
 
-.history { display: flex; flex-direction: column; }
-.history li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(120, 200, 255, 0.08); font-size: 0.88rem; }
-.history li span:first-child { color: var(--ink-3); flex: none; }
 
 .portrait { flex: none; border: 1px solid rgba(127, 182, 255, 0.5); border-radius: var(--r-sm); background: rgba(8, 23, 44, 0.8); }
 .sysmark { color: var(--mana); filter: drop-shadow(0 0 6px var(--mana-glow)); }
@@ -596,3 +593,27 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 /* What follows a quest's rewards: when it changes, where it stands, and the way to it. */
 .questinfo__when { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.76rem; }
 .questinfo__note { color: color-mix(in srgb, var(--sys-ink) 78%, transparent); font-size: 0.82rem; text-align: center; }
+
+/* ------------------------------------------------------------------ the interface's own sheets and windows
+ * Settings, the Guide, confirmations and Valcorde's window speak as themselves, so they keep their own
+ * frame: no lit rails, no Montserrat, no header plate. They share the System's geometry, so the app
+ * reads as one: square corners, the scratched glass, a hairline inside the edge, square switches.
+ */
+.sheet__panel:not(.sysframe) {
+  width: calc(100% - 14px);
+  margin: 0 7px calc(10px + var(--safe-b));
+  border: 1px solid color-mix(in srgb, var(--tone) 50%, transparent);
+  border-top: 2px solid var(--tone);
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(116deg, transparent 0 26px, rgba(170, 215, 255, 0.03) 26px 27px),
+    repeating-linear-gradient(62deg, transparent 0 41px, rgba(170, 215, 255, 0.02) 41px 42px),
+    linear-gradient(180deg, rgba(10, 24, 52, 0.97), rgba(3, 7, 18, 0.99));
+}
+.sheet__panel:not(.sysframe)::before { content: ''; position: absolute; inset: 6px; border: 1px solid color-mix(in srgb, var(--tone) 16%, transparent); pointer-events: none; }
+.sheet__panel:not(.sysframe) .sheet__body { padding-bottom: 20px; }
+.sheet__panel:not(.sysframe) .iconbtn, .sheet__panel:not(.sysframe) .btn, .sheet__panel:not(.sysframe) .fold, .sheet__panel:not(.sysframe) .card { border-radius: 0; }
+.sheet__panel .toggle__track, .sheet__panel .toggle__track::after { border-radius: 0; }
+.sheet__panel .toggle__track::after { width: 18px; height: 18px; }
+.syswin:not(.sysframe) { border-radius: 0; }
+.syswin:not(.sysframe) .btn { border-radius: 0; }

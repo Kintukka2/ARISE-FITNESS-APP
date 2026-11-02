@@ -57,7 +57,14 @@ async function tapCoachUntil(sel, max = 30) {
   for (let i = 0; i < max && !(await visible(sel)); i++) { await page.locator('.coachcard').first().click(); await sleep(140); }
   if (!(await visible(sel))) throw new Error(`NEVER ARRIVED: ${sel}`);
 }
-const nav = (k) => page.locator(`[data-nav="${k}"]`).click();
+/** Use the nav bar as a player would: close whatever sheet is over it first (a level-up's Allocate opens Status). */
+async function nav(k) {
+  for (let i = 0; i < 5 && (await visible('.sheet.is-top .iconbtn[aria-label="Close"]')); i++) {
+    await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click();
+    await sleep(250);
+  }
+  await page.locator(`[data-nav="${k}"]`).click();
+}
 
 /**
  * Open a gate from the board, play it through, and leave. By hand, the hunter
@@ -170,23 +177,30 @@ try {
   await drain();
 
   // The Gates are home, and the practice gate is first on the board.
-  await page.waitForSelector('.gaterow.is-practice', { timeout: 10000 });
+  await page.waitForSelector('.btile.is-gate.is-practice', { timeout: 10000 });
   await drain();
   await snap('gates');
   // Quests open with the practice gate cleared, not before.
   if (!(await page.locator('[data-nav="quests"].is-locked').isVisible())) throw new Error('THE QUESTS TAB OPENED BEFORE THE PRACTICE GATE');
-  await raidGate('.gaterow.is-practice', 'practice');
+  await raidGate('.btile.is-gate.is-practice .btile__hit', 'practice');
   if (!(await page.locator('.xpbar__label').innerText()).includes('LV 5')) throw new Error('THE PRACTICE GATE DID NOT LAND ON LEVEL 5');
 
-  // Spend the points it paid.
-  await nav('inventory');
-  await sleep(400);
-  await drain();
+  // Spend the points it paid. The level-up's Allocate opens the Status sheet itself; if it was closed, the Status tile does.
+  if (!(await visible('.sheet.is-top .status'))) {
+    await nav('inventory');
+    await sleep(400);
+    await drain();
+    await page.locator('.btile--status .btile__hit').click();
+    await sleep(400);
+  }
+  if (!(await page.locator('.sheet.is-top .status').isVisible())) throw new Error('THE STATUS SHEET DID NOT OPEN');
   await snap('inventory-points');
   await page.locator('text=Auto-Allocate').click();
   await page.locator('.syswin__foot .btn--primary').click();
   await drain();
   await snap('inventory');
+  await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').click();
+  await sleep(300);
 
   // The practice gate is behind the hunter, so the System has issued the day's contracts, on the Quests screen.
   if (!(await page.locator('[data-nav="quests"] .badge').isVisible())) throw new Error('THE QUESTS TAB DID NOT SAY THE DAILY QUESTS HAD ARRIVED');
@@ -194,18 +208,18 @@ try {
   await sleep(400);
   await drain();
   // One page of tiles: the day's quests, the next rank and the Secret Quests, each opening its window.
-  if ((await page.locator('.questtile--daily .qa-row').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
-  if (!(await visible('.questtile--rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
-  if (!(await visible('.questtile--secret'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE SECRET QUESTS');
+  if ((await page.locator('.btile--daily .qa-row').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
+  if (!(await visible('.btile--rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
+  if (!(await visible('.btile--secret'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE SECRET QUESTS');
   await sleep(800);
   await snap('quests');
-  await page.locator('.questtile--daily .questtile__hit').click();
+  await page.locator('.btile--daily .btile__hit').click();
   await sleep(500);
   if ((await page.locator('.sheet.is-top .contracts .contract').count()) !== 3) throw new Error('THE DAILY QUESTS TILE DID NOT OPEN ITS WINDOW');
   await snap('quests-daily');
   await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').click();
   await sleep(300);
-  await page.locator('.questtile--secret .questtile__hit').click();
+  await page.locator('.btile--secret .btile__hit').click();
   await sleep(500);
   if (!(await visible('.sheet.is-top .quest-secret .contract.is-done'))) throw new Error('THE SECRET QUESTS TILE DID NOT OPEN ITS WINDOW');
   await snap('quests-secret');
@@ -220,7 +234,7 @@ try {
   if (await visible('.sysframe.contracts')) throw new Error('THE DAILY QUESTS ARE STILL ON THE GATES SCREEN');
   const before = await page.locator('.xpbar__label').innerText();
   // Win or lose it pays: a defeat still pays a share. The System fights this one.
-  await raidGate('.gaterow:not(.is-locked):not(.is-practice)', 'first-gate', true);
+  await raidGate('.btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit', 'first-gate', true);
   if ((await page.locator('.xpbar__label').innerText()) === before) throw new Error('A GATE PAID NO EXPERIENCE');
 
   await nav('shadows');

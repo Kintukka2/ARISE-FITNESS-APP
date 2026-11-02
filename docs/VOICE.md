@@ -34,6 +34,9 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | System windows: Notification, Quest Info, Quest Rewards | The System | `src/ui/system.ts`, `src/app/flow.ts`, `data/narrative.ts` |
 | Cards: items, skills, classes, potions, stats | The System | `data/equipment.ts`, `data/classes.ts`, `data/abilities.ts`, `core/shop.ts`, `core/progression.ts` |
 | The brief's assessment | The System | `raid.verdict`, `GRADES` |
+| The brief itself: a Gate card, `GATE: {name}`, in the Gates' orange | The System, with the Association's file as its first field | `openBrief` in `screens/Gates.tsx` |
+| Every main screen's bento tiles (Inventory, Gates, Quests, Shadows) | The System | `ui/bento.tsx`, `screens/` |
+| The Equipment, Squad, Licence and Ascension windows, and the hunter's card (`HUNTER: {name}`) | The System | `screens/Inventory.tsx`, `screens/Shadows.tsx`, `screens/Gates.tsx` |
 | The fight log | The System | `lines()` in `screens/Arena.tsx` |
 | What an outcome inside a Gate cost or paid | The System | `system.outcome()` |
 | The extraction panel, promotions, the Chosen, Daily Quests | The System | `screens/Arena.tsx`, `ui/contracts.tsx` |
@@ -63,9 +66,9 @@ the table above gives it, so a player can tell who is talking before reading a w
 
 | Speaker | Frame |
 |---|---|
-| **The System** | The anime's window, below. Every System window, and every System surface on a screen: the Status sheet, Skills, Inventory, the Exchange, item and Shadow cards, Quest Info, Quest Rewards, the Quests screen's tiles, the notices after a run |
+| **The System** | The anime's window, below. Every System window, and every System surface on a screen: every main screen's bento tiles, the Status sheet, Skills, Equipment, Inventory, the Exchange, the brief, item, Shadow and hunter cards, Quest Info, Quest Rewards, the notices after a run |
 | **Valcorde** | His own window: a plain frame in his blue, his portrait and his name |
-| **The interface** | The app's panels, tiles and buttons: rounded corners, corner brackets, Rajdhani in capitals |
+| **The interface** | Its own sheets and windows (Settings, the Guide, confirmations, tutorials) and the controls between the tiles (the board's grade tabs, the nav): the System's geometry, square corners, scratched glass and a hairline inside the edge, but no lit rails, no header plate and Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
 
 ### The System's frame
@@ -169,6 +172,7 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | QUEST REWARDS | What a finished quest paid |
 | STATUS | The hunter's sheet |
 | SKILLS | Skills, passive and active |
+| EQUIPMENT | What the hunter wears: a slot to each of the ten around them, the score, the sets worn |
 | INVENTORY | What the hunter holds |
 | EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
 
@@ -354,6 +358,13 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Fell [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
+- **Every main screen is a grid of these tiles** (`ui/bento.tsx`): Inventory (Status, Stats, Skills,
+  Equipment, Inventory, the Exchange, the hunter's card), Gates (the open run, Grade, Condition,
+  Record, the Pale Spire, Ascension, then a tile to every Gate on the board, its portal in its
+  grade's colour), Quests, and Shadows (the Squad, then a tile to every Shadow, ringed by its kills
+  toward the next rank). A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
+  name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
+  a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates grid.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
   the bracketed name, one line under it, and the count in a hairline box: `5/10`, `0/3`, `Closed`.
   A tile says nothing its window does not; the window holds the goals, the hints and the rewards.
@@ -570,7 +581,8 @@ ARISE class, the first time: `Class assigned.` / `[Class: Brawler]` / `STR +2`. 
 differently can move a hunter sideways to another line, not only up.
 ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
 
-**Status.** The hunter's sheet, at the top of the Inventory screen.
+**Status.** The hunter's sheet, opened from the Inventory screen's Status and Stats tiles, the rank
+plate in the top bar, and a level-up's Allocate.
 
 ```
                  STATUS                  [dossier]
@@ -591,8 +603,14 @@ bar, because it falls over time and a potion lowers it. Tapping the class opens 
 of skill or passive, the kept one lit in gold. The frame is gold, because a choice here is
 advancement.
 
-**Inventory.** A grid of icons under tabs, with the count of what is held, on the Inventory screen
-under Status and the equipment. The tab is named for it.
+**Equipment.** The ten slots in hairline boxes, five down each side of the hunter's figure, each with
+its slot set small above the item's name (`HEAD` / Warden Helm), or `-- --` when it is empty. Fields
+above them give `EQUIPMENT SCORE:` and `SLOTS FILLED:`; `Auto Equip` is lit when it has something to
+improve; each set worn is a box of its own: `[Set: Warden] 2/3`, its bonus in green. A slot opens the
+item's card, or `EQUIPMENT: {Slot}` with what could fill it.
+
+**Inventory.** A grid of icons under tabs, with the count of what is held, opened from the Inventory
+screen's Inventory tile. The tab is named for it.
 Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`. ARISE holds only gear, so the tabs are
 `All · {count}` and the slots. Each square is the item's icon in its grade's frame, its score, and
 `WORN` when it is worn; the item card holds the rest.

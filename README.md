@@ -77,7 +77,7 @@ src/
   data/         content: enemies, abilities, dungeons, map steps and events, contracts, the Spire, equipment and its sets, classes, story text
   app/          the shell: routing, the top bar and nav, and flow.ts, which narrates results
   screens/      one file per screen or major sheet
-  ui/           overlays (System windows, sheets, tours, toasts), the System's frame, components, icons
+  ui/           overlays (System windows, sheets, tours, toasts), the System's frame, the bento grid every screen is laid out on, components, icons
   audio/        every sound and the music, synthesised in WebAudio — no audio files
   platform/     the Android bridge: Play billing and the rested notification (inert on the web)
   styles/       theme tokens, components, screens

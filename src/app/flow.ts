@@ -15,6 +15,7 @@ import * as store from '@/store';
 import { flash } from '@/ui/feedback';
 import { sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
+import { openStatus } from '@/screens/Inventory';
 import { arena, go, type Route } from './router';
 
 /** Level-ups. Rank changes are announced by their story beat, once. */
@@ -93,6 +94,8 @@ export async function rewardChain(xp: XpResult | null, then?: Route) {
   await playBeats();
   if (want) go(want);
   else if (then) go(then);
+  // Allocate means spend them: the Status sheet is where Ability Points go.
+  if (want === 'inventory') openStatus();
 }
 
 let catching = false;
