@@ -30,6 +30,11 @@ page.on('pageerror', (e) => errors.push(String(e)));
 let shot = 0;
 const snap = async (name) => page.screenshot({ path: `${OUT}/${String(++shot).padStart(2, '0')}-${name}.png` });
 const sleep = (ms) => page.waitForTimeout(ms);
+/** Turn over every piece of loot on the results, and wait for the high grades to finish gathering themselves. */
+async function revealLoot() {
+  for (let n = 0; n < 12 && (await page.locator('.flip.is-down').count()); n++) { await page.locator('.flip.is-down').first().click(); await page.waitForTimeout(80); }
+  await page.waitForFunction(() => !document.querySelector('.flip.is-charging, .flip.is-down'), null, { timeout: 8000 });
+}
 const visible = (sel) => page.locator(sel).first().isVisible().catch(() => false);
 async function hold(sel, ms) {
   const box = await page.locator(sel).first().boundingBox();
@@ -143,8 +148,8 @@ async function raidGate(row, name, auto = false) {
     }
     if (await visible('button.gnode.is-next')) {
       if (!steps++) await snap(`${name}-map`);
-      // A trap passes for an Unknown step until the hunter stands on it.
-      if (await page.locator('.gnode--trap:not(.is-here):not(.is-done)').count()) throw new Error('A TRAP SHOWED ITSELF BEFORE IT WAS STEPPED ON');
+      // A trap or a cache passes for an Unknown step until the hunter stands on it.
+      if (await page.locator(':is(.gnode--trap, .gnode--treasure):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP OR A CACHE SHOWED ITSELF BEFORE IT WAS STEPPED ON');
       await page.locator('button.gnode.is-next').first().click();
       continue;
     }
@@ -173,9 +178,16 @@ async function raidGate(row, name, auto = false) {
     await sleep(300 * (await page.locator('.flip').count()) + 400);
     if (await visible('.flip:not(.is-open)')) throw new Error('REVEAL ALL LEFT LOOT FACE DOWN');
   }
-  for (const f of await page.locator('.flip').all()) await f.click();
-  await sleep(500);
+  await revealLoot();
+  await sleep(1500);
   await snap(`${name}-results`);
+  // A piece turned over opens its card.
+  if (await visible('.flip.is-open')) {
+    await page.locator('.flip.is-open').first().click();
+    await page.waitForSelector('.sheet.is-top[aria-label^="Item:"]', { timeout: 3000 }).catch(() => { throw new Error('A REVEALED ITEM DID NOT OPEN ITS CARD'); });
+    await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click();
+    await sleep(300);
+  }
   await page.locator('text=Leave The Gate').click();
   await drain();
 }

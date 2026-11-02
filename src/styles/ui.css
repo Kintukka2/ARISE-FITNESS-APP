@@ -148,6 +148,11 @@
 .holdbtn__label { position: relative; }
 .holdbtn.is-done { border-color: var(--verdant); box-shadow: 0 0 24px var(--verdant-glow); }
 .holdbtn.is-done .holdbtn__fill { background: linear-gradient(90deg, rgba(72, 245, 168, 0.4), rgba(72, 245, 168, 0.8)); }
+/* The act did not take: red, shaken, and the fill draining out of it. */
+.holdbtn.is-failed { border-color: var(--sysred); color: #fff; box-shadow: 0 0 24px rgba(255, 47, 62, 0.5); animation: holdFail 460ms linear; }
+.holdbtn.is-failed .holdbtn__fill { background: linear-gradient(90deg, rgba(255, 47, 62, 0.35), rgba(255, 47, 62, 0.8)); transform-origin: right; animation: holdDrain 900ms 260ms var(--ease) forwards; }
+@keyframes holdFail { 10%, 50%, 90% { translate: -5px 0; } 30%, 70% { translate: 5px 0; } }
+@keyframes holdDrain { to { transform: scaleX(0.08); opacity: 0.6; } }
 
 /* ------------------------------------------------------------------ sheets */
 
@@ -632,6 +637,10 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysframe .holdbtn { border-color: var(--sys-hair-hot); border-radius: 0; font-family: var(--font-sys); font-size: 0.92rem; font-weight: 600; letter-spacing: 0.06em; text-transform: none; text-shadow: var(--sys-glow); background: rgba(3, 8, 20, 0.45); }
 .sysframe .holdbtn__fill { background: linear-gradient(90deg, color-mix(in srgb, var(--win) 25%, transparent), color-mix(in srgb, var(--win) 70%, transparent)); }
 .sysframe .iconbtn { border-radius: 0; border-color: var(--sys-hair); background: rgba(3, 8, 20, 0.45); color: var(--sys-ink); }
+/* A toggle that is set, as a starred item's star: gold, the starred items' colour in the Inventory. */
+.iconbtn.is-on, .sysframe .iconbtn.is-on, .sheet__head .iconbtn.is-on { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 65%, transparent); background: color-mix(in srgb, var(--gold) 12%, rgba(3, 8, 20, 0.45)); box-shadow: 0 0 14px var(--gold-glow); }
+.iconbtn.is-on .ico { filter: drop-shadow(0 0 4px var(--gold-glow)); animation: starOn 380ms var(--ease); }
+@keyframes starOn { 0% { transform: scale(0.6) rotate(-30deg); } 60% { transform: scale(1.25) rotate(8deg); } }
 
 /* Tiles, rows and sections set inside the frame take its hairline and its type. */
 .sysframe .tile { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }

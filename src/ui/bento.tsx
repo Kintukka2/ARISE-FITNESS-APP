@@ -29,6 +29,8 @@ export interface Tile {
   wide?: boolean;
   /** Something can be done about it now: the frame breathes. */
   hot?: boolean;
+  /** Something is waiting on the hunter (a rank to claim, a skill to choose): brighter than `hot`, a light crossing it, its count lit gold. */
+  call?: boolean;
   done?: boolean;
   /** Dimmed, as a Gate the licence does not cover. */
   shut?: boolean;
@@ -60,8 +62,9 @@ const whole = (name: string) => name.split(' ').flatMap((w, i) => [i ? ' ' : '',
 export function BentoTile({ t }: { t: Tile }) {
   return (
     <SysFrame kind={t.kind} label={t.label ?? t.name} tour={t.tour}
-      class={`btile btile--${t.key} ${t.wide ? 'is-wide' : ''} ${t.hot ? 'is-hot' : ''} ${t.done ? 'is-done' : ''} ${t.shut ? 'is-shut' : ''} ${t.class ?? ''}`}>
+      class={`btile btile--${t.key} ${t.wide ? 'is-wide' : ''} ${t.hot ? 'is-hot' : ''} ${t.call ? 'is-call' : ''} ${t.done ? 'is-done' : ''} ${t.shut ? 'is-shut' : ''} ${t.class ?? ''}`}>
       <button type="button" class="btile__hit" onClick={() => { sfx.tap(); t.open(); }}>
+        {t.call && <i class="btile__sweep" aria-hidden="true" />}
         <span class="btile__art" aria-hidden="true">{t.art}</span>
         <span class="btile__foot">
           {t.icon && <span class="sysbox btile__icon" aria-hidden="true">{t.icon}</span>}

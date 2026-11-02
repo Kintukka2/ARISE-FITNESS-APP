@@ -24,6 +24,11 @@ page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 await page.addInitScript((json) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('arise-rpg:save', json); sessionStorage.setItem('seeded', '1'); } }, save);
 
 const sleep = (ms) => page.waitForTimeout(ms);
+/** Turn over every piece of loot on the results, and wait for the high grades to finish gathering themselves. */
+async function revealLoot() {
+  for (let n = 0; n < 12 && (await page.locator('.flip.is-down').count()); n++) { await page.locator('.flip.is-down').first().click(); await page.waitForTimeout(80); }
+  await page.waitForFunction(() => !document.querySelector('.flip.is-charging, .flip.is-down'), null, { timeout: 8000 });
+}
 const snap = (name, full = false) => page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
 async function drain() {
   for (let i = 0, quiet = 0; i < 40 && quiet < 4; i++) {
@@ -111,7 +116,7 @@ try {
   await drain();
   await sleep(400); await snap('arena-turn');
   await autoToResults();
-  for (const f of await page.locator('.flip').all()) await f.click();
+  await revealLoot();
   await sleep(600); await snap('raid-results', true);
   await page.locator('text=Leave The Gate').click(); await drain();
 
@@ -129,7 +134,7 @@ try {
     await autoToResults();
     await sleep(600); await snap('spire-results', true);
     // Turn the loot over first: leaving with it face down asks, and the drain would answer Reveal All.
-    for (const f of await page.locator('.flip').all()) await f.click();
+    await revealLoot();
     await page.locator('text=Leave The Gate').click(); await drain();
   } else await close();
 

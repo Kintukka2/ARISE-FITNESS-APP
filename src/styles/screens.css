@@ -343,7 +343,13 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
   background: radial-gradient(60% 50% at 50% 42%, color-mix(in srgb, var(--rc) 70%, white 15%), transparent 72%); animation: flash 720ms var(--ease) both; }
 .lootflash[data-rarity='S'] { --rc: var(--rank-S); animation: lootFlashS 900ms var(--ease) both; }
 @keyframes lootFlashS { 8% { opacity: 0.85; } 100% { opacity: 0; } }
-.arena__results.is-quake { animation: lootQuake 480ms linear; }
+.arena__results.is-quake, .loot.is-quake { animation: lootQuake 480ms linear; }
+/* A cache's find, in its panel: the same box, a little room around it for its light. */
+.loot--cache { padding: 14px 0 6px; }
+/* Turned over on the results, a piece opens its card: it says so when touched. */
+.haul__item.is-link { cursor: pointer; }
+.haul__item.is-link:active .loot-cell { scale: 0.94; }
+.haul__item.is-link:hover small { text-decoration: underline; text-underline-offset: 2px; }
 @keyframes lootQuake { 10%, 50%, 90% { translate: -5px 2px; } 30%, 70% { translate: 5px -2px; } }
 /* The System's notices after a run (extraction, the Chosen, Ascension, promotions): its frame, set into the results. */
 .extract .sysframe__glass { gap: 10px; text-align: center; font-size: 0.92rem; }
@@ -468,6 +474,13 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .btile.is-wide { grid-column: 1 / -1; }
 .btile > .sysframe__glass { flex: 1; gap: 0; padding: 0; }
 .btile.is-hot { animation: btileHot 1.8s ease-in-out infinite; }
+/* Something waiting on the hunter: a gold ring breathing round the frame, a light crossing the tile, its count lit gold. */
+.btile.is-call { animation: btileCall 1.5s ease-in-out infinite; }
+.btile.is-call .btile__count { color: #1a1200; background: var(--gold); border-color: var(--gold); text-shadow: none; font-weight: 700; box-shadow: 0 0 14px var(--gold-glow); animation: btileCount 1.5s ease-in-out infinite; }
+.btile__sweep { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(105deg, transparent 38%, color-mix(in srgb, var(--gold) 26%, transparent) 50%, transparent 62%); background-size: 260% 100%; animation: btileSweep 2.8s ease-in-out infinite; mix-blend-mode: screen; }
+@keyframes btileCall { 50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 80%, transparent), 0 0 32px var(--gold-glow), 0 0 64px color-mix(in srgb, var(--gold) 22%, transparent); } }
+@keyframes btileCount { 50% { box-shadow: 0 0 24px var(--gold-glow); scale: 1.07; } }
+@keyframes btileSweep { from { background-position: 140% 0; } 70%, to { background-position: -40% 0; } }
 /* Unspent Ability Points: gold, advancement's colour, with a lit + mark that breathes until they are spent. */
 .apdue { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
 .apdue b { color: inherit; }
@@ -536,6 +549,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .qa-rank__path::after { content: ''; position: absolute; inset: 0; width: 35%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent); animation: qaSweep 2.6s ease-in-out infinite; }
 @keyframes qaSweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
 .qa-rank__next { filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
+/* Ready to claim: the plates larger, the way between them full and running with light, the next one burning. */
+.qa-rank.is-ready { gap: 14px; }
+.qa-rank.is-ready .qa-rank__path { max-width: 120px; height: 6px; }
+.qa-rank.is-ready .qa-rank__next { filter: drop-shadow(0 0 16px var(--win-glow)) drop-shadow(0 0 4px var(--win)); }
 /* Reclassification's plates: the rank held, the way to the next, and the next, lit once it can be claimed. */
 .rankplates { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 0 6px; }
 .rankplates .sigil { display: block; }

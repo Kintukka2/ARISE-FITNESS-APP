@@ -9,7 +9,7 @@ import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
 import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT } from '@/core/combat';
 import * as story from '@/core/story';
-import type { Item, Order } from '@/core/types';
+import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
@@ -31,9 +31,10 @@ import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { QuestLines } from '@/ui/contracts';
 import { SysFrame } from '@/ui/frame';
 import { MapView } from '@/ui/map';
-import { buzz, flash, reducedMotion } from '@/ui/feedback';
+import { buzz, flash } from '@/ui/feedback';
 import { Glyph, Shard } from '@/ui/icons';
-import { drinkFlow } from './Inventory';
+import { drinkFlow, openItem } from './Inventory';
+import { LootCell, useReveal } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, pushBack, sys } from '@/ui/overlays';
 
@@ -401,6 +402,23 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
   );
 }
 
+/** A cache's find, face down until tapped, turned over by its grade as the results turn over what a run found. */
+function CacheFind({ defId }: { defId: string }) {
+  const [loot] = useState(() => [{ defId }]);
+  const turn = useReveal(loot);
+  const name = gear.gearDef(defId)?.name;
+  return (
+    <>
+      {turn.flash}
+      <p>Something lies under the dust. You take it.</p>
+      <div class={`loot loot--cache ${turn.quake ? 'is-quake' : ''}`}>
+        <div class="haul"><LootCell loot={loot[0]} i={0} state={turn.stateOf(0)} onTap={() => turn.reveal(0)} /></div>
+      </div>
+      {turn.stateOf(0) === 'open' && <p class="muted" dangerouslySetInnerHTML={{ __html: system.outcome({ text: '' }, { item: name }).join('<br />') }} />}
+    </>
+  );
+}
+
 /** A step that is not a fight: what happened, or the choice it puts to you. */
 function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
   d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void;
@@ -417,7 +435,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
     <section class={`nodepanel nodepanel--${x.kind}`}>
       <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
       {x.kind === 'rest' && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{REST_HEAL * 100}%</span> · Debuffs cleared</p></>}
-      {x.kind === 'treasure' && (item ? <><p>Something lies under the dust. You take it.</p><p class="muted" dangerouslySetInnerHTML={{ __html: system.outcome({ text: '' }, { item: item.name }).join('<br />') }} /></> : <p>The cache is empty.</p>)}
+      {x.kind === 'treasure' && (item ? <CacheFind key={x.id} defId={p.item!} /> : <p>The cache is empty.</p>)}
       {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one.</p>}
       {ev && !p.done && <p>{ev.text}</p>}
       {p.done && <p>{x.kind === 'shrine' ? 'You take the offering.' : p.done.effect.text}</p>}
@@ -495,81 +513,20 @@ function UnitChip({ u, acting, aimed, onPick, intent, party, incoming }: {
 
 // ------------------------------------------------------------------ results
 
-/** How long loot of each grade gathers itself before it turns over, in ms, and how it lands in the hand. */
-const LOOT_CHARGE: Record<string, number> = { E: 0, D: 0, C: 220, B: 420, A: 720, S: 1150 };
-const LOOT_BUZZ: Record<string, number[]> = {
-  E: [8], D: [12], C: [14, 30, 22], B: [20, 40, 30, 40, 50], A: [30, 40, 30, 40, 90], S: [60, 40, 60, 40, 220],
-};
-/** Sparks thrown out when it opens. */
-const LOOT_SPARKS: Record<string, number> = { E: 0, D: 0, C: 8, B: 12, A: 18, S: 26 };
 const MANA = shop.POTIONS.find((p) => p.id === 'mp')!;
-
-/**
- * One piece of loot on the results: face down, gathering itself (from Rare up the box trembles in its
- * grade's colour), then open, breaking out of its light and keeping as much of it as its grade
- * earns: a glow from Uncommon, a pulse from Rare, turning rays from Epic, orbiting sparks from Heroic,
- * and at Legendary all of it, floating.
- */
-function LootCell({ it, i, state, onTap }: { it: Item; i: number; state: 'down' | 'charging' | 'open'; onTap: () => void }) {
-  const def = gear.defOf(it);
-  const rank = def?.rank ?? 'E';
-  const sparks = state === 'open' ? LOOT_SPARKS[rank] ?? 0 : 0;
-  return (
-    <button type="button" class={`haul__item flip is-${state}`} style={`--i:${i}`} data-rarity={rank}
-      aria-label={state === 'open' ? `${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}` : 'Reveal this item'}
-      onClick={() => state === 'down' && onTap()}>
-      <span class="loot-cell">
-        <span class="aura" aria-hidden="true">
-          <i class="aura__glow" />
-          <i class="aura__rays" />
-          {state === 'open' && rank !== 'E' && <i class="aura__ring" />}
-          {Array.from({ length: sparks }, (_, k) => <i key={k} class="aura__spark" style={`--a:${(k * 137.5) % 360}deg;--d:${30 + (k % 4) * 10 + (rank === 'S' ? 18 : rank === 'A' ? 10 : 0)}px;--t:${(k % 5) * 22}ms`} />)}
-          {state === 'open' && (rank === 'A' || rank === 'S') && <><i class="aura__orbit" /><i class="aura__orbit aura__orbit--2" /></>}
-        </span>
-        {state === 'open' ? <GearArt item={it} size={56} /> : <span class="flip__back">?</span>}
-      </span>
-      <small>{state === 'open' ? def?.name : ''}</small>
-    </button>
-  );
-}
 
 function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: () => void }) {
   const s = useSave();
-  const [flipped, setFlipped] = useState<number[]>([]);
-  const [charging, setCharging] = useState<number[]>([]);
-  const [burst, setBurst] = useState<{ rank: string; k: number } | null>(null);
-  const [quake, setQuake] = useState(false);
-  const turning = useRef(new Set<number>());
-  const tiers = r.loot.map((it) => gear.defOf(it)?.rank ?? 'E');
+  // Everything the run found, to turn over by its grade (ui/loot.tsx).
+  const [found] = useState(() => r.loot.map((item) => ({ item })));
+  const turn = useReveal(found);
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
+  // Each lingering Shadow's roll, made as its hold completes and shown once the button has settled.
+  const rolled = useRef<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   // Auto Equip's place is kept from the start when an upgrade is waiting, so nothing jumps when it appears.
   const [upgradeWaits] = useState(() => gear.upgradeCount(store.get()) > 0);
   const [equipped, setEquipped] = useState(false);
-  const faceDown = r.loot.length - flipped.length;
-  // A piece turns over by its grade: the higher it is, the longer it gathers itself and the harder it breaks open.
-  const open = (i: number) => {
-    const rank = tiers[i];
-    setCharging((c) => c.filter((x) => x !== i));
-    setFlipped((f) => (f.includes(i) ? f : [...f, i]));
-    sfx.loot(rank);
-    buzz(LOOT_BUZZ[rank] ?? 10);
-    if (rank === 'A' || rank === 'S') setBurst({ rank, k: (burst?.k ?? 0) + 1 + i });
-    if (rank === 'S' && !reducedMotion()) { setQuake(true); setTimeout(() => setQuake(false), 520); }
-  };
-  const reveal = (i: number) => {
-    if (turning.current.has(i)) return;
-    turning.current.add(i);
-    const rank = tiers[i];
-    const wait = reducedMotion() ? Math.min(LOOT_CHARGE[rank] ?? 0, 200) : LOOT_CHARGE[rank] ?? 0;
-    if (!wait) return open(i);
-    setCharging((c) => [...c, i]);
-    sfx.lootCharge(rank, wait / 1000);
-    buzz(10);
-    setTimeout(() => open(i), wait);
-  };
-  const revealAll = () => r.loot.forEach((_, i) => {
-    if (!flipped.includes(i)) setTimeout(() => reveal(i), r.loot.slice(0, i).filter((_, j) => !flipped.includes(j)).length * 260);
-  });
+  const { faceDown, revealAll } = turn;
   // The loot is already in the Inventory; leaving with some face down only gets a reminder to look.
   const leave = async () => {
     if (faceDown > 0) {
@@ -591,8 +548,8 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const shardSub = [r.bounty > 0 ? `First-clear bounty +${r.bounty}` : r.banked > 0 ? `Banked +${r.banked}` : ''].filter(Boolean);
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
-      {burst && <div key={burst.k} class="lootflash" data-rarity={burst.rank} aria-hidden="true" />}
-      <div class={`arena__results stack ${quake ? 'is-quake' : ''}`}>
+      {turn.flash}
+      <div class={`arena__results stack ${turn.quake ? 'is-quake' : ''}`}>
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
@@ -612,10 +569,10 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         </div>
         {r.loot.length > 0 && (
           <section class="loot">
-            <span class="label">{faceDown ? 'Tap to reveal' : 'Loot'}</span>
+            <span class="label">{faceDown ? 'Tap to reveal' : 'Tap an item for its card'}</span>
             <div class="haul">
-              {r.loot.map((it, i) => (
-                <LootCell key={it.id} it={it} i={i} state={flipped.includes(i) ? 'open' : charging.includes(i) ? 'charging' : 'down'} onTap={() => reveal(i)} />
+              {found.map((l, i) => (
+                <LootCell key={l.item.id} loot={l} i={i} state={turn.stateOf(i)} onTap={() => turn.reveal(i)} onOpen={() => { sfx.tap(); openItem(l.item.id); }} />
               ))}
             </div>
             {upgradeWaits && (
@@ -638,12 +595,21 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               {!out && <>
                 <p>The mana of <strong>[{e.name}]</strong> lingers.</p>
                 <p class="muted">Extraction cost: <b>{l.cost} MP</b> ({v.mp} MP held)<br />Success rate: <b>{odds}%</b></p>
-                {v.mp >= l.cost
-                  ? <HoldButton hold={{ label: 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE' }} onFire={() => {
-                    const res = store.update((x) => raid.extract(x, l, Math.random()));
-                    setReach({ ...reach, [i]: res });
-                    if (res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); } else sfx.shadowLost();
-                  }} />
+                {v.mp >= l.cost || rolled.current[i]
+                  // The roll is made the moment the hold completes, so the button finishes on it: ARISE, or Failed.
+                  // It stays up while it settles, though the extraction has spent the MP it showed.
+                  ? <HoldButton hold={{ label: 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE', failed: 'Failed', after: 900 }}
+                    decide={() => {
+                      const res = store.update((x) => raid.extract(x, l, Math.random()));
+                      rolled.current[i] = res;
+                      return res === 'bound';
+                    }}
+                    onFire={() => {
+                      const res = rolled.current[i];
+                      if (!res) return;
+                      setReach((r) => ({ ...r, [i]: res }));
+                      if (res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); }
+                    }} />
                   : <>
                     <p class="warn">Not enough MP. ({v.mp}/{l.cost})</p>
                     {/* Short of mana with the Shadow still lingering: a Mana Potion, bought and drunk here, without leaving. */}
