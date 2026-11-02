@@ -42,16 +42,18 @@ export function MapView({ m, path = [], at = 0, options = [], road = [], onPick,
       {m.layers.map((row) => (
         <div class="gmap__row" style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }} key={row[0].id}>
           {row.map((n) => {
-            const kind = NODE[n.kind];
+            // A trap passes for an Unknown step until the hunter is standing on it.
+            const looks = n.kind === 'trap' && !walked.has(n.id) ? 'event' : n.kind;
+            const kind = NODE[looks];
             const next = options.includes(n.id);
             const state = done.has(n.id) ? 'is-done' : walked.has(n.id) ? 'is-here' : next ? 'is-next' : road.includes(n.id) ? 'is-road' : '';
             const body = <><Glyph name={kind.glyph} /><small>{kind.name}</small></>;
             return (
               <div class="gmap__cell" key={n.id}>
                 {next && onPick
-                  ? <button type="button" class={`gnode gnode--${n.kind} ${state}`} data-node={n.id} aria-label={`${kind.name}: ${kind.desc}`} title={kind.desc}
+                  ? <button type="button" class={`gnode gnode--${looks} ${state}`} data-node={n.id} aria-label={`${kind.name}: ${kind.desc}`} title={kind.desc}
                     onClick={() => { sfx.tap(); onPick(n.id); }}>{body}</button>
-                  : <span class={`gnode gnode--${n.kind} ${state}`} title={`${kind.name}: ${kind.desc}`}>{body}</span>}
+                  : <span class={`gnode gnode--${looks} ${state}`} title={`${kind.name}: ${kind.desc}`}>{body}</span>}
               </div>
             );
           })}

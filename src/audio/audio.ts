@@ -331,6 +331,44 @@ export const sfx = {
     drone(v, 261.63, 0.016, 'triangle');
     return () => v.stop(1.6);
   },
+
+  /** A piece of loot turning over. The higher its grade (E to S), the more of it rings. */
+  loot: (rank: string) => {
+    if (!on()) return;
+    const n = Math.max(0, 'EDCBAS'.indexOf(rank));
+    if (n === 0) {
+      tone(620, 0, 0.08, 'triangle', 0.1, 760);
+      noise(0, 0.05, 0.05, 3200, 'highpass');
+      return;
+    }
+    // A bright climb, one note more for every grade.
+    [659.25, 783.99, 987.77, 1174.66, 1318.51, 1567.98].slice(0, n + 1).forEach((f, i) => {
+      tone(f, i * 0.055, 0.32 + n * 0.06, 'sine', 0.11 + n * 0.012);
+      tone(f * 2, i * 0.055, 0.16, 'triangle', 0.028);
+    });
+    noise(0, 0.08 + n * 0.03, 0.05 + n * 0.015, 4200 + n * 700, 'highpass');
+    // Weight under it from Epic up.
+    if (n >= 3) tone(118 - n * 8, 0, 0.5 + n * 0.18, 'sine', 0.18 + n * 0.04, 48);
+    // Heroic holds a chord over the climb.
+    if (n >= 4) {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.32 + i * 0.04, 1.5, 'sine', 0.06));
+      noise(0.05, 1.3, 0.03, 9000, 'highpass');
+    }
+    // Legendary breaks open: a boom, a crack, and a shimmer that hangs.
+    if (n >= 5) {
+      tone(55, 0, 2.4, 'sine', 0.46, 27);
+      noise(0, 0.14, 0.26, 2400, 'highpass');
+      [1046.5, 1318.51, 1567.98, 2093, 2637.02].forEach((f, i) => tone(f, 0.5 + i * 0.07, 1.8 - i * 0.12, 'sine', 0.07));
+    }
+  },
+  /** Loot of a high grade gathering itself before it turns over, across `secs`. */
+  lootCharge: (rank: string, secs: number) => {
+    if (!on() || !ac()) return;
+    const n = Math.max(0, 'EDCBAS'.indexOf(rank));
+    swell(fx!, 200 + n * 40, 760 + n * 220, 0, secs, 'triangle', 0.01, 0.07 + n * 0.02);
+    hiss(fx!, 0, secs, 'bandpass', 600, 4800 + n * 600, 0.005, 0.07 + n * 0.02, 1.2);
+    if (n >= 4) swell(fx!, 55, 82, 0, secs, 'sine', 0.02, 0.22);
+  },
   levelUp: () => {
     if (!on()) return;
     [523, 659, 784, 1047, 1319].forEach((f, i) => {

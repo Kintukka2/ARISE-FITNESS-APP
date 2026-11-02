@@ -13,8 +13,8 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   rest: { name: 'Rest', glyph: 'heart', desc: 'Heals the party. The only place to withdraw.' },
   treasure: { name: 'Cache', glyph: 'bag', desc: 'Gear, one grade below the Gate.' },
   shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate.' },
-  trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check. Failing it costs HP.' },
-  event: { name: 'Unknown', glyph: 'unknown', desc: 'A choice. Some outcomes are rolled.' },
+  trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It shows as Unknown until you step on it.' },
+  event: { name: 'Unknown', glyph: 'unknown', desc: 'A choice, or a trap. Some outcomes are rolled.' },
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
 };
 

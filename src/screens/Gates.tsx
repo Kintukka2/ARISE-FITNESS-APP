@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { powerOf, TACTICS } from '@/core/combat';
-import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
+import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { overCap, RARITY } from '@/core/gear';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
@@ -463,9 +463,21 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
       </Section>
 
-      <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
-        <MapView m={map} road={proj.road} compact />
-      </Section>
+      {/* Unidentified until the hunter has been inside, as the boss is until it is met. */}
+      {mapKnown(s, d)
+        ? (
+          <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
+            <MapView m={map} road={proj.road} compact />
+          </Section>
+        )
+        : (
+          <Section title="Today’s map" right="Unidentified">
+            <div class="gmap-fog" role="img" aria-label="Map unidentified">
+              <Glyph name="unknown" />
+              <b>?</b>
+            </div>
+          </Section>
+        )}
 
       <Section title="Standing orders" right={party.length + squad.length ? 'For allies and Shadows' : undefined}>
         <div class="chips chips--orders" aria-label="Standing orders" data-tour="orders">

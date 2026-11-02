@@ -9,7 +9,7 @@ import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
 import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT } from '@/core/combat';
 import * as story from '@/core/story';
-import type { Order } from '@/core/types';
+import type { Item, Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
 import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
@@ -28,11 +28,12 @@ import * as store from '@/store';
 import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
-import { ContractsMoved } from '@/ui/contracts';
-import { Rewards, SysFrame } from '@/ui/frame';
+import { QuestLines } from '@/ui/contracts';
+import { SysFrame } from '@/ui/frame';
 import { MapView } from '@/ui/map';
-import { buzz, flash } from '@/ui/feedback';
-import { Glyph } from '@/ui/icons';
+import { buzz, flash, reducedMotion } from '@/ui/feedback';
+import { Glyph, Shard } from '@/ui/icons';
+import { drinkFlow } from './Inventory';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, pushBack, sys } from '@/ui/overlays';
 
@@ -494,18 +495,77 @@ function UnitChip({ u, acting, aimed, onPick, intent, party, incoming }: {
 
 // ------------------------------------------------------------------ results
 
+/** How long loot of each grade gathers itself before it turns over, in ms, and how it lands in the hand. */
+const LOOT_CHARGE: Record<string, number> = { E: 0, D: 0, C: 220, B: 420, A: 720, S: 1150 };
+const LOOT_BUZZ: Record<string, number[]> = {
+  E: [8], D: [12], C: [14, 30, 22], B: [20, 40, 30, 40, 50], A: [30, 40, 30, 40, 90], S: [60, 40, 60, 40, 220],
+};
+/** Sparks thrown out when it opens. */
+const LOOT_SPARKS: Record<string, number> = { E: 0, D: 0, C: 8, B: 12, A: 18, S: 26 };
+const MANA = shop.POTIONS.find((p) => p.id === 'mp')!;
+
+/**
+ * One piece of loot on the results: face down, gathering itself (from Rare up the box trembles in its
+ * grade's colour), then open, breaking out of its light and keeping as much of it as its grade
+ * earns: a glow from Uncommon, a pulse from Rare, turning rays from Epic, orbiting sparks from Heroic,
+ * and at Legendary all of it, floating.
+ */
+function LootCell({ it, i, state, onTap }: { it: Item; i: number; state: 'down' | 'charging' | 'open'; onTap: () => void }) {
+  const def = gear.defOf(it);
+  const rank = def?.rank ?? 'E';
+  const sparks = state === 'open' ? LOOT_SPARKS[rank] ?? 0 : 0;
+  return (
+    <button type="button" class={`haul__item flip is-${state}`} style={`--i:${i}`} data-rarity={rank}
+      aria-label={state === 'open' ? `${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}` : 'Reveal this item'}
+      onClick={() => state === 'down' && onTap()}>
+      <span class="loot-cell">
+        <span class="aura" aria-hidden="true">
+          <i class="aura__glow" />
+          <i class="aura__rays" />
+          {state === 'open' && rank !== 'E' && <i class="aura__ring" />}
+          {Array.from({ length: sparks }, (_, k) => <i key={k} class="aura__spark" style={`--a:${(k * 137.5) % 360}deg;--d:${30 + (k % 4) * 10 + (rank === 'S' ? 18 : rank === 'A' ? 10 : 0)}px;--t:${(k % 5) * 22}ms`} />)}
+          {state === 'open' && (rank === 'A' || rank === 'S') && <><i class="aura__orbit" /><i class="aura__orbit aura__orbit--2" /></>}
+        </span>
+        {state === 'open' ? <GearArt item={it} size={56} /> : <span class="flip__back">?</span>}
+      </span>
+      <small>{state === 'open' ? def?.name : ''}</small>
+    </button>
+  );
+}
+
 function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: () => void }) {
   const s = useSave();
   const [flipped, setFlipped] = useState<number[]>([]);
+  const [charging, setCharging] = useState<number[]>([]);
+  const [burst, setBurst] = useState<{ rank: string; k: number } | null>(null);
+  const [quake, setQuake] = useState(false);
+  const turning = useRef(new Set<number>());
+  const tiers = r.loot.map((it) => gear.defOf(it)?.rank ?? 'E');
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
   // Auto Equip's place is kept from the start when an upgrade is waiting, so nothing jumps when it appears.
   const [upgradeWaits] = useState(() => gear.upgradeCount(store.get()) > 0);
   const [equipped, setEquipped] = useState(false);
   const faceDown = r.loot.length - flipped.length;
-  const reveal = (i: number) => {
+  // A piece turns over by its grade: the higher it is, the longer it gathers itself and the harder it breaks open.
+  const open = (i: number) => {
+    const rank = tiers[i];
+    setCharging((c) => c.filter((x) => x !== i));
     setFlipped((f) => (f.includes(i) ? f : [...f, i]));
-    sfx.window('gear');
-    buzz([14, 30, 22]);
+    sfx.loot(rank);
+    buzz(LOOT_BUZZ[rank] ?? 10);
+    if (rank === 'A' || rank === 'S') setBurst({ rank, k: (burst?.k ?? 0) + 1 + i });
+    if (rank === 'S' && !reducedMotion()) { setQuake(true); setTimeout(() => setQuake(false), 520); }
+  };
+  const reveal = (i: number) => {
+    if (turning.current.has(i)) return;
+    turning.current.add(i);
+    const rank = tiers[i];
+    const wait = reducedMotion() ? Math.min(LOOT_CHARGE[rank] ?? 0, 200) : LOOT_CHARGE[rank] ?? 0;
+    if (!wait) return open(i);
+    setCharging((c) => [...c, i]);
+    sfx.lootCharge(rank, wait / 1000);
+    buzz(10);
+    setTimeout(() => open(i), wait);
   };
   const revealAll = () => r.loot.forEach((_, i) => {
     if (!flipped.includes(i)) setTimeout(() => reveal(i), r.loot.slice(0, i).filter((_, j) => !flipped.includes(j)).length * 260);
@@ -526,11 +586,13 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const trial = isTrial(d);
   const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
-  const xpSub = [r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared', deal.xp ? `Daily Quests +${deal.xp}` : ''].filter(Boolean).join(' · ');
-  const shardSub = [r.bounty > 0 ? `First-clear bounty +${r.bounty}` : r.banked > 0 ? `Banked +${r.banked}` : '', deal.shards ? `Daily Quests +${deal.shards}` : ''].filter(Boolean);
+  // What the Daily Quests paid is shown once, on their own lines below, so the tiles do not repeat it.
+  const xpSub = r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared';
+  const shardSub = [r.bounty > 0 ? `First-clear bounty +${r.bounty}` : r.banked > 0 ? `Banked +${r.banked}` : ''].filter(Boolean);
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
-      <div class="arena__results stack">
+      {burst && <div key={burst.k} class="lootflash" data-rarity={burst.rank} aria-hidden="true" />}
+      <div class={`arena__results stack ${quake ? 'is-quake' : ''}`}>
         <header class="report__head">
           <span class="label">{d.name}</span>
           <h2>{title}</h2>
@@ -552,17 +614,9 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <section class="loot">
             <span class="label">{faceDown ? 'Tap to reveal' : 'Loot'}</span>
             <div class="haul">
-              {r.loot.map((it, i) => {
-                const open = flipped.includes(i);
-                const def = gear.defOf(it);
-                return (
-                  <button type="button" key={it.id} class={`haul__item flip ${open ? 'is-open' : ''}`} style={`--i:${i}`} data-rarity={def?.rank}
-                    aria-label={open ? def?.name : 'Reveal this item'} onClick={() => !open && reveal(i)}>
-                    {open ? <GearArt item={it} size={56} /> : <span class="flip__back" aria-hidden="true">?</span>}
-                    <small>{open ? def?.name : ''}</small>
-                  </button>
-                );
-              })}
+              {r.loot.map((it, i) => (
+                <LootCell key={it.id} it={it} i={i} state={flipped.includes(i) ? 'open' : charging.includes(i) ? 'charging' : 'down'} onTap={() => reveal(i)} />
+              ))}
             </div>
             {upgradeWaits && (
               // Dimmed until everything is turned over: one more reason to turn it.
@@ -590,7 +644,13 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                     setReach({ ...reach, [i]: res });
                     if (res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); } else sfx.shadowLost();
                   }} />
-                  : <p class="warn">Not enough MP. ({v.mp}/{l.cost})</p>}
+                  : <>
+                    <p class="warn">Not enough MP. ({v.mp}/{l.cost})</p>
+                    {/* Short of mana with the Shadow still lingering: a Mana Potion, bought and drunk here, without leaving. */}
+                    <Btn size="sm" block onClick={() => void drinkFlow('mp')}>
+                      <Glyph name="potion" /> Buy {MANA.name} · <Shard size={12} /> <span class="num">{MANA.price}</span>
+                    </Btn>
+                  </>}
               </>}
               {out === 'bound' && <><p class="grant">Extraction successful.</p><p><strong>[{e.shadow}]</strong> has joined your army.</p></>}
               {out === 'lost' && <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>}
@@ -626,14 +686,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </SysFrame>
           );
         })}
-        {!isPractice(d) && deal.moved.length > 0 && <ContractsMoved c={s.contracts} moved={deal.moved} />}
-        {!isPractice(d) && deal.done.length > 0 && (
-          <SysFrame title="Quest Rewards" class="questrewards">
-            <p>You got rewards.</p>
-            <Rewards items={[<>Mana Shards <span class="grant">+{deal.shards}</span></>, <>Experience <span class="grant">+{deal.xp}</span></>]} />
-            {deal.bonus && <p class="muted">Completion bonus included.</p>}
-          </SysFrame>
-        )}
+        {!isPractice(d) && deal.moved.length > 0 && <QuestLines c={s.contracts} report={deal} />}
         <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>
     </div>

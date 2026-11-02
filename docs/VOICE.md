@@ -51,6 +51,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | Status tooltips and foes' intent on unit cards | The System | `STATUS_TEXT` in `core/combat.ts`, `screens/Arena.tsx` |
 | Spire reward tiers, rank blurbs | The System | `core/spire.ts`, `core/progression.ts` |
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
+| The brief's map before the hunter has been inside: `Today's map` / `Unidentified`, a fogged `?` | The System, as the unidentified boss | `screens/Gates.tsx`, `core/gates.ts` (`mapKnown`) |
 | The Arrival: the cut between the office and the first Notification | No one. It carries no words, so the System's first words are its Notification | `ui/arrival.ts`, `screens/Onboarding.tsx` |
 | The rank-up: the cut between a held Reclassification and "Reclassification approved." | No one, as the Arrival | `ui/arrival.ts` (`rankUp`), `app/flow.ts` (`claimRank`) |
 | A rank's requirements met: `You have met the requirements for [Reclassification: D-Rank].` | The System | `app/flow.ts` (`reclassReady`) |
@@ -179,6 +180,10 @@ and no dashes.
   and the hunter claims it, so the rank's own window ("Reclassification approved.") reports the
   rank's Ability Points and the level-up window never includes them. Daily Quest pay is shown in the
   run's results, where `raid.finish` settled it.
+- **A run's Daily Quests are one notice on its results**, in the Gates' orange: a line to each quest
+  the run moved, its ring, its goal, its count, or what it paid once done, and a line for the
+  completion bonus. There it stands in for QUEST INFO and QUEST REWARDS, and the Experience and
+  Shards tiles do not repeat what it paid. The full window stays on the Quests screen.
 - **A rank is told twice, as two events:** once when the level meets its requirements
   (`You have met the requirements for [Reclassification: D-Rank].`), once when the hunter claims it
   ("Reclassification approved."). The first pays nothing.

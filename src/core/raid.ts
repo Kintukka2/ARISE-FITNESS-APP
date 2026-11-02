@@ -262,6 +262,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   // The practice gate is played as it is, and a Trial at the level it proves, whatever the hunter has chosen.
   const level = asc.entryLevel(s, d, isPractice(d));
   if (isTrial(d)) asc.enterTrial(s, day);
+  if (!s.gates.entered.includes(d.id)) s.gates.entered.push(d.id);
   if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, fatigueShare(s, level));
   const specs = partySpecs(s, d, day, undefined, now, level);
   const party = buildParty(specs);

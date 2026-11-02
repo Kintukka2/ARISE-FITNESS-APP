@@ -79,6 +79,8 @@ async function raidGate(row, name, auto = false) {
   await page.locator(row).first().click();
   await sleep(500);
   await snap(`${name}-brief`);
+  // A Gate never walked into keeps its map unidentified, as its boss is until met.
+  if (name === 'practice' && !(await visible('.sheet.is-top .gmap-fog'))) throw new Error('THE PRACTICE BRIEF SHOWED A MAP BEFORE THE HUNTER WENT IN');
   await page.locator('text=Enter The Gate').click();
   await drain();
   await page.waitForSelector('.arena');
@@ -141,6 +143,8 @@ async function raidGate(row, name, auto = false) {
     }
     if (await visible('button.gnode.is-next')) {
       if (!steps++) await snap(`${name}-map`);
+      // A trap passes for an Unknown step until the hunter stands on it.
+      if (await page.locator('.gnode--trap:not(.is-here):not(.is-done)').count()) throw new Error('A TRAP SHOWED ITSELF BEFORE IT WAS STEPPED ON');
       await page.locator('button.gnode.is-next').first().click();
       continue;
     }
@@ -155,7 +159,7 @@ async function raidGate(row, name, auto = false) {
     await sleep(400);
     const after = await questCounts();
     const moved = Object.keys(after).filter((k) => after[k] > (before[k] ?? 0)).sort().join();
-    const shown = (await page.locator('.arena--results .questinfo--moved [data-contract]').evaluateAll((els) => els.map((e) => e.dataset.contract))).sort().join();
+    const shown = (await page.locator('.arena--results .questlines [data-contract]').evaluateAll((els) => els.map((e) => e.dataset.contract))).sort().join();
     if (shown !== moved) throw new Error(`THE RESULTS SHOWED DAILY QUESTS [${shown}] BUT THE RUN MOVED [${moved}]`);
   }
   // Leaving with loot face down asks first; Reveal All turns it over and stays.

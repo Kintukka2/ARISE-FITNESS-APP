@@ -204,6 +204,14 @@
 
 .report__head { display: flex; flex-direction: column; gap: 4px; }
 .report__head h2 { font-size: 1.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+/* A Gate's map before the hunter has been inside: fog over a faint grid, and a question. */
+.gmap-fog { position: relative; display: grid; place-items: center; gap: 4px; min-height: 140px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--win, var(--ember)) 30%, transparent);
+  background: radial-gradient(60% 70% at 50% 50%, color-mix(in srgb, var(--win, var(--ember)) 10%, transparent), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255, 154, 60, 0.05) 0 8px, transparent 8px 16px), rgba(3, 8, 20, 0.45); }
+.gmap-fog::after { content: ''; position: absolute; inset: -20%; background: radial-gradient(40% 30% at 30% 40%, rgba(180, 200, 230, 0.07), transparent 70%), radial-gradient(35% 30% at 70% 60%, rgba(180, 200, 230, 0.06), transparent 70%); animation: fogDrift 14s ease-in-out infinite alternate; pointer-events: none; }
+.gmap-fog .ico { width: 30px; height: 30px; color: color-mix(in srgb, var(--win, var(--ember)) 70%, transparent); }
+.gmap-fog b { font-size: 1.1rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+@keyframes fogDrift { to { transform: translate(6%, -4%) scale(1.08); } }
 /* The haul: one centred row of equal cells, each keeping room for its name from the start, so revealing moves nothing. */
 .loot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 .haul { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 10px; }
@@ -272,7 +280,71 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .flip:active .flip__back { transform: scale(0.93); }
 @keyframes lootCall { 0%, 100% { translate: 0 0; box-shadow: 0 0 0 rgba(255, 154, 60, 0); text-shadow: none; } 50% { translate: 0 -3px; box-shadow: 0 0 0 1px rgba(255, 154, 60, 0.55), 0 0 18px rgba(255, 154, 60, 0.42); text-shadow: 0 0 10px rgba(255, 154, 60, 0.8); } }
 @keyframes lootGlint { 0%, 55% { transform: translateX(-150%) skewX(-14deg); } 85%, 100% { transform: translateX(320%) skewX(-14deg); } }
-.flip.is-open { animation: windowIn 360ms var(--ease) both; }
+
+/* Loot, felt by its grade (`LootCell` in screens/Arena.tsx). From Rare up a piece gathers itself before it
+   turns over, trembling in its grade's colour; then it breaks out of its light and keeps as much of it as
+   the grade earns. Common: nothing. Uncommon: a glow. Rare: a pulse. Epic: turning rays. Heroic: double
+   rays and orbiting sparks. Legendary: all of it, floating, with the screen shaken. */
+.haul__item { --rc: var(--rank-E); --pop: 1; }
+.haul__item[data-rarity='D'] { --rc: var(--rank-D); }
+.haul__item[data-rarity='C'] { --rc: var(--rank-C); }
+.haul__item[data-rarity='B'] { --rc: var(--rank-B); }
+.haul__item[data-rarity='A'] { --rc: var(--rank-A); }
+.haul__item[data-rarity='S'] { --rc: var(--rank-S); }
+.loot-cell { position: relative; display: grid; place-items: center; width: 56px; height: 56px; }
+.loot-cell > .art, .loot-cell > .flip__back { position: relative; z-index: 1; }
+.aura { position: absolute; inset: 0; pointer-events: none; }
+.aura > i { position: absolute; display: block; }
+.aura__glow { inset: -18px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--rc) 60%, transparent), transparent); opacity: 0; transition: opacity 300ms; }
+.aura__rays { inset: -40px; border-radius: 50%; opacity: 0; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 55%, transparent) 0 5deg, transparent 5deg 24deg);
+  -webkit-mask: radial-gradient(closest-side, #000 25%, transparent 100%); mask: radial-gradient(closest-side, #000 25%, transparent 100%); }
+.aura__ring { inset: 0; border: 2px solid var(--rc); box-shadow: 0 0 12px var(--rc); animation: auraRing 700ms ease-out both; }
+.aura__spark { left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px 1px var(--rc); animation: auraSpark 800ms cubic-bezier(0.15, 0.8, 0.3, 1) var(--t) both; }
+.aura__orbit { inset: -12px; border-radius: 50%; animation: halo 3.2s linear infinite; }
+.aura__orbit::before { content: ''; position: absolute; left: 50%; top: -2px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px 2px var(--rc); }
+.aura__orbit--2 { inset: -22px; animation-duration: 5.2s; animation-direction: reverse; }
+.aura__orbit--2::before { width: 3px; height: 3px; margin-left: -1.5px; }
+@keyframes auraRing { from { transform: scale(0.7); opacity: 1; } to { transform: scale(var(--ring, 2.4)); opacity: 0; } }
+@keyframes auraSpark { 0% { transform: rotate(var(--a)) translateX(4px) scale(1.3); opacity: 1; } 100% { transform: rotate(var(--a)) translateX(var(--d)) scale(0.2); opacity: 0; } }
+@keyframes auraPulse { 50% { opacity: var(--hi, 0.6); transform: scale(1.08); } }
+@keyframes auraSpin { to { transform: rotate(360deg); } }
+
+/* Gathering itself: the box trembles and its grade's light leaks out of it, more the higher it is. */
+.flip.is-charging .flip__back { animation: lootTremble 80ms linear infinite; border-color: var(--rc); color: #fff;
+  box-shadow: 0 0 0 1px var(--rc), 0 0 22px color-mix(in srgb, var(--rc) 75%, transparent), inset 0 0 20px color-mix(in srgb, var(--rc) 55%, transparent); }
+.flip.is-charging .aura__glow { opacity: 0.95; animation: auraPulse 260ms ease-in-out infinite; --hi: 1; }
+.flip.is-charging[data-rarity='B'] .aura__rays, .flip.is-charging[data-rarity='A'] .aura__rays, .flip.is-charging[data-rarity='S'] .aura__rays { opacity: 0.7; animation: auraSpin 1.4s linear infinite; }
+.flip.is-charging[data-rarity='A'] .flip__back, .flip.is-charging[data-rarity='S'] .flip__back { animation-duration: 55ms; }
+@keyframes lootTremble { 25% { translate: -1.5px 0.5px; } 50% { translate: 1px -1px; } 75% { translate: 1.5px 1px; } }
+
+/* Open: it lands, then keeps its light. */
+.flip.is-open .loot-cell > .art { animation: lootPop 380ms var(--ease) both; }
+.flip.is-open[data-rarity='A'] .loot-cell > .art, .flip.is-open[data-rarity='S'] .loot-cell > .art { animation: lootPopBig 700ms cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+@keyframes lootPop { from { transform: scale(0.55); filter: brightness(2.4); opacity: 0; } }
+@keyframes lootPopBig { 0% { transform: scale(0.25); filter: brightness(4); opacity: 0; } 60% { filter: brightness(1.6); } }
+.flip.is-open[data-rarity='D'] .aura__glow { opacity: 0.32; }
+.flip.is-open[data-rarity='C'] .aura__glow { --hi: 0.62; opacity: 0.34; animation: auraPulse 2.4s ease-in-out infinite; }
+.flip.is-open[data-rarity='B'] .aura__glow { --hi: 0.75; opacity: 0.42; animation: auraPulse 2.1s ease-in-out infinite; }
+.flip.is-open[data-rarity='B'] .aura__rays { opacity: 0.42; animation: auraSpin 14s linear infinite; }
+.flip.is-open[data-rarity='A'] { --ring: 3.4; }
+.flip.is-open[data-rarity='A'] .aura__glow { --hi: 0.9; opacity: 0.5; animation: auraPulse 1.8s ease-in-out infinite; }
+.flip.is-open[data-rarity='A'] .aura__rays { inset: -48px; opacity: 0.6; animation: auraSpin 10s linear infinite; }
+.flip.is-open[data-rarity='S'] { --ring: 4.2; }
+.flip.is-open[data-rarity='S'] .aura__glow { --hi: 1; inset: -24px; opacity: 0.6; animation: auraPulse 1.5s ease-in-out infinite; }
+.flip.is-open[data-rarity='S'] .aura__rays { inset: -56px; opacity: 0.8; animation: auraSpin 7s linear infinite; }
+.flip.is-open[data-rarity='S'] .aura__rays::after { content: ''; position: absolute; inset: 10%; border-radius: 50%; background: inherit; animation: auraSpin 11s linear infinite reverse; }
+.flip.is-open[data-rarity='S'] .loot-cell { animation: lootFloat 3s ease-in-out 700ms infinite; }
+@keyframes lootFloat { 50% { translate: 0 -4px; } }
+.flip.is-open[data-rarity='C'] small, .flip.is-open[data-rarity='B'] small { color: color-mix(in srgb, var(--rc) 70%, white); }
+.flip.is-open[data-rarity='A'] small, .flip.is-open[data-rarity='S'] small { color: color-mix(in srgb, var(--rc) 60%, white); text-shadow: 0 0 8px var(--rc); font-weight: 700; }
+
+/* Heroic and Legendary light the whole screen for a moment; Legendary shakes it. */
+.lootflash { --rc: var(--rank-A); position: fixed; inset: 0; z-index: var(--z-flash); pointer-events: none; opacity: 0;
+  background: radial-gradient(60% 50% at 50% 42%, color-mix(in srgb, var(--rc) 70%, white 15%), transparent 72%); animation: flash 720ms var(--ease) both; }
+.lootflash[data-rarity='S'] { --rc: var(--rank-S); animation: lootFlashS 900ms var(--ease) both; }
+@keyframes lootFlashS { 8% { opacity: 0.85; } 100% { opacity: 0; } }
+.arena__results.is-quake { animation: lootQuake 480ms linear; }
+@keyframes lootQuake { 10%, 50%, 90% { translate: -5px 2px; } 30%, 70% { translate: 5px -2px; } }
 /* The System's notices after a run (extraction, the Chosen, Ascension, promotions): its frame, set into the results. */
 .extract .sysframe__glass { gap: 10px; text-align: center; font-size: 0.92rem; }
 .extract__who { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; text-shadow: var(--sys-glow); }
@@ -551,6 +623,8 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ia-radar__ring { fill: none; stroke: var(--sys-hair); stroke-width: 0.5; }
 .ia-radar__axis { stroke: color-mix(in srgb, var(--sys-ink) 22%, transparent); stroke-width: 0.5; }
 .ia-radar__shape { fill: color-mix(in srgb, var(--win) 30%, transparent); stroke: var(--win); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--win-glow)); transform-origin: 50px 50px; animation: iaGrow 900ms var(--ease) both; }
+.ia-radar__over { fill: var(--gold); filter: drop-shadow(0 0 3px var(--gold-glow)); }
+.ia-radar__label.is-over { fill: var(--gold); }
 .ia-radar__label { fill: color-mix(in srgb, var(--sys-ink) 78%, transparent); font-family: var(--font-sys); font-size: 6.5px; font-weight: 600; letter-spacing: 0.04em; text-anchor: middle; dominant-baseline: middle; }
 @keyframes iaGrow { from { opacity: 0; transform: scale(0.15); } }
 

@@ -64,7 +64,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'The map',
     lines: [
       'A Gate is a map: a few layers of steps, a rest, then the boss.',
-      'The map is drawn from the Gate and the day, so the brief shows it before you go in.',
+      'The map is drawn from the Gate and the day.',
+      'The brief shows a Gate’s map only once you have been inside it. Until then it is unidentified, like its boss.',
       'Inside, you choose each step from the ones your last step leads to.',
       ...(['fight', 'elite', 'rest', 'treasure', 'shrine', 'trap', 'event'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
       `A rest restores ${REST_HEAL * 100}% of health to everyone standing.`,

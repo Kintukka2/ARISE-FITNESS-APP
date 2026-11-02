@@ -101,6 +101,13 @@ export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | 
 }
 
 /** Whether the boss has been seen: cleared, or reached. The Spire's and the Trial's are never hidden. */
+/**
+ * The brief shows a Gate's map only once the hunter has walked into it (`entered`, written by
+ * `raid.begin`; a save from before it was kept counts its tallied runs and clears). Until then it is
+ * unidentified, as a boss is until it is met. A Trial is its line of Chosen, so there is nothing to hide.
+ */
+export const mapKnown = (s: Save, d: Dungeon) => isTrial(d) || s.gates.entered.includes(d.id) || (s.gates.runs[d.id]?.fought ?? 0) > 0 || s.gates.cleared.includes(d.id);
+
 export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d) || isTrial(d);
 
 // ------------------------------------------------------------------ allies

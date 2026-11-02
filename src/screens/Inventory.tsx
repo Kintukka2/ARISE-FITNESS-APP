@@ -156,22 +156,25 @@ export function MiniBar({ label, cur, max, tone }: { label: string; cur: number;
   );
 }
 
-/** The five stats as a figure: each axis out to the highest of them, the hunter's shape drawn inside. */
+/**
+ * The five stats as a figure, every axis out to `STAT_CAP` (100), the most Ability Points take a stat: where
+ * the hunter stands against the world, not against their own best. A stat past it holds the rim and lights.
+ */
 function Radar({ values }: { values: Record<Stat, number> }) {
   const order: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
-  const top = Math.max(1, ...order.map((k) => values[k]));
   const at = (i: number, r: number) => {
     const a = (-90 + i * 72) * (Math.PI / 180);
     return [50 + Math.cos(a) * r, 50 + Math.sin(a) * r];
   };
   const ring = (r: number) => order.map((_, i) => at(i, r).join(',')).join(' ');
-  const shape = order.map((k, i) => at(i, 8 + 30 * (values[k] / top)).join(',')).join(' ');
+  const shape = order.map((k, i) => at(i, 2 + 36 * Math.min(1, Math.max(0, values[k]) / STAT_CAP)).join(',')).join(' ');
   return (
-    <svg viewBox="0 0 100 100" class="ia-radar">
-      {[13, 25.5, 38].map((r) => <polygon key={r} points={ring(r)} class="ia-radar__ring" />)}
+    <svg viewBox="0 0 100 100" class="ia-radar" role="img" aria-label={order.map((k) => `${k} ${Math.round(values[k])}`).join(', ')}>
+      {[11, 20, 29, 38].map((r) => <polygon key={r} points={ring(r)} class="ia-radar__ring" />)}
       {order.map((_, i) => { const [x, y] = at(i, 38); return <line key={i} x1="50" y1="50" x2={x} y2={y} class="ia-radar__axis" />; })}
       <polygon points={shape} class="ia-radar__shape" />
-      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class="ia-radar__label">{k}</text>; })}
+      {order.map((k, i) => values[k] >= STAT_CAP && (() => { const [x, y] = at(i, 38); return <circle key={`o${k}`} cx={x} cy={y} r="2.2" class="ia-radar__over" />; })())}
+      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class={`ia-radar__label ${values[k] >= STAT_CAP ? 'is-over' : ''}`}>{k}</text>; })}
     </svg>
   );
 }
@@ -247,7 +250,7 @@ function StatsSheet() {
   ];
   return (
     <div class="stack statsheet">
-      <div class="statsheet__radar"><Radar values={total} /></div>
+      <div class="statsheet__radar"><Radar values={total} /><small class="muted">Scale: 0 to {STAT_CAP}</small></div>
       <ul class="statrows">
         {STAT_ORDER.map((k) => {
           const a = ATTRS.find((x) => x.key === k)!;
