@@ -1,36 +1,102 @@
 /**
- * The Arrival: the cut between the Association's office and the System's first window.
+ * The cinematics: a lock of light forming around a rank plate, catching, and breaking open. Two
+ * scripts play it.
  *
- * It carries no words, so the System's first words are still its Notification (docs/VOICE.md,
- * "Surfaces"). The rank plate lifts off the licence and the office goes dark. A hum, and a heartbeat
- * closing in. A lock draws itself around the plate and its rings turn, catching one by one, until
- * their keyways line up and light pours through. The plate the Association says is fixed for life
- * cracks, everything folds into one point, a breath of silence, and it breaks open. What is left
- * glows behind the window and answers the hold: each gong brightens it, letting go lets it fade,
- * and the seal blows the lock apart.
+ * The Arrival is the cut between the Association's office and the System's first window. The rank
+ * plate lifts off the licence and the office goes dark. A hum, and a heartbeat closing in. A lock
+ * draws itself around the plate and its rings turn, catching one by one, until their keyways line
+ * up and light pours through. The plate the Association says is fixed for life cracks, everything
+ * folds into one point, a breath of silence, and it breaks open. What is left glows behind the
+ * window and answers the hold: each gong brightens it, letting go lets it fade, and the seal blows
+ * the lock apart.
  *
- * One canvas on its own clock. Nothing here is game state, and nothing here decides anything.
- * Under reduced motion it keeps every beat and drops the movement: no shake, no spin, no flying
- * light, and the flashes are softer.
+ * The rank-up is the same ceremony in advancement's gold, quicker, when a hunter claims a rank:
+ * the plate lifts off its Reclassification window, the lock breaks it open, and the new rank's
+ * plate rises out of the light, white-hot, cooling into its own colour.
+ *
+ * Neither carries words, so a System window is always what speaks after (docs/VOICE.md,
+ * "Surfaces"). One canvas on its own clock. Nothing here is game state, and nothing here decides
+ * anything. Under reduced motion each keeps every beat and drops the movement: no shake, no spin,
+ * no flying light, and the flashes are softer.
  */
 import { music, sfx } from '@/audio/audio';
 import { buzz, reducedMotion } from './feedback';
-import { PLATE_FRAME, RUNE } from './icons';
+import { plateParts } from './icons';
 
-/** When each beat lands, in ms from the tap that leaves the office. */
-export const T = {
-  dark: 1100, // the office has gone
-  beats: [1300, 2250, 2950, 3450], // the heartbeat, closing in
-  form: 3650, // the rings draw out of the plate
-  catches: [5050, 5600, 6100, 6550], // outer ring to inner; the last one opens the keyway
-  fold: 7900, // everything drawn into the centre
-  hush: 8250, // silence
-  breach: 8600, // it breaks open
-  open: 9450, // the first window may open
+/** When each beat lands, in ms from the start. */
+export interface Timeline {
+  dark: number; // what was on screen has gone
+  beats: number[]; // the heartbeat, closing in
+  form: number; // the rings draw out of the plate
+  catches: number[]; // outer ring to inner; the last one opens the keyway
+  fold: number; // everything drawn into the centre
+  hush: number; // silence
+  breach: number; // it breaks open
+  open: number; // the window that speaks next may open
+  tears: [number, number][]; // moments the picture tears while the light pours, and how long each lasts
+}
+
+/** The Arrival's beats, from the tap that leaves the office. */
+export const T: Timeline = {
+  dark: 1100,
+  beats: [1300, 2250, 2950, 3450],
+  form: 3650,
+  catches: [5050, 5600, 6100, 6550],
+  fold: 7900,
+  hush: 8250,
+  breach: 8600,
+  open: 9450,
+  tears: [[6720, 70], [7160, 90], [7470, 60], [7700, 80], [7830, 60]],
 };
 
+/** The rank-up's beats: the same shape, quicker, with two heartbeats, from the end of the hold. */
+export const RANK_T: Timeline = {
+  dark: 800,
+  beats: [950, 1550],
+  form: 1750,
+  catches: [2550, 2950, 3300, 3600],
+  fold: 4700,
+  hush: 5000,
+  breach: 5300,
+  open: 6600,
+  tears: [[3900, 70], [4250, 60], [4480, 60]],
+};
+
+/** A cinematic's light, as rgb triplets. Cyan is the System arriving; gold is advancement. */
+interface Palette {
+  glow: string; soft: string; hot: string;
+  core: [number, number, number];
+  /** What a plate heats towards, then what it ends at. */
+  heat: [number, number, number]; white: [number, number, number];
+  /** The after's dark, heart and middle. */
+  deep: [string, string];
+  /** The breach's flash, heart to edge. */
+  flash: [string, string, string];
+}
+const CYAN: Palette = {
+  glow: '79, 214, 255', soft: '160, 230, 255', hot: '236, 250, 255', core: [200, 238, 255],
+  heat: [120, 225, 255], white: [244, 252, 255], deep: ['28, 82, 156', '12, 34, 82'],
+  flash: ['244, 252, 255', '150, 228, 255', '36, 110, 190'],
+};
+const GOLD: Palette = {
+  glow: '255, 190, 70', soft: '255, 222, 150', hot: '255, 248, 228', core: [255, 230, 182],
+  heat: [255, 210, 110], white: [255, 250, 236], deep: ['112, 76, 20', '48, 32, 10'],
+  flash: ['255, 252, 240', '255, 212, 120', '150, 96, 24'],
+};
+
+/** One playing: whose light, which plate is lifted, and which one rises out of the breach, if any. */
+interface Script {
+  t: Timeline;
+  pal: Palette;
+  plate: string;
+  /** The rank whose plate the breach leaves behind. The Arrival's breach leaves only shards. */
+  rise?: string;
+  /** What is left of the lock glows on behind the next window and answers a hold. */
+  idle: boolean;
+}
+
 export interface ArrivalCtl {
-  /** Resolves when the breach has settled enough for the first window to open. */
+  /** Resolves when the breach has settled enough for the next window to open. */
   ready: Promise<void>;
   /** Jump to the silence before the breach. The breach itself always plays. */
   skip: () => void;
@@ -44,8 +110,14 @@ export interface ArrivalCtl {
   stop: () => void;
 }
 
-/** Where the plate sits on the licence when the cut begins, in CSS pixels: its centre and width. */
+/** Where the plate sits when the cut begins, in CSS pixels: its centre and width. */
 export interface From { x: number; y: number; size: number }
+
+/** The plate's place on screen, read off the element showing it. Null when it is not laid out. */
+export function fromEl(el: Element | null | undefined): From | null {
+  const r = el?.getBoundingClientRect();
+  return r?.width ? { x: r.left + r.width / 2, y: r.top + r.height / 2, size: r.width } : null;
+}
 
 // ------------------------------------------------------------------ geometry
 
@@ -54,7 +126,10 @@ const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const span = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
 const outCubic = (p: number) => 1 - (1 - p) ** 3;
 const inCubic = (p: number) => p * p * p;
+/** Out past the mark and back: a plate landing. */
+const outBack = (p: number) => 1 + 2.70158 * (p - 1) ** 3 + 1.70158 * (p - 1) ** 2;
 const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
+const mix = (a: number[], b: number[], p: number) => a.map((x, i) => Math.round(lerp(x, b[i], p))).join(', ');
 const decay = (t: number, at: number, ms: number) => (t >= at ? Math.exp(-(t - at) / ms) : 0);
 
 /** A small seeded generator, so the light falls the same way every time. */
@@ -100,17 +175,17 @@ const inKeyway = (a: number, notch: number) => {
 };
 
 /** When ring `i` starts drawing: the inner one first, spreading out from the plate. */
-const formAt = (i: number) => T.form + (RINGS.length - 1 - i) * 130;
+const formAt = (T: Timeline, i: number) => T.form + (RINGS.length - 1 - i) * 130;
 
 /** Ring `i`'s turn while the lock is working: fast, slowing, a hard stop on its catch, then a recoil. */
-function lockAngle(i: number, t: number) {
+function lockAngle(T: Timeline, i: number, t: number) {
   const { turns } = RINGS[i];
   const at = T.catches[i];
   if (t >= at) {
     const d = t - at;
     return -Math.sign(turns) * 0.06 * Math.exp(-d / 90) * Math.sin(d / 30);
   }
-  const q = 1 - span(t, formAt(i), at);
+  const q = 1 - span(t, formAt(T, i), at);
   return turns * TAU * (0.75 * q * q + 0.25 * q);
 }
 
@@ -145,14 +220,17 @@ function burstOf(seed: number, motes: number, shards: number) {
   };
 }
 
-/** The air after: motes rising through the System's dark. */
+/** The air after: motes rising through the dark. */
 const DRIFT = (() => {
   const r = rng(31);
   return Array.from({ length: 54 }, () => ({ x: r(), y: r(), v: 0.012 + r() * 0.04, size: 0.003 + r() * 0.006, ph: r() * TAU }));
 })();
 
-/** Moments the picture tears while the light pours through, and how long each lasts. */
-const TEARS: [number, number][] = [[6720, 70], [7160, 90], [7470, 60], [7700, 80], [7830, 60]];
+/** The rays behind a risen plate, turning slowly. */
+const HALO_RAYS = (() => {
+  const r = rng(43);
+  return Array.from({ length: 10 }, (_, k) => ({ a: (k / 10) * TAU + r() * 0.3, w: 0.03 + r() * 0.05, len: 1.6 + r() * 1.4 }));
+})();
 
 function sprite(rgb: string) {
   const c = document.createElement('canvas');
@@ -167,15 +245,64 @@ function sprite(rgb: string) {
   return c;
 }
 
-// ------------------------------------------------------------------ the cut
+/** A grade's own colour, read off the theme (`--rank-E` and the rest), so the canvas and the Sigil never differ. */
+function rankRgb(key: string): [number, number, number] {
+  const hex = getComputedStyle(document.documentElement).getPropertyValue(`--rank-${key}`).trim();
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  const n = m ? parseInt(m[1], 16) : 0x8a99b0;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
 
+/** A grade's plate, ready to draw: its parts as paths, and its colour. */
+interface Plate { frame: Path2D; rune: Path2D; extras: Path2D[]; nodes?: Path2D; rays?: Path2D; halo: boolean; rgb: [number, number, number] }
+function plateOf(key: string): Plate {
+  const p = plateParts(key);
+  return {
+    frame: new Path2D(p.frame),
+    rune: new Path2D(p.rune),
+    extras: [p.outer, p.inner, p.spurs].filter((x): x is string => !!x).map((x) => new Path2D(x)),
+    nodes: p.nodes ? new Path2D(p.nodes) : undefined,
+    rays: p.rays ? new Path2D(p.rays) : undefined,
+    halo: p.halo,
+    rgb: rankRgb(key),
+  };
+}
+
+// ------------------------------------------------------------------ the scripts
+
+/** The Arrival, on the onboarding's own canvas. */
 export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; skippable?: boolean } = {}): ArrivalCtl {
+  return play(canvas, { t: T, pal: CYAN, plate: 'E', idle: true }, opts);
+}
+
+/**
+ * A rank claimed: the plate `was` lifts off its window and the breach leaves `now`. Draws on a canvas
+ * of its own over everything but the windows, and takes it away on `stop`. `onDark` runs once the
+ * screen behind is covered, so what changes there is never seen changing.
+ */
+export function rankUp(opts: { from?: From | null; was: string; now: string; onDark?: () => void }): ArrivalCtl {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'arrival';
+  canvas.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(canvas);
+  const ctl = play(canvas, { t: RANK_T, pal: GOLD, plate: opts.was, rise: opts.now, idle: false }, { from: opts.from, onDark: opts.onDark });
+  const stop = ctl.stop;
+  ctl.stop = () => { stop(); canvas.remove(); };
+  return ctl;
+}
+
+// ------------------------------------------------------------------ the engine
+
+function play(canvas: HTMLCanvasElement, script: Script, opts: { from?: From | null; skippable?: boolean; onDark?: () => void }): ArrivalCtl {
+  const T = script.t;
+  const P = script.pal;
   const g = canvas.getContext('2d')!;
   const calm = reducedMotion();
-  const GLOW = sprite('79, 214, 255');
-  const HOT = sprite('236, 250, 255');
-  const FRAME = new Path2D(PLATE_FRAME);
-  const RUNE_E = new Path2D(RUNE.E);
+  const GLOW = sprite(P.glow);
+  const HOT = sprite(P.hot);
+  const PLATE = plateOf(script.plate);
+  const RISE = script.rise ? plateOf(script.rise) : null;
+  const RISE_GLOW = RISE ? sprite(RISE.rgb.join(', ')) : null;
   const BREACH = burstOf(11, 170, 22);
   const SEAL = burstOf(23, 120, 0);
 
@@ -207,16 +334,20 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
   let stopGlow = () => {};
   let ready!: () => void;
   const readyP = new Promise<void>((r) => { ready = r; });
+  const final = T.catches.length - 1;
 
   const cues: { at: number; run: () => void; done?: boolean }[] = [
     { at: 0, run: () => { music.hush(true); stopHum = sfx.hum((T.fold - 400) / 1000); } },
-    ...T.beats.map((at, k) => ({ at, run: () => { sfx.heartbeat(k / (T.beats.length - 1)); buzz([26, 170, 16]); } })),
+    { at: T.dark, run: () => opts.onDark?.() },
+    ...T.beats.map((at, k) => ({ at, run: () => { sfx.heartbeat(T.beats.length > 1 ? k / (T.beats.length - 1) : 1); buzz([26, 170, 16]); } })),
     { at: T.form, run: () => sfx.lockForm() },
-    ...T.catches.map((at, k) => ({ at, run: () => { sfx.lockCatch(k + 1, T.catches.length); buzz(k === T.catches.length - 1 ? [30, 40, 40] : 18); } })),
-    { at: T.catches[3], run: () => { stopSurge = sfx.surge((T.fold - T.catches[3]) / 1000); } },
+    ...T.catches.map((at, k) => ({ at, run: () => { sfx.lockCatch(k + 1, T.catches.length); buzz(k === final ? [30, 40, 40] : 18); } })),
+    { at: T.catches[final], run: () => { stopSurge = sfx.surge((T.fold - T.catches[final]) / 1000); } },
     { at: T.fold, run: () => { stopSurge(); sfx.fold((T.hush - T.fold) / 1000); } },
     { at: T.hush, run: () => stopHum() },
     { at: T.breach, run: () => { sfx.breach(); buzz([90, 40, 220]); stopGlow = sfx.afterglow(); } },
+    // A rank's fanfare as its plate rises.
+    ...(RISE ? [{ at: T.breach + 220, run: () => sfx.rankUp() }] : []),
     { at: T.open, run: () => ready() },
   ];
 
@@ -258,11 +389,10 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
       g.stroke();
       return;
     }
-    g.strokeStyle = `rgba(79, 214, 255, ${0.16 * hot})`;
+    g.strokeStyle = `rgba(${P.glow}, ${0.16 * hot})`;
     g.lineWidth = (ring.w * 2 + 8) * dpr;
     g.stroke();
-    const white = Math.round(lerp(200, 255, flare));
-    g.strokeStyle = `rgba(${white}, ${Math.round(lerp(238, 255, flare))}, 255, ${0.9 * hot})`;
+    g.strokeStyle = `rgba(${mix(P.core, [255, 255, 255], flare)}, ${0.9 * hot})`;
     g.lineWidth = ring.w * dpr;
     g.stroke();
     if (ring.ticks) {
@@ -278,7 +408,7 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         g.moveTo(Math.cos(s) * r1, Math.sin(s) * r1);
         g.lineTo(Math.cos(s) * r2, Math.sin(s) * r2);
       }
-      g.strokeStyle = `rgba(170, 228, 255, ${0.5 * hot})`;
+      g.strokeStyle = `rgba(${P.soft}, ${0.5 * hot})`;
       g.lineWidth = dpr;
       g.stroke();
     }
@@ -291,7 +421,7 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         g.lineTo(Math.cos(s) * (r + 5 * dpr), Math.sin(s) * (r + 5 * dpr));
       }
     }
-    g.strokeStyle = `rgba(236, 250, 255, ${hot})`;
+    g.strokeStyle = `rgba(${P.hot}, ${hot})`;
     g.lineWidth = 1.5 * dpr;
     g.stroke();
     // A catch throws light out of both keyways.
@@ -299,16 +429,16 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
       g.beginPath();
       g.moveTo(0, -r + 8 * dpr); g.lineTo(0, -r - 0.09 * u * scale * (1 + flare));
       g.moveTo(0, r - 8 * dpr); g.lineTo(0, r + 0.09 * u * scale * (1 + flare));
-      g.strokeStyle = `rgba(236, 250, 255, ${0.9 * flare * a})`;
+      g.strokeStyle = `rgba(${P.hot}, ${0.9 * flare * a})`;
       g.lineWidth = 2 * dpr;
       g.stroke();
-      g.strokeStyle = `rgba(79, 214, 255, ${0.3 * flare * a})`;
+      g.strokeStyle = `rgba(${P.glow}, ${0.3 * flare * a})`;
       g.lineWidth = 9 * dpr;
       g.stroke();
     }
   }
 
-  function drawPlate(x: number, y: number, size: number, alpha: number, heat: number, crack: number) {
+  function drawPlate(pl: Plate, x: number, y: number, size: number, alpha: number, heat: number, crack: number) {
     if (alpha <= 0.002 || size < 1) return;
     g.save();
     g.translate(x, y);
@@ -318,25 +448,35 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     g.globalAlpha = alpha;
     g.globalCompositeOperation = 'source-over';
     g.fillStyle = 'rgba(6, 14, 32, 0.94)';
-    g.fill(FRAME);
-    // E-Rank grey, taking the System's cyan as it heats, white at the last.
-    const c = heat < 0.7
-      ? [lerp(138, 120, heat / 0.7), lerp(153, 225, heat / 0.7), lerp(176, 255, heat / 0.7)]
-      : [lerp(120, 240, (heat - 0.7) / 0.3), lerp(225, 252, (heat - 0.7) / 0.3), 255];
-    const rgb = c.map(Math.round).join(', ');
+    g.fill(pl.frame);
+    // The grade's own colour, taking the light's as it heats, white at the last.
+    const rgb = heat < 0.7 ? mix(pl.rgb, P.heat, heat / 0.7) : mix(P.heat, P.white, (heat - 0.7) / 0.3);
     g.globalCompositeOperation = 'lighter';
     g.lineJoin = 'round';
     g.lineCap = 'round';
     g.strokeStyle = `rgba(${rgb}, ${0.22 + heat * 0.3})`;
     g.lineWidth = 3.4;
-    g.stroke(FRAME);
+    g.stroke(pl.frame);
     g.lineWidth = 4.4;
-    g.stroke(RUNE_E);
+    g.stroke(pl.rune);
     g.strokeStyle = `rgb(${rgb})`;
     g.lineWidth = 1.1;
-    g.stroke(FRAME);
+    g.stroke(pl.frame);
+    g.globalAlpha = alpha * 0.6;
+    for (const e of pl.extras) g.stroke(e);
+    g.globalAlpha = alpha;
+    if (pl.rays) { g.lineWidth = 1.4; g.stroke(pl.rays); }
+    g.fillStyle = `rgb(${rgb})`;
+    if (pl.nodes) g.fill(pl.nodes);
+    if (pl.halo) {
+      g.save();
+      g.translate(12, 12);
+      g.rotate(calm ? 0 : t * 0.00035);
+      for (let n = 0; n < 12; n++) { g.rotate(TAU / 12); g.fillRect(-0.3, -12, 0.6, 2.2); }
+      g.restore();
+    }
     g.lineWidth = 1.8;
-    g.stroke(RUNE_E);
+    g.stroke(pl.rune);
     if (crack > 0) {
       g.beginPath();
       CRACKS.forEach((pts, n) => {
@@ -352,10 +492,10 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
           g.lineTo(lerp(ax, bx, f), lerp(ay, by, f));
         }
       });
-      g.strokeStyle = `rgba(79, 214, 255, ${0.45 * crack})`;
+      g.strokeStyle = `rgba(${P.glow}, ${0.45 * crack})`;
       g.lineWidth = 1.8;
       g.stroke();
-      g.strokeStyle = `rgba(240, 252, 255, ${Math.min(1, crack * 1.6)})`;
+      g.strokeStyle = `rgba(${P.hot}, ${Math.min(1, crack * 1.6)})`;
       g.lineWidth = 0.55;
       g.stroke();
     }
@@ -385,9 +525,9 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         g.closePath();
       }
       const gr = g.createRadialGradient(0, 0, 0, 0, 0, diag * 0.6);
-      gr.addColorStop(0, `rgba(236, 250, 255, ${0.55 * ray * ray * power * (calm ? 0.5 : 1)})`);
-      gr.addColorStop(0.35, `rgba(79, 214, 255, ${0.22 * ray * ray * power * (calm ? 0.5 : 1)})`);
-      gr.addColorStop(1, 'rgba(79, 214, 255, 0)');
+      gr.addColorStop(0, `rgba(${P.hot}, ${0.55 * ray * ray * power * (calm ? 0.5 : 1)})`);
+      gr.addColorStop(0.35, `rgba(${P.glow}, ${0.22 * ray * ray * power * (calm ? 0.5 : 1)})`);
+      gr.addColorStop(1, `rgba(${P.glow}, 0)`);
       g.fillStyle = gr;
       g.fill();
     }
@@ -400,10 +540,10 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
       const fade = (1 - p) ** 1.4 * power;
       g.beginPath();
       g.arc(0, 0, r, 0, TAU);
-      g.strokeStyle = `rgba(79, 214, 255, ${0.25 * fade})`;
+      g.strokeStyle = `rgba(${P.glow}, ${0.25 * fade})`;
       g.lineWidth = (40 * (1 - p) ** 2 + 4) * dpr;
       g.stroke();
-      g.strokeStyle = `rgba(236, 250, 255, ${0.9 * fade})`;
+      g.strokeStyle = `rgba(${P.hot}, ${0.9 * fade})`;
       g.lineWidth = (14 * (1 - p) ** 2 + 1) * dpr;
       g.stroke();
     }
@@ -431,13 +571,47 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
       g.lineTo(z * 0.7, z * 0.5);
       g.lineTo(-z * 0.5, z * 0.7);
       g.closePath();
-      g.fillStyle = `rgba(170, 225, 255, ${0.5 * life})`;
+      g.fillStyle = `rgba(${P.soft}, ${0.5 * life})`;
       g.fill();
-      g.strokeStyle = `rgba(236, 250, 255, ${life})`;
+      g.strokeStyle = `rgba(${P.hot}, ${life})`;
       g.lineWidth = dpr;
       g.stroke();
       g.restore();
     }
+  }
+
+  /** The new rank's plate out of the light: white-hot, landing, cooling into its own colour, then up out of the window's way. */
+  function drawRise(sx: number, sy: number) {
+    if (!RISE || !RISE_GLOW || t < T.breach) return;
+    const p = span(t, T.breach + 40, T.breach + 1100);
+    const land = calm ? p : Math.max(0, outBack(p));
+    const up = calm ? span(t, T.open - 400, T.open) : outCubic(span(t, T.open - 400, T.open + 500));
+    const y = lerp(0, H * 0.2 - cy, up);
+    const size = 0.26 * u * lerp(1, 0.8, up) * land;
+    const shown = Math.min(1, p * 2.2);
+    const breathe = calm ? 0 : 0.12 * Math.sin(t * 0.003);
+    g.setTransform(1, 0, 0, 1, cx + sx, cy + sy);
+    g.globalCompositeOperation = 'lighter';
+    // Rays of its own colour behind it, turning.
+    g.beginPath();
+    for (const r of HALO_RAYS) {
+      const a = r.a + (calm ? 0 : t * 0.00012);
+      const len = r.len * size;
+      g.moveTo(0, y);
+      g.lineTo(Math.cos(a - r.w) * len, y + Math.sin(a - r.w) * len);
+      g.lineTo(Math.cos(a + r.w) * len, y + Math.sin(a + r.w) * len);
+      g.closePath();
+    }
+    const gr = g.createRadialGradient(0, y, 0, 0, y, Math.max(1, size * 3));
+    gr.addColorStop(0, `rgba(${RISE.rgb.join(', ')}, ${0.4 * shown})`);
+    gr.addColorStop(1, `rgba(${RISE.rgb.join(', ')}, 0)`);
+    g.fillStyle = gr;
+    g.fill();
+    glow(RISE_GLOW, 0, y, size * 3.4, (0.5 + breathe) * shown);
+    glow(HOT, 0, y, size * 1.4, 0.5 * (1 - span(t, T.breach + 200, T.breach + 1600)) * shown);
+    // Plates are drawn from the corner, as everywhere else here.
+    g.setTransform(1, 0, 0, 1, sx, sy);
+    drawPlate(RISE, cx, cy + y, size, shown, 1 - span(t, T.breach + 250, T.breach + 1700), 0);
   }
 
   function frame(now: number) {
@@ -456,7 +630,7 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, W, H);
 
-    // The dark, closing over the office.
+    // The dark, closing over what was on screen.
     const dark = calm ? span(t, 0, T.dark) : outCubic(span(t, 0, T.dark));
     g.fillStyle = `rgba(2, 4, 11, ${dark})`;
     g.fillRect(0, 0, W, H);
@@ -465,13 +639,13 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     if (!sealAt && t - lastTick > 1150) want = 0;
     level += (want - level) * Math.min(1, dt / 140);
 
-    // After the breach: the System's own dark, deep blue at the heart.
+    // After the breach: the light's own dark, deepest at the heart.
     const after = outCubic(span(t, T.breach + 60, T.breach + 1900));
     if (after > 0) {
       const gr = g.createRadialGradient(cx, cy, 0, cx, cy, diag * 0.62);
       const k = after * (1 + level * 0.9);
-      gr.addColorStop(0, `rgba(28, 82, 156, ${0.34 * k})`);
-      gr.addColorStop(0.45, `rgba(12, 34, 82, ${0.22 * k})`);
+      gr.addColorStop(0, `rgba(${P.deep[0]}, ${0.34 * k})`);
+      gr.addColorStop(0.45, `rgba(${P.deep[1]}, ${0.22 * k})`);
       gr.addColorStop(1, 'rgba(2, 4, 11, 0)');
       g.fillStyle = gr;
       g.fillRect(0, 0, W, H);
@@ -481,13 +655,13 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     let quake = 0;
     if (!calm) {
       T.catches.forEach((c, k) => { quake += (2 + k * 1.3) * decay(t, c, 110); });
-      if (t < T.hush) quake += 5 * span(t, T.catches[3], T.fold) ** 2;
+      if (t < T.hush) quake += 5 * span(t, T.catches[final], T.fold) ** 2;
       quake += 14 * decay(t, T.breach, 240);
       if (sealAt) quake += 9 * decay(t, sealAt, 260);
     }
     const sx = quake * dpr * Math.sin(t * 0.093 + 1.3) * Math.cos(t * 0.041);
     const sy = quake * dpr * Math.sin(t * 0.077) * Math.cos(t * 0.057 + 0.4);
-    const tear = calm ? null : TEARS.find(([at, ms]) => t >= at && t < at + ms);
+    const tear = calm ? null : T.tears.find(([at, ms]) => t >= at && t < at + ms);
     const jolt = tear ? (rng(tear[0])() - 0.5) * 22 * dpr : 0;
     g.setTransform(1, 0, 0, 1, cx + sx + jolt, cy + sy);
     g.globalCompositeOperation = 'lighter';
@@ -499,7 +673,7 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     const fold = span(t, T.fold, T.hush);
     const shrink = calm ? 1 : 1 - inCubic(fold);
     const fade = calm ? 1 - fold : 1;
-    const heat = span(t, T.catches[3], T.fold + 200);
+    const heat = span(t, T.catches[final], T.fold + 200);
     if (t < T.hush) {
       const formed = decay(t, T.form, 320);
       glow(GLOW, 0, 0, u * (0.45 + beat * 0.35 + heat * 0.5) * shrink, (0.1 + beat * 0.32 + formed * 0.5 + heat * 0.5) * span(t, 300, 1300) * fade);
@@ -508,14 +682,14 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         if (p <= 0 || p >= 1 || calm) continue;
         g.beginPath();
         g.arc(0, 0, lerp(0.09, 0.6, outCubic(p)) * u, 0, TAU);
-        g.strokeStyle = `rgba(79, 214, 255, ${0.22 * (1 - p) ** 2})`;
+        g.strokeStyle = `rgba(${P.glow}, ${0.22 * (1 - p) ** 2})`;
         g.lineWidth = 1.5 * dpr;
         g.stroke();
       }
     }
 
     // What is left of the lock after the breach, slow behind the window, answering the hold.
-    if (t > T.breach) {
+    if (script.idle && t > T.breach) {
       const gone = sealAt ? outCubic(span(t, sealAt, sealAt + 1400)) : 0;
       const a = (0.16 + 0.62 * level) * span(t, T.breach + 300, T.breach + 2200) * (1 - gone);
       if (!calm) RINGS.forEach((ring, i) => { idle[i] += Math.sign(ring.turns) * (0.00005 + 0.00003 * i) * (1 + 8 * level + 20 * gone) * dt; });
@@ -525,7 +699,7 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         if (q <= 0 || q >= 1) continue;
         g.beginPath();
         g.arc(0, 0, lerp(0.2, calm ? 0.2 : 0.95, outCubic(q)) * u, 0, TAU);
-        g.strokeStyle = `rgba(160, 230, 255, ${0.5 * p.k * (1 - q) ** 2})`;
+        g.strokeStyle = `rgba(${P.soft}, ${0.5 * p.k * (1 - q) ** 2})`;
         g.lineWidth = (3 * (1 - q) + 1) * dpr;
         g.stroke();
       }
@@ -537,8 +711,8 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
       if (!calm) g.rotate(2.4 * inCubic(fold));
       g.scale(shrink, shrink);
       for (let i = 0; i < RINGS.length; i++) {
-        const drawIn = calm ? span(t, formAt(i), formAt(i) + 650) : outCubic(span(t, formAt(i), formAt(i) + 650));
-        const ang = calm ? 0 : lockAngle(i, t);
+        const drawIn = calm ? span(t, formAt(T, i), formAt(T, i) + 650) : outCubic(span(t, formAt(T, i), formAt(T, i) + 650));
+        const ang = calm ? 0 : lockAngle(T, i, t);
         const flare = decay(t, T.catches[i], 280) + heat * 0.5;
         const a = (calm ? drawIn : 1) * fade;
         if (tear) {
@@ -551,15 +725,15 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         drawRing(i, 1, ang, a, drawIn, flare);
       }
       // The keyway open: a beam straight through every ring, top to bottom.
-      const open = outCubic(span(t, T.catches[3], T.catches[3] + 450));
+      const open = outCubic(span(t, T.catches[final], T.catches[final] + 450));
       if (open > 0) {
-        const grow = span(t, T.catches[3], T.fold);
-        const len = lerp(RINGS[3].r * u, H / shrink, open);
+        const grow = span(t, T.catches[final], T.fold);
+        const len = lerp(RINGS[final].r * u, H / shrink, open);
         const flick = calm ? 1 : 0.85 + 0.15 * Math.sin(t * 0.07) * Math.sin(t * 0.031);
         const gr = g.createLinearGradient(0, -len, 0, len);
-        gr.addColorStop(0, 'rgba(79, 214, 255, 0)');
-        gr.addColorStop(0.5, 'rgba(236, 250, 255, 1)');
-        gr.addColorStop(1, 'rgba(79, 214, 255, 0)');
+        gr.addColorStop(0, `rgba(${P.glow}, 0)`);
+        gr.addColorStop(0.5, `rgba(${P.hot}, 1)`);
+        gr.addColorStop(1, `rgba(${P.glow}, 0)`);
         g.strokeStyle = gr;
         const wide = (2 + 10 * grow) * dpr;
         for (const [w, al] of [[wide * 6, 0.1], [wide * 2, 0.3], [wide * 0.5, 0.95]]) {
@@ -577,8 +751,8 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
 
     // Light drawn in from everywhere while it pours.
     if (!calm && t < T.hush) {
-      if (t > T.catches[2]) {
-        owed += (dt / 1000) * lerp(30, 340, span(t, T.catches[2], T.fold) ** 2);
+      if (t > T.catches[final - 1]) {
+        owed += (dt / 1000) * lerp(30, 340, span(t, T.catches[final - 1], T.fold) ** 2);
         while (owed >= 1) {
           owed -= 1;
           inflow.push({ b: t, life: 500 + pull() * 550, a0: pull() * TAU, r0: (0.35 + pull() * 0.35) * diag, spin: (pull() - 0.5) * 2.6 });
@@ -599,26 +773,27 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
         g.moveTo(x0, y0);
         g.lineTo(x1, y1);
       }
-      g.strokeStyle = 'rgba(160, 230, 255, 0.55)';
+      g.strokeStyle = `rgba(${P.soft}, 0.55)`;
       g.lineWidth = 1.4 * dpr;
       g.stroke();
     } else if (inflow.length) inflow.length = 0;
 
-    // The plate: lifted off the licence, carried into the dark, then cracking.
+    // The plate: lifted off where it was shown, carried into the dark, then cracking.
     if (t < T.hush) {
       const S = 0.17 * u * (1 + 0.07 * beat) * shrink;
-      const crack = span(t, T.catches[3] + 150, T.fold);
+      const crack = span(t, T.catches[final] + 150, T.fold);
       const f = opts.from;
+      const glide = T.dark + 400;
       g.setTransform(1, 0, 0, 1, sx + jolt, sy);
       if (f && calm) {
-        const k = span(t, 300, 1300);
-        drawPlate(f.x * dpr, f.y * dpr, f.size * dpr, 1 - k, 0, 0);
-        drawPlate(cx, cy, S, k * fade, heat, crack);
+        const k = span(t, 300, glide - 200);
+        drawPlate(PLATE, f.x * dpr, f.y * dpr, f.size * dpr, 1 - k, 0, 0);
+        drawPlate(PLATE, cx, cy, S, k * fade, heat, crack);
       } else if (f) {
-        const k = outCubic(span(t, 150, 1500));
-        drawPlate(lerp(f.x * dpr, cx, k), lerp(f.y * dpr, cy, k), lerp(f.size * dpr, S, k), fade, heat, crack);
+        const k = outCubic(span(t, 150, glide));
+        drawPlate(PLATE, lerp(f.x * dpr, cx, k), lerp(f.y * dpr, cy, k), lerp(f.size * dpr, S, k), fade, heat, crack);
       } else {
-        drawPlate(cx, cy, S, span(t, 200, 1000) * fade, heat, crack);
+        drawPlate(PLATE, cx, cy, S, span(t, 200, 1000) * fade, heat, crack);
       }
       g.setTransform(1, 0, 0, 1, cx + sx + jolt, cy + sy);
       g.globalCompositeOperation = 'lighter';
@@ -644,12 +819,16 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
       }
     }
 
+    // A rank's new plate, above everything but the flash.
+    drawRise(sx, sy);
+
     // The tear: a few bright lines across the picture.
     if (tear) {
       const r = rng(tear[0] + Math.floor(t / 30));
       g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalCompositeOperation = 'lighter';
       for (let n = 0; n < 5; n++) {
-        g.fillStyle = `rgba(${r() < 0.5 ? '160, 230, 255' : '255, 80, 140'}, ${0.12 + r() * 0.2})`;
+        g.fillStyle = `rgba(${r() < 0.5 ? P.soft : '255, 80, 140'}, ${0.12 + r() * 0.2})`;
         const y = r() * H;
         const x = r() * W * 0.4;
         g.fillRect(x, y, W - x * r(), (1 + r() * 5) * dpr);
@@ -662,18 +841,18 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     let white = (calm ? 0.45 : 0.95) * decay(t, T.breach, calm ? 520 : 200);
     if (sealAt) white += (calm ? 0.3 : 0.6) * decay(t, sealAt, calm ? 520 : 220);
     if (white > 0.003) {
-      // White at the heart, falling off to the System's cyan, so a fading flash reads as light, not fog.
+      // White at the heart, falling off to the light's own colour, so a fading flash reads as light, not fog.
       const w = Math.min(1, white);
       const gr = g.createRadialGradient(cx, cy, 0, cx, cy, diag * 0.6);
-      gr.addColorStop(0, `rgba(244, 252, 255, ${w})`);
-      gr.addColorStop(0.4, `rgba(150, 228, 255, ${w * 0.82})`);
-      gr.addColorStop(1, `rgba(36, 110, 190, ${w * 0.6})`);
+      gr.addColorStop(0, `rgba(${P.flash[0]}, ${w})`);
+      gr.addColorStop(0.4, `rgba(${P.flash[1]}, ${w * 0.82})`);
+      gr.addColorStop(1, `rgba(${P.flash[2]}, ${w * 0.6})`);
       g.fillStyle = gr;
       g.fillRect(0, 0, W, H);
     }
   }
 
-  // The first picture goes up before the browser paints, so the plate never blinks off the licence.
+  // The first picture goes up before the browser paints, so the plate never blinks off where it was.
   draw(0);
   raf = requestAnimationFrame((now) => { last = now; frame(now); });
 
@@ -682,7 +861,7 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
     skip() {
       if (!opts.skippable || t >= T.hush) return;
       t = T.hush;
-      for (const c of cues) if (c.at < T.hush && !c.done) c.done = true;
+      for (const c of cues) if (c.at < T.hush && !c.done) { c.done = true; if (c.at === T.dark) c.run(); }
       stopSurge();
       stopHum();
     },

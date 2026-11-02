@@ -4,7 +4,7 @@ import { dungeonById, enemyById, opening, PRACTICE_GATE } from '@/core/gates';
 import { build, mapSeed, systemRoad } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as raid from '@/core/raid';
-import { autoAllocate, GATE_XP, grantXP, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, GATE_XP, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { GATE_SHARDS } from '@/core/shop';
 import type { Contract, Rank, Save } from '@/core/types';
 import { RANKS } from '@/core/types';
@@ -19,6 +19,7 @@ const now = Date.parse(day + 'T12:00:00');
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   autoAllocate(s);
   syncClass(s);
   s.gates.cleared.push(PRACTICE_GATE.id);
@@ -75,6 +76,7 @@ describe('the draw', () => {
     contracts.issue(s, day);
     expect(s.contracts).toEqual(shown);
     grantXP(s, totalXpFor(30));
+    reclassifyAll(s);
     expect(contracts.issue(s, day)).toEqual(shown);
     expect(contracts.today(s, day)).toEqual(shown);
     // The next day is drawn for the grade the hunter holds by then.

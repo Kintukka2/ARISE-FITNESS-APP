@@ -131,21 +131,38 @@ const PLATE: Record<string, [number, boolean, boolean, boolean, boolean, boolean
 };
 const node = (x: number, y: number, r: number) => `M${x} ${y - r}L${x + r} ${y}L${x} ${y + r}L${x - r} ${y}Z`;
 
-export function Sigil({ rank, size = 40 }: { rank: string; size?: number }) {
+/** One grade's plate as path data in the 24-unit box: what `Sigil` draws, and what the cinematics draw on their canvas. */
+export interface PlateParts { frame: string; outer?: string; inner?: string; nodes?: string; spurs?: string; rays?: string; halo: boolean; rune: string }
+
+export function plateParts(rank: string): PlateParts {
   const [nodes, inner, spurs, outer, star, halo] = PLATE[rank] ?? PLATE.E;
   const r = star ? 2.3 : 1.7;
   let nd = nodes ? node(12, 2.5, r) + node(12, 21.5, r) + node(2.5, 12, r) + node(21.5, 12, r) : '';
   if (nodes > 4) nd += node(5.2, 5.2, 1.3) + node(18.8, 5.2, 1.3) + node(5.2, 18.8, 1.3) + node(18.8, 18.8, 1.3);
+  return {
+    frame: PLATE_FRAME,
+    outer: outer ? 'M6.4 1h11.2l5.4 5.4v11.2L17.6 23H6.4L1 17.6V6.4z' : undefined,
+    inner: inner ? 'M8 5h8l3 3v8l-3 3H8l-3-3V8z' : undefined,
+    nodes: nd || undefined,
+    spurs: spurs ? 'M4.6 8.2 8.2 4.6M15.8 4.6l3.6 3.6M19.4 15.8l-3.6 3.6M8.2 19.4l-3.6-3.6' : undefined,
+    rays: star ? 'M12 0v2M12 22v2M0 12h2M22 12h2' : undefined,
+    halo,
+    rune: RUNE[rank] ?? RUNE.E,
+  };
+}
+
+export function Sigil({ rank, size = 40 }: { rank: string; size?: number }) {
+  const p = plateParts(rank);
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} class="sigil" data-rank={rank} role="img" aria-label={rank === 'N' ? 'Sovereign' : `${rank}-Rank`}>
-      <path class="sig__frame" d={PLATE_FRAME} />
-      {outer && <path class="sig__outer" d="M6.4 1h11.2l5.4 5.4v11.2L17.6 23H6.4L1 17.6V6.4z" />}
-      {inner && <path class="sig__inner" d="M8 5h8l3 3v8l-3 3H8l-3-3V8z" />}
-      {nd && <path class="sig__node" d={nd} />}
-      {spurs && <path class="sig__spur" d="M4.6 8.2 8.2 4.6M15.8 4.6l3.6 3.6M19.4 15.8l-3.6 3.6M8.2 19.4l-3.6-3.6" />}
-      {star && <path class="sig__ray" d="M12 0v2M12 22v2M0 12h2M22 12h2" />}
-      {halo && <g class="sig__halo">{Array.from({ length: 12 }, (_, i) => <rect key={i} x="11.7" y="0" width=".6" height="2.2" transform={`rotate(${i * 30} 12 12)`} />)}</g>}
-      <path class="sig__rune" d={RUNE[rank] ?? RUNE.E} />
+      <path class="sig__frame" d={p.frame} />
+      {p.outer && <path class="sig__outer" d={p.outer} />}
+      {p.inner && <path class="sig__inner" d={p.inner} />}
+      {p.nodes && <path class="sig__node" d={p.nodes} />}
+      {p.spurs && <path class="sig__spur" d={p.spurs} />}
+      {p.rays && <path class="sig__ray" d={p.rays} />}
+      {p.halo && <g class="sig__halo">{Array.from({ length: 12 }, (_, i) => <rect key={i} x="11.7" y="0" width=".6" height="2.2" transform={`rotate(${i * 30} 12 12)`} />)}</g>}
+      <path class="sig__rune" d={p.rune} />
     </svg>
   );
 }

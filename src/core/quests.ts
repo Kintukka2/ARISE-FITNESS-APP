@@ -1,7 +1,7 @@
 /**
- * Quests the Quests screen reads off the save rather than issues: the next rank, and what reaching
- * it brings, and what the Quests tab counts. Nothing here writes and nothing here pays. A rank still
- * pays through `grantXP`, and a class still changes through `syncClass`, exactly as before; this only
+ * Quests the Quests screen reads off the save rather than issues: the next rank, and what claiming
+ * it brings, and what the Quests tab counts. Nothing here writes and nothing here pays. A rank pays
+ * through `reclassify` when the hunter claims it, and a class changes through `syncClass`; this only
  * says what they will do.
  */
 import { CLASS_RANKS, classById, classFor } from '@/data/classes';
@@ -10,7 +10,7 @@ import { SLOTS } from '@/data/shadows';
 import { trialReady } from './ascension';
 import { unseen } from './contracts';
 import { licenceRequired, licensedRank, UNLICENSED_CAP } from './licence';
-import { bankedXp, nextRank, optionsAt, RANK_UP_POINTS, rankFor, totalXpFor, type RankInfo } from './progression';
+import { bankedXp, canReclassify, nextRankOf, optionsAt, RANK_UP_POINTS, rankOf, totalXpFor, type RankInfo } from './progression';
 import type { Rank, Save, Stat } from './types';
 import { RANKS } from './types';
 import { dayKey } from './util';
@@ -21,6 +21,8 @@ export interface Reclass {
   /** Experience still to earn before the rank, and how far through this rank's levels the hunter is, from 0 to 1. */
   left: number;
   share: number;
+  /** The level is reached: the rank is the hunter's to claim. */
+  ready: boolean;
   /** Ability Points the rank pays on top of its level's. */
   points: number;
   /** The class the rank assigns as the hunter's stats stand, and the one it replaces. Null at Sovereign, which assigns none. */
@@ -39,12 +41,11 @@ function gradeAt(s: Save, rank: Rank | 'N'): Rank {
   return licenceRequired(s) && RANKS.indexOf(r) > RANKS.indexOf(UNLICENSED_CAP) ? UNLICENSED_CAP : r;
 }
 
-/** The next rank up the ladder, how near it is, and what it brings. Null at Sovereign. */
+/** The rank above the one held, how near its level is, and what claiming it brings. Null at Sovereign. */
 export function reclassification(s: Save): Reclass | null {
-  const level = s.hunter.level;
-  const to = nextRank(level);
+  const to = nextRankOf(s);
   if (!to) return null;
-  const from = rankFor(level);
+  const from = rankOf(s);
   const floor = totalXpFor(from.min);
   const need = totalXpFor(to.min) - floor;
   const banked = bankedXp(s) - floor;
@@ -56,6 +57,7 @@ export function reclassification(s: Save): Reclass | null {
     from, to,
     left: Math.max(0, need - banked),
     share: need > 0 ? Math.max(0, Math.min(1, banked / need)) : 1,
+    ready: canReclassify(s),
     points: RANK_UP_POINTS,
     cls: next ? { was: classById(s.hunter.classId)?.name ?? null, is: next.name, lead: next.lead, bonus: next.bonus } : null,
     pick: next && rung >= 0 ? optionsAt(next.lead, rung) : null,
@@ -65,7 +67,8 @@ export function reclassification(s: Save): Reclass | null {
 }
 
 /**
- * What the Quests tab counts: today's Daily Quests until the screen has shown them, and the Trial while
- * it stands open and today's attempt is unused, as the Inventory tab counts unspent points.
+ * What the Quests tab counts: today's Daily Quests until the screen has shown them, the Trial while
+ * it stands open and today's attempt is unused, and a rank waiting to be claimed, as the Inventory tab
+ * counts unspent points.
  */
-export const waiting = (s: Save, day = dayKey()) => unseen(s, day) + (trialReady(s, day) ? 1 : 0);
+export const waiting = (s: Save, day = dayKey()) => unseen(s, day) + (trialReady(s, day) ? 1 : 0) + (canReclassify(s) ? 1 : 0);

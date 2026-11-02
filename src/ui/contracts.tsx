@@ -44,9 +44,11 @@ export function QuestGoal({ id, text, hint, got, need, done, fresh, count, pct }
  * A QUEST INFO window: the quest's bracketed name, GOAL, REWARDS, then whatever follows them. `bare`
  * leaves the frame off, for a sheet opened with `system`, which draws the frame and its header itself.
  */
-export function QuestWindow({ name, kind = 'system', goals, rewards, rewardsLead, class: cls, label, tour, bare, children }: {
+export function QuestWindow({ name, lead, kind = 'system', goals, rewards, rewardsLead, class: cls, label, tour, bare, children }: {
   /** The quest's name with its type, as the window brackets it: `Daily Quests`, `Reclassification: D-Rank`. */
   name: string;
+  /** What stands under the name, before GOAL: a Reclassification's rank plates. */
+  lead?: ComponentChildren;
   kind?: FrameKind;
   goals: ComponentChildren;
   rewards: ComponentChildren[];
@@ -61,6 +63,7 @@ export function QuestWindow({ name, kind = 'system', goals, rewards, rewardsLead
   const body = (
     <>
       <p class="questinfo__name"><strong>[{name}]</strong></p>
+      {lead}
       <span class="label questinfo__head">Goal</span>
       <ul class="questinfo__goals">{goals}</ul>
       <span class="label questinfo__head">Rewards</span>

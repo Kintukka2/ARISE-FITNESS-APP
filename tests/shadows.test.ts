@@ -5,7 +5,7 @@ import { ALL_ENEMIES, dungeonById, enemyById } from '@/core/gates';
 import { MISSIONS, sweep } from '@/core/missions';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
-import { autoAllocate, grantXP, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, totalXpFor, reclassifyAll } from '@/core/progression';
 import type { Shadow } from '@/core/types';
 import { rng } from '@/core/util';
 import { walk } from './walk';
@@ -45,6 +45,7 @@ describe('ranks', () => {
   it('a run reports the Shadows its kills promoted', () => {
     const s = defaults();
     grantXP(s, totalXpFor(20));
+    reclassifyAll(s);
     autoAllocate(s);
     const d = dungeonById('DNG-001')!;
     const sh = shadows.bind(s, d.mobs[0]);

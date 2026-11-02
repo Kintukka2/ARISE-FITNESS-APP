@@ -3,7 +3,7 @@ import { defaults, parse } from '@/core/save';
 import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
 import { build, mapSeed, next, systemRoad, type GateMap } from '@/core/map';
 import * as raid from '@/core/raid';
-import { autoAllocate, grantXP, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { REST_HEAL, TRAP } from '@/data/nodes';
 import { walk } from './walk';
 
@@ -12,6 +12,7 @@ const now = Date.parse('2026-02-02T12:00:00');
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   autoAllocate(s);
   syncClass(s);
   return s;

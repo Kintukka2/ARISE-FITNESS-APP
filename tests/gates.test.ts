@@ -4,7 +4,7 @@ import { board, allies, dungeonById, entryBlock, seal, PRACTICE_GATE } from '@/c
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
 import { grant, autoEquip, ofRank, upgradeCount, power } from '@/core/gear';
-import { totalXpFor, grantXP, autoAllocate, GATE_XP, PRACTICE_LEVEL } from '@/core/progression';
+import { totalXpFor, grantXP, autoAllocate, GATE_XP, PRACTICE_LEVEL, reclassifyAll } from '@/core/progression';
 import type { Dungeon, Save } from '@/core/types';
 import { walk } from './walk';
 
@@ -16,6 +16,7 @@ const now = Date.parse(day + 'T12:00:00');
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   autoAllocate(s);
   return s;
 }

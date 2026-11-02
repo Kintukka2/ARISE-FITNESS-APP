@@ -5,7 +5,7 @@ import { powerOf, TACTICS } from '@/core/combat';
 import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { overCap, RARITY } from '@/core/gear';
-import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankFor } from '@/core/progression';
+import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
@@ -257,7 +257,7 @@ function openGrade() {
           <div class="sysfields">
             <Field k="Association grade" v={`${mine}-Rank`} />
             <Field k="Gates open" v={`Up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank`} />
-            <Field k="Rank" v={rankFor(s.hunter.level).name} />
+            <Field k="Rank" v={rankOf(s).name} />
             <Field k="Association Licence" v={licenceRequired(s) ? (s.licence.granted ? 'Issued' : '-- --') : 'Issued'} />
           </div>
           {licenceHolding(s) && <p class="hint">Gate grade held at {mine}-Rank.</p>}

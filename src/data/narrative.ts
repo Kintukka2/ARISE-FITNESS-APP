@@ -5,11 +5,17 @@
  * new licences through their first Gates. He does not know the System
  * exists, so nothing he says may reference it. The System speaks in windows.
  */
+import { RANK_LADDER, RANK_UP_POINTS } from '@/core/progression';
 import type { Save } from '@/core/types';
 import { CONTRACTS_PER_DAY } from './contracts';
 import { SPIRE_OPENS } from './spire';
 import { SLOTS } from './shadows';
-import { arrival, change, counter, event, foe, tag, unlock } from '@/ui/system';
+import { arrival, change, counter, event, foe, gain, signed, tag, unlock } from '@/ui/system';
+
+/** The hunter holds this rank or a higher one. A rank's window waits for the claim, not the level. */
+const holds = (s: Save, key: string) => RANK_LADDER.findIndex((r) => r.key === s.hunter.rank) >= RANK_LADDER.findIndex((r) => r.key === key);
+/** What a claimed rank pays, reported once, in the window that pays it. */
+const RANK_POINTS = `Ability Points ${gain(signed(RANK_UP_POINTS))}`;
 
 /** The Awakening Assessment at the Association desk. */
 export const ASSESSMENT = [
@@ -104,8 +110,8 @@ export const BEATS: Beat[] = [
     lines: ['[A Shadow has joined your army.]', unlock('Shadows')],
   },
   {
-    id: 'rank_d', when: (s) => s.hunter.level >= 10, kind: 'gold', title: 'Notification', center: true,
-    lines: ['Reclassification approved.', `Rank: ${change('E', 'D')}`, unlock('Class')],
+    id: 'rank_d', when: (s) => holds(s, 'D'), kind: 'gold', title: 'Notification', center: true,
+    lines: ['Reclassification approved.', `Rank: ${change('E', 'D')}`, RANK_POINTS, unlock('Class')],
   },
   {
     id: 'monarch_whisper', when: (s) => s.hunter.level >= 15, kind: 'danger', title: '???',
@@ -117,11 +123,11 @@ export const BEATS: Beat[] = [
     ],
   },
   {
-    id: 'rank_c', when: (s) => s.hunter.level >= 20, kind: 'gold', title: 'Notification', center: true,
-    lines: ['Reclassification approved.', `Rank: ${change('D', 'C')}`],
+    id: 'rank_c', when: (s) => holds(s, 'C'), kind: 'gold', title: 'Notification', center: true,
+    lines: ['Reclassification approved.', `Rank: ${change('D', 'C')}`, RANK_POINTS],
   },
   {
-    id: 'valcorde_grade', when: (s) => s.hunter.level >= 20, kind: 'coach', title: 'Valcorde',
+    id: 'valcorde_grade', when: (s) => holds(s, 'C'), kind: 'coach', title: 'Valcorde',
     lines: [
       'C-Rank. That’s my grade. It took me eleven years.',
       'I’m not going to ask how you’re doing it. Whatever it is, keep it to yourself. People talk.',
@@ -137,10 +143,11 @@ export const BEATS: Beat[] = [
     ],
   },
   {
-    id: 'rank_b', when: (s) => s.hunter.level >= 35, kind: 'gold', title: 'Notification', center: true,
+    id: 'rank_b', when: (s) => holds(s, 'B'), kind: 'gold', title: 'Notification', center: true,
     lines: [
       'Reclassification approved.',
       `Rank: ${change('C', 'B')}`,
+      RANK_POINTS,
       '[A record has been unsealed.]',
       'Candidate 1: Player designation declined.',
       'Candidate 2: Player designation accepted.',
@@ -156,20 +163,22 @@ export const BEATS: Beat[] = [
     ],
   },
   {
-    id: 'rank_a', when: (s) => s.hunter.level >= 50, kind: 'gold', title: 'Notification', center: true,
+    id: 'rank_a', when: (s) => holds(s, 'A'), kind: 'gold', title: 'Notification', center: true,
     lines: [
       'Reclassification approved.',
       `Rank: ${change('B', 'A')}`,
+      RANK_POINTS,
       `Shadow slots: ${change(SLOTS.B, SLOTS.A)}`,
       '[A Gate of unprecedented density is forming.]',
       'Required rank: S',
     ],
   },
   {
-    id: 'rank_s', when: (s) => s.hunter.level >= 70, kind: 'gold', title: 'Notification', center: true,
+    id: 'rank_s', when: (s) => holds(s, 'S'), kind: 'gold', title: 'Notification', center: true,
     lines: [
       'Reclassification approved.',
       `Rank: ${change('A', 'S')}`,
+      RANK_POINTS,
       `${tag('The Hollow Throne')} has opened. It does not close at midnight.`,
       `You have received a message from ${tag('Ryn Valcorde')}.`,
       '“Do not go in tired. Go in with something left.”',
@@ -180,7 +189,7 @@ export const BEATS: Beat[] = [
     lines: event('defeated', foe('The Hollow Monarch')),
   },
   {
-    id: 'sovereign', when: (s) => s.hunter.level >= 100, kind: 'gold', title: 'Notification', center: true,
-    lines: ['[You have reached Level 100.]', `Rank: ${change('S', 'Sovereign')}`, 'Further ranks: none.'],
+    id: 'sovereign', when: (s) => holds(s, 'N'), kind: 'gold', title: 'Notification', center: true,
+    lines: ['Reclassification approved.', `Rank: ${change('S', 'Sovereign')}`, RANK_POINTS, 'Further ranks: none.'],
   },
 ];

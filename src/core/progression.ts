@@ -1,8 +1,9 @@
 /**
  * Levels, rank, attributes and class.
  *
- * One rank ladder, earned by level. Level is earned in the Gates: every run
- * pays experience by the gate's grade, settled once in `raid.finish`.
+ * One rank ladder. A level qualifies the hunter for a rank (`rankFor`); the hunter claims it from its
+ * Reclassification quest (`reclassify`), and holds it from then on (`rankOf`). Level is earned in the
+ * Gates: every run pays experience by the gate's grade, settled once in `raid.finish`.
  */
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { classById, classFor } from '@/data/classes';
@@ -58,6 +59,7 @@ export function totalXpFor(level: number): number {
 
 export const bankedXp = (s: Save) => totalXpFor(s.hunter.level) + s.hunter.xp;
 
+/** The rank a level qualifies for. The hunter holds it only once claimed: see `rankOf`. */
 export function rankFor(level: number): RankInfo {
   let r = RANK_LADDER[0];
   for (const x of RANK_LADDER) if (level >= x.min) r = x;
@@ -68,9 +70,46 @@ export function nextRank(level: number): RankInfo | null {
   return RANK_LADDER.find((x) => x.min > level) ?? null;
 }
 
+/** The rank the hunter holds. */
+export function rankOf(s: Save): RankInfo {
+  return RANK_LADDER.find((x) => x.key === s.hunter.rank) ?? RANK_LADDER[0];
+}
+
+/** The rung above the one held. Null at Sovereign. */
+export function nextRankOf(s: Save): RankInfo | null {
+  return RANK_LADDER[RANK_LADDER.indexOf(rankOf(s)) + 1] ?? null;
+}
+
+/** The hunter's level qualifies them for the rung above the one they hold. */
+export function canReclassify(s: Save): boolean {
+  const next = nextRankOf(s);
+  return !!next && s.hunter.level >= next.min;
+}
+
+/**
+ * Claim the next rank: the hunter now holds it, and it pays its Ability Points. One rung at a time,
+ * each its own ceremony. The class it assigns follows through `syncClass`, as after any payout. Mutates.
+ */
+export function reclassify(s: Save): { from: RankInfo; to: RankInfo; points: number } | null {
+  if (!canReclassify(s)) return null;
+  const from = rankOf(s);
+  const to = nextRankOf(s)!;
+  s.hunter.rank = to.key;
+  s.hunter.points += RANK_UP_POINTS;
+  return { from, to, points: RANK_UP_POINTS };
+}
+
+/** Claim every rank the level has reached, then the class: a hunter who keeps up, as the balance tools model one. Mutates. */
+export function reclassifyAll(s: Save): number {
+  let n = 0;
+  while (reclassify(s)) n++;
+  if (n) syncClass(s);
+  return n;
+}
+
 /** The letter the Gates and the Exchange read. Sovereign counts as S. */
 export function gateRank(s: Save): Rank {
-  const k = rankFor(s.hunter.level).key;
+  const k = rankOf(s).key;
   return k === 'N' ? 'S' : k;
 }
 
@@ -86,10 +125,11 @@ export interface XpResult {
   from: number;
   to: number;
   points: number;
-  rankUp: RankInfo | null;
+  /** A rank this payout's levels newly qualified the hunter for. It is theirs to claim, not yet held. */
+  qualifies: RankInfo | null;
 }
 
-/** Award experience. Mutates. */
+/** Award experience. A rank it qualifies the hunter for is claimed separately, with `reclassify`. Mutates. */
 export function grantXP(s: Save, amount: number): XpResult {
   const gained = Math.max(0, Math.round(amount));
   const from = s.hunter.level;
@@ -105,14 +145,8 @@ export function grantXP(s: Save, amount: number): XpResult {
     s.hunter.points += POINTS_PER_LEVEL;
   }
   const to = s.hunter.level;
-  let rankUp: RankInfo | null = null;
-  if (rankFor(to).key !== fromRank) {
-    rankUp = rankFor(to);
-    // One bonus per rank crossed, so a big payout across two ranks pays both.
-    const crossed = RANK_LADDER.filter((r) => r.min > from && r.min <= to).length;
-    s.hunter.points += RANK_UP_POINTS * crossed;
-  }
-  return { gained, levels: to - from, from, to, points: s.hunter.points - pointsBefore, rankUp };
+  const qualifies = rankFor(to).key !== fromRank ? rankFor(to) : null;
+  return { gained, levels: to - from, from, to, points: s.hunter.points - pointsBefore, qualifies };
 }
 
 /** Exactly the shortfall to the practice level, so clearing the practice gate lands you on it. */
@@ -152,9 +186,9 @@ export function leadStat(a: Attrs): Stat {
   return STATS.reduce((best, k) => (a[k] > a[best] ? k : best), 'STR' as Stat);
 }
 
-/** Reclassify from the leading attribute and current rank. Returns the change, if any. */
+/** Reclassify from the leading attribute and the rank held. Returns the change, if any. */
 export function syncClass(s: Save) {
-  const c = classFor(s.hunter.attrs, rankFor(s.hunter.level).key);
+  const c = classFor(s.hunter.attrs, rankOf(s).key);
   if (!c || c.id === s.hunter.classId) return null;
   const was = classById(s.hunter.classId);
   s.hunter.classId = c.id;

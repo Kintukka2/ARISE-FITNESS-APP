@@ -52,6 +52,8 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | Spire reward tiers, rank blurbs | The System | `core/spire.ts`, `core/progression.ts` |
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
 | The Arrival: the cut between the office and the first Notification | No one. It carries no words, so the System's first words are its Notification | `ui/arrival.ts`, `screens/Onboarding.tsx` |
+| The rank-up: the cut between a held Reclassification and "Reclassification approved." | No one, as the Arrival | `ui/arrival.ts` (`rankUp`), `app/flow.ts` (`claimRank`) |
+| A rank's requirements met: `You have met the requirements for [Reclassification: D-Rank].` | The System | `app/flow.ts` (`reclassReady`) |
 | Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
@@ -72,11 +74,12 @@ the table above gives it, so a player can tell who is talking before reading a w
 | **The interface** | Its own windows (confirmations, tutorials) and the controls between the tiles (the nav): the System's geometry, square corners, scratched glass and a hairline inside the edge, but no lit rails, no header plate and Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
 
-**The Arrival has no speaker and no frame.** It is light in the System's cyan on a canvas: the rank
-plate lifting off the licence, a lock of rings catching, the breach. It never sets a word, so it
-never takes Montserrat or the frame, and nothing in it may be read as the System talking before its
-first Notification. A later cinematic follows the same rule: if it needs words, they go in a
-window after it.
+**The cinematics have no speaker and no frame.** Each is light on a canvas: a rank plate lifting off
+where it was shown, a lock of rings catching, the breach. The Arrival is the System's cyan; the
+rank-up is advancement's gold, and the new rank's plate rises out of its breach in the rank's own
+colour. Neither sets a word, so neither takes Montserrat or the frame, and nothing in the Arrival may
+be read as the System talking before its first Notification. A later cinematic follows the same
+rule: if it needs words, they go in a window after it.
 
 ### The System's frame
 
@@ -172,9 +175,13 @@ and no dashes.
 - **One event, one announcement.** When two windows would report the same moment, keep the one
   that carries more and cut the other. Clearing the Practice Gate completes the Secret Quest
   `First Light`, so there is no second "You have cleared [The Practice Gate]."
-- **A payout is reported once, in the window that pays it.** The level-up window's Ability Points
-  already include the rank-up bonus, so a rank window never repeats them. Daily Quest pay is shown
-  in the run's results, where `raid.finish` settled it.
+- **A payout is reported once, in the window that pays it.** A level qualifies the hunter for a rank
+  and the hunter claims it, so the rank's own window ("Reclassification approved.") reports the
+  rank's Ability Points and the level-up window never includes them. Daily Quest pay is shown in the
+  run's results, where `raid.finish` settled it.
+- **A rank is told twice, as two events:** once when the level meets its requirements
+  (`You have met the requirements for [Reclassification: D-Rank].`), once when the hunter claims it
+  ("Reclassification approved."). The first pays nothing.
 - **A character may react to what the System announced**, without repeating its numbers: the
   System reports C-Rank, then Valcorde says it took him eleven years.
 - **Order follows the engine:** the Spire's week, level-ups, Secret Quests and class changes, then
@@ -191,6 +198,7 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | QUEST INFO | One quest: name, brief, goal, rewards |
 | QUEST REWARDS | What a finished quest paid |
 | STATUS | The hunter's sheet |
+| STATS | The five stats: where each comes from (base, class, gear) and the hunter's numbers in a fight. Its tile is the Inventory's Stats |
 | SKILLS | Skills, passive and active |
 | EQUIPMENT | What the hunter wears: a slot to each of the ten around them, the score, the sets worn |
 | INVENTORY | What the hunter holds |

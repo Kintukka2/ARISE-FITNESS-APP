@@ -3,7 +3,7 @@ import { defaults } from '@/core/save';
 import { grant, autoEquip, ofRank, upgradeStep, worn } from '@/core/gear';
 import { ALL_DUNGEONS } from '@/core/gates';
 import * as shadows from '@/core/shadows';
-import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, syncClass } from '@/core/progression';
+import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, rankFor, syncClass } from '@/core/progression';
 import type { Rank } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
 import { rng } from '@/core/util';
@@ -16,6 +16,8 @@ export const LEVELS: Record<Rank, [number, number, number]> = {
 export function typicalHunter(level: number, gearRank: Rank, seed: string) {
   const s = defaults();
   s.hunter.level = level;
+  // A typical hunter claims each rank as soon as the level reaches it.
+  s.hunter.rank = rankFor(level).key;
   const ranks = RANK_LADDER.filter((r) => r.min <= level && r.min > 1).length;
   // Points from levels and rank-ups. Secret Missions add a little on top; a typical hunter is not counted on to have them.
   s.hunter.points = (level - 1) * POINTS_PER_LEVEL + ranks * RANK_UP_POINTS;

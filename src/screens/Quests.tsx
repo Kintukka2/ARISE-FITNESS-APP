@@ -5,9 +5,9 @@
  * a rank in `grantXP`, the Spire's week in `spire.settle`, a Trial and the Chosen in `raid.finish`).
  * This screen only says where each one stands.
  */
-import { playBeats } from '@/app/flow';
+import { claimRank, playBeats } from '@/app/flow';
 import type { ComponentChildren, FunctionComponent } from 'preact';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
 import { board, dungeonById, entryBlock } from '@/core/gates';
@@ -32,7 +32,7 @@ import { ContractsWindow, QuestGoal, QuestWindow } from '@/ui/contracts';
 import { BentoGrid, type Tile } from '@/ui/bento';
 import { Field } from '@/ui/frame';
 import { Glyph, Sigil } from '@/ui/icons';
-import { openSheet, toast } from '@/ui/overlays';
+import { HoldButton, openSheet, toast } from '@/ui/overlays';
 import { openBrief } from './Gates';
 
 /** A quest as the grid shows it: its tile, and the window its sheet opens. */
@@ -107,9 +107,9 @@ function rankTile(s: Save): QuestTile | null {
   const q = reclassification(s);
   if (!q) return null;
   return {
-    key: 'rank', kind: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: false,
-    count: `${s.hunter.level}/${q.to.min}`,
-    status: <>Experience needed: <b class="num">{group(q.left)}</b></>,
+    key: 'rank', kind: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: false, hot: q.ready,
+    count: q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`,
+    status: q.ready ? 'Requirements met.' : <>Experience needed: <b class="num">{group(q.left)}</b></>,
     art: (
       <span class="qa-rank">
         <Sigil rank={q.from.key} size={34} />
@@ -121,8 +121,14 @@ function rankTile(s: Save): QuestTile | null {
   };
 }
 
+/**
+ * The Reclassification window: the rank held and the one above it, as plates; the level it asks; what
+ * claiming it brings. Once the level is reached, a hold claims it, and the rank-up lifts the plate
+ * off this window (`claimRank`).
+ */
 function RankBody() {
   const s = useSave();
+  const plate = useRef<HTMLSpanElement>(null);
   const q = reclassification(s);
   if (!q) return null;
   const to = q.to.key === 'N' ? q.to.name : q.to.key;
@@ -137,10 +143,24 @@ function RankBody() {
   if (q.slots) rewards.push(<>Shadow slots: {q.slots[0]} → {q.slots[1]}</>);
   if (q.throne) rewards.push(<span class="grant">ACCESS GRANTED: THE HOLLOW THRONE</span>);
   return (
-    <QuestWindow bare name={`Reclassification: ${q.to.name}`} class="quest-rank"
+    <QuestWindow bare name={`Reclassification: ${q.to.name}`} class={`quest-rank ${q.ready ? 'is-ready' : ''}`}
+      lead={(
+        <div class="rankplates" aria-label={`${q.from.name} to ${q.to.name}`}>
+          <span class="rankplates__from" ref={plate}><Sigil rank={q.from.key} size={58} /></span>
+          <span class="rankplates__path" style={`--p: ${q.share}`} aria-hidden="true"><i /></span>
+          <span class="rankplates__to"><Sigil rank={q.to.key} size={58} /></span>
+        </div>
+      )}
       goals={<QuestGoal id="rank" text={`Reach Level ${q.to.min}.`} hint={`Experience needed: ${group(q.left)}`}
-        got={s.hunter.level} need={q.to.min} done={false} pct={q.share} />}
-      rewards={rewards} />
+        got={Math.min(s.hunter.level, q.to.min)} need={q.to.min} done={q.ready} pct={q.share} />}
+      rewards={rewards}>
+      {q.ready && (
+        <div class="rankclaim" key={q.to.key}>
+          <HoldButton hold={{ label: 'Hold To Reclassify', ms: 2400, ticks: 6, holding: 'Reclassifying…', done: 'Reclassified', after: 260 }}
+            onFire={() => void claimRank(plate.current?.querySelector('svg') ?? plate.current)} />
+        </div>
+      )}
+    </QuestWindow>
   );
 }
 

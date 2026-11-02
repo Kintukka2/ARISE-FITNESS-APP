@@ -222,6 +222,11 @@ export interface Save {
     regNo: string;
     level: number;
     xp: number;
+    /**
+     * The rank the hunter holds. A level only qualifies them for the next one; they claim it from its
+     * Reclassification quest (`progression.reclassify`). Sovereign is `N`.
+     */
+    rank: Rank | 'N';
     attrs: Attrs;
     points: number;
     classId: string | null;
