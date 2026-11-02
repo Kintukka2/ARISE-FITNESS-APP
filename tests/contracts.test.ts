@@ -105,6 +105,17 @@ describe('counting', () => {
     expect(s.contracts.list[0].got).toBe(2);
   });
 
+  it('reports every contract a run moved, from where it stood, and nothing it did not touch', () => {
+    const s = hunter(5);
+    give(s, [{ kind: 'clear', need: 3 }, { kind: 'offroad' }, { kind: 'tired', at: 15 }]);
+    const a = contracts.count(s, deed(), day);
+    expect(a.moved.map((m) => [m.kind, m.from, m.got, m.done])).toEqual([['clear', 0, 1, false]]);
+    const b = contracts.count(s, deed({ offroad: true }), day);
+    expect(b.moved.map((m) => [m.kind, m.from, m.got, m.done])).toEqual([['clear', 1, 2, false], ['offroad', 0, 1, true]]);
+    expect(b.done.map((c) => c.kind)).toEqual(['offroad']);
+    expect(contracts.count(s, deed({ cleared: false }), day).moved).toEqual([]);
+  });
+
   it('pays each contract once, when it is done, and the bonus once, with the last', () => {
     const s = hunter(5);
     give(s, [{ kind: 'clear' }, { kind: 'offroad' }, { kind: 'tired', at: 15 }]);

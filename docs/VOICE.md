@@ -213,6 +213,8 @@ for advancement, orange for Gates. The text inside follows these:
 
 - **A name** sits in brackets and stands out. An enemy or boss name is red.
 - **A gain or an effect's value** is green: `+25`, `ALL ABILITIES +40%`.
+- **Unspent Ability Points** are gold wherever a tile shows them, with a lit `+` mark: gold is
+  advancement, the "there is something for you here" colour. They stop being gold once spent.
 - **A warning** reddens only its key word: in "You will be transferred to the penalty zone.",
   only "penalty zone" is red.
 - **A failure or refusal** reddens the whole message and keeps the frame of its subject.
@@ -757,7 +759,10 @@ out of the way. The art, the System and Valcorde carry the mood.
 8. **A tutorial is the interface teaching**, short and direct: "Tap a foe to aim at it, then act."
 9. **No contractions.** The interface is as plain as the System, without its stiffness; Valcorde is
    the only one who contracts.
-10. **A screen shows a number once.** If a tile already shows it, nothing beside it repeats it: not
+10. **A label opens with a capital**, a section's right-hand label included: "Redraw: 03:55:45",
+    "For allies and Shadows", "The party's". Only the game's own terms keep a capital inside it
+    (see [Words](#words)).
+11. **A screen shows a number once.** If a tile already shows it, nothing beside it repeats it: not
     a tile's sub-label, not a section header, not a notice. On Shadows, Bound is every successful
     extraction, so the Extractions tile does not add "3 successful", and the list header does not
     add "3 commanded".
@@ -840,6 +845,8 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | stats | attributes | STR, VIT, AGI, PER and INT, as the source says it: "All stats -50%" |
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
+| Shadow | shadow | Capitalised everywhere, as a game term, like Gate |
+| ally | Ally | A hunter in the party. Not a game term, so lowercase inside a sentence: "For allies and Shadows" |
 | Arise | ARISE | The app's name in prose: "How Arise Works". The splash wordmark and the extraction button set it in capitals. The store title is `Arise: Dungeon RPG` |
 | Mana Shards | | In System text, always in full. The interface may say "shards" |
 | Citation, Directive, Edict, Testament | Mission | Secret Quest tiers, lowest to highest |

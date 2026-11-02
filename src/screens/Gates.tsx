@@ -467,8 +467,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <MapView m={map} road={proj.road} compact />
       </Section>
 
-      <Section title="Standing orders" right={party.length + squad.length ? 'allies and Shadows' : undefined}>
-        <div class="chips" aria-label="Standing orders" data-tour="orders">
+      <Section title="Standing orders" right={party.length + squad.length ? 'For allies and Shadows' : undefined}>
+        <div class="chips chips--orders" aria-label="Standing orders" data-tour="orders">
           {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
         </div>
         <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc}</p>

@@ -17,7 +17,6 @@ import { BLOCK } from '@/data/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial } from '@/core/trial';
 import { OVERCHARGE } from '@/data/ascension';
-import * as contracts from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -29,7 +28,7 @@ import * as store from '@/store';
 import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
-import { ContractsWindow } from '@/ui/contracts';
+import { ContractsMoved } from '@/ui/contracts';
 import { Rewards, SysFrame } from '@/ui/frame';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
@@ -499,6 +498,30 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const s = useSave();
   const [flipped, setFlipped] = useState<number[]>([]);
   const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
+  // Auto Equip's place is kept from the start when an upgrade is waiting, so nothing jumps when it appears.
+  const [upgradeWaits] = useState(() => gear.upgradeCount(store.get()) > 0);
+  const [equipped, setEquipped] = useState(false);
+  const faceDown = r.loot.length - flipped.length;
+  const reveal = (i: number) => {
+    setFlipped((f) => (f.includes(i) ? f : [...f, i]));
+    sfx.window('gear');
+    buzz([14, 30, 22]);
+  };
+  const revealAll = () => r.loot.forEach((_, i) => {
+    if (!flipped.includes(i)) setTimeout(() => reveal(i), r.loot.slice(0, i).filter((_, j) => !flipped.includes(j)).length * 260);
+  });
+  // The loot is already in the Inventory; leaving with some face down only gets a reminder to look.
+  const leave = async () => {
+    if (faceDown > 0) {
+      const v = await sys({
+        title: 'Unrevealed Loot', kind: 'app', typed: false,
+        lines: [`${faceDown === 1 ? '1 item is' : `${faceDown} items are`} still face down. ${faceDown === 1 ? 'It is' : 'They are'} already in your Inventory.`],
+        actions: [{ label: 'Leave Anyway', value: 'leave' }, { label: 'Reveal All', value: 'reveal', primary: true }],
+      });
+      if (v !== 'leave') { revealAll(); return; }
+    }
+    onDone();
+  };
   const v = vitals.read(s);
   const trial = isTrial(d);
   const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
@@ -526,26 +549,28 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of {vitals.FATIGUE_MAX}</small></div>
         </div>
         {r.loot.length > 0 && (
-          <section>
-            <span class="label">Tap to reveal</span>
+          <section class="loot">
+            <span class="label">{faceDown ? 'Tap to reveal' : 'Loot'}</span>
             <div class="haul">
               {r.loot.map((it, i) => {
                 const open = flipped.includes(i);
                 const def = gear.defOf(it);
                 return (
-                  <button type="button" key={it.id} class={`haul__item flip ${open ? 'is-open' : ''}`} data-rarity={def?.rank} onClick={() => {
-                    if (open) return;
-                    setFlipped([...flipped, i]);
-                    sfx.window('gear');
-                    buzz([14, 30, 22]);
-                  }}>
-                    {open ? <><GearArt item={it} size={52} /><small>{def?.name}</small></> : <span class="flip__back" aria-label="Face-down item">?</span>}
+                  <button type="button" key={it.id} class={`haul__item flip ${open ? 'is-open' : ''}`} style={`--i:${i}`} data-rarity={def?.rank}
+                    aria-label={open ? def?.name : 'Reveal this item'} onClick={() => !open && reveal(i)}>
+                    {open ? <GearArt item={it} size={56} /> : <span class="flip__back" aria-hidden="true">?</span>}
+                    <small>{open ? def?.name : ''}</small>
                   </button>
                 );
               })}
             </div>
-            {flipped.length === r.loot.length && gear.upgradeCount(s) > 0 && (
-              <Btn kind="gold" size="sm" onClick={() => { store.update(gear.autoEquip); sfx.success(); }}>Auto Equip Upgrades</Btn>
+            {upgradeWaits && (
+              // Dimmed until everything is turned over: one more reason to turn it.
+              <div class={`loot__act ${faceDown ? '' : 'is-ready'}`}>
+                {equipped
+                  ? <span class="grant">Upgrades equipped</span>
+                  : <Btn kind="gold" size="sm" disabled={faceDown > 0} onClick={() => { store.update(gear.autoEquip); setEquipped(true); sfx.success(); }}>Auto Equip Upgrades</Btn>}
+              </div>
             )}
           </section>
         )}
@@ -601,9 +626,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </SysFrame>
           );
         })}
-        {!isPractice(d) && contracts.contractsOpen(s) && s.contracts.list.length > 0 && (
-          <ContractsWindow c={s.contracts} fresh={deal.done.map((k) => k.kind)} />
-        )}
+        {!isPractice(d) && deal.moved.length > 0 && <ContractsMoved c={s.contracts} moved={deal.moved} />}
         {!isPractice(d) && deal.done.length > 0 && (
           <SysFrame title="Quest Rewards" class="questrewards">
             <p>You got rewards.</p>
@@ -611,7 +634,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             {deal.bonus && <p class="muted">Completion bonus included.</p>}
           </SysFrame>
         )}
-        <Btn kind="primary" size="lg" block onClick={onDone} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
+        <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>
     </div>
   );

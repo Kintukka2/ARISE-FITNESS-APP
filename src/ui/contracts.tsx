@@ -1,10 +1,11 @@
 /**
  * QUEST INFO windows: one quest each, its name, its goals and what it pays, as the source sets them.
- * The day's Daily Quests are one, opened from the Quests screen and again when a run is settled; the
+ * The day's Daily Quests are one, opened from the Quests screen (a run's results show only the ones it moved); the
  * Quests screen builds every other quest from the same pieces.
  */
 import type { ComponentChildren } from 'preact';
-import { bonusOf, contractHint, contractText, payOf, type Contracts } from '@/core/contracts';
+import { useEffect, useState } from 'preact/hooks';
+import { bonusOf, contractHint, contractText, payOf, type Contracts, type Moved } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
 import { Bar } from './components';
 import { Rewards, SysFrame, type FrameKind } from './frame';
@@ -99,4 +100,30 @@ export function ContractsWindow({ c, fresh = [], bare, children }: {
       {children}
     </QuestWindow>
   );
+}
+
+/**
+ * What a run did to the day's Daily Quests, on its results: only the quests it moved, each count and
+ * bar running from where it stood to where it stands. The whole window stays on the Quests screen.
+ */
+export function ContractsMoved({ c, moved }: { c: Contracts; moved: Moved[] }) {
+  return (
+    <SysFrame title="Quest Info" class="questinfo questinfo--moved" label="Daily Quests">
+      <p class="questinfo__name"><strong>[Daily Quests]</strong></p>
+      <ul class="questinfo__goals">
+        {moved.map((k) => <MovedGoal key={k.kind} k={k} grade={c.grade} />)}
+      </ul>
+    </SysFrame>
+  );
+}
+
+function MovedGoal({ k, grade }: { k: Moved; grade: Contracts['grade'] }) {
+  const [at, setAt] = useState(k.from);
+  // A beat after the results land, the count and the bar move to where the run left them.
+  useEffect(() => {
+    const t = setTimeout(() => setAt(k.got), 450);
+    return () => clearTimeout(t);
+  }, []);
+  const done = k.done && at >= k.got;
+  return <QuestGoal id={k.kind} text={contractText(k, grade)} got={at} need={k.need} done={done} fresh={done} count={done ? 'Done' : undefined} />;
 }

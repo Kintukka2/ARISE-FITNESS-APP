@@ -116,7 +116,8 @@ difficulty moves a little with its map.
 
 The player sees these as Daily Quests; the code and this section call them contracts. The System
 issues three a day, replacing what the exercise Daily Quest used to be. They sit in a
-System window on the Quests screen, and again on the results of every run. The board marks each
+System window on the Quests screen. A run's results show only the ones it moved, each count and
+bar running from where it stood (`ContractReport.moved`, `ContractsMoved`). The board marks each
 gate a contract names with a Quest chip, and the Quests tab counts the day's until they are seen.
 
 - **Drawn** (`core/contracts.ts`, table in `data/contracts.ts`) from the day and the hunter's grade,
@@ -148,7 +149,8 @@ and the Secret Quests, whose window ticks off each one done and adds up what the
 (`missions.earned`). The day's contracts and the Secret Quests span the grid; the climbs pair up
 beside each other, and the last of an odd number spans it too. None of it pays:
 each quest is settled where it always was, and the screen reads where it stands (`core/quests.ts`,
-`contracts.unseen`). The tab opens with the practice gate cleared, when the contracts do. Its badge
+`contracts.unseen`). The tab opens with the practice gate cleared, when the contracts do, and the
+System announces them (`[Daily Quests have arrived.]`) on the hunter's first visit to it. Its badge
 counts the day's contracts until the screen has shown them, and the Trial while it stands open with
 today's attempt unused (`quests.waiting`), as the Inventory tab counts unspent points.
 

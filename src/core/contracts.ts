@@ -127,9 +127,14 @@ export function progress(c: Contract, grade: Rank, x: Deed): number {
 export const payOf = (grade: Rank) => ({ shards: shop.gateShards(grade, CONTRACT_PAY.shards), xp: Math.round(GATE_XP[grade] * CONTRACT_PAY.xp) });
 export const bonusOf = (grade: Rank) => ({ shards: shop.gateShards(grade, CONTRACT_BONUS.shards), xp: Math.round(GATE_XP[grade] * CONTRACT_BONUS.xp) });
 
+/** A contract a run moved: as it stands after the run, and the count it stood at before. */
+export interface Moved extends Contract { from: number }
+
 export interface ContractReport {
   /** Contracts this run completed, as they stood when it did. */
   done: Contract[];
+  /** Every contract this run moved, done or not, in the day's order. */
+  moved: Moved[];
   grade: Rank;
   /** It completed the last of the day's, and the bonus with it. */
   bonus: boolean;
@@ -138,7 +143,7 @@ export interface ContractReport {
   xp: number;
 }
 
-export const nothing = (grade: Rank = 'E'): ContractReport => ({ done: [], grade, bonus: false, shards: 0, xp: 0 });
+export const nothing = (grade: Rank = 'E'): ContractReport => ({ done: [], moved: [], grade, bonus: false, shards: 0, xp: 0 });
 
 /** Count a finished run against today's contracts and pay the shards of any it completes. Mutates. */
 export function count(s: Save, x: Deed, day: string): ContractReport {
@@ -147,14 +152,17 @@ export function count(s: Save, x: Deed, day: string): ContractReport {
   const out = nothing(c.grade);
   for (const k of c.list) {
     if (k.done) continue;
+    const from = k.got;
     k.got = Math.min(k.need, k.got + progress(k, c.grade, x));
-    if (k.got < k.need) continue;
-    k.done = true;
-    const p = payOf(c.grade);
-    out.shards += shop.earn(s, p.shards);
-    out.xp += p.xp;
-    out.done.push({ ...k });
-    s.stats.contracts++;
+    if (k.got >= k.need) {
+      k.done = true;
+      const p = payOf(c.grade);
+      out.shards += shop.earn(s, p.shards);
+      out.xp += p.xp;
+      out.done.push({ ...k });
+      s.stats.contracts++;
+    }
+    if (k.got > from) out.moved.push({ ...k, from });
   }
   if (!c.bonus && c.list.length && c.list.every((k) => k.done)) {
     c.bonus = true;
