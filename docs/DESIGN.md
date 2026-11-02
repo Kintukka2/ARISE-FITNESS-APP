@@ -148,8 +148,13 @@ claims it by holding *Hold To Reclassify* in its window (`progression.reclassify
 The rank-up then plays: the gold cut from `ui/arrival.ts`, where the held plate breaks open and the
 new one rises. The rank is the one held (`hunter.rank`, read by `rankOf`), and everything a rank
 opens reads that: the board, the Exchange, the class and its tier, Shadow slots. The balance tools
-model a hunter who claims each rank as soon as the level reaches it (`reclassifyAll`), so claiming
-changes no number. The Pale Spire's week as a *Weekly Quest*,
+model a hunter who claims each rank as soon as the level reaches it (`reclassifyAll`), so the tuning
+does not move: `npm run balance` and `npm run calibrate` come out as before. One run per rank does
+change: the one that reaches the level is settled at the rank held, so its Gate can count toward an
+Ascension proof where it used to fall under the new grade. In the campaign that opens Ascension a
+little sooner for the three-session hunter, and its 120 days take a different path from there. A
+hunter may also hold a rank on purpose; the board, the pay, the class and the Shadow slots stay
+the held rank's. The Pale Spire's week as a *Weekly Quest*,
 set at the next floor that raises what the week pays (`spire.tierGoal`); the proof of the next
 Ascension level and its Trial; the Chosen walking today, with how many of those sent have fallen;
 and the Secret Quests, whose window ticks off each one done and adds up what they have paid
