@@ -10,7 +10,8 @@ import { createStore } from '@/store';
 import * as store from '@/store';
 import { buzz, flash } from './feedback';
 import { Rail, SysHead, type FrameKind } from './frame';
-import { CoachPortrait, Glyph, SystemMark } from './icons';
+import { CoachHead } from './components';
+import { Glyph, SystemMark } from './icons';
 import { SYSTEM_KINDS } from './system';
 
 // ------------------------------------------------------------------ back stack
@@ -263,14 +264,16 @@ function SysWindow({ w }: { w: Queued }) {
         )
         // Valcorde, the app and the other voices keep frames of their own.
         : (
-          <div class={`syswin syswin--${kind} ${w.center ? 'is-center' : ''}`} onClick={skipTyping}>
-            <header class="syswin__head">
-              <span class="syswin__glyph" aria-hidden="true">{w.glyph ? <Glyph name={w.glyph} /> : '!'}</span>
-              <h2 class="syswin__title">{w.title ?? 'Notification'}</h2>
-            </header>
-            {kind === 'coach' && (
-              <div class="syswin__who"><CoachPortrait size={40} /><div><b>Ryn Valcorde</b><small>Instructor · Hunter Training</small></div></div>
-            )}
+          <div class={`syswin syswin--${kind} ${kind === 'coach' ? 'coachframe' : ''} ${w.center ? 'is-center' : ''}`} onClick={skipTyping}>
+            {kind === 'coach'
+              // Valcorde's channel: his head, no header word, never the System's circled mark.
+              ? <CoachHead speaking={!typedDone} size={44} />
+              : (
+                <header class="syswin__head">
+                  <span class="syswin__glyph" aria-hidden="true">{w.glyph ? <Glyph name={w.glyph} /> : '!'}</span>
+                  <h2 class="syswin__title">{w.title ?? 'Notification'}</h2>
+                </header>
+              )}
             {body}
           </div>
         )}
@@ -424,15 +427,19 @@ function TourView({ t }: { t: Tour & { resolve: () => void } }) {
   const cardBottom = rect && cardTop === undefined ? Math.max(12, vh - rect.top + pad + 14) : undefined;
   return (
     <div class="tour" onClick={next} role="dialog" aria-label={t.title}>
-      <div class="tour__mask" style={rect
+      <div class={`tour__mask tour__mask--${t.who}`} style={rect
         ? { left: rect.left - pad, top: rect.top - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }
         : { left: '50%', top: '40%', width: 0, height: 0 }} />
-      <div class={`tour__card tour__card--${t.who}`} style={rect ? { top: cardTop, bottom: cardBottom } : { bottom: 'calc(var(--nav-h) + 24px)' }}>
-        <header class="tour__head">
-          {t.who === 'coach' ? <CoachPortrait size={28} /> : <SystemMark size={28} />}
-          <b>{t.who === 'coach' ? 'Ryn Valcorde' : 'Notification'}</b>
-          {t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}
-        </header>
+      <div class={`tour__card tour__card--${t.who} ${t.who === 'coach' ? 'coachframe' : ''}`} style={rect ? { top: cardTop, bottom: cardBottom } : { bottom: 'calc(var(--nav-h) + 24px)' }}>
+        {t.who === 'coach'
+          ? <div class="tour__head tour__head--coach"><CoachHead speaking size={32} />{t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}</div>
+          : (
+            <header class="tour__head">
+              <SystemMark size={28} />
+              <b>Notification</b>
+              {t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}
+            </header>
+          )}
         <h3 class="tour__title">{t.title}</h3>
         <p class="tour__say">{step.say}</p>
         <footer class="tour__foot">

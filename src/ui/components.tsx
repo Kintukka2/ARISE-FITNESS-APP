@@ -6,6 +6,7 @@ import { defOf, RARITY, rollTag, score } from '@/core/gear';
 import type { Item, Rank } from '@/core/types';
 import { compact } from '@/core/util';
 import { CoachPortrait, Glyph, Shard, Sigil } from './icons';
+import { useTyped } from './typed';
 
 type Sound = 'tap' | 'blip' | 'success' | 'gate' | 'none';
 
@@ -127,17 +128,37 @@ export function Fold({ title, right, children, open: initial = false, onOpen }: 
   );
 }
 
+/** The signal on Valcorde's channel: four bars that move while he speaks and rest when he is done. */
+export function Signal({ live }: { live: boolean }) {
+  return <span class={`signal ${live ? 'is-live' : ''}`} aria-hidden="true"><i /><i /><i /><i /></span>;
+}
+
 /**
- * Ryn Valcorde speaking inline at the top of a screen. The System never speaks here: a System line on
- * a screen is a `SysFrame` (docs/VOICE.md, "The look").
+ * Valcorde's header, wherever he speaks: his portrait in its box, his name and post, and the signal.
+ * He does not know the System exists, so nothing of its frame is here (docs/VOICE.md, "The look").
  */
-export function Voice({ children, tour }: { children: ComponentChildren; tour?: string }) {
+export function CoachHead({ speaking = false, size = 40 }: { speaking?: boolean; size?: number }) {
   return (
-    <div class="voice voice--coach" data-tour={tour}>
-      <div class="voice__face"><CoachPortrait size={36} /></div>
+    <header class="coachhead">
+      <span class="coachface"><CoachPortrait size={size} /></span>
+      <span class="coachhead__who"><b class="coachname">Ryn Valcorde</b><small class="coachrole">Instructor · Hunter Training</small></span>
+      <Signal live={speaking} />
+    </header>
+  );
+}
+
+/**
+ * Ryn Valcorde speaking inline at the top of a screen, on his channel, the line typing out as he says
+ * it. The System never speaks here: a System line on a screen is a `SysFrame` (docs/VOICE.md, "The look").
+ */
+export function Voice({ children, tour }: { children: string; tour?: string }) {
+  const { shown, done } = useTyped(children, { speed: 18, sound: false });
+  return (
+    <div class="voice coachframe" data-tour={tour}>
+      <span class="coachface"><CoachPortrait size={40} /></span>
       <div class="voice__body">
-        <b class="voice__name">Ryn Valcorde</b>
-        <p class="voice__line">{children}</p>
+        <div class="voice__top"><b class="coachname">Ryn Valcorde</b><Signal live={!done} /></div>
+        <p class="voice__line"><span class="sr-only">{children}</span><span aria-hidden="true">{shown}{!done && <span class="caret" />}</span></p>
       </div>
     </div>
   );
