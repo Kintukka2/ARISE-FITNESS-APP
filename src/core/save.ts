@@ -32,7 +32,7 @@ export function defaults(): Save {
     found: [],
     gates: {
       clears: 0, fails: 0, withdrawn: 0, cleared: [], sealed: { day: null, ids: [] },
-      runs: {}, raid: null, met: [], together: {}, bosses: [],
+      runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [],
       last: null, unbroken: 0, bestUnbroken: 0, tactic: 'default',
     },
     shadows: { army: [], squad: [], fresh: [] },

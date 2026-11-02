@@ -262,6 +262,8 @@ export interface Save {
     met: string[];
     together: Record<string, number>;
     bosses: string[];
+    /** Every Gate the hunter has walked into: the brief shows its map from then on (`gates.mapKnown`). */
+    entered: string[];
     /** How the last run ended, and clears since the last time you were carried out. */
     last: 'cleared' | 'withdrawn' | 'defeated' | null;
     unbroken: number;

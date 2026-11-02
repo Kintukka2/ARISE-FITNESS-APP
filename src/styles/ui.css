@@ -658,6 +658,29 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 /* In a sheet the frame is the sheet's: the window's parts stack as they would inside its glass. */
 .questinfo--bare { display: flex; flex-direction: column; gap: 14px; }
 .questinfo__goals { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* A run's Daily Quests on its results: one line to each quest the run moved, in the Gates' orange; a done line lit green. */
+.questlines .sysframe__glass { gap: 8px; padding: 10px 12px 12px; }
+.questlines__name { margin: 0; text-align: center; font-size: 0.86rem; }
+.questlines__list { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.qline { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 6px 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); transition: border-color 400ms, background 400ms; }
+.qline__ring { flex: none; width: 30px; height: 30px; overflow: visible; }
+.qline__ring circle { fill: none; stroke-width: 3; }
+.qline__track { stroke: rgba(255, 255, 255, 0.1); }
+.qline__arc { stroke: var(--win); transform: rotate(-90deg); transform-origin: 15px 15px; transition: stroke-dashoffset 650ms var(--ease), stroke 300ms; filter: drop-shadow(0 0 3px var(--win-glow)); }
+.qline__mark { fill: var(--verdant); stroke: none; filter: drop-shadow(0 0 4px var(--verdant-glow)); animation: windowIn 360ms var(--ease) both; transform-origin: 15px 15px; }
+.qline__mark--tick { fill: none; stroke: var(--verdant); stroke-width: 2.4; stroke-linecap: square; }
+.qline__text { flex: 1; min-width: 0; font-size: 0.82rem; line-height: 1.3; color: var(--sys-ink); }
+.qline__count { flex: none; font-size: 0.82rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.qline__pay { flex: none; display: inline-flex; align-items: center; gap: 10px; font-size: 0.76rem; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.qline__shards { display: inline-flex; align-items: center; gap: 3px; }
+.qline.is-done { border-color: color-mix(in srgb, var(--verdant) 50%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--verdant) 18%, transparent), rgba(3, 8, 20, 0.45) 72%); }
+.qline.is-done .qline__arc { stroke: var(--verdant); filter: drop-shadow(0 0 4px var(--verdant-glow)); }
+.qline.is-done .qline__text { color: var(--verdant); }
+.qline.is-bonus { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 16%, transparent), rgba(3, 8, 20, 0.45) 72%); }
+.qline.is-bonus .qline__arc, .qline.is-bonus .qline__mark { stroke: var(--gold); }
+.qline.is-bonus .qline__mark { fill: var(--gold); stroke: none; filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.qline.is-bonus .qline__text { color: var(--gold); }
 .contract { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: start; }
 .contract__mark { display: grid; place-items: center; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--sys-hair-hot); }
 .contract__mark .ico { width: 13px; height: 13px; }

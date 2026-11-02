@@ -5,11 +5,11 @@
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { bonusOf, contractHint, contractText, payOf, type Contracts, type Moved } from '@/core/contracts';
+import { bonusOf, contractHint, contractText, payOf, type ContractReport, type Contracts, type Moved } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
 import { Bar } from './components';
 import { Rewards, SysFrame, type FrameKind } from './frame';
-import { Glyph } from './icons';
+import { Glyph, Shard } from './icons';
 
 /** One goal: the order, a hint under it while it is undone, a bar for a count above one, and the count. */
 export function QuestGoal({ id, text, hint, got, need, done, fresh, count, pct }: {
@@ -106,27 +106,68 @@ export function ContractsWindow({ c, fresh = [], bare, children }: {
 }
 
 /**
- * What a run did to the day's Daily Quests, on its results: only the quests it moved, each count and
- * bar running from where it stood to where it stands. The whole window stays on the Quests screen.
+ * What a run did to the day's Daily Quests, on its results, in the Gates' orange: a line to each quest
+ * the run moved, its ring filling from where it stood to where it stands, then its count, or what it
+ * paid once done; and a line for the completion bonus when this run earned it. On the results it
+ * stands in for QUEST INFO and QUEST REWARDS (docs/VOICE.md, "Announcements").
  */
-export function ContractsMoved({ c, moved }: { c: Contracts; moved: Moved[] }) {
+export function QuestLines({ c, report }: { c: Contracts; report: ContractReport }) {
+  const pay = payOf(c.grade);
+  const bonus = bonusOf(c.grade);
   return (
-    <SysFrame title="Quest Info" class="questinfo questinfo--moved" label="Daily Quests">
-      <p class="questinfo__name"><strong>[Daily Quests]</strong></p>
-      <ul class="questinfo__goals">
-        {moved.map((k) => <MovedGoal key={k.kind} k={k} grade={c.grade} />)}
+    <SysFrame title="Quest Info" kind="gates" class="sysnotice questlines" label="Daily Quests">
+      <p class="questlines__name"><strong>[Daily Quests]</strong></p>
+      <ul class="questlines__list">
+        {report.moved.map((k) => <QuestLine key={k.kind} k={k} grade={c.grade} pay={pay} />)}
+        {report.bonus && (
+          <li class="qline is-done is-bonus">
+            <Ring p={1} done mark="star" />
+            <span class="qline__text">Completion bonus</span>
+            <Pay {...bonus} />
+          </li>
+        )}
       </ul>
     </SysFrame>
   );
 }
 
-function MovedGoal({ k, grade }: { k: Moved; grade: Contracts['grade'] }) {
+function QuestLine({ k, grade, pay }: { k: Moved; grade: Contracts['grade']; pay: { shards: number; xp: number } }) {
   const [at, setAt] = useState(k.from);
-  // A beat after the results land, the count and the bar move to where the run left them.
+  // A beat after the results land, the ring and the count move to where the run left them.
   useEffect(() => {
     const t = setTimeout(() => setAt(k.got), 450);
     return () => clearTimeout(t);
   }, []);
   const done = k.done && at >= k.got;
-  return <QuestGoal id={k.kind} text={contractText(k, grade)} got={at} need={k.need} done={done} fresh={done} count={done ? 'Done' : undefined} />;
+  return (
+    <li class={`qline ${done ? 'is-done' : ''}`} data-contract={k.kind}>
+      <Ring p={Math.min(1, at / Math.max(1, k.need))} done={done} />
+      <span class="qline__text">{contractText(k, grade)}</span>
+      {done ? <Pay {...pay} /> : <span class="qline__count num">{Math.min(at, k.need)}/{k.need}</span>}
+    </li>
+  );
+}
+
+/** How far a quest has come, as a ring; a tick, or a star for the bonus, once it is done. */
+function Ring({ p, done, mark = 'check' }: { p: number; done?: boolean; mark?: 'check' | 'star' }) {
+  const C = 2 * Math.PI * 12;
+  return (
+    <svg class="qline__ring" viewBox="0 0 30 30" aria-hidden="true">
+      <circle class="qline__track" cx="15" cy="15" r="12" />
+      <circle class="qline__arc" cx="15" cy="15" r="12" style={{ strokeDasharray: `${C}`, strokeDashoffset: `${C * (1 - p)}` }} />
+      {done && (mark === 'star'
+        ? <path class="qline__mark" d="M15 8.5l1.9 4 4.3.5-3.2 2.9.9 4.3-3.9-2.2-3.9 2.2.9-4.3-3.2-2.9 4.3-.5z" />
+        : <path class="qline__mark qline__mark--tick" d="M10 15.4l3.3 3.2 6.7-7" />)}
+    </svg>
+  );
+}
+
+/** What a quest paid, name first, as every gain is. */
+function Pay({ xp, shards }: { xp: number; shards: number }) {
+  return (
+    <span class="qline__pay">
+      <span>XP <b class="grant num">+{xp}</b></span>
+      <span class="qline__shards"><Shard size={12} /><b class="grant num">+{shards}</b></span>
+    </span>
+  );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
-import { board, allies, dungeonById, entryBlock, seal, PRACTICE_GATE } from '@/core/gates';
+import { board, allies, dungeonById, entryBlock, mapKnown, seal, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
 import { grant, autoEquip, ofRank, upgradeCount, power } from '@/core/gear';
@@ -72,6 +72,22 @@ describe('the board', () => {
 });
 
 describe('a raid', () => {
+  it('leaves a Gate’s map unidentified until the hunter has been inside it', () => {
+    const s = hunter(5);
+    const d = dungeonById('DNG-001')!;
+    expect(mapKnown(s, d)).toBe(false);
+    expect(mapKnown(s, PRACTICE_GATE)).toBe(false);
+    raid.begin(s, d);
+    expect(mapKnown(s, d)).toBe(true);
+    raid.finish(s, d, s.gates.raid!, 'defeated');
+    expect(mapKnown(s, d)).toBe(true);
+    expect(mapKnown(s, dungeonById('DNG-002')!)).toBe(false);
+    // The Practice Gate and the Spire tally no runs, so walking in is what is kept.
+    raid.begin(s, PRACTICE_GATE);
+    raid.finish(s, PRACTICE_GATE, s.gates.raid!, 'defeated');
+    expect(mapKnown(s, PRACTICE_GATE)).toBe(true);
+  });
+
   it('is deterministic for a seed and pays out', () => {
     const s = hunter(12);
     const d = dungeonById('DNG-001')!;
