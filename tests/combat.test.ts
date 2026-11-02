@@ -4,7 +4,7 @@ import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
 import { battle, fight, FIELD_POTION_HEAL, GUARD, Unit } from '@/core/combat';
-import { autoAllocate, grantXP, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import type { Order, Save } from '@/core/types';
 import { rng } from '@/core/util';
 import { chamberOf } from '@/core/map';
@@ -16,6 +16,7 @@ const base = { STR: 10, AGI: 10, PER: 10, VIT: 10, INT: 10 };
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   s.hunter.attrs.STR += 6;
   autoAllocate(s);
   syncClass(s);

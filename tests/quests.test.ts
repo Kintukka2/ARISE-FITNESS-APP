@@ -5,7 +5,7 @@ import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
 import { PRACTICE_GATE } from '@/core/gates';
 import { deltaOf, earned, freeOf, MISSIONS } from '@/core/missions';
-import { autoAllocate, grantXP, RANK_LADDER, RANK_UP_POINTS, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, RANK_LADDER, RANK_UP_POINTS, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { classById } from '@/data/classes';
 import { SLOTS } from '@/data/shadows';
 import { HOLLOW_THRONE } from '@/data/special';
@@ -13,6 +13,7 @@ import { HOLLOW_THRONE } from '@/data/special';
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   autoAllocate(s);
   syncClass(s);
   return s;
@@ -40,6 +41,7 @@ describe('reclassification', () => {
     const toC = reclassification(c)!;
     // The class it names is the one the hunter's stats would be given, once the level is reached.
     grantXP(c, totalXpFor(20) - totalXpFor(15) - c.hunter.xp);
+    reclassifyAll(c);
     syncClass(c);
     expect(classById(c.hunter.classId)?.name).toBe(toC.cls?.is);
     expect(toC.slots).toEqual([SLOTS.D, SLOTS.C]);

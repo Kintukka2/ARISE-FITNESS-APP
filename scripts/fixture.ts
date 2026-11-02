@@ -7,7 +7,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { defaults } from '@/core/save';
-import { autoAllocate, grantXP, optionsAt, pick, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, optionsAt, pick, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
 import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
 import { bind } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
@@ -24,6 +24,7 @@ s.hunter.name = 'KINTUKKA';
 s.hunter.regNo = 'E-048213';
 issueKit(s);
 grantXP(s, totalXpFor(32) + 400);
+reclassifyAll(s);
 s.hunter.attrs.STR += 12;
 autoAllocate(s);
 s.hunter.points = 4;

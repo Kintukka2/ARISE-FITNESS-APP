@@ -69,6 +69,7 @@ try {
   await snap('inventory-full', true);
   await page.locator('.btile--status .btile__hit').click(); await sleep(400); await snap('status', true);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
+  await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true); await close();
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
   await page.locator('.btile--inventory .btile__hit').click(); await sleep(400); await snap('inventory-grid');
   await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();
@@ -127,6 +128,8 @@ try {
     await snap('spire-turn');
     await autoToResults();
     await sleep(600); await snap('spire-results', true);
+    // Turn the loot over first: leaving with it face down asks, and the drain would answer Reveal All.
+    for (const f of await page.locator('.flip').all()) await f.click();
     await page.locator('text=Leave The Gate').click(); await drain();
   } else await close();
 

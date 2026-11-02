@@ -34,6 +34,20 @@ describe('save', () => {
     expect(back.hunter.level).toBe(1);
   });
 
+  it('starts a hunter at E-Rank, and lets an older save keep the rank its level had given it', () => {
+    expect(defaults().hunter.rank).toBe('E');
+    const old = defaults() as unknown as Record<string, Record<string, unknown>>;
+    old.v = 3 as never;
+    old.hunter.level = 32;
+    delete old.hunter.rank;
+    expect(parse(JSON.stringify(old))?.hunter.rank).toBe('C');
+    // A save already on v4 keeps the rank it holds, whatever its level would qualify for.
+    const held = defaults();
+    held.hunter.level = 32;
+    held.hunter.rank = 'D';
+    expect(parse(JSON.stringify(held))?.hunter.rank).toBe('D');
+  });
+
   it('rejects things that are not saves', () => {
     expect(parse('nope')).toBeNull();
     expect(parse('{"a":1}')).toBeNull();

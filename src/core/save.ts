@@ -7,9 +7,10 @@
  * The keys are this game's own. The fitness app this was carved from kept
  * `arise:save`; a phone that has both never mixes them up.
  */
+import { rankFor } from './progression';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -19,7 +20,7 @@ export function defaults(): Save {
     createdAt: new Date().toISOString(),
     onboarded: false,
     hunter: {
-      name: 'HUNTER', regNo: '', level: 1, xp: 0,
+      name: 'HUNTER', regNo: '', level: 1, xp: 0, rank: 'E',
       attrs: { STR: 5, AGI: 5, PER: 5, VIT: 5, INT: 5 },
       points: 0, classId: null, missions: [], picks: {},
     },
@@ -83,6 +84,12 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
   2: (s) => {
     const a = isObj(s.ascension) ? s.ascension : null;
     if (a && typeof a.unlocked === 'number' && !Array.isArray(a.sent)) a.sent = Array.from({ length: a.unlocked }, (_, i) => i + 1);
+    return s;
+  },
+  // v4: a rank is claimed, not given by the level. A hunter keeps the rank their level had already given them.
+  3: (s) => {
+    const h = isObj(s.hunter) ? s.hunter : null;
+    if (h && typeof h.rank !== 'string') h.rank = rankFor(typeof h.level === 'number' ? h.level : 1).key;
     return s;
   },
 };

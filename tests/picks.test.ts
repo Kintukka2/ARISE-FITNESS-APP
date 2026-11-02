@@ -3,7 +3,7 @@ import { defaults } from '@/core/save';
 import { ability, fight, passiveStyle, Unit } from '@/core/combat';
 import { dungeonById } from '@/core/gates';
 import * as raid from '@/core/raid';
-import { autoAllocate, canPick, grantXP, kitFor, optionsAt, pick, rungsOf, syncClass, totalXpFor, waiting } from '@/core/progression';
+import { autoAllocate, canPick, grantXP, kitFor, optionsAt, pick, rungsOf, syncClass, totalXpFor, waiting, reclassifyAll } from '@/core/progression';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { classById } from '@/data/classes';
 import { STATS } from '@/core/types';
@@ -15,6 +15,7 @@ const now = Date.parse('2026-02-04T12:00:00');
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   s.hunter.attrs.STR += s.hunter.points;
   s.hunter.points = 0;
   syncClass(s);
@@ -75,6 +76,7 @@ describe('choosing', () => {
     expect(canPick(s, 0)).toBe(false);
     expect(pick(s, 0, first)).toBe(false);
     grantXP(s, totalXpFor(40) - totalXpFor(25));
+    reclassifyAll(s);
     syncClass(s);
     expect(classById(s.hunter.classId)!.tier).toBe(2);
     expect(canPick(s, 0)).toBe(true);

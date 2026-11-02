@@ -9,8 +9,10 @@ import * as gear from '@/core/gear';
 import { ascensionOpen } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
-import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, kitFor, nextRank, optionsAt, pick, POINTS_PER_LEVEL, rankFor, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
-import { ability, passiveText, REACH_TEXT } from '@/core/combat';
+import { reclassification } from '@/core/quests';
+import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, kitFor, optionsAt, pick, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
+import { ability, passiveText, REACH_TEXT, Unit } from '@/core/combat';
+import { heroSpec } from '@/core/raid';
 import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
 import type { Item, Save, SlotKey, Stat } from '@/core/types';
@@ -38,6 +40,11 @@ export function Inventory() {
   return <BentoGrid class="invscreen" tiles={tiles(s)} label="Inventory" />;
 }
 
+/** A rank the level has reached and the hunter has not yet claimed, in advancement's gold. */
+function RankDue({ to }: { to: string }) {
+  return <span class="apdue"><span class="apdue__mark" aria-hidden="true"><Glyph name="up" /></span>{to}: requirements met</span>;
+}
+
 /** Unspent Ability Points on a tile, in advancement's gold: a lit + mark, then the count. */
 function PointsDue({ n }: { n: number }) {
   return <span class="apdue"><span class="apdue__mark" aria-hidden="true">+</span>Ability Points: <b class="num">{n}</b></span>;
@@ -45,7 +52,7 @@ function PointsDue({ n }: { n: number }) {
 
 /** The hunter's page: who they are, what they can do, what they wear, what they hold, and their record. */
 function tiles(s: Save): Tile[] {
-  const r = rankFor(s.hunter.level);
+  const r = rankOf(s);
   const shown = r.key === 'N' ? 'N' : licensedRank(s);
   const cls = classById(s.hunter.classId);
   const v = vitals.read(s);
@@ -56,12 +63,12 @@ function tiles(s: Save): Tile[] {
   // The three best pieces held, fanned out with the best in the middle.
   const best = s.items.slice().sort((a, b) => gear.score(b) - gear.score(a)).slice(0, 3);
   const top = best.length === 3 ? [best[1], best[0], best[2]] : best;
-  const nr = nextRank(s.hunter.level);
+  const rc = reclassification(s);
   return [
     {
-      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0,
+      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0 || !!rc?.ready,
       count: `LV ${s.hunter.level}`,
-      status: s.hunter.points ? <PointsDue n={s.hunter.points} /> : nr ? `Level ${nr.min} for ${nr.name}.` : r.name,
+      status: rc?.ready ? <RankDue to={rc.to.name} /> : s.hunter.points ? <PointsDue n={s.hunter.points} /> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : r.name,
       art: (
         <span class="ia-status">
           <span class="ia-status__who">
@@ -82,7 +89,7 @@ function tiles(s: Save): Tile[] {
       count: `${lead} ${Math.round(total[lead])}`,
       status: s.hunter.points ? <PointsDue n={s.hunter.points} /> : `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
       art: <Radar values={total} />,
-      open: openStatus,
+      open: openStats,
     },
     {
       key: 'skills', kind: 'gold', name: 'Skills', head: true, icon: <Glyph name="bolt" />, hot: choose > 0,
@@ -195,9 +202,9 @@ export function openStatus() {
 function StatusSheet() {
   const s = useSave();
   useNow(5000);
-  const r = rankFor(s.hunter.level);
+  const r = rankOf(s);
   const cls = classById(s.hunter.classId);
-  const nr = nextRank(s.hunter.level);
+  const rc = reclassification(s);
   return (
     <div class="stack status">
       <div class="sysfields">
@@ -206,10 +213,62 @@ function StatusSheet() {
         <Field k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
         <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
       </div>
-      <small class="muted">{nr ? `Level ${nr.min} for ${nr.name}.` : 'Further ranks: none.'}{licenceHolding(s) ? ` Gate grade: ${licensedRank(s)}-Rank without the Association Licence.` : ''}</small>
+      <small class="muted">{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}{licenceHolding(s) ? ` Gate grade: ${licensedRank(s)}-Rank without the Association Licence.` : ''}</small>
       {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose New Skills · {waiting(s).length}</Btn>}
       <VitalsBlock />
       <Attributes />
+    </div>
+  );
+}
+
+/**
+ * STATS: the five stats as the hunter fights with them, where each one comes from (its base, the
+ * class, the gear), and what they make of the hunter in a fight. Status is where the points are spent.
+ */
+export function openStats() {
+  openSheet({ title: 'Stats', system: { icon: null }, render: () => <StatsSheet /> });
+}
+
+const STAT_ORDER: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
+
+function StatsSheet() {
+  const s = useSave();
+  useNow(5000);
+  const bonus = classBonus(s);
+  const total = gear.boosted(s.hunter.attrs, gear.worn(s), bonus, BOOST_CAP);
+  const v = vitals.read(s);
+  // The hunter exactly as the fight builds them: class, gear, sets, marks, passives, and fatigue.
+  const d = new Unit(heroSpec(s)).d;
+  const fight: [string, string][] = [
+    ['Attack', `${Math.round(d.patk)}`], ['Magic', `${Math.round(d.mpow)}`],
+    ['Defence', `${Math.round(d.defense)}`], ['Resistance', `${Math.round(d.resist)}`],
+    ['Accuracy', `${Math.round(d.accuracy)}`], ['Evasion', `${Math.round(d.evasion)}`],
+    ['Critical hit', `${Math.round(d.crit)}%`], ['Initiative', `${Math.round(d.initiative)}`],
+  ];
+  return (
+    <div class="stack statsheet">
+      <div class="statsheet__radar"><Radar values={total} /></div>
+      <ul class="statrows">
+        {STAT_ORDER.map((k) => {
+          const a = ATTRS.find((x) => x.key === k)!;
+          const cls = bonus[k] ?? 0;
+          const kit = Math.round(total[k] - s.hunter.attrs[k] - cls);
+          return (
+            <li key={k} class="sysbox statrow">
+              <span class="statrow__icon" aria-hidden="true"><Glyph name={STAT_ICON[k]} /></span>
+              <span class="statrow__body">
+                <span class="statrow__head"><b>{a.name}</b><b class="num">{Math.round(total[k])}</b></span>
+                <small>{[`Base ${s.hunter.attrs[k]}`, cls ? `Class +${cls}` : '', kit > 0 ? `Gear +${kit}` : ''].filter(Boolean).join(' · ')}</small>
+                <small class="muted">{a.desc}</small>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <span class="label">In a fight</span>
+      <div class="sysfields">{fight.map(([k, val]) => <Field key={k} k={k} v={<span class="num">{val}</span>} />)}</div>
+      {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
+      {s.hunter.points > 0 && <Btn kind="gold" block onClick={openStatus}>Allocate · {s.hunter.points}</Btn>}
     </div>
   );
 }
@@ -271,7 +330,8 @@ function Rung({ rung, lead, tier }: { rung: number; lead: string; tier: number }
                 if (store.update((x) => pick(x, rung, n))) { sfx.rankUp(); toast(`${n} kept.`, 'good'); }
               }}>
               <b>{n}</b>
-              <small>{describe(kind, n)}</small>
+              {/* A rung above the rank held keeps its options' names and nothing more, until it opens. */}
+              {open && <small>{describe(kind, n)}</small>}
               {isKept && <span class="pickcard__tag">{chosen ? 'Kept' : 'Until you choose'}</span>}
             </button>
           );
@@ -403,7 +463,7 @@ function EquipmentSheet() {
   const s = useSave();
   const ups = gear.upgradeCount(s);
   const offers = gear.offers(s);
-  const r = rankFor(s.hunter.level);
+  const r = rankOf(s);
   const slot = (k: SlotKey) => {
     const it = gear.equippedIn(s, k);
     const def = gear.SLOTS.find((x) => x.key === k)!;
@@ -668,7 +728,7 @@ function Recycle({ initial, onChange, onDone }: { initial: string[]; onChange: (
 export function openDossier() {
   const s = store.get();
   openSheet({
-    title: `Hunter: ${s.hunter.name}`, system: { icon: <Sigil rank={rankFor(s.hunter.level).key === 'N' ? 'N' : licensedRank(s)} size={40} /> },
+    title: `Hunter: ${s.hunter.name}`, system: { icon: <Sigil rank={rankOf(s).key === 'N' ? 'N' : licensedRank(s)} size={40} /> },
     render: () => {
       const s = store.get();
       const felled = Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
@@ -677,7 +737,7 @@ export function openDossier() {
           <div class="sysfields">
             <Field k="Licence" v={<span class="num">{s.hunter.regNo || '-- --'}</span>} />
             <Field k="Awakened" v={new Date(s.createdAt).toLocaleDateString()} />
-            <Field k="Rank" v={rankFor(s.hunter.level).name} />
+            <Field k="Rank" v={rankOf(s).name} />
             <Field k="Guild" v="-- --" />
           </div>
           <Section title="In force">

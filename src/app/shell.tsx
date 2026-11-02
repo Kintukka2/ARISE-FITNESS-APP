@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import { upgradeCount } from '@/core/gear';
-import { rankFor, waiting, xpToNext } from '@/core/progression';
+import { rankOf, waiting, xpToNext } from '@/core/progression';
 import { waiting as questsWaiting } from '@/core/quests';
 import { licensedRank } from '@/core/licence';
 import { compact } from '@/core/util';
@@ -63,7 +63,7 @@ export function TopBar() {
   const s = useSave();
   const need = xpToNext(s.hunter.level);
   const cls = classById(s.hunter.classId);
-  const rank = rankFor(s.hunter.level).key;
+  const rank = rankOf(s).key;
   const shown = rank === 'N' ? 'N' : licensedRank(s);
   return (
     <header class="topbar">

@@ -20,7 +20,7 @@ import * as walkers from '@/core/walkers';
 import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
 import { sweep } from '@/core/missions';
-import { autoAllocate, rankFor, syncClass } from '@/core/progression';
+import { autoAllocate, rankFor, rankOf, reclassifyAll, syncClass } from '@/core/progression';
 import { licensedRank } from '@/core/licence';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
@@ -139,6 +139,8 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   // Auto walks the System's road to the boss; it never withdraws.
   const outcome = won ? 'cleared' : 'defeated';
   const res = raid.finish(s, d, run, outcome, now);
+  // A hunter who keeps up claims each rank the moment its level is reached.
+  reclassifyAll(s);
   t.runs++;
   if (spire.isSpire(d)) t.spire++;
   t[outcome]++;
@@ -188,7 +190,7 @@ function campaign(p: Profile) {
         tidy(s, now, t);
         now += HOUR / 3;
       }
-      const key = rankFor(s.hunter.level).key;
+      const key = rankOf(s).key;
       if (key !== rank) { rank = key; ranks.push(`${key}:${day + 1}d`); }
     }
     if ((day + 1) % 28 === 0) {

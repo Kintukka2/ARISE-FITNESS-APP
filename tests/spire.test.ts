@@ -4,7 +4,7 @@ import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import { build, mapSeed } from '@/core/map';
 import * as raid from '@/core/raid';
 import * as spire from '@/core/spire';
-import { autoAllocate, GATE_XP, grantXP, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, GATE_XP, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { GATE_SHARDS } from '@/core/shop';
 import { RANKS } from '@/core/types';
 import { addDays, dayKey } from '@/core/util';
@@ -21,6 +21,7 @@ const nextWeek = Date.parse('2026-02-09T12:00:00');
 function hunter(level: number) {
   const s = defaults();
   grantXP(s, totalXpFor(level));
+  reclassifyAll(s);
   autoAllocate(s);
   syncClass(s);
   s.gates.cleared.push(PRACTICE_GATE.id);

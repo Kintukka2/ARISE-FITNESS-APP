@@ -8,12 +8,14 @@ import { issue } from '@/core/contracts';
 import { gearDef } from '@/core/gear';
 import * as spire from '@/core/spire';
 import { grantText, sweep, type Mission } from '@/core/missions';
-import { optionsAt, syncClass, waiting, type XpResult } from '@/core/progression';
+import { optionsAt, reclassify, syncClass, waiting, type XpResult } from '@/core/progression';
+import { reclassification } from '@/core/quests';
 import * as story from '@/core/story';
 import * as vitals from '@/core/vitals';
 import * as store from '@/store';
+import { fromEl, rankUp } from '@/ui/arrival';
 import { flash } from '@/ui/feedback';
-import { sys } from '@/ui/overlays';
+import { closeAllSheets, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
 import { openStatus } from '@/screens/Inventory';
 import { arena, go, type Route } from './router';
@@ -70,6 +72,46 @@ export async function playBeats() {
   }
 }
 
+/** A rank the level has reached: told once, in gold, and left on the Quests screen for the hunter to claim. */
+export async function reclassReady() {
+  const q = reclassification(store.get());
+  if (!q?.ready || !store.update((x) => story.markOnce(x, `reclass-ready-${q.to.key}`))) return;
+  sfx.rankUp();
+  flash('gold');
+  await sys(system.notify(['You have met the requirements for', `${system.tag(`Reclassification: ${q.to.name}`)}.`], 'gold'));
+}
+
+/**
+ * The hunter claims the rank their level has reached, from its Reclassification window. The plate
+ * lifts off the window and the rank-up plays; the claim lands once the screen is covered, so nothing
+ * is seen changing behind it. Then the System says what it brought, over what the breach left: the
+ * rank's own window, the class it assigns, any Secret Quest, and the next rank if the level has
+ * reached that too.
+ */
+export async function claimRank(plate: Element | null) {
+  const q = reclassification(store.get());
+  if (!q?.ready) return;
+  const lifted = plate instanceof HTMLElement || plate instanceof SVGElement ? plate : null;
+  const from = fromEl(plate);
+  if (lifted) lifted.style.visibility = 'hidden';
+  let claimed = false;
+  const claim = () => { if (!claimed) claimed = !!store.update(reclassify); };
+  const cut = rankUp({ from, was: q.from.key, now: q.to.key, onDark: claim });
+  try {
+    await cut.ready;
+    claim();
+    await playBeats();
+    await checkAwards();
+    await reclassReady();
+    await cut.leave();
+  } finally {
+    cut.stop();
+    if (lifted) lifted.style.visibility = '';
+    // Past the last rank there is no Reclassification left to show.
+    if (!reclassification(store.get())) closeAllSheets();
+  }
+}
+
 /** The Spire's week closing, told once, whichever engine call closed it. */
 export async function weekClosed() {
   const last = store.get().spire.last;
@@ -92,6 +134,7 @@ export async function rewardChain(xp: XpResult | null, then?: Route) {
   const want = await celebrate(xp);
   await checkAwards();
   await playBeats();
+  await reclassReady();
   if (want) go(want);
   else if (then) go(then);
   // Allocate means spend them: the Status sheet is where Ability Points go.
@@ -110,6 +153,7 @@ export async function catchUp() {
     await weekClosed();
     await checkAwards();
     await playBeats();
+    await reclassReady();
   } finally {
     catching = false;
   }

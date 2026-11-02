@@ -464,6 +464,15 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .qa-rank__path::after { content: ''; position: absolute; inset: 0; width: 35%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent); animation: qaSweep 2.6s ease-in-out infinite; }
 @keyframes qaSweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
 .qa-rank__next { filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
+/* Reclassification's plates: the rank held, the way to the next, and the next, lit once it can be claimed. */
+.rankplates { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 0 6px; }
+.rankplates .sigil { display: block; }
+.rankplates__path { position: relative; flex: 0 1 96px; height: 6px; overflow: hidden; border: 1px solid var(--sys-hair); }
+.rankplates__path > i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--p, 0)); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 55%, transparent), var(--win)); box-shadow: 0 0 8px var(--win-glow); }
+.rankplates__to { opacity: 0.5; filter: saturate(0.4); transition: opacity 300ms, filter 300ms; }
+.quest-rank.is-ready .rankplates__to { opacity: 1; filter: drop-shadow(0 0 12px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
+.quest-rank.is-ready .rankplates__path::after { content: ''; position: absolute; inset: 0; width: 35%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent); animation: qaSweep 2.6s ease-in-out infinite; }
+.rankclaim { display: flex; padding-top: 8px; }
 
 /* The Pale Spire: a tower of storeys, lit up to the week's best, the next one calling. */
 .qa-tower { display: flex; flex-direction: column-reverse; align-items: center; gap: 3px; }
@@ -529,6 +538,16 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 
 /* Stats: the hunter's shape across the five, growing in. */
 .ia-radar { width: 108px; height: 108px; overflow: visible; }
+/* STATS: the figure large, a box per stat with where it comes from, then the fight's numbers. */
+.statsheet__radar { display: grid; place-items: center; padding: 6px 0 2px; }
+.statsheet__radar .ia-radar { width: min(64vw, 220px); height: min(64vw, 220px); }
+.statrows { display: flex; flex-direction: column; gap: 8px; }
+.statrow { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; }
+.statrow__icon { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border: 1px solid var(--sys-hair); color: var(--win); }
+.statrow__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.statrow__head { display: flex; justify-content: space-between; gap: 10px; }
+.statrow__head .num { text-shadow: var(--sys-glow); }
+.statrow small { font-size: 0.74rem; line-height: 1.35; }
 .ia-radar__ring { fill: none; stroke: var(--sys-hair); stroke-width: 0.5; }
 .ia-radar__axis { stroke: color-mix(in srgb, var(--sys-ink) 22%, transparent); stroke-width: 0.5; }
 .ia-radar__shape { fill: color-mix(in srgb, var(--win) 30%, transparent); stroke: var(--win); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--win-glow)); transform-origin: 50px 50px; animation: iaGrow 900ms var(--ease) both; }
