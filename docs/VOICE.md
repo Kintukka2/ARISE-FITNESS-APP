@@ -67,7 +67,7 @@ the table above gives it, so a player can tell who is talking before reading a w
 | Speaker | Frame |
 |---|---|
 | **The System** | The anime's window, below. Every System window, and every System surface on a screen: every main screen's bento tiles, the Status sheet, Skills, Equipment, Inventory, the Exchange, the Gates board, the Army, the brief, item, Shadow and hunter cards, Quest Info, Quest Rewards, the notices after a run. Settings and the Guide take it too, at the owner's call |
-| **Valcorde** | His own window: a plain frame in his blue, his portrait and his name |
+| **Valcorde** | His channel, below: his voice box on a screen, his windows, his tours and his card in the intro |
 | **The interface** | Its own windows (confirmations, tutorials) and the controls between the tiles (the nav): the System's geometry, square corners, scratched glass and a hairline inside the edge, but no lit rails, no header plate and Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
 
@@ -103,7 +103,20 @@ Built only with `src/ui/frame.tsx` (`SysFrame`, `SysHead`, `Field`), a sheet ope
   `system.rewardList()` in a window, `<Rewards>` on a screen. Quest Info's REWARDS and every Quest
   Rewards window are set this way.
 
-## The System
+### Valcorde's channel
+
+Everything Valcorde says arrives the same way, like a call on an Association feed. Built only with
+`CoachHead` and the `coachframe` class (`ui/components.tsx`, styled in `ui.css`); his voice box is
+`Voice`, his windows are `sys()` with the `coach` kind, his tours are `tour()` with `who: 'coach'`.
+
+- **His blue** (`--coach`), never the System's cyan, and never the System's lit rails, plate,
+  circled `!`, header word or Montserrat. He does not know that frame exists.
+- **Square corners, a hairline inside the edge and four corner brackets**, over faint scanlines.
+- **His head** where a header word would be: his portrait in a lit box with a scan passing over
+  it, `RYN VALCORDE` and his post, `INSTRUCTOR · HUNTER TRAINING`, under it.
+- **A signal** of four bars, moving while his line types out and still once he has said it. His
+  line types out wherever he speaks, the voice box included; a screen reader hears it whole.
+
 
 The System speaks the way the System speaks in *Solo Leveling*. The anime is the main reference;
 the manhwa fills in where the anime shows less (the Status sheet, item and skill cards). DESIGN.md

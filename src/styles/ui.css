@@ -120,9 +120,6 @@
 .syswin__glyph { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--win); border-radius: 50%; color: var(--win); font-weight: 700; box-shadow: 0 0 12px var(--win-glow); }
 .syswin__glyph .ico { width: 15px; height: 15px; }
 .syswin__title { font-size: 1rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink); text-shadow: 0 0 12px var(--win-glow); }
-.syswin__who { display: flex; align-items: center; gap: 10px; padding: 12px 18px 0; }
-.syswin__who div { display: flex; flex-direction: column; }
-.syswin__who small { color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; }
 .syswin__line em { color: var(--win); }
 .syswin__line .warn { color: var(--sysred); font-weight: 700; }
 .syswin:not(.sysframe) .btn--primary { --accent: var(--win); --accent-glow: var(--win-glow); }
@@ -186,7 +183,8 @@
 /* ------------------------------------------------------------------ the spotlight */
 
 .tour { position: fixed; inset: 0; z-index: var(--z-tour); cursor: pointer; }
-.tour__mask { position: fixed; border-radius: var(--r-md); box-shadow: 0 0 0 9999px rgba(1, 4, 12, 0.8), 0 0 0 2px var(--mana), 0 0 24px var(--mana-glow); transition: all 260ms var(--ease); pointer-events: none; }
+.tour__mask { position: fixed; border-radius: 0; box-shadow: 0 0 0 9999px rgba(1, 4, 12, 0.8), 0 0 0 2px var(--mana), 0 0 24px var(--mana-glow); transition: all 260ms var(--ease); pointer-events: none; }
+.tour__mask--coach { box-shadow: 0 0 0 9999px rgba(1, 4, 12, 0.8), 0 0 0 2px var(--coach), 0 0 24px var(--coach-glow); }
 .tour__card {
   position: fixed;
   left: 14px;
@@ -200,7 +198,6 @@
   box-shadow: 0 0 30px var(--mana-glow);
   animation: fadein 220ms both;
 }
-.tour__card--coach { border-color: #7fb6ff; }
 .tour__head { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mana); }
 .tour__count { margin-left: auto; color: var(--ink-3); font-family: var(--font-num); }
 .tour__title { margin: 8px 0 4px; font-size: 1.05rem; }
@@ -292,11 +289,100 @@
 .fold.is-open { border-color: rgba(72, 245, 168, 0.45); }
 .fold__body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
 
-.voice { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-left: 2px solid #7fb6ff; background: linear-gradient(90deg, rgba(127, 182, 255, 0.08), transparent); border-radius: 0 var(--r-md) var(--r-md) 0; }
-.voice__face { flex: none; }
-.voice__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.voice__name { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: #9cc7ff; }
-.voice__line { color: var(--ink-2); font-size: 0.95rem; }
+/*
+ * Valcorde's channel: how everything he says arrives, on a screen, in a window, in a tour or in the
+ * intro. His blue, square corners, an inner hairline and corner brackets, scanlines like a feed; his
+ * portrait in a lit box, his name and post, and a signal that moves while he is talking. Never the
+ * System's frame, its type or its circled mark: he does not know it is there.
+ */
+:root { --coach: #7fb6ff; --coach-ink: #cfe3ff; --coach-glow: rgba(127, 182, 255, 0.35); }
+.coachframe {
+  --win: var(--coach);
+  --win-glow: var(--coach-glow);
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--coach) 55%, transparent);
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(127, 182, 255, 0.035) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(10, 26, 56, 0.97), rgba(4, 10, 24, 0.98));
+  box-shadow: 0 0 0 1px rgba(4, 10, 24, 0.9) inset, 0 0 28px rgba(127, 182, 255, 0.14);
+}
+.coachframe::before { content: ''; position: absolute; inset: 4px; z-index: -1; border: 1px solid color-mix(in srgb, var(--coach) 16%, transparent); pointer-events: none; }
+.coachframe::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  --b: var(--coach);
+  background:
+    linear-gradient(var(--b), var(--b)) top left / 12px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) top left / 2px 12px no-repeat,
+    linear-gradient(var(--b), var(--b)) top right / 12px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) top right / 2px 12px no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom left / 12px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom left / 2px 12px no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom right / 12px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom right / 2px 12px no-repeat;
+  filter: drop-shadow(0 0 4px var(--coach-glow));
+}
+.coachframe .caret { background: var(--coach); box-shadow: 0 0 6px var(--coach-glow); }
+.coachframe em { color: var(--coach); font-style: normal; }
+
+/* His portrait, lit in its box, a scan line passing over it. */
+.coachface {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--coach) 60%, transparent);
+  background: radial-gradient(circle at 50% 35%, rgba(127, 182, 255, 0.22), rgba(4, 10, 24, 0.9) 75%);
+  box-shadow: 0 0 12px var(--coach-glow);
+}
+.coachface .portrait { display: block; border: 0; border-radius: 0; background: none; animation: coachFlicker 6s steps(1) infinite; }
+.coachface::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(4, 10, 24, 0.28) 0 1px, transparent 1px 3px); pointer-events: none; }
+.coachface::after { content: ''; position: absolute; left: 0; right: 0; height: 35%; background: linear-gradient(to bottom, transparent, rgba(127, 182, 255, 0.28), transparent); animation: eqScan 3.2s ease-in-out infinite; pointer-events: none; }
+@keyframes coachFlicker { 0%, 100% { opacity: 1; } 47% { opacity: 1; } 48% { opacity: 0.55; } 49% { opacity: 1; } 91% { opacity: 0.8; } 92% { opacity: 1; } }
+
+.coachhead { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.coachhead__who { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.coachname { color: var(--coach-ink); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; text-shadow: 0 0 10px var(--coach-glow); }
+.coachrole { color: color-mix(in srgb, var(--coach) 70%, var(--ink-3)); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* The signal: four bars, still when he is quiet, alive while he is talking. */
+.signal { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; flex: none; }
+.signal i { display: block; width: 3px; background: var(--coach); opacity: 0.35; transform-origin: bottom; }
+.signal i:nth-child(1) { height: 4px; }
+.signal i:nth-child(2) { height: 7px; }
+.signal i:nth-child(3) { height: 10px; }
+.signal i:nth-child(4) { height: 12px; }
+.signal.is-live i { opacity: 1; box-shadow: 0 0 6px var(--coach-glow); animation: signalBar 0.9s ease-in-out infinite; }
+.signal.is-live i:nth-child(2) { animation-delay: -0.3s; }
+.signal.is-live i:nth-child(3) { animation-delay: -0.55s; }
+.signal.is-live i:nth-child(4) { animation-delay: -0.15s; }
+@keyframes signalBar { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+
+/* On a screen: his portrait beside the line, his name and signal over it. */
+.voice { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; }
+.voice__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.voice__top { display: flex; align-items: center; gap: 8px; }
+.voice__top .signal { margin-left: auto; }
+.voice__line { color: var(--ink-2); font-size: 0.95rem; min-height: 2.9em; }
+
+/* In a window: the channel over the plain frame, his head where a header word would be. */
+.syswin.coachframe { border-radius: 0; box-shadow: 0 0 0 1px rgba(4, 10, 24, 0.9) inset, 0 0 40px var(--coach-glow), 0 18px 60px rgba(0, 0, 0, 0.7); }
+.syswin.coachframe::before { inset: 4px; border-color: color-mix(in srgb, var(--coach) 16%, transparent); }
+.syswin.coachframe > .coachhead { padding: 16px 18px 12px; border-bottom: 1px solid color-mix(in srgb, var(--coach) 26%, transparent); }
+.syswin.coachframe .syswin__line { color: var(--ink); }
+
+/* In a tour: the same head, smaller, the step count beside it. */
+.tour__card.coachframe { border-radius: 0; animation: fadein 220ms both; }
+.tour__head--coach { display: flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: normal; }
+.tour__head--coach .coachhead { flex: 1; }
+.tour__head--coach .tour__count { margin-left: 0; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(4, 10, 24, 0.75); color: var(--ink); font-size: 1rem; }
 .input:focus { outline: none; border-color: var(--mana); box-shadow: 0 0 0 3px rgba(79, 214, 255, 0.18); }

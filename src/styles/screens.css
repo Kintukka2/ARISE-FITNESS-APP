@@ -33,21 +33,20 @@
 .awaken__sub { max-width: 320px; font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-3); }
 .awaken__type { min-height: 3.2em; color: var(--ink-2); }
 .coachcard {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   text-align: left;
-  background: linear-gradient(180deg, rgba(10, 26, 56, 0.92), rgba(4, 10, 24, 0.94));
-  border: 1px solid rgba(127, 182, 255, 0.4);
-  border-radius: var(--r-md);
-  box-shadow: 0 0 24px rgba(79, 214, 255, 0.12);
   animation: windowIn 360ms var(--ease) both;
 }
-.coachcard.is-hot { border-color: var(--mana); box-shadow: 0 0 30px var(--mana-glow); }
-.coachcard__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.coachcard__name { color: var(--mana); letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.82rem; }
-.coachcard__line { margin-top: 6px; color: var(--ink); font-size: 1.02rem; min-height: 2.9em; }
+.coachcard > .coachhead { padding-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, var(--coach) 26%, transparent); }
+.coachcard.is-hot { border-color: var(--coach); box-shadow: 0 0 0 1px rgba(4, 10, 24, 0.9) inset, 0 0 34px var(--coach-glow); }
+.coachcard__line { color: var(--ink); font-size: 1.02rem; min-height: 2.9em; }
+.coachcard .cue { align-self: flex-end; margin-top: 0; }
 .cue { margin-top: 6px; color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; animation: fadein 300ms both; }
 .licence { border: 1px solid var(--edge); border-radius: var(--r-md); background: linear-gradient(180deg, rgba(12, 28, 58, 0.92), rgba(4, 10, 24, 0.94)); overflow: hidden; }
 .reveal { animation: windowIn 420ms var(--ease) both; }
