@@ -234,7 +234,12 @@ try {
   if (await visible('.sysframe.contracts')) throw new Error('THE DAILY QUESTS ARE STILL ON THE GATES SCREEN');
   const before = await page.locator('.xpbar__label').innerText();
   // Win or lose it pays: a defeat still pays a share. The System fights this one.
-  await raidGate('.btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit', 'first-gate', true);
+  // The open Gates are one tile; it opens the board.
+  await page.locator('.btile--board .btile__hit').click();
+  await sleep(400);
+  if (!(await visible('.sheet.is-top .board .btile.is-gate'))) throw new Error('THE BOARD TILE DID NOT OPEN THE GATES');
+  await snap('board');
+  await raidGate('.sheet.is-top .btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit', 'first-gate', true);
   if ((await page.locator('.xpbar__label').innerText()) === before) throw new Error('A GATE PAID NO EXPERIENCE');
 
   await nav('shadows');

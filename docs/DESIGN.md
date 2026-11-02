@@ -157,11 +157,12 @@ were laid out the same way (`ui/bento.tsx`): a grid of System tiles, each with a
 the engine and opening its window. Inventory holds Status, a radar of the five stats, Skills,
 Equipment, what is held, the Exchange and the hunter's card; Equipment became a System window of its
 own (`EQUIPMENT`, added to the closed list of headers). Gates keeps Valcorde's line above tiles for
-the open run, the grade and its licence, the hunter's condition, the record, the Spire and
-Ascension, and the board is a grid of Gate tiles, each a portal in its grade's colour. Shadows holds
-the squad's slots, then a tile to every Shadow ringed by its kills toward the next rank. The brief,
-the dossier, the slot picker and recycling moved into the System's frame; Settings and the Guide
-keep the interface's frame, now drawn with the System's geometry.
+the Practice Gate until it is cleared, the open run, the open Gates, the grade and its licence, the
+hunter's condition, the record, the Spire and Ascension. A list is one tile: Open Gates opens the
+board (`GATES`), a grid of Gate tiles, each a portal in its grade's colour; on Shadows, the Army
+opens `ARMY`, a tile to every Shadow ringed by its kills toward the next rank, beside the squad's
+slots. The brief, the dossier, the slot picker, recycling, Settings and the Guide all take the
+System's frame; Settings and the Guide keep the interface's words.
 
 The Trial and the Chosen live only here. The Gates screen keeps what bears on the next run: its
 Ascension card (the level, its rules and the marks) shows once Ascension 1 is open, the board tags

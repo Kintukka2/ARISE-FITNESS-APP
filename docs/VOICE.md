@@ -66,9 +66,9 @@ the table above gives it, so a player can tell who is talking before reading a w
 
 | Speaker | Frame |
 |---|---|
-| **The System** | The anime's window, below. Every System window, and every System surface on a screen: every main screen's bento tiles, the Status sheet, Skills, Equipment, Inventory, the Exchange, the brief, item, Shadow and hunter cards, Quest Info, Quest Rewards, the notices after a run |
+| **The System** | The anime's window, below. Every System window, and every System surface on a screen: every main screen's bento tiles, the Status sheet, Skills, Equipment, Inventory, the Exchange, the Gates board, the Army, the brief, item, Shadow and hunter cards, Quest Info, Quest Rewards, the notices after a run. Settings and the Guide take it too, at the owner's call |
 | **Valcorde** | His own window: a plain frame in his blue, his portrait and his name |
-| **The interface** | Its own sheets and windows (Settings, the Guide, confirmations, tutorials) and the controls between the tiles (the board's grade tabs, the nav): the System's geometry, square corners, scratched glass and a hairline inside the edge, but no lit rails, no header plate and Rajdhani in capitals |
+| **The interface** | Its own windows (confirmations, tutorials) and the controls between the tiles (the nav): the System's geometry, square corners, scratched glass and a hairline inside the edge, but no lit rails, no header plate and Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
 
 ### The System's frame
@@ -174,6 +174,9 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | SKILLS | Skills, passive and active |
 | EQUIPMENT | What the hunter wears: a slot to each of the ten around them, the score, the sets worn |
 | INVENTORY | What the hunter holds |
+| GATES | Every Gate standing open today, a tile each, under the grade tabs |
+| ARMY | Every Shadow bound, a tile each |
+| SETTINGS, GUIDE | The interface's two windows, set in the System's frame at the owner's call. Their words stay the interface's: plain, free to explain and to name the System |
 | EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
 
 Cards have no header word. Their header box is the name: `ITEM: …`, `SKILL: …`, `CLASS: …`.
@@ -359,10 +362,11 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
 - **Every main screen is a grid of these tiles** (`ui/bento.tsx`): Inventory (Status, Stats, Skills,
-  Equipment, Inventory, the Exchange, the hunter's card), Gates (the open run, Grade, Condition,
-  Record, the Pale Spire, Ascension, then a tile to every Gate on the board, its portal in its
-  grade's colour), Quests, and Shadows (the Squad, then a tile to every Shadow, ringed by its kills
-  toward the next rank). A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
+  Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
+  cleared, the open run, Open Gates, Grade, Condition, Record, the Pale Spire, Ascension), Quests,
+  and Shadows (the Squad and the Army). A list is one tile that opens its window: Open Gates opens
+  GATES, a tile to every Gate, its portal in its grade's colour; the Army opens ARMY, a tile to
+  every Shadow, ringed by its kills toward the next rank. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates grid.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,

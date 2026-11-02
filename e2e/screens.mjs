@@ -98,7 +98,8 @@ try {
   // The Pale Spire's next block, beside the board.
   await page.locator('.btile--spire .btile__hit').click(); await sleep(800); await snap('spire-brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess'); await close();
-  await page.locator('.btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit').first().click(); await sleep(800); await snap('brief', true);
+  await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
+  await page.locator('.sheet.is-top .btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit').first().click(); await sleep(800); await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-orders');
   await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
   await page.waitForSelector('.arena', { timeout: 10000 });
@@ -132,10 +133,13 @@ try {
   await nav('shadows');
   await snap('shadows', true);
   await sleep(600);
-  await page.locator('.btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail'); await close();
+  await page.locator('.btile--army .btile__hit').click(); await sleep(600); await snap('army', true);
+  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail'); await close(); await close();
   await page.locator('.btile--squad .btile__hit').click(); await sleep(400); await snap('squad'); await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
+  await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);
+  await page.locator('.sheet.is-top .fold__head').first().click(); await sleep(300); await snap('guide');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));
   console.log(`screens green · ${OUT}/`);

@@ -10,7 +10,7 @@ import type { Effect } from '@/data/nodes';
 import type { Action, Kind, WinOpts } from './overlays';
 
 /** The only headers a System window may carry. Cards carry their own name instead. */
-export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Skills', 'Equipment', 'Inventory', 'Exchange'] as const;
+export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Skills', 'Equipment', 'Inventory', 'Exchange', 'Gates', 'Army', 'Settings', 'Guide'] as const;
 export type Header = (typeof HEADERS)[number];
 
 /** The window kinds the System speaks in. The others belong to Valcorde, the app and the `???` voice. */

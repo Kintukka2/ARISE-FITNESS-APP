@@ -35,7 +35,7 @@ import { BentoGrid, type Tile as BTile } from '@/ui/bento';
 import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
-import { confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
+import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { drinkFlow, MiniBar, openDossier, openStatus } from './Inventory';
 import { openExchange } from './Exchange';
 
@@ -50,12 +50,7 @@ function coachLine(s = store.get()) {
 export function Gates() {
   const s = useSave();
   useNow();
-  const [band, setBand] = useState<'all' | Rank>('all');
-  const gates = board(s);
-  const shown = gates.filter((d) => band === 'all' || d.rank === band);
   const day = dayKey();
-  // The board marks the Gates today's Daily Quests name, so showing it issues them, if nothing has yet.
-  const named = contracts.named(s, day);
 
   useEffect(() => {
     if (!story.seen(s, 'gates-visited')) {
@@ -63,6 +58,7 @@ export function Gates() {
       setTimeout(() => void intro(), 500);
     }
   }, []);
+  // The board marks the Gates today's Daily Quests name, so showing it issues them, if nothing has yet.
   useEffect(() => {
     if (contracts.contractsOpen(store.get()) && store.get().contracts.day !== day) store.update((x) => { contracts.issue(x, day); });
   }, [day, contracts.contractsOpen(s)]);
@@ -71,7 +67,26 @@ export function Gates() {
     <div class="stack">
       <Voice>{coachLine(s)}</Voice>
       <BentoGrid class="gatesgrid" tiles={topTiles(s)} label="Gates" />
-      <div class="bands" role="tablist" aria-label="Filter Gates by grade" data-tour="bands">
+    </div>
+  );
+}
+
+/** GATES: every Gate standing open today, filtered by grade, a tile to each. */
+function openBoard() {
+  openSheet({ title: 'Gates', system: { icon: null, kind: 'gates' }, render: () => <BoardSheet /> });
+}
+
+function BoardSheet() {
+  const s = useSave();
+  useNow();
+  const [band, setBand] = useState<'all' | Rank>('all');
+  const day = dayKey();
+  const gates = board(s, day);
+  const named = contracts.named(s, day);
+  const shown = gates.filter((d) => band === 'all' || d.rank === band);
+  return (
+    <div class="stack">
+      <div class="bands" role="tablist" aria-label="Filter Gates by grade">
         <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
         {RANKS.map((r) => {
           const any = gates.some((d) => d.rank === r);
@@ -81,16 +96,45 @@ export function Gates() {
       <div class="boardhead">
         <span class="label">{band === 'all' ? 'Open Gates' : `${band}-Rank Gates`}</span>
         <span class="label">Redraw <b class="num countdown">{hhmmss(msUntilMidnight())}</b></span>
-        <span class="label">{s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0} closed today</span>
+        <span class="label">Closed today: {s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0}</span>
       </div>
-      <BentoGrid class="board" tour="board" tiles={shown.map((d) => gateTile(s, d, named.has(d.id), day))} label="Open Gates" />
+      <BentoGrid class="board" tiles={shown.map((d) => gateTile(s, d, named.has(d.id), day))} label="Open Gates" />
     </div>
   );
+}
+
+/** The board as one tile: a portal to each grade, the count of its Gates open, dimmed where the licence stops. */
+function boardTile(s: Save, gates: Dungeon[]): BTile {
+  return {
+    key: 'board', kind: 'gates', name: 'Open Gates', head: true, wide: true, tour: 'bands', icon: <Glyph name="gates" />,
+    count: gates.length,
+    status: <>Redraw: <b class="num">{hhmmss(msUntilMidnight())}</b></>,
+    art: (
+      <span class="ga-board">
+        {RANKS.map((r) => {
+          const here = gates.filter((d) => d.rank === r);
+          const open = here.some((d) => entryBlock(s, d) !== 'licence');
+          return (
+            <span key={r} class={`ga-board__one ${here.length ? '' : 'is-none'} ${open ? '' : 'is-shut'}`} style={`--rc: var(--rank-${r})`}>
+              <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
+              <small class="num">{here.length}</small>
+            </span>
+          );
+        })}
+      </span>
+    ),
+    open: openBoard,
+  };
 }
 
 /** What stands above the board: the run left open, the hunter's grade and condition, their record, the Spire and Ascension. */
 function topTiles(s: Save): BTile[] {
   const out: BTile[] = [];
+  const day = dayKey();
+  const gates = board(s, day);
+  // The practice Gate stands on the screen, first, until it is cleared: Valcorde's tour points at it.
+  const practice = gates.find(isPractice);
+  if (practice) out.push({ ...gateTile(s, practice, false, day), tour: 'board' });
   const run = s.gates.raid;
   const open = run && dungeonById(run.dungeonId);
   if (open && run) {
@@ -103,6 +147,7 @@ function topTiles(s: Save): BTile[] {
       open: () => { sfx.gate(); arena.set(open.id); },
     });
   }
+  out.push(boardTile(s, gates));
   const mine = licensedRank(s);
   const holding = licenceHolding(s);
   out.push({
@@ -372,7 +417,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       if (want === 'drink') { await drinkFlow('fatigue'); return; }
       if (!want) return;
     }
-    close();
+    closeAllSheets();
     store.update((x) => raid.begin(x, d));
     sfx.gate();
     buzz([26, 40, 20, 40, 90]);
@@ -436,7 +481,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       </Section>
 
       {block === 'open' ? open?.id === d.id
-        ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { close(); arena.set(d.id); }}>Go Back In</Btn></div>
+        ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
         : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
         : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
         : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>

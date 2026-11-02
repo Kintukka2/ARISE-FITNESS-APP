@@ -1,4 +1,4 @@
-/** Settings: sound, display, the reminder and the save itself. */
+/** SETTINGS: sound, display, the reminder and the save itself, in the System's frame at the owner's call. Its words stay the interface's. */
 import { useEffect, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import { defaults, parse } from '@/core/save';
@@ -11,7 +11,7 @@ import { Glyph } from '@/ui/icons';
 import { openGuide } from './Guide';
 
 export function openSettings() {
-  openSheet({ title: 'Settings', render: () => <Settings /> });
+  openSheet({ title: 'Settings', system: { icon: null }, render: () => <Settings /> });
 }
 
 function Toggle({ label, note, on, onChange }: { label: string; note?: string; on: boolean; onChange: (v: boolean) => void }) {

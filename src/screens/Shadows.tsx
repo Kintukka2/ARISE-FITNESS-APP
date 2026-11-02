@@ -29,16 +29,21 @@ export function Shadows() {
         </SysFrame>
       )}
       <BentoGrid class="shadowgrid" tiles={tiles(s, news)} label="Shadows" />
-      <p class="muted center">Shadows not yet bound: {ALL_ENEMIES.length - s.shadows.army.length}</p>
     </div>
   );
 }
 
-/** The army: the squad first, then a tile to every Shadow, the deployed ones first and the strongest before the rest. */
+/** Every Shadow bound, the deployed ones first and the strongest before the rest. */
+const ranked = (s: Save) => {
+  const squad = shadows.squad(s);
+  return s.shadows.army.slice().sort((a, b) => Number(squad.includes(b)) - Number(squad.includes(a)) || powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
+};
+
+/** The Shadows screen: the squad that walks in next, and the army behind it, a tile each. */
 function tiles(s: Save, news: string[]): BTile[] {
   const slots = shadows.slots(s);
   const squad = shadows.squad(s);
-  const army = s.shadows.army.slice().sort((a, b) => Number(squad.includes(b)) - Number(squad.includes(a)) || powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
+  const army = ranked(s);
   const squadTile: BTile = {
     key: 'squad', kind: 'shadow', name: 'Squad', head: true, wide: true, icon: <Glyph name="shadows" />,
     count: `${squad.length}/${slots}`, hot: shadows.freeSlots(s) > 0,
@@ -58,7 +63,40 @@ function tiles(s: Save, news: string[]): BTile[] {
     ),
     open: openSquad,
   };
-  return [squadTile, ...army.map((sh): BTile => {
+  const armyTile: BTile = {
+    key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="skull" />, hot: news.length > 0,
+    count: army.length,
+    status: `Not yet bound: ${ALL_ENEMIES.length - army.length}`,
+    art: (
+      <span class="sa-army">
+        {army.slice(0, 5).map((sh, i) => {
+          const e = enemyById(sh.enemyId)!;
+          return (
+            <span key={sh.id} class={`sa-army__one ${squad.includes(sh) ? 'is-on' : ''}`} style={`--i: ${i}`}>
+              <span class="sa-army__smoke" /><RankPlate rank={e.rank} size={32} />
+            </span>
+          );
+        })}
+      </span>
+    ),
+    open: () => openArmy(news),
+  };
+  return [squadTile, armyTile];
+}
+
+/** ARMY: every Shadow bound, a tile each, ringed by its kills toward the next rank. */
+function openArmy(news: string[]) {
+  openSheet({ title: 'Army', system: { icon: null, kind: 'shadow' }, render: () => <ArmySheet news={news} /> });
+}
+
+function ArmySheet({ news }: { news: string[] }) {
+  const s = useSave();
+  return <BentoGrid class="armygrid" tiles={shadowTiles(s, news)} label="Army" />;
+}
+
+function shadowTiles(s: Save, news: string[]): BTile[] {
+  const squad = shadows.squad(s);
+  return ranked(s).map((sh): BTile => {
     const e = enemyById(sh.enemyId)!;
     const on = squad.includes(sh);
     const rank = shadows.rankOf(sh);
@@ -72,7 +110,7 @@ function tiles(s: Save, news: string[]): BTile[] {
       art: <ShadowArt kills={sh.kills} share={share} on={on} />,
       open: () => openShadow(sh.id),
     };
-  })];
+  });
 }
 
 /** A Shadow on its tile: its shape in smoke, and a ring that fills with the kills to its next rank. */
