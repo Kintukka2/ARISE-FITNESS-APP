@@ -11,41 +11,16 @@ import * as story from '@/core/story';
 import { ASSESSMENT, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn } from '@/ui/components';
+import { Btn, CoachHead } from '@/ui/components';
+import { useTyped } from '@/ui/typed';
 import { flash } from '@/ui/feedback';
-import { CoachPortrait, Sigil } from '@/ui/icons';
+import { Sigil } from '@/ui/icons';
 import { sys } from '@/ui/overlays';
-
-// ------------------------------------------------------------------ typing
-
-function useTyped(text: string, speed = 15) {
-  const [n, setN] = useState(0);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const fast = store.get().settings.fastText;
-  const stop = () => {
-    if (timer.current) clearInterval(timer.current);
-    timer.current = null;
-    sfx.stopTicker();
-  };
-  useEffect(() => {
-    setN(0);
-    if (!text) return;
-    sfx.startTicker();
-    let i = 0;
-    timer.current = setInterval(() => {
-      i += fast ? 6 : 1;
-      setN(Math.min(i, text.length));
-      if (i >= text.length) stop();
-    }, fast ? 1 : speed);
-    return stop;
-  }, [text]);
-  return { shown: text.slice(0, n), done: n >= text.length, skip: () => { stop(); setN(text.length); } };
-}
 
 /** Valcorde talking, one line per tap. Calls `onDone` after the last. */
 function Coach({ lines, onDone, onLine, hot }: { lines: string[]; onDone: () => void; onLine?: (i: number) => void; hot?: boolean }) {
   const [i, setI] = useState(0);
-  const { shown, done, skip } = useTyped(lines[i] ?? '', 15);
+  const { shown, done, skip } = useTyped(lines[i] ?? '', { speed: 15 });
   const finished = useRef(false);
   const tap = () => {
     if (!done) return skip();
@@ -56,14 +31,10 @@ function Coach({ lines, onDone, onLine, hot }: { lines: string[]; onDone: () => 
     else { finished.current = true; onDone(); }
   };
   return (
-    <button type="button" class={`coachcard ${hot ? 'is-hot' : ''}`} onClick={tap} aria-live="polite">
-      <CoachPortrait size={56} />
-      <div class="coachcard__body">
-        <b class="coachcard__name">Ryn Valcorde</b>
-        <small class="label">Instructor · Hunter Training</small>
-        <p class="coachcard__line">{shown}{!done && <span class="caret" />}</p>
-        {done && !finished.current && <span class="cue">Tap to continue ▸</span>}
-      </div>
+    <button type="button" class={`coachcard coachframe ${hot ? 'is-hot' : ''}`} onClick={tap} aria-live="polite">
+      <CoachHead speaking={!done} size={48} />
+      <p class="coachcard__line">{shown}{!done && <span class="caret" />}</p>
+      {done && !finished.current && <span class="cue">Tap to continue ▸</span>}
     </button>
   );
 }
@@ -132,8 +103,8 @@ export function Awakening() {
 
 function Splash({ onDone }: { onDone: () => void }) {
   const [line, setLine] = useState(0);
-  const a = useTyped(line >= 1 ? 'Awakening registered.' : '', 34);
-  const b = useTyped(line >= 2 ? 'Assessment pending.' : '', 34);
+  const a = useTyped(line >= 1 ? 'Awakening registered.' : '', { speed: 34 });
+  const b = useTyped(line >= 2 ? 'Assessment pending.' : '', { speed: 34 });
   useEffect(() => {
     const t = [setTimeout(() => { sfx.blip(); setLine(1); }, 1300), setTimeout(() => { sfx.blip(); setLine(2); }, 3000), setTimeout(onDone, 4800)];
     return () => t.forEach(clearTimeout);
