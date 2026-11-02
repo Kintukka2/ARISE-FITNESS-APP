@@ -31,7 +31,7 @@ const unlocks = (xs: { rung: number }[]) => {
   return at.length > 1 ? `${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}` : at.join('');
 };
 
-/** The Guide: one fact per line, numbers up front. The interface's reference, not the System's. */
+/** The Guide: one fact per line, numbers up front. The interface's reference, set in the System's frame (GUIDE) at the owner's call. */
 export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Levels, ranks and stats',
@@ -232,7 +232,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 
 export function openGuide() {
   openSheet({
-    title: 'How Arise Works',
+    title: 'Guide', system: { icon: null },
     render: () => (
       <div class="stack">
         {TOPICS.map((t) => (
