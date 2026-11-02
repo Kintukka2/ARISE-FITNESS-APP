@@ -51,6 +51,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | Status tooltips and foes' intent on unit cards | The System | `STATUS_TEXT` in `core/combat.ts`, `screens/Arena.tsx` |
 | Spire reward tiers, rank blurbs | The System | `core/spire.ts`, `core/progression.ts` |
 | The splash and the Hunter Licence card | The world: the Association's file | `screens/Onboarding.tsx` |
+| The Arrival: the cut between the office and the first Notification | No one. It carries no words, so the System's first words are its Notification | `ui/arrival.ts`, `screens/Onboarding.tsx` |
 | Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
@@ -70,6 +71,12 @@ the table above gives it, so a player can tell who is talking before reading a w
 | **Valcorde** | His channel, below: his voice box on a screen, his windows, his tours and his card in the intro |
 | **The interface** | Its own windows (confirmations, tutorials) and the controls between the tiles (the nav): the System's geometry, square corners, scratched glass and a hairline inside the edge, but no lit rails, no header plate and Rajdhani in capitals |
 | **Other voices** | The red `danger` frame. Nothing else uses it |
+
+**The Arrival has no speaker and no frame.** It is light in the System's cyan on a canvas: the rank
+plate lifting off the licence, a lock of rings catching, the breach. It never sets a word, so it
+never takes Montserrat or the frame, and nothing in it may be read as the System talking before its
+first Notification. A later cinematic follows the same rule: if it needs words, they go in a
+window after it.
 
 ### The System's frame
 

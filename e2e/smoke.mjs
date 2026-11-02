@@ -171,7 +171,11 @@ try {
   await snap('handover');
   await page.locator('text=Leave The Office').click();
 
-  await page.waitForSelector('.sysgate .holdbtn', { timeout: 8000 });
+  // The Arrival plays before the System's first window: the lock forms, catches and breaks open.
+  await page.waitForSelector('canvas.arrival');
+  await sleep(6900);
+  await snap('arrival');
+  await page.waitForSelector('.sysgate .holdbtn', { timeout: 15000 });
   await sleep(300);
   await snap('awakening');
   await drain();
