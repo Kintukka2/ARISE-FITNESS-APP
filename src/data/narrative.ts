@@ -64,8 +64,9 @@ export const BEATS: Beat[] = [
     lines: ['[A Gate has formed in your area.]', unlock('Gates')],
   },
   {
-    id: 'contracts_issued', when: (s) => s.gates.cleared.includes('DNG-000'), kind: 'system', title: 'Notification', center: true,
-    lines: [arrival('Daily Quests', true), counter('Daily Quests completed', 0, CONTRACTS_PER_DAY), unlock('Quests')],
+    // Told on the hunter's first visit to the Quests screen (it marks the day's quests seen), not the moment the Practice Gate closes.
+    id: 'contracts_issued', when: (s) => s.gates.cleared.includes('DNG-000') && !!s.contracts.seen, kind: 'system', title: 'Notification', center: true,
+    lines: [arrival('Daily Quests', true), counter('Daily Quests completed', 0, CONTRACTS_PER_DAY)],
   },
   {
     id: 'lv3', when: (s) => s.gates.clears >= 3, kind: 'coach', title: 'Valcorde',

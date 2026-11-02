@@ -5,6 +5,7 @@
  * a rank in `grantXP`, the Spire's week in `spire.settle`, a Trial and the Chosen in `raid.finish`).
  * This screen only says where each one stands.
  */
+import { playBeats } from '@/app/flow';
 import type { ComponentChildren, FunctionComponent } from 'preact';
 import { useEffect } from 'preact/hooks';
 import * as ascension from '@/core/ascension';
@@ -43,10 +44,12 @@ export function Quests() {
   const s = useSave();
   useNow();
   const day = dayKey();
-  // Showing today's Daily Quests issues them, if nothing has yet, and clears the badge on the tab.
+  // Showing today's Daily Quests issues them, if nothing has yet, and clears the badge on the tab. The first
+  // visit is also when the System announces them (the `contracts_issued` beat).
   useEffect(() => {
     const now = store.get();
     if (contracts.contractsOpen(now) && !(now.contracts.day === day && now.contracts.seen)) store.update((x) => contracts.show(x, day));
+    void playBeats();
   }, [day]);
   return <BentoGrid class="questgrid" tiles={tiles(s, day)} label="Quests" />;
 }

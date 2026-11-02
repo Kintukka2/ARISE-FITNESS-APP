@@ -38,6 +38,11 @@ export function Inventory() {
   return <BentoGrid class="invscreen" tiles={tiles(s)} label="Inventory" />;
 }
 
+/** Unspent Ability Points on a tile, in advancement's gold: a lit + mark, then the count. */
+function PointsDue({ n }: { n: number }) {
+  return <span class="apdue"><span class="apdue__mark" aria-hidden="true">+</span>Ability Points: <b class="num">{n}</b></span>;
+}
+
 /** The hunter's page: who they are, what they can do, what they wear, what they hold, and their record. */
 function tiles(s: Save): Tile[] {
   const r = rankFor(s.hunter.level);
@@ -56,7 +61,7 @@ function tiles(s: Save): Tile[] {
     {
       key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0,
       count: `LV ${s.hunter.level}`,
-      status: s.hunter.points ? <>Ability Points: <b class="num">{s.hunter.points}</b></> : nr ? `Level ${nr.min} for ${nr.name}.` : r.name,
+      status: s.hunter.points ? <PointsDue n={s.hunter.points} /> : nr ? `Level ${nr.min} for ${nr.name}.` : r.name,
       art: (
         <span class="ia-status">
           <span class="ia-status__who">
@@ -75,7 +80,7 @@ function tiles(s: Save): Tile[] {
     {
       key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />,
       count: `${lead} ${Math.round(total[lead])}`,
-      status: s.hunter.points ? <>Ability Points: <b class="num">{s.hunter.points}</b></> : `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
+      status: s.hunter.points ? <PointsDue n={s.hunter.points} /> : `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
       art: <Radar values={total} />,
       open: openStatus,
     },

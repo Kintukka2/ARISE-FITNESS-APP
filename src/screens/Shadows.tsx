@@ -202,8 +202,8 @@ function openShadow(id: string) {
               })}
             </div>
           </Section>
-          <Section title="Standing orders" right={sh.tactic ? 'its own' : 'the party’s'}>
-            <div class="chips">
+          <Section title="Standing orders" right={sh.tactic ? 'Its own' : 'The party’s'}>
+            <div class="chips chips--orders">
               <Chip on={!sh.tactic} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, null))}>Party’s orders</Chip>
               {TACTICS.map((t) => <Chip key={t.key} on={sh.tactic === t.key} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, t.key))}>{t.name}</Chip>)}
             </div>

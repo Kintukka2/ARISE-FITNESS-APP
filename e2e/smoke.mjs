@@ -71,7 +71,11 @@ async function nav(k) {
  * aims at a foe and strikes every turn; with `auto`, the System fights them.
  * Only the practice gate must be won.
  */
+/** Today's Daily Quest counts, from the save: kind to count. */
+const questCounts = () => page.evaluate(() => Object.fromEntries((JSON.parse(localStorage.getItem('arise-rpg:save') || '{}').contracts?.list ?? []).map((k) => [k.kind, k.got])));
+
 async function raidGate(row, name, auto = false) {
+  const before = await questCounts();
   await page.locator(row).first().click();
   await sleep(500);
   await snap(`${name}-brief`);
@@ -146,7 +150,25 @@ async function raidGate(row, name, auto = false) {
   if (!auto && !steps) throw new Error(`${name.toUpperCase()} NEVER SHOWED THE MAP`);
   if (name === 'practice' && !resumed) throw new Error('THE PRACTICE GATE ENDED BEFORE THE RELOAD CHECK');
   await page.waitForSelector('.arena--results');
-  if (name !== 'practice' && !(await visible('.arena--results .sysframe.contracts'))) throw new Error('THE RESULTS DID NOT COUNT THE CONTRACTS');
+  if (name !== 'practice') {
+    // The results show exactly the Daily Quests the run moved, and nothing when it moved none.
+    await sleep(400);
+    const after = await questCounts();
+    const moved = Object.keys(after).filter((k) => after[k] > (before[k] ?? 0)).sort().join();
+    const shown = (await page.locator('.arena--results .questinfo--moved [data-contract]').evaluateAll((els) => els.map((e) => e.dataset.contract))).sort().join();
+    if (shown !== moved) throw new Error(`THE RESULTS SHOWED DAILY QUESTS [${shown}] BUT THE RUN MOVED [${moved}]`);
+  }
+  // Leaving with loot face down asks first; Reveal All turns it over and stays.
+  if (await visible('.flip:not(.is-open)')) {
+    await sleep(700);
+    await snap(`${name}-results-facedown`);
+    await page.locator('text=Leave The Gate').click();
+    await page.waitForSelector('.syswin--app', { timeout: 3000 });
+    await snap(`${name}-leave-check`);
+    await page.locator('.syswin--app .btn--primary', { hasText: 'Reveal All' }).click();
+    await sleep(300 * (await page.locator('.flip').count()) + 400);
+    if (await visible('.flip:not(.is-open)')) throw new Error('REVEAL ALL LEFT LOOT FACE DOWN');
+  }
   for (const f of await page.locator('.flip').all()) await f.click();
   await sleep(500);
   await snap(`${name}-results`);
@@ -209,7 +231,10 @@ try {
   // The practice gate is behind the hunter, so the System has issued the day's contracts, on the Quests screen.
   if (!(await page.locator('[data-nav="quests"] .badge').isVisible())) throw new Error('THE QUESTS TAB DID NOT SAY THE DAILY QUESTS HAD ARRIVED');
   await nav('quests');
-  await sleep(400);
+  // The first visit is when the System announces the day's Daily Quests.
+  await page.waitForSelector('.syswin', { timeout: 3000 }).catch(() => { throw new Error('THE FIRST QUESTS VISIT DID NOT ANNOUNCE THE DAILY QUESTS'); });
+  await sleep(1400);
+  await snap('quests-arrival');
   await drain();
   // One page of tiles: the day's quests, the next rank and the Secret Quests, each opening its window.
   if ((await page.locator('.btile--daily .qa-row').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');

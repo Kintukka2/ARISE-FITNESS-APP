@@ -204,9 +204,14 @@
 
 .report__head { display: flex; flex-direction: column; gap: 4px; }
 .report__head h2 { font-size: 1.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
-.haul { display: flex; flex-wrap: wrap; gap: 10px; }
-.haul__item { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 92px; text-align: center; }
-.haul__item small { font-size: 0.72rem; color: var(--ink-2); line-height: 1.2; }
+/* The haul: one centred row of equal cells, each keeping room for its name from the start, so revealing moves nothing. */
+.loot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.haul { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 10px; }
+.haul__item { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 80px; text-align: center; }
+.haul__item small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em; font-size: 0.72rem; color: var(--ink-2); line-height: 1.2; }
+.loot__act { display: flex; align-items: center; justify-content: center; min-height: 36px; }
+.loot__act:not(.is-ready) { opacity: 0.38; }
+.loot__act { transition: opacity 320ms var(--ease); }
 .arena { position: fixed; inset: 0; z-index: var(--z-player); display: flex; flex-direction: column; background: radial-gradient(100% 60% at 50% 0%, rgba(120, 50, 10, 0.35), transparent 60%), #05060c; animation: fadein 240ms both; }
 .arena.is-boss { background: radial-gradient(100% 60% at 50% 0%, rgba(140, 20, 40, 0.45), transparent 60%), #06040a; }
 .arena__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; padding: calc(var(--safe-t) + 12px) 16px 10px; border-bottom: 1px solid rgba(255, 154, 60, 0.3); }
@@ -261,7 +266,12 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .arena--results.is-cleared .report__head h2 { color: var(--verdant); text-shadow: 0 0 18px var(--verdant-glow); }
 .arena--results.is-defeated .report__head h2 { color: var(--sysred); }
 .flip { cursor: pointer; }
-.flip__back { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid rgba(255, 154, 60, 0.5); border-radius: var(--r-sm); background: repeating-linear-gradient(45deg, rgba(255, 154, 60, 0.08) 0 6px, transparent 6px 12px); color: var(--ember); font-size: 1.4rem; font-weight: 700; }
+.flip__back { position: relative; overflow: hidden; display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid rgba(255, 154, 60, 0.5); border-radius: var(--r-sm); background: repeating-linear-gradient(45deg, rgba(255, 154, 60, 0.08) 0 6px, transparent 6px 12px); color: var(--ember); font-size: 1.4rem; font-weight: 700; transition: transform 120ms; animation: lootCall 2.2s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 0.22s); }
+/* A face-down box calls to be tapped: it lifts and glows, and a glint crosses it, each box a beat after the last. */
+.flip__back::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 220, 180, 0.38), transparent); transform: translateX(-150%) skewX(-14deg); animation: lootGlint 2.2s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 0.22s); pointer-events: none; }
+.flip:active .flip__back { transform: scale(0.93); }
+@keyframes lootCall { 0%, 100% { translate: 0 0; box-shadow: 0 0 0 rgba(255, 154, 60, 0); text-shadow: none; } 50% { translate: 0 -3px; box-shadow: 0 0 0 1px rgba(255, 154, 60, 0.55), 0 0 18px rgba(255, 154, 60, 0.42); text-shadow: 0 0 10px rgba(255, 154, 60, 0.8); } }
+@keyframes lootGlint { 0%, 55% { transform: translateX(-150%) skewX(-14deg); } 85%, 100% { transform: translateX(320%) skewX(-14deg); } }
 .flip.is-open { animation: windowIn 360ms var(--ease) both; }
 /* The System's notices after a run (extraction, the Chosen, Ascension, promotions): its frame, set into the results. */
 .extract .sysframe__glass { gap: 10px; text-align: center; font-size: 0.92rem; }
@@ -386,6 +396,11 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .btile.is-wide { grid-column: 1 / -1; }
 .btile > .sysframe__glass { flex: 1; gap: 0; padding: 0; }
 .btile.is-hot { animation: btileHot 1.8s ease-in-out infinite; }
+/* Unspent Ability Points: gold, advancement's colour, with a lit + mark that breathes until they are spent. */
+.apdue { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.apdue b { color: inherit; }
+.apdue__mark { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--gold); font-weight: 700; font-size: 0.82rem; line-height: 1; box-shadow: 0 0 8px var(--gold-glow); animation: apdue 1.6s ease-in-out infinite; }
+@keyframes apdue { 50% { background: rgba(255, 203, 92, 0.2); box-shadow: 0 0 14px var(--gold-glow); } }
 @keyframes btileHot { 50% { box-shadow: -2px 0 20px -2px var(--win-glow), 2px 0 20px -2px var(--win-glow), 0 0 30px var(--win-glow); } }
 
 .btile__hit { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 178px; overflow: hidden; color: inherit; text-align: left; transition: background 200ms; }
