@@ -31,9 +31,10 @@ export function Btn({ children, onClick, kind, size, block, disabled, sound = 't
   );
 }
 
-export function IconBtn({ icon, label, onClick, disabled, tour, badge }: { icon: string; label: string; onClick: () => void; disabled?: boolean; tour?: string; badge?: string | number }) {
+/** An icon button. `on` marks a toggle that is set, as a starred item's star, lit gold. */
+export function IconBtn({ icon, label, onClick, disabled, tour, badge, on }: { icon: string; label: string; onClick: () => void; disabled?: boolean; tour?: string; badge?: string | number; on?: boolean }) {
   return (
-    <button type="button" class="iconbtn" aria-label={label} title={label} disabled={disabled} data-tour={tour}
+    <button type="button" class={`iconbtn ${on ? 'is-on' : ''}`} aria-label={label} title={label} disabled={disabled} data-tour={tour} aria-pressed={on === undefined ? undefined : on}
       onClick={() => { sfx.blip(); onClick(); }}>
       <Glyph name={icon} />
       {badge ? <span class="badge">{badge}</span> : null}

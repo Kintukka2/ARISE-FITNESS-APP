@@ -40,6 +40,11 @@ export function Inventory() {
   return <BentoGrid class="invscreen" tiles={tiles(s)} label="Inventory" />;
 }
 
+/** A skill or passive waiting to be chosen, in advancement's gold. */
+function ChoiceDue({ kind }: { kind: 'skill' | 'passive' }) {
+  return <span class="apdue"><span class="apdue__mark" aria-hidden="true">+</span>{kind === 'skill' ? 'Skill' : 'Passive'} available</span>;
+}
+
 /** A rank the level has reached and the hunter has not yet claimed, in advancement's gold. */
 function RankDue({ to }: { to: string }) {
   return <span class="apdue"><span class="apdue__mark" aria-hidden="true"><Glyph name="up" /></span>{to}: requirements met</span>;
@@ -66,7 +71,7 @@ function tiles(s: Save): Tile[] {
   const rc = reclassification(s);
   return [
     {
-      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0 || !!rc?.ready,
+      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0, call: !!rc?.ready,
       count: `LV ${s.hunter.level}`,
       status: rc?.ready ? <RankDue to={rc.to.name} /> : s.hunter.points ? <PointsDue n={s.hunter.points} /> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : r.name,
       art: (
@@ -92,9 +97,9 @@ function tiles(s: Save): Tile[] {
       open: openStats,
     },
     {
-      key: 'skills', kind: 'gold', name: 'Skills', head: true, icon: <Glyph name="bolt" />, hot: choose > 0,
+      key: 'skills', kind: 'gold', name: 'Skills', head: true, icon: <Glyph name="bolt" />, call: choose > 0,
       count: choose ? `${choose} new` : cls ? `${cls.rank}-Rank` : '-- --',
-      status: cls ? `[Class: ${cls.name}]` : 'Unclassified',
+      status: choose && cls ? <ChoiceDue kind={optionsAt(cls.lead, waiting(s)[0]).kind} /> : cls ? `[Class: ${cls.name}]` : 'Unclassified',
       art: <SkillArt s={s} />,
       open: openClass,
     },
@@ -665,7 +670,7 @@ export function openItem(id: string) {
           {d.set && setById(d.set) && <SetBlock set={setById(d.set)!} s={s} />}
           <div class="row">
             <Btn kind="primary" class="grow" sound="success" onClick={() => { store.update((x) => (worn ? gear.unequip(x, worn) : gear.equip(x, it.id))); toast(`${d.name} ${worn ? 'stowed' : 'equipped'}.`, 'xp'); void checkAwards(); }}>{worn ? 'Unequip' : 'Equip'}</Btn>
-            <IconBtn icon="star" label={s.favourites.includes(it.id) ? 'Unstar' : 'Star (protects from bulk recycle)'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
+            <IconBtn icon="star" on={s.favourites.includes(it.id)} label={s.favourites.includes(it.id) ? 'Unstar' : 'Star (protects from bulk recycle)'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
           </div>
           {!d.issued && !worn && (
             <Btn kind="ghost" onClick={async () => {

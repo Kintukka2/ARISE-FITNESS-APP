@@ -11,10 +11,10 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the Gate. Pays shards, sometimes gear.' },
   elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. Guards gear.' },
   rest: { name: 'Rest', glyph: 'heart', desc: 'Heals the party. The only place to withdraw.' },
-  treasure: { name: 'Cache', glyph: 'bag', desc: 'Gear, one grade below the Gate.' },
+  treasure: { name: 'Cache', glyph: 'bag', desc: 'Gear, one grade below the Gate. It shows as Unknown until you step on it.' },
   shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate.' },
   trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It shows as Unknown until you step on it.' },
-  event: { name: 'Unknown', glyph: 'unknown', desc: 'A choice, or a trap. Some outcomes are rolled.' },
+  event: { name: 'Unknown', glyph: 'unknown', desc: 'A choice, a trap or a cache. Some outcomes are rolled.' },
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
 };
 

@@ -54,8 +54,12 @@ export interface Hold {
   ticks?: number;
   holding?: string;
   done?: string;
+  /** What the button finishes on when `decide` says the act did not take. */
+  failed?: string;
   tick?: (step: number, of: number) => void;
   seal?: () => void;
+  /** The sound of it not taking. */
+  fail?: () => void;
   after?: number;
   /** The value the window resolves with once the hold completes. */
   value?: unknown;
@@ -141,15 +145,20 @@ function Typed({ lines, fast, onDone, skipRef }: { lines: string[]; fast: boolea
   );
 }
 
-export function HoldButton({ hold, onFire, disabled }: { hold: Hold; onFire: () => void; disabled?: boolean }) {
+/**
+ * Hold to confirm. `decide`, when given, settles the act the moment the hold completes, so the button
+ * can finish on what happened: lit green on `done`, or red and shaken on `failed`. `onFire` follows a
+ * beat later either way.
+ */
+export function HoldButton({ hold, onFire, disabled, decide }: { hold: Hold; onFire: () => void; disabled?: boolean; decide?: () => boolean }) {
   const [p, setP] = useState(0);
-  const [state, setState] = useState<'idle' | 'holding' | 'done'>('idle');
+  const [state, setState] = useState<'idle' | 'holding' | 'done' | 'failed'>('idle');
   const raf = useRef(0);
   const ms = hold.ms ?? 2400;
   const ticks = hold.ticks ?? 6;
   const start = (e: Event) => {
     e.preventDefault();
-    if (disabled || state === 'done') return;
+    if (disabled || state === 'done' || state === 'failed') return;
     // Capture the pointer so a layout shift under the finger cannot cancel the hold.
     const pe = e as PointerEvent;
     if (pe.pointerId !== undefined) (e.currentTarget as Element).setPointerCapture?.(pe.pointerId);
@@ -166,10 +175,17 @@ export function HoldButton({ hold, onFire, disabled }: { hold: Hold; onFire: () 
         buzz(7);
       }
       if (f >= 1) {
-        setState('done');
-        (hold.seal ?? sfx.sealed)();
-        buzz([24, 44, 130]);
-        flash();
+        const took = decide ? decide() : true;
+        setState(took ? 'done' : 'failed');
+        if (took) {
+          (hold.seal ?? sfx.sealed)();
+          buzz([24, 44, 130]);
+          flash();
+        } else {
+          (hold.fail ?? sfx.shadowLost)();
+          buzz([70, 50, 70, 50, 160]);
+          flash('danger');
+        }
         setTimeout(onFire, hold.after ?? 620);
         return;
       }
@@ -187,7 +203,7 @@ export function HoldButton({ hold, onFire, disabled }: { hold: Hold; onFire: () 
   return (
     <button
       type="button"
-      class={`holdbtn ${state === 'done' ? 'is-done' : ''} ${state === 'holding' ? 'is-holding' : ''}`}
+      class={`holdbtn ${state === 'done' ? 'is-done' : ''} ${state === 'failed' ? 'is-failed' : ''} ${state === 'holding' ? 'is-holding' : ''}`}
       disabled={disabled}
       onPointerDown={start}
       onPointerUp={stop}
@@ -198,7 +214,7 @@ export function HoldButton({ hold, onFire, disabled }: { hold: Hold; onFire: () 
       onContextMenu={(e) => e.preventDefault()}
     >
       <span class="holdbtn__fill" style={{ transform: `scaleX(${p})` }} />
-      <span class="holdbtn__label">{state === 'done' ? hold.done ?? 'Done' : state === 'holding' ? hold.holding ?? 'Hold…' : hold.label}</span>
+      <span class="holdbtn__label">{state === 'done' ? hold.done ?? 'Done' : state === 'failed' ? hold.failed ?? 'Failed' : state === 'holding' ? hold.holding ?? 'Hold…' : hold.label}</span>
     </button>
   );
 }

@@ -256,7 +256,9 @@ Buttons answer the window, so they change with what it says.
 - A window that only reports gets one button, **Close**, or the open and dismiss icons on a
   one-line notice.
 - A hold-to-confirm button names the act, then its progress, then the result: **Hold To
-  Extract**, **Extracting…**. The extraction button finishes on **ARISE** (see the exceptions).
+  Extract**, **Extracting…**. The extraction button finishes on **ARISE** (see the exceptions), or on
+  **Failed**, red and shaken, when the roll misses: a hold that can fail settles as it completes,
+  so the button never lights green for an act that did not take.
 - An app confirmation is the interface's (`confirm()`, kind `app`). A destructive act turns only
   its button red; the red frame belongs to another voice.
 - Never ask the player to accept something the engine has already paid. Rewards are settled in
@@ -537,10 +539,11 @@ runs (`GRADES` in `core/raid.ts`): **Safe, Favourable, Even, Unfavourable, Letha
 
 ```
 Assessment: Safe
-Clear rate: 96% · Carried out: 4%
+Clear rate: 96%
 ```
 
-The rates are percentages of those runs, never a count of them. It reports the grade and the
+The rate is a percentage of those runs, never a count of them. It is the one number the
+assessment gives; how often the hunter is carried out is left to the grade. It reports the grade and the
 numbers. It never says what the party "will" do, and it never
 explains how it ran the Gate; the Guide does.
 

@@ -56,7 +56,10 @@ export function Quests() {
 
 /** Every quest that stands, in the grid's order: the day's first, then the climbs, then the record. */
 function tiles(s: Save, day: string): Tile[] {
-  const list = [dailyTile(s, day), rankTile(s), spireTile(s, day), trialTile(s, day), chosenTile(s, day), secretTile(s)].filter((t): t is QuestTile => !!t);
+  const rank = rankTile(s);
+  // A rank waiting to be claimed leads the page, across its width.
+  const lead = rank?.call ? [rank, dailyTile(s, day)] : [dailyTile(s, day), rank];
+  const list = [...lead, spireTile(s, day), trialTile(s, day), chosenTile(s, day), secretTile(s)].filter((t): t is QuestTile => !!t);
   return list.map(({ Body, ...t }) => ({
     ...t,
     open: () => openSheet({ title: 'Quest Info', system: { kind: t.kind }, render: (close) => <Body close={close} /> }),
@@ -107,14 +110,14 @@ function rankTile(s: Save): QuestTile | null {
   const q = reclassification(s);
   if (!q) return null;
   return {
-    key: 'rank', kind: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: false, hot: q.ready,
+    key: 'rank', kind: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: q.ready, call: q.ready,
     count: q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`,
     status: q.ready ? 'Requirements met.' : <>Experience needed: <b class="num">{group(q.left)}</b></>,
     art: (
-      <span class="qa-rank">
-        <Sigil rank={q.from.key} size={34} />
+      <span class={`qa-rank ${q.ready ? 'is-ready' : ''}`}>
+        <Sigil rank={q.from.key} size={q.ready ? 46 : 34} />
         <span class="qa-rank__path" style={`--p: ${q.share}`}><i /></span>
-        <span class="qa-rank__next"><Sigil rank={q.to.key} size={34} /></span>
+        <span class="qa-rank__next"><Sigil rank={q.to.key} size={q.ready ? 58 : 34} /></span>
       </span>
     ),
     Body: RankBody,
