@@ -8,7 +8,8 @@
  */
 import { writeFileSync } from 'node:fs';
 import { defaults } from '@/core/save';
-import { autoAllocate, grantXP, optionsAt, pick, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
+import { autoAllocate, grantXP, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
+import { autoLearn, equip, learn, points } from '@/core/skilltree';
 import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
 import { bind, promoteAll } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
@@ -31,8 +32,14 @@ s.hunter.attrs.STR += 12;
 autoAllocate(s);
 s.hunter.points = 4;
 syncClass(s);
-// The D-Rank skill chosen, the C-Rank one still waiting.
-pick(s, 0, optionsAt('STR', 0).names[1]);
+// A build of their own down Ruin, a dip into Bastion, and a few Skill Points still to spend.
+for (const id of [
+  'STR:rend', 'STR:hammerblow', 'STR:might', 'STR:might', 'STR:might', 'STR:rend', 'STR:rend',
+  'STR:heavy-hands', 'STR:heavy-hands', 'STR:skullsplitter', 'STR:skullsplitter', 'STR:sundering-arc', 'STR:hammerblow',
+  'VIT:toughness', 'VIT:toughness', 'VIT:shield-blow', 'VIT:shoulder-charge', 'AGI:swiftness',
+]) learn(s, id);
+equip(s, 'STR:skullsplitter');
+if (points(s) < 4) throw new Error(`The veteran should have Skill Points to spend, has ${points(s)}.`);
 const r = rng('fixture');
 for (const rank of ['D', 'C', 'C', 'B'] as const) for (const slot of ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Weapon', 'Off-Hand', 'Amulet', 'Ring']) {
   const pool = ofRank(rank).filter((d) => d.slot === slot);
@@ -95,6 +102,7 @@ reclassifyAll(a);
 a.hunter.attrs.STR += 30;
 autoAllocate(a);
 syncClass(a);
+autoLearn(a);
 const ra = rng('fixture|ascended');
 for (const rank of ['A', 'S', 'S'] as const) for (const slot of ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Weapon', 'Off-Hand', 'Amulet', 'Ring']) {
   const pool = ofRank(rank).filter((d) => d.slot === slot);

@@ -377,6 +377,19 @@ export const sfx = {
     });
     noise(0.42, 0.7, 0.06, 4000);
   },
+  /** A point going into the skill tree: a crystal chime, higher for a higher tier, and a deeper one under a new skill or passive. */
+  learn: (tier: number, fresh: boolean) => {
+    if (!on()) return;
+    const root = 523 * Math.pow(2, tier / 6);
+    tone(root, 0, 0.32, 'sine', 0.2);
+    tone(root * 1.5, 0.06, 0.36, 'sine', 0.16);
+    tone(root * 2, 0.12, 0.5, 'triangle', 0.08);
+    if (fresh) {
+      tone(root / 2, 0, 0.7, 'sine', 0.16, root / 4);
+      tone(root * 3, 0.2, 0.6, 'sine', 0.07);
+      noise(0.05, 0.5, 0.05, 5200);
+    }
+  },
   rankUp: () => {
     if (!on()) return;
     tone(110, 0, 1.5, 'sawtooth', 0.1, 220);

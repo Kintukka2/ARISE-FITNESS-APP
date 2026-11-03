@@ -5,6 +5,8 @@ import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
 import { battle, fight, FIELD_POTION_HEAL, GUARD, Unit } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
+import { autoLearn } from '@/core/skilltree';
+import { SKILL_SLOTS } from '@/data/tree';
 import type { Order, Save } from '@/core/types';
 import { rng } from '@/core/util';
 import { chamberOf } from '@/core/map';
@@ -20,6 +22,7 @@ function hunter(level: number) {
   s.hunter.attrs.STR += 6;
   autoAllocate(s);
   syncClass(s);
+  autoLearn(s);
   return s;
 }
 
@@ -249,13 +252,15 @@ describe('foe intents', () => {
   });
 });
 
-describe('class skills', () => {
-  it('arrive at D, C and A', () => {
+describe('skill slots', () => {
+  it('fill a slot more at C and at A, and one more again at Sovereign', () => {
     const kit = (level: number) => raid.heroSpec(hunter(level), now).kit ?? [];
-    expect(kit(10)).toHaveLength(1);
-    expect(kit(20)).toHaveLength(2);
-    expect(kit(35)).toHaveLength(2);
-    expect(kit(50)).toHaveLength(3);
+    expect(kit(10)).toHaveLength(SKILL_SLOTS.D);
+    expect(kit(20)).toHaveLength(SKILL_SLOTS.C);
+    expect(kit(35)).toHaveLength(SKILL_SLOTS.B);
+    expect(kit(50)).toHaveLength(SKILL_SLOTS.A);
+    expect(kit(100)).toHaveLength(SKILL_SLOTS.N);
+    expect(SKILL_SLOTS.D < SKILL_SLOTS.C && SKILL_SLOTS.C < SKILL_SLOTS.A && SKILL_SLOTS.A < SKILL_SLOTS.N).toBe(true);
   });
 });
 

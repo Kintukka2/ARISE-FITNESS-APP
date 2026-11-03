@@ -64,10 +64,11 @@ export function offer(lines: string[], kind: Kind = 'system', yes = 'Yes', no = 
 }
 
 /** Levels gained, then the Ability Points they paid. Resolves 'inventory' for Allocate: the screen opens on its Status sheet. */
-export function levelUp(levels: number, to: number, points: number): WinOpts {
+export function levelUp(levels: number, to: number, points: number, skill = 0): WinOpts {
   const lines = Array.from({ length: Math.min(levels, 3) }, () => '[You have levelled up!]');
   if (levels > 3) lines.push(counter('Level', to));
   lines.push(`Ability Points ${gain(signed(points))}`);
+  if (skill) lines.push(`Skill Points ${gain(signed(skill))}`);
   return notify(lines, 'gold', [{ label: 'Close', value: null }, { label: 'Allocate', value: 'inventory', primary: true }]);
 }
 

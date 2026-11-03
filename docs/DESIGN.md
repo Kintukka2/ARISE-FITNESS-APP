@@ -228,7 +228,63 @@ fight was tried and did not narrow it.
   it is stunned. Intents are chosen against the cooldowns as they will be when the foe acts, so a
   one-round cooldown stays one round. The hunter's card counts the foes coming for them, and
   *Protect The Hunter* goes for whatever is about to hit you. Gates recalibrated.
-- **Skill choices at rank-up — built.** Each rung of every line now offers two options, two skills
+- **The skill tree — built.** It replaces the choices at rank-up, below. Skill Points (one each level,
+  two more each rank claimed) are spent on five Paths, one for each stat: Ruin (STR), Bastion (VIT),
+  Tempest (AGI), Arcana (INT) and Sight (PER). `data/tree.ts` holds them, `core/skilltree.ts` plays them.
+  - **A Path** has fifteen nodes over five tiers, D to S. Down its edges, the line's six skills (the
+    old rungs' first options on the left, the other halves on the right), each levelling Lv.1 to
+    Lv.MAX: ×0.1 a level, and at the top its own edge (a status, a wider reach, a shorter cooldown).
+    Down its spine, an attribute at D and two fight bonuses at C and A, three ranks each, then a
+    notable passive at B and at S. Either side of the spine at B and S, the old rung passives as a
+    fork: learning one seals the other.
+  - **Gates:** a tier opens at its rank and once its Path holds 3, 8, 14 or 20 points. A node needs
+    the one it grows from. Any Path is open to any class; its skills grow with its stat, so a hunter
+    who reaches across pays in points and in force. The tree holds more than a Sovereign at Level 100
+    can buy, so a build is always a choice between depth and breadth.
+  - **Ten new passives**, one per tier notable, each a style only the hunter has: Bloodthirst (heal
+    from damage dealt), Rampage (attack for each foe put down), Ambush (the first hit crits), Flurry
+    (a critical hit cools the other skills), Cull (more damage to the nearly dead), Deadeye (crits on
+    a Marked foe hit twice as hard), Spiked Guard (hits taken come back), Unbroken (less damage while
+    healthy), Lingering Curse (debuffs last a turn longer) and Unravel (more damage to a debuffed foe).
+    Their numbers are `EDGE` in `data/tree.ts`, which the engine and the cards both read. None of them
+    changes what a foe does, so a shown intent stays a promise.
+  - **Skill slots:** the skills learned go into a fight in slot order, as many as the rank allows: two
+    at D-Rank, three at C and B, four at A and S, five at Sovereign. A skill learned takes a free
+    slot; Equip, Unequip and Swap In change the rest. A unit carries its own versions of its skills
+    (`UnitSpec.own`), so a hunter's Lv.3 Hammerblow is not an ally's Lv.1.
+  - **Not stored:** Skill Points are what the level and the ranks claimed have earned, less what the
+    tree holds, so nothing can drift. Nothing is unlearned a point at a time; a reset hands every
+    point back, free the first time and then for a clear's Mana Shards at the hunter's grade.
+  - **The System's way:** `autoLearn` spends into the class's Path until nothing there can take a
+    point, then the next highest stat's: passives first, then new skills down the left, then stats,
+    then levels, the left fork before the right. Auto Assign is that, for a hunter who would rather
+    not choose, and so are calibration's and the campaign's hunters.
+  - **Save version 6:** what each open rung of the class's line gave, picked or by default, is learned
+    at Lv.1 and its skills taken in; every other point waits to be spent.
+  - **The Association's hunters** still fight with each line's first options (`progression.kitFor`).
+  - **The screen:** the five Paths drawn as a constellation around the hunter, in the Stats radar's
+    order, so a build has a shape; the rank rings lit as they are held; the points to spend at its
+    centre. Below it the slots, then the chosen Path as a tree, and the card of the node tapped,
+    which stays at the foot of the sheet. A point spent ignites its node, draws its link and is
+    reported on the card in the System's words.
+  - **Balance:** recalibrated. `npm run balance` keeps the middle of every grade at 70% to 86%. Levels
+    matter more inside a grade than before, because each pays a Skill Point: the floor of a grade
+    clears 50% to 75% of the time and the top 80% to 94%. Campaign, against `main`:
+
+    | | One evening a day | Three sessions a day |
+    |---|---|---|
+    | Cleared | 93% (was 97%) | 93% (was 95%) |
+    | Carried out | 19 (was 9) | 28 (was 22) |
+    | S-Rank | day 58 (was 60) | day 34 (was 31) |
+    | Sovereign | day 115 (was 111) | day 64 (was 63) |
+    | Ascension opened | 8 (was 9) | 16 (was 19) |
+    | Last four weeks cleared | 88% (was 93%) | 79% (was 87%) |
+
+    Calibration now counts the typical hunter's tree, so the Gates rose with it, and a hunter who keeps
+    up has a little less of an edge over them than before.
+  - **Open:** whether a deep build (one Path to S, then the next) beats the System's spread by enough
+    to matter. Calibration plays only the System's way.
+- **Skill choices at rank-up — built, then replaced by the skill tree.** Each rung of every line offered two options, two skills
   or two passives, and the hunter keeps one. There are 15 new skills and 10 new passives, all data
   built from abilities and passive styles the combat engine already plays. A line's four passives
   never share a style, so any pair of picks stacks.

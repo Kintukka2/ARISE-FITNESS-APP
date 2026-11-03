@@ -12,6 +12,7 @@
  * passives are data; statuses are a table of multipliers.
  */
 import { ABILITIES, CLASS_PASSIVES, CLASS_SKILLS, PASSIVES } from '@/data/abilities';
+import { EDGE, TREE_PASSIVES } from '@/data/tree';
 import type { Ability, Attrs, Order, Tactic } from './types';
 import { clamp, type Rand } from './util';
 
@@ -108,10 +109,11 @@ STATUS_TEXT.Guarded = `Damage taken -${(1 - GUARD) * 100}% until its next turn`;
 /** A field potion restores this share of the drinker's maximum HP. */
 export const FIELD_POTION_HEAL = 0.3;
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS].map((a) => [a.name, a]));
-const passiveMap = new Map<string, string>([...PASSIVES, ...CLASS_PASSIVES].map((p) => [p.name, p.style]));
+const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES];
+const passiveMap = new Map<string, string>(ALL_PASSIVES.map((p) => [p.name, p.style]));
 export const ability = (n: string) => abilityMap.get(n);
 export const passiveStyle = (n: string) => passiveMap.get(n);
-export const passiveText = (n: string) => [...PASSIVES, ...CLASS_PASSIVES].find((p) => p.name === n)?.text ?? '';
+export const passiveText = (n: string) => ALL_PASSIVES.find((p) => p.name === n)?.text ?? '';
 
 const BASE_STATUS = 35;
 const SWING = 0.15;
@@ -124,6 +126,8 @@ export interface UnitSpec {
   side: 'p' | 'e';
   base: Attrs;
   kit?: string[];
+  /** The unit's own versions of abilities in its kit, by name: a hunter's skills at the levels learned. */
+  own?: Ability[];
   passives?: string[];
   imm?: string[];
   res?: string[];
@@ -142,6 +146,9 @@ export class Unit {
   maxHp: number; hp: number; kit: string[]; styles: string[]; names: string[];
   imm: string[]; res: string[]; status: Record<string, number> = {}; cd: Record<string, number> = {};
   esc = 0; aura = { ini: 0, acc: 0 }; spent = new Set<string>(); kin: Unit[] = [];
+  /** Foes this unit has put down this fight, for Rampage. */
+  mom = 0;
+  own: Map<string, Ability>;
   atkMult: number; tag: UnitSpec['tag']; ref?: string; tactic?: Tactic;
   /** The last foe to land a hit on this unit, for allies told to protect it. */
   hitBy?: Unit;
@@ -152,6 +159,7 @@ export class Unit {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
     this.tag = sp.tag; this.ref = sp.ref; this.tactic = sp.tactic;
     this.kit = sp.kit ?? [];
+    this.own = new Map((sp.own ?? []).map((a) => [a.name, a]));
     this.names = sp.passives ?? [];
     this.styles = this.names.map((n) => passiveStyle(n) ?? '');
     this.imm = sp.imm ?? []; this.res = sp.res ?? [];
@@ -173,6 +181,8 @@ export class Unit {
   }
 
   has(style: string) { return this.styles.includes(style); }
+  /** An ability as this unit uses it: its own version if it has one. */
+  ab(n: string) { return this.own.get(n) ?? ability(n); }
   named(style: string) { return this.names[this.styles.indexOf(style)] ?? style; }
   alive() { return this.hp > 0; }
   mod(key: 'pdef' | 'mdef' | 'eva' | 'ini' | 'acc' | 'atk') {
@@ -180,7 +190,7 @@ export class Unit {
     for (const k of Object.keys(this.status)) m *= STATUS[k]?.[key] ?? 1;
     return m;
   }
-  atk(magic: boolean) { return ((magic ? this.d.mpow : this.d.patk + this.esc * 4)) * this.mod('atk') * this.atkMult; }
+  atk(magic: boolean) { return ((magic ? this.d.mpow : this.d.patk + this.esc * 4)) * this.mod('atk') * this.atkMult * (1 + this.mom * EDGE.momentum.step); }
   def(magic: boolean) {
     const pack = this.has('pack') ? Math.min(2, this.kin.filter((k) => k !== this && k.alive() && k.has('pack')).length) * 5 : 0;
     return magic ? (this.d.resist + pack) * this.mod('mdef') : (this.d.defense + pack) * this.mod('pdef');
@@ -204,7 +214,7 @@ export type Ev =
   | { t: 'guard'; a: string }
   | { t: 'intent'; u: string; ab: string; at?: string }
   | { t: 'heal'; a: string; amt: number; hp: number }
-  | { t: 'passive'; u: string; p: string; k: string; hp?: number };
+  | { t: 'passive'; u: string; p: string; k: string; hp?: number; amt?: number };
 
 const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva), HIT.min, HIT.max);
 
@@ -217,7 +227,7 @@ function statusLands(src: Unit, t: Unit, st: string) {
 
 /** The auto policy's pick. `ahead` counts the cooldown ticks that will pass before the action happens. */
 function choose(u: Unit, r: Rand, ahead = 0): Ability {
-  const ready = u.kit.map(ability).filter((a): a is Ability => !!a && (u.cd[a.name] ?? 0) <= ahead);
+  const ready = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a && (u.cd[a.name] ?? 0) <= ahead);
   if (!ready.length) return STRIKE;
   if (ready.length === 1) return ready[0];
   const heavy = ready.reduce((a, b) => (b.mult > a.mult ? b : a));
@@ -250,7 +260,7 @@ function foresee(u: Unit, enemy: Unit[], r: Rand, log: Ev[], ahead: number) {
 function intended(u: Unit): Ability | null {
   if (!u.intent) return null;
   if (u.intent.ab === STRIKE.name) return STRIKE;
-  const a = ability(u.intent.ab);
+  const a = u.ab(u.intent.ab);
   return a && !u.cd[a.name] ? a : null;
 }
 
@@ -258,7 +268,7 @@ function intended(u: Unit): Ability | null {
 function ordered(u: Unit, o: Order): Ability | null {
   if (o.use === STRIKE.name) return STRIKE;
   if (!u.kit.includes(o.use) || u.cd[o.use]) return null;
-  return ability(o.use) ?? null;
+  return u.ab(o.use) ?? null;
 }
 
 /** The standing orders, as the brief offers them, and as one Shadow's own. */
@@ -333,7 +343,11 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   const meant = u.intent?.ab === a.name ? u.intent.at : undefined;
   const at = o?.at ?? meant;
   const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, u.tactic ?? ctx.tactic, ctx.hero);
+  let drawn = 0;
+  let quick = false;
   for (const t of targets(a, foes, r, first)) {
+    // Put down by a foe's spikes partway through, it does no more.
+    if (!u.alive()) break;
     const aim = u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0);
     if (r() * 100 > hitChance(aim, t.eva())) {
       log.push({ t: 'miss', a: u.uid, v: t.uid, ab: a.name });
@@ -341,10 +355,19 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     }
     const power = u.atk(magic);
     let dmg = Math.max(1, ((power * a.mult * power) / (power + t.def(magic))) * (1 - SWING + r() * 2 * SWING));
-    const crit = r() * 100 < u.d.crit;
-    if (crit) dmg *= CRIT.mult;
+    let crit = r() * 100 < u.d.crit;
+    if (u.has('ambush') && !u.spent.has('ambush')) {
+      u.spent.add('ambush');
+      if (!crit) log.push({ t: 'passive', u: u.uid, p: u.named('ambush'), k: 'ambush' });
+      crit = true;
+    }
+    if (crit) dmg *= u.has('deadeye') && t.status.Marked ? EDGE.deadeye : CRIT.mult;
+    if (u.has('execute') && t.hp < t.maxHp * EDGE.execute.below) dmg *= EDGE.execute.mult;
+    if (u.has('exploit') && Object.keys(t.status).some((k) => STATUS[k] && !STATUS[k].good)) dmg *= EDGE.exploit;
+    if (t.has('stalwart') && t.hp > t.maxHp * EDGE.stalwart.above) dmg *= EDGE.stalwart.mult;
     if (t.status.Guarded) dmg *= GUARD;
     dmg = Math.round(dmg);
+    if (crit && u.has('flurry')) quick = true;
     if (magic && t.has('arcane') && !t.spent.has('ward')) {
       t.spent.add('ward');
       const half = Math.max(1, Math.round(dmg / 2));
@@ -352,13 +375,24 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       dmg = half;
     }
     const was = t.alive();
+    const took = Math.min(dmg, Math.max(0, t.hp));
     t.hp -= dmg;
     t.hitBy = u;
     survive(t, log);
     if (u.has('escalation') && u.esc < 2) u.esc += 1;
+    if (u.has('vamp')) drawn += took * EDGE.vamp;
     log.push({ t: 'hit', a: u.uid, v: t.uid, ab: a.name, dmg, crit, hp: Math.max(0, Math.round(t.hp)) });
+    // Spikes: the one who landed it takes a share back, and can fall to it.
+    if (t.has('thorns') && was) {
+      const back = Math.max(1, Math.round(dmg * EDGE.thorns));
+      u.hp -= back;
+      log.push({ t: 'tick', v: u.uid, s: t.named('thorns'), dmg: back, hp: Math.max(0, Math.round(u.hp)) });
+      survive(u, log);
+      if (!u.alive()) { log.push({ t: 'down', v: u.uid }); onKill(t, u); }
+    }
     if (was && !t.alive()) {
       log.push({ t: 'down', v: t.uid });
+      if (u.has('momentum') && u.mom < EDGE.momentum.max) u.mom += 1;
       onKill(u, t);
       continue;
     }
@@ -369,9 +403,25 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
         log.push({ t: 'passive', u: t.uid, p: t.named('brace'), k: 'brace' });
         continue;
       }
-      t.status[st] = STATUS[st].turns;
+      t.status[st] = STATUS[st].turns + (u.has('affliction') && !STATUS[st].skip && !STATUS[st].good ? EDGE.affliction : 0);
       log.push({ t: 'status', v: t.uid, s: st });
     }
+  }
+  // Bloodthirst: what the action drew comes back at once, as one heal.
+  const heal = Math.min(Math.round(drawn), Math.round(u.maxHp - u.hp));
+  if (heal > 0 && u.alive()) {
+    u.hp += heal;
+    log.push({ t: 'passive', u: u.uid, p: u.named('vamp'), k: 'vamp', amt: heal, hp: Math.round(u.hp) });
+  }
+  // Flurry: a critical hit takes a turn off every other skill's cooldown, once an action.
+  if (quick) {
+    let moved = false;
+    for (const k of Object.keys(u.cd)) {
+      if (k === a.name) continue;
+      moved = true;
+      if (--u.cd[k] <= 0) delete u.cd[k];
+    }
+    if (moved) log.push({ t: 'passive', u: u.uid, p: u.named('flurry'), k: 'flurry' });
   }
 }
 
@@ -401,7 +451,7 @@ function hazard(u: Unit, foes: Unit[], r: Rand, log: Ev[]) {
   const live = foes.filter((f) => f.alive());
   if (!live.length) return;
   const t = live[Math.floor(r() * live.length)];
-  const st = u.kit.map(ability).flatMap((a) => a?.inflicts ?? []).find((s) => STATUS[s]?.dot) ?? 'Poisoned';
+  const st = u.kit.map((n) => u.ab(n)).flatMap((a) => a?.inflicts ?? []).find((s) => STATUS[s]?.dot) ?? 'Poisoned';
   if (r() * 100 >= statusLands(u, t, st)) return;
   t.status[st] = Math.max(t.status[st] ?? 0, 1);
   log.push({ t: 'passive', u: u.uid, p: u.named('hazard'), k: 'hazard' });
@@ -409,7 +459,7 @@ function hazard(u: Unit, foes: Unit[], r: Rand, log: Ev[]) {
 }
 
 function openSide(side: Unit[], log: Ev[]) {
-  for (const u of side) { u.kin = side; u.esc = 0; u.spent = new Set(); u.aura = { ini: 0, acc: 0 }; }
+  for (const u of side) { u.kin = side; u.esc = 0; u.mom = 0; u.spent = new Set(); u.aura = { ini: 0, acc: 0 }; }
   for (const u of side) {
     if (!u.alive() || !u.has('leadership')) continue;
     for (const f of side) { f.aura.ini += 5; f.aura.acc += 5; }
@@ -480,7 +530,7 @@ export function* battle(
 }
 
 function turnOf(u: Unit, foes: Unit[], potions: number): Turn {
-  const skills = u.kit.map(ability).filter((a): a is Ability => !!a).map((a) => ({ ability: a, cd: u.cd[a.name] ?? 0 }));
+  const skills = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a).map((a) => ({ ability: a, cd: u.cd[a.name] ?? 0 }));
   return { uid: u.uid, skills, foes: foes.filter((f) => f.alive()).map((f) => f.uid), potions };
 }
 

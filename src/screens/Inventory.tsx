@@ -4,14 +4,15 @@
  */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { CLASS_RANKS, classById } from '@/data/classes';
+import { classById } from '@/data/classes';
 import * as gear from '@/core/gear';
 import { ascensionOpen, overCap } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
 import { reclassification } from '@/core/quests';
-import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, kitFor, optionsAt, pick, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
-import { ability, CRIT, HIT, passiveText, REACH_TEXT, Unit } from '@/core/combat';
+import { ATTRS, autoAllocate, BOOST_CAP, classBonus, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, spendPoint, STAT_CAP } from '@/core/progression';
+import * as skilltree from '@/core/skilltree';
+import { CRIT, HIT, Unit } from '@/core/combat';
 import { heroSpec } from '@/core/raid';
 import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
@@ -34,6 +35,10 @@ import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
 import { ask } from '@/ui/ask';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { openExchange } from './Exchange';
+import { Constellation, openSkills } from './Skills';
+
+/** The Skills window: kept under its old name for the screens that open it from a class. */
+export const openClass = openSkills;
 
 export function Inventory() {
   const s = useSave();
@@ -41,9 +46,9 @@ export function Inventory() {
   return <BentoGrid class="invscreen" tiles={tiles(s)} label="Inventory" />;
 }
 
-/** A skill or passive waiting to be chosen, in advancement's gold. */
-function ChoiceDue({ kind }: { kind: 'skill' | 'passive' }) {
-  return <span class="apdue"><span class="apdue__mark" aria-hidden="true">+</span>{kind === 'skill' ? 'Skill' : 'Passive'} available</span>;
+/** Skill Points with somewhere to go, in advancement's gold. */
+function SkillDue({ n }: { n: number }) {
+  return <span class="apdue"><span class="apdue__mark" aria-hidden="true">+</span>Skill Points: <b class="num">{n}</b></span>;
 }
 
 /** A rank the level has reached and the hunter has not yet claimed, in advancement's gold. */
@@ -64,7 +69,7 @@ function tiles(s: Save): Tile[] {
   const v = vitals.read(s);
   const total = statsNow(s);
   const lead = STATS.reduce((a, b) => (total[b] > total[a] ? b : a));
-  const choose = waiting(s).length;
+  const sp = skilltree.canSpend(s) ? skilltree.points(s) : 0;
   const ups = gear.upgradeCount(s);
   // The three best pieces held, fanned out with the best in the middle.
   const best = s.items.slice().sort((a, b) => gear.score(b) - gear.score(a)).slice(0, 3);
@@ -100,11 +105,12 @@ function tiles(s: Save): Tile[] {
       open: openStats,
     },
     {
-      key: 'skills', kind: 'system', name: 'Skills', head: true, icon: <Glyph name="bolt" />, call: choose > 0,
-      count: choose ? `${choose} new` : cls ? `${cls.rank}-Rank` : '-- --',
-      status: choose && cls ? <ChoiceDue kind={optionsAt(cls.lead, waiting(s)[0]).kind} /> : cls ? `[Class: ${cls.name}]` : 'Unclassified',
-      art: <SkillArt s={s} />,
-      open: openClass,
+      // Skill Points with a node to take them: gold, as every tile that waits on the hunter.
+      key: 'skills', kind: 'system', name: 'Skills', head: true, icon: <Glyph name="bolt" />, call: sp > 0,
+      count: sp ? `${sp} ${sp === 1 ? 'point' : 'points'}` : cls ? `${cls.rank}-Rank` : '-- --',
+      status: sp ? <SkillDue n={sp} /> : cls ? `[Class: ${cls.name}]` : 'Unclassified',
+      art: <span class="ia-sky"><Constellation s={s} mini /></span>,
+      open: openSkills,
     },
     {
       key: 'equipment', kind: 'gear', name: 'Equipment', head: true, wide: true, icon: <Glyph name="Chest" />, call: ups > 0,
@@ -152,7 +158,7 @@ function tiles(s: Save): Tile[] {
 }
 
 /** Every stat as it fights: Ability Points, class and gear together. */
-const statsNow = (s: Save) => gear.boosted(s.hunter.attrs, gear.worn(s), classBonus(s), BOOST_CAP);
+const statsNow = (s: Save) => gear.boosted(s.hunter.attrs, gear.worn(s), skilltree.flatBonus(s), BOOST_CAP);
 
 /** One vital as a thin bar with its count, for a tile. */
 export function MiniBar({ label, cur, max, tone }: { label: string; cur: number; max: number; tone: string }) {
@@ -202,18 +208,6 @@ function Radar({ values, live }: { values: Record<Stat, number>; live?: boolean 
   );
 }
 
-/** The skills and passives the hunter fights with, kept or defaulted, as hairline boxes. */
-function SkillArt({ s }: { s: Save }) {
-  const cls = classById(s.hunter.classId);
-  if (!cls) return <span class="ia-skills is-none"><b>?</b></span>;
-  const { kit, passives } = kitFor(cls.lead, cls.tier, s.hunter.picks);
-  return (
-    <span class="ia-skills">
-      {[...kit, ...passives].slice(0, 4).map((n) => <span key={n} class="sysbox ia-skills__one">{n}</span>)}
-    </span>
-  );
-}
-
 /** The fullest set worn, as the Equipment tile names it. */
 function setLine(s: Save): string | null {
   const on = [...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]);
@@ -236,11 +230,11 @@ function StatusSheet() {
       <div class="sysfields">
         <Field k="Name" v={s.hunter.name} />
         <Field k="Level" v={<span class="status__level">{s.hunter.level}</span>} />
-        <Field k="Class" v={<button type="button" class="linkish" onClick={openClass}>{cls?.name ?? 'Unclassified'}</button>} />
+        <Field k="Class" v={<button type="button" class="linkish" onClick={openSkills}>{cls?.name ?? 'Unclassified'}</button>} />
         <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
       </div>
       <small class="muted">{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}{licenceHolding(s) ? ` Gate grade: ${licensedRank(s)}-Rank without the Association Licence.` : ''}</small>
-      {waiting(s).length > 0 && <Btn kind="gold" block onClick={openClass}>Choose New Skills · {waiting(s).length}</Btn>}
+      {skilltree.canSpend(s) && <Btn kind="gold" block onClick={openSkills}>Skills · Skill Points: {skilltree.points(s)}</Btn>}
       <VitalsBlock />
       <Attributes />
     </div>
@@ -273,7 +267,8 @@ function StatsSheet() {
   const s = useSave();
   useNow(5000);
   const bonus = classBonus(s);
-  const total = gear.boosted(s.hunter.attrs, gear.worn(s), bonus, BOOST_CAP);
+  const fromTree = skilltree.treeAttrs(s);
+  const total = gear.boosted(s.hunter.attrs, gear.worn(s), skilltree.flatBonus(s), BOOST_CAP);
   const v = vitals.read(s);
   // The hunter exactly as the fight builds them: class, gear, sets, marks, passives, and fatigue.
   const d = new Unit(heroSpec(s)).d;
@@ -290,13 +285,14 @@ function StatsSheet() {
         {STAT_ORDER.map((k) => {
           const a = ATTRS.find((x) => x.key === k)!;
           const cls = bonus[k] ?? 0;
-          const kit = Math.round(total[k] - s.hunter.attrs[k] - cls);
+          const learned = fromTree[k] ?? 0;
+          const kit = Math.round(total[k] - s.hunter.attrs[k] - cls - learned);
           return (
             <li key={k} class="sysbox statrow">
               <span class="statrow__icon" aria-hidden="true"><Glyph name={STAT_ICON[k]} /></span>
               <span class="statrow__body">
                 <span class="statrow__head"><b>{a.name}</b><b class="num">{Math.round(total[k])}</b></span>
-                <small>{[`Base ${s.hunter.attrs[k]}`, cls ? `Class +${cls}` : '', kit > 0 ? `Gear +${kit}` : ''].filter(Boolean).join(' · ')}</small>
+                <small>{[`Base ${s.hunter.attrs[k]}`, cls ? `Class +${cls}` : '', learned ? `Skills +${learned}` : '', kit > 0 ? `Gear +${kit}` : ''].filter(Boolean).join(' · ')}</small>
                 <small class="muted">{a.desc}</small>
               </span>
             </li>
@@ -307,74 +303,6 @@ function StatsSheet() {
       <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
     </div>
-  );
-}
-
-/** The class, and the choice at each of its rungs. */
-export function openClass() {
-  openSheet({ title: 'Skills', system: { icon: null, kind: 'gold' }, render: () => <ClassSheet /> });
-}
-
-function ClassSheet() {
-  const s = useSave();
-  const cls = classById(s.hunter.classId);
-  if (!cls) {
-    return <Empty title="Unclassified">No class yet.</Empty>;
-  }
-  return (
-    <div class="stack">
-      <div class="classcard">
-        <p><strong>[Class: {cls.name}]</strong></p>
-        <p>{cls.desc}</p>
-        <p class="grant">{cls.lead} +{cls.bonus}</p>
-        <small class="muted">Reassigned when another stat is highest. Choices made in other lines are kept.</small>
-      </div>
-      {rungsOf(cls.lead).map((r) => <Rung key={r} rung={r} lead={cls.lead} tier={cls.tier} />)}
-    </div>
-  );
-}
-
-/** What a skill or passive does, read from the data. */
-function describe(kind: 'skill' | 'passive', name: string) {
-  if (kind === 'passive') return passiveText(name);
-  const a = ability(name);
-  if (!a) return '';
-  const what = a.profile === 'support' ? 'Rallies the whole party' : `${a.type === 'magic' ? 'Magic' : 'Physical'}, ×${a.mult}, ${REACH_TEXT[a.profile] ?? 'one target'}`;
-  return `${what}${a.cd ? `, cooldown ${a.cd}` : ''}${a.inflicts.length ? `. Inflicts ${a.inflicts.join(' and ')}` : ''}.`;
-}
-
-/** One rung: its two options, the one kept, and whether it can be changed yet. */
-function Rung({ rung, lead, tier }: { rung: number; lead: string; tier: number }) {
-  const s = useSave();
-  const open = rung <= tier;
-  const { kind, names } = optionsAt(lead, rung);
-  const kept = keptAt(s.hunter.picks, lead, rung);
-  const chosen = s.hunter.picks?.[`${lead}:${rung}`];
-  const can = open && canPick(s, rung);
-  const until = chosen ? CLASS_RANKS[chosen.at + 1] : null;
-  const state = !open ? `opens at ${CLASS_RANKS[rung]}-Rank` : !chosen ? 'choose one' : can ? 'you may change it' : until ? `kept until ${until}-Rank` : 'kept for good';
-  return (
-    <section class={`rung ${open ? '' : 'is-shut'}`}>
-      <header class="rung__head"><span class="label">{CLASS_RANKS[rung]}-Rank {kind}</span><small>{state}</small></header>
-      <div class="rung__options">
-        {names.map((n) => {
-          const isKept = open && n === kept;
-          return (
-            <button type="button" key={n} class={`pickcard ${isKept ? 'is-kept' : ''}`} disabled={!can || (isKept && !!chosen)} aria-pressed={isKept}
-              onClick={async () => {
-                const next = CLASS_RANKS[tier + 1];
-                if (!(await confirm(`Keep ${n}?`, next ? `You can change it again at <strong>${next}-Rank</strong>.` : 'At S-Rank the choice is for good.', 'Keep'))) return;
-                if (store.update((x) => pick(x, rung, n))) { sfx.rankUp(); toast(`${n} kept.`, 'good'); }
-              }}>
-              <b>{n}</b>
-              {/* A rung above the rank held keeps its options' names and nothing more, until it opens. */}
-              {open && <small>{describe(kind, n)}</small>}
-              {isKept && <span class="pickcard__tag">{chosen ? 'Kept' : 'Until you choose'}</span>}
-            </button>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -445,8 +373,7 @@ export async function drinkFlow(id: shop.PotionId) {
 
 function Attributes() {
   const s = useSave();
-  const bonus = classBonus(s);
-  const total = gear.boosted(s.hunter.attrs, gear.worn(s), bonus, BOOST_CAP);
+  const total = gear.boosted(s.hunter.attrs, gear.worn(s), skilltree.flatBonus(s), BOOST_CAP);
   const order: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
   const spend = (k: Stat) => {
     if (!s.hunter.points) {

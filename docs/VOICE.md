@@ -688,9 +688,39 @@ Source: `NAME`, `LEVEL`, `JOB`, `FATIGUE`, `TITLE`, `HP`, `MP`, the five stats, 
 `JOB` is `CLASS`. ARISE has no titles, so `RANK` takes that place. Fatigue sits with HP and MP as a
 bar, because it falls over time and a potion lowers it. Tapping the class opens Skills.
 
-**Skills.** The class card (`[Class: {name}]`, its text, its stat bonus), then each rank's choice
-of skill or passive, the kept one lit in gold. The frame is gold, because a choice here is
-advancement.
+**Skills.** The skill tree, in the System's cyan frame. A box for the class (`[Class: {name}]`, its
+stat bonus) beside one for `SKILL POINTS`, which turns gold with its lit `+` mark while a point has
+somewhere to go. Then the five Paths as a constellation around the hunter, their points at its
+centre (`17` / `POINTS`), each arm named for its Path with its stat and the points spent in it
+(`RUIN` / `STR · 13`), and a ring for each rank, lettered and lit once it is held. Then `SKILL SLOTS`
+(`3/3`), a hairline box to each slot with the skill's mark, name and `Lv.2`, or `-- --`. Then the
+chosen Path's box (`[Path: Ruin]`, its line, `SPENT 13`) and its tree, tier by tier under
+`D-RANK` to `S-RANK`, each tier shut with what it waits for: `Opens at B-Rank`, or
+`Points in Ruin: 5/8`. A node is a hexagon for a skill, a diamond for a passive and a circle for a
+stat, with its counter (`2/3`) and its slot number when it is taken into fights.
+
+Colour follows CLAUDE.md: learned is the System's cyan, Lv.MAX is cyan nearly white, and a node that
+can take a point is gold, because it waits on the hunter. A node shut is slate; a fork's sealed half
+is struck through.
+
+The card of the node tapped sits at the foot of the sheet: `SKILL · Ruin · D-Rank`, the name,
+`Lv.2/3`, what it does now (`Physical ×1.25 · One target`), what the next level adds in green
+(`Lv.3 (MAX): ×1.35 · Inflicts Staggered`), and why it takes no point, as a report:
+`Requires: [Might]`, `Sealed: [Blood Up] is held.`, `Skill Points: 0`. A point spent is reported on
+the card, as the source reports a skill:
+
+```
+[Skill: Hammerblow] acquired.
+Skill level increased.
+Hammerblow  Lv.1  →  Lv.2
+```
+
+Its buttons: `Learn` for a node's first point, `Level Up` for every point after, and for a skill
+learned `Equip`, `Unequip`, or `Swap In` when every slot is full, which lights the slots in gold for
+the hunter to pick one. Under it, the passives learned as boxes, then `Auto Assign` (gold, while a
+point has somewhere to go) and `Reset`, with its price once the free one is spent. Both ask first,
+as a purchase does: `Assign every Skill Point?`, `Reset the skill tree?` / `Skill Points returned: 13`
+/ `Price: …`.
 
 **Equipment.** The ten slots in hairline boxes, five down each side of the hunter's figure, each with
 its slot set small above the item's name (`HEAD` / Warden Helm), or `-- --` when it is empty. Fields
@@ -952,3 +982,7 @@ name decided both:
 - A share of attempts is a percentage: `Clear rate: 96%`, `Success rate: 34%`. A fraction is only
   ever a counter towards a ceiling: `0/3`, `HP: 140/200`.
 - A decision made while writing that will come up again is written here before the change ships.
+- The skill tree's words: `Skill Points` (never "SP"), a `Path` (`[Path: Ruin]`), a tier by its
+  rank (`B-Rank`), `Lv.1` to `Lv.MAX` for every node that takes more than one point, `acquired` for a
+  node's first point, `Skill slots`, `Auto Assign`, `Swap In`. A Path is named by the System for
+  what it does, never for a class: Ruin (STR), Bastion (VIT), Tempest (AGI), Arcana (INT), Sight (PER).

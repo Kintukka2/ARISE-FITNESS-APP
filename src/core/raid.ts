@@ -7,14 +7,15 @@
  */
 import { LOOT } from '@/data/dungeons';
 import { GATE_TUNE } from '@/data/gatetune';
-import { classById, classFor } from '@/data/classes';
+import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
 import { build, chamberOf, isFight, mapSeed, next, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, heldOf, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
-import { BOOST_CAP, classBonus, GATE_XP, grantXP, kitFor, practiceAward, type XpResult } from './progression';
+import { BOOST_CAP, GATE_XP, grantXP, kitFor, practiceAward, type XpResult } from './progression';
+import * as tree from './skilltree';
 import { licensedRank } from './licence';
 import * as asc from './ascension';
 import * as contracts from './contracts';
@@ -46,13 +47,13 @@ const WITHDRAW_CAP = 0.6;
 export type { Chamber };
 
 
-/** The hunter as they will actually fight: attributes + class + gear, worn down by fatigue. */
+/** The hunter as they will actually fight: attributes, class, skill tree and gear, worn down by fatigue. */
 export function heroSpec(s: Save, now = Date.now(), level = 0): UnitSpec {
   const items = wornItems(s);
-  const base = vitals.worn(boosted(s.hunter.attrs, items, classBonus(s), BOOST_CAP), Math.min(vitals.FATIGUE_MAX, vitals.read(s, now).fatigue * asc.dragShare(level)));
-  const cls = classById(s.hunter.classId);
-  const k = cls ? kitFor(cls.lead, cls.tier, s.hunter.picks) : { kit: [], passives: [] };
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, ...k, bonus: sumBonuses(rollBonuses(items), setBonuses(items), marks.heroBonus(s)), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
+  const base = vitals.worn(boosted(s.hunter.attrs, items, tree.flatBonus(s), BOOST_CAP), Math.min(vitals.FATIGUE_MAX, vitals.read(s, now).fatigue * asc.dragShare(level)));
+  // The skill tree: the skills taken in at their levels, every passive learned, and its fight bonuses.
+  const b = tree.buildOf(s);
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: b.passives, bonus: sumBonuses(rollBonuses(items), setBonuses(items), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {

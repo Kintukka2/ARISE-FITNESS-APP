@@ -103,11 +103,6 @@
 .invtile__up { position: absolute; right: 4px; bottom: 2px; color: var(--verdant); font-size: 0.7rem; text-shadow: 0 0 6px var(--verdant-glow); }
 
 /* Skills: the class card, then a rung of choices per rank. */
-.classcard { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); text-align: center; font-size: 0.9rem; }
-.sysframe .pickcard { border-radius: 0; border-color: var(--sys-hair); background: rgba(3, 8, 20, 0.45); font-family: var(--font-sys); }
-.sysframe .pickcard b { font-weight: 600; text-shadow: var(--sys-glow); }
-.sysframe .pickcard small { font-size: 0.78rem; }
-.sysframe .rung__head small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 
 /* The item card: fields, its text, its stat lines in green. */
 .itemsheet__text { font-size: 0.9rem; line-height: 1.55; }
@@ -430,19 +425,191 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .setbonus.is-on { border-left-color: var(--verdant); color: var(--verdant); }
 .upgrade { display: flex; flex-direction: column; gap: 2px; }
 
-/* ------------------------------------------------------------------ class rungs: one of two kept */
+/* ------------------------------------------------------------------ the skill tree */
 
-.rung { display: flex; flex-direction: column; gap: 8px; }
-.rung__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.rung__head small { color: var(--ink-3); font-size: 0.78rem; }
-.rung__options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pickcard { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); text-align: left; }
-.pickcard small { color: var(--ink-3); font-size: 0.8rem; line-height: 1.35; }
-.pickcard.is-kept { border-color: var(--gold); box-shadow: 0 0 16px var(--gold-glow) inset; }
-.pickcard.is-kept b { color: var(--gold); }
-.pickcard:disabled:not(.is-kept) { opacity: 0.6; }
-.pickcard__tag { align-self: flex-start; margin-top: 2px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
-.rung.is-shut .pickcard { opacity: 0.45; }
+/* Cyan is what is learned, the System's; gold is only what waits on the hunter. */
+.skilltree, .ia-sky { --st-shut: rgba(140, 170, 210, 0.3); --st-core-a: rgba(79, 214, 255, 0.55); --st-core-b: rgba(6, 22, 48, 0.95); gap: 14px; }
+.skilltree .label { font-family: var(--font-sys); }
+.st-head { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.st-head__class, .st-head__pts { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 12px; background: rgba(3, 8, 20, 0.45); }
+.st-head__class strong { font-weight: 600; text-shadow: var(--sys-glow); }
+.st-head__class small, .st-head__pts small { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.st-head__pts { position: relative; align-items: flex-end; min-width: 108px; }
+.st-head__pts b { font-size: 1.5rem; line-height: 1; }
+.st-head__pts.is-due { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 18px var(--gold-glow) inset, 0 0 12px var(--gold-glow); }
+.st-head__pts.is-due small { color: var(--gold); }
+.st-head__pts .apdue__mark { position: absolute; left: 10px; top: 50%; translate: 0 -50%; color: var(--gold); }
+
+/* The sky: the five Paths around the hunter. */
+.st-skywrap { position: relative; margin: -4px -6px 0; }
+.st-skywrap::before { content: ''; position: absolute; inset: 8% 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(79, 214, 255, 0.13), transparent 70%); pointer-events: none; }
+.st-sky { display: block; width: 100%; max-width: 420px; margin: 0 auto; overflow: visible; }
+.st-sky__star { fill: #cfeeff; opacity: 0.25; animation: stTwinkle 5s ease-in-out infinite; }
+@keyframes stTwinkle { 50% { opacity: 0.85; } }
+.st-sky__ring { fill: none; stroke: var(--st-shut); stroke-width: 0.6; stroke-dasharray: 2 4; }
+.st-sky__ring.is-open { stroke: rgba(79, 214, 255, 0.42); stroke-dasharray: none; }
+.st-sky__rank { fill: var(--st-shut); font: 700 8px var(--font-sys); text-anchor: middle; letter-spacing: 0.05em; }
+.st-sky__rank.is-open { fill: var(--mana); }
+.st-sky__axis { stroke: rgba(160, 200, 240, 0.12); stroke-width: 0.8; }
+.st-sky__link { stroke: var(--st-shut); stroke-width: 0.8; }
+.st-sky__link.is-lit { stroke: var(--mana); stroke-width: 1.3; filter: drop-shadow(0 0 2px var(--mana)); stroke-dasharray: 3 3; animation: stFlow 1.6s linear infinite; }
+@keyframes stFlow { to { stroke-dashoffset: -12; } }
+.st-sky__node { fill: rgba(30, 50, 80, 0.9); stroke: rgba(150, 180, 220, 0.5); stroke-width: 0.9; transform-box: fill-box; transform-origin: center; transition: fill 300ms, stroke 300ms; }
+.st-sky__node.is-learned { fill: rgba(79, 214, 255, 0.55); stroke: var(--mana); filter: drop-shadow(0 0 3px var(--mana)); }
+.st-sky__node.is-max { fill: #d9f7ff; stroke: #fff; filter: drop-shadow(0 0 4px var(--mana)) drop-shadow(0 0 8px var(--mana)); }
+.st-sky__node.is-open, .st-sky__node.is-can { stroke: var(--gold); animation: stCall 1.8s ease-in-out infinite; }
+.st-sky__node.is-sealed { opacity: 0.35; }
+.st-sky__node.is-fresh { animation: stFlare 1.1s var(--ease) both; }
+@keyframes stCall { 50% { fill: rgba(255, 203, 92, 0.45); filter: drop-shadow(0 0 4px var(--gold)); } }
+@keyframes stFlare { 0% { transform: scale(1); } 30% { transform: scale(2.6); fill: #fff; filter: drop-shadow(0 0 8px #fff); } 100% { transform: scale(1); } }
+.st-sky__arm.is-dim .st-sky__node:not(.is-learned):not(.is-max), .st-sky__arm.is-dim .st-sky__link:not(.is-lit) { opacity: 0.45; }
+.st-sky__arm.is-sel .st-sky__axis { stroke: rgba(79, 214, 255, 0.35); }
+.st-sky__name { fill: color-mix(in srgb, var(--sys-ink) 72%, transparent); font: 700 10.5px var(--font-sys); letter-spacing: 0.16em; text-anchor: middle; text-transform: uppercase; }
+.st-sky__count { fill: var(--ink-3); font: 600 9px var(--font-num, var(--font-sys)); text-anchor: middle; letter-spacing: 0.06em; }
+.st-sky__count.is-call { fill: var(--gold); }
+.st-sky__arm.is-sel .st-sky__name { fill: var(--mana); filter: drop-shadow(0 0 4px var(--mana-glow)); }
+.st-sky__hit { fill: transparent; cursor: pointer; }
+.st-sky__hit:hover { fill: rgba(79, 214, 255, 0.04); }
+.st-sky__core { pointer-events: none; }
+.st-sky__halo { fill: none; stroke: rgba(79, 214, 255, 0.25); stroke-width: 0.8; transform-box: fill-box; transform-origin: center; animation: stHalo 3.2s ease-in-out infinite; }
+@keyframes stHalo { 50% { transform: scale(1.12); stroke-opacity: 0.6; } }
+.st-sky__spin { fill: none; stroke: var(--mana); stroke-width: 1; stroke-dasharray: 2 5 9 5; transform-box: fill-box; transform-origin: center; animation: stSpin 14s linear infinite; }
+@keyframes stSpin { to { transform: rotate(360deg); } }
+.st-sky__heart { stroke: rgba(79, 214, 255, 0.7); stroke-width: 0.8; }
+.st-sky__core.is-due .st-sky__spin, .st-sky__core.is-due .st-sky__heart { stroke: var(--gold); }
+.st-sky__core.is-due .st-sky__halo { stroke: var(--gold); }
+.st-sky__pts { fill: #fff; font: 700 17px var(--font-num, var(--font-sys)); text-anchor: middle; }
+.st-sky__core.is-due .st-sky__pts { fill: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.st-sky__cap { fill: color-mix(in srgb, var(--sys-ink) 60%, transparent); font: 700 5.5px var(--font-sys); text-anchor: middle; letter-spacing: 0.2em; }
+.st-sky__core.is-due .st-sky__cap { fill: var(--gold); }
+.st-sky__glyph { display: grid; place-items: center; width: 20px; height: 20px; color: #fff; }
+.st-sky__glyph .ico { width: 16px; height: 16px; }
+.st-sky.is-mini .st-sky__ring { stroke-width: 1.2; }
+.st-sky.is-mini .st-sky__link { stroke-width: 1.6; }
+.st-sky.is-mini .st-sky__link.is-lit { stroke-width: 2.4; }
+.st-sky.is-mini .st-sky__node { stroke-width: 1.6; }
+.ia-sky { display: block; width: 100%; max-width: 168px; margin: -18px auto -14px; --st-core-a: rgba(79, 214, 255, 0.55); --st-core-b: rgba(6, 22, 48, 0.95); }
+
+/* The loadout: the skills taken into a fight. */
+.st-loadout { display: flex; flex-direction: column; gap: 6px; }
+.st-loadout__head { display: flex; justify-content: space-between; align-items: baseline; }
+.st-loadout__head b { color: var(--mana); }
+.st-slots { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 6px; }
+.st-slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 66px; padding: 8px 4px 6px; background: rgba(3, 8, 20, 0.45); font-family: var(--font-sys); text-align: center; }
+.st-slot b { overflow: hidden; max-width: 100%; font-size: 0.66rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; text-shadow: var(--sys-glow); }
+.st-slot small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.62rem; }
+.st-slot.is-empty { justify-content: center; border-style: dashed; }
+.st-slot__n { position: absolute; left: 4px; top: 3px; color: var(--ink-3); font-size: 0.58rem; }
+.st-slot__icon { display: grid; place-items: center; width: 24px; height: 24px; color: var(--mana); }
+.st-slot__icon .st-icon, .st-slot__icon .ico { width: 20px; height: 20px; }
+.st-loadout.is-swap .st-slot { border-color: var(--gold); box-shadow: 0 0 12px var(--gold-glow) inset; animation: apdue 1.6s ease-in-out infinite; }
+.st-loadout.is-swap .label { color: var(--gold); }
+
+/* A Path's heading. */
+.st-pathhead { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--sys-hair); background: linear-gradient(90deg, rgba(79, 214, 255, 0.08), rgba(3, 8, 20, 0.45)); }
+.st-pathhead__icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--mana); color: var(--mana); box-shadow: 0 0 12px var(--mana-glow) inset; }
+.st-pathhead__body { display: flex; flex-direction: column; gap: 2px; }
+.st-pathhead__body b { font-weight: 600; text-shadow: var(--sys-glow); }
+.st-pathhead__body small { color: color-mix(in srgb, var(--sys-ink) 65%, transparent); font-size: 0.74rem; }
+.st-pathhead__n { display: flex; flex-direction: column; align-items: flex-end; }
+.st-pathhead__n small { color: var(--ink-3); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.st-pathhead__n b { font-size: 1.25rem; color: var(--mana); }
+
+/* A Path, tier by tier. The links sit under the nodes, in the same pixels. */
+.st-path { position: relative; animation: qaIn 420ms var(--ease) both; }
+.st-path__links { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.st-link { fill: none; stroke: var(--st-shut); stroke-width: 1.4; }
+.st-link.is-lit { stroke: rgba(79, 214, 255, 0.75); stroke-width: 2; filter: drop-shadow(0 0 3px var(--mana)); }
+.st-link.is-call { stroke: var(--gold); stroke-dasharray: 4 4; animation: stFlow 1.2s linear infinite; opacity: 0.8; }
+.st-link__flow { fill: none; stroke: #e6fbff; stroke-width: 2; stroke-dasharray: 2 26; stroke-linecap: round; animation: stRun 2.2s linear infinite; }
+@keyframes stRun { to { stroke-dashoffset: -56; } }
+.st-link__draw { fill: none; stroke: #fff; stroke-width: 3.5; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px var(--mana)); animation: stDraw 700ms var(--ease) forwards, stFade 700ms 700ms forwards; }
+@keyframes stDraw { to { stroke-dashoffset: 0; } }
+@keyframes stFade { to { opacity: 0; } }
+.st-tier { position: relative; height: 112px; }
+.st-tier + .st-tier::before { content: ''; position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed rgba(160, 200, 240, 0.1); }
+.st-tier__head { display: flex; justify-content: space-between; align-items: center; height: 20px; padding: 0 2px; }
+.st-tier__rank { color: var(--mana); font: 700 0.62rem var(--font-sys); letter-spacing: 0.2em; }
+.st-tier.is-shut .st-tier__rank { color: var(--ink-3); }
+.st-tier__gate { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-3); font-size: 0.66rem; }
+.st-tier__gate .ico { width: 11px; height: 11px; }
+.st-tier__row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: 92px; }
+
+.st-node { --ring: var(--st-shut); --fill: rgba(6, 14, 30, 0.96); --icon: rgba(160, 185, 215, 0.45); position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font-family: var(--font-sys); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.st-node__shape { position: relative; display: grid; place-items: center; width: 50px; height: 54px; color: var(--icon); transition: transform 200ms var(--ease); }
+.st-node__shape::before, .st-node__shape::after { content: ''; position: absolute; inset: 0; clip-path: var(--clip); }
+.st-node__shape::before { background: var(--ring); }
+.st-node__shape::after { inset: 2px; background: var(--fill); }
+.st-node__shape > * { position: relative; z-index: 1; }
+.st-node--skill { --clip: polygon(50% 0, 96% 25%, 96% 75%, 50% 100%, 4% 75%, 4% 25%); }
+.st-node--passive { --clip: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.st-node--passive:not(.st-node--fork) .st-node__shape { width: 56px; height: 58px; }
+.st-node--stat { --clip: circle(46% at 50% 50%); }
+.st-node--stat .st-node__shape { width: 44px; height: 44px; margin: 5px 0; }
+.st-icon, .st-node__shape .ico { width: 22px; height: 22px; }
+.st-node__name { max-width: calc(100% + 12px); padding: 1px 2px; border-radius: 3px; background: rgba(3, 9, 22, 0.92); color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.58rem; font-weight: 600; line-height: 1.2; text-align: center; overflow-wrap: normal; hyphens: manual; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.st-node__lv { position: absolute; top: 38px; left: 50%; translate: 12px 0; z-index: 2; padding: 0 4px; border: 1px solid var(--ring); background: var(--void); color: var(--icon); font-size: 0.56rem; line-height: 1.35; }
+.st-node--stat .st-node__lv { top: 34px; translate: 10px 0; }
+.st-node__slot { position: absolute; top: 2px; left: 50%; translate: -26px 0; z-index: 2; display: grid; place-items: center; width: 14px; height: 14px; background: var(--mana); color: var(--void); font-size: 0.56rem; font-weight: 700; }
+.st-node.is-learned { --ring: var(--mana); --fill: linear-gradient(180deg, rgba(79, 214, 255, 0.3), rgba(6, 30, 60, 0.95)); --icon: #dff8ff; }
+.st-node.is-learned .st-node__shape, .st-node.is-max .st-node__shape { filter: drop-shadow(0 0 6px var(--mana-glow)); }
+.st-node.is-learned .st-node__name, .st-node.is-max .st-node__name { color: var(--sys-ink); }
+.st-node.is-max { --ring: #e9fbff; --fill: linear-gradient(180deg, rgba(120, 228, 255, 0.55), rgba(10, 50, 90, 0.95)); --icon: #fff; }
+.st-node.is-max .st-node__shape { filter: drop-shadow(0 0 6px var(--mana)) drop-shadow(0 0 14px var(--mana-glow)); }
+.st-node.is-open { --ring: var(--gold); --fill: linear-gradient(180deg, rgba(255, 203, 92, 0.16), rgba(20, 16, 8, 0.95)); --icon: var(--gold); }
+.st-node.is-open .st-node__name { color: var(--gold); }
+.st-node.is-open .st-node__shape, .st-node.is-learned.is-can .st-node__shape { animation: stNodeCall 1.8s ease-in-out infinite; }
+.st-node.is-learned.is-can .st-node__lv { border-color: var(--gold); color: var(--gold); }
+@keyframes stNodeCall { 50% { filter: drop-shadow(0 0 9px var(--gold-glow)) drop-shadow(0 0 3px var(--gold)); } }
+.st-node.is-sealed { opacity: 0.38; }
+.st-node.is-sealed .st-node__name { text-decoration: line-through; }
+.st-node.is-shut .st-node__shape { opacity: 0.8; }
+.st-node.is-sel .st-node__shape { transform: scale(1.1); }
+.st-node.is-sel .st-node__shape::before { box-shadow: none; }
+.st-node.is-sel::before { content: ''; position: absolute; top: -4px; left: 50%; width: 62px; height: 62px; translate: -50% 0; border: 1px dashed var(--mana); border-radius: 50%; animation: stSpin 10s linear infinite; pointer-events: none; }
+.st-node.is-sel.is-open::before, .st-node.is-sel.is-can::before { border-color: var(--gold); }
+.st-node.is-fresh .st-node__shape { animation: stIgnite 900ms var(--ease) both; }
+@keyframes stIgnite { 0% { transform: scale(0.8); filter: brightness(3) drop-shadow(0 0 16px #fff); } 40% { transform: scale(1.28); filter: brightness(2) drop-shadow(0 0 18px var(--mana)); } 100% { transform: scale(1.1); } }
+.st-node__burst { position: absolute; top: 27px; left: 50%; z-index: 3; width: 0; height: 0; pointer-events: none; }
+.st-node__burst::before { content: ''; position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border: 2px solid #fff; border-radius: 50%; animation: stRingOut 800ms var(--ease) forwards; }
+.st-node__burst i { position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px var(--mana); animation: stSpark 900ms var(--ease) forwards; rotate: var(--a); }
+@keyframes stRingOut { from { transform: scale(0.4); opacity: 1; } to { transform: scale(2.2); opacity: 0; border-color: var(--mana); } }
+@keyframes stSpark { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(-46px) scale(0.3); opacity: 0; } }
+
+/* The card of the node tapped: where a point is spent. It stays in sight while the tree scrolls. */
+.st-dock { position: sticky; bottom: -24px; z-index: 5; margin: 0 -4px; padding: 6px 4px 0; background: linear-gradient(180deg, transparent, rgba(4, 10, 24, 0.95) 22%); }
+.st-dock:empty { display: none; }
+.st-card { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 12px; background: rgba(4, 12, 28, 0.96); box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.5); animation: qaIn 260ms var(--ease) both; }
+.st-card.is-can { border-color: var(--gold); box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.5), 0 0 14px var(--gold-glow) inset; }
+.st-card__head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+.st-card__icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--sys-hair); color: var(--mana); }
+.st-card.is-can .st-card__icon { border-color: var(--gold); color: var(--gold); }
+.st-card__title { display: flex; flex-direction: column; min-width: 0; }
+.st-card__title small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.6rem; letter-spacing: 0.14em; }
+.st-card__title b { font-weight: 600; text-shadow: var(--sys-glow); }
+.st-card__lv { color: var(--mana); font-size: 0.8rem; }
+.st-card p { margin: 0; font-size: 0.8rem; line-height: 1.4; }
+.st-card__at { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.st-card__fork { display: flex; align-items: center; gap: 6px; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.st-card__fork .ico { width: 13px; height: 13px; }
+.st-card__why { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.st-card__why.is-shut { color: #ff9aa5; }
+.st-card__flash { padding: 6px 8px; border-left: 2px solid var(--mana); background: rgba(79, 214, 255, 0.08); color: var(--sys-ink); animation: stType 600ms steps(24) both; }
+@keyframes stType { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.st-card__acts { display: flex; gap: 8px; }
+.st-card__acts .btn { flex: 1; }
+.st-card__acts:empty { display: none; }
+
+.st-passives { display: flex; flex-direction: column; gap: 6px; }
+.st-passives__list { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-chip { padding: 5px 9px; background: rgba(3, 8, 20, 0.45); font: 600 0.7rem var(--font-sys); text-shadow: var(--sys-glow); }
+.st-foot { display: flex; gap: 8px; }
+.st-foot .btn { flex: 1; }
+.skilltree.is-shut .st-path, .skilltree.is-shut .st-loadout { opacity: 0.7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .st-sky__star, .st-sky__link.is-lit, .st-sky__node, .st-sky__halo, .st-sky__spin, .st-link__flow, .st-link.is-call, .st-node__shape, .st-node.is-sel::before { animation: none !important; }
+}
 
 /* ------------------------------------------------------------------ Ascension: gold, for advancement */
 
@@ -664,12 +831,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 @keyframes iaGrow { from { opacity: 0; transform: scale(0.15); } }
 
 /* Skills: what the hunter fights with, one hairline box each. */
-.ia-skills { display: flex; flex-direction: column; gap: 5px; width: 100%; }
-.ia-skills__one { overflow: hidden; padding: 5px 8px; font-size: 0.66rem; font-weight: 600; text-align: center; white-space: nowrap; text-overflow: ellipsis; text-shadow: var(--sys-glow); animation: qaIn 560ms var(--ease) both; }
-.ia-skills__one:nth-child(2) { animation-delay: 110ms; }
-.ia-skills__one:nth-child(3) { animation-delay: 220ms; }
-.ia-skills__one:nth-child(4) { animation-delay: 330ms; }
-.ia-skills.is-none b { font-size: 2rem; opacity: 0.45; }
 
 /* Equipment: the ten slots, worn or waiting. */
 .ia-doll { display: grid; grid-template-columns: repeat(5, 42px); gap: 9px; justify-content: center; }

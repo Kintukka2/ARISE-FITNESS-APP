@@ -52,7 +52,7 @@ export function lines(b: Beat, name: (uid: string) => string): { text: string; t
     else if (e.t === 'down') out.push({ text: `✖ ${name(e.v)} has fallen.`, tone: e.v.startsWith('e') ? 'kill' : 'loss' });
     else if (e.t === 'tick') out.push({ text: `● ${name(e.v)} HP -${e.dmg} (${e.s})`, tone: 'status' });
     else if (e.t === 'passive') {
-      const t = e.k === 'ward' ? `◉ ${name(e.u)}: [${e.p}] Damage halved.` : e.k === 'stand' ? `◉ ${name(e.u)}: [${e.p}] Survived at 1 HP.` : e.k === 'brace' ? `◉ ${name(e.u)}: Stagger ignored.` : e.k === 'aura' ? `◉ ${name(e.u)}: [${e.p}] has activated.` : `◉ [${e.p}] has activated.`;
+      const t = e.k === 'ward' ? `◉ ${name(e.u)}: [${e.p}] Damage halved.` : e.k === 'stand' ? `◉ ${name(e.u)}: [${e.p}] Survived at 1 HP.` : e.k === 'brace' ? `◉ ${name(e.u)}: Stagger ignored.` : e.k === 'vamp' ? `◉ ${name(e.u)}: [${e.p}] HP +${e.amt ?? 0}` : e.k === 'ambush' ? `◉ ${name(e.u)}: [${e.p}] Critical hit.` : e.k === 'flurry' ? `◉ ${name(e.u)}: [${e.p}] Cooldowns -1.` : e.k === 'aura' ? `◉ ${name(e.u)}: [${e.p}] has activated.` : `◉ [${e.p}] has activated.`;
       out.push({ text: t, tone: 'passive' });
     }
   }
