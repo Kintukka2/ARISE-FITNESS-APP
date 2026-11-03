@@ -149,7 +149,7 @@ async function raidGate(row, name, auto = false) {
     if (await visible('button.gnode.is-next')) {
       if (!steps++) await snap(`${name}-map`);
       // A trap or a cache passes for an Unknown step until the hunter stands on it.
-      if (await page.locator(':is(.gnode--trap, .gnode--treasure):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP OR A CACHE SHOWED ITSELF BEFORE IT WAS STEPPED ON');
+      if (await page.locator(':is(.gnode--trap, .gnode--treasure, .gnode--shrine):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP, A CACHE OR A SHRINE SHOWED ITSELF BEFORE IT WAS STEPPED ON');
       await page.locator('button.gnode.is-next').first().click();
       continue;
     }

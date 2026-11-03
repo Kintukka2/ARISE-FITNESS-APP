@@ -15,8 +15,11 @@ export const ASCENSION_RULED = 10;
 /** Past the ruled levels, every level makes every foe this many times as strong as the level below. */
 export const BEYOND = { growth: 1.08, name: 'Beyond' } as const;
 
-/** The grade from which a hunter's clears count toward proving a level. */
-export const ASCENSION_FROM: Rank = 'C';
+/**
+ * The grade Ascension opens at. It is what comes after the climb: below it the board is the
+ * challenge, and the Pale Spire the one that grows with the hunter.
+ */
+export const ASCENSION_FROM: Rank = 'S';
 
 /** What proves a level: this many different gates of the hunter's grade cleared at it, and then the Trial. */
 export const PROOF = { gates: 4 } as const;

@@ -77,7 +77,8 @@ export function trialDungeon(grade: Rank, level: number): Dungeon {
   const rounds = trialRounds(level);
   return {
     id: `TRL-${grade}-${level}`, rank: grade, name: `The Trial of Ascension ${level + 1}`,
-    theme: `${rounds} of the Chosen, one after another, and nothing between them: no rest, no way out but through. Win, and Ascension ${level + 1} opens.`,
+    // The Trial is the System's, so it carries no Association file: the brief states its terms instead.
+    theme: '',
     identity: 'Chosen', mobs: [], boss: chosen(trialLast(level), grade).id, mobRounds: 0,
     trial: rounds, trialFrom: trialFirst(level), scale: trialTune(level),
   };

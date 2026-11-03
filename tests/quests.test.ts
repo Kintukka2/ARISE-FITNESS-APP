@@ -60,7 +60,7 @@ describe('the Quests tab', () => {
   const day = '2026-02-02';
 
   it('counts the day’s Daily Quests until shown, and the Trial while today’s attempt is unused', () => {
-    const s = hunter(25);
+    const s = hunter(75);
     s.gates.cleared.push(PRACTICE_GATE.id);
     const daily = contracts.unseen(s, day);
     expect(daily).toBeGreaterThan(0);
@@ -76,8 +76,8 @@ describe('the Quests tab', () => {
     expect(waiting(s, day)).toBe(0);
   });
 
-  it('counts nothing below C-Rank, where no proof counts yet', () => {
-    const s = hunter(15);
+  it('counts nothing below S-Rank, where no proof counts yet', () => {
+    const s = hunter(60);
     s.gates.cleared.push(PRACTICE_GATE.id);
     contracts.show(s, day);
     s.ascension.proof.gates = ['DNG-P0', 'DNG-P1', 'DNG-P2', 'DNG-P3'];

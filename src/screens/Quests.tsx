@@ -23,7 +23,7 @@ import type { Rank, Save } from '@/core/types';
 import { STATS } from '@/core/types';
 import { dayKey, group, hhmmss, msUntilMidnight, msUntilWeek } from '@/core/util';
 import * as walkers from '@/core/walkers';
-import { ASCENSION_FROM, OVERCHARGE, PROOF, WALKERS } from '@/data/ascension';
+import { OVERCHARGE, PROOF, WALKERS } from '@/data/ascension';
 import { SPIRE_NAME } from '@/data/spire';
 import * as store from '@/store';
 import { useSave } from '@/store';
@@ -145,6 +145,7 @@ function RankBody() {
   if (q.cls?.was && q.pick) rewards.push(<>{kind} available: <strong>[{kind}: {q.pick.names[0]}]</strong> or <strong>[{kind}: {q.pick.names[1]}]</strong></>);
   if (q.slots) rewards.push(<>Shadow slots: {q.slots[0]} → {q.slots[1]}</>);
   if (q.throne) rewards.push(<span class="grant">ACCESS GRANTED: THE HOLLOW THRONE</span>);
+  if (q.ascension) rewards.push(<span class="grant">ACCESS GRANTED: ASCENSION</span>);
   return (
     <QuestWindow bare name={`Reclassification: ${q.to.name}`} class={`quest-rank ${q.ready ? 'is-ready' : ''}`}
       lead={(
@@ -272,7 +273,7 @@ function TrialBody({ close }: { close: () => void }) {
     <QuestWindow bare name={`Trial: Ascension ${opens}`} class="quest-trial"
       goals={<>
         <QuestGoal id="proof" text={a.unlocked ? `Clear ${gates} at Ascension ${a.unlocked}.` : `Clear ${gates}.`}
-          hint={!ascension.proving(s) ? `Clears count from ${ASCENSION_FROM}-Rank.` : a.unlocked ? `Only runs entered at Ascension ${a.unlocked} count.` : undefined}
+          hint={a.unlocked ? `Only runs entered at Ascension ${a.unlocked} count.` : undefined}
           got={a.proof.gates.length} need={need} done={proved} />
         <QuestGoal id="trial" text={`Win ${trial.name}: ${trialRounds(a.unlocked)} of the Chosen in a row.`}
           hint={!proved ? 'Opens when the first goal is done.' : ready ? 'Once each day.' : 'Faced today. It opens again tomorrow.'}

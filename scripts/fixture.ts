@@ -1,7 +1,8 @@
 /**
  * Writes e2e/fixtures/veteran.json: a hunter a few weeks in — C-Rank,
- * classed, geared, with Shadows and a run of Gates behind them — built by the
- * engine itself, so it is always a valid save.
+ * classed, geared, with Shadows and a run of Gates behind them — and
+ * e2e/fixtures/ascended.json: one at S-Rank, a few levels into Ascension. Both
+ * are built by the engine itself, so they are always valid saves.
  *
  *   node scripts/run.mjs scripts/fixture.ts
  */
@@ -64,9 +65,6 @@ going.got = Math.floor(going.need / 2);
 // A few weeks on the Spire, and this week's climb under way. Last week's pay has been told.
 const lastWeek = seasonOf(addDays(today, -7));
 s.spire = { season: seasonOf(today), best: 25, top: 40, seasons: 3, last: { season: lastWeek, best: 40, tier: 'B-Rank', shards: 168, item: null } };
-// Ascension: three levels open, the second chosen, half the proof of the fourth, one mark still to set,
-// and the three Chosen those Trials sent into the world, the first of them felled.
-s.ascension = { level: 2, unlocked: 3, best: 3, proof: { gates: ['DNG-015', 'DNG-016'] }, trialDay: null, trials: 3, marks: { edge: 1, legion: 1 }, sent: [1, 2, 3], felled: [1] };
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);
@@ -75,3 +73,45 @@ s.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spi
 s.vitals = { hp: 520, mp: 120, fatigue: 22, at: Date.now(), lockedUntil: null };
 writeFileSync('e2e/fixtures/veteran.json', JSON.stringify(s));
 console.log('veteran: level', s.hunter.level, 'class', s.hunter.classId, 'items', s.items.length, 'equipped', Object.keys(s.equipped).length);
+
+// ------------------------------------------------------------------ the ascended hunter
+
+const a = defaults();
+a.onboarded = true;
+a.createdAt = new Date(Date.now() - 70 * 864e5).toISOString();
+a.hunter.name = 'KINTUKKA';
+a.hunter.regNo = 'E-048213';
+a.licence = { granted: true, at: a.createdAt, tx: null };
+issueKit(a);
+grantXP(a, totalXpFor(88) + 900);
+reclassifyAll(a);
+a.hunter.attrs.STR += 30;
+autoAllocate(a);
+syncClass(a);
+const ra = rng('fixture|ascended');
+for (const rank of ['A', 'S', 'S'] as const) for (const slot of ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Weapon', 'Off-Hand', 'Amulet', 'Ring']) {
+  const pool = ofRank(rank).filter((d) => d.slot === slot);
+  grant(a, pool[Math.floor(ra() * pool.length)].id);
+}
+autoEquip(a);
+for (const id of ['ENM-099', 'ENM-101', 'ENM-103', 'ENM-105', 'ENM-106']) bind(a, id, addDays(today, -30));
+a.shadows.army.forEach((x, i) => { x.kills = 120 - i * 20; });
+a.wallet = { shards: 6400, earned: 41000, spent: 34600, bought: 0, receipts: [] };
+a.gates.clears = 240; a.gates.fails = 9; a.gates.withdrawn = 7;
+a.gates.cleared = ['DNG-000', ...Array.from({ length: 50 }, (_, i) => `DNG-${String(i + 1).padStart(3, '0')}`)];
+a.gates.bosses = [...a.gates.cleared];
+a.gates.entered = [...a.gates.cleared];
+a.gates.last = 'cleared'; a.gates.unbroken = 23; a.gates.bestUnbroken = 41;
+issue(a, today);
+a.contracts.seen = true;
+a.spire = { season: seasonOf(today), best: 95, top: 105, seasons: 8, last: { season: lastWeek, best: 105, tier: 'S-Rank', shards: 900, item: null } };
+// Ascension: three levels open, the second chosen, the S-Rank Gates proved at the third so its Trial
+// stands open, one mark still to set, and the three Chosen those Trials sent out, the first felled.
+a.ascension = { level: 2, unlocked: 3, best: 3, proof: { gates: ['DNG-048', 'DNG-049', 'DNG-050'] }, trialDay: null, trials: 3, marks: { edge: 1, legion: 1 }, sent: [1, 2, 3], felled: [1] };
+a.story = BEATS.filter((b) => { try { return b.when(a); } catch { return false; } }).map((b) => b.id);
+a.hunter.missions = MISSIONS.filter((m) => { try { return m.check(a); } catch { return false; } }).map((m) => m.id);
+// Everything seen but the Ascension tile's walkthrough, which the screens capture.
+a.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spire-week-${lastWeek}`, 'turn-told'];
+a.vitals = { hp: 99999, mp: 9999, fatigue: 8, at: Date.now(), lockedUntil: null };
+writeFileSync('e2e/fixtures/ascended.json', JSON.stringify(a));
+console.log('ascended: level', a.hunter.level, 'rank', a.hunter.rank, 'class', a.hunter.classId, 'Ascension', a.ascension.unlocked);

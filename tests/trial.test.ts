@@ -6,7 +6,7 @@ import * as raid from '@/core/raid';
 import { chosen, chosenName, isTrial, trialDungeon, trialFirst, trialLast, trialRounds } from '@/core/trial';
 import { walkerOf } from '@/core/walkers';
 import { RANKS } from '@/core/types';
-import { CHOSEN, PROOF, TRIAL } from '@/data/ascension';
+import { CHOSEN, TRIAL } from '@/data/ascension';
 import { keptUpHunter } from '../scripts/hunters';
 
 const now = Date.parse('2026-02-04T12:00:00');
@@ -48,13 +48,17 @@ describe('the Trial', () => {
   });
 
   it('opens once the gates are proved, and can be walked into once a day', () => {
-    const s = keptUpHunter(30, 'C', 'trial-test');
+    const s = keptUpHunter(85, 'S', 'trial-test');
     s.gates.cleared.push(PRACTICE_GATE.id);
     const trial = asc.nextTrial(s);
     expect(entryBlock(s, trial, now)).toBe('spent');
-    s.ascension.proof.gates = ['DNG-015', 'DNG-016', 'DNG-017', 'DNG-018'].slice(0, PROOF.gates);
+    s.ascension.proof.gates = ['DNG-048', 'DNG-049', 'DNG-050'].slice(0, asc.proofNeeds(s));
     expect(entryBlock(s, trial, now)).toBeNull();
     const run = raid.begin(s, trial, now);
+    // The Trial is the System's: the Association sends no one, and the hunter's Shadows go in with them.
+    expect(run.party.filter((u) => u.tag === 'ally')).toEqual([]);
+    expect(run.party.filter((u) => u.tag === 'shadow').length).toBe(s.shadows.army.length ? run.squad.length : 0);
+    expect(raid.alliesAt(trial, day, 'S', 0)).toEqual([]);
     expect(raid.canWithdraw(trial, run)).toBe(false);
     run.lost = true;
     expect(raid.finish(s, trial, run, 'defeated', now).ascended).toBeNull();

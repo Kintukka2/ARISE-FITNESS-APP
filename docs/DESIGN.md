@@ -299,7 +299,7 @@ upgrades.
 
 What it says, and what to decide next:
 
-1. **An invested hunter outgrows the calibration.** *Decided: Ascension, below.* Gates are tuned to 75% for a typical hunter:
+1. **An invested hunter outgrows the calibration.** *Decided: Ascension, below, since moved to S-Rank (see "Opened at S-Rank").* Gates are tuned to 75% for a typical hunter:
    random gear at whatever quality it rolled, no Shadows, no sets. The campaign's hunters had
    perfect, upgraded gear by A-Rank, four to six Shadows and a set or two, and cleared 97%. The
    brief tells them so honestly, but from the middle of the climb nothing is hard. *Decision:*
@@ -355,7 +355,8 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
 - **Proving.** A level opens when the one below it is proved: four different gates of the hunter's
   grade cleared at it (GM's league trophies), and then the Trial. S-Rank has only three gates, so
   there it is all three (`proofNeeds`). Only clears at the highest level opened count, and only from
-  C-Rank. The proof, the Trial and the way into it are on the Quests screen.
+  S-Rank (it was C-Rank; see "Opened at S-Rank"). The proof, the Trial and the way into it are on the
+  Quests screen, and on the Ascension sheet.
 - **The Trial** (`core/trial.ts`) is GM's Ascension tournament.
   - **The gauntlet:** proving level L means beating L+2 of the Chosen in a row, in a gate with one to a
     layer, no rest and nothing to withdraw to.
@@ -449,6 +450,56 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
     it reaches 11 by day 84, 17 by day 112 and 18 by day 120, still climbing slowly. It clears 82%,
     90% in its last four weeks, and fells 23 Chosen for 15 masterworks. The one-evening hunter
     never passes 10 and plays exactly as before.
+- **Opened at S-Rank.** Ascension used to open at C-Rank, halfway up the climb. A player said it made
+  everything "feel all over the place": a second ladder, with rules, marks and a Trial, arriving
+  while the ranks were still the goal. It now opens at S-Rank (`ASCENSION_FROM`), as what comes after
+  the climb.
+  - **The cost:** finding #1 comes back between C-Rank and S-Rank. A hunter who keeps up meets
+    nothing hard on the board there. The Pale Spire is the challenge that grows with them until
+    S-Rank: its floors are built for a hunter of their number.
+  - **Saves from before:** a hunter below S-Rank who had opened levels keeps them, their marks and
+    their upgrade limit. Every Gate is played at level 0 until S-Rank (`entryLevel`, `choose`), and
+    their Chosen do not walk until then (`walking`).
+  - **The proof:** S-Rank has three Gates, so a level is proved by all three, then the Trial.
+  - **Calibration:** it now tunes the levels and the Trial against S-Rank alone, with more hunters
+    a gate, so it plays about as many runs as it did across four grades. The gates and the Spire came
+    out identical.
+- **The Trial is the System's.** The Association sent its hunters into the Trial, and its brief opened
+  with an Association file. Neither fits: the Association does not know the System exists. The Trial
+  now has no Association hunter (`alliesAt`) and no file. Its brief is gold and states its terms in
+  fields: Chosen, Rest, Withdrawal, Allies. The hunter's Shadows still go in: they are the hunter's
+  own. Calibration retuned it (`TRIAL_TUNE` at level 0, 1.21 to 0.99), so a hunter who keeps up
+  still wins about half the time.
+- **The brief now matches the fight.** Taking the allies out showed an old gap. `raid.begin`
+  charged the Gate's fatigue before it built the party, so the hunter fought at the fatigue they
+  would leave with. The brief, its projection and calibration all fight at the fatigue the hunter
+  walks in with. The gap grew with Ascension: Heavy Legs adds half again to the fatigue a Gate costs,
+  and Worn Thin doubles what fatigue takes. The three-session hunter reached the Trial for
+  Ascension 16 on day 101 and lost it twenty days running, though the brief gave it an even chance
+  each day. `begin` now builds the party first and charges the fatigue after, for the runs to come.
+  Calibration never called `begin`, so `gatetune.ts` stands. Real runs now play as calibrated. Before
+  this, they played harder than calibrated.
+  - **Campaign, against `main`:**
+
+    | | One evening a day | Three sessions a day |
+    |---|---|---|
+    | Cleared | 96% (was 85%) | 95% (was 82%) |
+    | Carried out | 12 (was 34) | 22 (was 58) |
+    | S-Rank | day 64 (was 61) | day 34 (was 45) |
+    | Sovereign | day 117 (was not reached) | day 64 (was 76) |
+    | Ascension opened | 8 (was 9) | 18 (was 18) |
+    | Trials won / walked into | 8/8 (was 9/12) | 18/18 (was 18/26) |
+    | Last four weeks cleared | 98% (was 88%) | 90% (was 67%) |
+
+    The higher clear rates are the brief and the fight agreeing, and, for the evening hunter, no
+    proof runs at even odds before S-Rank. The three-session hunter now climbs faster because it is
+    carried out less often and locked out less. `npm run balance` is unchanged: its model never
+    entered a Gate.
+- **Explained where it is played.** The Ascension tile shows from S-Rank, before Ascension 1 is open.
+  Its sheet gives the level entered at, what it does to foe strength and pay, the rules in force,
+  the road to the next level (the Gates to prove, then the Trial, and the rule that level adds) and
+  the marks. The first time it opens, the interface walks the player through it, a part at a time.
+  The help button on the sheet shows the walkthrough again.
 - **Next.** Ascension is done unless the campaign says otherwise. The design doc's other open
   findings remain: the days-to-rank formula assumes 75% clears, and levels past 100 keep paying
   points (Sovereign's "nothing left to award" is not quite true).

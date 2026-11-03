@@ -8,15 +8,15 @@ import { defaults, parse } from '@/core/save';
 import * as shop from '@/core/shop';
 import * as walkers from '@/core/walkers';
 import type { Save } from '@/core/types';
-import { PROOF, WALKERS } from '@/data/ascension';
+import { WALKERS } from '@/data/ascension';
 import { keptUpHunter } from '../scripts/hunters';
 
 const now = Date.parse('2026-02-04T12:00:00');
 const day = '2026-02-04';
 
-/** A C-Rank hunter with levels open and their Chosen sent into the world. */
+/** An S-Rank hunter with levels open and their Chosen sent into the world. */
 function hunter(sent: number[] = [], felled: number[] = []) {
-  const s = keptUpHunter(30, 'C', 'walk-test');
+  const s = keptUpHunter(85, 'S', 'walk-test');
   s.gates.cleared.push(PRACTICE_GATE.id);
   s.ascension.unlocked = Math.max(0, ...sent);
   s.ascension.sent = [...sent];
@@ -39,15 +39,15 @@ describe('the Chosen sent into the world', () => {
   it('none walks until a Trial is won, and the Trial sends its last Chosen', () => {
     const s = hunter();
     expect(walkers.walking(s, day)).toBeNull();
-    s.ascension.proof.gates = ['DNG-015', 'DNG-016', 'DNG-017', 'DNG-018'].slice(0, PROOF.gates);
+    s.ascension.proof.gates = ['DNG-048', 'DNG-049', 'DNG-050'].slice(0, asc.proofNeeds(s));
     const trial = asc.nextTrial(s);
     const res = raid.finish(s, trial, raid.begin(s, trial, now), 'cleared', now);
     expect(res.ascended).toBe(1);
     expect(s.ascension.sent).toEqual([1]);
     // The one sent is the Trial's last.
-    expect(walkers.walkerOf(1, 'C').id).toBe(trial.boss);
+    expect(walkers.walkerOf(1, 'S').id).toBe(trial.boss);
     const w = walkers.walking(s, day)!;
-    expect(w).toEqual({ level: 1, gateId: dayOrder('C', day)[0], name: walkers.walkerOf(1, 'C').name });
+    expect(w).toEqual({ level: 1, gateId: dayOrder('S', day)[0], name: walkers.walkerOf(1, 'S').name });
   });
 
   it('walks among those not yet felled, the same all day', () => {
@@ -71,10 +71,10 @@ describe('the Chosen sent into the world', () => {
     const high = enterAt(s, w.gateId, 2);
     expect(high.chosen).toBe(2);
     const c = raid.chamberAt(d, bossNode(w.gateId), 2, high.chosen);
-    expect(c.foes[0]).toBe(walkers.walkerOf(2, 'C').id);
+    expect(c.foes[0]).toBe(walkers.walkerOf(2, 'S').id);
     expect(c.label).toBe(w.name);
     // A gate it does not hold never meets it.
-    const other = dayOrder('C', day)[1];
+    const other = dayOrder('S', day)[1];
     expect(walkers.meets(s, dungeonById(other)!, day, 2)).toBeNull();
   });
 
@@ -86,7 +86,7 @@ describe('the Chosen sent into the world', () => {
     expect(first.level).toBe(2);
     const it = first.item!;
     expect(gear.defOf(it)!.slot).toBe(walkers.slotOf(2));
-    expect(gear.defOf(it)!.rank).toBe('C');
+    expect(gear.defOf(it)!.rank).toBe('S');
     expect(it.master).toBe(2);
     expect(it.over).toBe(2);
     expect(it.q).toBeGreaterThan(gear.Q_HIGH);
@@ -95,8 +95,15 @@ describe('the Chosen sent into the world', () => {
     const purse = s.wallet.shards;
     const again = raid.finish(s, d, enterAt(s, w.gateId, 2), 'cleared', now).chosen!;
     expect(again.item).toBeNull();
-    expect(again.shards).toBe(shop.gateShards('C', WALKERS.bounty * asc.payShare(2)));
+    expect(again.shards).toBe(shop.gateShards('S', WALKERS.bounty * asc.payShare(2)));
     expect(s.wallet.shards - purse).toBeGreaterThanOrEqual(again.shards);
+  });
+
+  it('walks only where Ascension is played: none below S-Rank, for a save that sent them before', () => {
+    const s = keptUpHunter(60, 'A', 'walk-early');
+    s.ascension.unlocked = 2;
+    s.ascension.sent = [1, 2];
+    expect(walkers.walking(s, day)).toBeNull();
   });
 
   it('does not fall to a run carried out', () => {

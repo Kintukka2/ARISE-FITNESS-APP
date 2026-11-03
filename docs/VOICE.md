@@ -35,6 +35,9 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | Cards: items, skills, classes, potions, stats | The System | `data/equipment.ts`, `data/classes.ts`, `data/abilities.ts`, `core/shop.ts`, `core/progression.ts` |
 | The brief's assessment | The System | `raid.verdict`, `GRADES` |
 | The brief itself: a Gate card, `GATE: {name}`, in the Gates' orange | The System, with the Association's file as its first field | `openBrief` in `screens/Gates.tsx` |
+| A Trial's brief: `TRIAL: Ascension {n}`, in advancement's gold | The System alone. The Trial is the System's, so it has no Association file and no Association hunter walks in: its terms are fields (`CHOSEN: 5, in a row`, `REST: None`, `WITHDRAWAL: Not possible`, `ALLIES: None`) | `openBrief` in `screens/Gates.tsx` |
+| Setting a mark: `Would you like to set this mark?`, the mark, what it adds, `Set: 1/4 → 2/4`, and in red that it cannot be moved | The System, as an Offer, in gold | `MarkList` in `screens/Gates.tsx` |
+| The Ascension walkthrough: the sheet explained a part at a time, the first time it opens and from its help button | The interface, as a tour headed `Tutorial` (`tour()` with `who: 'app'`) | `ascensionTour` in `screens/Gates.tsx` |
 | Every main screen's bento tiles (Inventory, Gates, Quests, Shadows) | The System | `ui/bento.tsx`, `screens/` |
 | The Equipment, Squad, Licence and Ascension windows, and the hunter's card (`HUNTER: {name}`) | The System | `screens/Inventory.tsx`, `screens/Shadows.tsx`, `screens/Gates.tsx` |
 | The fight log | The System | `lines()` in `screens/Arena.tsx` |
@@ -55,7 +58,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The Arrival: the cut between the office and the first Notification | No one. It carries no words, so the System's first words are its Notification | `ui/arrival.ts`, `screens/Onboarding.tsx` |
 | The rank-up: the cut between a held Reclassification and "Reclassification approved." | No one, as the Arrival | `ui/arrival.ts` (`rankUp`), `app/flow.ts` (`claimRank`) |
 | A rank's requirements met: `You have met the requirements for [Reclassification: D-Rank].` | The System | `app/flow.ts` (`reclassReady`) |
-| Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
+| Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification", "Tutorial") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
 | The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Inventory.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
@@ -394,7 +397,7 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 | The day's | `[Daily Quests]` | As above |
 | The next rank | `[Reclassification: D-Rank]`, `[Reclassification: Sovereign]` | `Reach Level 10.` / `Experience needed: {n}` |
 | The Spire's week | `[Weekly Quest: The Pale Spire]` | `Clear Floor 36.` / `Floors 26 to 30 next.` |
-| The next Ascension level | `[Trial: Ascension 4]` | `Clear 4 different C-Rank Gates at Ascension 3.` / `Win The Trial of Ascension 4: 5 of the Chosen in a row.` |
+| The next Ascension level | `[Trial: Ascension 4]` | `Clear all 3 S-Rank Gates at Ascension 3.` / `Win The Trial of Ascension 4: 5 of the Chosen in a row.` |
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Fell [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
@@ -427,9 +430,13 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
   C-Rank`.
 - **Secret Quests stay sealed.** The window lists those done, with their tier, goal and reward, and
   counts the rest as `Sealed: {n}`; the tile shows them as `?`. Nothing names one that is not done.
-- **The Trial and the Chosen are only quests.** Their windows here are the one place that reports the
-  proof, opens the Trial or counts the Chosen felled (`Chosen felled: {n}/{m}`). The Gates screen's
-  Ascension card holds the level, its rules and the marks, and shows once Ascension 1 is open.
+- **The Trial and the Chosen are quests, and the Ascension card shows the road.** Their windows here
+  report the proof, open the Trial and count the Chosen felled (`Chosen felled: {n}/{m}`). The Gates
+  screen's Ascension card shows from S-Rank, before Ascension 1 is open: the level entered at, what it
+  does to foes and pay, its rules, the road to the next level (the Gates to prove, then the Trial,
+  and the rule it adds) and the marks. It reports the proof as the quest does and opens the Trial
+  once it stands open, so a hunter on the card can see what Ascension asks without leaving it. It
+  never counts the Chosen.
 
 **Quest Rewards.**
 
@@ -812,7 +819,8 @@ The world speaks in two registers, one on each side of the Gate.
 ### Outside: the Association's file
 
 The brief shows what the Association has on file for a Gate (`theme` in `data/dungeons.ts`,
-`data/special.ts` and `data/spire.ts`). It reads like a field record: dry, factual, terse.
+`data/special.ts` and `data/spire.ts`). It reads like a field record: dry, factual, terse. The
+Trial has none: it is the System's, and the Association does not know it exists.
 
 1. **The site, then what holds it.** A fragment naming the place, then its occupants or its
    threat: "Collapsed burial storage. Undead scavenge among broken ossuaries."

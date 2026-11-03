@@ -7,17 +7,21 @@ import * as raid from '@/core/raid';
 import * as spire from '@/core/spire';
 import { RAID_FATIGUE } from '@/core/vitals';
 import type { Save } from '@/core/types';
-import { ASCENSION_PAY, ASCENSION_RULED, BEYOND, PROOF, RULES } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, PROOF, RULES } from '@/data/ascension';
 import { TRAP } from '@/data/nodes';
+import { setAllBySystem } from '@/core/marks';
 import { walk } from './walk';
 import { keptUpHunter, typicalHunter } from '../scripts/hunters';
 
 const now = Date.parse('2026-02-04T12:00:00');
 const day = '2026-02-04';
 
-/** A C-Rank hunter strong enough to clear C gates, with Ascension open to a level. */
+/** The S-Rank gates, where Ascension is played. */
+const TOP = ALL_DUNGEONS.filter((d) => d.rank === 'S').map((d) => d.id);
+
+/** An S-Rank hunter strong enough to clear S gates, with Ascension open to a level. */
 function hunter(unlocked = ASCENSION_RULED, level = 0) {
-  const s = keptUpHunter(30, 'C', 'asc-test');
+  const s = keptUpHunter(85, 'S', 'asc-test');
   s.gates.cleared.push(PRACTICE_GATE.id);
   s.ascension.unlocked = unlocked;
   asc.choose(s, level);
@@ -49,12 +53,14 @@ describe('the levels', () => {
   });
 
   it('every level is harder than the one below it', () => {
-    // A typical hunter in the middle of C-Rank, over four gates and two days: room to fall at every step.
+    // A hunter who keeps up in the middle of S-Rank, marks set as the System would, over its gates and
+    // three days: the one the levels are calibrated for, with room to fall at every step.
     const rate = (L: number) => {
       let c = 0, n = 0;
-      for (const id of ['DNG-015', 'DNG-016', 'DNG-019', 'DNG-022']) for (const dd of ['04', '11']) {
-        const s = typicalHunter(27, 'C', 'asc-rate');
+      for (const id of TOP) for (const dd of ['04', '11', '18']) {
+        const s = keptUpHunter(85, 'S', 'asc-rate');
         s.ascension.unlocked = ASCENSION_RULED;
+        setAllBySystem(s);
         asc.choose(s, L);
         const p = raid.project(s, dungeonById(id)!, 12, Date.parse(`2026-02-${dd}T12:00:00`));
         c += p.cleared; n += p.runs;
@@ -68,7 +74,7 @@ describe('the levels', () => {
 
 describe('a run keeps the level it walked in with', () => {
   it('and plays every rule it brings', () => {
-    const d = dungeonById('DNG-016')!;
+    const d = dungeonById(TOP[1])!;
     const at0 = hunter(ASCENSION_RULED, 0);
     const run0 = raid.begin(at0, d, now);
     const s = hunter(ASCENSION_RULED, ASCENSION_RULED);
@@ -76,7 +82,7 @@ describe('a run keeps the level it walked in with', () => {
     const run = raid.begin(s, d, now);
     expect(run.ascension).toBe(ASCENSION_RULED);
     // Heavy Legs, and Short-Handed.
-    expect(s.vitals.fatigue - fatigue).toBe(Math.round(RAID_FATIGUE.C * RULES.heavyLegs.fatigue));
+    expect(s.vitals.fatigue - fatigue).toBe(Math.round(RAID_FATIGUE.S * RULES.heavyLegs.fatigue));
     expect(run.party.filter((u) => u.tag === 'ally').length).toBe(run0.party.filter((u) => u.tag === 'ally').length - RULES.shortHanded.allies);
     // Changing the chosen level now does not reach the run.
     asc.choose(s, 0);
@@ -96,7 +102,7 @@ describe('a run keeps the level it walked in with', () => {
   });
 
   it('pays more for the gate, by the level it was entered at', () => {
-    const d = dungeonById('DNG-016')!;
+    const d = dungeonById(TOP[1])!;
     const play = (L: number) => {
       const s = hunter(ASCENSION_RULED, L);
       s.gates.cleared.push(d.id);
@@ -106,8 +112,8 @@ describe('a run keeps the level it walked in with', () => {
       const res = raid.finish(s, d, s.gates.raid!, 'cleared', now);
       return s.stats.xpTotal - before - res.contracts.xp;
     };
-    expect(play(4)).toBe(Math.round(GATE_XP.C * (1 + ASCENSION_PAY * 4)));
-    expect(play(0)).toBe(GATE_XP.C);
+    expect(play(4)).toBe(Math.round(GATE_XP.S * (1 + ASCENSION_PAY * 4)));
+    expect(play(0)).toBe(GATE_XP.S);
   });
 });
 
@@ -120,7 +126,7 @@ describe('proving a level', () => {
 
   it('takes different gates of the hunter’s grade at the highest level opened, then the Trial', () => {
     const s = hunter(2, 2);
-    const cs = ['DNG-015', 'DNG-016', 'DNG-017', 'DNG-018', 'DNG-019'];
+    const cs = TOP;
     expect(clearAt(s, cs[0])).toBeNull();
     expect(clearAt(s, cs[0])).toBeNull();
     expect(s.ascension.proof.gates).toEqual([cs[0]]);
@@ -132,7 +138,7 @@ describe('proving a level', () => {
     raid.finish(s, block, raid.begin(s, block, now), 'cleared', now);
     expect(s.ascension.proof.gates).toEqual([cs[0]]);
     expect(asc.trialProved(s)).toBe(false);
-    for (const id of cs.slice(1, PROOF.gates)) expect(clearAt(s, id)).toBeNull();
+    for (const id of cs.slice(1, asc.proofNeeds(s))) expect(clearAt(s, id)).toBeNull();
     expect(asc.trialReady(s, day)).toBe(true);
     // The Trial is fought at the level it proves, whatever is chosen, and opens the next.
     asc.choose(s, 0);
@@ -162,16 +168,29 @@ describe('proving a level', () => {
     expect(raid.finish(s, trial, raid.begin(s, trial, now), 'cleared', now).ascended).toBe(3);
   });
 
-  it('counts nothing below C-Rank', () => {
-    const s = typicalHunter(15, 'D', 'asc-low');
+  it(`counts nothing below ${ASCENSION_FROM}-Rank`, () => {
+    const s = typicalHunter(60, 'A', 'asc-low');
     s.gates.cleared.push(PRACTICE_GATE.id);
     expect(asc.proving(s)).toBe(false);
     expect(asc.ascensionOpen(s)).toBe(false);
-    const d = dungeonById('DNG-007')!;
+    const d = dungeonById('DNG-043')!;
     const run = raid.begin(s, d, now);
     walk(s, d, now);
     raid.finish(s, d, run, 'cleared', now);
     expect(s.ascension.proof.gates).toEqual([]);
+  });
+
+  it(`keeps levels a save opened below ${ASCENSION_FROM}-Rank, and plays the board as it stands until then`, () => {
+    const s = typicalHunter(60, 'A', 'asc-early');
+    s.gates.cleared.push(PRACTICE_GATE.id);
+    s.ascension.unlocked = 3;
+    s.ascension.level = 3;
+    const d = dungeonById('DNG-043')!;
+    expect(asc.entryLevel(s, d, false)).toBe(0);
+    expect(raid.begin(s, d, now).ascension).toBe(0);
+    asc.choose(s, 2);
+    expect(s.ascension.level).toBe(0);
+    expect(s.ascension.unlocked).toBe(3);
   });
 });
 
@@ -195,7 +214,7 @@ describe('past the ruled levels', () => {
   it('opens a level past them as any other, by its gates and its Trial', () => {
     const s = hunter(ASCENSION_RULED, ASCENSION_RULED);
     expect(asc.proving(s)).toBe(true);
-    s.ascension.proof.gates = ['DNG-015', 'DNG-016', 'DNG-017', 'DNG-018'].slice(0, PROOF.gates);
+    s.ascension.proof.gates = TOP.slice(0, asc.proofNeeds(s));
     const trial = asc.nextTrial(s);
     expect(raid.finish(s, trial, raid.begin(s, trial, now), 'cleared', now).ascended).toBe(ASCENSION_RULED + 1);
     asc.choose(s, ASCENSION_RULED + 5);

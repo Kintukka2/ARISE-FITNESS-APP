@@ -1,6 +1,6 @@
 /** A gate's map, drawn top to bottom: entrance to boss. Read-only in the brief; in the arena, where you step next. */
 import type { GateMap } from '@/core/map';
-import { NODE } from '@/data/nodes';
+import { HIDDEN, NODE } from '@/data/nodes';
 import { sfx } from '@/audio/audio';
 import { Glyph } from './icons';
 
@@ -42,8 +42,8 @@ export function MapView({ m, path = [], at = 0, options = [], road = [], onPick,
       {m.layers.map((row) => (
         <div class="gmap__row" style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }} key={row[0].id}>
           {row.map((n) => {
-            // A trap or a cache passes for an Unknown step until the hunter is standing on it.
-            const looks = (n.kind === 'trap' || n.kind === 'treasure') && !walked.has(n.id) ? 'event' : n.kind;
+            // A trap, a cache or a shrine passes for an Unknown step until the hunter is standing on it.
+            const looks = HIDDEN.has(n.kind) && !walked.has(n.id) ? 'event' : n.kind;
             const kind = NODE[looks];
             const next = options.includes(n.id);
             const state = done.has(n.id) ? 'is-done' : walked.has(n.id) ? 'is-here' : next ? 'is-next' : road.includes(n.id) ? 'is-road' : '';

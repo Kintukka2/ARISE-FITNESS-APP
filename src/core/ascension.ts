@@ -59,18 +59,24 @@ export const levelInfo = (level: number): Level => ({ level, name: ASCENSION_NAM
 /** Every rule a level plays: its own and all below it. Past the ruled levels there are no more. */
 export const rulesAt = (level: number): Level[] => Array.from({ length: Math.min(level, ASCENSION_RULED) }, (_, i) => levelInfo(i + 1));
 
-/** Whether the hunter's clears count toward a proof yet. The ladder has no top, so from C-Rank they always do. */
+/** Whether the hunter has reached the grade Ascension opens at. Rank never falls, so once there they always have. */
 export const proving = (s: Save) => RANKS.indexOf(licensedRank(s)) >= RANKS.indexOf(ASCENSION_FROM);
-/** Whether Ascension shows at all: a level is open, or the hunter is proving one. */
-export const ascensionOpen = (s: Save) => s.ascension.unlocked > 0 || proving(s);
+/**
+ * Whether Ascension shows at all. Only from its grade: a save that opened levels below it, when
+ * Ascension opened earlier, keeps them for then, and plays the board as it stands until it gets there.
+ */
+export const ascensionOpen = proving;
 
-/** Choose the level the next run is entered at, up to the highest opened. Mutates. */
+/** Choose the level the next run is entered at, up to the highest opened. Below Ascension's grade, none. Mutates. */
 export function choose(s: Save, level: number) {
-  s.ascension.level = Math.max(0, Math.min(s.ascension.unlocked, Math.round(level)));
+  s.ascension.level = proving(s) ? Math.max(0, Math.min(s.ascension.unlocked, Math.round(level))) : 0;
 }
 
-/** The level a run at this gate is entered at: a Trial is always fought at the level it proves, and the practice gate at none. */
-export const entryLevel = (s: Save, d: Dungeon, practice: boolean) => (practice ? 0 : isTrial(d) ? trialLevel(d) : s.ascension.level);
+/**
+ * The level a run at this gate is entered at: a Trial is always fought at the level it proves, the
+ * practice gate at none, and every gate at none below Ascension's grade.
+ */
+export const entryLevel = (s: Save, d: Dungeon, practice: boolean) => (practice ? 0 : isTrial(d) ? trialLevel(d) : proving(s) ? s.ascension.level : 0);
 
 /** The Trial the hunter would face next: the one that proves the highest level they have opened. */
 export const nextTrial = (s: Save) => trialDungeon(licensedRank(s), s.ascension.unlocked);
