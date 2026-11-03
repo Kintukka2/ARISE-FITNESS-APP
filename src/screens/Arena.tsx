@@ -566,7 +566,6 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
         <p><strong>[{e.shadow}]</strong> has joined your army.</p>
         <p>You may bestow a name.</p>
         <NameField id={out.id} close={() => close()} />
-        <Btn block onClick={close}>Not Now</Btn>
       </>}
       {out?.res === 'lost' && <>
         <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>
