@@ -11,8 +11,10 @@ import { BentoGrid, type Tile as BTile } from '@/ui/bento';
 import type { Save } from '@/core/types';
 import { Field, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
-import { openSheet, toast } from '@/ui/overlays';
-import { useEffect, useState } from 'preact/hooks';
+import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
+import { HoldButton, openSheet, toast } from '@/ui/overlays';
+import { claimPromotion } from '@/app/flow';
+import { useEffect, useRef, useState } from 'preact/hooks';
 
 export function Shadows() {
   const s = useSave();
@@ -63,17 +65,20 @@ function tiles(s: Save, news: string[]): BTile[] {
     ),
     open: openSquad,
   };
+  const waiting = shadows.promotable(s);
   const armyTile: BTile = {
     key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="skull" />, hot: news.length > 0,
+    // A Shadow waiting to be promoted is waiting on the hunter, as a rank to claim is.
+    call: waiting.length > 0,
     count: army.length,
-    status: `Not yet bound: ${ALL_ENEMIES.length - army.length}`,
+    status: waiting.length ? `Promotion ready: ${waiting.length}` : `Not yet bound: ${ALL_ENEMIES.length - army.length}`,
     art: (
       <span class="sa-army">
         {army.slice(0, 5).map((sh, i) => {
           const e = enemyById(sh.enemyId)!;
           return (
-            <span key={sh.id} class={`sa-army__one ${squad.includes(sh) ? 'is-on' : ''}`} style={`--i: ${i}`}>
-              <span class="sa-army__smoke" /><RankPlate rank={e.rank} size={32} />
+            <span key={sh.id} class={`sa-army__one ${squad.includes(sh) ? 'is-on' : ''} ${shadows.canPromote(sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
+              <span class="sa-army__smoke" /><ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} />
             </span>
           );
         })}
@@ -84,7 +89,7 @@ function tiles(s: Save, news: string[]): BTile[] {
   return [squadTile, armyTile];
 }
 
-/** ARMY: every Shadow bound, a tile each, ringed by its kills toward the next rank. */
+/** ARMY: every Shadow bound, a tile each: its badge, ringed by its kills toward the next rank. */
 function openArmy(news: string[]) {
   openSheet({ title: 'Army', system: { icon: null, kind: 'shadow' }, render: () => <ArmySheet news={news} /> });
 }
@@ -99,31 +104,33 @@ function shadowTiles(s: Save, news: string[]): BTile[] {
   return ranked(s).map((sh): BTile => {
     const e = enemyById(sh.enemyId)!;
     const on = squad.includes(sh);
+    const at = shadows.rankIndex(sh);
     const rank = shadows.rankOf(sh);
     const next = shadows.nextRank(sh);
     const share = next ? (sh.kills - rank.kills) / (next.kills - rank.kills) : 1;
+    const ready = shadows.canPromote(sh);
     return {
       key: `shadow-${sh.id}`, kind: 'shadow', name: e.shadow, icon: <RankPlate rank={e.rank} size={22} />,
-      class: `is-shadow ${on ? 'is-deployed' : ''}`, hot: news.includes(sh.id),
-      count: rank.name,
-      status: `${on ? 'Deployed · ' : ''}Power ${powerOf(shadows.statsOf(sh))}`,
-      art: <ShadowArt kills={sh.kills} share={share} on={on} />,
+      class: `is-shadow ${on ? 'is-deployed' : ''} ${ready ? 'is-ready' : ''}`, hot: news.includes(sh.id), call: ready,
+      count: <span class="sa-rank"><Insignia rank={at} size={14} />{rank.name}</span>,
+      status: ready && next ? <>Promotion: <span class="grant">{next.name} Rank</span></> : `${on ? 'Deployed · ' : ''}Power ${powerOf(shadows.statsOf(sh))}`,
+      art: <ShadowArt family={e.family} rank={at} kills={sh.kills} share={share} on={on} ready={ready} />,
       open: () => openShadow(sh.id),
     };
   });
 }
 
-/** A Shadow on its tile: its shape in smoke, and a ring that fills with the kills to its next rank. */
-function ShadowArt({ kills, share, on }: { kills: number; share: number; on: boolean }) {
+/** A Shadow on its tile: its badge in smoke, and a ring that fills with the kills to its next rank, lit once they have earned it. */
+function ShadowArt({ family, rank, kills, share, on, ready }: { family: string; rank: number; kills: number; share: number; on: boolean; ready: boolean }) {
   const c = 2 * Math.PI * 40;
   return (
-    <span class={`sa-shade ${on ? 'is-on' : ''}`}>
+    <span class={`sa-shade ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''}`}>
       <svg viewBox="0 0 100 100" class="sa-shade__ring">
         <circle cx="50" cy="50" r="40" class="sa-shade__track" />
         <circle cx="50" cy="50" r="40" class="sa-shade__fill" style={`stroke-dasharray: ${c * Math.max(0, Math.min(1, share))} ${c}`} />
       </svg>
       <span class="sa-shade__smoke" />
-      <Glyph name="shadows" />
+      <ShadowEmblem family={family} rank={rank} size={50} />
       <b class="num">{kills}</b>
     </span>
   );
@@ -165,56 +172,99 @@ function openShadow(id: string) {
   const was = at && enemyById(at.enemyId);
   openSheet({
     title: `Shadow: ${was?.shadow ?? 'Unknown'}`,
-    system: { icon: was ? <RankPlate rank={was.rank} size={44} /> : null, kind: 'shadow' },
-    render: () => {
-      const s = store.get();
-      const sh = s.shadows.army.find((x) => x.id === id);
-      if (!sh) return <Empty>That Shadow is gone.</Empty>;
-      const e = enemyById(sh.enemyId)!;
-      const st = shadows.statsOf(sh);
-      const squad = shadows.squad(s);
-      const on = squad.includes(sh);
-      const full = !on && squad.length >= shadows.slots(s);
-      return (
-        <div class="stack">
-          <Btn kind={on ? undefined : 'primary'} block disabled={full} onClick={() => { store.update((x) => shadows.toggleDeploy(x, sh.id)); sfx.blip(); }}>
-            {on ? 'Recall' : full ? 'Squad Full' : 'Deploy'}
-          </Btn>
-          <div class="sysfields">
-            <Field k="Rank" v={shadows.rankOf(sh).name} />
-            <Field k="Grade" v={`${e.rank}-Rank`} />
-            <Field k="Category" v={`${e.family} · ${e.role}`} />
-            <Field k="Was" v={e.name} />
-          </div>
-          <div class="tiles tiles--5">{(['STR', 'VIT', 'AGI', 'INT', 'PER'] as const).map((k) => <Tile key={k} label={k} value={st[k]} />)}</div>
-          <div class="sysfields">
-            <Field k="Growth" v={<><span class="grant">+{Math.round(shadows.growth(sh) * 100)}%</span> / +{Math.round(shadows.rankOf(sh).cap * 100)}%</>} />
-            <Field k="Next rank" v={shadows.nextRank(sh) ? `${shadows.nextRank(sh)!.name} · Kills ${shadows.nextRank(sh)!.kills - sh.kills}` : '-- --'} />
-          </div>
-          {shadows.nextRank(sh) && <p class="hint">{shadows.nextRank(sh)!.name} Rank: growth limit +{Math.round(shadows.nextRank(sh)!.cap * 100)}%{shadows.rankIndex(sh) + 1 === shadows.SECOND_AT && shadows.secondOf(e) ? ` · ${tagged(shadows.secondOf(e)!)}` : ''}</p>}
-          <Section title="Skills">
-            <div class="stack stack--tight">
-              {[e.kit[0], shadows.secondOf(e)].filter((n): n is string => !!n).map((n) => {
-                const a = ability(n);
-                const known = shadows.kitOf(sh).includes(n);
-                const learned = !e.kit.includes(n);
-                return <KV key={n} k={n} v={!known ? `remembered at ${shadows.SHADOW_RANKS[shadows.SECOND_AT].name}` : a ? `${a.type}, ${REACH_TEXT[a.profile] ?? 'one target'} · ×${a.mult}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}${learned ? ' · from its kin' : ''}` : '-- --'} />;
-              })}
-            </div>
-          </Section>
-          <Section title="Standing orders" right={sh.tactic ? 'Its own' : 'The party’s'}>
-            <div class="chips chips--orders">
-              <Chip on={!sh.tactic} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, null))}>Party’s orders</Chip>
-              {TACTICS.map((t) => <Chip key={t.key} on={sh.tactic === t.key} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, t.key))}>{t.name}</Chip>)}
-            </div>
-            <p class="muted">{sh.tactic ? TACTICS.find((t) => t.key === sh.tactic)?.one : 'Orders: the party’s, as set in the brief.'}</p>
-            <small class="muted">From the next Gate.</small>
-          </Section>
-          {e.passive && <Section title="Passive"><KV k={e.passive} v={passiveText(e.passive)} /></Section>}
-          {(e.imm.length > 0 || e.res.length > 0) && <div class="chips">{e.imm.map((x) => <Chip key={x} tone="verdant">Immune: {x}</Chip>)}{e.res.map((x) => <Chip key={x}>Resists: {x}</Chip>)}</div>}
-          <div class="tiles tiles--3"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
-        </div>
-      );
-    },
+    system: { icon: was ? <CardBadge id={id} /> : null, kind: 'shadow' },
+    render: () => <ShadowCard id={id} />,
   });
+}
+
+/** The card's badge, in its icon box: the rank it holds, as it changes. */
+function CardBadge({ id }: { id: string }) {
+  const s = useSave();
+  const sh = s.shadows.army.find((x) => x.id === id);
+  const e = sh && enemyById(sh.enemyId);
+  return e ? <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh!)} size={44} /> : null;
+}
+
+/**
+ * The promotion a Shadow's kills have earned, on its card: its badge now and at the rank above, what
+ * the rank brings, and the hold that claims it. The badge lifts off into the promotion (`claimPromotion`).
+ */
+function Promotion({ id }: { id: string }) {
+  const s = useSave();
+  const badge = useRef<HTMLSpanElement>(null);
+  const sh = s.shadows.army.find((x) => x.id === id);
+  const e = sh && enemyById(sh.enemyId);
+  if (!sh || !e || !shadows.canPromote(sh)) return null;
+  const R = shadows.SHADOW_RANKS;
+  const at = shadows.rankIndex(sh);
+  const second = at + 1 === shadows.SECOND_AT ? shadows.secondOf(e) : null;
+  return (
+    <div class="sysbox promote" key={at}>
+      <span class="label">Promotion</span>
+      <div class="rankplates promote__plates" aria-label={`${R[at].name} Rank to ${R[at + 1].name} Rank`}>
+        <span class="rankplates__from" ref={badge}><ShadowEmblem family={e.family} rank={at} size={64} /></span>
+        <span class="rankplates__path" style="--p: 1" aria-hidden="true"><i /></span>
+        <span class="rankplates__to"><ShadowEmblem family={e.family} rank={at + 1} size={64} /></span>
+      </div>
+      <ul class="promote__gains">
+        <li>Rank: {R[at].name} → <span class="grant">{R[at + 1].name}</span></li>
+        <li>Growth limit: +{Math.round(R[at].cap * 100)}% → <span class="grant">+{Math.round(R[at + 1].cap * 100)}%</span></li>
+        {second && <li>Skill: <strong>[{second}]</strong></li>}
+      </ul>
+      <HoldButton hold={{ label: 'Hold To Promote', ms: 2000, ticks: 5, holding: 'Promoting…', done: 'Promoted', after: 260 }}
+        onFire={() => void claimPromotion(id, badge.current?.querySelector('svg') ?? badge.current)} />
+    </div>
+  );
+}
+
+function ShadowCard({ id }: { id: string }) {
+  const s = useSave();
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return <Empty>That Shadow is gone.</Empty>;
+  const e = enemyById(sh.enemyId)!;
+  const st = shadows.statsOf(sh);
+  const squad = shadows.squad(s);
+  const on = squad.includes(sh);
+  const full = !on && squad.length >= shadows.slots(s);
+  return (
+    <div class="stack">
+      <Promotion id={id} />
+      <Btn kind={on ? undefined : 'primary'} block disabled={full} onClick={() => { store.update((x) => shadows.toggleDeploy(x, sh.id)); sfx.blip(); }}>
+        {on ? 'Recall' : full ? 'Squad Full' : 'Deploy'}
+      </Btn>
+      <div class="sysfields">
+        <Field k="Rank" v={<span class="sa-rank"><Insignia rank={shadows.rankIndex(sh)} size={16} />{shadows.rankOf(sh).name}</span>} />
+        <Field k="Grade" v={`${e.rank}-Rank`} />
+        <Field k="Category" v={<span class="sa-rank"><FamilyGlyph family={e.family} size={16} />{e.family} · {e.role}</span>} />
+        <Field k="Was" v={e.name} />
+      </div>
+      <div class="tiles tiles--5">{(['STR', 'VIT', 'AGI', 'INT', 'PER'] as const).map((k) => <Tile key={k} label={k} value={st[k]} />)}</div>
+      <div class="sysfields">
+        <Field k="Growth" v={<><span class="grant">+{Math.round(shadows.growth(sh) * 100)}%</span> / +{Math.round(shadows.rankOf(sh).cap * 100)}%</>} />
+        <Field k="Next rank" v={shadows.nextRank(sh) ? shadows.canPromote(sh) ? <span class="grant">{shadows.nextRank(sh)!.name} · Ready</span> : `${shadows.nextRank(sh)!.name} · Kills ${shadows.nextRank(sh)!.kills - sh.kills}` : '-- --'} />
+      </div>
+      {shadows.nextRank(sh) && !shadows.canPromote(sh) && <p class="hint">{shadows.nextRank(sh)!.name} Rank: growth limit +{Math.round(shadows.nextRank(sh)!.cap * 100)}%{shadows.rankIndex(sh) + 1 === shadows.SECOND_AT && shadows.secondOf(e) ? ` · ${tagged(shadows.secondOf(e)!)}` : ''}</p>}
+      <Section title="Skills">
+        <div class="stack stack--tight">
+          {[e.kit[0], shadows.secondOf(e)].filter((n): n is string => !!n).map((n) => {
+            const a = ability(n);
+            const known = shadows.kitOf(sh).includes(n);
+            const learned = !e.kit.includes(n);
+            return <KV key={n} k={n} v={!known ? `remembered at ${shadows.SHADOW_RANKS[shadows.SECOND_AT].name}` : a ? `${a.type}, ${REACH_TEXT[a.profile] ?? 'one target'} · ×${a.mult}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}${learned ? ' · from its kin' : ''}` : '-- --'} />;
+          })}
+        </div>
+      </Section>
+      <Section title="Standing orders" right={sh.tactic ? 'Its own' : 'The party’s'}>
+        <div class="chips chips--orders">
+          <Chip on={!sh.tactic} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, null))}>Party’s orders</Chip>
+          {TACTICS.map((t) => <Chip key={t.key} on={sh.tactic === t.key} onClick={() => store.update((x) => shadows.setTactic(x, sh.id, t.key))}>{t.name}</Chip>)}
+        </div>
+        <p class="muted">{sh.tactic ? TACTICS.find((t) => t.key === sh.tactic)?.one : 'Orders: the party’s, as set in the brief.'}</p>
+        <small class="muted">From the next Gate.</small>
+      </Section>
+      {e.passive && <Section title="Passive"><KV k={e.passive} v={passiveText(e.passive)} /></Section>}
+      {(e.imm.length > 0 || e.res.length > 0) && <div class="chips">{e.imm.map((x) => <Chip key={x} tone="verdant">Immune: {x}</Chip>)}{e.res.map((x) => <Chip key={x}>Resists: {x}</Chip>)}</div>}
+      <div class="tiles tiles--3"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
+    </div>
+  );
 }

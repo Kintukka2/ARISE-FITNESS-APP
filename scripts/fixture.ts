@@ -10,7 +10,7 @@ import { writeFileSync } from 'node:fs';
 import { defaults } from '@/core/save';
 import { autoAllocate, grantXP, optionsAt, pick, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
 import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
-import { bind } from '@/core/shadows';
+import { bind, promoteAll } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
 import { MISSIONS } from '@/core/missions';
@@ -45,10 +45,11 @@ autoEquip(s);
 const worn = s.items.findIndex((it) => it.id === s.equipped.hands);
 if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[worn]) ?? s.items[worn];
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));
-// One Sworn, with orders of its own; one still Bound.
+// One Sworn, with orders of its own; one whose kills have earned Sworn, waiting to be promoted.
 s.shadows.army[0].kills = 31;
+s.shadows.army[0].rank = 1;
 s.shadows.army[0].tactic = 'finish';
-s.shadows.army[1].kills = 6;
+s.shadows.army[1].kills = 27;
 s.shadows.fresh = [s.shadows.army[2].id];
 s.wallet = { shards: 2480, earned: 6200, spent: 3720, bought: 0, receipts: [] };
 s.gates.clears = 61; s.gates.fails = 3; s.gates.withdrawn = 4;
@@ -96,6 +97,7 @@ for (const rank of ['A', 'S', 'S'] as const) for (const slot of ['Head', 'Chest'
 autoEquip(a);
 for (const id of ['ENM-099', 'ENM-101', 'ENM-103', 'ENM-105', 'ENM-106']) bind(a, id, addDays(today, -30));
 a.shadows.army.forEach((x, i) => { x.kills = 120 - i * 20; });
+promoteAll(a);
 a.wallet = { shards: 6400, earned: 41000, spent: 34600, bought: 0, receipts: [] };
 a.gates.clears = 240; a.gates.fails = 9; a.gates.withdrawn = 7;
 a.gates.cleared = ['DNG-000', ...Array.from({ length: 50 }, (_, i) => `DNG-${String(i + 1).padStart(3, '0')}`)];

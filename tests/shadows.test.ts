@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaults } from '@/core/save';
+import { defaults, parse } from '@/core/save';
 import { battle, Unit, type Ev } from '@/core/combat';
 import { ALL_ENEMIES, dungeonById, enemyById } from '@/core/gates';
 import { MISSIONS, sweep } from '@/core/missions';
@@ -13,24 +13,63 @@ import { walk } from './walk';
 const now = Date.parse('2026-02-04T12:00:00');
 const one = ALL_ENEMIES.find((e) => e.kit.length === 1)!;
 const two = ALL_ENEMIES.find((e) => e.kit.length === 2)!;
-const shadow = (enemyId: string, kills = 0): Shadow => ({ id: `sh-${enemyId}-${kills}`, enemyId, boundAt: '2026-02-04', out: 0, kills, bosses: 0 });
+/** A Shadow with some kills, holding the rank they earned unless told otherwise. */
+const shadow = (enemyId: string, kills = 0, rank = shadows.qualifiedIndex({ kills })): Shadow => ({ id: `sh-${enemyId}-${kills}`, enemyId, boundAt: '2026-02-04', out: 0, kills, bosses: 0, rank });
 
 describe('ranks', () => {
-  it('kills promote a Shadow, and its rank caps how far the kills grow it', () => {
+  it('kills qualify a Shadow for a rank, and the rank it holds caps how far the kills grow it', () => {
     const R = shadows.SHADOW_RANKS;
-    expect(shadows.rankOf(shadow(two.id, 0)).name).toBe(R[0].name);
-    expect(shadows.rankOf(shadow(two.id, R[1].kills)).name).toBe(R[1].name);
+    expect(shadows.qualifiedIndex(shadow(two.id, 0))).toBe(0);
+    expect(shadows.qualifiedIndex(shadow(two.id, R[1].kills))).toBe(1);
+    expect(shadows.qualifiedIndex(shadow(two.id, R[3].kills + 400))).toBe(3);
     expect(shadows.rankOf(shadow(two.id, R[3].kills + 400)).name).toBe(R[3].name);
     // Between Sworn's cap and Vanguard, kills stop counting until the promotion.
     expect(shadows.growth(shadow(two.id, R[2].kills - 1))).toBe(R[1].cap);
     expect(shadows.growth(shadow(two.id, R[2].kills))).toBe(R[2].cap);
     expect(shadows.growth(shadow(two.id, 10_000))).toBe(R[3].cap);
+    // Qualified and not yet promoted, it holds its rank, and its cap.
+    const waiting = shadow(two.id, R[2].kills, 1);
+    expect(shadows.rankOf(waiting).name).toBe(R[1].name);
+    expect(shadows.growth(waiting)).toBe(R[1].cap);
+    expect(shadows.canPromote(waiting)).toBe(true);
+  });
+
+  it('a promotion is claimed one rank at a time, and only once the kills have earned it', () => {
+    const R = shadows.SHADOW_RANKS;
+    const s = defaults();
+    const sh = shadows.bind(s, one.id);
+    expect(sh.rank).toBe(0);
+    expect(shadows.promote(s, sh.id)).toBeNull();
+    sh.kills = R[2].kills;
+    expect(shadows.promotable(s)).toEqual([sh]);
+    const first = shadows.promote(s, sh.id)!;
+    // Sworn remembers a second ability, and the promotion says so.
+    expect(first).toEqual({ id: sh.id, from: 0, to: 1, second: shadows.secondOf(one) });
+    expect(shadows.kitOf(sh)).toHaveLength(2);
+    expect(shadows.promote(s, sh.id)).toEqual({ id: sh.id, from: 1, to: 2, second: null });
+    expect(shadows.promote(s, sh.id)).toBeNull();
+    expect(shadows.promotable(s)).toEqual([]);
+    sh.kills = R[3].kills;
+    shadows.promoteAll(s);
+    expect(sh.rank).toBe(3);
+    expect(shadows.promote(s, sh.id)).toBeNull();
+  });
+
+  it('a save from before keeps every rank its Shadows’ kills had given them', () => {
+    const old = JSON.parse(JSON.stringify(defaults()));
+    old.v = 4;
+    old.shadows.army = [0, 30, 80, 400].map((kills, i) => ({ id: `sh${i}`, enemyId: two.id, boundAt: '2026-02-04', out: 1, kills, bosses: 0 }));
+    const s = parse(JSON.stringify(old))!;
+    expect(s.shadows.army.map((x) => x.rank)).toEqual([0, 1, 2, 3]);
+    expect(shadows.promotable(s)).toEqual([]);
   });
 
   it('a Bound Shadow fights with one ability, and a Sworn one remembers a second', () => {
     const sworn = shadows.SHADOW_RANKS[shadows.SECOND_AT].kills;
     expect(shadows.kitOf(shadow(two.id))).toEqual([two.kit[0]]);
     expect(shadows.kitOf(shadow(two.id, sworn))).toEqual(two.kit);
+    // Until it is promoted, it fights as the rank it holds.
+    expect(shadows.kitOf(shadow(two.id, sworn, 0))).toEqual([two.kit[0]]);
     // A creature with only one learns its second from its kin.
     const learned = shadows.kitOf(shadow(one.id, sworn))[1];
     expect(learned).toBeTruthy();
@@ -42,7 +81,7 @@ describe('ranks', () => {
     for (const e of ALL_ENEMIES) expect(shadows.secondOf(e)).toBeTruthy();
   });
 
-  it('a run reports the Shadows its kills promoted', () => {
+  it('a run reports the Shadows its kills qualified, and promotes none of them', () => {
     const s = defaults();
     grantXP(s, totalXpFor(20));
     reclassifyAll(s);
@@ -54,7 +93,13 @@ describe('ranks', () => {
     walk(s, d, now);
     run.kills[sh.id] = { kills: 3, bosses: 0 };
     const res = raid.finish(s, d, run, 'cleared', now);
-    expect(res.promoted).toEqual([{ id: sh.id, rank: shadows.SHADOW_RANKS[1].name }]);
+    expect(res.ready).toEqual([{ id: sh.id, rank: shadows.SHADOW_RANKS[1].name }]);
+    expect(sh.rank).toBe(0);
+    // Qualified already, the next run reports it no more.
+    const again = raid.begin(s, d, now);
+    walk(s, d, now);
+    again.kills[sh.id] = { kills: 2, bosses: 0 };
+    expect(raid.finish(s, d, again, 'cleared', now).ready).toEqual([]);
   });
 });
 
@@ -66,6 +111,10 @@ describe('slots', () => {
     expect(granting.length).toBeGreaterThanOrEqual(3);
     for (let i = 0; i < 10; i++) shadows.bind(s, ALL_ENEMIES[i].id);
     s.shadows.army[0].kills = shadows.SHADOW_RANKS[1].kills;
+    // Its kills have earned Sworn, but the quest is for a Sworn Shadow: it pays once it is promoted.
+    sweep(s);
+    expect(shadows.missionSlots(s)).toBe(1);
+    shadows.promote(s, s.shadows.army[0].id);
     sweep(s);
     expect(shadows.missionSlots(s)).toBe(2);
     expect(shadows.slots(s)).toBe(base + 2);

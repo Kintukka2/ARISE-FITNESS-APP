@@ -57,6 +57,11 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The brief's map before the hunter has been inside: `Today's map` / `Unidentified`, a fogged `?` | The System, as the unidentified boss | `screens/Gates.tsx`, `core/gates.ts` (`mapKnown`) |
 | The Arrival: the cut between the office and the first Notification | No one. It carries no words, so the System's first words are its Notification | `ui/arrival.ts`, `screens/Onboarding.tsx` |
 | The rank-up: the cut between a held Reclassification and "Reclassification approved." | No one, as the Arrival | `ui/arrival.ts` (`rankUp`), `app/flow.ts` (`claimRank`) |
+| The promotion: the cut between a held Hold To Promote and "[Shadow …] has been promoted." | No one, as the Arrival | `ui/arrival.ts` (`promotion`), `app/flow.ts` (`claimPromotion`) |
+| A Shadow's promotion earned, on the results: `[Shadow …] has met the requirements for [Promotion: Sworn Rank].` | The System, as an alert: a strip of its frame, not a window (`SysAlert`) | `screens/Arena.tsx`, `ui/frame.tsx` |
+| Where to claim it, under the alerts: `Promote it on the Shadows screen.` | The interface, as a hint | `screens/Arena.tsx` |
+| A Shadow's promotion on its card: its badge now and at the rank above, what the rank brings, Hold To Promote | The System, in the card's violet, the promotion itself in advancement's gold | `Promotion` in `screens/Shadows.tsx` |
+| The family glyphs, the rank insignia and the Shadow badge | No one: art, as the rank plates are | `ui/emblems.tsx` |
 | A rank's requirements met: `You have met the requirements for [Reclassification: D-Rank].` | The System | `app/flow.ts` (`reclassReady`) |
 | Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification", "Tutorial") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
@@ -81,9 +86,23 @@ the table above gives it, so a player can tell who is talking before reading a w
 **The cinematics have no speaker and no frame.** Each is light on a canvas: a rank plate lifting off
 where it was shown, a lock of rings catching, the breach. The Arrival is the System's cyan; the
 rank-up is advancement's gold, and the new rank's plate rises out of its breach in the rank's own
-colour. Neither sets a word, so neither takes Montserrat or the frame, and nothing in the Arrival may
-be read as the System talking before its first Notification. A later cinematic follows the same
-rule: if it needs words, they go in a window after it.
+colour. The promotion is the Shadows' violet: a Shadow's badge lifts off its card and rises out of
+the breach wearing its new rank's insignia. None of them sets a word, so none takes Montserrat or the
+frame, and nothing in the Arrival may be read as the System talking before its first Notification. A
+later cinematic follows the same rule: if it needs words, they go in a window after it.
+
+**A creature is drawn by its family.** Each of the sixteen families has a glyph of its own
+(`ui/emblems.tsx`). A creature shows it alone: the brief's boss card, once the boss is known. A
+Shadow shows it doubled, the creature in white and its shadow in violet behind it, on a shield with
+its rank's insignia under them: chevrons after an army's, one for Bound, two for Sworn, three for
+Vanguard, three over a rocker for Ascendant. The badge is the Shadow's mark everywhere it is drawn
+large (the Army, its card, the promotion); below about 40 pixels the insignia or the glyph goes
+alone.
+
+**An alert is the System's frame as a strip.** For news that asks for nothing where it shows (a
+Shadow's promotion earned, on the results), the System does not open a window: a strip of its frame,
+lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. What to do
+about it is the interface's hint under it. A window is for what the player answers or must stop for.
 
 ### The System's frame
 
@@ -259,7 +278,8 @@ Buttons answer the window, so they change with what it says.
 - A window that only reports gets one button, **Close**, or the open and dismiss icons on a
   one-line notice.
 - A hold-to-confirm button names the act, then its progress, then the result: **Hold To
-  Extract**, **Extracting…**. The extraction button finishes on **ARISE** (see the exceptions), or on
+  Extract**, **Extracting…**; **Hold To Reclassify**, **Reclassifying…**, **Reclassified**; **Hold To
+  Promote**, **Promoting…**, **Promoted**. A hold claims what cannot be taken back. The extraction button finishes on **ARISE** (see the exceptions), or on
   **Failed**, red and shaken, when the roll misses: a hold that can fail settles as it completes,
   so the button never lights green for an act that did not take.
 - An app confirmation is the interface's (`confirm()`, kind `app`). A destructive act turns only

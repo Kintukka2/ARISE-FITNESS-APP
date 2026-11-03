@@ -29,7 +29,8 @@ import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { QuestLines } from '@/ui/contracts';
-import { SysFrame } from '@/ui/frame';
+import { SysAlert, SysFrame } from '@/ui/frame';
+import { ShadowEmblem } from '@/ui/emblems';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph, Shard } from '@/ui/icons';
@@ -527,6 +528,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const [upgradeWaits] = useState(() => gear.upgradeCount(store.get()) > 0);
   const [equipped, setEquipped] = useState(false);
   const { faceDown, revealAll } = turn;
+  // A promotion waiting lands as its alert slides in: a chime, and a touch in the hand.
+  useEffect(() => {
+    if (!r.ready.length) return;
+    const t = setTimeout(() => { sfx.ping(); buzz([12, 40, 18]); }, 520);
+    return () => clearTimeout(t);
+  }, []);
   // The loot is already in the Inventory; leaving with some face down only gets a reminder to look.
   const leave = async () => {
     if (faceDown > 0) {
@@ -638,20 +645,22 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             <p class="muted">Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span><br />Marks <span class="grant">+1</span></p>
           </SysFrame>
         )}
-        {r.promoted.map((p) => {
-          const sh = s.shadows.army.find((x) => x.id === p.id);
-          const e = sh && enemyById(sh.enemyId);
-          if (!sh || !e) return null;
-          const second = shadows.rankIndex(sh) === shadows.SECOND_AT ? shadows.secondOf(e) : null;
-          return (
-            <SysFrame key={p.id} title="Notification" kind="shadow" class="extract is-bound">
-              <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
-              <p><strong>[{e.shadow}]</strong> has been promoted.</p>
-              <p class="grant">{shadows.SHADOW_RANKS[shadows.rankIndex(sh) - 1]?.name ?? 'Bound'} Rank → {p.rank} Rank</p>
-              <p class="muted">Kills: {sh.kills}<br />Growth limit: +{Math.round(shadows.rankOf(sh).cap * 100)}%{second ? <><br />Skill learned: <strong>[{second}]</strong></> : null}</p>
-            </SysFrame>
-          );
-        })}
+        {r.ready.length > 0 && (
+          <div class="alerts">
+            {r.ready.map((p, i) => {
+              const sh = s.shadows.army.find((x) => x.id === p.id);
+              const e = sh && enemyById(sh.enemyId);
+              if (!sh || !e) return null;
+              return (
+                <SysAlert key={p.id} kind="shadow" delay={500 + i * 220} label={`${e.shadow}: promotion ready`}
+                  icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={36} />}>
+                  <strong>[{e.shadow}]</strong> has met the requirements for <strong>[Promotion: {p.rank} Rank]</strong>.
+                </SysAlert>
+              );
+            })}
+            <p class="hint">{r.ready.length === 1 ? 'Promote it' : 'Promote them'} on the Shadows screen.</p>
+          </div>
+        )}
         {!isPractice(d) && deal.moved.length > 0 && <QuestLines c={s.contracts} report={deal} />}
         <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>

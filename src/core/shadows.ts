@@ -1,8 +1,10 @@
 /**
  * The Shadow army. A creature you felled can linger after a clear; reach for
  * it with mana and it may follow you home. A bound Shadow fights beside you,
- * and grows a little with every kill it lands, as far as its rank allows;
- * enough kills promote it, and a Sworn Shadow remembers a second ability.
+ * and grows a little with every kill it lands, as far as its rank allows.
+ * Enough kills qualify it for the next rank, and the hunter promotes it, one
+ * rank at a time, from the Shadows screen. A Sworn Shadow remembers a second
+ * ability.
  */
 import { SECOND_AT, SHADOW_RANKS, SLOTS } from '@/data/shadows';
 import { ALL_ENEMIES, enemyById } from './gates';
@@ -18,9 +20,31 @@ export const GROWTH_PER_KILL = 0.01;
 
 export { SECOND_AT, SHADOW_RANKS, SLOTS };
 
-export const rankIndex = (sh: Shadow) => SHADOW_RANKS.reduce((n, r, i) => (sh.kills >= r.kills ? i : n), 0);
+/** The rank a Shadow's kills qualify it for, by index. */
+export const qualifiedIndex = (sh: Pick<Shadow, 'kills'>) => SHADOW_RANKS.reduce((n, r, i) => (sh.kills >= r.kills ? i : n), 0);
+/** The rank a Shadow holds, by index: what it fights at, whatever its kills qualify it for. */
+export const rankIndex = (sh: Shadow) => Math.max(0, Math.min(SHADOW_RANKS.length - 1, sh.rank ?? 0));
 export const rankOf = (sh: Shadow) => SHADOW_RANKS[rankIndex(sh)];
 export const nextRank = (sh: Shadow) => SHADOW_RANKS[rankIndex(sh) + 1] ?? null;
+/** Its kills have earned the rank above the one it holds. */
+export const canPromote = (sh: Shadow) => qualifiedIndex(sh) > rankIndex(sh);
+/** Every Shadow waiting to be promoted. */
+export const promotable = (s: Save) => s.shadows.army.filter(canPromote);
+
+export interface Promotion { id: string; from: number; to: number; second: string | null }
+/** Promote a Shadow one rank, if its kills have earned it. Returns what changed, or null. Mutates. */
+export function promote(s: Save, id: string): Promotion | null {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh || !canPromote(sh)) return null;
+  const from = rankIndex(sh);
+  sh.rank = from + 1;
+  const e = enemyById(sh.enemyId);
+  return { id, from, to: from + 1, second: from + 1 === SECOND_AT && e ? secondOf(e) : null };
+}
+/** Every promotion waiting, claimed: what a hunter who keeps up does after every run. Mutates. */
+export function promoteAll(s: Save) {
+  for (const sh of s.shadows.army) while (canPromote(sh)) promote(s, sh.id);
+}
 
 /** Shadow slots the Secret Missions have paid for, on top of the grade's. */
 export const missionSlots = (s: Save) => MISSIONS.filter((m) => m.grant.slot && s.hunter.missions.includes(m.id)).reduce((n, m) => n + (m.grant.slot ?? 0), 0);
@@ -76,7 +100,7 @@ export function setTactic(s: Save, id: string, tactic: Tactic | null) {
 }
 
 export function bind(s: Save, enemyId: string, day = dayKey()): Shadow {
-  const sh: Shadow = { id: uid('sh'), enemyId, boundAt: day, out: 0, kills: 0, bosses: 0 };
+  const sh: Shadow = { id: uid('sh'), enemyId, boundAt: day, out: 0, kills: 0, bosses: 0, rank: 0 };
   s.shadows.army.push(sh);
   s.shadows.fresh.push(sh.id);
   // Fill a free slot automatically: a bound Shadow that is not deployed does nothing.

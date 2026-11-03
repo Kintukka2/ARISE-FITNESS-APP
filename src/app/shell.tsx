@@ -6,6 +6,7 @@ import { upgradeCount } from '@/core/gear';
 import { rankOf, waiting, xpToNext } from '@/core/progression';
 import { waiting as questsWaiting } from '@/core/quests';
 import { licensedRank } from '@/core/licence';
+import { promotable } from '@/core/shadows';
 import { compact } from '@/core/util';
 import { useSave } from '@/store';
 import { reducedMotion } from '@/ui/feedback';
@@ -106,7 +107,8 @@ export function NavBar() {
     }
     // The day's Daily Quests until the Quests screen has shown them, and a Trial with today's attempt unused.
     if (k === 'quests' && questsWaiting(s)) return String(questsWaiting(s));
-    if (k === 'shadows' && s.shadows.fresh.length) return String(s.shadows.fresh.length);
+    // Shadows that joined since the last visit, and every one waiting to be promoted.
+    if (k === 'shadows' && s.shadows.fresh.length + promotable(s).length) return String(s.shadows.fresh.length + promotable(s).length);
     return null;
   };
   const lock = (k: Route) => !isOpen(s, k);

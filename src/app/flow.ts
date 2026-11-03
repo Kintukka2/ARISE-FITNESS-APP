@@ -6,6 +6,8 @@
 import { sfx } from '@/audio/audio';
 import { issue } from '@/core/contracts';
 import { gearDef } from '@/core/gear';
+import { enemyById } from '@/core/gates';
+import * as shadows from '@/core/shadows';
 import * as spire from '@/core/spire';
 import { grantText, sweep, type Mission } from '@/core/missions';
 import { optionsAt, reclassify, syncClass, waiting, type XpResult } from '@/core/progression';
@@ -13,7 +15,7 @@ import { reclassification } from '@/core/quests';
 import * as story from '@/core/story';
 import * as vitals from '@/core/vitals';
 import * as store from '@/store';
-import { fromEl, rankUp } from '@/ui/arrival';
+import { fromEl, promotion, rankUp } from '@/ui/arrival';
 import { flash } from '@/ui/feedback';
 import { closeAllSheets, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
@@ -109,6 +111,46 @@ export async function claimRank(plate: Element | null) {
     if (lifted) lifted.style.visibility = '';
     // Past the last rank there is no Reclassification left to show.
     if (!reclassification(store.get())) closeAllSheets();
+  }
+}
+
+/**
+ * A Shadow promoted from its card, as a rank is claimed: the hold has fired, the badge lifts off the
+ * card into the promotion, the promotion is made while the screen is dark, and the System says what
+ * the rank brought once the breach has settled.
+ */
+export async function claimPromotion(id: string, badge: Element | null) {
+  const sh = store.get().shadows.army.find((x) => x.id === id);
+  const e = sh && enemyById(sh.enemyId);
+  if (!sh || !e || !shadows.canPromote(sh)) return;
+  const was = shadows.rankIndex(sh);
+  const lifted = badge instanceof HTMLElement || badge instanceof SVGElement ? badge : null;
+  const from = fromEl(badge);
+  if (lifted) lifted.style.visibility = 'hidden';
+  let made: shadows.Promotion | null = null;
+  const claim = () => { if (!made) made = store.update((x) => shadows.promote(x, id)) ?? null; };
+  const cut = promotion({ from, family: e.family, was, now: was + 1, onDark: claim });
+  try {
+    await cut.ready;
+    claim();
+    const p = made as shadows.Promotion | null;
+    if (p) {
+      const R = shadows.SHADOW_RANKS;
+      await sys({
+        ...system.notify([
+          `${system.tag(e.shadow)} has been promoted.`,
+          system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`),
+          `Growth limit: ${system.change(`+${Math.round(R[p.from].cap * 100)}%`, `+${Math.round(R[p.to].cap * 100)}%`)}`,
+          ...(p.second ? [`Skill learned: ${system.tag(p.second)}`] : []),
+        ], 'shadow'),
+        typed: false,
+      });
+    }
+    await checkAwards();
+    await cut.leave();
+  } finally {
+    cut.stop();
+    if (lifted) lifted.style.visibility = '';
   }
 }
 
