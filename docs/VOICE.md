@@ -64,7 +64,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The extraction: what lingers, the cost and the odds, Hold To Extract; bound, `You may bestow a name.` and the name field | The System, on its sheet headed `NOTIFICATION`; the field and Not Now are the interface's | `Extraction` in `screens/Arena.tsx`, `NameField` in `screens/Shadows.tsx` |
 | Leaving with a Shadow still lingering: `A Shadow Lingers` | The interface, as the unrevealed loot's reminder is | `screens/Arena.tsx` |
 | A purchase or a use offered: `Would you like to purchase?` / `Would you like to drink?` / `Would you like to use?`, and under it **Do not ask again** | The System's Offer; the toggle is the interface's control, and Settings lists what it skips | `ui/ask.tsx`, `screens/Settings.tsx` |
-| Ryn's Association Quests: his card at the top of the Quests screen, his windows when he hands a job over and pays for one, the strip on a run's results | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
+| Ryn's Association Quests: his card at the top of the Quests screen, his windows when he hands a job over and pays for one, the alert on a run's results (shaped as the System's alerts, in his blue, his corner brackets and his face) | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
 | The board's `Association` chip, and the brief's `Association Quest:` hint | The interface | `screens/Gates.tsx` |
 | Where to claim it, under the alerts: `Promote it on the Shadows screen.` | The interface, as a hint | `screens/Arena.tsx` |
 | A Shadow's promotion on its card: its badge now and at the rank above, what the rank brings, Hold To Promote | The System, in the card's violet, the promotion itself in advancement's gold | `Promotion` in `screens/Shadows.tsx` |
@@ -108,7 +108,7 @@ alone.
 
 **An alert is the System's frame as a strip.** For news that asks for nothing where it shows (a
 Shadow's promotion earned, on the results), the System does not open a window: a strip of its frame,
-lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. What to do
+lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. One that opens something ends in a lit box with a chevron at its right edge. What to do
 about it is the interface's hint under it. A window is for what the player answers or must stop for.
 
 ### The System's frame

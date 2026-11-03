@@ -275,11 +275,15 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
 
 // ------------------------------------------------------------------ names
 
-/** "You may bestow a name.": a field and the act, under the System's line. Empty takes a name away. */
-export function NameField({ id, close }: { id: string; close: (v: unknown) => void }) {
+/**
+ * "You may bestow a name.": the field across the window, how much of the name is used, and the two
+ * acts under it, the way out first. Empty takes a name away.
+ */
+export function NameField({ id, close, skip = 'Not Now' }: { id: string; close: (v: unknown) => void; skip?: string }) {
   const sh = store.get().shadows.army.find((x) => x.id === id);
   const [v, setV] = useState(sh?.name ?? '');
   if (!sh) return null;
+  const creature = enemyById(sh.enemyId)?.name ?? 'Shadow';
   const submit = (e: Event) => {
     e.preventDefault();
     const kept = store.update((x) => shadows.rename(x, id, v));
@@ -289,9 +293,15 @@ export function NameField({ id, close }: { id: string; close: (v: unknown) => vo
   };
   return (
     <form class="namefield" onSubmit={submit}>
-      <input class="sysbox namefield__input" value={v} maxLength={shadows.NAME_MAX} placeholder={enemyById(sh.enemyId)?.shadow ?? 'Name'}
-        aria-label="Name" autoComplete="off" spellcheck={false} onInput={(e) => setV((e.currentTarget as HTMLInputElement).value)} />
-      <Btn kind="primary" type="submit">{v.trim() || !sh.name ? 'Bestow' : 'Take Away'}</Btn>
+      <label class="sysbox namefield__box">
+        <input class="namefield__input" value={v} maxLength={shadows.NAME_MAX} placeholder={creature}
+          aria-label="Name" autoComplete="off" spellcheck={false} onInput={(e) => setV((e.currentTarget as HTMLInputElement).value)} />
+        <span class="namefield__count num" aria-hidden="true">{v.length}/{shadows.NAME_MAX}</span>
+      </label>
+      <div class="namefield__acts">
+        <Btn onClick={() => close(null)}>{skip}</Btn>
+        <Btn kind="primary" type="submit" disabled={!v.trim() && !sh.name}>{v.trim() || !sh.name ? 'Bestow' : 'Take Away'}</Btn>
+      </div>
     </form>
   );
 }
@@ -301,7 +311,7 @@ export function nameShadow(id: string) {
   return sys({
     title: 'Notification', kind: 'shadow', typed: false,
     lines: ['You may bestow a name.'],
-    body: (close) => <NameField id={id} close={close} />,
-    actions: [{ label: 'Cancel', value: null }],
+    body: (close) => <NameField id={id} close={close} skip="Cancel" />,
+    actions: [],
   });
 }

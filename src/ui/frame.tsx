@@ -9,6 +9,7 @@
  */
 import type { ComponentChildren } from 'preact';
 import type { Kind } from './overlays';
+import { Glyph } from './icons';
 
 /** One of the lit rails along the top or the bottom of the frame. */
 export function Rail({ at }: { at: 'top' | 'bottom' }) {
@@ -103,7 +104,7 @@ export function SysAlert({ kind = 'system', icon, label, children, aside, head =
         <p>{children}</p>
       </div>
       {aside != null && <span class="sysalert__aside">{aside}</span>}
-      {onTap && <span class="sysalert__go" aria-hidden="true">›</span>}
+      {onTap && <span class="sysbox sysalert__go" aria-hidden="true"><Glyph name="chevron" /></span>}
       <i class="sysalert__scan" aria-hidden="true" />
     </>
   );

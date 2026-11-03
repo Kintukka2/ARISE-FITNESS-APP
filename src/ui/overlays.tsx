@@ -239,7 +239,9 @@ function SysWindow({ w }: { w: Queued }) {
     if (w.hold) return;
     const acts = w.actions ?? [{ label: 'Close', value: true }];
     const out = acts.find((a) => a.value === false) ?? (acts.length === 1 ? acts[0] : null);
+    // A window whose body holds its own buttons closes on back with nothing chosen.
     if (out) close(out.value);
+    else if (!acts.length) close(null);
   });
   const actions = w.actions ?? [{ label: 'Close', value: true, primary: true }];
   const body = (
@@ -250,7 +252,7 @@ function SysWindow({ w }: { w: Queued }) {
           : <Typed lines={w.lines ?? []} fast={fast} onDone={() => setTypedDone(true)} skipRef={skip} />}
         {typedDone && w.body?.(close)}
       </div>
-      {typedDone && (
+      {typedDone && (w.hold || actions.length > 0) && (
         <footer class="syswin__foot">
           {w.hold
             ? <HoldButton hold={w.hold} onFire={() => close(w.hold!.value ?? true)} />

@@ -14,6 +14,7 @@ import { ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Bar, Btn, CoachHead } from './components';
+import { CoachPortrait } from './icons';
 import { sys } from './overlays';
 
 /** A creature's name for more than one: "Dire Wolves", "Rootlings". */
@@ -78,15 +79,24 @@ export function AssocCard() {
   );
 }
 
-/** On a run's results: how far the run moved the job, on his channel. */
+/**
+ * On a run's results: how far the run moved the job, as an alert on his channel, shaped as the
+ * System's are (an icon box, a small header, one line, the count at the right) but in his blue, his
+ * corner brackets and his face, never the System's frame.
+ */
 export function AssocStrip({ q, move }: { q: AssocQuest; move: association.AssocMove }) {
   const done = move.to >= move.need;
   return (
-    <aside class={`assocstrip coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
-      <span class="assocstrip__label">Association Quest</span>
-      <span class="assocstrip__goal">{goalOf(q)}</span>
-      <b class="num">{move.to}/{move.need}</b>
-      {done && <small class="assocstrip__done">Done. Report to Ryn on the Quests screen.</small>}
+    <aside class={`assocalert coachframe ${done ? 'is-done' : ''}`} role="status" aria-label={`Association Quest: ${move.to} of ${move.need}`}>
+      <span class="assocalert__icon"><CoachPortrait size={34} /></span>
+      <div class="assocalert__body">
+        <span class="assocalert__head">Association Quest</span>
+        <p>{goalOf(q)}</p>
+        <Bar pct={(move.to / Math.max(1, move.need)) * 100} tone={done ? 'verdant' : 'mana'} thin />
+        {done && <small class="assocalert__done">Done. Report to Ryn on the Quests screen.</small>}
+      </div>
+      <b class="assocalert__count num">{move.to}/{move.need}</b>
+      <i class="assocalert__scan" aria-hidden="true" />
     </aside>
   );
 }

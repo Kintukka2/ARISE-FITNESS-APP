@@ -21,7 +21,12 @@ await new Promise((r) => { server.stdout.on('data', (d) => String(d).includes(St
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const errors = [];
 /** A fresh phone with a save on it. Every helper below drives the one opened last. */
-async function phone(json) {
+async function phone(raw) {
+  // Health, mana and fatigue recover by the hour from when the fixture was written: they start from now,
+  // so every run sees the hunter as the fixture left them.
+  const seeded = JSON.parse(raw);
+  if (seeded.vitals) seeded.vitals.at = Date.now();
+  const json = JSON.stringify(seeded);
   const p = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   p.on('pageerror', (e) => errors.push(String(e)));
   p.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
@@ -155,7 +160,14 @@ try {
   await snap('shadows', true);
   await sleep(600);
   await page.locator('.btile--army .btile__hit').click(); await sleep(600); await snap('army', true);
-  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail'); await close();
+  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail');
+  // Naming from the card: the System's line, the field across the window, and the two acts under it.
+  await page.locator('.sheet.is-top .btn', { hasText: /^(Name|Rename)$/ }).click(); await sleep(400);
+  if (!(await page.locator('.syswin .namefield__input').isVisible())) throw new Error('THE NAME WINDOW DID NOT OPEN');
+  await page.locator('.syswin .namefield__input').click(); await page.keyboard.type('Bellion'); await sleep(200); await snap('shadow-name');
+  await page.locator('.syswin .namefield .btn', { hasText: 'Cancel' }).click(); await sleep(300);
+  if (await page.locator('.syswin').count()) throw new Error('CANCEL LEFT THE NAME WINDOW OPEN');
+  await close();
   // The veteran's second Shadow has earned Sworn: its tile calls, its card holds the promotion, and the hold plays it.
   if (!(await page.locator('.sheet.is-top .btile.is-shadow.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
   await page.locator('.sheet.is-top .btile.is-shadow.is-ready .btile__hit').first().click(); await sleep(500);
