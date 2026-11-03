@@ -22,9 +22,11 @@ import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
 
 const ranks = RANK_LADDER.map((r) => `${r.name} at Level ${r.min}`).join(', ');
-/** The grades Ascension counts from that have fewer gates than a proof asks for. */
+/** What proves a level at a grade: the rule's number of its Gates, or all of them for a grade with fewer. */
 const gatesOf = (g: string) => DUNGEONS.filter((d) => d.rank === g).length;
-const SHORT = RANKS.slice(RANKS.indexOf(ASCENSION_FROM)).filter((g) => gatesOf(g) < PROOF.gates);
+const proofOf = (g: string) => (gatesOf(g) < PROOF.gates ? `all ${gatesOf(g)} ${g}-Rank Gates` : `${PROOF.gates} different ${g}-Rank Gates`);
+/** The grades above the one Ascension opens at whose proof differs from it. */
+const SHORT = RANKS.slice(RANKS.indexOf(ASCENSION_FROM) + 1).filter((g) => gatesOf(g) !== gatesOf(ASCENSION_FROM));
 /** The ranks a class line's rungs open at, read from the data. */
 const unlocks = (xs: { rung: number }[]) => {
   const at = [...new Set(xs.map((x) => x.rung))].sort((a, b) => a - b).map((n) => CLASS_RANKS[n]);
@@ -155,16 +157,18 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Ascension',
     lines: [
+      `Ascension opens at ${ASCENSION_FROM}-Rank. It is the climb after the ranks: the same Gates, played harder, for more.`,
+      'Choose a level on the Ascension tile of the Gates screen. Every Gate you enter is played at it, and Level 0 is the board as it stands.',
       `The first ${ASCENSION_RULED} levels each make every foe stronger and add a rule, on top of every rule below it.`,
       `Past them the ladder has no top. Each level makes every foe ${Math.round((BEYOND.growth - 1) * 100)}% stronger than the one below, and adds no rule.`,
       `Each level pays ${ASCENSION_PAY * 100}% more on a Gate than the level below.`,
       'You can step back down at any time.',
-      `A level opens when you prove the one below it: ${PROOF.gates} different Gates of your grade cleared at it, then the Trial.`,
-      ...SHORT.map((g) => `${g}-Rank has only ${gatesOf(g)} Gates, so there the proof is all of them.`),
-      `Clears count from ${ASCENSION_FROM}-Rank.`,
-      'The proof and the Trial are on the Quests screen.',
-      'Once Ascension 1 is open, the Ascension tile on the Gates screen holds the level you enter at, its rules and your marks.',
+      `A level opens when you prove the one below it: ${proofOf(ASCENSION_FROM)} cleared at it, then the Trial.`,
+      ...SHORT.map((g) => `At ${g}-Rank the proof is ${proofOf(g)}.`),
+      'The Ascension tile holds the level you enter at, its rules, the road to the next level and your marks.',
+      'The proof and the Trial are on the Quests screen too.',
       `The Trial is a Gate of the Chosen, fought back to back with no rest and no way out: ${TRIAL.extra} more than the level it proves, up to ${TRIAL.most}.`,
+      'The Trial is the System’s. No hunter of the Association goes in with you, but your Shadows do.',
       'Each of the Chosen is one of your grade’s bosses, stronger for every round before it.',
       'The Trial is fought at the level it proves. You can enter it once a day.',
       'Winning a Trial sends its last Chosen into the Gates.',

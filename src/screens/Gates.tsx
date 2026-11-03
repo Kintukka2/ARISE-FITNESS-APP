@@ -10,8 +10,8 @@ import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
-import { isTrial } from '@/core/trial';
-import { ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, WALKERS, type Mark } from '@/data/ascension';
+import { isTrial, trialLevel } from '@/core/trial';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { SPIRE_NAME } from '@/data/spire';
@@ -203,9 +203,10 @@ function topTiles(s: Save): BTile[] {
     });
   }
   const a = s.ascension;
-  if (a.unlocked) {
+  // From Ascension's grade, before its first level opens too: the tile holds the road to it.
+  if (ascension.ascensionOpen(s)) {
     out.push({
-      key: 'ascension', kind: 'gold', name: `Ascension ${a.level}`, icon: <Glyph name="crown" />, hot: marks.unset(s) > 0,
+      key: 'ascension', kind: 'gold', name: `Ascension ${a.level}`, icon: <Glyph name="crown" />, hot: marks.unset(s) > 0 || !story.seen(s, 'ascension-told'),
       count: `${a.level}/${a.unlocked}`,
       status: a.level ? ascension.levelInfo(a.level).name : 'The board as it stands.',
       art: (
@@ -272,9 +273,35 @@ function openGrade() {
   });
 }
 
-/** Ascension: the level the next run is entered at, its rules, and the marks. Advancement, so gold. */
+/** Ascension: the level the next run is entered at, what it does, the road to the next, and the marks. Advancement, so gold. */
 function openAscension() {
-  openSheet({ title: `Ascension: ${store.get().ascension.level}`, system: { icon: <Glyph name="crown" />, kind: 'gold' }, render: () => <AscensionSheet /> });
+  openSheet({
+    title: `Ascension: ${store.get().ascension.level}`, system: { icon: <Glyph name="crown" />, kind: 'gold' },
+    action: { label: 'How Ascension Works', icon: 'help', onClick: () => void ascensionTour() },
+    render: () => <AscensionSheet />,
+  });
+}
+
+/** The Gates a proof asks for, as the Trial's quest words it: every one of a grade with fewer than the rule's number. */
+const proofGates = (s: Save) => {
+  const need = ascension.proofNeeds(s);
+  return `${need < PROOF.gates ? `all ${need}` : `${need} different`} ${licensedRank(s)}-Rank Gates`;
+};
+
+/** The interface teaching Ascension on the sheet itself, a part at a time. Shown the first time the sheet opens, and from its help button. */
+function ascensionTour() {
+  const s = store.get();
+  const gates = ascension.proving(s) ? proofGates(s) : `the ${ASCENSION_FROM}-Rank Gates`;
+  return tour({
+    who: 'app', title: 'Ascension',
+    steps: [
+      { at: 'asc-level', say: `Ascension is the climb after ${ASCENSION_FROM}-Rank: the same Gates, played harder, for more. Choose a level here, and every Gate you enter is played at it. Level 0 is the board as it stands.` },
+      { at: 'asc-now', say: `Every level makes every foe stronger and adds a rule, on top of every rule below it. Every level pays ${Math.round(ASCENSION_PAY * 100)}% more than the one below.` },
+      { at: 'asc-next', say: `To open the next level, clear ${gates} at your highest level. Then win the Trial: the Chosen, one after another, with no rest. The Trial is on the Quests screen too.` },
+      { at: 'asc-marks', say: `Every level you open earns a mark, a bonus you set here for good. It also lets gear go ${OVERCHARGE.per === 1 ? 'one upgrade step' : `${OVERCHARGE.per} upgrade steps`} past perfect, and sends one of the Chosen into the Gates.` },
+      { say: 'You can step back down at any time. Every rule is in the Guide, under Ascension.' },
+    ],
+  });
 }
 
 function AscensionSheet() {
@@ -282,28 +309,35 @@ function AscensionSheet() {
   const a = s.ascension;
   const rules = ascension.rulesAt(a.level);
   const choose = (L: number) => store.update((x) => ascension.choose(x, L));
+  const foes = Math.round((ascension.ascensionTune(a.level) - 1) * 100);
+  useEffect(() => {
+    if (store.update((x) => story.markOnce(x, 'ascension-told'))) setTimeout(() => void ascensionTour(), 450);
+  }, []);
   return (
     <div class="stack ascension">
-      <div class="sysfields">
-        <Field k="Level" v={<span class="status__level">{a.level}</span>} />
-        <Field k="Pay" v={<span class="grant">+{Math.round(ASCENSION_PAY * a.level * 100)}%</span>} />
-        <Field k="Name" v={a.level ? ascension.levelInfo(a.level).name : '-- --'} />
+      <div class="sysfields" data-tour="asc-now">
+        <Field k="Entering at" v={<><span class="status__level">{a.level}</span>{a.level ? ` · ${ascension.levelInfo(a.level).name}` : ''}</>} />
         <Field k="Highest opened" v={a.unlocked} />
+        <Field k="Foe strength" v={foes ? <span class="warn">+{foes}%</span> : 'As the board'} />
+        <Field k="Gate pay" v={a.level ? <span class="grant">+{Math.round(ASCENSION_PAY * a.level * 100)}%</span> : 'As the board'} />
       </div>
-      {a.unlocked <= ASCENSION_RULED && (
-        <div class="chips" role="radiogroup" aria-label="Ascension level">
-          {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => choose(L)}>{L}</Chip>)}
-        </div>
-      )}
-      {a.unlocked > ASCENSION_RULED && (
-        <div class="stepper" role="group" aria-label="Ascension level">
-          <Btn size="sm" disabled={a.level === 0} onClick={() => choose(a.level - 1)}>−</Btn>
-          <b class="num">{a.level}</b>
-          <Btn size="sm" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}>+</Btn>
-          <Btn size="sm" onClick={() => choose(0)}>0</Btn>
-          <Btn size="sm" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
-        </div>
-      )}
+      <div data-tour="asc-level">
+        {a.unlocked <= ASCENSION_RULED && (
+          <div class="chips" role="radiogroup" aria-label="Ascension level">
+            {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => choose(L)}>{L}</Chip>)}
+            <span class="chip chip--locked" aria-label={`Ascension ${a.unlocked + 1}, locked`}><Glyph name="lock" />{a.unlocked + 1}</span>
+          </div>
+        )}
+        {a.unlocked > ASCENSION_RULED && (
+          <div class="stepper" role="group" aria-label="Ascension level">
+            <Btn size="sm" disabled={a.level === 0} onClick={() => choose(a.level - 1)}>−</Btn>
+            <b class="num">{a.level}</b>
+            <Btn size="sm" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}>+</Btn>
+            <Btn size="sm" onClick={() => choose(0)}>0</Btn>
+            <Btn size="sm" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
+          </div>
+        )}
+      </div>
       {rules.length > 0 && (
         <Section title="Rules in force">
           <ol class="ascension__rules">{rules.map((r) => <li key={r.level} class="sysbox"><strong>[{r.name}]</strong> {r.rule}</li>)}</ol>
@@ -312,8 +346,46 @@ function AscensionSheet() {
       {ascension.beyond(a.level) > 0 && (
         <small class="ascension__proof">Past Level {ASCENSION_RULED}: Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level · +{Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here</small>
       )}
+      <NextLevel />
       <MarkList />
     </div>
+  );
+}
+
+/** The road to the next level: the Gates to prove at the highest one, then the Trial, and the rule the next level adds. */
+function NextLevel() {
+  const s = useSave();
+  const a = s.ascension;
+  const next = a.unlocked + 1;
+  const need = ascension.proofNeeds(s);
+  const got = Math.min(need, a.proof.gates.length);
+  const proved = ascension.trialProved(s);
+  const ready = ascension.trialReady(s);
+  const trial = ascension.nextTrial(s);
+  const info = ascension.levelInfo(next);
+  return (
+    <Section title={`To open Ascension ${next}`}>
+      <ol class="ascnext" data-tour="asc-next">
+        <li class={`sysbox ${proved ? 'is-done' : 'is-now'}`}>
+          <span class="ascnext__n num">1</span>
+          <div class="grow">
+            <b>Clear {proofGates(s)} at Ascension {a.unlocked}.</b>
+            <span class="ascnext__pips" aria-hidden="true">{Array.from({ length: need }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''} />)}</span>
+          </div>
+          <span class="num">{got}/{need}</span>
+        </li>
+        <li class={`sysbox ${ready ? 'is-now' : proved ? 'is-wait' : 'is-later'}`}>
+          <span class="ascnext__n num">2</span>
+          <div class="grow">
+            <b>Win the Trial: {trial.trial} of the Chosen in a row.</b>
+            <small>{!proved ? 'Opens when the Gates are cleared.' : ready ? 'Open. Once a day.' : 'Faced today. It opens again tomorrow.'}</small>
+          </div>
+          <span class="num">0/1</span>
+        </li>
+      </ol>
+      <p class="ascnext__adds"><span class="label">Ascension {next} adds</span>{next <= ASCENSION_RULED ? <><strong>[{info.name}]</strong> {info.rule}</> : `Foe strength +${Math.round((BEYOND.growth - 1) * 100)}%`}</p>
+      {ready && <Btn kind="gold" block onClick={() => openBrief(trial)}>Face The Trial</Btn>}
+    </Section>
   );
 }
 
@@ -340,14 +412,23 @@ function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
 function MarkList() {
   const s = useSave();
   const waiting = marks.unset(s);
+  // The System's offer, as a purchase is: the mark, what it adds, where it stands, and that it is for good.
   const set = async (m: Mark) => {
-    const ok = await confirm(m.name, `<strong>${marks.markText(m)}</strong>, on top of every mark already set. A mark stays where you set it.`, 'Set The Mark');
-    if (!ok || !store.update((x) => marks.setMark(x, m.id))) return;
+    const n = marks.setOn(store.get(), m.id);
+    const ok = await sys(system.offer([
+      'Would you like to set this mark?',
+      system.tag(m.name),
+      system.gain(marks.markText(m)),
+      `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)} · Marks to set: ${marks.unset(store.get())}`,
+      system.red('A mark cannot be moved once set.'),
+    ], 'gold', 'Set', 'Cancel'));
+    if (ok !== true || !store.update((x) => marks.setMark(x, m.id))) return;
     sfx.success();
-    toast(`${m.name} set.`, 'good');
+    buzz([14, 30, 22]);
+    await sys({ ...system.notify([`${system.tag(m.name)} has been set.`, system.gain(marks.markText(m, n + 1))], 'gold'), typed: false });
   };
   return (
-    <div class="marks">
+    <div class="marks" data-tour="asc-marks">
       <span class="label">Marks{waiting ? ` · ${waiting} to set` : ''}</span>
       <ul class="marks__list">
         {MARKS.map((m) => {
@@ -370,9 +451,14 @@ function MarkList() {
 
 // ------------------------------------------------------------------ the brief
 
-/** The brief: the System's card on a Gate, in the Gates' orange. */
+/** The brief: the System's card on a Gate, in the Gates' orange. A Trial is advancement, so its card is gold. */
 export function openBrief(d: Dungeon) {
-  openSheet({ title: `Gate: ${d.name}`, system: { icon: <RankPlate rank={d.rank} size={40} />, kind: 'gates' }, render: (close) => <Brief d={d} close={close} /> });
+  const trial = isTrial(d);
+  openSheet({
+    title: trial ? `Trial: Ascension ${trialLevel(d) + 1}` : `Gate: ${d.name}`,
+    system: trial ? { icon: <Glyph name="cert" />, kind: 'gold' } : { icon: <RankPlate rank={d.rank} size={40} />, kind: 'gates' },
+    render: (close) => <Brief d={d} close={close} />,
+  });
 }
 
 function Brief({ d, close }: { d: Dungeon; close: () => void }) {
@@ -433,11 +519,21 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 
   return (
     <div class="stack brief">
-      <div class="sysfields brief__file"><Field k="Association file" v={d.theme} wide /></div>
+      {/* A Gate comes with the Association's file. The Trial is the System's own: it states its terms, and no hunter of the Association walks in. */}
+      {isTrial(d)
+        ? (
+          <div class="sysfields brief__file">
+            <Field k="Chosen" v={`${d.trial}, in a row`} />
+            <Field k="Rest" v="None" />
+            <Field k="Withdrawal" v="Not possible" />
+            <Field k="Allies" v="None" />
+          </div>
+        )
+        : <div class="sysfields brief__file"><Field k="Association file" v={d.theme} wide /></div>}
       <Card class="bosscard" tour="boss">
         <Glyph name={known || met ? 'skull' : 'unknown'} />
         <div class="grow">
-          <span class="label">{met ? 'In the boss’s place' : `Gate boss${known ? '' : ': unidentified'}`}</span>
+          <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
           <b>{met ? met.name : known ? boss.name : '?'}</b>
           <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
         </div>
@@ -479,7 +575,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           </Section>
         )}
 
-      <Section title="Standing orders" right={party.length + squad.length ? 'For allies and Shadows' : undefined}>
+      <Section title="Standing orders" right={party.length && squad.length ? 'For allies and Shadows' : party.length ? 'For allies' : squad.length ? 'For Shadows' : undefined}>
         <div class="chips chips--orders" aria-label="Standing orders" data-tour="orders">
           {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
         </div>
@@ -498,9 +594,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
         : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
           : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
-            : <Btn kind="primary" size="lg" block onClick={enter} sound="none" tour="enter">Enter The Gate</Btn>}
+            : <Btn kind={isTrial(d) ? 'gold' : 'primary'} size="lg" block onClick={enter} sound="none" tour="enter">{isTrial(d) ? 'Enter The Trial' : 'Enter The Gate'}</Btn>}
 
-      <Section title="Your party" right={`Hunters: ${1 + party.length}${squad.length ? ` · Shadows: ${squad.length}` : ''}`}>
+      <Section title={isTrial(d) ? 'Entering' : 'Your party'} right={isTrial(d) ? `You${squad.length ? ` · Shadows: ${squad.length}` : ''}` : `Hunters: ${1 + party.length}${squad.length ? ` · Shadows: ${squad.length}` : ''}`}>
         <ul class="partylist" data-tour="party">
           <li class="is-you"><RankPlate rank={licensedRank(s)} size={22} /><b>{s.hunter.name}</b><small>you</small><span class="num">{powerOf(hero.base)}</span></li>
           {party.map((a) => (

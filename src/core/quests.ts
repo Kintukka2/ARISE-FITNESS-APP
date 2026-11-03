@@ -5,6 +5,7 @@
  * says what they will do.
  */
 import { CLASS_RANKS, classById, classFor } from '@/data/classes';
+import { ASCENSION_FROM } from '@/data/ascension';
 import { HOLLOW_THRONE } from '@/data/special';
 import { SLOTS } from '@/data/shadows';
 import { trialReady } from './ascension';
@@ -33,6 +34,8 @@ export interface Reclass {
   slots: [number, number] | null;
   /** The rank opens the Hollow Throne. */
   throne: boolean;
+  /** The rank opens Ascension. */
+  ascension: boolean;
 }
 
 /** The grade the board would answer to at a rank, with the Association Licence's hold applied. */
@@ -63,6 +66,7 @@ export function reclassification(s: Save): Reclass | null {
     pick: next && rung >= 0 ? optionsAt(next.lead, rung) : null,
     slots: SLOTS[after] > SLOTS[grade] ? [SLOTS[grade], SLOTS[after]] : null,
     throne: after === 'S' && grade !== 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id),
+    ascension: RANKS.indexOf(after) >= RANKS.indexOf(ASCENSION_FROM) && RANKS.indexOf(grade) < RANKS.indexOf(ASCENSION_FROM),
   };
 }
 

@@ -7,13 +7,14 @@
  * The first time a Chosen falls it leaves a masterwork; after that, a bounty.
  * All of it is settled in `raid.finish`.
  */
-import { MASTERWORK_SLOTS, WALKERS } from '@/data/ascension';
+import { ASCENSION_FROM, MASTERWORK_SLOTS, WALKERS } from '@/data/ascension';
 import { dayOrder } from './gates';
 import { grant, ofRank, pastPerfect } from './gear';
 import { licensedRank } from './licence';
 import * as shop from './shop';
 import { chosen } from './trial';
 import type { Dungeon, Item, OpenRaid, Rank, Save } from './types';
+import { RANKS } from './types';
 import { rng } from './util';
 
 /** The Chosen the Trial that opens `level` ends with: the one it sends into the world. */
@@ -35,7 +36,8 @@ export interface Walker { level: number; gateId: string; name: string }
  */
 export function walking(s: Save, day: string): Walker | null {
   const { sent, felled } = s.ascension;
-  if (!sent.length) return null;
+  // The Chosen walk where Ascension is played: not below its grade, for a save that sent them before it opened there.
+  if (!sent.length || RANKS.indexOf(licensedRank(s)) < RANKS.indexOf(ASCENSION_FROM)) return null;
   const standing = sent.filter((L) => !felled.includes(L));
   const pool = (standing.length ? standing : sent).slice().sort((a, b) => a - b);
   const level = pool[Math.floor(rng(`arise|walk|${day}`)() * pool.length)];

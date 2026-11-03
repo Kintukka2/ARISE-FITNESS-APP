@@ -91,7 +91,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: 'ascension_open', when: (s) => s.ascension.unlocked >= 1, kind: 'gold', title: 'Notification', center: true,
-    lines: [unlock('Ascension'), counter('Ascension levels unlocked', 1)],
+    lines: [unlock('Ascension 1'), counter('Ascension levels unlocked', 1)],
   },
   {
     id: 'first_defeat', when: (s) => s.gates.fails >= 1, kind: 'coach', title: 'Valcorde',
@@ -179,6 +179,7 @@ export const BEATS: Beat[] = [
       'Reclassification approved.',
       `Rank: ${change('A', 'S')}`,
       RANK_POINTS,
+      unlock('Ascension'),
       `${tag('The Hollow Throne')} has opened. It does not close at midnight.`,
       `You have received a message from ${tag('Ryn Valcorde')}.`,
       '“Do not go in tired. Go in with something left.”',

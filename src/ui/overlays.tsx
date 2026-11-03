@@ -407,7 +407,8 @@ function ToastHost() {
 // ------------------------------------------------------------------ spotlight tour
 
 export interface TourStep { at?: string; say: string }
-export interface Tour { who: 'system' | 'coach'; title: string; steps: TourStep[] }
+/** Who walks the player through: the System, Valcorde, or the interface teaching (`app`), as its own windows do. */
+export interface Tour { who: 'system' | 'coach' | 'app'; title: string; steps: TourStep[] }
 
 const tours = createStore<(Tour & { resolve: () => void }) | null>(null);
 
@@ -449,6 +450,8 @@ function TourView({ t }: { t: Tour & { resolve: () => void } }) {
       <div class={`tour__card tour__card--${t.who} ${t.who === 'coach' ? 'coachframe' : ''}`} style={rect ? { top: cardTop, bottom: cardBottom } : { bottom: 'calc(var(--nav-h) + 24px)' }}>
         {t.who === 'coach'
           ? <div class="tour__head tour__head--coach"><CoachHead speaking size={32} />{t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}</div>
+          : t.who === 'app'
+          ? <header class="tour__head tour__head--app"><b>Tutorial</b>{t.steps.length > 1 && <span class="tour__count">{i + 1}/{t.steps.length}</span>}</header>
           : (
             <header class="tour__head">
               <SystemMark size={28} />

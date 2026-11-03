@@ -558,7 +558,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
               : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
             : r.outcome === 'withdrawn' ? d.floor ? `Withdrawn from the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.` : `Withdrawn at step ${r.steps} of ${r.depth}. The Gate is still open.`
-              : trial ? 'The party was carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
+              : trial ? 'You were carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
               : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
         </header>
         <div class="tiles">

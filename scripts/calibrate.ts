@@ -93,11 +93,13 @@ for (let b = 0; b < SPIRE_TOP / BLOCK; b++) {
 }
 
 // Ascension last: each level, so a hunter who keeps up, in the middle of a grade that proves levels, clears its target.
-// Two gates of each such grade, each tried by hunters on different days.
-const ASC_GATES = RANKS.slice(RANKS.indexOf(ASCENSION_FROM)).flatMap((g) => ALL_DUNGEONS.filter((d) => d.rank === g).slice(0, 2));
+// Every gate of each such grade, each tried by hunters on different days: about two dozen in all, however few the grades.
+const ASC_GRADES = RANKS.slice(RANKS.indexOf(ASCENSION_FROM));
+const ASC_GATES = ASC_GRADES.flatMap((g) => ALL_DUNGEONS.filter((d) => d.rank === g).slice(0, 3));
+const ASC_HUNTERS = Math.max(3, Math.round(24 / ASC_GATES.length));
 function ascensionRate(level: number) {
   let c = 0, n = 0;
-  for (const d of ASC_GATES) for (let h = 0; h < 3; h++) {
+  for (const d of ASC_GATES) for (let h = 0; h < ASC_HUNTERS; h++) {
     const s = keptUpHunter(LEVELS[d.rank as Rank][1], d.rank as Rank, `asc|${d.id}|${h}`);
     s.ascension.unlocked = s.ascension.level = level;
     // A hunter who has opened a level holds a mark for every level below it, set as the System would.
@@ -122,9 +124,10 @@ for (let L = 1; L <= ASCENSION_RULED; L++) {
 
 // The Trial at each level it proves, so a hunter who keeps up wins it about half the time.
 const TRIAL_TARGET = 0.5;
+const TRIAL_HUNTERS = Math.max(4, Math.round(16 / ASC_GRADES.length));
 function trialRate(level: number) {
   let c = 0, n = 0;
-  for (const g of RANKS.slice(RANKS.indexOf(ASCENSION_FROM))) for (let h = 0; h < 4; h++) {
+  for (const g of ASC_GRADES) for (let h = 0; h < TRIAL_HUNTERS; h++) {
     const s = keptUpHunter(LEVELS[g][1], g, `trial|${g}|${h}`);
     s.ascension.unlocked = level;
     setAllBySystem(s);

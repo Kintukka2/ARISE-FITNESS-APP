@@ -66,8 +66,9 @@ export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> 
   return { uid: `s${i}`, name: e.shadow, side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
 }
 
-/** The hunters the Association sends with you at an Ascension level. */
+/** The hunters the Association sends with you at an Ascension level. The Trial is the System's, so it sends none there. */
 export function alliesAt(d: Dungeon, day: string, rank: Rank, level = 0): Ally[] {
+  if (isTrial(d)) return [];
   const all = alliesFor(d, day, rank);
   return all.slice(0, Math.max(0, all.length - asc.alliesCut(level)));
 }
@@ -255,7 +256,7 @@ export const systemChoice = (x: MapNode) => (x.kind === 'shrine' ? 0 : Math.max(
 
 // ------------------------------------------------------------------ the run, in the save
 
-/** Enter a gate: charge fatigue, open the run. Mutates. */
+/** Enter a gate: build the party as it walks in, charge fatigue, open the run. Mutates. */
 export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   const day = dayKey(now);
   const fatigue = vitals.read(s, now).fatigue;
@@ -263,8 +264,10 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   const level = asc.entryLevel(s, d, isPractice(d));
   if (isTrial(d)) asc.enterTrial(s, day);
   if (!s.gates.entered.includes(d.id)) s.gates.entered.push(d.id);
-  if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, fatigueShare(s, level));
+  // The party walks in as the brief assessed it: at the fatigue it walked in with. The Gate's own is
+  // charged after, for the runs to come, so the fight is the one the projection and calibration played.
   const specs = partySpecs(s, d, day, undefined, now, level);
+  if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, fatigueShare(s, level));
   const party = buildParty(specs);
   const hero = party[0];
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
