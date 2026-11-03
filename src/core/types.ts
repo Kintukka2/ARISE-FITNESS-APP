@@ -115,6 +115,8 @@ export interface Shadow {
   out: number;
   kills: number;
   bosses: number;
+  /** The rank it holds, by index into SHADOW_RANKS. Kills qualify it for the next; the hunter claims it. */
+  rank: number;
   /** Standing orders of its own. Unset, it follows the party's. */
   tactic?: Tactic;
 }

@@ -146,7 +146,25 @@ try {
   await snap('shadows', true);
   await sleep(600);
   await page.locator('.btile--army .btile__hit').click(); await sleep(600); await snap('army', true);
-  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail'); await close(); await close();
+  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail'); await close();
+  // The veteran's second Shadow has earned Sworn: its tile calls, its card holds the promotion, and the hold plays it.
+  if (!(await page.locator('.sheet.is-top .btile.is-shadow.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
+  await page.locator('.sheet.is-top .btile.is-shadow.is-ready .btile__hit').first().click(); await sleep(500);
+  await snap('shadow-promote');
+  {
+    const box = await page.locator('.sheet.is-top .promote .holdbtn').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down(); await sleep(2300); await page.mouse.up();
+  }
+  for (const [ms, name] of [[900, 'promote-1'], [1500, 'promote-2'], [1300, 'promote-3'], [1100, 'promote-4']]) { await sleep(ms); await snap(name); }
+  await page.waitForSelector('.syswin', { timeout: 8000 });
+  await sleep(500); await snap('promote-window');
+  if (!(await page.locator('.syswin', { hasText: 'has been promoted' }).isVisible())) throw new Error('THE PROMOTION WAS NOT REPORTED');
+  await page.locator('.syswin__foot .btn').last().click();
+  await page.waitForFunction(() => !document.querySelector('canvas.arrival'), null, { timeout: 8000 });
+  await sleep(400); await snap('shadow-promoted');
+  if (await page.locator('.sheet.is-top .promote').count()) throw new Error('THE PROMOTION STAYED ON THE CARD');
+  await close(); await close();
   await page.locator('.btile--squad .btile__hit').click(); await sleep(400); await snap('squad'); await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);

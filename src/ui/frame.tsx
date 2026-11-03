@@ -83,3 +83,23 @@ export function Rewards({ items }: { items: ComponentChildren[] }) {
     </ol>
   );
 }
+
+/**
+ * A System alert set into a screen: news that asks for nothing where it shows, as a strip rather than
+ * a window. The frame's glass, lit down its left edge in its kind's colour, the icon box, the header
+ * word small, and one line. It slides in once, a light crossing it as it lands.
+ */
+export function SysAlert({ kind = 'system', icon, label, children, delay = 0 }: {
+  kind?: FrameKind; icon: ComponentChildren; label?: string; children: ComponentChildren; delay?: number;
+}) {
+  return (
+    <aside class={`sysframe sysframe--${kind} sysalert`} role="status" aria-label={label} style={`--delay: ${delay}ms`}>
+      <span class="sysbox sysalert__icon">{icon}</span>
+      <div class="sysalert__body">
+        <span class="sysalert__head">Notification</span>
+        <p>{children}</p>
+      </div>
+      <i class="sysalert__scan" aria-hidden="true" />
+    </aside>
+  );
+}

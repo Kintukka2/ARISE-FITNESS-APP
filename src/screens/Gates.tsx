@@ -35,6 +35,7 @@ import { BentoGrid, type Tile as BTile } from '@/ui/bento';
 import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
+import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { drinkFlow, MiniBar, openDossier, openStatus } from './Inventory';
 import { openExchange } from './Exchange';
@@ -531,7 +532,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         )
         : <div class="sysfields brief__file"><Field k="Association file" v={d.theme} wide /></div>}
       <Card class="bosscard" tour="boss">
-        <Glyph name={known || met ? 'skull' : 'unknown'} />
+        {/* What it is, once it is known: its family's glyph. */}
+        {known || met ? <FamilyGlyph family={(met ?? boss).family} size={40} /> : <Glyph name="unknown" />}
         <div class="grow">
           <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
           <b>{met ? met.name : known ? boss.name : '?'}</b>

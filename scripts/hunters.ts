@@ -50,5 +50,7 @@ export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
   const r = rng(seed + '|shadows');
   const mobs = ALL_DUNGEONS.filter((d) => d.rank === gearRank).flatMap((d) => d.mobs);
   for (let k = 0; k < shadows.slots(s); k++) shadows.bind(s, mobs[Math.floor(r() * mobs.length)]).kills = shadows.SHADOW_RANKS[2].kills;
+  // A hunter who keeps up has promoted every Shadow its kills have earned.
+  shadows.promoteAll(s);
   return s;
 }

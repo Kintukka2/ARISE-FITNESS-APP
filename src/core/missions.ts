@@ -24,6 +24,8 @@ const metGrades = (s: Save) => new Set(s.gates.met.map((id) => id.split('-')[1])
 const felled = (s: Save) => Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
 const families = (s: Save) => Object.keys(s.stats.killsByFamily).length;
 const bestShadow = (s: Save) => s.shadows.army.reduce((n, x) => Math.max(n, x.kills), 0);
+/** The highest rank any Shadow holds: a rank is reached when it is promoted to, not when its kills earn it. */
+const topRank = (s: Save) => s.shadows.army.reduce((n, x) => Math.max(n, x.rank ?? 0), 0);
 
 export const MISSIONS: Mission[] = [
   // Citation: 1 point
@@ -38,7 +40,7 @@ export const MISSIONS: Mission[] = [
   { id: 'gatebreaker', name: 'Gatebreaker', tier: 'minor', did: 'Clear a Gate.', grant: { STR: 1 }, check: (s) => s.gates.clears >= 1 },
   { id: 'first_artifact', name: 'Salvage', tier: 'minor', did: 'Recover an item from a Gate.', grant: { AGI: 1 }, check: fromGate },
   { id: 'first_shadow', name: 'Something Followed You Home', tier: 'minor', did: 'Bind a Shadow.', grant: { free: 1 }, check: (s) => s.shadows.army.length >= 1 },
-  { id: 'first_sworn', name: 'Sworn', tier: 'minor', did: `Have a Shadow reach ${SHADOW_RANKS[1].name} Rank: ${SHADOW_RANKS[1].kills} kills.`, grant: { slot: 1 }, check: (s) => bestShadow(s) >= SHADOW_RANKS[1].kills },
+  { id: 'first_sworn', name: 'Sworn', tier: 'minor', did: `Have a Shadow reach ${SHADOW_RANKS[1].name} Rank: ${SHADOW_RANKS[1].kills} kills.`, grant: { slot: 1 }, check: (s) => topRank(s) >= 1 },
   { id: 'classified', name: 'Classified', tier: 'minor', did: 'Be assigned a class.', grant: { free: 1 }, check: (s) => !!s.hunter.classId },
   {
     id: 'standard_issue', name: 'Standard Issue', tier: 'minor', did: 'Equip every piece of issued kit at once.', grant: { free: 1 },
@@ -79,7 +81,7 @@ export const MISSIONS: Mission[] = [
   { id: 's_rank', name: 'The Highest Grant', tier: 'legend', did: 'Reach S-Rank.', grant: { free: 4 }, check: (s) => gateRank(s) === 'S' },
   { id: 'sovereign', name: 'Beyond Classification', tier: 'legend', did: 'Reach Level 100.', grant: { all: 1 }, check: (s) => s.hunter.level >= 100 },
   { id: 'spire_top', name: 'The Top Floor', tier: 'legend', did: `Reach Floor ${SPIRE_TOP} of the Pale Spire.`, grant: { free: 4 }, check: (s) => s.spire.top >= SPIRE_TOP },
-  { id: 'shadow_ascendant', name: 'Ascendant', tier: 'legend', did: `Have a Shadow reach ${SHADOW_RANKS[3].name} Rank: ${SHADOW_RANKS[3].kills} kills.`, grant: { slot: 1 }, check: (s) => bestShadow(s) >= SHADOW_RANKS[3].kills },
+  { id: 'shadow_ascendant', name: 'Ascendant', tier: 'legend', did: `Have a Shadow reach ${SHADOW_RANKS[3].name} Rank: ${SHADOW_RANKS[3].kills} kills.`, grant: { slot: 1 }, check: (s) => topRank(s) >= 3 },
   { id: 'walked_out_together', name: 'Someone To Walk Out With', tier: 'legend', did: 'Clear 25 Gates with the same hunter.', grant: { PER: 2, VIT: 2 }, check: (s) => Object.values(s.gates.together).some((n) => n >= 25) },
 
   // Testament: 6 or more

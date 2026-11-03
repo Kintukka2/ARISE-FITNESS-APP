@@ -488,8 +488,8 @@ export interface RaidResult {
   contracts: contracts.ContractReport;
   /** A Spire block: the floor it reached, and whether that is the week's best. */
   spire: { floor: number; best: boolean } | null;
-  /** Shadows the run's kills promoted, and to what. */
-  promoted: { id: string; rank: string }[];
+  /** Shadows the run's kills qualified for promotion, and the rank each can now be promoted to. */
+  ready: { id: string; rank: string }[];
   /** An Ascension level the run's clear proved the way to, if it did. Its Trial's last Chosen is sent into the world. */
   ascended: number | null;
   /** A Chosen met in the boss's place and felled: its masterwork, or its bounty. */
@@ -613,7 +613,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   }
 
   // Records.
-  const promoted: RaidResult['promoted'] = [];
+  const ready: RaidResult['ready'] = [];
   if (!practice) {
     if (!tower) {
       const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
@@ -641,11 +641,12 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     for (const id of run.squad) {
       const sh = s.shadows.army.find((x) => x.id === id);
       if (!sh) continue;
-      const was = shadows.rankIndex(sh);
+      const was = shadows.qualifiedIndex(sh);
       sh.out++;
       sh.kills += run.kills[id]?.kills ?? 0;
       sh.bosses += run.kills[id]?.bosses ?? 0;
-      if (shadows.rankIndex(sh) > was) promoted.push({ id: sh.id, rank: shadows.rankOf(sh).name });
+      // Kills qualify a Shadow; the hunter promotes it, from the Shadows screen.
+      if (shadows.qualifiedIndex(sh) > was && shadows.canPromote(sh)) ready.push({ id: sh.id, rank: shadows.nextRank(sh)!.name });
     }
   }
   // A Chosen in the boss's place is not the gate's own boss: meeting it shows nothing of that one.
@@ -665,7 +666,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth, contracts: deal, spire: climb, promoted, ascended, chosen,
+    steps: run.at, depth, contracts: deal, spire: climb, ready, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }

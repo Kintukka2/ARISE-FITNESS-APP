@@ -266,7 +266,18 @@ fight was tried and did not narrow it.
   - A newly bound Shadow fights with its creature's first ability. Sworn, it remembers a second:
     the second in its own kit or, for the 58 creatures that have only one, the first ability of
     its kin it lacks (its family's, or its role's for a family that shares one).
-  - Promotions are counted in `raid.finish` and shown on the results.
+  - **Claimed, as ranks are.** Kills earn a Shadow the next rank; the hunter promotes it, one rank
+    at a time, from its card on the Shadows screen (`shadows.promote`). Until then it keeps its rank,
+    its growth limit and its kit, and its kills keep counting. `raid.finish` reports the Shadows a
+    run's kills qualified (`ready`), and the results show each as a System alert, not a window. The
+    hold plays the promotion's cinematic, the rank-up's in violet, and the System's window after it
+    says what the rank brought. A save from before (v5 migration) keeps every rank its Shadows'
+    kills had given them. The Secret Quests for a Sworn and an Ascendant Shadow pay on the
+    promotion. Calibration's and the campaign's hunters promote at once, so `gatetune.ts` and the
+    campaign came out identical.
+  - **Badges.** Every family has a glyph, and a Shadow's badge is its family's glyph with its
+    shadow behind it and its rank's insignia under them (`ui/emblems.tsx`). The Army tells its
+    Shadows apart at a glance; it drew every one with the same two silhouettes before.
 - **More slots through Secret Quests.** Three new ones each make room for one more Shadow: a
   first Sworn Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions'
   (`shadows.slots`).

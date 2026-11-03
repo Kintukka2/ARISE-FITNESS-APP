@@ -14,6 +14,9 @@
  * the plate lifts off its Reclassification window, the lock breaks it open, and the new rank's
  * plate rises out of the light, white-hot, cooling into its own colour.
  *
+ * The promotion is the rank-up in the Shadows' violet, when a hunter promotes a Shadow: its badge
+ * lifts off its card, and it rises again out of the breach wearing its new rank's insignia.
+ *
  * Neither carries words, so a System window is always what speaks after (docs/VOICE.md,
  * "Surfaces"). One canvas on its own clock. Nothing here is game state, and nothing here decides
  * anything. Under reduced motion each keeps every beat and drops the movement: no shake, no spin,
@@ -21,6 +24,7 @@
  */
 import { music, sfx } from '@/audio/audio';
 import { buzz, reducedMotion } from './feedback';
+import { emblemParts, PLACE } from './emblems';
 import { plateParts } from './icons';
 
 /** When each beat lands, in ms from the start. */
@@ -83,14 +87,20 @@ const GOLD: Palette = {
   heat: [255, 210, 110], white: [255, 250, 236], deep: ['112, 76, 20', '48, 32, 10'],
   flash: ['255, 252, 240', '255, 212, 120', '150, 96, 24'],
 };
+/** The Shadows' violet, for a Shadow's promotion. */
+const VIOLET: Palette = {
+  glow: '155, 107, 255', soft: '201, 170, 255', hot: '246, 238, 255', core: [214, 192, 255],
+  heat: [182, 140, 255], white: [250, 246, 255], deep: ['70, 34, 140', '30, 14, 64'],
+  flash: ['250, 246, 255', '190, 150, 255', '84, 40, 170'],
+};
 
 /** One playing: whose light, which plate is lifted, and which one rises out of the breach, if any. */
 interface Script {
   t: Timeline;
   pal: Palette;
-  plate: string;
-  /** The rank whose plate the breach leaves behind. The Arrival's breach leaves only shards. */
-  rise?: string;
+  plate: () => Plate;
+  /** The plate the breach leaves behind. The Arrival's breach leaves only shards. */
+  rise?: () => Plate;
   /** What is left of the lock glows on behind the next window and answers a hold. */
   idle: boolean;
 }
@@ -253,8 +263,8 @@ function rankRgb(key: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** A grade's plate, ready to draw: its parts as paths, and its colour. */
-interface Plate { frame: Path2D; rune: Path2D; extras: Path2D[]; nodes?: Path2D; rays?: Path2D; halo: boolean; rgb: [number, number, number] }
+/** A plate, ready to draw: its parts as paths, its colour, and how heavy its rune's line is (1 for a rank's letter). */
+interface Plate { frame: Path2D; rune: Path2D; extras: Path2D[]; nodes?: Path2D; rays?: Path2D; halo: boolean; rgb: [number, number, number]; weight?: number }
 function plateOf(key: string): Plate {
   const p = plateParts(key);
   return {
@@ -268,11 +278,44 @@ function plateOf(key: string): Plate {
   };
 }
 
+/** A path placed on the plate's grid, at [scale, x, y]. */
+function placed(d: string, [k, x, y]: readonly [number, number, number]) {
+  const p = new Path2D();
+  p.addPath(new Path2D(d), new DOMMatrix([k, 0, 0, k, x, y]));
+  return p;
+}
+
+/** A Shadow's badge, as a plate: the shield, the family glyph and its shadow, and the rank's insignia. Violet, as the Shadows are. */
+function emblemOf(family: string, rank: number): Plate {
+  const p = emblemParts(family, rank);
+  return {
+    frame: new Path2D(p.frame),
+    rune: placed(p.glyph, PLACE.glyph),
+    extras: [placed(p.glyph, PLACE.echo)],
+    nodes: placed(p.insignia, PLACE.insignia),
+    halo: false,
+    rgb: VIOLET.heat,
+    weight: 0.55,
+  };
+}
+
 // ------------------------------------------------------------------ the scripts
 
 /** The Arrival, on the onboarding's own canvas. */
 export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; skippable?: boolean } = {}): ArrivalCtl {
-  return play(canvas, { t: T, pal: CYAN, plate: 'E', idle: true }, opts);
+  return play(canvas, { t: T, pal: CYAN, plate: () => plateOf('E'), idle: true }, opts);
+}
+
+/** A cinematic on a canvas of its own over everything but the windows, taken away on `stop`. */
+function overlay(script: Script, opts: { from?: From | null; onDark?: () => void }): ArrivalCtl {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'arrival';
+  canvas.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(canvas);
+  const ctl = play(canvas, script, opts);
+  const stop = ctl.stop;
+  ctl.stop = () => { stop(); canvas.remove(); };
+  return ctl;
 }
 
 /**
@@ -281,14 +324,15 @@ export function arrival(canvas: HTMLCanvasElement, opts: { from?: From | null; s
  * screen behind is covered, so what changes there is never seen changing.
  */
 export function rankUp(opts: { from?: From | null; was: string; now: string; onDark?: () => void }): ArrivalCtl {
-  const canvas = document.createElement('canvas');
-  canvas.className = 'arrival';
-  canvas.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(canvas);
-  const ctl = play(canvas, { t: RANK_T, pal: GOLD, plate: opts.was, rise: opts.now, idle: false }, { from: opts.from, onDark: opts.onDark });
-  const stop = ctl.stop;
-  ctl.stop = () => { stop(); canvas.remove(); };
-  return ctl;
+  return overlay({ t: RANK_T, pal: GOLD, plate: () => plateOf(opts.was), rise: () => plateOf(opts.now), idle: false }, opts);
+}
+
+/**
+ * A Shadow promoted: its badge, of family `family` at rank `was`, lifts off its card, and the breach
+ * leaves it at rank `now`. As `rankUp` in every other way.
+ */
+export function promotion(opts: { from?: From | null; family: string; was: number; now: number; onDark?: () => void }): ArrivalCtl {
+  return overlay({ t: RANK_T, pal: VIOLET, plate: () => emblemOf(opts.family, opts.was), rise: () => emblemOf(opts.family, opts.now), idle: false }, opts);
 }
 
 // ------------------------------------------------------------------ the engine
@@ -300,8 +344,8 @@ function play(canvas: HTMLCanvasElement, script: Script, opts: { from?: From | n
   const calm = reducedMotion();
   const GLOW = sprite(P.glow);
   const HOT = sprite(P.hot);
-  const PLATE = plateOf(script.plate);
-  const RISE = script.rise ? plateOf(script.rise) : null;
+  const PLATE = script.plate();
+  const RISE = script.rise ? script.rise() : null;
   const RISE_GLOW = RISE ? sprite(RISE.rgb.join(', ')) : null;
   const BREACH = burstOf(11, 170, 22);
   const SEAL = burstOf(23, 120, 0);
@@ -454,10 +498,11 @@ function play(canvas: HTMLCanvasElement, script: Script, opts: { from?: From | n
     g.globalCompositeOperation = 'lighter';
     g.lineJoin = 'round';
     g.lineCap = 'round';
+    const w = pl.weight ?? 1;
     g.strokeStyle = `rgba(${rgb}, ${0.22 + heat * 0.3})`;
     g.lineWidth = 3.4;
     g.stroke(pl.frame);
-    g.lineWidth = 4.4;
+    g.lineWidth = 4.4 * w;
     g.stroke(pl.rune);
     g.strokeStyle = `rgb(${rgb})`;
     g.lineWidth = 1.1;
@@ -475,7 +520,7 @@ function play(canvas: HTMLCanvasElement, script: Script, opts: { from?: From | n
       for (let n = 0; n < 12; n++) { g.rotate(TAU / 12); g.fillRect(-0.3, -12, 0.6, 2.2); }
       g.restore();
     }
-    g.lineWidth = 1.8;
+    g.lineWidth = 1.8 * w;
     g.stroke(pl.rune);
     if (crack > 0) {
       g.beginPath();

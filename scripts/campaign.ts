@@ -139,8 +139,9 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   // Auto walks the System's road to the boss; it never withdraws.
   const outcome = won ? 'cleared' : 'defeated';
   const res = raid.finish(s, d, run, outcome, now);
-  // A hunter who keeps up claims each rank the moment its level is reached.
+  // A hunter who keeps up claims each rank the moment its level is reached, and promotes each Shadow the moment its kills earn it.
   reclassifyAll(s);
+  shadows.promoteAll(s);
   t.runs++;
   if (spire.isSpire(d)) t.spire++;
   t[outcome]++;

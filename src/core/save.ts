@@ -7,10 +7,11 @@
  * The keys are this game's own. The fitness app this was carved from kept
  * `arise:save`; a phone that has both never mixes them up.
  */
+import { SHADOW_RANKS } from '@/data/shadows';
 import { rankFor } from './progression';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -90,6 +91,12 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
   3: (s) => {
     const h = isObj(s.hunter) ? s.hunter : null;
     if (h && typeof h.rank !== 'string') h.rank = rankFor(typeof h.level === 'number' ? h.level : 1).key;
+    return s;
+  },
+  // v5: a Shadow's promotion is claimed, not given by its kills. Every Shadow keeps the rank its kills had already given it.
+  4: (s) => {
+    const army = isObj(s.shadows) && Array.isArray(s.shadows.army) ? s.shadows.army : [];
+    for (const sh of army) if (isObj(sh) && typeof sh.rank !== 'number') sh.rank = SHADOW_RANKS.reduce((n, r, i) => ((typeof sh.kills === 'number' ? sh.kills : 0) >= r.kills ? i : n), 0);
     return s;
   },
 };
