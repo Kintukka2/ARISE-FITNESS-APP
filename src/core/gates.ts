@@ -73,6 +73,9 @@ export function board(s: Save, day = dayKey()): Dungeon[] {
     const open = [...order.filter((id) => !shut.includes(id)), ...order.filter((id) => shut.includes(id))];
     picked.push(...open.slice(0, grades.filter((x) => x === g).length));
   }
+  // The Association pins its job's Gate to the board until the job is done, unless it is closed for the day.
+  const pin = s.assoc?.quest && s.assoc.quest.got < s.assoc.quest.need ? s.assoc.quest.gate : null;
+  if (pin && !picked.includes(pin) && !shut.includes(pin)) picked.push(pin);
   const out = DUNGEONS.filter((d) => picked.includes(d.id));
   if (licensedRank(s) === 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id)) out.push(HOLLOW_THRONE);
   if (!s.gates.cleared.includes(PRACTICE_GATE.id)) out.unshift(PRACTICE_GATE);
@@ -106,7 +109,7 @@ export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | 
  * `raid.begin`; a save from before it was kept counts its tallied runs and clears). Until then it is
  * unidentified, as a boss is until it is met. A Trial is its line of Chosen, so there is nothing to hide.
  */
-export const mapKnown = (s: Save, d: Dungeon) => isTrial(d) || s.gates.entered.includes(d.id) || (s.gates.runs[d.id]?.fought ?? 0) > 0 || s.gates.cleared.includes(d.id);
+export const mapKnown = (s: Save, d: Dungeon) => isTrial(d) || s.gates.entered.includes(d.id) || (s.gates.surveyed ?? []).includes(d.id) || (s.gates.runs[d.id]?.fought ?? 0) > 0 || s.gates.cleared.includes(d.id);
 
 export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d) || isTrial(d);
 

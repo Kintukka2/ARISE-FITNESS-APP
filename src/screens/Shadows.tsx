@@ -12,7 +12,7 @@ import type { Save } from '@/core/types';
 import { Field, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
-import { HoldButton, openSheet, toast } from '@/ui/overlays';
+import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { claimPromotion } from '@/app/flow';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
@@ -57,7 +57,7 @@ function tiles(s: Save, news: string[]): BTile[] {
           const e = sh && enemyById(sh.enemyId);
           return (
             <span key={i} class={`sysbox sa-squad__slot ${e ? 'is-on' : ''}`}>
-              {e ? <><RankPlate rank={e.rank} size={30} /><small>{e.shadow.replace(/^Shadow /, '')}</small></> : <Glyph name="plus" />}
+              {e ? <><RankPlate rank={e.rank} size={30} /><small>{sh.name || e.shadow.replace(/^Shadow /, '')}</small></> : <Glyph name="plus" />}
             </span>
           );
         })}
@@ -110,7 +110,7 @@ function shadowTiles(s: Save, news: string[]): BTile[] {
     const share = next ? (sh.kills - rank.kills) / (next.kills - rank.kills) : 1;
     const ready = shadows.canPromote(sh);
     return {
-      key: `shadow-${sh.id}`, kind: 'shadow', name: e.shadow, icon: <RankPlate rank={e.rank} size={22} />,
+      key: `shadow-${sh.id}`, kind: 'shadow', name: shadows.nameOf(sh), icon: <RankPlate rank={e.rank} size={22} />,
       class: `is-shadow ${on ? 'is-deployed' : ''} ${ready ? 'is-ready' : ''}`, hot: news.includes(sh.id), call: ready,
       count: <span class="sa-rank"><Insignia rank={at} size={14} />{rank.name}</span>,
       status: ready && next ? <>Promotion: <span class="grant">{next.name} Rank</span></> : `${on ? 'Deployed · ' : ''}Power ${powerOf(shadows.statsOf(sh))}`,
@@ -156,7 +156,7 @@ function SquadSheet() {
       <small class="muted">Squad slots: {shadows.SLOTS.E} at E and D · {shadows.SLOTS.C} at C and B · {shadows.SLOTS.A} at A and S</small>
       <Section title="Deployed">
         {squad.length
-          ? <ul class="partylist">{squad.map((x) => { const e = enemyById(x.enemyId)!; return <li key={x.id} class="is-shadow"><RankPlate rank={e.rank} size={22} /><b>{e.shadow}</b><small>{shadows.rankOf(x).name}</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>; })}</ul>
+          ? <ul class="partylist">{squad.map((x) => { const e = enemyById(x.enemyId)!; return <li key={x.id} class="is-shadow"><RankPlate rank={e.rank} size={22} /><b>{shadows.nameOf(x)}</b><small>{shadows.rankOf(x).name}</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>; })}</ul>
           : <Empty>Deployed: 0</Empty>}
       </Section>
       {squad.length > 0 && <Btn block onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall Shadows · {squad.length}</Btn>}
@@ -171,9 +171,9 @@ function openShadow(id: string) {
   const at = store.get().shadows.army.find((x) => x.id === id);
   const was = at && enemyById(at.enemyId);
   openSheet({
-    title: `Shadow: ${was?.shadow ?? 'Unknown'}`,
+    title: `Shadow: ${at ? shadows.nameOf(at) : 'Unknown'}`,
     system: { icon: was ? <CardBadge id={id} /> : null, kind: 'shadow' },
-    render: () => <ShadowCard id={id} />,
+    render: (close) => <ShadowCard id={id} close={close} />,
   });
 }
 
@@ -217,7 +217,7 @@ function Promotion({ id }: { id: string }) {
   );
 }
 
-function ShadowCard({ id }: { id: string }) {
+function ShadowCard({ id, close }: { id: string; close: () => void }) {
   const s = useSave();
   const sh = s.shadows.army.find((x) => x.id === id);
   if (!sh) return <Empty>That Shadow is gone.</Empty>;
@@ -229,14 +229,18 @@ function ShadowCard({ id }: { id: string }) {
   return (
     <div class="stack">
       <Promotion id={id} />
-      <Btn kind={on ? undefined : 'primary'} block disabled={full} onClick={() => { store.update((x) => shadows.toggleDeploy(x, sh.id)); sfx.blip(); }}>
-        {on ? 'Recall' : full ? 'Squad Full' : 'Deploy'}
-      </Btn>
+      <div class="row">
+        <Btn kind={on ? undefined : 'primary'} class="grow" disabled={full} onClick={() => { store.update((x) => shadows.toggleDeploy(x, sh.id)); sfx.blip(); }}>
+          {on ? 'Recall' : full ? 'Squad Full' : 'Deploy'}
+        </Btn>
+        {/* A name changes the card's header, so the card opens again under it. */}
+        <Btn onClick={async () => { const v = await nameShadow(id); if (typeof v === 'string') { close(); openShadow(id); } }}>{sh.name ? 'Rename' : 'Name'}</Btn>
+      </div>
       <div class="sysfields">
         <Field k="Rank" v={<span class="sa-rank"><Insignia rank={shadows.rankIndex(sh)} size={16} />{shadows.rankOf(sh).name}</span>} />
         <Field k="Grade" v={`${e.rank}-Rank`} />
         <Field k="Category" v={<span class="sa-rank"><FamilyGlyph family={e.family} size={16} />{e.family} · {e.role}</span>} />
-        <Field k="Was" v={e.name} />
+        <Field k="Was" v={sh.name ? `${e.name} · ${e.shadow}` : e.name} />
       </div>
       <div class="tiles tiles--5">{(['STR', 'VIT', 'AGI', 'INT', 'PER'] as const).map((k) => <Tile key={k} label={k} value={st[k]} />)}</div>
       <div class="sysfields">
@@ -267,4 +271,37 @@ function ShadowCard({ id }: { id: string }) {
       <div class="tiles tiles--3"><Tile label="Deployed" value={sh.out} /><Tile label="Kills" value={sh.kills} /><Tile label="Bosses" value={sh.bosses} /></div>
     </div>
   );
+}
+
+// ------------------------------------------------------------------ names
+
+/** "You may bestow a name.": a field and the act, under the System's line. Empty takes a name away. */
+export function NameField({ id, close }: { id: string; close: (v: unknown) => void }) {
+  const sh = store.get().shadows.army.find((x) => x.id === id);
+  const [v, setV] = useState(sh?.name ?? '');
+  if (!sh) return null;
+  const submit = (e: Event) => {
+    e.preventDefault();
+    const kept = store.update((x) => shadows.rename(x, id, v));
+    sfx.success();
+    if (kept) toast(`Named: ${kept}`, 'good');
+    close(kept ?? '');
+  };
+  return (
+    <form class="namefield" onSubmit={submit}>
+      <input class="sysbox namefield__input" value={v} maxLength={shadows.NAME_MAX} placeholder={enemyById(sh.enemyId)?.shadow ?? 'Name'}
+        aria-label="Name" autoComplete="off" spellcheck={false} onInput={(e) => setV((e.currentTarget as HTMLInputElement).value)} />
+      <Btn kind="primary" type="submit">{v.trim() || !sh.name ? 'Bestow' : 'Take Away'}</Btn>
+    </form>
+  );
+}
+
+/** The System's offer of a name, for a Shadow already bound: from its card. */
+export function nameShadow(id: string) {
+  return sys({
+    title: 'Notification', kind: 'shadow', typed: false,
+    lines: ['You may bestow a name.'],
+    body: (close) => <NameField id={id} close={close} />,
+    actions: [{ label: 'Cancel', value: null }],
+  });
 }

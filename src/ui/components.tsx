@@ -185,7 +185,7 @@ export function GearArt({ item, defId, size = 52, equipped }: { item?: Item; def
       <span class="art__rays" aria-hidden="true" />
       <Glyph name={d?.slot ?? 'Chest'} class="art__glyph" />
       {item && size >= 44 && <span class="art__score num">{Math.round(score(item))}</span>}
-      {tag && <span class={`art__tag art__tag--${tag}`} aria-label={tag === 'perfect' ? 'Perfect roll' : 'Dead roll'}>{tag === 'perfect' ? '✦' : '✕'}</span>}
+      {tag && <span class={`art__tag art__tag--${tag}`} aria-label={tag === 'perfect' ? 'Perfect' : tag === 'peak' ? 'Perfect quality' : 'Dead roll'}>{tag === 'perfect' ? '✦' : tag === 'peak' ? '✧' : '✕'}</span>}
       {equipped && <span class="art__worn">Worn</span>}
     </span>
   );

@@ -86,20 +86,29 @@ export function Rewards({ items }: { items: ComponentChildren[] }) {
 
 /**
  * A System alert set into a screen: news that asks for nothing where it shows, as a strip rather than
- * a window. The frame's glass, lit down its left edge in its kind's colour, the icon box, the header
- * word small, and one line. It slides in once, a light crossing it as it lands.
+ * a window. The frame's glass, lit down its left edge in its kind's colour, the icon box, a header word
+ * small (`Notification`, `Quest Info`, `Quest Rewards`), one line, and what it comes to at the right.
+ * It slides in once, a light crossing it as it lands. One that opens a window is a button, and says so
+ * with a chevron.
  */
-export function SysAlert({ kind = 'system', icon, label, children, delay = 0 }: {
-  kind?: FrameKind; icon: ComponentChildren; label?: string; children: ComponentChildren; delay?: number;
+export function SysAlert({ kind = 'system', icon, label, children, aside, head = 'Notification', delay = 0, onTap, class: cls, attrs }: {
+  kind?: FrameKind; icon: ComponentChildren; label?: string; children: ComponentChildren; aside?: ComponentChildren;
+  head?: 'Notification' | 'Quest Info' | 'Quest Rewards'; delay?: number; onTap?: () => void; class?: string; attrs?: Record<string, string>;
 }) {
-  return (
-    <aside class={`sysframe sysframe--${kind} sysalert`} role="status" aria-label={label} style={`--delay: ${delay}ms`}>
+  const inner = (
+    <>
       <span class="sysbox sysalert__icon">{icon}</span>
       <div class="sysalert__body">
-        <span class="sysalert__head">Notification</span>
+        <span class="sysalert__head">{head}</span>
         <p>{children}</p>
       </div>
+      {aside != null && <span class="sysalert__aside">{aside}</span>}
+      {onTap && <span class="sysalert__go" aria-hidden="true">›</span>}
       <i class="sysalert__scan" aria-hidden="true" />
-    </aside>
+    </>
   );
+  const klass = `sysframe sysframe--${kind} sysalert ${onTap ? 'is-tap' : ''} ${cls ?? ''}`;
+  return onTap
+    ? <button type="button" class={klass} aria-label={label} style={`--delay: ${delay}ms`} onClick={onTap} {...attrs}>{inner}</button>
+    : <aside class={klass} role="status" aria-label={label} style={`--delay: ${delay}ms`} {...attrs}>{inner}</aside>;
 }

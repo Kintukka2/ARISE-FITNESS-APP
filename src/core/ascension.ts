@@ -5,7 +5,7 @@
  * hunter's grade, played at that level, and then the Trial. Settled in
  * `raid.finish`, with everything else a run pays.
  */
-import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_RULED, BEYOND, PROOF, RULES } from '@/data/ascension';
+import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_RULED, BEYOND, OVERCHARGE, PROOF, RULES } from '@/data/ascension';
 import { DUNGEONS } from '@/data/dungeons';
 import { ASCENSION_TUNE } from '@/data/gatetune';
 import { licensedRank } from './licence';
@@ -66,6 +66,12 @@ export const proving = (s: Save) => RANKS.indexOf(licensedRank(s)) >= RANKS.inde
  * Ascension opened earlier, keeps them for then, and plays the board as it stands until it gets there.
  */
 export const ascensionOpen = proving;
+
+/**
+ * How many steps past perfect the hunter's Ascension lets a piece go: one a level opened, from
+ * Ascension's grade. A save that opened levels below it, when Ascension opened earlier, keeps them for then.
+ */
+export const overCap = (s: Save) => (proving(s) ? s.ascension.unlocked * OVERCHARGE.per : 0);
 
 /** Choose the level the next run is entered at, up to the highest opened. Below Ascension's grade, none. Mutates. */
 export function choose(s: Save, level: number) {

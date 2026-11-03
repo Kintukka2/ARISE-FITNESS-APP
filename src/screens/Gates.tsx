@@ -4,13 +4,17 @@ import { sfx } from '@/audio/audio';
 import { powerOf, TACTICS } from '@/core/combat';
 import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
-import { overCap, RARITY } from '@/core/gear';
+import { RARITY } from '@/core/gear';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialLevel } from '@/core/trial';
+import * as association from '@/core/association';
+import { SURVEY } from '@/data/association';
+import { goalOf } from '@/ui/assoc';
+import { ask } from '@/ui/ask';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
@@ -229,7 +233,10 @@ function gateTile(s: Save, d: Dungeon, quest: boolean, day: string): BTile {
   const known = bossKnown(s, d);
   const boss = enemyById(d.boss);
   const practice = isPractice(d);
-  const tag = practice ? 'Training' : held ? 'Chosen' : quest ? 'Quest' : undefined;
+  // The Association pins its job's Gate: Ryn's, so it carries his name for it.
+  const job = association.current(s);
+  const pinned = job && !association.done(job) && job.gate === d.id;
+  const tag = practice ? 'Training' : held ? 'Chosen' : pinned ? 'Association' : quest ? 'Quest' : undefined;
   return {
     key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, hot: practice, shut: locked,
     class: `is-gate ${practice ? 'is-practice' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''} ${tag ? `is-${tag.toLowerCase()}` : ''}`,
@@ -445,7 +452,7 @@ function MarkList() {
           );
         })}
       </ul>
-      <small class="ascension__proof">Upgrade limit: Perfect +{overCap(s)}</small>
+      <small class="ascension__proof">Upgrade limit: Perfect +{ascension.overCap(s)}</small>
     </div>
   );
 }
@@ -561,6 +568,13 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
       </Section>
 
+      {/* The job Ryn gave for this Gate, if one is in hand: the interface saying what it is. */}
+      {(() => {
+        const job = association.current(s);
+        if (!job || association.done(job) || (job.kind !== 'hunt' && job.gate !== d.id) || (job.kind === 'hunt' && !d.mobs.includes(job.target ?? ''))) return null;
+        return <p class="hint assochint">Association Quest: {goalOf(job)} <span class="num">{job.got}/{job.need}</span></p>;
+      })()}
+
       {/* Unidentified until the hunter has been inside, as the boss is until it is met. */}
       {mapKnown(s, d)
         ? (
@@ -574,6 +588,18 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
               <Glyph name="unknown" />
               <b>?</b>
             </div>
+            {/* A Gate Survey from the Association shows the map before the hunter has been in. */}
+            {shop.held(s, 'survey') > 0 && (
+              <Btn size="sm" block onClick={async () => {
+                const ok = await ask('use:survey', system.offer([
+                  'Would you like to use?',
+                  system.tag(SURVEY.name, 'Item'),
+                  `Map of ${system.tag(d.name)}`,
+                  `Held: ${shop.held(store.get(), 'survey')}`,
+                ], 'gear', 'Use', 'Cancel'));
+                if (ok && store.update((x) => association.survey(x, d.id))) { sfx.success(); toast(`${SURVEY.name} · ${d.name} mapped.`, 'good'); }
+              }}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
+            )}
           </Section>
         )}
 
@@ -585,9 +611,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         {squad.some((x) => x.tactic) && <small class="muted">Shadows on their own orders: {squad.filter((x) => x.tactic).length}</small>}
       </Section>
 
-      <Section title="Satchel" right={`${s.satchel}/${shop.FIELD_POTION.max}`}>
+      <Section title="Satchel" right={`${s.satchel}/${shop.satchelMax(s)}`}>
         <p><strong>[Item: Field Potion]</strong> <span class="grant">HP +{shop.FIELD_POTION.heal * 100}%</span></p>
-        {s.satchel < shop.FIELD_POTION.max && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
+        {s.satchel < shop.satchelMax(s) && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
       </Section>
 
       {block === 'open' ? open?.id === d.id
@@ -605,7 +631,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             <li key={a.id}><RankPlate rank={a.rank} size={22} /><b>{a.name}</b><small>{a.note ?? a.role}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small><span class="num">{powerOf(a.base)}</span></li>
           ))}
           {squad.map((x) => (
-            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={22} /><b>{enemyById(x.enemyId)!.shadow}</b><small>Shadow</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>
+            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={22} /><b>{shadows.nameOf(x)}</b><small>Shadow</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>
           ))}
         </ul>
         {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">Shadow slots empty: {shadows.freeSlots(s)}</p>}

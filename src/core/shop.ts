@@ -5,10 +5,11 @@
  * field potions go in the satchel for the hunter's turn in a fight.
  */
 import { EQUIPMENT } from '@/data/equipment';
-import { defOf, gearDef, grant, make, overCap, Q_HIGH, Q_LOW, RARITY, score, upgradeStep } from './gear';
+import { overCap } from './ascension';
+import { defOf, gearDef, grant, make, Q_HIGH, Q_LOW, RARITY, score, upgradeStep } from './gear';
 import { OVERCHARGE } from '@/data/ascension';
 import { UPGRADE } from '@/data/sets';
-import type { Item, Rank, Save } from './types';
+import type { Item, Rank, Save, StockId } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
 import * as vitals from './vitals';
@@ -169,11 +170,22 @@ export const POTIONS: { id: PotionId; name: string; price: number; effect: strin
 /** Field potions are carried, not drunk: into a Gate, for the hunter's own turn. */
 export const FIELD_POTION = { price: 40, max: 3, heal: FIELD_POTION_HEAL } as const;
 
+/** How many field potions the satchel holds: the Exchange's, and what the Association has added. */
+export const satchelMax = (s: Save) => FIELD_POTION.max + (s.satchelPlus ?? 0);
+
 /** Put a field potion in the satchel. False if it is full or the shards are short. */
 export function buyField(s: Save): boolean {
-  if (s.satchel >= FIELD_POTION.max || !pay(s, FIELD_POTION.price)) return false;
+  if (s.satchel >= satchelMax(s) || !pay(s, FIELD_POTION.price)) return false;
   s.satchel += 1;
   return true;
+}
+
+/** How many of a kind the hunter holds in stock. */
+export const held = (s: Save, id: StockId) => s.stock?.[id] ?? 0;
+/** Add to the stock. Mutates. */
+export function stockUp(s: Save, id: StockId, n = 1) {
+  s.stock ??= {};
+  s.stock[id] = held(s, id) + n;
 }
 
 /** Why a potion would be wasted right now, or null if it is worth drinking. */
@@ -185,9 +197,12 @@ export function potionIdle(s: Save, id: PotionId, now = Date.now()): string | nu
   return v.locked ? null : 'Not locked';
 }
 
+/** Drink a potion: one held in stock first, else one bought at its price. Returns what it moved, or null. Mutates. */
 export function drink(s: Save, id: PotionId, now = Date.now()): number | null {
   const p = POTIONS.find((x) => x.id === id)!;
-  if (potionIdle(s, id, now) || !pay(s, p.price)) return null;
+  if (potionIdle(s, id, now)) return null;
+  if (held(s, id) > 0) s.stock[id] = held(s, id) - 1;
+  else if (!pay(s, p.price)) return null;
   if (id === 'hp') return vitals.heal(s, POTION_RESTORE, now);
   if (id === 'mp') return vitals.restore(s, POTION_RESTORE, now);
   if (id === 'fatigue') return vitals.ease(s, POTION_EASE, now);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Unit } from '@/core/combat';
 import { dungeonById, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
+import { overCap } from '@/core/ascension';
 import * as marks from '@/core/marks';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
@@ -98,6 +99,8 @@ describe('past perfect', () => {
   function perfect() {
     const def = gear.ofRank('C').find((d) => (d.rolls ?? []).length > 0)!;
     const s = defaults();
+    // Past perfect is Ascension's, and Ascension is played from S-Rank.
+    s.hunter.rank = 'S';
     gear.grant(s, def.id, 'past|0');
     s.wallet.shards = 100000;
     s.items[0].q = gear.Q_HIGH;
@@ -108,14 +111,14 @@ describe('past perfect', () => {
   it('goes nowhere until a level is opened', () => {
     const { s } = perfect();
     expect(gear.upgradeStep(s.items[0])).toBeNull();
-    expect(shop.upgradeCost(s.items[0], gear.overCap(s))).toBeNull();
+    expect(shop.upgradeCost(s.items[0], overCap(s))).toBeNull();
     expect(shop.upgrade(s, s.items[0].id)).toBe(false);
   });
 
   it('takes a step past perfect for every level opened, each dearer than the last', () => {
     const { s, def } = perfect();
     s.ascension.unlocked = 3;
-    const cap = gear.overCap(s);
+    const cap = overCap(s);
     expect(cap).toBe(3 * OVERCHARGE.per);
     let last = 0;
     for (let k = 1; k <= cap; k++) {
@@ -137,11 +140,20 @@ describe('past perfect', () => {
     expect(OVERCHARGE.share).toBeLessThan(UPGRADE.share);
   });
 
+  it('takes none below S-Rank, for a save that opened levels before Ascension moved there', () => {
+    const { s } = perfect();
+    s.hunter.rank = 'A';
+    s.ascension.unlocked = 6;
+    expect(overCap(s)).toBe(0);
+    expect(shop.upgradeCost(s.items[0], overCap(s))).toBeNull();
+    expect(shop.upgrade(s, s.items[0].id)).toBe(false);
+  });
+
   it('a piece below perfect is raised toward it first, at the usual price', () => {
     const { s } = perfect();
     s.ascension.unlocked = 2;
     s.items[0].q = gear.Q_LOW;
-    expect(shop.upgradeCost(s.items[0], gear.overCap(s))).toBe(shop.stepCost('C'));
-    expect(gear.upgradeStep(s.items[0], gear.overCap(s))!.over).toBeUndefined();
+    expect(shop.upgradeCost(s.items[0], overCap(s))).toBe(shop.stepCost('C'));
+    expect(gear.upgradeStep(s.items[0], overCap(s))!.over).toBeUndefined();
   });
 });

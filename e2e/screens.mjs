@@ -40,6 +40,8 @@ const snap = (name, full = false) => page.screenshot({ path: `${OUT}/${name}.png
 async function drain() {
   for (let i = 0, quiet = 0; i < 40 && quiet < 4; i++) {
     await sleep(150);
+    // A Shadow left lingering asks before the Gate is left; the tour leaves it.
+    if (await page.locator('.syswin--app', { hasText: 'A Shadow Lingers' }).isVisible().catch(() => false)) { quiet = 0; await page.locator('.syswin__foot .btn', { hasText: 'Leave Anyway' }).click(); continue; }
     if (await page.locator('.syswin__foot .btn').first().isVisible().catch(() => false)) { quiet = 0; await page.locator('.syswin__foot .btn').last().click(); continue; }
     if (await page.locator('.syswin').first().isVisible().catch(() => false)) { quiet = 0; await page.locator('.syswin').first().click(); continue; }
     if (await page.locator('.tour').isVisible().catch(() => false)) { quiet = 0; await page.locator('.tour').click({ position: { x: 10, y: 10 } }); continue; }
@@ -80,6 +82,12 @@ try {
   await snap('inventory');
   await snap('inventory-full', true);
   await page.locator('.btile--status .btile__hit').click(); await sleep(400); await snap('status', true);
+  // A potion held is drunk before one is bought, and its offer can be told not to ask again.
+  if (!(await page.locator('.sheet.is-top .pip.is-held').count())) throw new Error('THE HELD POTION DOES NOT SHOW');
+  await page.locator('.sheet.is-top .pip.is-held').first().click(); await sleep(400);
+  if (!(await page.locator('.syswin', { hasText: 'Would you like to drink?' }).isVisible())) throw new Error('A HELD POTION WAS NOT OFFERED TO DRINK');
+  await page.locator('.syswin .dontask').click(); await sleep(150); await snap('drink-offer');
+  await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
   await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true); await close();
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
@@ -92,6 +100,7 @@ try {
   await nav('quests');
   await sleep(800);
   await snap('quests');
+  if (!(await page.locator('.assoccard').isVisible())) throw new Error('RYN’S ASSOCIATION QUEST IS NOT ON THE QUESTS SCREEN');
   await snap('quests-full', true);
   // The veteran is C-Rank: Ascension opens at S-Rank, so neither the Trial nor the Chosen is here yet.
   if (await page.locator('.btile--trial, .btile--chosen').count()) throw new Error('THE TRIAL OR THE CHOSEN SHOWED BELOW S-RANK');
@@ -181,6 +190,17 @@ try {
   await snap('asc-quests', true);
   if (!(await page.locator('.btile--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN AT S-RANK');
   if (!(await page.locator('.btile--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN AT S-RANK');
+  // Ryn's job is done: reporting it pays, then he hands over the next.
+  await page.locator('.assoccard .btn', { hasText: 'Report To Ryn' }).click();
+  await page.waitForSelector('.syswin--coach', { timeout: 5000 });
+  await sleep(1800); await snap('assoc-paid');
+  for (let i = 0; i < 8 && !(await page.locator('.syswin--coach', { hasText: /“?[A-Z]/ }).filter({ hasNotText: 'Received' }).count()); i++) {
+    await page.locator('.syswin__foot .btn').last().click(); await sleep(600);
+  }
+  await sleep(1800); await snap('assoc-next');
+  await drain();
+  if (await page.locator('.assoccard .btn', { hasText: 'Report To Ryn' }).count()) throw new Error('THE REPORT LEFT THE JOB IN HAND');
+  await snap('assoc-card');
   for (const k of ['trial', 'chosen']) {
     await page.locator(`.btile--${k} .btile__hit`).click(); await sleep(450);
     if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} TILE DID NOT OPEN ITS WINDOW`);

@@ -127,6 +127,8 @@
 .pip .ico { width: 14px; height: 14px; }
 .pip.is-live { border-style: solid; border-color: rgba(72, 245, 168, 0.55); color: var(--verdant); }
 .pip.is-dear { opacity: 0.55; }
+/* A potion held in stock: its count, in gold, drunk before one is bought. */
+.pip.is-held { border-style: solid; border-color: color-mix(in srgb, var(--gold) 65%, transparent); color: var(--gold); }
 .attrs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .attr { position: relative; display: flex; align-items: center; gap: 6px; padding: 10px; min-height: 56px; min-width: 0; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); text-align: left; transition: border-color 160ms, transform 120ms; }
 .attr:active { transform: scale(0.98); }
@@ -773,6 +775,8 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .btile.is-cleared .btile__text strong { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
 .btile.is-quest .btile__count { color: var(--mana); border-color: rgba(79, 214, 255, 0.6); }
 .btile.is-chosen .btile__count { color: var(--gold); border-color: rgba(255, 203, 92, 0.6); }
+/* The Association's job, pinned by Ryn: his blue, not the System's. */
+.btile.is-association .btile__count { color: var(--coach); border-color: color-mix(in srgb, var(--coach) 65%, transparent); }
 .btile.is-gate .btile__icon .ico { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
 
 /* ------------------------------------------------------------------ the interface's parts, set inside the System's frame */

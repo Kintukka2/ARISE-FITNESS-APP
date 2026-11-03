@@ -515,6 +515,45 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
   findings remain: the days-to-rank formula assumes 75% clears, and levels past 100 keep paying
   points (Sovereign's "nothing left to award" is not quite true).
 
+## Association Quests — built
+
+A player asked for a line of quests to follow from the start: given by Ryn, one at a time, growing
+harder, about clearing Gates and felling creatures and bosses, each paid for when reported.
+
+- **The line** (`data/association.ts`, `core/association.ts`). It loops through three kinds of job,
+  hunt, clear, hunt, boss, at the hunter's grade when the job is handed over. A hunt asks for 5 of
+  one creature, and 2 more every time round, to 24. Early jobs pick from the grade's two Gates with
+  the weakest bosses, and every time round one Gate further.
+- **Always doable.** A job's Gate is pinned to the board until the job is done, unless it is closed
+  for the day (`gates.board`). Creatures count in any Gate, however the run ends; a clear counts only
+  its own Gate, cleared. Progress is counted in `raid.finish` and shown on the results as a strip on
+  Ryn's channel.
+- **Reported, not paid on the tap.** A job done waits on Ryn's card at the top of the Quests screen
+  until the hunter reports it (`association.report`). He pays, then hands over the next. A job is
+  written to the save when it is handed over, so nothing redraws it.
+- **The pay.** Every job pays a quarter of a clear's experience at its grade. About 30% pay nothing
+  more. The rest pay a Health, Mana or Fatigue Potion (held, and drunk before one is bought), a field
+  potion (shards at its price if the satchel is full), a clear's worth of shards or two, or a Gate
+  Survey, which shows a Gate's map in its brief before the hunter has been in. Jobs 6, 16 and 31
+  widen the satchel by one field potion each.
+- **Balance.** Calibration's hunters take no jobs, so `gatetune.ts` stands. The campaign's hunters
+  take every job and report it at once.
+
+## Smaller changes from the same playtest
+
+- **Perfect means perfect.** A piece was marked Perfect when its quality alone was at its best, and
+  could still take up to ten upgrade steps on its properties. Perfect now means quality and every
+  property at their best; a piece with quality alone at its best is marked Perfect quality, and its
+  card counts the steps left. Steps past perfect are Ascension's, so they open at S-Rank with it: a
+  save that opened levels at C-Rank no longer takes them below S-Rank.
+- **Do not ask again.** Every purchase or use the System offers can be told not to ask again, kind
+  by kind; Settings lists what it skips and brings them back.
+- **A potion held.** Potions can be held now (`stock`), from Ryn's jobs; one held is drunk before one
+  is bought, and the potion buttons show how many.
+- **Results as alerts.** The Daily Quests a run moved, and a lingering Shadow, are System alerts on
+  the results, not windows. The lingering Shadow's alert opens the extraction, on the System's
+  sheet; a Shadow bound is offered a name there, and can be named or renamed from its card.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

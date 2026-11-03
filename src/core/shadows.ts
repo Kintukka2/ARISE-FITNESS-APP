@@ -46,6 +46,22 @@ export function promoteAll(s: Save) {
   for (const sh of s.shadows.army) while (canPromote(sh)) promote(s, sh.id);
 }
 
+/** The longest name a Shadow can be given. */
+export const NAME_MAX = 16;
+/** What a Shadow goes by: the name bestowed on it, or what it was. */
+export const nameOf = (sh: Shadow) => sh.name || enemyById(sh.enemyId)?.shadow || 'Shadow';
+/** A name as it is kept: trimmed, single-spaced, letters, digits, spaces, apostrophes and hyphens only, and no longer than NAME_MAX. */
+export const cleanName = (raw: string) => raw.replace(/[^\p{L}\p{N} '\-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX).trim();
+/** Bestow a name on a Shadow, or take it away with an empty one. Returns the name kept. Mutates. */
+export function rename(s: Save, id: string, raw: string): string | null {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return null;
+  const name = cleanName(raw);
+  if (name) sh.name = name;
+  else delete sh.name;
+  return name || null;
+}
+
 /** Shadow slots the Secret Missions have paid for, on top of the grade's. */
 export const missionSlots = (s: Save) => MISSIONS.filter((m) => m.grant.slot && s.hunter.missions.includes(m.id)).reduce((n, m) => n + (m.grant.slot ?? 0), 0);
 

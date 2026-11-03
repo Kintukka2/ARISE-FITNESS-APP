@@ -33,7 +33,7 @@ export function defaults(): Save {
     found: [],
     gates: {
       clears: 0, fails: 0, withdrawn: 0, cleared: [], sealed: { day: null, ids: [] },
-      runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [],
+      runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [], surveyed: [],
       last: null, unbroken: 0, bestUnbroken: 0, tactic: 'default',
     },
     shadows: { army: [], squad: [], fresh: [] },
@@ -42,12 +42,15 @@ export function defaults(): Save {
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
     ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0, marks: {}, sent: [], felled: [] },
     satchel: 0,
+    satchelPlus: 0,
+    stock: {},
+    assoc: { n: 0, quest: null, reported: 0 },
     log: [],
     story: [],
     seen: [],
     licence: { granted: false, at: null, tx: null },
     stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0, contracts: 0, contractDays: 0 },
-    settings: { sound: true, music: true, haptics: true, fastText: false, reminders: { on: false } },
+    settings: { sound: true, music: true, haptics: true, fastText: false, reminders: { on: false }, skipAsk: [] },
   };
 }
 

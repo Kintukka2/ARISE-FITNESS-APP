@@ -17,6 +17,7 @@ import { RANKS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
 import { GRADES } from '@/core/raid';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
+import { ASSOC, SURVEY } from '@/data/association';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
@@ -88,7 +89,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Every foe shows its next move and its target. It does exactly that, unless its target falls first or it is stunned.',
       'Your own card counts the foes coming for you.',
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
-      `Field potion: restores ${FIELD_POTION_HEAL * 100}% of your health. The satchel holds ${FIELD_POTION.max}.`,
+      `Field potion: restores ${FIELD_POTION_HEAL * 100}% of your health. The satchel holds ${FIELD_POTION.max}, and the Association can add room.`,
       `Allies and Shadows follow the standing orders set in the brief: ${TACTICS.map((x) => x.name).join(', ')}.`,
       'Auto hands your turns and steps to the System. The verdict is what Auto would do.',
       'Every order is saved before it plays. Leave mid-fight and you return to the same turn.',
@@ -114,14 +115,30 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Quests',
     lines: [
       'The Quests screen opens once the Practice Gate is cleared.',
-      'It holds the day’s Daily Quests, your next rank, the Pale Spire’s week, the Trial, the Chosen and the Secret Quests.',
+      'It holds Ryn Valcorde’s Association Quest, the day’s Daily Quests, your next rank, the Pale Spire’s week, the Trial, the Chosen and the Secret Quests.',
       'Each quest is a tile that shows where it stands. Tap one to open its window.',
       'Reclassification: your next rank, the level it needs, and what it brings.',
       'Weekly Quest: the next floor of the Pale Spire that raises what the week pays.',
       `The Trial appears from ${ASCENSION_FROM}-Rank. The Chosen appear once a Trial is won.`,
-      'The tab counts the day’s Daily Quests until you open it, the Trial while today’s attempt is unused, and a rank waiting to be claimed.',
+      'The tab counts the day’s Daily Quests until you open it, the Trial while today’s attempt is unused, a rank waiting to be claimed, and an Association Quest waiting to be reported.',
       `There are ${MISSIONS.length} Secret Quests. None is shown until it is done.`,
       'The Secret Quests window adds up everything they have paid.',
+    ],
+  },
+  {
+    title: 'Association Quests',
+    lines: [
+      'Ryn Valcorde hands out work for the Association, one job at a time, once the Practice Gate is cleared.',
+      `Each job is at your grade: fell a number of one creature, clear one Gate, or fell one Gate’s boss.`,
+      'The job’s Gate is pinned to your board, marked Association, until the job is done.',
+      'Creatures count in any Gate, however the run ends. A clear counts only when you clear.',
+      'When it is done, report to him from his card on the Quests screen. He pays, then hands over the next.',
+      `Every job pays ${Math.round(ASSOC.xp * 100)}% of a clear’s experience at its grade.`,
+      `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, a field potion, shards or a ${SURVEY.name}.`,
+      `Jobs ${ASSOC.satchelAt.map((n) => n + 1).join(', ')} widen your satchel by one field potion each.`,
+      'The line loops through the three kinds, and asks for more creatures and stronger Gates each time round.',
+      `A ${SURVEY.name} shows a Gate’s map in its brief before you have been in.`,
+      'A potion you hold is drunk before one is bought. The potion buttons show how many you hold.',
     ],
   },
   {
@@ -212,6 +229,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A newly bound Shadow fights with its creature’s first ability.',
       `At ${SHADOW_RANKS[SECOND_AT].name} it remembers a second, from its own kit or, if it had only one, from its kin.`,
       'Each Shadow follows the standing orders set in the brief, unless you give it its own on its sheet.',
+      'You may bestow a name on a Shadow when it joins your army, or later from its card. It goes by that name everywhere.',
     ],
   },
   {
@@ -225,7 +243,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'The item’s sheet says what each set pays.',
       'Each set has a home Gate. Every clear there leaves a piece you do not hold yet, while there is one.',
       `An upgrade moves an item’s quality and every property ${UPGRADE.share * 100}% across its design’s range, until it is perfect.`,
-      'Past perfect, it goes as far as your Ascension allows.',
+      'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
+      `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank.`,
       `A step costs ${UPGRADE.rate} shards for every point of score it adds: ${stepCost('C')} at Rare, ${stepCost('S')} at Legendary.`,
       'The Exchange redraws eight pieces at midnight, mostly at your grade.',
       `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}. The Field Potion costs ${FIELD_POTION.price}.`,

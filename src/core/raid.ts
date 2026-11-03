@@ -23,6 +23,8 @@ import * as walkers from './walkers';
 import * as shadows from './shadows';
 import * as spire from './spire';
 import { isTrial } from './trial';
+import * as association from './association';
+import type { AssocMove } from './association';
 import * as shop from './shop';
 import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
 import { RANKS } from './types';
@@ -63,7 +65,7 @@ export function allySpec(a: Ally, i: number): UnitSpec {
 /** A Shadow as it fights. `bonus` is what the hunter's marks give every Shadow. */
 export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: e.shadow, side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
+  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
 }
 
 /** The hunters the Association sends with you at an Ascension level. The Trial is the System's, so it sends none there. */
@@ -490,6 +492,8 @@ export interface RaidResult {
   spire: { floor: number; best: boolean } | null;
   /** Shadows the run's kills qualified for promotion, and the rank each can now be promoted to. */
   ready: { id: string; rank: string }[];
+  /** How far the run moved the Association Quest in hand. */
+  assoc: AssocMove | null;
   /** An Ascension level the run's clear proved the way to, if it did. Its Trial's last Chosen is sent into the world. */
   ascended: number | null;
   /** A Chosen met in the boss's place and felled: its masterwork, or its bounty. */
@@ -652,6 +656,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // A Chosen in the boss's place is not the gate's own boss: meeting it shows nothing of that one.
   if (run.bossFaced && !tower && !run.chosen && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
   const climb = spire.isSpire(d) && outcome === 'cleared' ? spire.climbed(s, d, now) : null;
+  const job = practice ? null : association.count(s, d, run, outcome);
   const ascended = outcome === 'cleared' && !practice ? asc.prove(s, d, run) : null;
   if (ascended) walkers.send(s, ascended);
   const chosen = outcome === 'cleared' ? walkers.fell(s, d, run, pay) : null;
@@ -666,7 +671,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth, contracts: deal, spire: climb, ready, ascended, chosen,
+    steps: run.at, depth, contracts: deal, spire: climb, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }

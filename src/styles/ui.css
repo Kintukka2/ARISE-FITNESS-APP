@@ -474,6 +474,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .art__score { position: absolute; left: 11px; top: 2px; font-size: 0.6rem; color: var(--ink-2); }
 .art__tag { position: absolute; right: 4px; top: 2px; font-size: 0.7rem; }
 .art__tag--perfect { color: var(--gold); }
+.art__tag--peak { color: color-mix(in srgb, var(--gold) 70%, transparent); }
 .art__tag--dead { color: var(--blood); }
 .art__worn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; background: rgba(72, 245, 168, 0.85); color: #02160c; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase; }
 
@@ -796,3 +797,32 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysframe .toggle input:checked + .toggle__track { border-color: var(--win); background: color-mix(in srgb, var(--win) 25%, transparent); }
 .sysframe .toggle input:checked + .toggle__track::after { background: var(--win); box-shadow: 0 0 10px var(--win-glow); }
 .sysframe .btn--danger { border-color: rgba(255, 59, 75, 0.75); background: rgba(255, 47, 62, 0.1); color: #ff3b4b; text-shadow: 0 0 8px rgba(255, 47, 62, 0.5); }
+
+/* "Do not ask again", under a System offer's lines: the interface's own control, in the window's hairline geometry. */
+.dontask { display: flex; align-items: center; gap: 10px; align-self: center; margin: 6px auto 0; padding: 7px 12px; border: 1px solid var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); font: 600 0.74rem var(--font); letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 70%, transparent); cursor: pointer; }
+.dontask__box { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--sys-hair-hot, rgba(160, 220, 255, 0.6)); font-size: 0.72rem; color: #fff; }
+.dontask.is-on { color: #fff; border-color: var(--sys-hair-hot, rgba(160, 220, 255, 0.6)); }
+.dontask.is-on .dontask__box { background: color-mix(in srgb, var(--win, #4fd6ff) 40%, transparent); box-shadow: 0 0 8px var(--win-glow, rgba(79, 214, 255, 0.4)); }
+.asklist { margin: 0 0 8px; padding-left: 18px; color: var(--ink-2); font-size: 0.85rem; }
+.sysalert__aside { flex: none; margin-left: auto; font-size: 0.8rem; font-weight: 600; text-align: right; text-shadow: var(--sys-glow); }
+.sysalert__go { flex: none; margin-left: 4px; font-size: 1.3rem; line-height: 1; color: var(--win); text-shadow: 0 0 8px var(--win-glow); }
+button.sysalert { width: 100%; text-align: left; cursor: pointer; }
+.sysalert.is-tap { animation: alertIn 520ms var(--ease) var(--delay, 0ms) both, alertCall 1.8s ease-in-out calc(var(--delay, 0ms) + 600ms) infinite; }
+@keyframes alertCall { 50% { box-shadow: -4px 0 22px -2px var(--win-glow), 0 0 18px -6px var(--win-glow), 0 10px 30px rgba(0, 0, 0, 0.5); } }
+.sysalert.is-done .sysalert__head { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.sysalert .qline__ring { width: 34px; height: 34px; }
+.sysalert .qline__pay { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 0.74rem; }
+
+/* Ryn's Association Quests (ui/assoc.tsx): his channel, as his voice box is. */
+.assoccard { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; }
+.assoccard__label, .assocstrip__label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--coach); }
+.assoccard__line { margin: 0; color: var(--ink-2); font-size: 0.9rem; line-height: 1.5; font-style: italic; }
+.assoccard__goal { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-weight: 600; color: var(--ink); }
+.assoccard__pay { margin: 0; font-size: 0.8rem; color: var(--ink-3); }
+.assoccard.is-done { box-shadow: 0 0 0 1px color-mix(in srgb, var(--coach) 60%, transparent), 0 0 22px var(--coach-glow); }
+.assocstrip { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline; padding: 9px 12px; animation: alertIn 520ms var(--ease) 700ms both; }
+.assocstrip__label { grid-column: 1 / -1; }
+.assocstrip__goal { color: var(--ink); font-size: 0.86rem; }
+.assocstrip__done { grid-column: 1 / -1; color: var(--verdant); font-size: 0.78rem; }
+.assocstrip.is-done b { color: var(--verdant); }
+.assochint { color: var(--coach); }

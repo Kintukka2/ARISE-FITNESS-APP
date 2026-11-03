@@ -52,6 +52,39 @@ export const HANDOVER = [
   'Nothing in there gets past me. Read the brief first, then we go in, when you’re ready.',
 ];
 
+/**
+ * Valcorde's Association Quests. He hands them over one at a time, and pays for each when the hunter
+ * reports back. `{Gate}`, `{creature}`, `{boss}` and `{need}` are filled from the job.
+ */
+export const ASSOC_FIRST = 'One more thing before you go. I hand out Association work, one job at a time. Do it, come back to me, and you get paid.';
+export const ASSOC_BRIEF = {
+  hunt: [
+    '{Gate}’s crawling with {creature}. Headquarters wants {need} of them gone. Thin them out and come find me.',
+    'Got a cull for you: {need} {creature}, out of {Gate}. Count them as you go.',
+  ],
+  clear: [
+    '{Gate} has been open too long, and the Association’s sick of looking at it. Clear it, then report back.',
+    'Simple one. Walk into {Gate}, walk out with it closed. I’ll be here.',
+  ],
+  boss: [
+    'Something called {boss} is holding {Gate}. They want it dead, not wounded. Tell me when it’s done.',
+    'A survey team came back from {Gate} two short. Whatever {boss} is, put it down.',
+  ],
+};
+export const ASSOC_PAID = {
+  paid: [
+    'Good work. Headquarters pays its debts, mostly. Here.',
+    'That’s that, then. Take this before someone in accounts notices.',
+    'Clean job. I put in for a little extra on your behalf.',
+  ],
+  bare: [
+    'Job done. No bonus this time; the budget’s thin. You learn more than you’re paid for anyway.',
+    'Nothing extra on this one. Accounts call it training. So do I.',
+  ],
+  satchel: 'Here, have my old belt. It’ll carry one more flask than that thing you’ve got.',
+  survey: 'This came off a survey team’s desk. It’ll show you what’s inside a Gate before you’re in it.',
+};
+
 export type WindowKind = 'system' | 'coach' | 'danger' | 'gold' | 'gates' | 'shadow';
 
 export interface Beat {

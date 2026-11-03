@@ -16,6 +16,7 @@ import { addDays, dayKey, rng } from '@/core/util';
 import { MISSIONS } from '@/core/missions';
 import { issue } from '@/core/contracts';
 import { seasonOf } from '@/core/spire';
+import * as association from '@/core/association';
 
 const today = dayKey();
 const s = defaults();
@@ -66,12 +67,17 @@ going.got = Math.floor(going.need / 2);
 // A few weeks on the Spire, and this week's climb under way. Last week's pay has been told.
 const lastWeek = seasonOf(addDays(today, -7));
 s.spire = { season: seasonOf(today), best: 25, top: 40, seasons: 3, last: { season: lastWeek, best: 40, tier: 'B-Rank', shards: 168, item: null } };
+// Ryn's sixth job in hand, half done; two Health Potions and a Gate Survey from the ones before.
+s.assoc = { n: 5, quest: null, reported: 5 };
+association.issue(s);
+s.assoc.quest!.got = Math.floor(s.assoc.quest!.need / 2);
+s.stock = { hp: 2, survey: 1 };
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);
 s.hunter.missions = MISSIONS.filter((m) => { try { return m.check(s); } catch { return false; } }).map((m) => m.id);
-s.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spire-week-${lastWeek}`];
-s.vitals = { hp: 520, mp: 120, fatigue: 22, at: Date.now(), lockedUntil: null };
+s.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spire-week-${lastWeek}`, 'assoc-told'];
+s.vitals = { hp: 380, mp: 120, fatigue: 22, at: Date.now(), lockedUntil: null };
 writeFileSync('e2e/fixtures/veteran.json', JSON.stringify(s));
 console.log('veteran: level', s.hunter.level, 'class', s.hunter.classId, 'items', s.items.length, 'equipped', Object.keys(s.equipped).length);
 
@@ -113,7 +119,12 @@ a.ascension = { level: 2, unlocked: 3, best: 3, proof: { gates: ['DNG-048', 'DNG
 a.story = BEATS.filter((b) => { try { return b.when(a); } catch { return false; } }).map((b) => b.id);
 a.hunter.missions = MISSIONS.filter((m) => { try { return m.check(a); } catch { return false; } }).map((m) => m.id);
 // Everything seen but the Ascension tile's walkthrough, which the screens capture.
-a.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spire-week-${lastWeek}`, 'turn-told'];
+a.seen = ['gates-visited', 'shadows-visited', 'ob-licence', 'shop-visited', `spire-week-${lastWeek}`, 'turn-told', 'assoc-told'];
+// A Shadow with a name, and Ryn's job done, waiting to be reported.
+a.shadows.army[0].name = 'Igris';
+a.assoc = { n: 22, quest: null, reported: 22 };
+association.issue(a);
+a.assoc.quest!.got = a.assoc.quest!.need;
 a.vitals = { hp: 99999, mp: 9999, fatigue: 8, at: Date.now(), lockedUntil: null };
 writeFileSync('e2e/fixtures/ascended.json', JSON.stringify(a));
 console.log('ascended: level', a.hunter.level, 'rank', a.hunter.rank, 'class', a.hunter.classId, 'Ascension', a.ascension.unlocked);

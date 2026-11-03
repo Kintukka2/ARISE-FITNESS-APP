@@ -1,0 +1,122 @@
+/**
+ * Ryn Valcorde's Association Quests on screen: his card at the top of the Quests screen, with the job
+ * in hand, how far it has come, what it pays and, once it is done, the report; his windows when he pays
+ * for one and hands over the next; and the strip on a run's results that says how far the run moved it.
+ * All of it is his channel (docs/VOICE.md, "Valcorde's channel"): the System has no part in it.
+ */
+import { rewardChain } from '@/app/flow';
+import * as association from '@/core/association';
+import type { AssocQuest, AssocReward } from '@/core/association';
+import { dungeonById, enemyById } from '@/core/gates';
+import { POTIONS } from '@/core/shop';
+import { SURVEY } from '@/data/association';
+import { ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID } from '@/data/narrative';
+import * as store from '@/store';
+import { useSave } from '@/store';
+import { Bar, Btn, CoachHead } from './components';
+import { sys } from './overlays';
+
+/** A creature's name for more than one: "Dire Wolves", "Rootlings". */
+export function plural(name: string): string {
+  if (/(s|x|ch|sh)$/i.test(name)) return `${name}es`;
+  if (/[^aeiou]y$/i.test(name)) return `${name.slice(0, -1)}ies`;
+  if (/(wolf|elf|half)$/i.test(name)) return `${name.slice(0, -1)}ves`;
+  return `${name}s`;
+}
+
+const gateName = (q: AssocQuest) => dungeonById(q.gate)?.name ?? 'the Gate';
+const targetName = (q: AssocQuest) => (q.target ? enemyById(q.target)?.name : undefined) ?? 'creature';
+
+/** What he says when he hands a job over. */
+export function briefOf(q: AssocQuest): string {
+  const lines = ASSOC_BRIEF[q.kind];
+  return lines[q.n % lines.length]
+    .replace(/\{Gate\}/g, gateName(q))
+    .replace(/\{creature\}/g, plural(targetName(q)))
+    .replace(/\{boss\}/g, targetName(q))
+    .replace(/\{need\}/g, String(q.need));
+}
+
+/** The job, as a goal: what to do and where. */
+export function goalOf(q: AssocQuest): string {
+  if (q.kind === 'clear') return `Clear ${gateName(q)}.`;
+  if (q.kind === 'boss') return `Fell ${targetName(q)}, in ${gateName(q)}.`;
+  return `Fell ${q.need} ${plural(targetName(q))}, in any Gate.`;
+}
+
+/** What a job pays besides its experience, in words. */
+export function rewardText(w: AssocReward | null): string | null {
+  if (!w) return null;
+  const times = w.n > 1 ? ` ×${w.n}` : '';
+  if (w.kind === 'potion') return `${POTIONS.find((p) => p.id === w.id)?.name ?? 'Potion'}${times}`;
+  if (w.kind === 'field') return `Field Potion${times}`;
+  if (w.kind === 'survey') return `${SURVEY.name}${times}`;
+  if (w.kind === 'satchel') return 'Satchel: room for one more Field Potion';
+  return `Mana Shards: ${w.n === 1 ? 'a clear’s worth' : `${w.n} clears’ worth`}`;
+}
+
+/** His card on the Quests screen: the job in hand. Null until the line opens. */
+export function AssocCard() {
+  const s = useSave();
+  const q = association.current(s);
+  if (!q) return null;
+  const done = association.done(q);
+  const pay = rewardText(q.reward);
+  return (
+    <section class={`assoccard coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
+      <CoachHead size={34} />
+      <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
+      <p class="assoccard__line">“{briefOf(q)}”</p>
+      <div class="assoccard__goal">
+        <span>{goalOf(q)}</span>
+        <b class="num">{q.got}/{q.need}</b>
+      </div>
+      <Bar pct={(q.got / Math.max(1, q.need)) * 100} tone={done ? 'verdant' : 'mana'} thin />
+      <p class="assoccard__pay">Pay: XP +{q.xp}{pay ? ` · ${pay}` : ''}</p>
+      {done && <Btn kind="primary" block onClick={() => void reportAssoc()}>Report To Ryn</Btn>}
+    </section>
+  );
+}
+
+/** On a run's results: how far the run moved the job, on his channel. */
+export function AssocStrip({ q, move }: { q: AssocQuest; move: association.AssocMove }) {
+  const done = move.to >= move.need;
+  return (
+    <aside class={`assocstrip coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
+      <span class="assocstrip__label">Association Quest</span>
+      <span class="assocstrip__goal">{goalOf(q)}</span>
+      <b class="num">{move.to}/{move.need}</b>
+      {done && <small class="assocstrip__done">Done. Report to Ryn on the Quests screen.</small>}
+    </aside>
+  );
+}
+
+/** The first time the line opens: he says what it is, and hands over the first job. */
+export async function firstJob() {
+  const q = association.current(store.get());
+  // Only before the first job is reported: a hunter already working for him needs no introduction.
+  if (!q || store.get().seen.includes('assoc-told') || store.get().assoc.reported > 0) return;
+  store.update((x) => { if (!x.seen.includes('assoc-told')) x.seen.push('assoc-told'); });
+  await sys({ title: 'Valcorde', kind: 'coach', lines: [ASSOC_FIRST, briefOf(q)], actions: [{ label: 'On It', value: null, primary: true }] });
+}
+
+/**
+ * Report the job in hand: he pays for it, and hands over the next. What it paid is settled in
+ * `association.report` before he says a word, and the experience is celebrated after.
+ */
+export async function reportAssoc() {
+  const paid = store.update((x) => association.report(x));
+  if (!paid) return;
+  const w = paid.quest.reward;
+  const line = w?.kind === 'satchel' ? ASSOC_PAID.satchel : w?.kind === 'survey' ? ASSOC_PAID.survey
+    : w ? ASSOC_PAID.paid[paid.quest.n % ASSOC_PAID.paid.length] : ASSOC_PAID.bare[paid.quest.n % ASSOC_PAID.bare.length];
+  const got = [
+    `Experience +${paid.quest.xp}`,
+    ...(w?.kind === 'field' ? [paid.field ? `Field Potion ×${paid.field}` : null, paid.shards ? `Mana Shards +${paid.shards} (the satchel was full)` : null]
+      : w?.kind === 'shards' ? [`Mana Shards +${paid.shards}`]
+      : [rewardText(w)]),
+  ].filter((x): x is string => !!x);
+  await sys({ title: 'Valcorde', kind: 'coach', lines: [line, `<em>Received:</em> ${got.join(' · ')}`], actions: [{ label: 'Next Job', value: null, primary: true }] });
+  await rewardChain(paid.xp);
+  if (paid.next) await sys({ title: 'Valcorde', kind: 'coach', lines: [briefOf(paid.next)], actions: [{ label: 'On It', value: null, primary: true }] });
+}

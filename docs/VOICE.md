@@ -59,6 +59,13 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The rank-up: the cut between a held Reclassification and "Reclassification approved." | No one, as the Arrival | `ui/arrival.ts` (`rankUp`), `app/flow.ts` (`claimRank`) |
 | The promotion: the cut between a held Hold To Promote and "[Shadow …] has been promoted." | No one, as the Arrival | `ui/arrival.ts` (`promotion`), `app/flow.ts` (`claimPromotion`) |
 | A Shadow's promotion earned, on the results: `[Shadow …] has met the requirements for [Promotion: Sworn Rank].` | The System, as an alert: a strip of its frame, not a window (`SysAlert`) | `screens/Arena.tsx`, `ui/frame.tsx` |
+| The Daily Quests a run moved, on the results: one alert each, `QUEST INFO` under way and `QUEST REWARDS` once done, with what it paid | The System, as alerts | `QuestLines` in `ui/contracts.tsx` |
+| A Shadow lingering, on the results: `The mana of [Clay Sentinel] lingers.`, an alert that opens the extraction | The System, as an alert that is a button | `screens/Arena.tsx` |
+| The extraction: what lingers, the cost and the odds, Hold To Extract; bound, `You may bestow a name.` and the name field | The System, on its sheet headed `NOTIFICATION`; the field and Not Now are the interface's | `Extraction` in `screens/Arena.tsx`, `NameField` in `screens/Shadows.tsx` |
+| Leaving with a Shadow still lingering: `A Shadow Lingers` | The interface, as the unrevealed loot's reminder is | `screens/Arena.tsx` |
+| A purchase or a use offered: `Would you like to purchase?` / `Would you like to drink?` / `Would you like to use?`, and under it **Do not ask again** | The System's Offer; the toggle is the interface's control, and Settings lists what it skips | `ui/ask.tsx`, `screens/Settings.tsx` |
+| Ryn's Association Quests: his card at the top of the Quests screen, his windows when he hands a job over and pays for one, the strip on a run's results | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
+| The board's `Association` chip, and the brief's `Association Quest:` hint | The interface | `screens/Gates.tsx` |
 | Where to claim it, under the alerts: `Promote it on the Shadows screen.` | The interface, as a hint | `screens/Arena.tsx` |
 | A Shadow's promotion on its card: its badge now and at the rank above, what the rank brings, Hold To Promote | The System, in the card's violet, the promotion itself in advancement's gold | `Promotion` in `screens/Shadows.tsx` |
 | The family glyphs, the rank insignia and the Shadow badge | No one: art, as the rank plates are | `ui/emblems.tsx` |
@@ -883,6 +890,8 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Daily Quest | contract | Code keeps `contracts`; only the words change |
 | Secret Quest | Secret Mission | Code keeps `missions` |
 | Weekly Quest | season, weekly contract | The Pale Spire's week, on the Quests screen. Code keeps `season` |
+| Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
+| Gate Survey | scout, survey report | The Association's report that shows a Gate's map before the hunter goes in. An item: `[Item: Gate Survey]` |
 | Reclassification | rank-up quest, job change | The quest for the next rank, as the rank windows say: "Reclassification approved." |
 | Inventory | Profile | The tab with Status, the equipment and everything held. Code keeps the route `inventory` |
 | Ability Points | attribute points, stat points | Code keeps `points` |
