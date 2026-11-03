@@ -94,7 +94,16 @@ try {
   await page.locator('.syswin .dontask').click(); await sleep(150); await snap('drink-offer');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
-  await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true); await close();
+  await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true);
+  // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
+  if (await page.locator('.sheet.is-top .btn', { hasText: 'Allocate' }).count()) throw new Error('THE STATS SHEET STILL ALLOCATES');
+  await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
+  if (!(await page.locator('.sheet.is-top .ia-radar__label.is-on').count())) throw new Error('THE RADAR DID NOT SHOW A VALUE');
+  await page.locator('.sheet.is-top .statsheet__radar').scrollIntoViewIfNeeded(); await snap('stats-radar');
+  await page.locator('.sheet.is-top .sysfield__help').nth(4).click(); await sleep(200);
+  if (!(await page.locator('.sheet.is-top .sysfield.is-open .sysfield__why').isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
+  await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
+  await close();
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
   await page.locator('.btile--inventory .btile__hit').click(); await sleep(400); await snap('inventory-grid');
   await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();

@@ -24,6 +24,11 @@ export interface Derived {
   recovery: number;
 }
 
+/** A critical hit's multiplier, and the most critical chance a hunter can have from stats alone, and with gear. */
+export const CRIT = { mult: 1.5, base: 50, max: 60 } as const;
+/** The least and the most a hit can be, as a chance, whatever the accuracy and the evasion. */
+export const HIT = { min: 5, max: 95 } as const;
+
 export function derive(b: Attrs): Derived {
   const { STR: s, VIT: v, AGI: a, INT: i, PER: p } = b;
   return {
@@ -34,7 +39,7 @@ export function derive(b: Attrs): Derived {
     resist: v * 2 + i * 2,
     accuracy: 50 + p * 2 + a,
     evasion: a * 1.5 + p * 0.5,
-    crit: Math.min(50, 2 + a * 0.18 + p * 0.3),
+    crit: Math.min(CRIT.base, 2 + a * 0.18 + p * 0.3),
     initiative: a * 2 + p,
     statusChance: 0, statusSave: 0, recovery: 0,
   };
@@ -51,7 +56,7 @@ export function applyBonuses(d: Derived, bonus: Record<string, number>): Derived
     else if (pct.has(key)) out[key] = out[key] * (1 + v);
     else out[key] = out[key] + v;
   }
-  out.crit = Math.min(60, out.crit);
+  out.crit = Math.min(CRIT.max, out.crit);
   return out;
 }
 
@@ -160,7 +165,7 @@ export class Unit {
     if (this.has('brace')) d.defense *= 1.2;
     if (this.has('arcane')) d.resist += 15;
     if (this.has('bulwark')) d.maxHp *= 1.2;
-    if (this.has('bladework')) d.crit = Math.min(60, d.crit + 12);
+    if (this.has('bladework')) d.crit = Math.min(CRIT.max, d.crit + 12);
     if (this.has('keen')) d.accuracy += 15;
     this.d = d;
     this.maxHp = Math.round(d.maxHp * (sp.hpMult ?? 1));
@@ -201,7 +206,7 @@ export type Ev =
   | { t: 'heal'; a: string; amt: number; hp: number }
   | { t: 'passive'; u: string; p: string; k: string; hp?: number };
 
-const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva), 5, 95);
+const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva), HIT.min, HIT.max);
 
 function statusLands(src: Unit, t: Unit, st: string) {
   if (t.imm.includes(st)) return 0;
@@ -337,7 +342,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     const power = u.atk(magic);
     let dmg = Math.max(1, ((power * a.mult * power) / (power + t.def(magic))) * (1 - SWING + r() * 2 * SWING));
     const crit = r() * 100 < u.d.crit;
-    if (crit) dmg *= 1.5;
+    if (crit) dmg *= CRIT.mult;
     if (t.status.Guarded) dmg *= GUARD;
     dmg = Math.round(dmg);
     if (magic && t.has('arcane') && !t.spent.has('ward')) {

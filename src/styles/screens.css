@@ -654,6 +654,12 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ia-radar__shape { fill: color-mix(in srgb, var(--win) 30%, transparent); stroke: var(--win); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--win-glow)); transform-origin: 50px 50px; animation: iaGrow 900ms var(--ease) both; }
 .ia-radar__over { fill: var(--gold); filter: drop-shadow(0 0 3px var(--gold-glow)); }
 .ia-radar__label.is-over { fill: var(--gold); }
+/* Pointing at a stat, or tapping it, shows its value at its corner. */
+.ia-radar__hit { cursor: pointer; }
+.ia-radar__reach { fill: transparent; }
+.ia-radar__dot { fill: #fff; filter: drop-shadow(0 0 2px var(--win, var(--mana))); transition: r 160ms; }
+.ia-radar__hit.is-on .ia-radar__dot { fill: var(--win, var(--mana)); }
+.ia-radar__label.is-on { fill: #fff; font-weight: 700; }
 .ia-radar__label { fill: color-mix(in srgb, var(--sys-ink) 78%, transparent); font-family: var(--font-sys); font-size: 6.5px; font-weight: 600; letter-spacing: 0.04em; text-anchor: middle; dominant-baseline: middle; }
 @keyframes iaGrow { from { opacity: 0; transform: scale(0.15); } }
 

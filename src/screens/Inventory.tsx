@@ -11,7 +11,7 @@ import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
 import { reclassification } from '@/core/quests';
 import { ATTRS, autoAllocate, BOOST_CAP, canPick, classBonus, keptAt, kitFor, optionsAt, pick, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, rungsOf, spendPoint, STAT_CAP, waiting } from '@/core/progression';
-import { ability, passiveText, REACH_TEXT, Unit } from '@/core/combat';
+import { ability, CRIT, HIT, passiveText, REACH_TEXT, Unit } from '@/core/combat';
 import { heroSpec } from '@/core/raid';
 import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
@@ -92,9 +92,10 @@ function tiles(s: Save): Tile[] {
       open: openStatus,
     },
     {
-      key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />, call: s.hunter.points > 0,
-      count: s.hunter.points ? `${s.hunter.points} ${s.hunter.points === 1 ? 'point' : 'points'}` : `${lead} ${Math.round(total[lead])}`,
-      status: s.hunter.points ? <PointsDue n={s.hunter.points} /> : `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
+      // Stats reads; Status is where the points are spent, so only Status calls for them.
+      key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />,
+      count: `${lead} ${Math.round(total[lead])}`,
+      status: `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
       art: <Radar values={total} />,
       open: openStats,
     },
@@ -167,7 +168,9 @@ export function MiniBar({ label, cur, max, tone }: { label: string; cur: number;
  * The five stats as a figure, every axis out to `STAT_CAP` (100), the most Ability Points take a stat: where
  * the hunter stands against the world, not against their own best. A stat past it holds the rim and lights.
  */
-function Radar({ values }: { values: Record<Stat, number> }) {
+/** The five stats out of the cap. `live`: pointing at a stat, or tapping it, shows its value at its corner. */
+function Radar({ values, live }: { values: Record<Stat, number>; live?: boolean }) {
+  const [on, setOn] = useState<Stat | null>(null);
   const order: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
   const at = (i: number, r: number) => {
     const a = (-90 + i * 72) * (Math.PI / 180);
@@ -181,7 +184,20 @@ function Radar({ values }: { values: Record<Stat, number> }) {
       {order.map((_, i) => { const [x, y] = at(i, 38); return <line key={i} x1="50" y1="50" x2={x} y2={y} class="ia-radar__axis" />; })}
       <polygon points={shape} class="ia-radar__shape" />
       {order.map((k, i) => values[k] >= STAT_CAP && (() => { const [x, y] = at(i, 38); return <circle key={`o${k}`} cx={x} cy={y} r="2.2" class="ia-radar__over" />; })())}
-      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class={`ia-radar__label ${values[k] >= STAT_CAP ? 'is-over' : ''}`}>{k}</text>; })}
+      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class={`ia-radar__label ${values[k] >= STAT_CAP ? 'is-over' : ''} ${on === k ? 'is-on' : ''}`}>{on === k ? `${k} ${Math.round(values[k])}` : k}</text>; })}
+      {live && order.map((k, i) => {
+        const [px, py] = at(i, 2 + 36 * Math.min(1, Math.max(0, values[k]) / STAT_CAP));
+        const [lx, ly] = at(i, 44);
+        return (
+          <g key={`h${k}`} class={`ia-radar__hit ${on === k ? 'is-on' : ''}`}
+            onMouseEnter={() => setOn(k)} onMouseLeave={() => setOn((x) => (x === k ? null : x))} onClick={() => setOn(k)}>
+            <title>{`${k} ${Math.round(values[k])}`}</title>
+            <circle cx={px} cy={py} r={on === k ? 2.4 : 1.6} class="ia-radar__dot" />
+            {/* A wide, invisible reach: the corner's label and the shape's point both answer a finger. */}
+            <circle cx={(px + lx) / 2} cy={(py + ly) / 2} r="11" class="ia-radar__reach" />
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -241,6 +257,18 @@ export function openStats() {
 
 const STAT_ORDER: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
 
+/** What each number in a fight does, and where it comes from: the interface, one line each, numbers read from the engine. */
+const FIGHT_HELP: Record<string, string> = {
+  Attack: 'The power of a Strike and of a physical skill, set against the target’s Defence. From STR, and a little AGI.',
+  Magic: 'The power of a magic skill, set against the target’s Resistance. From INT, and a little PER.',
+  Defence: 'Takes the force out of a physical hit: the more of it, the less each one does. From VIT, and a little STR.',
+  Resistance: 'Takes the force out of a magic hit, and wards off debuffs. From VIT and INT.',
+  Accuracy: `How often your hits land: your Accuracy against the target’s Evasion, from ${HIT.min}% to ${HIT.max}%. From PER, and a little AGI.`,
+  Evasion: 'How often a foe misses you: its Accuracy against your Evasion. From AGI, and a little PER.',
+  'Critical hit': `The chance a hit does ×${CRIT.mult} damage. From AGI and PER, up to ${CRIT.base}%, and ${CRIT.max}% with gear and passives.`,
+  Initiative: 'Who acts first in each round: the highest goes first. From AGI, and a little PER.',
+};
+
 function StatsSheet() {
   const s = useSave();
   useNow(5000);
@@ -249,15 +277,15 @@ function StatsSheet() {
   const v = vitals.read(s);
   // The hunter exactly as the fight builds them: class, gear, sets, marks, passives, and fatigue.
   const d = new Unit(heroSpec(s)).d;
-  const fight: [string, string][] = [
-    ['Attack', `${Math.round(d.patk)}`], ['Magic', `${Math.round(d.mpow)}`],
-    ['Defence', `${Math.round(d.defense)}`], ['Resistance', `${Math.round(d.resist)}`],
-    ['Accuracy', `${Math.round(d.accuracy)}`], ['Evasion', `${Math.round(d.evasion)}`],
-    ['Critical hit', `${Math.round(d.crit)}%`], ['Initiative', `${Math.round(d.initiative)}`],
+  const fight: [string, string, string][] = [
+    ['Attack', `${Math.round(d.patk)}`, FIGHT_HELP.Attack], ['Magic', `${Math.round(d.mpow)}`, FIGHT_HELP.Magic],
+    ['Defence', `${Math.round(d.defense)}`, FIGHT_HELP.Defence], ['Resistance', `${Math.round(d.resist)}`, FIGHT_HELP.Resistance],
+    ['Accuracy', `${Math.round(d.accuracy)}`, FIGHT_HELP.Accuracy], ['Evasion', `${Math.round(d.evasion)}`, FIGHT_HELP.Evasion],
+    ['Critical hit', `${Math.round(d.crit)}%`, FIGHT_HELP['Critical hit']], ['Initiative', `${Math.round(d.initiative)}`, FIGHT_HELP.Initiative],
   ];
   return (
     <div class="stack statsheet">
-      <div class="statsheet__radar"><Radar values={total} /><small class="muted">Scale: 0 to {STAT_CAP}</small></div>
+      <div class="statsheet__radar"><Radar values={total} live /><small class="muted">Scale: 0 to {STAT_CAP} · Tap a stat for its value</small></div>
       <ul class="statrows">
         {STAT_ORDER.map((k) => {
           const a = ATTRS.find((x) => x.key === k)!;
@@ -276,9 +304,8 @@ function StatsSheet() {
         })}
       </ul>
       <span class="label">In a fight</span>
-      <div class="sysfields">{fight.map(([k, val]) => <Field key={k} k={k} v={<span class="num">{val}</span>} />)}</div>
+      <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
-      {s.hunter.points > 0 && <Btn kind="gold" block onClick={openStatus}>Allocate · {s.hunter.points}</Btn>}
     </div>
   );
 }
