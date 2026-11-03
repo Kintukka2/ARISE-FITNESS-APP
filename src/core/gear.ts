@@ -91,7 +91,21 @@ export function coreOf(it: Item): Partial<Attrs> {
 /** Quality as a 0–100 grade for display. Steps past perfect are counted on their own. */
 export const quality = (it: Item) => Math.min(100, Math.round(((it.q - Q_LOW) / (Q_HIGH - Q_LOW)) * 100));
 export const qualityText = (it: Item) => `${quality(it)}%${it.over ? ` +${it.over}` : ''}`;
-export const rollTag = (it: Item) => (defOf(it)?.issued ? null : it.q >= Q_HIGH - 0.005 ? 'perfect' : it.q <= Q_LOW + 0.005 ? 'dead' : null);
+/**
+ * How a piece rolled: `perfect` once its quality and every property are at their best (or past it),
+ * `peak` for a quality at its best with properties still to raise, `dead` for the lowest quality.
+ */
+export const rollTag = (it: Item): 'perfect' | 'peak' | 'dead' | null => {
+  if (defOf(it)?.issued) return null;
+  if (it.q >= Q_HIGH - 0.005) return stepsToPerfect(it) ? 'peak' : 'perfect';
+  return it.q <= Q_LOW + 0.005 ? 'dead' : null;
+};
+/** Upgrade steps until a piece is perfect: its quality and every property at their best. 0 once it is. */
+export function stepsToPerfect(it: Item): number {
+  let n = 0;
+  for (let x = upgradeStep(it, 0); x && n < 100; x = upgradeStep(x, 0)) n++;
+  return n;
+}
 
 export function equippedIn(s: Save, slot: SlotKey): Item | null {
   const id = s.equipped[slot];
@@ -318,9 +332,6 @@ export function bonusText(b: Record<string, number>): string {
 }
 
 // ------------------------------------------------------------------ upgrades
-
-/** How many steps past perfect the hunter's Ascension lets a piece go. */
-export const overCap = (s: Save) => s.ascension.unlocked * OVERCHARGE.per;
 
 /**
  * The piece one upgrade step on: its quality and every property a share of the way closer to their

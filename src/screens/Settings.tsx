@@ -6,6 +6,7 @@ import { askNotifications, remindersAvailable, syncReminders } from '@/platform/
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Section } from '@/ui/components';
+import { askName } from '@/ui/ask';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { Glyph } from '@/ui/icons';
 import { openGuide } from './Guide';
@@ -51,6 +52,13 @@ function Settings() {
             }} />
           </div>
           <small class="muted">Scheduled on this phone by the app. Nothing is sent anywhere.</small>
+        </Section>
+      )}
+
+      {(s.settings.skipAsk ?? []).length > 0 && (
+        <Section title="Purchases" right={`Not asked: ${s.settings.skipAsk.length}`}>
+          <ul class="asklist">{s.settings.skipAsk.map((k) => <li key={k}>{askName(k)}</li>)}</ul>
+          <Btn kind="ghost" block onClick={() => { set((x) => { x.settings.skipAsk = []; }); toast('Every purchase asks first again.', 'good'); }}>Ask Before Every Purchase</Btn>
         </Section>
       )}
 

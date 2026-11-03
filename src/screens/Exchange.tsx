@@ -13,6 +13,7 @@ import { Btn, GearArt, Section, Shards, useNow } from '@/ui/components';
 import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph } from '@/ui/icons';
+import { ask } from '@/ui/ask';
 import { openSheet, sys, toast } from '@/ui/overlays';
 import { drinkFlow } from './Inventory';
 
@@ -57,7 +58,7 @@ function Exchange() {
   const buy = async (o: shop.Offer) => {
     if (store.get().wallet.shards < o.price) return void short(o.price);
     const d = gear.defOf(o.item);
-    const want = await sys(system.offer([
+    const want = await ask('buy:shelf', system.offer([
       'Would you like to purchase?',
       system.tag(d?.name ?? 'Item', 'Item'),
       system.gain(gear.coreText(o.item)),
@@ -79,7 +80,7 @@ function Exchange() {
   const buyField = async () => {
     const f = shop.FIELD_POTION;
     if (store.get().wallet.shards < f.price) return void short(f.price);
-    const want = await sys(system.offer([
+    const want = await ask('buy:field', system.offer([
       'Would you like to purchase?',
       system.tag('Field Potion', 'Item'),
       system.gain(`HP +${f.heal * 100}%`),
@@ -90,7 +91,7 @@ function Exchange() {
     if (!store.update(shop.buyField)) return void short(f.price);
     sfx.success();
     buzz([14, 30, 22]);
-    toast(`Field Potion · Satchel ${store.get().satchel}/${f.max}`, 'xp');
+    toast(`Field Potion · Satchel ${store.get().satchel}/${shop.satchelMax(store.get())}`, 'xp');
   };
   return (
     <div class="stack exchange">
@@ -117,8 +118,8 @@ function Exchange() {
         <div class="shoplist">
           <ShopRow icon={<span class="potion potion--field"><Glyph name="potion" /></span>} name="Field Potion"
             gives={`HP +${shop.FIELD_POTION.heal * 100}%`}
-            note={`Carried into a Gate, used on your turn. Satchel: ${s.satchel}/${shop.FIELD_POTION.max}`}
-            price={shop.FIELD_POTION.price} off={s.satchel >= shop.FIELD_POTION.max ? 'Satchel full' : null} onBuy={buyField} />
+            note={`Carried into a Gate, used on your turn. Satchel: ${s.satchel}/${shop.satchelMax(s)}`}
+            price={shop.FIELD_POTION.price} off={s.satchel >= shop.satchelMax(s) ? 'Satchel full' : null} onBuy={buyField} />
           {shop.POTIONS.map((p) => (
             <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
               gives={p.effect} note={p.desc} price={p.price} off={shop.potionIdle(s, p.id)}

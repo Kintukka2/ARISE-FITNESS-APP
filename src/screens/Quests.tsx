@@ -6,12 +6,15 @@
  * This screen only says where each one stands.
  */
 import { claimRank, playBeats } from '@/app/flow';
+import * as association from '@/core/association';
+import { AssocCard, firstJob } from '@/ui/assoc';
 import type { ComponentChildren, FunctionComponent } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
 import { board, dungeonById, entryBlock } from '@/core/gates';
-import { overCap, RARITY } from '@/core/gear';
+import { RARITY } from '@/core/gear';
+import { overCap } from '@/core/ascension';
 import { licensedRank } from '@/core/licence';
 import { MARKS_MOST } from '@/core/marks';
 import { earned, grantText, MISSIONS, TIER_NAMES, type Mission, type MissionTier } from '@/core/missions';
@@ -49,9 +52,16 @@ export function Quests() {
   useEffect(() => {
     const now = store.get();
     if (contracts.contractsOpen(now) && !(now.contracts.day === day && now.contracts.seen)) store.update((x) => contracts.show(x, day));
-    void playBeats();
+    // Ryn's Association work is handed over the first time the screen shows it, and kept from then.
+    if (association.open(now) && !association.current(now)) store.update((x) => association.issue(x));
+    void playBeats().then(firstJob);
   }, [day]);
-  return <BentoGrid class="questgrid" tiles={tiles(s, day)} label="Quests" />;
+  return (
+    <div class="stack">
+      <AssocCard />
+      <BentoGrid class="questgrid" tiles={tiles(s, day)} label="Quests" />
+    </div>
+  );
 }
 
 /** Every quest that stands, in the grid's order: the day's first, then the climbs, then the record. */

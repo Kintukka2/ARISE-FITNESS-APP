@@ -25,6 +25,7 @@ import { licensedRank } from '@/core/licence';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
 import * as shadows from '@/core/shadows';
+import * as association from '@/core/association';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
 import type { Dungeon, Save } from '@/core/types';
@@ -49,7 +50,7 @@ const PROFILES: Profile[] = [
 
 interface Tally {
   runs: number; cleared: number; defeated: number; spire: number; chosen: number; masterworks: number;
-  contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number;
+  contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number; assoc: number;
 }
 
 function newHunter() {
@@ -75,7 +76,7 @@ function tidy(s: Save, now: number, t: Tally) {
   if (best && shop.buy(s, best.index, day)) { t.bought++; t.shardsOut += best.price; gear.autoEquip(s); }
   // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows.
   for (;;) {
-    const worn = gear.worn(s).map((it) => ({ it, cost: shop.upgradeCost(it, gear.overCap(s)) })).filter((x): x is { it: typeof x.it; cost: number } => x.cost !== null);
+    const worn = gear.worn(s).map((it) => ({ it, cost: shop.upgradeCost(it, asc.overCap(s)) })).filter((x): x is { it: typeof x.it; cost: number } => x.cost !== null);
     const next = worn.sort((a, b) => a.cost - b.cost)[0];
     if (!next || s.wallet.shards - next.cost < RESERVE) break;
     shop.upgrade(s, next.it.id);
@@ -91,7 +92,11 @@ function tidy(s: Save, now: number, t: Tally) {
 function pickGate(s: Save, day: string, now: number): Dungeon | null {
   const mine = licensedRank(s);
   const open = board(s, day).filter((d) => !isPractice(d) && d.rank === mine && !entryBlock(s, d, now));
+  // Ryn's job's Gate, pinned to the board, when the job asks for it or its creatures.
+  const job = association.current(s);
+  const pinned = job && !association.done(job) ? open.find((d) => d.id === job.gate) : undefined;
   return open.find((d) => !s.gates.cleared.includes(d.id))
+    ?? pinned
     ?? open.find((d) => asc.proving(s) && !s.ascension.proof.gates.includes(d.id))
     ?? open[0] ?? null;
 }
@@ -142,6 +147,9 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   // A hunter who keeps up claims each rank the moment its level is reached, and promotes each Shadow the moment its kills earn it.
   reclassifyAll(s);
   shadows.promoteAll(s);
+  // And takes Ryn's Association work, reporting each job the moment it is done.
+  association.issue(s);
+  if (association.ready(s)) { association.report(s); t.assoc++; }
   t.runs++;
   if (spire.isSpire(d)) t.spire++;
   t[outcome]++;
@@ -155,7 +163,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
 function campaign(p: Profile) {
   const s = newHunter();
   const r = rng('campaign|' + p.name);
-  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0 };
+  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0, assoc: 0 };
   const ranks: string[] = [];
   const weekly: string[] = [];
   let rank = rankFor(1).key;
@@ -209,6 +217,7 @@ function campaign(p: Profile) {
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);
+  console.log(`  Association ${t.assoc} jobs reported; satchel ${shop.satchelMax(s)}; held: ${Object.entries(s.stock).filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).join(', ') || 'nothing'}`);
   console.log(weekly.join('\n'));
 }
 

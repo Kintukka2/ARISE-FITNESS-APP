@@ -6,7 +6,7 @@ import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { CLASS_RANKS, classById } from '@/data/classes';
 import * as gear from '@/core/gear';
-import { ascensionOpen } from '@/core/ascension';
+import { ascensionOpen, overCap } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
 import { reclassification } from '@/core/quests';
@@ -31,6 +31,7 @@ import { BentoGrid, type Tile } from '@/ui/bento';
 import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
+import { ask } from '@/ui/ask';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { openExchange } from './Exchange';
 
@@ -355,11 +356,13 @@ export function VitalsBlock() {
   const pip = (id: shop.PotionId) => {
     const p = shop.POTIONS.find((x) => x.id === id)!;
     const idle = shop.potionIdle(s, id);
-    const dear = s.wallet.shards < p.price;
+    const have = shop.held(s, id);
+    const dear = !have && s.wallet.shards < p.price;
+    // One held shows how many, and is drunk before one is bought.
     return (
-      <button type="button" class={`pip ${idle ? 'is-idle' : dear ? 'is-dear' : 'is-live'}`} aria-label={`${p.name}, ${p.price} shards`} title={`${p.name} · ${p.price}`}
+      <button type="button" class={`pip ${idle ? 'is-idle' : dear ? 'is-dear' : 'is-live'} ${have ? 'is-held' : ''}`} aria-label={have ? `${p.name}, ${have} held` : `${p.name}, ${p.price} shards`} title={have ? `${p.name} · Held: ${have}` : `${p.name} · ${p.price}`}
         onClick={() => drinkFlow(id)}>
-        <Glyph name="potion" /><span class="num">{p.price}</span>
+        <Glyph name="potion" /><span class="num">{have ? `×${have}` : p.price}</span>
       </button>
     );
   };
@@ -385,16 +388,25 @@ export async function drinkFlow(id: shop.PotionId) {
     await sys(system.refuse([why, `${system.tag(p.name, 'Item')} is not available.`], 'gear'));
     return;
   }
-  if (s.wallet.shards < p.price) {
+  // One held in stock is drunk first; otherwise it is bought.
+  const have = shop.held(s, id);
+  if (!have && s.wallet.shards < p.price) {
     await sys(system.refuse([`Not enough Mana Shards. (${s.wallet.shards}/${p.price})`], 'gear'));
     return;
   }
-  const buy = await sys(system.offer([
-    'Would you like to purchase?',
-    system.tag(p.name, 'Item'),
-    system.gain(p.effect),
-    `Price: ${group(p.price)} Mana Shards · Held: ${group(s.wallet.shards)}`,
-  ], 'gear', 'Buy and Drink', 'Cancel'));
+  const buy = have
+    ? await ask(`drink:${id}`, system.offer([
+      'Would you like to drink?',
+      system.tag(p.name, 'Item'),
+      system.gain(p.effect),
+      `Held: ${have}`,
+    ], 'gear', 'Drink', 'Cancel'))
+    : await ask(`buy:${id}`, system.offer([
+      'Would you like to purchase?',
+      system.tag(p.name, 'Item'),
+      system.gain(p.effect),
+      `Price: ${group(p.price)} Mana Shards · Held: ${group(s.wallet.shards)}`,
+    ], 'gear', 'Buy and Drink', 'Cancel'));
   if (buy !== true) return;
   const moved = store.update((x) => shop.drink(x, id));
   if (moved == null) return toast('The potion was not used.', 'bad');
@@ -552,7 +564,7 @@ function SetBlock({ set, s }: { set: GearSet; s: Save }) {
 
 /** The next upgrade step on a piece: what it raises, and what it costs. */
 function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
-  const cap = gear.overCap(s);
+  const cap = overCap(s);
   const next = gear.upgradeStep(it, cap);
   const cost = shop.upgradeCost(it, cap);
   if (!next || cost === null) {
@@ -561,8 +573,9 @@ function UpgradeBlock({ it, s }: { it: Item; s: Save }) {
       : `Perfect${over ? ` +${over}` : ''}. Each Ascension level opened allows ${OVERCHARGE.per === 1 ? '1 more step' : `${OVERCHARGE.per} more steps`}.`}</p>;
   }
   const short = s.wallet.shards < cost;
+  const left = gear.stepsToPerfect(it);
   return (
-    <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? `${it.up} step${it.up === 1 ? '' : 's'} bought` : 'at the Exchange'}>
+    <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={left ? `Steps to perfect: ${left}` : it.up ? `${it.up} step${it.up === 1 ? '' : 's'} bought` : 'at the Exchange'}>
       <div class="upgrade">
         <KV k="Quality" v={`${gear.qualityText(it)} → ${gear.qualityText(next)}`} />
         <KV k="Core" v={gear.coreText(next)} />
@@ -663,7 +676,7 @@ export function openItem(id: string) {
             <p class="itemsheet__tags">
               {worn && <span>Worn</span>}
               {it.master && <span class="hint">Masterwork of {walkerOf(it.master, d.rank).name}</span>}
-              {tag && <span class={tag === 'perfect' ? 'hint' : 'warn'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ' roll'}` : '✕ Dead roll'}</span>}
+              {tag && <span class={tag === 'dead' ? 'warn' : 'hint'}>{tag === 'perfect' ? `✦ Perfect${it.over ? ` +${it.over}` : ''}` : tag === 'peak' ? '✧ Perfect quality' : '✕ Dead roll'}</span>}
             </p>
           )}
           {!d.issued && <UpgradeBlock it={it} s={s} />}

@@ -9,6 +9,7 @@ import { ASCENSION_FROM } from '@/data/ascension';
 import { HOLLOW_THRONE } from '@/data/special';
 import { SLOTS } from '@/data/shadows';
 import { trialReady } from './ascension';
+import { ready as assocReady } from './association';
 import { unseen } from './contracts';
 import { licenceRequired, licensedRank, UNLICENSED_CAP } from './licence';
 import { bankedXp, canReclassify, nextRankOf, optionsAt, RANK_UP_POINTS, rankOf, totalXpFor, type RankInfo } from './progression';
@@ -75,4 +76,4 @@ export function reclassification(s: Save): Reclass | null {
  * it stands open and today's attempt is unused, and a rank waiting to be claimed, as the Inventory tab
  * counts unspent points.
  */
-export const waiting = (s: Save, day = dayKey()) => unseen(s, day) + (trialReady(s, day) ? 1 : 0) + (canReclassify(s) ? 1 : 0);
+export const waiting = (s: Save, day = dayKey()) => unseen(s, day) + (trialReady(s, day) ? 1 : 0) + (canReclassify(s) ? 1 : 0) + (assocReady(s) ? 1 : 0);

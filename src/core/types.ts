@@ -117,6 +117,8 @@ export interface Shadow {
   bosses: number;
   /** The rank it holds, by index into SHADOW_RANKS. Kills qualify it for the next; the hunter claims it. */
   rank: number;
+  /** The name the hunter bestowed on it, if any. Unset, it goes by what it was: `Shadow {creature}`. */
+  name?: string;
   /** Standing orders of its own. Unset, it follows the party's. */
   tactic?: Tactic;
 }
@@ -198,7 +200,12 @@ export interface Settings {
   fastText: boolean;
   /** A phone notification when fatigue has faded or the lockout has lifted. */
   reminders: { on: boolean };
+  /** Purchases and uses the hunter has asked not to be asked about again, by key (`buy:hp`, `drink:mp`, `buy:shelf`). */
+  skipAsk: string[];
 }
+
+/** What can be held in stock: the four potions, and the Association's Gate Survey. */
+export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey';
 
 export interface Stats {
   xpTotal: number;
@@ -266,6 +273,8 @@ export interface Save {
     bosses: string[];
     /** Every Gate the hunter has walked into: the brief shows its map from then on (`gates.mapKnown`). */
     entered: string[];
+    /** Every Gate a Gate Survey has shown the map of, before the hunter went in. */
+    surveyed: string[];
     /** How the last run ended, and clears since the last time you were carried out. */
     last: 'cleared' | 'withdrawn' | 'defeated' | null;
     unbroken: number;
@@ -308,6 +317,12 @@ export interface Save {
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean; seen?: boolean };
   /** Field potions carried into Gates, drunk on the hunter's turn. */
   satchel: number;
+  /** Room in the satchel past the Exchange's, given by the Association. */
+  satchelPlus: number;
+  /** Ryn Valcorde's Association Quests: the place in the line, the job in hand, and how many reported. */
+  assoc: { n: number; quest: import('./association').AssocQuest | null; reported: number };
+  /** What the hunter holds to use later, by kind: potions, and Gate Surveys. Each is used before one is bought. */
+  stock: Partial<Record<StockId, number>>;
 
   log: LogEntry[];
   story: string[];

@@ -6,6 +6,7 @@
 import { sfx } from '@/audio/audio';
 import { issue } from '@/core/contracts';
 import { gearDef } from '@/core/gear';
+import * as association from '@/core/association';
 import { enemyById } from '@/core/gates';
 import * as shadows from '@/core/shadows';
 import * as spire from '@/core/spire';
@@ -97,7 +98,8 @@ export async function claimRank(plate: Element | null) {
   const from = fromEl(plate);
   if (lifted) lifted.style.visibility = 'hidden';
   let claimed = false;
-  const claim = () => { if (!claimed) claimed = !!store.update(reclassify); };
+  // A new grade redraws a job of Ryn's left below it (`association.issue`).
+  const claim = () => { if (!claimed) { claimed = !!store.update(reclassify); store.update((x) => association.issue(x)); } };
   const cut = rankUp({ from, was: q.from.key, now: q.to.key, onDark: claim });
   try {
     await cut.ready;
@@ -138,7 +140,7 @@ export async function claimPromotion(id: string, badge: Element | null) {
       const R = shadows.SHADOW_RANKS;
       await sys({
         ...system.notify([
-          `${system.tag(e.shadow)} has been promoted.`,
+          `${system.tag(shadows.nameOf(sh))} has been promoted.`,
           system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`),
           `Growth limit: ${system.change(`+${Math.round(R[p.from].cap * 100)}%`, `+${Math.round(R[p.to].cap * 100)}%`)}`,
           ...(p.second ? [`Skill learned: ${system.tag(p.second)}`] : []),

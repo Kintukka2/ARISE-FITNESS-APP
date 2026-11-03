@@ -23,7 +23,7 @@ import { BLESSINGS, EVENTS, TRAP } from '@/data/nodes';
 import { HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
 import { SPIRE_THEME } from '@/data/spire';
 import { ISSUED } from '@/data/equipment';
-import { ASSESSMENT, BEATS, GATES_LINE, GATES_TOUR, HANDOVER, NAME_PROMPT } from '@/data/narrative';
+import { ASSESSMENT, ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID, BEATS, GATES_LINE, GATES_TOUR, HANDOVER, NAME_PROMPT } from '@/data/narrative';
 import * as system from '@/ui/system';
 import { lines, toBeats } from '@/ui/log';
 import { GRADES, verdict } from '@/core/raid';
@@ -47,6 +47,7 @@ const systemBeats = BEATS.filter((b) => system.SYSTEM_KINDS.includes(b.kind));
 const quests = CONTRACT_KINDS.map(({ kind }) => ({ kind, need: 3, got: 0, family: 'Undead', at: 30, where: [] }) as unknown as Parameters<typeof contractText>[0]);
 const coachLines = [
   ...ASSESSMENT, NAME_PROMPT, ...HANDOVER, ...Object.values(GATES_LINE), ...GATES_TOUR.map((t) => t.say),
+  ASSOC_FIRST, ...Object.values(ASSOC_BRIEF).flat(), ...ASSOC_PAID.paid, ...ASSOC_PAID.bare, ASSOC_PAID.satchel, ASSOC_PAID.survey,
   ...BEATS.filter((b) => b.kind === 'coach').flatMap((b) => b.lines),
 ];
 

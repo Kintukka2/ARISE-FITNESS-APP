@@ -50,6 +50,8 @@ async function drain(max = 60) {
   for (let i = 0; i < max && quiet < 5; i++) {
     await sleep(140);
     if (await visible('.sysgate .holdbtn')) { quiet = 0; await hold('.sysgate .holdbtn', 5600); await sleep(1700); continue; }
+    // A Shadow left lingering asks before the Gate is left; the walk leaves it.
+    if (await visible('.syswin--app:has-text("A Shadow Lingers")')) { quiet = 0; await page.locator('.syswin__foot .btn', { hasText: 'Leave Anyway' }).click(); continue; }
     if (await visible('.syswin__foot .btn--primary')) { quiet = 0; await page.locator('.syswin__foot .btn--primary').first().click(); continue; }
     if (await visible('.syswin__foot .btn')) { quiet = 0; await page.locator('.syswin__foot .btn').last().click(); continue; }
     if (await visible('.syswin')) { quiet = 0; await page.locator('.syswin').first().click(); await sleep(150); continue; }
