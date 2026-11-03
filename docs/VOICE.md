@@ -257,6 +257,18 @@ for advancement, orange for Gates. The text inside follows these:
 - **A gain or an effect's value** is green: `+25`, `ALL ABILITIES +40%`.
 - **Unspent Ability Points** are gold wherever a tile shows them, with a lit `+` mark: gold is
   advancement, the "there is something for you here" colour. They stop being gold once spent.
+- **A tile waiting on the hunter is gold, and only then.** On every screen, a tile with something to
+  do or something new (points to spend, a skill to choose, a rank or a promotion to claim, a Trial
+  open, a mark to set, a Shadow just bound, a squad slot empty, better gear to put on, a run left
+  open) turns its frame gold whatever its kind, lights its count gold with a word (`3 new`,
+  `4 points`, `Ready`, `Open`, `1 ready`, `3 better`), and a light crosses it (`call` in
+  `ui/bento.tsx`). Otherwise a tile keeps its screen's colour: Skills, Reclassification, the Trial,
+  the Chosen and Ascension are not gold at rest, though the windows they open are advancement's.
+  Ryn's card turns gold the same way when a job is done. The breathing frame (`hot`) is kept for
+  what to look at but not act on: a lockout, a licence to buy.
+- **A set's pieces carry the set's mark:** a small diamond low in the corner of each piece's icon, in
+  the set's own hue (`gear.setHue`), and the same diamond beside the set's name wherever it is
+  written. Pieces of one set read as one without a word.
 - **A warning** reddens only its key word: in "You will be transferred to the penalty zone.",
   only "penalty zone" is red.
 - **A failure or refusal** reddens the whole message and keeps the frame of its subject.

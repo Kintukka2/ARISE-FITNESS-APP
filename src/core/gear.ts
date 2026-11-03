@@ -7,7 +7,7 @@
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
 import { OVERCHARGE } from '@/data/ascension';
-import { SET_KEEP, setById, UPGRADE } from '@/data/sets';
+import { SET_KEEP, setById, SETS, UPGRADE } from '@/data/sets';
 import type { Attrs, GearDef, Item, Rank, Save, SlotKey, Stat } from './types';
 import { STATS } from './types';
 import { rng, round2, uid } from './util';
@@ -91,6 +91,12 @@ export function coreOf(it: Item): Partial<Attrs> {
 /** Quality as a 0–100 grade for display. Steps past perfect are counted on their own. */
 export const quality = (it: Item) => Math.min(100, Math.round(((it.q - Q_LOW) / (Q_HIGH - Q_LOW)) * 100));
 export const qualityText = (it: Item) => `${quality(it)}%${it.over ? ` +${it.over}` : ''}`;
+/**
+ * A set's own hue, for the mark its pieces carry: the sets spread round the wheel by the golden angle,
+ * so no two sets near each other in the list look alike.
+ */
+export const setHue = (id: string) => Math.round((Math.max(0, SETS.findIndex((x) => x.id === id)) * 137.508 + 18) % 360);
+
 /**
  * How a piece rolled: `perfect` once its quality and every property are at their best (or past it),
  * `peak` for a quality at its best with properties still to raise, `dead` for the lowest quality.

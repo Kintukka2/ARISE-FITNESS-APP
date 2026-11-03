@@ -65,6 +65,8 @@ export function AssocCard() {
   const pay = rewardText(q.reward);
   return (
     <section class={`assoccard coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
+      {/* A job done is waiting on the hunter: gold, with the light crossing it, as every tile that waits is. */}
+      {done && <i class="assoccard__sweep" aria-hidden="true" />}
       <CoachHead size={34} />
       <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
       <p class="assoccard__line">“{briefOf(q)}”</p>
