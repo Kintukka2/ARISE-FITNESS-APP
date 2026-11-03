@@ -2,7 +2,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { defOf, RARITY, rollTag, score } from '@/core/gear';
+import { defOf, RARITY, rollTag, score, setHue } from '@/core/gear';
 import type { Item, Rank } from '@/core/types';
 import { compact } from '@/core/util';
 import { CoachPortrait, Glyph, Shard, Sigil } from './icons';
@@ -187,8 +187,15 @@ export function GearArt({ item, defId, size = 52, equipped }: { item?: Item; def
       {item && size >= 44 && <span class="art__score num">{Math.round(score(item))}</span>}
       {tag && <span class={`art__tag art__tag--${tag}`} aria-label={tag === 'perfect' ? 'Perfect' : tag === 'peak' ? 'Perfect quality' : 'Dead roll'}>{tag === 'perfect' ? '✦' : tag === 'peak' ? '✧' : '✕'}</span>}
       {equipped && <span class="art__worn">Worn</span>}
+      {/* A set's piece carries the set's mark, in the set's own hue, so pieces of one set read as one. */}
+      {d?.set && <span class="art__set" style={`--set-h: ${setHue(d.set)}`} title={`${d.set} set`} aria-label={`${d.set} set`} />}
     </span>
   );
+}
+
+/** A set's mark on its own, for where a set is named. */
+export function SetMark({ id }: { id: string }) {
+  return <span class="setmark" style={`--set-h: ${setHue(id)}`} aria-hidden="true" />;
 }
 
 export function HpBar({ cur, max, tone = 'hp' }: { cur: number; max: number; tone?: string }) {

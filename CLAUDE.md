@@ -59,7 +59,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `STORAGE_KEY` (`arise-rpg:save`); it is deliberately not the fitness app's `arise:save`.
 - Colour has meaning: cyan is the System, gold is advancement, green is success and currency,
   orange is Gates, violet is Shadows, red is damage or warning. Screens retint `--accent`; System
-  windows set their own colour.
+  windows set their own colour. A tile turns gold only while it waits on the hunter (`call`); see
+  VOICE.md, "Colour and emphasis".
 - Ryn Valcorde does not know the System exists. Nothing he says may reference it.
 - Every word a player reads follows `docs/VOICE.md`, including README's description of the game. A
   System window is built with `src/ui/system.ts` and never explains, advises or refers to itself;

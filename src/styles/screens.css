@@ -477,7 +477,8 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .btile > .sysframe__glass { flex: 1; gap: 0; padding: 0; }
 .btile.is-hot { animation: btileHot 1.8s ease-in-out infinite; }
 /* Something waiting on the hunter: a gold ring breathing round the frame, a light crossing the tile, its count lit gold. */
-.btile.is-call { animation: btileCall 1.5s ease-in-out infinite; }
+/* Waiting on the hunter, on every screen: the frame turns gold, whatever its kind, the count is lit gold with a word, and a light crosses it. */
+.btile.is-call { --win: var(--gold); --win-glow: var(--gold-glow); animation: btileCall 1.5s ease-in-out infinite; }
 .btile.is-call .btile__count { color: #1a1200; background: var(--gold); border-color: var(--gold); text-shadow: none; font-weight: 700; box-shadow: 0 0 14px var(--gold-glow); animation: btileCount 1.5s ease-in-out infinite; }
 .btile__sweep { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(105deg, transparent 38%, color-mix(in srgb, var(--gold) 26%, transparent) 50%, transparent 62%); background-size: 260% 100%; animation: btileSweep 2.8s ease-in-out infinite; mix-blend-mode: screen; }
 @keyframes btileCall { 50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 80%, transparent), 0 0 32px var(--gold-glow), 0 0 64px color-mix(in srgb, var(--gold) 22%, transparent); } }

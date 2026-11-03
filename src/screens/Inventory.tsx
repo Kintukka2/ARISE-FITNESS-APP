@@ -26,7 +26,7 @@ import { weekBest } from '@/core/spire';
 import { dungeonById } from '@/core/gates';
 import { setById, type GearSet } from '@/data/sets';
 import * as system from '@/ui/system';
-import { Btn, Chip, Empty, GearArt, HpBar, IconBtn, KV, Section, Shards, useNow } from '@/ui/components';
+import { Btn, Chip, Empty, GearArt, HpBar, IconBtn, KV, Section, Shards, useNow, SetMark } from '@/ui/components';
 import { BentoGrid, type Tile } from '@/ui/bento';
 import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
@@ -72,8 +72,9 @@ function tiles(s: Save): Tile[] {
   const rc = reclassification(s);
   return [
     {
-      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, hot: s.hunter.points > 0, call: !!rc?.ready,
-      count: `LV ${s.hunter.level}`,
+      // Waiting on the hunter (a rank to claim, points to spend): gold, a word in the count, and the light crossing it.
+      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, call: !!rc?.ready || s.hunter.points > 0,
+      count: rc?.ready ? 'Ready' : s.hunter.points ? `${s.hunter.points} ${s.hunter.points === 1 ? 'point' : 'points'}` : `LV ${s.hunter.level}`,
       status: rc?.ready ? <RankDue to={rc.to.name} /> : s.hunter.points ? <PointsDue n={s.hunter.points} /> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : r.name,
       art: (
         <span class="ia-status">
@@ -91,22 +92,22 @@ function tiles(s: Save): Tile[] {
       open: openStatus,
     },
     {
-      key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />,
-      count: `${lead} ${Math.round(total[lead])}`,
+      key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />, call: s.hunter.points > 0,
+      count: s.hunter.points ? `${s.hunter.points} ${s.hunter.points === 1 ? 'point' : 'points'}` : `${lead} ${Math.round(total[lead])}`,
       status: s.hunter.points ? <PointsDue n={s.hunter.points} /> : `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
       art: <Radar values={total} />,
       open: openStats,
     },
     {
-      key: 'skills', kind: 'gold', name: 'Skills', head: true, icon: <Glyph name="bolt" />, call: choose > 0,
+      key: 'skills', kind: 'system', name: 'Skills', head: true, icon: <Glyph name="bolt" />, call: choose > 0,
       count: choose ? `${choose} new` : cls ? `${cls.rank}-Rank` : '-- --',
       status: choose && cls ? <ChoiceDue kind={optionsAt(cls.lead, waiting(s)[0]).kind} /> : cls ? `[Class: ${cls.name}]` : 'Unclassified',
       art: <SkillArt s={s} />,
       open: openClass,
     },
     {
-      key: 'equipment', kind: 'gear', name: 'Equipment', head: true, wide: true, icon: <Glyph name="Chest" />, hot: ups > 0,
-      count: Math.round(gear.power(s)),
+      key: 'equipment', kind: 'gear', name: 'Equipment', head: true, wide: true, icon: <Glyph name="Chest" />, call: ups > 0,
+      count: ups ? `${ups} better` : Math.round(gear.power(s)),
       status: ups ? <>Auto Equip: <b class="num">{ups}</b></> : setLine(s) ?? `Slots filled: ${gear.worn(s).length}/${gear.SLOTS.length}`,
       art: (
         <span class="ia-doll">
@@ -534,7 +535,7 @@ function ActiveSets({ s }: { s: Save }) {
           const set = setById(id)!;
           return (
             <li key={id} class="sysbox eqsets__one">
-              <span><strong>[Set: {id}]</strong> <span class="num">{n}/{gear.setPieces(id).length}</span></span>
+              <span><SetMark id={id} /><strong>[Set: {id}]</strong> <span class="num">{n}/{gear.setPieces(id).length}</span></span>
               <span class="grant">{gear.bonusText(gear.sumBonuses(set.two, n >= 3 ? set.three : {}))}</span>
             </li>
           );
@@ -665,7 +666,7 @@ export function openItem(id: string) {
             <Field k="Rarity" v={gear.RARITY[d.rank].name} />
             <Field k="Quality" v={d.issued ? 'Issued' : gear.qualityText(it)} />
             <Field k="Score" v={Math.round(gear.score(it))} />
-            <Field k="Set" v={d.set ?? '-- --'} />
+            <Field k="Set" v={d.set ? <><SetMark id={d.set} />{d.set}</> : '-- --'} />
           </div>
           {d.desc && <p class="itemsheet__text">{d.desc}</p>}
           <ul class="sysstats">

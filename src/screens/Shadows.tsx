@@ -48,7 +48,7 @@ function tiles(s: Save, news: string[]): BTile[] {
   const army = ranked(s);
   const squadTile: BTile = {
     key: 'squad', kind: 'shadow', name: 'Squad', head: true, wide: true, icon: <Glyph name="shadows" />,
-    count: `${squad.length}/${slots}`, hot: shadows.freeSlots(s) > 0,
+    count: `${squad.length}/${slots}`, call: shadows.freeSlots(s) > 0,
     status: `Bound: ${s.shadows.army.length} · Extractions: ${s.stats.extractions}`,
     art: (
       <span class="sa-squad">
@@ -67,10 +67,10 @@ function tiles(s: Save, news: string[]): BTile[] {
   };
   const waiting = shadows.promotable(s);
   const armyTile: BTile = {
-    key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="skull" />, hot: news.length > 0,
-    // A Shadow waiting to be promoted is waiting on the hunter, as a rank to claim is.
-    call: waiting.length > 0,
-    count: army.length,
+    key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="skull" />,
+    // A Shadow waiting to be promoted is waiting on the hunter, as a rank to claim is; one just bound is new.
+    call: waiting.length > 0 || news.length > 0,
+    count: waiting.length ? `${waiting.length} ready` : news.length ? `${news.length} new` : army.length,
     status: waiting.length ? `Promotion ready: ${waiting.length}` : `Not yet bound: ${ALL_ENEMIES.length - army.length}`,
     art: (
       <span class="sa-army">
@@ -111,8 +111,8 @@ function shadowTiles(s: Save, news: string[]): BTile[] {
     const ready = shadows.canPromote(sh);
     return {
       key: `shadow-${sh.id}`, kind: 'shadow', name: shadows.nameOf(sh), icon: <RankPlate rank={e.rank} size={22} />,
-      class: `is-shadow ${on ? 'is-deployed' : ''} ${ready ? 'is-ready' : ''}`, hot: news.includes(sh.id), call: ready,
-      count: <span class="sa-rank"><Insignia rank={at} size={14} />{rank.name}</span>,
+      class: `is-shadow ${on ? 'is-deployed' : ''} ${ready ? 'is-ready' : ''}`, call: ready || news.includes(sh.id),
+      count: <span class="sa-rank"><Insignia rank={at} size={14} />{ready ? 'Ready' : news.includes(sh.id) ? 'New' : rank.name}</span>,
       status: ready && next ? <>Promotion: <span class="grant">{next.name} Rank</span></> : `${on ? 'Deployed · ' : ''}Power ${powerOf(shadows.statsOf(sh))}`,
       art: <ShadowArt family={e.family} rank={at} kills={sh.kills} share={share} on={on} ready={ready} />,
       open: () => openShadow(sh.id),

@@ -145,7 +145,7 @@ function topTiles(s: Save): BTile[] {
   if (open && run) {
     const steps = raid.mapOf(open, run).layers.length;
     out.push({
-      key: 'run', kind: 'gates', name: open.name, wide: true, hot: true, icon: <Glyph name="gates" />,
+      key: 'run', kind: 'gates', name: open.name, wide: true, call: true, icon: <Glyph name="gates" />,
       count: `${run.at}/${steps}`, status: 'Go Back In',
       art: <span class="ga-steps">{Array.from({ length: steps }, (_, i) => <i key={i} class={i < run.at ? 'is-on' : i === run.at ? 'is-here' : ''} />)}</span>,
       // A run left open is one tap from where it stopped; its brief, from the board, holds Abandon.
@@ -211,8 +211,9 @@ function topTiles(s: Save): BTile[] {
   // From Ascension's grade, before its first level opens too: the tile holds the road to it.
   if (ascension.ascensionOpen(s)) {
     out.push({
-      key: 'ascension', kind: 'gold', name: `Ascension ${a.level}`, icon: <Glyph name="crown" />, hot: marks.unset(s) > 0 || !story.seen(s, 'ascension-told'),
-      count: `${a.level}/${a.unlocked}`,
+      // Gold only while something waits: a mark to set, or the tile not yet opened.
+      key: 'ascension', kind: 'system', name: `Ascension ${a.level}`, icon: <Glyph name="crown" />, call: marks.unset(s) > 0 || !story.seen(s, 'ascension-told'),
+      count: marks.unset(s) > 0 ? `${marks.unset(s)} ${marks.unset(s) === 1 ? 'mark' : 'marks'}` : !story.seen(s, 'ascension-told') ? 'New' : `${a.level}/${a.unlocked}`,
       status: a.level ? ascension.levelInfo(a.level).name : 'The board as it stands.',
       art: (
         <span class="ga-ascend">
@@ -238,7 +239,7 @@ function gateTile(s: Save, d: Dungeon, quest: boolean, day: string): BTile {
   const pinned = job && !association.done(job) && job.gate === d.id;
   const tag = practice ? 'Training' : held ? 'Chosen' : pinned ? 'Association' : quest ? 'Quest' : undefined;
   return {
-    key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, hot: practice, shut: locked,
+    key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, call: practice, shut: locked,
     class: `is-gate ${practice ? 'is-practice' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''} ${tag ? `is-${tag.toLowerCase()}` : ''}`,
     icon: <Glyph name={locked ? 'lock' : known ? 'skull' : 'unknown'} />,
     count: tag,

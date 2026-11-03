@@ -41,6 +41,8 @@ import { openBrief } from './Gates';
 /** A quest as the grid shows it: its tile, and the window its sheet opens. */
 interface QuestTile extends Omit<Tile, 'open'> {
   Body: FunctionComponent<{ close: () => void }>;
+  /** The window's colour, when it is not the tile's: advancement's windows are gold whatever the tile shows. */
+  sheet?: Tile['kind'];
 }
 
 export function Quests() {
@@ -70,9 +72,9 @@ function tiles(s: Save, day: string): Tile[] {
   // A rank waiting to be claimed leads the page, across its width.
   const lead = rank?.call ? [rank, dailyTile(s, day)] : [dailyTile(s, day), rank];
   const list = [...lead, spireTile(s, day), trialTile(s, day), chosenTile(s, day), secretTile(s)].filter((t): t is QuestTile => !!t);
-  return list.map(({ Body, ...t }) => ({
+  return list.map(({ Body, sheet, ...t }) => ({
     ...t,
-    open: () => openSheet({ title: 'Quest Info', system: { kind: t.kind }, render: (close) => <Body close={close} /> }),
+    open: () => openSheet({ title: 'Quest Info', system: { kind: sheet ?? t.kind }, render: (close) => <Body close={close} /> }),
   }));
 }
 
@@ -120,7 +122,7 @@ function rankTile(s: Save): QuestTile | null {
   const q = reclassification(s);
   if (!q) return null;
   return {
-    key: 'rank', kind: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: q.ready, call: q.ready,
+    key: 'rank', kind: 'system', sheet: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: q.ready, call: q.ready,
     count: q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`,
     status: q.ready ? 'Requirements met.' : <>Experience needed: <b class="num">{group(q.left)}</b></>,
     art: (
@@ -248,8 +250,8 @@ function trialTile(s: Save, day: string): QuestTile | null {
   const ready = ascension.trialReady(s, day);
   const rounds = trialRounds(a.unlocked);
   return {
-    key: 'trial', kind: 'gold', name: `Trial: Ascension ${a.unlocked + 1}`, icon: <Glyph name="cert" />, wide: false,
-    count: `${got}/${need}`, hot: ready,
+    key: 'trial', kind: 'system', sheet: 'gold', name: `Trial: Ascension ${a.unlocked + 1}`, icon: <Glyph name="cert" />, wide: false,
+    count: ready ? 'Open' : `${got}/${need}`, call: ready,
     status: ready ? 'The Trial is open.' : proved ? 'Faced today.' : `Then ${rounds} of the Chosen.`,
     art: (
       <span class="qa-trial">
@@ -304,7 +306,7 @@ function chosenTile(s: Save, day: string): QuestTile | null {
   if (!w || !gate) return null;
   const open = board(s, day).some((x) => x.id === gate.id);
   return {
-    key: 'chosen', kind: 'gold', name: `Chosen: ${w.name}`, icon: <Glyph name="crown" />, wide: false,
+    key: 'chosen', kind: 'system', sheet: 'gold', name: `Chosen: ${w.name}`, icon: <Glyph name="crown" />, wide: false,
     count: open ? '0/1' : 'Closed',
     status: open ? gate.name : `${gate.name} is closed until tomorrow.`,
     art: (

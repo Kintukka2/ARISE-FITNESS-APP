@@ -824,7 +824,10 @@ button.sysalert { width: 100%; text-align: left; cursor: pointer; }
 .assoccard__line { margin: 0; color: var(--ink-2); font-size: 0.9rem; line-height: 1.5; font-style: italic; }
 .assoccard__goal { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-weight: 600; color: var(--ink); }
 .assoccard__pay { margin: 0; font-size: 0.8rem; color: var(--ink-3); }
-.assoccard.is-done { box-shadow: 0 0 0 1px color-mix(in srgb, var(--coach) 60%, transparent), 0 0 22px var(--coach-glow); }
+.assoccard { position: relative; overflow: hidden; }
+.assoccard.is-done { border-color: var(--gold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 70%, transparent), 0 0 26px var(--gold-glow); animation: btileCall 1.5s ease-in-out infinite; }
+.assoccard.is-done .assoccard__goal b { color: #1a1200; background: var(--gold); padding: 1px 8px; box-shadow: 0 0 14px var(--gold-glow); animation: btileCount 1.5s ease-in-out infinite; }
+.assoccard__sweep { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 38%, color-mix(in srgb, var(--gold) 24%, transparent) 50%, transparent 62%); background-size: 260% 100%; animation: btileSweep 2.8s ease-in-out infinite; mix-blend-mode: screen; }
 .assocalert { position: relative; display: flex; align-items: center; gap: 10px; overflow: hidden; padding: 9px 12px 9px 9px; border-left: 3px solid var(--coach); box-shadow: -4px 0 16px -4px var(--coach-glow), 0 10px 30px rgba(0, 0, 0, 0.5); animation: alertIn 520ms var(--ease) 700ms both; }
 .assocalert__icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 1px solid color-mix(in srgb, var(--coach) 45%, transparent); box-shadow: inset 0 0 12px color-mix(in srgb, var(--coach) 25%, transparent); }
 .assocalert__body { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
@@ -847,3 +850,9 @@ button.sysalert { width: 100%; text-align: left; cursor: pointer; }
 .namefield__count { flex: none; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 55%, transparent); }
 .namefield__acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .namefield__acts .btn { width: 100%; }
+
+/* A set's mark: a small diamond in the set's own hue, low in the corner of each of its pieces. */
+.art__set, .setmark { display: inline-block; width: 8px; height: 8px; transform: rotate(45deg); background: hsl(var(--set-h) 82% 62%); border: 1px solid rgba(2, 5, 14, 0.85); box-shadow: 0 0 5px hsl(var(--set-h) 85% 60% / 0.75); }
+.art__set { position: absolute; left: 4px; bottom: 4px; z-index: 2; }
+.setmark { margin: 0 7px 1px 2px; vertical-align: middle; }
+.art__worn + .art__set { bottom: 15px; }
