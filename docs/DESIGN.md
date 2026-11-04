@@ -172,7 +172,9 @@ the engine and opening its window. Inventory holds Status, a radar of the five s
 Equipment, what is held, the Exchange and the hunter's card; Equipment became a System window of its
 own (`EQUIPMENT`, added to the closed list of headers). Gates keeps Valcorde's line above tiles for
 the Practice Gate until it is cleared, the open run, the open Gates, the grade and its licence, the
-hunter's condition, the record, the Spire and Ascension. A list is one tile: Open Gates opens the
+record, the Spire and Ascension. The hunter's condition sits between Valcorde's line and the tiles,
+as the Status sheet's HP, MP and Fatigue rows with their potions, so nothing has to be opened to
+check it or to drink. A list is one tile: Open Gates opens the
 board (`GATES`), a grid of Gate tiles, each a portal in its grade's colour; on Shadows, the Army
 opens `ARMY`, a tile to every Shadow ringed by its kills toward the next rank, beside the squad's
 slots. The brief, the dossier, the slot picker, recycling, Settings and the Guide all take the
@@ -609,6 +611,13 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
 - **Results as alerts.** The Daily Quests a run moved, and a lingering Shadow, are System alerts on
   the results, not windows. The lingering Shadow's alert opens the extraction, on the System's
   sheet; a Shadow bound is offered a name there, and can be named or renamed from its card.
+- **Three reaches.** A reach that fails no longer loses the Shadow. It lingers for up to three reaches
+  in all (`EXTRACT_TRIES`), each costing twice the MP of the one before: a C-Rank creature is 70 MP,
+  then 140, then 280. The last to fail disperses it. `raid.extract` counts the reaches on the
+  lingering itself (`tries`, `bound`), so the results' alert and the sheet read the same state, and the
+  campaign's hunters reach as long as the mana holds. In the campaign, the evening hunter holds 33
+  Shadows by day 112 (was 25) and the three-session hunter 35 (was 34); S-Rank comes on the same day,
+  Sovereign on day 110 (was 115) and day 65 (was 64). Calibration does not extract, so it stands.
 
 ## What stays out
 

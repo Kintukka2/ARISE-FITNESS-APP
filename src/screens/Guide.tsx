@@ -4,7 +4,7 @@ import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
-import { SLOTS as SQUAD, EXTRACT_MP, GROWTH_PER_KILL, SECOND_AT, SHADOW_RANKS } from '@/core/shadows';
+import { SLOTS as SQUAD, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_KILL, SECOND_AT, SHADOW_RANKS } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
@@ -220,6 +220,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A felled creature can linger after a clear.',
       'Extract it with mana and it may join your army. The odds are shown first, and rise with INT.',
       `Extraction costs MP by grade: ${EXTRACT_MP.E} at E to ${EXTRACT_MP.S} at S, whether or not it holds.`,
+      `A Shadow that does not hold still lingers: you can reach for it ${EXTRACT_TRIES.max} times in all. Each reach costs ${EXTRACT_TRIES.step === 2 ? 'twice' : `${EXTRACT_TRIES.step} times`} the one before.`,
       `You can deploy ${SQUAD.E} at E, ${SQUAD.C} at C and ${SQUAD.A} at A. Some Secret Quests add more.`,
       'Shadows never make a Gate harder.',
       `A Shadow grows ${GROWTH_PER_KILL * 100}% with every kill it lands, up to its rank’s limit.`,

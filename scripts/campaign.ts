@@ -158,7 +158,8 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   t.contracts += res.contracts.done.length;
   if (res.contracts.bonus) t.bonusDays++;
   if (res.chosen) { t.chosen++; if (res.chosen.item) t.masterworks++; }
-  for (const l of res.lingering) if (vitals.read(s, now).mp >= l.cost) raid.extract(s, l, r(), now);
+  // Every reach it has the mana for, up to the last, while the Shadow lingers.
+  for (const l of res.lingering) while (raid.reachesLeft(l) > 0 && vitals.read(s, now).mp >= raid.reachCost(l)) raid.extract(s, l, r(), now);
   t.shardsIn += s.wallet.earned - before;
 }
 

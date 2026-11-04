@@ -470,7 +470,16 @@ export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: Ch
 
 export type Outcome = 'cleared' | 'withdrawn' | 'defeated';
 
-export interface Lingering { enemyId: string; boss: boolean; cost: number }
+/**
+ * A creature lingering after a clear. `cost` is the first reach's MP; `tries` counts the reaches that
+ * failed, and `bound` is set once one holds.
+ */
+export interface Lingering { enemyId: string; boss: boolean; cost: number; tries: number; bound?: boolean }
+
+/** What the next reach for a lingering Shadow costs: the first reach's MP, doubled for every one that failed. */
+export const reachCost = (l: Lingering) => Math.round(l.cost * Math.pow(shadows.EXTRACT_TRIES.step, l.tries ?? 0));
+/** Reaches left before its mana disperses. None once it has been bound. */
+export const reachesLeft = (l: Lingering) => (l.bound ? 0 : Math.max(0, shadows.EXTRACT_TRIES.max - (l.tries ?? 0)));
 
 export interface RaidResult {
   outcome: Outcome;
@@ -613,7 +622,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       if (!e || seen.has(id) || shadows.isBound(s, id) || lingering.length >= 2) continue;
       seen.add(id);
       const boss = id === d.boss || (!!run.chosen && id === walkers.walkerOf(run.chosen, d.rank as Rank).id);
-      if (r() < shadows.lingerChance(s, boss)) lingering.push({ enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level)) });
+      if (r() < shadows.lingerChance(s, boss)) lingering.push({ enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level)), tries: 0 });
     }
   }
 
@@ -677,16 +686,23 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   };
 }
 
-/** Reach for a lingering Shadow. MP is spent whether or not it holds. */
-export function extract(s: Save, l: Lingering, roll: number, now = Date.now()): 'bound' | 'lost' | 'no-mana' {
-  if (!vitals.spendMp(s, l.cost, now)) return 'no-mana';
+/**
+ * Reach for a lingering Shadow, at what this reach costs (`reachCost`). MP is spent whether or not it
+ * holds. A reach that fails leaves it lingering while reaches are left (`failed`); the last to fail
+ * disperses it (`lost`). Mutates the save and the lingering.
+ */
+export function extract(s: Save, l: Lingering, roll: number, now = Date.now()): 'bound' | 'failed' | 'lost' | 'no-mana' {
+  if (reachesLeft(l) <= 0) return 'lost';
+  if (!vitals.spendMp(s, reachCost(l), now)) return 'no-mana';
   s.stats.extractions++;
   if (roll < shadows.holdChance(s)) {
     s.stats.extractionsWon++;
     shadows.bind(s, l.enemyId, dayKey(now));
+    l.bound = true;
     return 'bound';
   }
-  return 'lost';
+  l.tries = (l.tries ?? 0) + 1;
+  return reachesLeft(l) > 0 ? 'failed' : 'lost';
 }
 
 // ------------------------------------------------------------------ projection

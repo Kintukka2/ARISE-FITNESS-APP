@@ -443,10 +443,12 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 
 - **Every main screen is a grid of these tiles** (`ui/bento.tsx`): Inventory (Status, Stats, Skills,
   Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
-  cleared, the open run, Open Gates, Grade, Condition, Record, the Pale Spire, Ascension), Quests,
+  cleared, the open run, Open Gates, Grade, Record, the Pale Spire, Ascension), Quests,
   and Shadows (the Squad and the Army). A list is one tile that opens its window: Open Gates opens
   GATES, a tile to every Gate, its portal in its grade's colour; the Army opens ARMY, a tile to
-  every Shadow, ringed by its kills toward the next rank. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
+  every Shadow, ringed by its kills toward the next rank. On Gates, the hunter's condition is not a
+  tile but a strip under Valcorde's line, in the System's frame: the Status sheet's HP, MP and FTG
+  rows, each with its potion, so a potion is one tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates grid.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
@@ -554,10 +556,12 @@ The panel after a clear, in a violet frame.
 |---|---|---|
 | Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | `The mana of [{foe}] lingers.` / `Extraction cost: 60 MP` / `Success rate: 34%` |
 | No mana | "You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some." | `Not enough MP. (40/60)` |
-| Failed | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Extraction] has failed.` / `The mana has dispersed.` (all red) |
+| Failed, reaches left | | `[Skill: Extraction] has failed.` (red) / `The mana of [{foe}] still lingers.` / `Extraction cost: 120 MP (×2)`, the cost in red / `MP held: 140 · Success rate: 34%` / `Attempts left: 2` / `Hold To Extract Again`. Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
+| Failed, the last reach | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Extraction] has failed.` / `The mana has dispersed.` (all red) |
 | Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
 
-That INT raises the rate is a rule, so it goes in the Guide.
+That INT raises the rate is a rule, so it goes in the Guide, and so does why the cost doubles: the
+System shows the multiplier (`×2`, `×4`) and the attempts left, never the reason.
 
 ### The fight log
 
