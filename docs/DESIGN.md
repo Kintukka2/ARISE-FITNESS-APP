@@ -656,6 +656,43 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
 - **Balance.** Calibration's hunters take no jobs, so `gatetune.ts` stands. The campaign's hunters
   take every job and report it at once.
 
+## Gear, overhauled — built
+
+The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mechanics.
+
+- **The Inventory** counts what is held, what is New and the designs found, and has two views.
+  *Items* is a square to every piece: its rarity's frame, its quality along its foot, and its marks
+  (worn, starred, a set's, better than what is worn, `New`, and `×2` while a duplicate can be fused
+  into it). A tab to every kind, a sort (score, rarity, newest, quality) and four filters (Better,
+  Fusable, Set pieces, Starred) narrow it. *Select* picks pieces to recycle together, by tapping or
+  by rarity or every duplicate but the best of each design, and a bar counts what they would pay;
+  worn, issued and starred pieces cannot be picked. It replaced the separate Recycle sheet.
+  *Sets* shows the designs found by rarity and a card to every set: its pieces held, seen or not yet
+  found, what two and three pay, and its home Gate.
+- **New.** A piece granted is marked New (`s.newItems`) until its card is opened or the bag is left.
+  The Inventory tile counts them.
+- **The item's card** leads with its art in its rarity's light, its rarity and kind, its tags and its
+  score, with what it gains or loses over the worn piece it would replace (`gear.counterpart`, the
+  weaker for a ring). Under it: that piece, to tap through to; quality on a bar with the steps to
+  perfect and any past it; each stat with its difference; each property with a bar from its design's
+  worst to its best; its set as a card; Fusion; Upgrade; and Equip, the star and Recycle.
+- **Fusion** (`gear.fuse`, `FUSE`). A duplicate of a piece's design, not worn, starred or a
+  masterwork, is fed into it: the piece keeps the better quality and the better of each property,
+  then takes three upgrade steps toward perfect, never past it, for no shards. Duplicates were only
+  worth a little in shards; now they are the cheap way to perfect. The campaign's hunters fuse every
+  duplicate of what they wear before they spend on upgrades.
+- **The Equipment sheet** sums what is worn (score, each stat, and the properties and sets as one
+  line), shows it on a figure with a slot either side and a line running in to it, the set's hue down
+  the edge of a slot whose set is paying, and keeps **three loadouts** (`gear.saveLoadout`,
+  `gear.wearLoadout`): what was worn, saved, and worn again in one tap. A piece of a loadout recycled or
+  fused away is counted missing, and its slot keeps what is worn there.
+- **Properties apply as they read.** `rollBonuses` divided every property written as a percentage by
+  100, but critical chance and status chance are counted in points, so Critical Chance +9.9% added 0.1
+  points. It now divides only for a stat the fight multiplies. `npm run calibrate` was rerun against it:
+  37 tunings moved, none by much, and the middle of every grade clears as before (67% at E to 85%
+  at B). In the campaign the evening hunter reaches S-Rank on day 59 and Sovereign on day 111, the
+  three-session hunter day 31 and day 61, fusing 19 and 27 duplicates on the way.
+
 ## Smaller changes from the same playtest
 
 - **Perfect means perfect.** A piece was marked Perfect when its quality alone was at its best, and

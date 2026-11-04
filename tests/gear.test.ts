@@ -139,3 +139,120 @@ describe('upgrading', () => {
     expect(shop.upgradeCost(kit)).toBeNull();
   });
 });
+
+describe('fusion', () => {
+  const D = 'CHAMPION_HELM';
+  it('feeds a duplicate into a piece: the better rolls of the two, then steps toward perfect', () => {
+    const s = holding(D, D, 'WARDEN_HELM');
+    const [a, b] = s.items;
+    // Make the duplicate the better roll, so the piece takes its quality.
+    s.items[0] = { ...a, q: 0.8, rolls: [3.2] };
+    s.items[1] = { ...b, q: 1.1, rolls: [4.6] };
+    expect(gear.fodderFor(s, s.items[0]).map((x) => x.id)).toEqual([b.id]);
+    const next = gear.fuse(s, a.id, b.id)!;
+    expect(next.q).toBeGreaterThan(1.1);
+    expect(next.rolls[0]).toBeGreaterThan(4.6);
+    expect(s.items.some((x) => x.id === b.id)).toBe(false);
+    expect(s.items.find((x) => x.id === a.id)).toEqual(next);
+  });
+
+  it('never fuses past perfect, a different design, a worn, starred or masterwork piece', () => {
+    const s = holding(D, D, D, D, 'WARDEN_HELM');
+    const [a, b, c, m, w] = s.items;
+    gear.equip(s, b.id);
+    gear.toggleFav(s, c.id);
+    s.items[3] = { ...m, master: 1 };
+    expect(gear.fodderFor(s, a).map((x) => x.id)).toEqual([]);
+    expect(gear.fuse(s, a.id, w.id)).toBeNull();
+    // A perfect piece takes nothing more from a duplicate.
+    gear.toggleFav(s, c.id);
+    let p = s.items[0];
+    for (let x = gear.upgradeStep(p, 0); x; x = gear.upgradeStep(x, 0)) p = x;
+    s.items[0] = p;
+    expect(gear.fusedWith(p, c)).toBeNull();
+    expect(gear.fuse(s, a.id, c.id)).toBeNull();
+  });
+
+  it('a hunter who keeps up feeds every duplicate into what is worn', () => {
+    const s = holding(D, D, D);
+    gear.equip(s, s.items[0].id);
+    expect(gear.fuseWorn(s)).toBe(2);
+    expect(s.items).toHaveLength(1);
+  });
+});
+
+describe('loadouts', () => {
+  it('saves what is worn and wears it again, emptying what it left empty', () => {
+    const s = holding('CHAMPION_HELM', 'WARDEN_HELM', 'CHAMPION_BLADE');
+    const [h1, h2, w] = s.items;
+    gear.equip(s, h1.id);
+    gear.equip(s, w.id);
+    gear.saveLoadout(s, 0, '2026-02-04');
+    gear.equip(s, h2.id);
+    gear.unequip(s, 'weapon');
+    expect(gear.wearing(s, s.loadouts[0])).toBe(false);
+    expect(gear.wearLoadout(s, 1)).toBe(0);
+    expect(gear.wearLoadout(s, 0)).toBe(2);
+    expect(s.equipped.head).toBe(h1.id);
+    expect(s.equipped.weapon).toBe(w.id);
+    expect(gear.wearing(s, s.loadouts[0])).toBe(true);
+  });
+
+  it('keeps what is worn where a piece of it is gone, and counts it missing', () => {
+    const s = holding('CHAMPION_HELM', 'WARDEN_HELM');
+    const [h1, h2] = s.items;
+    gear.equip(s, h1.id);
+    gear.saveLoadout(s, 2);
+    gear.equip(s, h2.id);
+    shop.recycle(s, h1.id);
+    expect(gear.loadoutHeld(s, s.loadouts[2]!).missing).toBe(1);
+    gear.wearLoadout(s, 2);
+    expect(s.equipped.head).toBe(h2.id);
+  });
+});
+
+describe('the bag', () => {
+  it('marks what comes in as New until it is looked at, and forgets what leaves', () => {
+    const s = holding('CHAMPION_HELM', 'WARDEN_HELM', 'CHAMPION_BLADE');
+    const [a, b, c] = s.items;
+    expect(s.newItems).toEqual([a.id, b.id, c.id]);
+    gear.seeItem(s, a.id);
+    expect(gear.isNew(s, a.id)).toBe(false);
+    shop.recycle(s, b.id);
+    expect(s.newItems).toEqual([c.id]);
+    gear.seeAllItems(s);
+    expect(s.newItems).toEqual([]);
+  });
+
+  it('compares a piece with the one it would replace, the weaker ring for a ring', () => {
+    const s = holding('CHAMPION_HELM', 'WARDEN_HELM');
+    const [a, b] = s.items;
+    expect(gear.counterpart(s, a)).toBeNull();
+    gear.equip(s, b.id);
+    expect(gear.counterpart(s, a)?.id).toBe(b.id);
+    expect(gear.counterpart(s, b)).toBeNull();
+    const d = gear.delta(a, b);
+    expect(d.score).toBeCloseTo(gear.score(a) - gear.score(b), 1);
+  });
+
+  it('recycles only the pieces chosen, never a worn or starred one', () => {
+    const s = holding('CHAMPION_HELM', 'WARDEN_HELM', 'CHAMPION_BLADE');
+    const [a, b, c] = s.items;
+    gear.equip(s, a.id);
+    gear.toggleFav(s, b.id);
+    const r = shop.recycleSome(s, [a.id, b.id, c.id]);
+    expect(r.count).toBe(1);
+    expect(s.items.map((x) => x.id)).toEqual([a.id, b.id]);
+  });
+});
+
+describe('properties in a fight', () => {
+  it('adds a property in the units the fight reads: points for a chance, a fraction for a multiplier', () => {
+    const s = holding('CHAMPION_BLADE', 'CHAMPION_BREASTPLATE');
+    const [blade, plate] = s.items;
+    const b = gear.rollBonuses([blade, plate]);
+    // Critical Chance +4% is 4 points of critical chance; Defence +4% multiplies defence by 1.04.
+    expect(b.crit).toBeCloseTo(blade.rolls[0], 5);
+    expect(b.defense).toBeCloseTo(plate.rolls[0] / 100, 5);
+  });
+});

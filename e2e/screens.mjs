@@ -129,11 +129,19 @@ try {
   if (await page.locator('.sheet.is-top .st-card').count()) throw new Error('A NEW PATH OPENED WITH A NODE ALREADY CHOSEN');
   await snap('skills-bastion');
   await close();
-  await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
-  await page.locator('.btile--inventory .btile__hit').click(); await sleep(400); await snap('inventory-grid');
-  await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();
-  await page.locator('.invtile[aria-label^="Warden"]').first().click(); await sleep(400);
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close(); await close();
+  await page.locator('.btile--equipment .btile__hit').click(); await sleep(900); await snap('equipment');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2'); await close();
+  await page.locator('.btile--inventory .btile__hit').click(); await sleep(900); await snap('inventory-grid');
+  await page.locator('.bagtile').first().click(); await sleep(700); await snap('item');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-2'); await close();
+  await page.locator('.bagtile[aria-label^="Warden"]').first().click(); await sleep(400);
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close();
+  // Select: the rarity chips pick every piece that can go, and the bar counts what they would pay.
+  await page.locator('.bagtools__pick').click(); await sleep(200);
+  await page.locator('.bagpick__chip[data-rarity="E"]').first().click().catch(() => {}); await sleep(300); await snap('inventory-select');
+  await page.locator('.bagtools__pick').click(); await sleep(200);
+  await page.locator('.bag__views .seg__btn', { hasText: 'Sets' }).click(); await sleep(700); await snap('inventory-sets');
+  await close();
   await page.locator('.btile--dossier .btile__hit').click(); await sleep(400); await snap('dossier'); await close();
 
   await nav('quests');

@@ -9,7 +9,7 @@ import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } 
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
-import { SETS, UPGRADE } from '@/data/sets';
+import { FUSE, LOADOUTS, SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
 import { markText, MARKS_MOST } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
@@ -255,6 +255,12 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
       `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank.`,
       `A step costs ${UPGRADE.rate} shards for every point of score it adds: ${stepCost('C')} at Rare, ${stepCost('S')} at Legendary.`,
+      `Fusion feeds a duplicate of an item’s design into it: it keeps the better roll of the two, then takes ${FUSE.steps} upgrade steps toward perfect. The duplicate is gone.`,
+      'A worn, starred or masterwork item is never fed into another.',
+      'Properties apply in the fight as they read: Critical Chance +9% is 9 points of critical chance.',
+      `Save what you wear as a loadout from the Equipment sheet, ${LOADOUTS} in all, and wear it again in one tap.`,
+      'An item stays marked New until you look at it, or leave the Inventory.',
+      'Select in the Inventory picks items to recycle together. Worn, issued and starred items cannot be picked.',
       'The Exchange redraws eight pieces at midnight, mostly at your grade.',
       `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}. The Field Potion costs ${FIELD_POTION.price}.`,
     ],

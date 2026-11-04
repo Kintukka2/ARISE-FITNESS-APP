@@ -2,15 +2,16 @@
  * Equipment: ten slots, six rarities. Every piece's core bonus rolls between
  * 75% and 125% of its design, and its unique properties roll inside their
  * ranges. Both are seeded off the item id, so a piece never changes unless it
- * is upgraded. Three-piece sets pay a bonus for two pieces worn, and for all three.
+ * is upgraded or fused. Three-piece sets pay a bonus for two pieces worn, and for all three.
  * Each level of Ascension opened lets a piece go one upgrade step past perfect.
+ * A duplicate of a piece's design can be fused into it; what is worn can be saved as a loadout.
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
 import { OVERCHARGE } from '@/data/ascension';
-import { SET_KEEP, setById, SETS, UPGRADE } from '@/data/sets';
-import type { Attrs, GearDef, Item, Rank, Save, SlotKey, Stat } from './types';
+import { FUSE, LOADOUTS, SET_KEEP, setById, SETS, UPGRADE } from '@/data/sets';
+import type { Attrs, GearDef, Item, Loadout, Rank, Save, SlotKey, Stat } from './types';
 import { STATS } from './types';
-import { rng, round2, uid } from './util';
+import { dayKey, rng, round2, uid } from './util';
 
 export const SLOTS: { key: SlotKey; name: string; accepts: string; side: 'l' | 'r' }[] = [
   { key: 'head', name: 'Head', accepts: 'Head', side: 'l' },
@@ -72,8 +73,16 @@ export function grant(s: Save, defId: string, id?: string): Item | null {
   const it = make(defId, id);
   s.items.push(it);
   if (!s.found.includes(defId)) s.found.push(defId);
+  (s.newItems ??= []).push(it.id);
   return it;
 }
+
+/** Marked New: in the bag since the hunter last looked at it. */
+export const isNew = (s: Save, id: string) => (s.newItems ?? []).includes(id);
+/** A piece has been looked at: New no more. Mutates. */
+export function seeItem(s: Save, id: string) { s.newItems = (s.newItems ?? []).filter((x) => x !== id); }
+/** Every piece looked at. Mutates. */
+export function seeAllItems(s: Save) { s.newItems = []; }
 
 export function score(it: Item): number {
   const d = defOf(it);
@@ -237,6 +246,7 @@ export function remove(s: Save, itemId: string) {
   if (at) delete s.equipped[at];
   s.items = s.items.filter((i) => i.id !== itemId);
   s.favourites = s.favourites.filter((f) => f !== itemId);
+  seeItem(s, itemId);
 }
 
 export function toggleFav(s: Save, id: string): boolean {
@@ -263,7 +273,12 @@ export const ROLL_EFFECT: Record<string, { key: string; pct: boolean }> = {
   'Healing Received': { key: 'recovery', pct: true },
 };
 
-/** Every worn piece's unique rolls, summed by derived stat. Pct values are fractions. */
+/**
+ * Every worn piece's unique rolls, summed by derived stat, in the units the fight reads: a fraction for a
+ * stat it multiplies (attack, defence, maximum HP), points for one it adds to (critical chance, status
+ * chance, accuracy). A property written as a percentage of a stat counted in points, as Critical Chance
+ * +9.9% is, adds 9.9 points.
+ */
 export function rollBonuses(items: Item[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const it of items) {
@@ -272,7 +287,7 @@ export function rollBonuses(items: Item[]): Record<string, number> {
       const eff = ROLL_EFFECT[r.stat];
       if (!eff) return;
       const v = it.rolls[i] ?? r.min;
-      out[eff.key] = (out[eff.key] ?? 0) + (r.pct ? v / 100 : v);
+      out[eff.key] = (out[eff.key] ?? 0) + (eff.pct ? v / 100 : v);
     });
   }
   return out;
@@ -324,7 +339,7 @@ const PAIRS: [string, string][] = [['patk', 'mpow'], ['defense', 'resist']];
 
 /** A bonus in words, name then value, read from its numbers: "Attack and magic +8%", "Critical chance +6". */
 export function bonusText(b: Record<string, number>): string {
-  const amount = (k: string, v: number) => (FRACTION.has(k) ? `+${Math.round(v * 100)}%` : `+${v}`);
+  const amount = (k: string, v: number) => (FRACTION.has(k) ? `+${Math.round(v * 100)}%` : `+${Math.round(v * 10) / 10}`);
   const left = { ...b };
   const parts: string[] = [];
   for (const [x, y] of PAIRS) {
@@ -367,6 +382,127 @@ export function pastPerfect(it: Item, over: number): Item {
     rolls: (d?.rolls ?? []).map((r) => round2(r.max + (r.max - r.min) * OVERCHARGE.share * over)),
     over,
   };
+}
+
+// ------------------------------------------------------------------ fusion
+
+/** Duplicates of a piece's design it can take in: held, not worn, not starred, not issued, not a masterwork. The weakest first. */
+export function fodderFor(s: Save, it: Item): Item[] {
+  const d = defOf(it);
+  if (!d || d.issued) return [];
+  const worn = new Set(Object.values(s.equipped));
+  return s.items.filter((x) => x.id !== it.id && x.defId === it.defId && !worn.has(x.id) && !s.favourites.includes(x.id) && !x.master)
+    .sort((a, b) => score(a) - score(b) || a.q - b.q);
+}
+
+/**
+ * A piece with a duplicate fed into it: the better quality and the better of each property, then
+ * FUSE.steps upgrade steps toward perfect, never past it. Null when it would gain nothing.
+ */
+export function fusedWith(it: Item, f: Item): Item | null {
+  const base: Item = { ...it, q: Math.max(it.q, f.q), rolls: it.rolls.map((v, k) => Math.max(v, f.rolls[k] ?? v)) };
+  let x = base;
+  for (let n = 0; n < FUSE.steps; n++) {
+    const next = upgradeStep(x, 0);
+    if (!next) break;
+    x = next;
+  }
+  return x.q !== it.q || x.rolls.some((v, k) => v !== it.rolls[k]) ? x : null;
+}
+
+/** Feed a duplicate into a piece. Returns the piece as it now is, or null if it could not be done. Mutates. */
+export function fuse(s: Save, targetId: string, fodderId: string): Item | null {
+  const i = s.items.findIndex((x) => x.id === targetId);
+  const it = s.items[i];
+  const f = it && fodderFor(s, it).find((x) => x.id === fodderId);
+  const next = it && f ? fusedWith(it, f) : null;
+  if (!next || !f) return null;
+  s.items[i] = next;
+  remove(s, f.id);
+  return next;
+}
+
+/** Every duplicate fed into every worn piece that can still take one: what a hunter who keeps up does. Mutates. */
+export function fuseWorn(s: Save): number {
+  let n = 0;
+  for (const it of worn(s)) {
+    for (const f of fodderFor(s, it)) {
+      const cur = s.items.find((x) => x.id === it.id)!;
+      if (!fuse(s, cur.id, f.id)) break;
+      n++;
+    }
+  }
+  return n;
+}
+
+// ------------------------------------------------------------------ comparing
+
+/** The worn piece a piece would take the place of: what is worn where it goes, the weaker for a ring. Null if it is worn, or a slot for it is empty. */
+export function counterpart(s: Save, it: Item): Item | null {
+  if (slotOf(s, it)) return null;
+  const fits = slotsFor(defOf(it));
+  const on = fits.map((f) => equippedIn(s, f.key)).filter((x): x is Item => !!x);
+  if (!on.length || on.length < fits.length) return null;
+  return on.sort((a, b) => score(a) - score(b))[0];
+}
+
+/** What a piece adds over another, stat by stat: core stats, and the derived bonuses its properties give. */
+export function delta(it: Item, other: Item | null): { score: number; core: Partial<Record<Stat, number>> } {
+  const a = coreOf(it);
+  const b = other ? coreOf(other) : {};
+  const core: Partial<Record<Stat, number>> = {};
+  for (const k of STATS) {
+    const v = round2((a[k] ?? 0) - (b[k] ?? 0));
+    if (v) core[k] = v;
+  }
+  return { score: round2(score(it) - (other ? score(other) : 0)), core };
+}
+
+// ------------------------------------------------------------------ loadouts
+
+export { LOADOUTS };
+/** Save what is worn as a loadout. Mutates. */
+export function saveLoadout(s: Save, i: number, day = dayKey()) {
+  if (i < 0 || i >= LOADOUTS) return;
+  s.loadouts ??= [];
+  s.loadouts[i] = { slots: { ...s.equipped }, at: day };
+}
+export function clearLoadout(s: Save, i: number) {
+  if (s.loadouts?.[i]) s.loadouts[i] = null;
+}
+/** The pieces of a loadout still held, slot by slot; those recycled or fused away are missing. */
+export function loadoutHeld(s: Save, l: Loadout): { held: Partial<Record<SlotKey, Item>>; missing: number } {
+  const held: Partial<Record<SlotKey, Item>> = {};
+  let missing = 0;
+  for (const sl of SLOTS) {
+    const id = l.slots[sl.key];
+    if (!id) continue;
+    const it = s.items.find((x) => x.id === id);
+    if (it) held[sl.key] = it;
+    else missing++;
+  }
+  return { held, missing };
+}
+/** Whether what is worn is exactly a loadout. */
+export const wearing = (s: Save, l: Loadout | null | undefined) => !!l && SLOTS.every((sl) => (s.equipped[sl.key] ?? null) === (l.slots[sl.key] ?? null));
+/**
+ * Wear a loadout: every piece of it still held goes into its slot, and a slot it left empty is emptied.
+ * A slot whose piece is gone keeps what is worn there, unless that piece now goes elsewhere. Returns
+ * how many slots changed. Mutates.
+ */
+export function wearLoadout(s: Save, i: number): number {
+  const l = s.loadouts?.[i];
+  if (!l) return 0;
+  const before = { ...s.equipped };
+  const { held } = loadoutHeld(s, l);
+  const placed = new Set(Object.values(held).map((x) => x!.id));
+  for (const sl of SLOTS) {
+    const it = held[sl.key];
+    if (it) s.equipped[sl.key] = it.id;
+    else if (!l.slots[sl.key]) delete s.equipped[sl.key];
+    else if (s.equipped[sl.key] && placed.has(s.equipped[sl.key]!)) delete s.equipped[sl.key];
+  }
+  return SLOTS.filter((sl) => (before[sl.key] ?? null) !== (s.equipped[sl.key] ?? null)).length;
 }
 
 export function rollText(it: Item): string[] {

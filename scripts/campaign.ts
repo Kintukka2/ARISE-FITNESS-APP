@@ -52,7 +52,7 @@ const PROFILES: Profile[] = [
 
 interface Tally {
   runs: number; cleared: number; defeated: number; spire: number; chosen: number; masterworks: number;
-  contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number; assoc: number;
+  contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number; assoc: number; fused: number;
 }
 
 function newHunter() {
@@ -80,6 +80,8 @@ function tidy(s: Save, now: number, t: Tally) {
   const shelf = shop.shelf(s, day).filter((o) => !o.sold && o.price <= s.wallet.shards / 2 && gear.beatsWorn(s, o.item));
   const best = shelf.sort((a, b) => gear.score(b.item) - gear.score(a.item))[0];
   if (best && shop.buy(s, best.index, day)) { t.bought++; t.shardsOut += best.price; gear.autoEquip(s); }
+  // Every duplicate of a worn piece fed into it, before a shard is spent raising it.
+  t.fused += gear.fuseWorn(s);
   // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows.
   for (;;) {
     const worn = gear.worn(s).map((it) => ({ it, cost: shop.upgradeCost(it, asc.overCap(s)) })).filter((x): x is { it: typeof x.it; cost: number } => x.cost !== null);
@@ -170,7 +172,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
 function campaign(p: Profile) {
   const s = newHunter();
   const r = rng('campaign|' + p.name);
-  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0, assoc: 0 };
+  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0, assoc: 0, fused: 0 };
   const ranks: string[] = [];
   const weekly: string[] = [];
   let rank = rankFor(1).key;
@@ -220,7 +222,7 @@ function campaign(p: Profile) {
   console.log(`  ranks      ${ranks.join('  ')}`);
   console.log(`  runs       ${t.runs} (${(t.runs / days).toFixed(1)} a day, ${t.spire} on the Spire): ${Math.round((t.cleared / t.runs) * 100)}% cleared, ${t.defeated} carried out`);
   console.log(`  contracts  ${(t.contracts / days).toFixed(2)} of 3 a day, all three on ${Math.round((t.bonusDays / days) * 100)}% of days${contractsOpen(s) ? '' : ' (never opened)'}`);
-  console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} pieces bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
+  console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} pieces bought, ${t.upgrades} upgrade steps, ${t.fused} duplicates fused), ${s.wallet.shards} left`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);

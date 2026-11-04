@@ -35,6 +35,8 @@ export function defaults(): Save {
     equipped: {},
     favourites: [],
     found: [],
+    newItems: [],
+    loadouts: [],
     gates: {
       clears: 0, fails: 0, withdrawn: 0, cleared: [], sealed: { day: null, ids: [] },
       runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [], surveyed: [],
