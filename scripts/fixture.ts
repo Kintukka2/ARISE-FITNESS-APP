@@ -118,7 +118,9 @@ a.newItems = [];
 for (const id of ['ENM-099', 'ENM-101', 'ENM-103', 'ENM-105', 'ENM-106']) bind(a, id, addDays(today, -30));
 // An Ascendant, two Vanguards and two Sworn, and the Essence towards the next.
 a.shadows.army.forEach((x, i) => { raise(x, [3, 2, 2, 1, 1][i]); x.xp = Math.min(xpAt([36, 30, 27, 20, 16][i]) + 3, x.xp); x.kills = 420 - i * 70; x.bosses = 14 - i * 3; x.out = 160 - i * 25; });
-a.shadows.essence = 34;
+// Igris at the top, two stars awakened, with the Essence for a third.
+Object.assign(a.shadows.army[0], { xp: xpAt(40), stars: 2 });
+a.shadows.essence = 52;
 a.wallet = { shards: 6400, earned: 41000, spent: 34600, bought: 0, receipts: [] };
 a.gates.clears = 240; a.gates.fails = 9; a.gates.withdrawn = 7;
 a.gates.cleared = ['DNG-000', ...Array.from({ length: 50 }, (_, i) => `DNG-${String(i + 1).padStart(3, '0')}`)];

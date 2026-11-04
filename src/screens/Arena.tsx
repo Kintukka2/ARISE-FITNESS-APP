@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
-import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE, TACTICS } from '@/core/combat';
+import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
@@ -29,7 +29,7 @@ import { arena } from '@/app/router';
 import * as store from '@/store';
 import * as system from '@/ui/system';
 import { useSave } from '@/store';
-import { Bar, Btn, Chip, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
+import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { QuestLines } from '@/ui/contracts';
 import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
@@ -51,27 +51,6 @@ interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; m
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
 
-/**
- * The standing orders for the fights still to come in this run, set on the map between them: whom the
- * hunter's Shadows go for, and whom Auto aims the hunter at. The Association's hunters pick their own.
- */
-function RunOrders({ d }: { d: NonNullable<ReturnType<typeof dungeonById>> }) {
-  const s = useSave();
-  const run = s.gates.raid;
-  if (!run) return null;
-  const t = run.tactic ?? 'default';
-  return (
-    <section class="runorders" aria-label="Orders for the next fight">
-      <div class="runorders__head"><span class="label">Orders for the next fight</span><small>For your Shadows, and for Auto</small></div>
-      <div class="chips chips--orders" data-tour="orders">
-        {TACTICS.map((x) => (
-          <Chip key={x.key} on={t === x.key} onClick={() => { if (t !== x.key) store.update((y) => raid.setTactic(y, d, y.gates.raid, x.key)); }}>{x.name}</Chip>
-        ))}
-      </div>
-      <p class="muted runorders__desc">{TACTICS.find((x) => x.key === t)?.desc}</p>
-    </section>
-  );
-}
 
 /** What an action does, in full, for its details: its line, and a line for each status it inflicts. */
 function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { name: string; level: string | null; ready: string | null; lines: string[] } {
@@ -420,7 +399,6 @@ export function Arena() {
               {raid.canWithdraw(d, run)
                 ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
                 : <small class="muted center">Tap a step that glows.</small>}
-              {!raid.pending(d, run) && <RunOrders d={d} />}
             </>}
         </div>
       ) : (
@@ -475,12 +453,24 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
   return (
     <div class="runstrip">
       <div class="runstrip__hp"><span class="label">You</span><HpBar cur={Math.round(Math.max(0, hero.hp))} max={hero.maxHp} tone="hp" /></div>
-      <div class="runstrip__row">
-        <small>Allies standing: {up}/{party.length - 1}</small>
-        <small><Shards n={run.purse ?? 0} /> · {(run.haul ?? []).length} found</small>
+      <div class="runstrip__cells">
+        <span><small>Allies</small><b class="num">{up}/{party.length - 1}</b></span>
+        <span><small>Banked</small><b class="num"><Shards n={run.purse ?? 0} /></b></span>
+        <span><small>Items found</small><b class="num">{(run.haul ?? []).length}</b></span>
       </div>
       {(run.blessings ?? []).length > 0 && (
-        <div class="chips">{run.blessings.map((b) => <span key={b} class="chip" data-tone="gold" title={blessingById(b)?.text}>{blessingById(b)?.name}</span>)}</div>
+        <div class="boons">
+          {run.blessings.map((b) => {
+            const x = blessingById(b);
+            if (!x) return null;
+            return (
+              <span key={b} class="boon" title={x.text}>
+                <span class="boon__mark" aria-hidden="true"><Glyph name="star" /></span>
+                <span class="boon__text"><b>{x.name}</b><small>{x.text}</small></span>
+              </span>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -620,7 +610,10 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
       {again && <>
         <p>The mana of <strong>[{e.name}]</strong> {l.tries ? 'still lingers' : 'lingers'}.</p>
         {/* One like it already serves: this reach is for its Essence. */}
-        {l.essence && <p class="extract__essence"><strong>[{e.shadow}]</strong> serves in your army.<br />Extraction: Shadow Essence <span class="grant">+{l.essence}</span></p>}
+        {l.essence && <>
+          <p>But <strong>[{e.shadow}]</strong> already serves in your army.<br />Would you like to extract its Shadow Essence instead?</p>
+          <p class="extract__gain"><EssenceMark size={18} /> Shadow Essence <span class="grant num">+{l.essence}</span></p>
+        </>}
         {/* After a failure the reach's terms are the warning, in red: what failed, what is left, what the next one costs. */}
         <p class={`extract__terms ${l.tries ? 'warn' : ''}`} key={`t${l.tries}`}>
           {l.tries ? <>[Skill: Extraction] has failed.<br /></> : null}
@@ -820,7 +813,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             )}
           </div>
         )}
-        <ShadowAlerts grew={r.grew} />
+        <ShadowAlerts grew={r.grew} ready={r.ready} />
         {!isPractice(d) && deal.moved.length > 0 && <QuestLines c={s.contracts} report={deal} />}
         {r.assoc && association.current(s) && <AssocStrip q={association.current(s)!} move={r.assoc} />}
         <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>

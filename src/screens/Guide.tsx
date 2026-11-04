@@ -4,7 +4,7 @@ import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
-import { SLOTS as SQUAD, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
+import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
@@ -94,7 +94,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Your own card counts the foes coming for you.',
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
       `Field potion: restores ${FIELD_POTION_HEAL * 100}% of your health. The satchel holds ${FIELD_POTION.max}, and the Association can add room.`,
-      `Standing orders, set on the map between fights, steer your Shadows and your own turns on Auto: ${TACTICS.map((x) => x.name).join(', ')}.`,
+      `Standing orders, set on the Shadows screen, steer your Shadows and your own turns on Auto: ${TACTICS.map((x) => x.name).join(', ')}.`,
+      'Orders set while a step is underway hold from the next step.',
       'The Association’s hunters are not yours to order. They pick their own targets.',
       'Auto hands your turns and steps to the System. The verdict is what Auto would do.',
       'Every order is saved before it plays. Leave mid-fight and you return to the same turn.',
@@ -231,13 +232,16 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each rank caps its level: ${SHADOW_RANKS.map((r) => `${r.name} Lv.${r.cap}`).join(', ')}. At the cap it takes no more XP until it is promoted, and the promotion lifts the cap without changing its level.`,
       `Promotion asks for its level at the cap and Shadow Essence, and from ${SHADOW_RANKS.find((r) => r.bosses)?.name} Rank bosses it helped fell: ${SHADOW_RANKS.slice(1).map((r) => `${r.name} ${r.essence} Essence${r.bosses ? ` and ${r.bosses} bosses` : ''}`).join(', ')}.`,
       'Promote it from its card on the Shadows screen, by holding Hold To Promote. A Shadow ready to be promoted lights its tile.',
+      `An Ascendant Shadow at Lv.${SHADOW_RANKS[SHADOW_RANKS.length - 1].cap} can be awakened from its card with Shadow Essence, ${AWAKENING.cost.length} stars in all: ${AWAKENING.cost.join(', ')}.`,
+      `Each star grows every attribute by ${AWAKENING.growth * 100}% more of its creature’s own.`,
       `A creature like one already in your army gives Shadow Essence when its extraction holds: ${ESSENCE.E} at E to ${ESSENCE.S} at S, and twice that from a boss.`,
       'Release a Shadow from its card for Shadow Essence: its creature’s, and half of what its ranks cost. A Shadow released is gone.',
       `Each rank has its insignia: ${SHADOW_RANKS.map((r, i) => `${r.name} ${['one chevron', 'two', 'three', 'three over a rocker'][i] ?? ''}`.trim()).join(', ')}.`,
       'A Shadow’s badge shows what it was, its family’s glyph, with its shadow behind it.',
       'A newly bound Shadow fights with its creature’s first ability.',
       `At ${SHADOW_RANKS[SECOND_AT].name} it remembers a second, from its own kit or, if it had only one, from its kin.`,
-      'Every Shadow follows the standing orders set on the map.',
+      'Every Shadow follows the army’s standing orders, unless you give it its own on its card.',
+      `From ${SHADOW_RANKS[SECOND_AT].name}, a Shadow can be given a focus on its card: a skill it uses whenever that skill is ready.`,
       'You may bestow a name on a Shadow when it joins your army, or later from its card. It goes by that name everywhere.',
     ],
   },

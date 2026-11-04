@@ -66,7 +66,7 @@ export function allySpec(a: Ally, i: number): UnitSpec {
 /** A Shadow as it fights. `bonus` is what the hunter's marks give every Shadow. */
 export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id };
+  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, focus: shadows.focusOf(sh), tactic: sh.tactic };
 }
 
 /** The hunters the Association sends with you at an Ascension level. The Trial is the System's, so it sends none there. */
@@ -300,14 +300,15 @@ export function pending(d: Dungeon, run: OpenRaid): MapNode | null {
 }
 
 /**
- * Set the standing orders. Between steps of an open run they hold for the fights still to come in it;
- * a fight underway keeps the orders it opened with, since its replay reads them. The hunter's next runs
- * go in with them too. False if a step is underway. Mutates.
+ * Set the standing orders, from the Shadows screen. Between steps of an open run they hold for the fights
+ * still to come in it. A step underway keeps the orders it opened with, since its replay reads them, so
+ * orders set during one reach the run when its next step is chosen (`choose`). The hunter's next runs go
+ * in with them too. True if they reached the open run now. Mutates.
  */
 export function setTactic(s: Save, d: Dungeon | null, run: OpenRaid | null, t: Tactic): boolean {
-  if (run && d && pending(d, run)) return false;
   s.gates.tactic = t;
-  if (run) run.tactic = t;
+  if (!run || (d && pending(d, run))) return false;
+  run.tactic = t;
   return true;
 }
 
@@ -360,6 +361,18 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
   if (!x) return null;
   run.path = [...(run.path ?? []), id];
   run.orders = [];
+  // Orders given while the last step was underway reach the run here, before this one plays: the
+  // standing orders, and each Shadow's focus.
+  run.tactic = s.gates.tactic;
+  for (const sp of run.party ?? []) {
+    if (sp.tag !== 'shadow') continue;
+    const sh = s.shadows.army.find((y) => y.id === sp.ref);
+    const f = sh && shadows.focusOf(sh);
+    if (f) sp.focus = f;
+    else delete sp.focus;
+    if (sh?.tactic) sp.tactic = sh.tactic;
+    else delete sp.tactic;
+  }
   const out: StepResult = { node: x };
   if (x.kind === 'rest') {
     const party = partyFor(s, d, run, now);
@@ -655,7 +668,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       const boss = id === d.boss || (!!run.chosen && id === walkers.walkerOf(run.chosen, d.rank as Rank).id);
       const owned = shadows.isBound(s, id);
       if (r() >= shadows.lingerChance(s, boss, owned)) continue;
-      const l: Lingering = { enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level)), tries: 0 };
+      // One already in the army gives only Essence, so it costs less to reach for.
+      const l: Lingering = { enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level) * (owned ? shadows.ECHO_COST : 1)), tries: 0 };
       // One like it already serves: extracted again, it gives Shadow Essence.
       if (owned) l.essence = shadows.essenceOf(e, boss);
       lingering.push(l);

@@ -166,6 +166,8 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   // Every reach it has the mana for, up to the last, while the Shadow lingers.
   for (const l of res.lingering) while (raid.reachesLeft(l) > 0 && vitals.read(s, now).mp >= raid.reachCost(l)) raid.extract(s, l, r(), now);
   shadows.promoteAll(s);
+  // And what Essence is left awakens its Ascendants.
+  shadows.awakenAll(s);
   t.shardsIn += s.wallet.earned - before;
 }
 
@@ -213,7 +215,7 @@ function campaign(p: Profile) {
     }
     if ((day + 1) % 28 === 0) {
       weekly.push(`  day ${String(day + 1).padStart(3)}  L${String(s.hunter.level).padStart(3)} ${licensedRank(s)}  Ascension ${String(s.ascension.level).padStart(2)}  shards ${String(s.wallet.shards).padStart(5)}  score ${String(Math.round(gear.power(s))).padStart(4)}  ` +
-        `Shadows ${s.shadows.army.length} (squad ${shadows.squad(s).map((x) => `${shadows.rankOf(x).name[0]}${shadows.levelOf(x)}`).join('/') || '-'}, essence ${s.shadows.essence}, slots ${shadows.slots(s)})  ` +
+        `Shadows ${s.shadows.army.length} (squad ${shadows.squad(s).map((x) => `${shadows.rankOf(x).name[0]}${shadows.levelOf(x)}${shadows.starsOf(x) ? `*${shadows.starsOf(x)}` : ''}`).join('/') || '-'}, essence ${s.shadows.essence}, slots ${shadows.slots(s)})  ` +
         `sets ${[...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}  Spire best ${s.spire.top}`);
     }
   }

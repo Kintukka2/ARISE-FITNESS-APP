@@ -60,8 +60,10 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   (`profile: 'taunt'`) is the one thing that changes an intent, and it does so by showing the new one
   (an `intent` event) before the foe acts.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
-  never the Association's hunters (`combat.aim`). They are set on the map between steps
-  (`raid.setTactic`), never while a step is underway.
+  never the Association's hunters (`combat.aim`). They are set on the Shadows screen
+  (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach
+  the run when its next step is chosen (`raid.choose`). A Shadow's own orders and focus
+  (`Shadow.tactic`, `Shadow.focus`) reach an open run the same way.
 - Copy that quotes a number reads it from the engine's constants (see `screens/Guide.tsx`), so the
   text cannot drift from the rules.
 - Save shape: adding a field with a default needs nothing beyond `defaults()` in `core/save.ts`.
