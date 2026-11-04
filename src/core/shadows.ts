@@ -6,11 +6,11 @@
  * extracted again when one like it already serves, and from a Shadow released. A Sworn Shadow
  * remembers a second ability.
  */
-import { AWAKENING, ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
+import { AWAKENING, ECHO, ECHO_COST, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
 import { ALL_ENEMIES, enemyById } from './gates';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
-import type { Attrs, Enemy, Rank, Save, Shadow } from './types';
+import type { Attrs, Enemy, Rank, Save, Shadow, Tactic } from './types';
 import { STATS } from './types';
 import { clamp, dayKey, uid } from './util';
 
@@ -18,7 +18,7 @@ export const EXTRACT_MP: Record<string, number> = { E: 50, D: 60, C: 70, B: 80, 
 /** A lingering Shadow can be reached for this many times, until it holds; each reach costs `step` times the one before. */
 export const EXTRACT_TRIES = { max: 3, step: 2 } as const;
 
-export { AWAKENING, ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS };
+export { AWAKENING, ECHO, ECHO_COST, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS };
 
 // ------------------------------------------------------------------ levels
 
@@ -176,6 +176,35 @@ export function release(s: Save, id: string): number | null {
   s.shadows.fresh = s.shadows.fresh.filter((x) => x !== id);
   s.shadows.essence = (s.shadows.essence ?? 0) + got;
   return got;
+}
+
+/** A Shadow's focus, if it still knows it: the skill it uses whenever that skill is ready. */
+export function focusOf(sh: Shadow): string | undefined {
+  return sh.focus && kitOf(sh).includes(sh.focus) ? sh.focus : undefined;
+}
+
+/** Give a Shadow a focus, a skill of its kit it uses whenever that skill is ready, or none. It reaches an open run at its next step. Mutates. */
+export function setFocus(s: Save, id: string, skill: string | null): boolean {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return false;
+  if (skill && !kitOf(sh).includes(skill)) return false;
+  if (skill) sh.focus = skill;
+  else delete sh.focus;
+  return true;
+}
+
+/** Give a Shadow standing orders of its own, or none, so it follows the army's. It reaches an open run at its next step. Mutates. */
+export function setTactic(s: Save, id: string, t: Tactic | null): boolean {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return false;
+  if (t) sh.tactic = t;
+  else delete sh.tactic;
+  return true;
+}
+
+/** Shadows given orders of their own: a focus, or standing orders. */
+export function ordered(s: Save): Shadow[] {
+  return s.shadows.army.filter((sh) => !!focusOf(sh) || !!sh.tactic);
 }
 
 /** The longest name a Shadow can be given. */

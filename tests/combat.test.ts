@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
-import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
+import { ALL_ENEMIES, dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
-import { battle, fight, FIELD_POTION_HEAL, GUARD, Unit } from '@/core/combat';
+import { ability, battle, fight, FIELD_POTION_HEAL, GUARD, Unit } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
 import { SKILL_SLOTS } from '@/data/tree';
@@ -293,12 +293,40 @@ describe('standing orders', () => {
     for (const tag of ['shadow', 'hero'] as const) expect(new Set(firsts(tag, 'finish'))).toEqual(new Set(['e0']));
   });
 
+  it('a Shadow given orders of its own follows them over the army’s', () => {
+    const go = (army: 'finish' | 'default', own: 'finish' | 'default') => ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((seed) => {
+      const u = new Unit({ uid: 'p0', name: 'P', side: 'p', base, tag: 'shadow', tactic: own });
+      const weak = new Unit({ uid: 'e0', name: 'W', side: 'e', base, hpMult: 1 });
+      const strong = new Unit({ uid: 'e1', name: 'S', side: 'e', base, hpMult: 20 });
+      weak.hp = 5;
+      const res = fight([u], [strong, weak], rng(`finish|${seed}`), 1, () => {}, army);
+      const first = res.log.find((e) => (e.t === 'hit' || e.t === 'miss') && e.a === 'p0');
+      return first && 'v' in first ? first.v : null;
+    });
+    expect(new Set(go('default', 'finish'))).toEqual(new Set(['e0']));
+    expect(new Set(go('finish', 'default')).size).toBe(2);
+  });
+
+  it('a Shadow given a focus opens with that skill whenever it is ready, and chooses for itself without one', () => {
+    const e = ALL_ENEMIES.find((x) => x.kit.length === 2 && x.kit.every((n) => ability(n)) && ability(x.kit[0])!.mult !== ability(x.kit[1])!.mult)!;
+    const light = e.kit.reduce((a, b) => (ability(b)!.mult < ability(a)!.mult ? b : a));
+    const opens = (focus?: string) => Array.from({ length: 12 }, (_, i) => {
+      const u = new Unit({ uid: 'p0', name: 'P', side: 'p', base, tag: 'shadow', kit: e.kit, focus });
+      const foe = new Unit({ uid: 'e0', name: 'F', side: 'e', base, hpMult: 20 });
+      const res = fight([u], [foe], rng(`focus|${i}`), 1);
+      const first = res.log.find((x) => 'ab' in x && 'a' in x && x.a === 'p0');
+      return first && 'ab' in first ? first.ab : null;
+    });
+    expect(new Set(opens(light))).toEqual(new Set([light]));
+    expect(new Set(opens())).not.toEqual(new Set([light]));
+  });
+
   it('the Association’s hunters pick their own targets, whatever the orders', () => {
     expect(firsts('ally', 'finish')).toEqual(firsts('ally', 'default'));
     expect(new Set(firsts('ally', 'finish')).size).toBe(2);
   });
 
-  it('the run keeps its orders until they are changed between steps, and the next runs go in with them', () => {
+  it('the run keeps its orders until they are changed, a step underway keeps its own, and the next runs go in with them', () => {
     const s = hunter(20);
     s.gates.tactic = 'protect';
     const d = dungeonById('DNG-015')!;
@@ -307,10 +335,18 @@ describe('standing orders', () => {
     expect(raid.setTactic(s, d, run, 'spread')).toBe(true);
     expect(run.tactic).toBe('spread');
     expect(s.gates.tactic).toBe('spread');
-    // A step underway keeps the orders it opened with.
-    raid.choose(s, d, run, raid.options(d, run)[0].id, now);
+    // A step underway keeps the orders it opened with; the new ones reach the run at its next step.
+    const first = raid.options(d, run).find((o) => isFight(o))!;
+    raid.choose(s, d, run, first.id, now);
     expect(raid.setTactic(s, d, run, 'finish')).toBe(false);
     expect(run.tactic).toBe('spread');
+    expect(s.gates.tactic).toBe('finish');
+    const { party, ch } = raid.resume(s, d, run, now);
+    while (ch.turn) ch.play(raid.order(s, run, null));
+    raid.record(s, d, run, party, ch.result(), now);
+    expect(run.tactic).toBe('spread');
+    raid.choose(s, d, run, raid.options(d, run)[0].id, now);
+    expect(run.tactic).toBe('finish');
   });
 
   it('the brief projects with the hunter’s actual orders', () => {

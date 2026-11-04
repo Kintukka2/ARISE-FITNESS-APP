@@ -68,12 +68,21 @@ hunter's turns to the System and presses on between chambers, for grinding.
 - **Hunter actions:** a skill from the class kit, Strike, *Guard* (half damage until your next
   turn), or a field potion (30% of maximum HP). Field potions are bought at the Exchange into a
   satchel of three; the other potions are still drunk on purchase.
-- **Standing orders**, set on the map between fights, in a small panel in the Shadows' violet: *As They See Fit*, *Finish The Weakest*,
-  *Protect The Hunter*, *Spread The Pain*. Each is a target rule for the hunter's Shadows, and for the
-  hunter's own turns when Auto plays them. They used to be set in the brief and to steer the
-  Association's hunters too; ordering strangers about made no sense, so those pick their own targets
-  now, and the orders moved to the map, where they hold for the fights still to come
-  (`raid.setTactic`), never for a step underway.
+- **Standing orders**, set on the Shadows screen's Orders tile (*Army: Orders*): *As They See Fit*,
+  *Finish The Weakest*, *Protect The Hunter*, *Spread The Pain*. Each is a target rule for the
+  hunter's Shadows, and for the hunter's own turns when Auto plays them. They used to be set in the
+  brief and to steer the Association's hunters too; ordering strangers about made no sense, so those
+  pick their own targets now. They then sat on the map between fights; the map was crowded with them,
+  so they moved to the Shadows screen, beside the army they steer. Set between steps of an open run
+  they hold for the fights still to come in it (`raid.setTactic`); set while a step is underway they
+  reach the run when its next step is chosen (`raid.choose`), never the step underway, whose replay
+  reads the orders it opened with.
+- **A Shadow's own orders**, set on its card: standing orders of its own over the army's
+  (`Shadow.tactic`, read by `combat.aim`), and from Sworn, when it knows two skills, a focus: the
+  skill it uses whenever that skill is ready (`Shadow.focus`, read by `choose()`). Both reach an open
+  run the way the standing orders do, at its next step. The orders sheet lists every Shadow with
+  what it follows, and a tap opens its card at its orders. Nothing is changed for a Shadow given
+  none, so the auto fight, calibration and the campaign stand.
 - **The save** records the hunter's orders for the chamber being fought, not the fight state. The
   engine is deterministic for a seed and a list of orders, so a reload replays to the same turn.
   Each order is written before it plays out, so a turn cannot be rerolled.
@@ -397,8 +406,10 @@ fight was tried and did not narrow it.
   shadow behind it and its rank's insignia under them (`ui/emblems.tsx`).
 - **More slots through Secret Quests.** Three make room for one more Shadow each: a first Sworn
   Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions' (`shadows.slots`).
-- **Orders.** Every Shadow follows the standing orders set on the map. The orders a Shadow once kept
-  of its own, set on its card, are gone: the map sets them for the next step.
+- **Orders.** Every Shadow follows the army's standing orders, set on the Shadows screen, unless it
+  is given its own on its card: whom it goes for, and a skill to use whenever it is ready (see
+  Turn-based combat). Orders a Shadow kept of its own were once removed for the map's; the map no
+  longer holds orders, and a Shadow's own came back with a focus beside them.
 - **A save from before** (v7 migration) gives every Shadow the rank its kills had earned and the
   level its growth stood at (a Vanguard with 75% growth is Lv.30), with no Essence. Its kills carry
   on, now counting every creature it helps fell.
@@ -731,6 +742,16 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
   line and what each status it inflicts does. On a desktop, resting the pointer on it opens them too.
 - **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
   tapped; its line no longer opens on hover.
+- **A duplicate's extraction** reads as an offer: the Shadow lingers, the sheet says one like it
+  already serves and asks whether to extract its Shadow Essence instead, and shows the Essence it
+  would give. A reach for one already in the army costs half the MP (`ECHO_COST`); the sheet shows
+  only the number. In the campaign, S-Rank comes on the same days, 59 and 31, and Sovereign on day 112
+  and day 63 (was 62); by day 112 the hunters hold 67 and 45 Essence (38 and 67).
+- **The promotion's cinematic** held its new plate for barely a beat before the window covered it.
+  The window now opens at 7.6 seconds (`RANK_T.open`), so the plate lands, is held and seen, and then
+  rises out of the way.
+- **The run strip** on the map is three cells (Allies, Banked, Items found) and a blessing is a
+  System chip with its mark, its name and what it gives.
 
 ## What stays out
 

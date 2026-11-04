@@ -139,6 +139,10 @@ export interface UnitSpec {
   atkMult?: number;
   tag?: 'hero' | 'ally' | 'shadow' | 'foe';
   ref?: string;
+  /** A skill of its kit it uses whenever that skill is ready: a Shadow's focus, from its orders. */
+  focus?: string;
+  /** Standing orders of its own, over the party's: a Shadow's, from its orders. */
+  tactic?: Tactic;
 }
 
 export class Unit {
@@ -149,7 +153,7 @@ export class Unit {
   /** Foes this unit has put down this fight, for Rampage. */
   mom = 0;
   own: Map<string, Ability>;
-  atkMult: number; tag: UnitSpec['tag']; ref?: string;
+  atkMult: number; tag: UnitSpec['tag']; ref?: string; focus?: string; tactic?: Tactic;
   /** The last foe to land a hit on this unit, for allies told to protect it. */
   hitBy?: Unit;
   /** Everyone who landed a hit on this unit: each helped fell it. */
@@ -159,7 +163,7 @@ export class Unit {
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
-    this.tag = sp.tag; this.ref = sp.ref;
+    this.tag = sp.tag; this.ref = sp.ref; this.focus = sp.focus; this.tactic = sp.tactic;
     this.kit = sp.kit ?? [];
     this.own = new Map((sp.own ?? []).map((a) => [a.name, a]));
     this.names = sp.passives ?? [];
@@ -235,6 +239,9 @@ function statusLands(src: Unit, t: Unit, st: string) {
 function choose(u: Unit, r: Rand, ahead = 0): Ability {
   const ready = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a && (u.cd[a.name] ?? 0) <= ahead);
   if (!ready.length) return STRIKE;
+  // A focus is used whenever it is ready; with none, the choice is as it always was.
+  const focus = u.focus ? ready.find((a) => a.name === u.focus) : undefined;
+  if (focus) return focus;
   if (ready.length === 1) return ready[0];
   const heavy = ready.reduce((a, b) => (b.mult > a.mult ? b : a));
   return r() < 0.6 ? heavy : ready[Math.floor(r() * ready.length)];
@@ -289,9 +296,11 @@ const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
 
 /**
  * Where standing orders point a Shadow, and the hunter when nobody gives their turn an order (Auto,
- * the projection). The Association's hunters pick their own targets. Undefined leaves it to chance.
+ * the projection). A Shadow given orders of its own follows those instead. The Association's hunters
+ * pick their own targets. Undefined leaves it to chance.
  */
-function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Unit | undefined {
+function aim(u: Unit, a: Ability, foes: Unit[], party: Tactic, hero?: Unit): Unit | undefined {
+  const tactic = u.tactic ?? party;
   if (u.side !== 'p' || u.tag === 'ally' || tactic === 'default') return undefined;
   const live = foes.filter((f) => f.alive());
   if (!live.length) return undefined;

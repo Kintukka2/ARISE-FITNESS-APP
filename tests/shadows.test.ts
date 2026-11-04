@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse } from '@/core/save';
 import { Unit } from '@/core/combat';
-import { ALL_ENEMIES, dungeonById } from '@/core/gates';
+import { ALL_ENEMIES, dungeonById, enemyById } from '@/core/gates';
 import { MISSIONS, sweep } from '@/core/missions';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -294,6 +294,31 @@ describe('extraction', () => {
     expect(raid.reachesLeft(l)).toBe(0);
   });
 
+  it('a creature already in the army costs half the mana to reach for', () => {
+    const d = dungeonById('DNG-015')!;
+    let owned = 0;
+    for (let k = 0; k < 16; k++) {
+      for (const own of [false, true]) {
+        const s = defaults();
+        grantXP(s, totalXpFor(24));
+        reclassifyAll(s);
+        autoAllocate(s);
+        if (own) for (const e of ALL_ENEMIES) shadows.bind(s, e.id);
+        const at = now + k * 86_400_000;
+        const run = raid.begin(s, d, at);
+        const { won } = walk(s, d, at);
+        if (!won) continue;
+        for (const l of raid.finish(s, d, run, 'cleared', at).lingering) {
+          const full = shadows.EXTRACT_MP[enemyById(l.enemyId)!.rank];
+          expect(!!l.essence).toBe(own);
+          expect(l.cost).toBe(own ? Math.round(full * shadows.ECHO_COST) : full);
+          if (own) owned++;
+        }
+      }
+    }
+    expect(owned).toBeGreaterThan(0);
+  });
+
   it('a creature already in the army lingers more often, marked for its Essence', () => {
     const s = defaults();
     expect(shadows.lingerChance(s, false, true)).toBeCloseTo(shadows.lingerChance(s, false) * shadows.ECHO);
@@ -355,5 +380,39 @@ describe('awakening', () => {
     shadows.awaken(s, sh.id);
     const ranks = shadows.SHADOW_RANKS.slice(1).reduce((n, r) => n + r.essence, 0);
     expect(shadows.releaseValue(sh)).toBe(shadows.essenceOf(two, false) + Math.floor((ranks + shadows.AWAKENING.cost[0]) / 2));
+  });
+});
+
+describe('orders', () => {
+  it('a Shadow’s focus and orders of its own reach an open run at its next step, and are cleared as easily', () => {
+    const s = defaults();
+    grantXP(s, totalXpFor(20));
+    reclassifyAll(s);
+    autoAllocate(s);
+    const sh = shadows.bind(s, two.id);
+    sh.rank = shadows.SECOND_AT;
+    const kit = shadows.kitOf(sh);
+    expect(kit).toHaveLength(2);
+    const d = dungeonById('DNG-015')!;
+    const run = raid.begin(s, d, now);
+    const spec = () => run.party.find((p) => p.ref === sh.id)!;
+    expect(spec().focus).toBeUndefined();
+    expect(shadows.setFocus(s, sh.id, 'Not A Skill')).toBe(false);
+    expect(shadows.setFocus(s, sh.id, kit[1])).toBe(true);
+    expect(shadows.setTactic(s, sh.id, 'finish')).toBe(true);
+    expect(shadows.ordered(s)).toEqual([sh]);
+    expect(spec().focus).toBeUndefined();
+    raid.choose(s, d, run, raid.options(d, run)[0].id, now);
+    expect(spec().focus).toBe(kit[1]);
+    expect(spec().tactic).toBe('finish');
+    expect(raid.shadowSpec(sh, 0).focus).toBe(kit[1]);
+    shadows.setFocus(s, sh.id, null);
+    shadows.setTactic(s, sh.id, null);
+    expect(shadows.ordered(s)).toEqual([]);
+    // A focus on a skill it no longer knows is no focus.
+    sh.focus = kit[1];
+    sh.rank = 0;
+    expect(shadows.focusOf(sh)).toBeUndefined();
+    expect(raid.shadowSpec(sh, 0).focus).toBeUndefined();
   });
 });

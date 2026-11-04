@@ -135,6 +135,10 @@ export interface Shadow {
   xp: number;
   /** Awakening stars, bought with Shadow Essence once Ascendant at its cap. */
   stars?: number;
+  /** A skill of its kit it uses whenever that skill is ready, from its orders. Unset, it chooses for itself. */
+  focus?: string;
+  /** Standing orders of its own, over the army's. Unset, it follows the army's. */
+  tactic?: Tactic;
   /** The name the hunter bestowed on it, if any. Unset, it goes by what it was: `Shadow {creature}`. */
   name?: string;
 }
@@ -156,7 +160,7 @@ export interface OpenRaid {
   bossFaced: boolean;
   /** Everyone as they walked in, fixed for the whole run so a chamber always replays the same. */
   party: UnitSpec[];
-  /** The standing orders the party went in with; they hold for the whole run. */
+  /** The standing orders its fights are fought on. Set while a step is underway, they reach the run when its next step is chosen. */
   tactic: Tactic;
   /**
    * The hunter's orders so far in the chamber being fought, null where the

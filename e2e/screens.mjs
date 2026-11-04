@@ -179,11 +179,9 @@ try {
   await page.waitForSelector('.arena', { timeout: 10000 });
   await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
   await sleep(400); await snap('arena-map');
-  // The orders for the next fight are on the map, between fights, and changing them holds.
-  if (!(await page.locator('.runorders .chip--btn').count())) throw new Error('THE MAP DOES NOT OFFER ORDERS FOR THE NEXT FIGHT');
-  await page.locator('.runorders .chip--btn', { hasText: 'Finish The Weakest' }).click(); await sleep(200);
-  if (!(await page.locator('.runorders .chip--btn.is-on', { hasText: 'Finish The Weakest' }).count())) throw new Error('THE ORDERS DID NOT CHANGE');
-  await page.locator('.runorders').scrollIntoViewIfNeeded(); await snap('arena-orders');
+  // Orders are the Shadows screen's: the map gives none.
+  if (await page.locator('.arena .chips--orders, .arena .runorders').count()) throw new Error('THE MAP STILL GIVES ORDERS');
+  if (!(await page.locator('.runstrip__cells').count())) throw new Error('THE RUN STRIP HAS NO CELLS');
   await page.locator('button.gnode.is-next').first().click();
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
@@ -276,6 +274,18 @@ try {
   await page.locator('.sheet.is-top .squadrow__act.is-plus:not(:disabled)').first().click(); await sleep(250);
   if ((await head()) !== before) throw new Error('PUTTING A SHADOW IN DID NOT COUNT');
   await snap('squad-edit'); await close();
+  // ARMY: ORDERS: the standing orders change and hold, and a Shadow given its own shows it on its row.
+  await page.locator('.btile--orders .btile__hit').click(); await sleep(500); await snap('orders', true);
+  await page.locator('.sheet.is-top .ord-card', { hasText: 'Protect The Hunter' }).click(); await sleep(250);
+  if (!(await page.locator('.sheet.is-top .ord-card.is-on', { hasText: 'Protect The Hunter' }).count())) throw new Error('THE STANDING ORDERS DID NOT CHANGE');
+  await page.locator('.sheet.is-top .ordrow__who').first().click(); await sleep(900);
+  await page.locator('.sheet.is-top .sp-orders .chip--btn', { hasText: 'Finish The Weakest' }).click(); await sleep(200);
+  const skills = page.locator('.sheet.is-top .sp-orders__line').nth(1).locator('.chip--btn');
+  if (await skills.count()) { await skills.last().click(); await sleep(200); }
+  await snap('shadow-orders');
+  await close(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .ordrow.is-own').count())) throw new Error('A SHADOW’S OWN ORDERS DID NOT SHOW ON ITS ROW');
+  await snap('orders-own'); await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
   await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);

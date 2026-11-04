@@ -1,14 +1,15 @@
 /** The Shadow army, as a bento grid: the squad that walks into the next Gate, then a tile to every Shadow bound. */
 import { sfx } from '@/audio/audio';
-import { powerOf, passiveText, ability } from '@/core/combat';
-import { ALL_ENEMIES, enemyById } from '@/core/gates';
+import { powerOf, passiveText, ability, TACTICS } from '@/core/combat';
+import { ALL_ENEMIES, dungeonById, enemyById } from '@/core/gates';
+import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Chip, Empty, RankPlate, Section } from '@/ui/components';
 import { BentoGrid, type Tile as BTile } from '@/ui/bento';
-import type { Enemy, Save, Shadow } from '@/core/types';
+import type { Enemy, Save, Shadow, Tactic } from '@/core/types';
 import type { RaidResult } from '@/core/raid';
 import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
@@ -92,7 +93,140 @@ function tiles(s: Save, news: string[]): BTile[] {
     ),
     open: () => openArmy(news),
   };
-  return [squadTile, armyTile];
+  const t = s.gates.tactic ?? 'default';
+  const own = shadows.ordered(s).length;
+  const ordersTile: BTile = {
+    key: 'orders', kind: 'shadow', name: 'Orders', head: true, wide: true, icon: <Glyph name="orders" />,
+    count: own ? `${own} own` : undefined,
+    status: <>Standing orders: <b>{tacticName(t)}</b></>,
+    art: (
+      <span class="sa-orders">
+        {TACTICS.map((x) => (
+          <span key={x.key} class={`sysbox sa-orders__one ${x.key === t ? 'is-on' : ''}`}><Glyph name={TACTIC_GLYPH[x.key]} /><small>{x.name}</small></span>
+        ))}
+      </span>
+    ),
+    open: openOrders,
+  };
+  return [squadTile, armyTile, ordersTile];
+}
+
+// ------------------------------------------------------------------ orders
+
+/** Each standing order's mark: an eye for their own judgement, a skull for the kill, the hunter, and the bolt of what spreads. */
+const TACTIC_GLYPH: Record<Tactic, string> = { default: 'eye', finish: 'skull', protect: 'profile', spread: 'bolt' };
+const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.name ?? 'Army Orders';
+
+/** ARMY: ORDERS: the standing orders the army fights on, and every Shadow given orders of its own. */
+function openOrders() {
+  openSheet({ title: 'Army: Orders', system: { icon: <Glyph name="orders" />, kind: 'shadow' }, render: () => <OrdersSheet /> });
+}
+
+function OrdersSheet() {
+  const s = useSave();
+  const t = s.gates.tactic ?? 'default';
+  const run = s.gates.raid;
+  // A step underway keeps the orders it opened with; the new ones reach the run at its next step.
+  const held = run && run.tactic !== t ? tacticName(run.tactic) : null;
+  const set = (k: Tactic) => {
+    if (k === t) return;
+    store.update((x) => { const r = x.gates.raid ?? null; raid.setTactic(x, r ? dungeonById(r.dungeonId) ?? null : null, r, k); });
+    sfx.blip();
+  };
+  const squad = shadows.squad(s);
+  const bench = ranked(s).filter((x) => !squad.includes(x));
+  const own = shadows.ordered(s);
+  return (
+    <div class="stack">
+      <Section title="Standing Orders" right="Shadows and Auto">
+        <div class="ord-grid" role="radiogroup" aria-label="Standing orders">
+          {TACTICS.map((x) => (
+            <button key={x.key} type="button" role="radio" aria-checked={x.key === t} class={`sysbox ord-card ${x.key === t ? 'is-on' : ''}`} onClick={() => set(x.key)}>
+              <span class="ord-card__ico"><Glyph name={TACTIC_GLYPH[x.key]} /></span>
+              <b>{x.name}</b>
+              <small>{x.desc}</small>
+            </button>
+          ))}
+        </div>
+        {held && <div class="sysfields"><Field k="Step underway" v={held} /></div>}
+      </Section>
+      {squad.length > 0 && (
+        <Section title="Deployed" right={`Own orders: ${own.filter((x) => squad.includes(x)).length}/${squad.length}`}>
+          <ul class="partylist ordlist">{squad.map((sh) => <OrdersRow key={sh.id} sh={sh} />)}</ul>
+        </Section>
+      )}
+      {bench.length > 0 && (
+        <Section title="Army" right={`Own orders: ${own.filter((x) => !squad.includes(x)).length}/${bench.length}`}>
+          <ul class="partylist ordlist">{bench.map((sh) => <OrdersRow key={sh.id} sh={sh} />)}</ul>
+        </Section>
+      )}
+      {own.length > 0 && (
+        <Btn block onClick={() => { store.update((x) => { for (const sh of x.shadows.army) { shadows.setFocus(x, sh.id, null); shadows.setTactic(x, sh.id, null); } }); toast('Every Shadow follows the army’s orders.'); }}>
+          <Glyph name="recall" /> Clear Own Orders · {own.length}
+        </Btn>
+      )}
+    </div>
+  );
+}
+
+/** A Shadow in the orders sheet: who it goes for and the skill it reaches for, a tap from its card, where they are set. */
+function OrdersRow({ sh }: { sh: Shadow }) {
+  const e = enemyById(sh.enemyId)!;
+  const focus = shadows.focusOf(sh);
+  return (
+    <li class={`is-shadow ordrow ${focus || sh.tactic ? 'is-own' : ''}`}>
+      <button type="button" class="ordrow__who" onClick={() => { sfx.tap(); openShadow(sh.id, true); }}>
+        <span class="ordrow__badge"><ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={30} /></span>
+        <span class="ordrow__body">
+          <b>{shadows.nameOf(sh)}</b>
+          <small><span class="label">Targets</span> <span class={sh.tactic ? 'ordrow__own' : ''}>{tacticName(sh.tactic)}</span></small>
+          <small><span class="label">Skill</span> <span class={focus ? 'ordrow__own' : ''}>{focus ?? 'As It Sees Fit'}</span></small>
+        </span>
+        <Glyph name="chevron" />
+      </button>
+    </li>
+  );
+}
+
+/**
+ * Its orders, on its card: whom it goes for, the army's standing orders or its own, and the skill it
+ * reaches for whenever it is ready. Its second skill, and so a choice of skill, comes with Sworn Rank.
+ */
+function Orders({ sh, at }: { sh: Shadow; at?: boolean }) {
+  const s = useSave();
+  const kit = shadows.kitOf(sh);
+  const focus = shadows.focusOf(sh);
+  const aim = (k: Tactic | null) => store.update((x) => shadows.setTactic(x, sh.id, k));
+  const pick = (n: string | null) => store.update((x) => shadows.setFocus(x, sh.id, n));
+  const ref = useRef<HTMLDivElement>(null);
+  // Opened from the orders sheet, the card opens at its orders.
+  useEffect(() => { if (at) setTimeout(() => ref.current?.scrollIntoView({ block: 'center' }), 120); }, []);
+  return (
+    <Section title="Orders" right={focus || sh.tactic ? 'Its own' : 'Army Orders'}>
+      <div class="sysbox sp-orders" ref={ref}>
+        <div class="sp-orders__line">
+          <span class="label">Targets</span>
+          <div class="chips chips--orders">
+            <Chip on={!sh.tactic} onClick={() => aim(null)}>Army Orders</Chip>
+            {TACTICS.map((x) => <Chip key={x.key} on={sh.tactic === x.key} onClick={() => aim(x.key)}>{x.name}</Chip>)}
+          </div>
+          <small class="muted">{sh.tactic ? TACTICS.find((x) => x.key === sh.tactic)?.one : <>Standing orders: {tacticName(s.gates.tactic ?? 'default')}</>}</small>
+        </div>
+        <div class="sp-orders__line">
+          <span class="label">Skill</span>
+          {kit.length > 1 ? (
+            <div class="chips chips--orders">
+              <Chip on={!focus} onClick={() => pick(null)}>As It Sees Fit</Chip>
+              {kit.map((n) => <Chip key={n} on={focus === n} onClick={() => pick(n)}>{n}</Chip>)}
+            </div>
+          ) : (
+            <span class="sp-orders__sealed"><Glyph name="lock" /> {shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank</span>
+          )}
+          {focus && <small class="muted">[Skill: {focus}] whenever it is ready.</small>}
+        </div>
+      </div>
+    </Section>
+  );
 }
 
 /** ARMY: every Shadow bound, a tile each: its badge, ringed by its levels through the rank it holds; and the Essence held. */
@@ -217,13 +351,14 @@ function SquadSheet() {
 
 // ------------------------------------------------------------------ the card
 
-function openShadow(id: string) {
+/** Open a Shadow's card; from the orders sheet, at its orders. */
+function openShadow(id: string, orders = false) {
   const at = store.get().shadows.army.find((x) => x.id === id);
   const was = at && enemyById(at.enemyId);
   openSheet({
     title: `Shadow: ${at ? shadows.nameOf(at) : 'Unknown'}`,
     system: { icon: was ? <CardBadge id={id} /> : null, kind: 'shadow' },
-    render: (close) => <ShadowCard id={id} close={close} />,
+    render: (close) => <ShadowCard id={id} close={close} orders={orders} />,
   });
 }
 
@@ -243,7 +378,7 @@ const pct = (x: number) => Math.round(x * 100);
  * A Shadow's card, as a profile: who it is and how far it has grown, the road of its ranks and what the
  * one above asks, its stats against its creature's own, what it fights with, its record, and its release.
  */
-function ShadowCard({ id, close }: { id: string; close: () => void }) {
+function ShadowCard({ id, close, orders }: { id: string; close: () => void; orders?: boolean }) {
   const s = useSave();
   const sh = s.shadows.army.find((x) => x.id === id);
   if (!sh) return <Empty>That Shadow is gone.</Empty>;
@@ -256,6 +391,7 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
       <Awakening sh={sh} />
       <Stats sh={sh} e={e} />
       <Kit sh={sh} e={e} />
+      <Orders sh={sh} at={orders} />
       <Record sh={sh} />
       <Release sh={sh} close={close} />
     </div>
@@ -530,7 +666,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
               <div key={n} class={`sysbox sp-skill ${on ? '' : 'is-sealed'}`}>
                 <span class="sp-skill__ico"><Glyph name={!on ? 'lock' : a?.type === 'magic' ? 'bolt' : 'fist'} /></span>
                 <span class="sp-skill__body">
-                  <b>[Skill: {n}]</b>
+                  <b>[Skill: {n}]{on && shadows.focusOf(sh) === n && <span class="sp-skill__focus">Focus</span>}</b>
                   <small>{on ? (a ? skillLine(a) : '-- --') : `${shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank`}</small>
                   {on && !e.kit.includes(n) && <small class="muted">From its kin</small>}
                 </span>

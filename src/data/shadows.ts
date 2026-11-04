@@ -33,6 +33,9 @@ export const ESSENCE: Record<Rank, number> = { E: 1, D: 2, C: 2, B: 3, A: 3, S: 
 /** A creature already in the army lingers this many times as often as one that is not. */
 export const ECHO = 3;
 
+/** And costs this share of the mana to reach for: it is only Essence it gives. */
+export const ECHO_COST = 0.5;
+
 /**
  * Awakening: what Shadow Essence buys once a Shadow is Ascendant at its cap. The star after `n` costs
  * `cost[n]`, and each grows every attribute by `growth` more of its creature's own.

@@ -62,7 +62,8 @@ export const RANK_T: Timeline = {
   fold: 4700,
   hush: 5000,
   breach: 5300,
-  open: 6600,
+  // The new plate lands by about 6400 and is held there, seen, before it rises out of the window's way.
+  open: 7600,
   tears: [[3900, 70], [4250, 60], [4480, 60]],
 };
 
