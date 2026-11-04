@@ -310,7 +310,8 @@ function WindowHost() {
 export type Tone = 'mana' | 'verdant' | 'ember' | 'arcane' | 'gold';
 
 interface SheetOpts {
-  title: string;
+  /** Its header. A function is read on every render, for a header that counts something the sheet changes. */
+  title: string | (() => string);
   tone?: Tone;
   render: (close: () => void) => ComponentChildren;
   onClose?: () => void;
@@ -345,6 +346,7 @@ function Sheet({ s, top }: { s: OpenSheet; top: boolean }) {
   useBack(close, top);
   // Re-render with the save so sheet contents stay live.
   store.useSave();
+  const title = typeof s.title === 'function' ? s.title() : s.title;
   const tools = (
     <>
       {s.action && <button type="button" class="iconbtn" aria-label={s.action.label} title={s.action.label} onClick={s.action.onClick}><Glyph name={s.action.icon} /></button>}
@@ -353,12 +355,12 @@ function Sheet({ s, top }: { s: OpenSheet; top: boolean }) {
   );
   if (s.system) {
     return (
-      <div class={`sheet ${top ? 'is-top' : ''}`} role="dialog" aria-modal="true" aria-label={s.title}>
+      <div class={`sheet ${top ? 'is-top' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
         <div class="sheet__scrim" onClick={close} />
         <section class={`sheet__panel sysframe sysframe--${s.system.kind ?? 'system'}`}>
           <Rail at="top" />
           <div class="sysframe__glass sheet__glass">
-            <SysHead title={s.title} icon={s.system.icon} tools={tools} />
+            <SysHead title={title} icon={s.system.icon} tools={tools} />
             <div class="sheet__body">{s.render(close)}</div>
           </div>
           <Rail at="bottom" />
@@ -367,11 +369,11 @@ function Sheet({ s, top }: { s: OpenSheet; top: boolean }) {
     );
   }
   return (
-    <div class={`sheet ${top ? 'is-top' : ''}`} data-tone={s.tone ?? 'mana'} role="dialog" aria-modal="true" aria-label={s.title}>
+    <div class={`sheet ${top ? 'is-top' : ''}`} data-tone={s.tone ?? 'mana'} role="dialog" aria-modal="true" aria-label={title}>
       <div class="sheet__scrim" onClick={close} />
       <section class="sheet__panel">
         <header class="sheet__head">
-          <h2 class="sheet__title">{s.title}</h2>
+          <h2 class="sheet__title">{title}</h2>
           {tools}
         </header>
         <div class="sheet__body">{s.render(close)}</div>

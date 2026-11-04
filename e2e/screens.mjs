@@ -244,7 +244,16 @@ try {
   await sleep(400); await snap('shadow-promoted');
   if (await page.locator('.sheet.is-top .promote').count()) throw new Error('THE PROMOTION STAYED ON THE CARD');
   await close(); await close();
-  await page.locator('.btile--squad .btile__hit').click(); await sleep(400); await snap('squad'); await close();
+  // The squad sheet puts a Shadow in and takes one out, and its header counts as it goes.
+  await page.locator('.btile--squad .btile__hit').click(); await sleep(400); await snap('squad');
+  if (await page.locator('.sheet.is-top', { hasText: 'Squad slots:' }).count()) throw new Error('THE SQUAD SHEET STILL LISTS ITS SLOTS BY RANK');
+  const head = async () => (await page.locator('.sheet.is-top .syshead__title').innerText()).replace(/\s+/g, ' ');
+  const before = await head();
+  await page.locator('.sheet.is-top .squadrow__act.is-minus').first().click(); await sleep(250);
+  if ((await head()) === before) throw new Error('TAKING A SHADOW OUT DID NOT COUNT');
+  await page.locator('.sheet.is-top .squadrow__act.is-plus:not(:disabled)').first().click(); await sleep(250);
+  if ((await head()) !== before) throw new Error('PUTTING A SHADOW IN DID NOT COUNT');
+  await snap('squad-edit'); await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
   await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);

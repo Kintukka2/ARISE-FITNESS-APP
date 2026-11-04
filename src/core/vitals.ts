@@ -95,6 +95,14 @@ export function restore(s: Save, frac: number, now = Date.now()) {
   return Math.round(s.vitals.mp - was);
 }
 
+/** Add fatigue, to the most there is. Returns what was added. Mutates. */
+export function tire(s: Save, n: number, now = Date.now()) {
+  settle(s, now);
+  const was = s.vitals.fatigue;
+  s.vitals.fatigue = Math.min(FATIGUE_MAX, was + n);
+  return Math.round(s.vitals.fatigue - was);
+}
+
 export function ease(s: Save, n: number, now = Date.now()) {
   settle(s, now);
   const was = s.vitals.fatigue;

@@ -935,6 +935,15 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 
 /* The record: three counts, a hairline box each. */
 .ga-record { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+/* Grade and Record, small under Open Gates: a smaller emblem, the record as three numbers in a row. */
+.btile--compact .btile__art { min-height: 0; padding: 40px 8px 6px; }
+.btile--compact .ga-emblem { width: 58px; height: 58px; }
+.btile--compact .ga-emblem__ring + .ga-emblem__ring { inset: 7px; }
+.btile--compact .ga-record { flex-direction: row; gap: 4px; }
+.btile--compact .ga-record > span { flex: 1; flex-direction: column-reverse; align-items: center; gap: 1px; padding: 5px 2px; }
+.btile--compact .ga-record b { font-size: 0.95rem; }
+.btile--compact .ga-record small { font-size: 0.46rem; letter-spacing: 0.08em; white-space: nowrap; }
+.btile--compact .btile__foot { padding: 6px 8px 7px; }
 .ga-record > span { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 5px 9px; animation: qaIn 520ms var(--ease) both; }
 .ga-record > span:nth-child(2) { animation-delay: 110ms; }
 .ga-record > span:nth-child(3) { animation-delay: 220ms; }
@@ -988,6 +997,15 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .sysframe .partylist { gap: 6px; }
 .sysframe .partylist li { padding: 7px 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
 .sysframe .partylist li b { font-weight: 600; font-size: 0.86rem; }
+/* The squad sheet: a row to each slot, a row to each Shadow behind it, and a button at each row's end. */
+.sysframe .squadlist li.squadrow { display: flex; gap: 8px; padding: 0 0 0 10px; }
+.squadrow__who { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 7px 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.squadrow__who b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--arcane); }
+.squadrow__act { display: grid; place-items: center; width: 40px; flex: none; border-width: 0 0 0 1px; color: #c9a7ff; background: rgba(155, 107, 255, 0.1); }
+.squadrow__act.is-plus:not(:disabled) { color: #e2d2ff; background: rgba(155, 107, 255, 0.24); }
+.squadrow__act:disabled { opacity: 0.35; }
+.squadrow__act .ico { width: 16px; height: 16px; }
+.sysframe .squadlist li.squadrow.is-empty { justify-content: center; padding: 10px; border-style: dashed; color: var(--ink-3); }
 .sysframe .partylist li small { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.74rem; }
 .sysframe .gnode { border-color: var(--sys-hair); border-radius: 0; }
 .sysframe .empty { border-color: var(--sys-hair); border-radius: 0; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }

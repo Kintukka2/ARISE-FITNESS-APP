@@ -99,6 +99,8 @@ export function outcome(e: Effect, got: { shards?: number; item?: string; blessi
   if (got.shards) out.push(`Mana Shards ${gain(signed(got.shards))} banked`);
   if (got.item) out.push(`${tag(got.item, 'Item')} banked`);
   if (got.blessing) out.push(`${tag(got.blessing.name, 'Blessing')} ${gain(got.blessing.text)}`);
+  if (e.mana) out.push(e.mana > 0 ? gain(`MP ${signed(Math.round(e.mana * 100), '%')}`) : red(`MP ${signed(Math.round(e.mana * 100), '%')}`));
+  if (e.fatigue) out.push(e.fatigue < 0 ? gain(`Fatigue ${signed(e.fatigue)}`) : red(`Fatigue ${signed(e.fatigue)}`));
   if (e.status) out.push(red(`[Debuff: ${e.status}]`));
   return out;
 }

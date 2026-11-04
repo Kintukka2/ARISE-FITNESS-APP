@@ -192,7 +192,7 @@ describe('the world', () => {
   });
 
   it('puts the cost of every outcome that hurts, heals or weakens under it', () => {
-    for (const o of outcomes) if (o.hurt || o.heal || o.status) expect(system.outcome(o).length, o.text).toBeGreaterThan(0);
+    for (const o of outcomes) if (o.hurt || o.heal || o.status || o.mana || o.fatigue) expect(system.outcome(o).length, o.text).toBeGreaterThan(0);
     expect(system.outcome({ text: '', hurt: 0.25 }).map((l) => l.replace(/<[^>]+>/g, ''))).toEqual(['HP -25%']);
   });
 });

@@ -38,8 +38,11 @@ export const BLESSINGS: Blessing[] = [
 ];
 export const blessingById = (id: string) => BLESSINGS.find((b) => b.id === id);
 
-/** What a choice does. Hurt and heal are shares of maximum HP; shards are shares of a clear's. */
-export interface Effect { item?: boolean; shards?: number; hurt?: number; heal?: number; bless?: boolean; status?: string; text: string }
+/**
+ * What a choice does. Hurt and heal are shares of maximum HP; shards are shares of a clear's; mana is a
+ * share of maximum MP, given or, below zero, drained; fatigue is points of it, added or, below zero, eased.
+ */
+export interface Effect { item?: boolean; shards?: number; hurt?: number; heal?: number; bless?: boolean; status?: string; mana?: number; fatigue?: number; text: string }
 
 export interface Choice {
   label: string;
@@ -95,6 +98,79 @@ export const EVENTS: GateEvent[] = [
     choices: [
       { label: 'Force it open', check: { stat: 'STR', base: 0.3, per: 0.006, max: 0.9 }, win: { item: true, text: 'The bands give. There is something inside.' }, lose: { hurt: 0.1, text: 'The bands hold. You wrench your shoulder.' } },
       { label: 'Leave it', system: true, win: nothing },
+    ],
+  },
+  {
+    id: 'crystal', title: 'A Mana Crystal',
+    text: 'A spar of raw mana as long as your arm, grown out of the wall. It hums when you come near.',
+    choices: [
+      { label: 'Draw from it', odds: 0.65, win: { mana: 0.5, text: 'Mana floods into you until your fingertips ache.' }, lose: { mana: -0.3, text: 'It drinks from you instead, and lets go.' } },
+      { label: 'Break off a piece', check: { stat: 'STR', base: 0.35, per: 0.006, max: 0.9 }, win: { shards: 0.5, text: 'It snaps clean. The shards are worth something.' }, lose: { hurt: 0.12, text: 'It splinters in your hand.' } },
+      { label: 'Leave it', system: true, win: nothing },
+    ],
+  },
+  {
+    id: 'tunnel', title: 'A Collapsed Tunnel',
+    text: 'Rubble fills the way ahead. There is a gap near the roof, just wide enough to crawl through.',
+    choices: [
+      { label: 'Squeeze through', check: { stat: 'AGI', base: 0.35, per: 0.006, max: 0.9 }, win: { shards: 0.4, text: 'Someone hid a stash on the far side and never came back for it.' }, lose: { hurt: 0.15, text: 'The rubble shifts on top of you. You crawl back out.' } },
+      { label: 'Go the long way round', system: true, win: { fatigue: 4, text: 'It takes a while. Your legs feel it.' } },
+    ],
+  },
+  {
+    id: 'runes', title: 'An Unfinished Circle',
+    text: 'Runes burned into the floor, still warm. Whoever drew them did not finish.',
+    choices: [
+      { label: 'Complete the circle', check: { stat: 'INT', base: 0.3, per: 0.006, max: 0.9 }, win: { bless: true, text: 'The last rune takes, and the circle closes around you.' }, lose: { status: 'Cursed', text: 'The circle closes on you instead.' } },
+      { label: 'Step around it', system: true, win: nothing },
+    ],
+  },
+  {
+    id: 'beast', title: 'A Sleeping Beast',
+    text: 'Something huge lies asleep across the path, curled around what it has taken from hunters before you.',
+    choices: [
+      { label: 'Take from the hoard', check: { stat: 'AGI', base: 0.3, per: 0.006, max: 0.85 }, win: { item: true, text: 'It does not stir. You come away with something.' }, lose: { hurt: 0.3, text: 'One eye opens. You get away, but not untouched.' } },
+      { label: 'Let it sleep', system: true, win: nothing },
+    ],
+  },
+  {
+    id: 'altar', title: 'An Altar of Bones',
+    text: 'Skulls stacked into an altar, a bowl at its foot. The bowl is stained, and empty.',
+    choices: [
+      { label: 'Bleed into the bowl', win: { hurt: 0.2, bless: true, text: 'The bowl takes what it is given. Something is given back.' } },
+      { label: 'Walk past', system: true, win: nothing },
+    ],
+  },
+  {
+    id: 'camp', title: 'An Abandoned Camp',
+    text: 'A cold fire, two bedrolls and a pot still half full. Nobody has been back for it.',
+    choices: [
+      { label: 'Eat and rest', system: true, win: { heal: 0.2, fatigue: -6, text: 'A meal and a short sleep. It helps more than you expected.' } },
+      { label: 'Search the packs', odds: 0.6, win: { shards: 0.4, text: 'Mana Shards, rolled up in a spare shirt.' }, lose: { status: 'Poisoned', text: 'Something was nesting in there, and it bites.' } },
+    ],
+  },
+  {
+    id: 'wounded', title: 'A Wounded Hunter',
+    text: 'A hunter from another party, alone against the wall, holding a wound closed.',
+    choices: [
+      { label: 'Patch them up', win: { fatigue: 5, shards: 0.3, text: 'They press their share of the haul on you and limp for the exit.' } },
+      { label: 'Point them to the way out', system: true, win: { text: 'They nod, and go.' } },
+    ],
+  },
+  {
+    id: 'voice', title: 'A Voice in the Dark',
+    text: 'Someone calls your name from a side passage, in a voice you almost know.',
+    choices: [
+      { label: 'Follow it', odds: 0.45, win: { bless: true, mana: 0.25, text: 'At the end of the passage, something old looks at you, and approves.' }, lose: { hurt: 0.1, status: 'Weakened', text: 'Nothing is there. Something was, and it took a little of you.' } },
+      { label: 'Keep to the road', system: true, win: nothing },
+    ],
+  },
+  {
+    id: 'pool', title: 'A Still Pool',
+    text: 'Black water, perfectly still. Your reflection moves a moment after you do.',
+    choices: [
+      { label: 'Wash in it', odds: 0.55, win: { fatigue: -12, text: 'The cold goes right through you, and takes the tiredness with it.' }, lose: { status: 'Chilled', fatigue: 4, text: 'The cold goes right through you, and stays.' } },
+      { label: 'Leave it be', system: true, win: nothing },
     ],
   },
 ];
