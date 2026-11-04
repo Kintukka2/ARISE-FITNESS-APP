@@ -259,7 +259,20 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .unit__intent { margin-top: 4px; font-size: 0.68rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .unit__intent.is-you { color: var(--blood); font-weight: 700; }
 .unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
-.turnbar { width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
+.turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
+/* An action's details, over the foot of the feed, so nothing under the finger moves when they open. */
+.actinfo { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 4; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(10, 6, 4, 0.96); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55); animation: feedIn 160ms var(--ease) both; pointer-events: none; }
+.actinfo__head { display: flex; align-items: baseline; gap: 8px; }
+.actinfo__head b { font-size: 0.92rem; letter-spacing: 0.04em; }
+.actinfo__head small { color: var(--ink-2); font-size: 0.72rem; }
+.actinfo__ready { margin-left: auto; color: var(--ink-3) !important; }
+.actinfo__ready.is-ready { color: var(--verdant) !important; }
+.actinfo p { margin: 0; color: var(--ink-2); font-size: 0.78rem; line-height: 1.4; }
+.actcell { position: relative; display: flex; }
+.actcell > .act { flex: 1; padding-right: 30px; }
+.act__info { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 3px; background: rgba(0, 0, 0, 0.35); color: var(--ink-2); font: 700 0.66rem var(--font-ui, inherit); line-height: 1; }
+.actcell.is-shown .act__info { border-color: var(--ember); background: var(--ember); color: #1a0b02; }
+.actcell.is-shown > .act { border-color: var(--ember); }
 .turnbar__hint { color: var(--ink-2); font-size: 0.78rem; text-align: center; }
 .turnbar__hint b { color: var(--blood); }
 .turnbar__acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 8px; }
@@ -533,7 +546,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .st-tier { position: relative; height: 112px; }
 .st-tier + .st-tier::before { content: ''; position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed rgba(160, 200, 240, 0.1); }
 .st-tier__head { display: flex; justify-content: space-between; align-items: center; height: 20px; padding: 0 2px; }
-.st-tier__rank { color: var(--mana); font: 700 0.62rem var(--font-sys); letter-spacing: 0.2em; }
+/* The tier's labels sit on the panel's own dark, as the node names do, so a link passes behind them. */
+.st-tier__head { position: relative; z-index: 1; }
+.st-tier__rank, .st-tier__gate { padding: 1px 4px; border-radius: 3px; background: rgba(3, 9, 22, 0.94); }
+.st-tier__rank { margin-left: -4px; color: var(--mana); font: 700 0.62rem var(--font-sys); letter-spacing: 0.2em; }
 .st-tier.is-shut .st-tier__rank { color: var(--ink-3); }
 .st-tier__gate { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-3); font-size: 0.66rem; }
 .st-tier__gate .ico { width: 11px; height: 11px; }

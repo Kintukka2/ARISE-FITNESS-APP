@@ -618,6 +618,13 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
   campaign's hunters reach as long as the mana holds. In the campaign, the evening hunter holds 33
   Shadows by day 112 (was 25) and the three-session hunter 35 (was 34); S-Rank comes on the same day,
   Sovereign on day 110 (was 115) and day 65 (was 64). Calibration does not extract, so it stands.
+  The sheet reads rank and name, what lingers, then what failed, the attempts left and the cost; the
+  odds moved to the Guide (`shadows.HOLD`), so the sheet holds only what changes from reach to reach.
+- **What an action does, in a fight.** Every action on the turn bar has a `?` in its corner that opens
+  its details above the bar without using it: its level from the tree, whether it is ready, its full
+  line and what each status it inflicts does. On a desktop, resting the pointer on it opens them too.
+- **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
+  tapped; its line no longer opens on hover.
 
 ## What stays out
 

@@ -249,6 +249,10 @@ function wedge(a: number): string {
 const ROW = 112;
 const HEAD = 20;
 const SHAPE = 27;
+/** How far from a node's centre its links start and end: at the edge of the shape, not inside it. */
+const EDGE_OFF = 22;
+/** How far below a node's centre a link to another column bends: past its name, on one or two lines. */
+const TRUNK = 64;
 
 function useWidth() {
   const ref = useRef<HTMLDivElement>(null);
@@ -274,13 +278,18 @@ function PathTree({ s, path, sel, onSel, fresh }: { s: Save; path: Stat; sel: st
   const Y = (tier: number) => tier * ROW + HEAD + SHAPE;
   const slots = tree.equipped(s).map((n) => n.id);
   return (
-    <div class="st-path" ref={ref} key={path}>
+    <div class="st-path" ref={ref}>
       <svg class="st-path__links" width={w} height={ROW * 5} viewBox={`0 0 ${w} ${ROW * 5}`} aria-hidden="true">
         {nodes.filter((n) => n.req).map((n) => {
           const r = nodeById(n.req!)!;
           const lit = tree.levelOf(s, n.id) > 0 && tree.levelOf(s, r.id) > 0;
           const call = !lit && tree.levelOf(s, r.id) > 0 && tree.canLearn(s, n);
-          const d = `M ${X(r.col)} ${Y(r.tier)} L ${X(n.col)} ${Y(n.tier)}`;
+          // From under the node it grows from to the top of this one: straight down a column, or, to
+          // another column, one trunk down past the name before it bends, so branches split below it.
+          const [x1, y1, x2, y2] = [X(r.col), Y(r.tier) + EDGE_OFF, X(n.col), Y(n.tier) - EDGE_OFF];
+          const fork = Y(r.tier) + TRUNK;
+          const mid = (fork + y2) / 2;
+          const d = x1 === x2 ? `M ${x1} ${y1} L ${x2} ${y2}` : `M ${x1} ${y1} L ${x1} ${fork} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
           return (
             <g key={n.id}>
               <path d={d} class={`st-link ${lit ? 'is-lit' : ''} ${call ? 'is-call' : ''}`} />
@@ -398,7 +407,8 @@ function SkillsSheet() {
   const s = useSave();
   const cls = classById(s.hunter.classId);
   const [path, setPath] = useState<Stat>(() => tree.pathOrder(s)[0]);
-  const [sel, setSel] = useState<string | null>(() => tree.learnable(s).find((n) => n.path === tree.pathOrder(s)[0])?.id ?? null);
+  // Nothing is chosen until the hunter taps a node, so the card never covers the tree uninvited.
+  const [sel, setSel] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string | null>(null);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [swap, setSwap] = useState<string | null>(null);
@@ -413,8 +423,8 @@ function SkillsSheet() {
 
   const choosePath = (k: Stat) => {
     setPath(k);
-    // The first node there that can take a point, so a tap on the sky lands on something to do.
-    setSel(tree.learnable(store.get()).find((n) => n.path === k)?.id ?? null);
+    setSel(null);
+    setSwap(null);
   };
 
   const learn = (id: string) => {
@@ -501,7 +511,8 @@ function SkillsSheet() {
         <span class="st-pathhead__n"><small>Spent</small><b class="num">{tree.inPath(s, path)}</b></span>
       </div>
 
-      <PathTree s={s} path={path} sel={sel} onSel={(id) => { setSel(id); setSwap(null); }} fresh={fresh} />
+      {/* A Path of its own each time: it is measured afresh, so its links land on its nodes. A second tap on a node puts its card away. */}
+      <PathTree key={path} s={s} path={path} sel={sel} onSel={(id) => { setSel((x) => (x === id ? null : id)); setSwap(null); }} fresh={fresh} />
 
       <div class="st-dock">
         <NodeCard s={s} id={sel} flash={flash} onLearn={learn} onEquip={equipOrSwap} />

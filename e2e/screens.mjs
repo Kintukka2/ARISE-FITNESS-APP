@@ -100,7 +100,8 @@ try {
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
   if (!(await page.locator('.sheet.is-top .ia-radar__label.is-on').count())) throw new Error('THE RADAR DID NOT SHOW A VALUE');
   await page.locator('.sheet.is-top .statsheet__radar').scrollIntoViewIfNeeded(); await snap('stats-radar');
-  await page.locator('.sheet.is-top .sysfield__help').nth(4).click(); await sleep(200);
+  if (await page.locator('.sheet.is-top .sysfield__why').count()) throw new Error('A FIGHT NUMBER EXPLAINED ITSELF BEFORE IT WAS TAPPED');
+  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).click(); await sleep(200);
   if (!(await page.locator('.sheet.is-top .sysfield.is-open .sysfield__why').isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
   await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
   await close();
@@ -113,7 +114,10 @@ try {
   if (!(await page.locator('.sheet.is-top .st-card__flash').isVisible())) throw new Error('A SKILL POINT SPENT WAS NOT REPORTED');
   await snap('skills-learn');
   // A skill left out swaps in for one taken in.
-  await page.locator('.sheet.is-top .st-node[aria-label^="Sundering Arc"]').click(); await sleep(200);
+  // Nothing is chosen when the sheet opens or a Path changes; a second tap on a node puts its card away.
+  const arc = page.locator('.sheet.is-top .st-node[aria-label^="Sundering Arc"]');
+  if (!(await arc.evaluate((el) => el.classList.contains('is-sel')))) await arc.click();
+  await sleep(200);
   await page.locator('.sheet.is-top .st-card .btn', { hasText: 'Swap In' }).click(); await sleep(200);
   await page.locator('.sheet.is-top .st-loadout').scrollIntoViewIfNeeded(); await snap('skills-swap');
   await page.locator('.sheet.is-top .st-slot').first().click(); await sleep(300);
@@ -122,6 +126,7 @@ try {
   await page.locator('.sheet.is-top .st-skywrap').scrollIntoViewIfNeeded();
   await page.locator('.sheet.is-top .st-sky__hit').nth(1).click(); await sleep(450);
   if (!(await page.locator('.sheet.is-top .st-pathhead', { hasText: 'Bastion' }).count())) throw new Error('THE SKY DID NOT CHOOSE A PATH');
+  if (await page.locator('.sheet.is-top .st-card').count()) throw new Error('A NEW PATH OPENED WITH A NODE ALREADY CHOSEN');
   await snap('skills-bastion');
   await close();
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
@@ -169,6 +174,12 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
+  // An action's ? shows what it does, in full, without using it.
+  await page.locator('.act__info').first().click(); await sleep(250);
+  if (!(await page.locator('.actinfo').isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
+  await snap('arena-skill-info');
+  await page.locator('.act__info').first().click(); await sleep(150);
+  if (await page.locator('.actinfo').count()) throw new Error('A SKILL’S DETAILS DID NOT CLOSE');
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);
