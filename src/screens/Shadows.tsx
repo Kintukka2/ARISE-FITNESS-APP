@@ -8,7 +8,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Chip, Empty, KV, RankPlate, Section, Tile } from '@/ui/components';
 import { BentoGrid, type Tile as BTile } from '@/ui/bento';
-import type { Save } from '@/core/types';
+import type { Save, Shadow } from '@/core/types';
 import { Field, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
@@ -136,15 +136,31 @@ function ShadowArt({ family, rank, kills, share, on, ready }: { family: string; 
   );
 }
 
-/** SQUAD: who walks into the next Gate, and the army behind them. */
+/** SQUAD: who walks into the next Gate, and the army behind them, each put in or taken out from here. */
 function openSquad() {
-  const s = store.get();
-  openSheet({ title: `Squad: ${shadows.squad(s).length}/${shadows.slots(s)}`, system: { icon: <Glyph name="shadows" />, kind: 'shadow' }, render: () => <SquadSheet /> });
+  openSheet({ title: () => { const s = store.get(); return `Squad: ${shadows.squad(s).length}/${shadows.slots(s)}`; }, system: { icon: <Glyph name="shadows" />, kind: 'shadow' }, render: () => <SquadSheet /> });
+}
+
+/** One Shadow in the squad sheet: its rank, name, rank of its own and power, a tap from its card, and the button that moves it. */
+function SquadRow({ sh, act, label, glyph, off }: { sh: Shadow; act: () => void; label: string; glyph: 'plus' | 'minus'; off?: boolean }) {
+  const e = enemyById(sh.enemyId)!;
+  return (
+    <li class="is-shadow squadrow">
+      <button type="button" class="squadrow__who" onClick={() => { sfx.tap(); openShadow(sh.id); }}>
+        <RankPlate rank={e.rank} size={22} /><b>{shadows.nameOf(sh)}</b><small>{shadows.rankOf(sh).name}</small><span class="num">{powerOf(shadows.statsOf(sh))}</span>
+      </button>
+      <button type="button" class={`sysbox squadrow__act is-${glyph}`} aria-label={`${label}: ${shadows.nameOf(sh)}`} title={label} disabled={off} onClick={act}><Glyph name={glyph} /></button>
+    </li>
+  );
 }
 
 function SquadSheet() {
   const s = useSave();
   const squad = shadows.squad(s);
+  const n = shadows.slots(s);
+  const full = squad.length >= n;
+  const bench = ranked(s).filter((x) => !squad.includes(x));
+  const move = (id: string) => { store.update((x) => shadows.toggleDeploy(x, id)); sfx.blip(); };
   return (
     <div class="stack">
       <div class="sysfields">
@@ -153,12 +169,20 @@ function SquadSheet() {
         <Field k="Extractions" v={`${s.stats.extractionsWon}/${s.stats.extractions}`} />
         <Field k="Slots from Secret Quests" v={shadows.missionSlots(s)} />
       </div>
-      <small class="muted">Squad slots: {shadows.SLOTS.E} at E and D · {shadows.SLOTS.C} at C and B · {shadows.SLOTS.A} at A and S</small>
-      <Section title="Deployed">
-        {squad.length
-          ? <ul class="partylist">{squad.map((x) => { const e = enemyById(x.enemyId)!; return <li key={x.id} class="is-shadow"><RankPlate rank={e.rank} size={22} /><b>{shadows.nameOf(x)}</b><small>{shadows.rankOf(x).name}</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>; })}</ul>
-          : <Empty>Deployed: 0</Empty>}
+      <Section title="Deployed" right={<span class="num">{squad.length}/{n}</span>}>
+        <ul class="partylist squadlist">
+          {Array.from({ length: n }, (_, i) => squad[i]
+            ? <SquadRow key={squad[i].id} sh={squad[i]} label="Take out" glyph="minus" act={() => move(squad[i].id)} />
+            : <li key={`slot-${i}`} class="squadrow is-empty"><span>-- --</span></li>)}
+        </ul>
       </Section>
+      {bench.length > 0 && (
+        <Section title="Army" right={full ? 'Slots full' : `Slots free: ${n - squad.length}`}>
+          <ul class="partylist squadlist">
+            {bench.map((x) => <SquadRow key={x.id} sh={x} label="Put in" glyph="plus" off={full} act={() => move(x.id)} />)}
+          </ul>
+        </Section>
+      )}
       {squad.length > 0 && <Btn block onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall Shadows · {squad.length}</Btn>}
     </div>
   );

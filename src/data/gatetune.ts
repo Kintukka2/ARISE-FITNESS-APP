@@ -36,7 +36,7 @@ export const GATE_TUNE: Record<string, number> = {
   'DNG-033': 1.08,
   'DNG-034': 1.06,
   'DNG-035': 0.83,
-  'DNG-036': 0.82,
+  'DNG-036': 0.84,
   'DNG-037': 0.8,
   'DNG-038': 0.94,
   'DNG-039': 0.67,
@@ -50,7 +50,7 @@ export const GATE_TUNE: Record<string, number> = {
   'DNG-047': 0.93,
   'DNG-048': 1.17,
   'DNG-049': 1.21,
-  'DNG-050': 1.05,
+  'DNG-050': 1.04,
   'DNG-HOLLOW': 0.86,
 };
 // The Spire, written by the same run. A block takes the shape of one gate a week: BLOCK_TUNE sets each gate's
@@ -110,6 +110,6 @@ export const BLOCK_TUNE: Record<string, number> = {
 };
 export const SPIRE_TUNE: number[] = [1.1, 0.9, 0.96, 1.15, 0.78, 0.93, 1.12, 0.94, 1.01, 1.03, 0.93, 0.98, 1.05, 1.15, 0.89, 0.96, 0.92, 1.07, 1.05, 1.04];
 // Ascension: how much stronger every foe is at each level from 1 up, so a hunter who keeps up clears its target.
-export const ASCENSION_TUNE: number[] = [1.36, 1.41, 1.38, 1.45, 1.45, 1.49, 1.52, 1.39, 1.43, 1.45];
+export const ASCENSION_TUNE: number[] = [1.36, 1.41, 1.38, 1.43, 1.44, 1.49, 1.52, 1.39, 1.44, 1.44];
 // The Trial at each level from 0 up: tuned so a hunter who keeps up wins it about half the time.
-export const TRIAL_TUNE: number[] = [1.24, 0.79, 0.69, 0.65, 0.58, 0.43, 0.4, 0.37, 0.37, 0.36];
+export const TRIAL_TUNE: number[] = [1.24, 0.79, 0.69, 0.65, 0.59, 0.44, 0.4, 0.37, 0.37, 0.35];

@@ -393,6 +393,15 @@ export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now 
     const effect = won ? c.win : c.lose ?? c.win;
     out = { node: x, choice, odds, won, effect };
     touch(party, effect);
+    // Mana and fatigue are the hunter's own, outside the fight: they land on the hunter at once.
+    if (effect.mana) {
+      if (effect.mana > 0) vitals.restore(s, effect.mana, now);
+      else vitals.spendMp(s, Math.min(vitals.read(s, now).mp, Math.round(vitals.maxima(s).mp * -effect.mana)), now);
+    }
+    if (effect.fatigue) {
+      if (effect.fatigue > 0) vitals.tire(s, effect.fatigue, now);
+      else vitals.ease(s, -effect.fatigue, now);
+    }
     if (effect.item) {
       const item = haulPiece(d, roll, 0);
       if (item) { (run.haul ??= []).push(item); out.item = item; }

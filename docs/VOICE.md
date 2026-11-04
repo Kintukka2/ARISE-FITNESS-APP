@@ -446,7 +446,8 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
   Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
   cleared, the open run, Open Gates, Grade, Record, Ascension; Open Gates is the screen's centre, larger
   than the rest and lit in orange), Quests (where the Pale Spire is a Weekly Quest),
-  and Shadows (the Squad and the Army). A list is one tile that opens its window: Open Gates opens
+  and Shadows (the Squad and the Army; the Squad's window, `SQUAD: 2/3`, puts a Shadow in with `+`
+  and takes one out with `-`, an empty slot showing `-- --`). A list is one tile that opens its window: Open Gates opens
   GATES, a tile to every Gate, its portal in its grade's colour; the Army opens ARMY, a tile to
   every Shadow, ringed by its kills toward the next rank. On Gates, the hunter's condition is not a
   tile but a strip under Valcorde's line, in the System's frame: the Status sheet's HP, MP and FTG

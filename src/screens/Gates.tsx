@@ -169,21 +169,22 @@ function topTiles(s: Save): BTile[] {
   const mine = licensedRank(s);
   const holding = licenceHolding(s);
   out.push({
-    key: 'grade', kind: 'gates', name: 'Grade', head: true, tour: 'licence', icon: <Glyph name="cert" />, hot: holding && licenceRequired(s) && storeReady(),
+    // Grade and Record stand under Open Gates, small, so it stays the screen's centre.
+    key: 'grade', kind: 'gates', name: 'Grade', head: true, tour: 'licence', icon: <Glyph name="cert" />, hot: holding && licenceRequired(s) && storeReady(), class: 'btile--compact',
     count: `${mine}-Rank`,
     status: holding ? `Held at ${mine}-Rank.` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank.`,
-    art: <span class="ga-emblem"><i class="ga-emblem__ring" /><i class="ga-emblem__ring" /><Sigil rank={mine} size={50} /></span>,
+    art: <span class="ga-emblem"><i class="ga-emblem__ring" /><i class="ga-emblem__ring" /><Sigil rank={mine} size={34} /></span>,
     open: openGrade,
   });
   const entered = s.gates.clears + s.gates.fails + s.gates.withdrawn;
   out.push({
-    key: 'record', kind: 'gates', name: 'Record', head: true, icon: <Glyph name="chart" />,
+    key: 'record', kind: 'gates', name: 'Record', head: true, icon: <Glyph name="chart" />, class: 'btile--compact',
     status: `Best run unbroken: ${s.gates.bestUnbroken}`,
     art: (
       <span class="ga-record">
         <span class="sysbox"><small>Entered</small><b class="num">{entered}</b></span>
         <span class="sysbox"><small>Cleared</small><b class="num">{s.gates.clears}</b></span>
-        <span class="sysbox"><small>Gates taken</small><b class="num">{s.gates.cleared.filter((id) => id !== 'DNG-000').length}</b></span>
+        <span class="sysbox"><small>Taken</small><b class="num">{s.gates.cleared.filter((id) => id !== 'DNG-000').length}</b></span>
       </span>
     ),
     open: openDossier,

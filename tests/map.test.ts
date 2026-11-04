@@ -4,7 +4,8 @@ import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
 import { build, mapSeed, next, systemRoad, type GateMap } from '@/core/map';
 import * as raid from '@/core/raid';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
-import { REST_HEAL, TRAP } from '@/data/nodes';
+import { EVENTS, REST_HEAL, TRAP } from '@/data/nodes';
+import * as vitals from '@/core/vitals';
 import { walk } from './walk';
 
 const now = Date.parse('2026-02-02T12:00:00');
@@ -211,5 +212,30 @@ describe('the verdict and the save', () => {
     expect(back.gates.raid!.at).toBe(0);
     expect(back.gates.raid!.lost).toBe(true);
     expect(back.gates.raid!.map).toBe('DNG-001|2026-02-02');
+  });
+});
+
+describe('the events behind Unknown', () => {
+  it('are many, each with exactly one choice for the System’s road, and that one never hurts or curses', () => {
+    expect(EVENTS.length).toBeGreaterThanOrEqual(10);
+    expect(new Set(EVENTS.map((e) => e.id)).size).toBe(EVENTS.length);
+    for (const e of EVENTS) {
+      const sys = e.choices.filter((c) => c.system);
+      expect(sys, e.id).toHaveLength(1);
+      const c = sys[0];
+      expect(c.odds === undefined && !c.check, e.id).toBe(true);
+      expect(!c.win.hurt && !c.win.status && !(c.win.mana && c.win.mana < 0), e.id).toBe(true);
+      for (const x of e.choices) expect(x.win.text.length, e.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('give and drain mana, and ease or add fatigue, on the hunter', () => {
+    const s = defaults();
+    s.vitals.hp = 100; s.vitals.mp = 0; s.vitals.fatigue = 50; s.vitals.at = Date.now();
+    expect(vitals.restore(s, 0.5)).toBeGreaterThan(0);
+    expect(vitals.tire(s, 10)).toBe(10);
+    expect(vitals.ease(s, 25)).toBe(25);
+    expect(vitals.read(s).fatigue).toBeCloseTo(35, 0);
+    expect(vitals.tire(s, 500)).toBe(65);
   });
 });

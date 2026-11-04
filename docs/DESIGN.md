@@ -98,8 +98,13 @@ layer is all fights and every layer holds at least one.
 
 - **Steps** (`data/nodes.ts`): fight (banks shards, sometimes gear), gatekeeper (a sure piece of
   gear), rest (heals, and is the only place to withdraw from), cache (gear a grade below the gate),
-  shrine (one of two blessings for the run), trap (a Perception check) and five events, each a
-  choice with its odds stated, some read off a stat.
+  shrine (one of two blessings for the run), trap (a Perception check) and fourteen events, each a
+  choice with its odds stated, some read off a stat (STR, AGI or INT). Besides HP, shards, gear,
+  blessings and debuffs, an event can give or drain MP and ease or add fatigue, both on the hunter at
+  once. Each has one choice the System makes on its road, and that one never hurts or curses
+  (`tests/map.test.ts`).
+- **The squad sheet** puts a Shadow in and takes one out: a row to each slot, then the army behind
+  it, and its header counts as it changes. It no longer lists the slots by rank; the Guide does.
 - **What the run finds is banked on it** (`haul`, `purse`, `blessings`) and paid in `finish`: kept
   walking out, at the end or from a rest; lost when carried out.
 - **The brief's verdict walks the System's road**, marked on the map: fight first, rest when it
