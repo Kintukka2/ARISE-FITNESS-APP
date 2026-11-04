@@ -820,7 +820,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             )}
           </div>
         )}
-        <ShadowAlerts grew={r.grew} />
+        <ShadowAlerts grew={r.grew} ready={r.ready} />
         {!isPractice(d) && deal.moved.length > 0 && <QuestLines c={s.contracts} report={deal} />}
         {r.assoc && association.current(s) && <AssocStrip q={association.current(s)!} move={r.assoc} />}
         <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>

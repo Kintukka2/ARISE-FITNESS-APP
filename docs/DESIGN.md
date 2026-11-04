@@ -352,8 +352,9 @@ fight was tried and did not narrow it.
   and, from Vanguard, bosses it helped fell (1, then 4). The hunter claims it, one rank at a time,
   from its card (`shadows.promote`, which spends the Essence). `raid.finish` pays each deployed
   Shadow its XP (`grew`) and reports the Shadows the run made ready (`ready`); the results show an
-  alert to each deployed Shadow, which says only that it has met the requirements for promotion once
-  it has. It stays violet and opens nothing: the Shadows tab's mark shows where to go. The hold plays the
+  alert only to each deployed Shadow that levelled up or that the run made ready; a Shadow that only
+  took XP, or was already waiting, gets none. One made ready says only that it has met the requirements
+  for promotion. It stays violet and opens nothing: the Shadows tab's mark shows where to go. The hold plays the
   promotion's cinematic, and the System's window says what the rank brought: the rank, the new cap
   and any skill learned. The Essence it cost is shown on the card before, not repeated after.
 - **Shadow Essence** (`s.shadows.essence`). A creature already in the army lingers three times as
@@ -361,6 +362,15 @@ fight was tried and did not narrow it.
   Essence instead of a second copy (`raid.extract` returns `essence`): 1 at E to 4 at S, twice that
   from a boss. Releasing a Shadow from its card (`shadows.release`, refused while it walks an open
   run) gives its creature's Essence and half of what its ranks cost.
+- **Awakening** (`shadows.awaken`, `AWAKENING`), the sink for Essence once a Shadow is Ascendant at
+  Lv.40: five stars at 20, 30, 45, 65 and 90 Essence, 250 in all, each growing every attribute by 4%
+  more of its creature's own, so growth tops out at +120%. Its card shows the stars and the next one's
+  asks where Next rank stood, and the hold takes it; the tile and the Shadows tab light while one can be
+  taken. Releasing an awakened Shadow returns half its stars' cost as well. Calibration's hunters are
+  Vanguards, so it moves nothing there; the campaign's hunters awaken with whatever Essence their
+  promotions leave. By day 112 the evening hunter holds 38 Essence (291 before) and the three-session
+  hunter 67 (931), with nearly every Ascendant at four or five stars; S-Rank and Sovereign come on the
+  same days as before.
 - **Skills.** A newly bound Shadow fights with its creature's first ability. Sworn, it remembers a
   second: the second in its own kit or, for the 58 creatures that have only one, the first ability of
   its kin it lacks (its family's, or its role's for a family that shares one).
@@ -404,8 +414,8 @@ fight was tried and did not narrow it.
   comes sooner mostly through the Daily Quests (0.94 a day, was 0.85; 1.46, was 1.16): the Shadows'
   quest, set at about two runs' worth, took four or five when only the last blow counted. It now
   asks what a Shadow helps fell in two runs at each grade (`SHADOW_KILLS_PER`, measured: about 2.5 a
-  Shadow a run, 3 to 4.5 at S). Essence runs short until about day 28 and piles up once every Shadow
-  is Ascendant (841 held by day 112 for the three-session hunter): a sink for it is still to come.
+  Shadow a run, 3 to 4.5 at S). Essence ran short until about day 28 and piled up once every Shadow
+  was Ascendant (841 held by day 112 for the three-session hunter), until Awakening gave it a sink.
 
 ## What a campaign showed
 

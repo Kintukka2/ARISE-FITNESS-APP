@@ -17,6 +17,7 @@ import { Field, SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
+import { buzz, flash } from '@/ui/feedback';
 import { claimPromotion } from '@/app/flow';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
@@ -69,19 +70,20 @@ function tiles(s: Save, news: string[]): BTile[] {
     ),
     open: openSquad,
   };
-  const waiting = shadows.promotable(s);
+  const waiting = shadows.waitingAll(s);
+  const promos = shadows.promotable(s).length;
   const armyTile: BTile = {
     key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="skull" />,
     // A Shadow waiting to be promoted is waiting on the hunter, as a rank to claim is; one just bound is new.
     call: waiting.length > 0 || news.length > 0,
     count: waiting.length ? `${waiting.length} ready` : news.length ? `${news.length} new` : army.length,
-    status: waiting.length ? `Promotion ready: ${waiting.length}` : <>Shadow Essence: <b class="num">{s.shadows.essence ?? 0}</b></>,
+    status: promos ? `Promotion ready: ${promos}` : waiting.length ? `Awakening ready: ${waiting.length}` : <>Shadow Essence: <b class="num">{s.shadows.essence ?? 0}</b></>,
     art: (
       <span class="sa-army">
         {army.slice(0, 5).map((sh, i) => {
           const e = enemyById(sh.enemyId)!;
           return (
-            <span key={sh.id} class={`sa-army__one ${squad.includes(sh) ? 'is-on' : ''} ${shadows.canPromote(s, sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
+            <span key={sh.id} class={`sa-army__one ${squad.includes(sh) ? 'is-on' : ''} ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
               <span class="sa-army__smoke" /><ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} />
             </span>
           );
@@ -104,7 +106,7 @@ function ArmySheet({ news }: { news: string[] }) {
     <div class="stack">
       <div class="sysfields">
         <Field k="Shadow Essence" v={<span class="sp-essence"><EssenceMark /><span class="num">{s.shadows.essence ?? 0}</span></span>} />
-        <Field k="Promotion ready" v={shadows.promotable(s).length} />
+        <Field k="Ready" v={shadows.waitingAll(s).length} />
       </div>
       <BentoGrid class="armygrid" tiles={shadowTiles(s, news)} label="Army" />
     </div>
@@ -132,12 +134,13 @@ function shadowTiles(s: Save, news: string[]): BTile[] {
     const lv = shadows.levelOf(sh);
     const floor = at ? shadows.SHADOW_RANKS[at - 1].cap : 0;
     const share = (lv - floor) / Math.max(1, rank.cap - floor);
-    const ready = shadows.canPromote(s, sh);
+    const ready = shadows.waiting(s, sh);
+    const stars = shadows.starsOf(sh);
     return {
       key: `shadow-${sh.id}`, kind: 'shadow', name: shadows.nameOf(sh), icon: <RankPlate rank={e.rank} size={22} />,
       class: `is-shadow ${on ? 'is-deployed' : ''} ${ready ? 'is-ready' : ''}`, call: ready || news.includes(sh.id),
-      count: <span class="sa-rank"><Insignia rank={at} size={14} />{ready ? 'Ready' : news.includes(sh.id) ? 'New' : rank.name}</span>,
-      status: ready && next ? <>Promotion: <span class="grant">{next.name} Rank</span></> : `${on ? 'Deployed · ' : ''}Power ${powerOf(shadows.statsOf(sh))}`,
+      count: <span class="sa-rank"><Insignia rank={at} size={14} />{ready ? 'Ready' : news.includes(sh.id) ? 'New' : rank.name}{stars ? <Stars n={stars} /> : null}</span>,
+      status: ready && next ? <>Promotion: <span class="grant">{next.name} Rank</span></> : ready ? <>Awakening: <span class="grant">{'★'.repeat(stars + 1)}</span></> : `${on ? 'Deployed · ' : ''}Power ${powerOf(shadows.statsOf(sh))}`,
       art: <ShadowArt family={e.family} rank={at} level={lv} share={share} on={on} ready={ready} />,
       open: () => openShadow(sh.id),
     };
@@ -250,6 +253,7 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
       <Profile sh={sh} e={e} close={close} />
       <Growth sh={sh} />
       <NextRank sh={sh} e={e} />
+      <Awakening sh={sh} />
       <Stats sh={sh} e={e} />
       <Kit sh={sh} e={e} />
       <Record sh={sh} />
@@ -268,7 +272,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
   const lv = shadows.levelOf(sh);
   const p = shadows.progress(sh);
   const top = lv >= shadows.MAX_LEVEL;
-  const ready = shadows.canPromote(s, sh);
+  const ready = shadows.waiting(s, sh);
   const share = p.need ? p.into / p.need : 1;
   const c = 2 * Math.PI * 52;
   return (
@@ -285,7 +289,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           <b class="sp-head__lv"><small>Lv.</small>{top ? 'MAX' : lv}</b>
         </div>
         <div class="sp-head__who">
-          <span class="sa-rank sp-head__rank"><Insignia rank={at} size={15} />{shadows.rankOf(sh).name} Rank</span>
+          <span class="sa-rank sp-head__rank"><Insignia rank={at} size={15} />{shadows.rankOf(sh).name} Rank{shadows.starsOf(sh) ? <Stars n={shadows.starsOf(sh)} /> : null}</span>
           <span class="sp-head__was"><span class="label">Was</span> {sh.name ? `${e.name} · ${e.shadow}` : e.name}</span>
           <span class="sp-head__tags">
             <RankPlate rank={e.rank} size={20} />
@@ -337,7 +341,7 @@ function Growth({ sh }: { sh: Shadow }) {
   });
   const seal = cap < MAX ? (at + 1) * run + at * GAP + GAP / 2 : null;
   return (
-    <Section title="Growth" right={<span class="num"><span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(MAX * shadows.GROWTH_PER_LEVEL)}%</span>}>
+    <Section title="Growth" right={<span class="num"><span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
       <div class="sp-growth">
         <svg viewBox={`0 0 ${W} ${H + 4}`} class="sp-graph" role="img" aria-label={`Level ${lv} of ${MAX}. Level cap ${cap}.`}>
           {bars}
@@ -402,13 +406,82 @@ function NextRank({ sh, e }: { sh: Shadow; e: Enemy }) {
   );
 }
 
+/** A Shadow's awakening, as stars: lit for those taken, dark for those still to take. */
+function Stars({ n, of = 0 }: { n: number; of?: number }) {
+  const max = Math.max(n, of);
+  return (
+    <span class="sp-stars" aria-label={`Awakening ${n}${of ? ` of ${of}` : ''}`}>
+      {Array.from({ length: max }, (_, i) => <i key={i} class={i < n ? 'is-on' : ''}>★</i>)}
+    </span>
+  );
+}
+
+/**
+ * Awakening, once a Shadow is Ascendant: its stars, what the next asks (its level at the cap and the
+ * Shadow Essence it costs) and what it adds; once all is met, the hold that takes it.
+ */
+function Awakening({ sh }: { sh: Shadow }) {
+  const s = useSave();
+  if (shadows.rankIndex(sh) < shadows.SHADOW_RANKS.length - 1) return null;
+  const n = shadows.starsOf(sh);
+  const cost = shadows.awakenCost(sh);
+  const ready = shadows.canAwaken(s, sh);
+  const name = shadows.nameOf(sh);
+  const go = async () => {
+    const was = shadows.growth(sh);
+    const got = store.update((x) => shadows.awaken(x, sh.id));
+    if (!got) return;
+    sfx.rankUp();
+    flash('shadow');
+    buzz([60, 90, 30, 60, 140]);
+    const now = store.get().shadows.army.find((x) => x.id === sh.id);
+    await sys({
+      ...system.notify([
+        `${system.tag(name)} has awakened.`,
+        system.gain(`Awakening ${'★'.repeat(got.to)}`),
+        `Stats: ${system.change(`+${pct(was)}%`, system.gain(`+${pct(now ? shadows.growth(now) : was)}%`))}`,
+      ], 'shadow'),
+      typed: false,
+    });
+  };
+  return (
+    <section class={`sysbox sp-next sp-awaken ${ready ? 'promote' : ''}`} key={n}>
+      <header class="sp-next__head">
+        <span class="label">Awakening</span>
+        <Stars n={n} of={shadows.MAX_STARS} />
+      </header>
+      {cost === null ? (
+        <ul class="promote__gains"><li>Stats: <span class="grant">+{pct(shadows.growth(sh))}%</span></li></ul>
+      ) : (
+        <>
+          <ul class="sp-reqs">
+            <li class={shadows.atTop(sh) ? 'is-met' : ''}>
+              <Glyph name={shadows.atTop(sh) ? 'check' : 'lock'} /><span>Level</span><b class="num">{shadows.levelOf(sh)}/{shadows.MAX_LEVEL}</b>
+              <i class="sp-reqs__bar" aria-hidden="true"><i style={`width: ${pct(unit(shadows.levelOf(sh) / shadows.MAX_LEVEL))}%`} /></i>
+            </li>
+            <li class={(s.shadows.essence ?? 0) >= cost ? 'is-met' : ''}>
+              <Glyph name={(s.shadows.essence ?? 0) >= cost ? 'check' : 'lock'} /><span>Shadow Essence</span><b class="num">{s.shadows.essence ?? 0}/{cost}</b>
+              <i class="sp-reqs__bar" aria-hidden="true"><i style={`width: ${pct(unit((s.shadows.essence ?? 0) / cost))}%`} /></i>
+            </li>
+          </ul>
+          <ul class="promote__gains">
+            <li>Awakening: {'★'.repeat(n) || '-- --'} → <span class="grant">{'★'.repeat(n + 1)}</span></li>
+            <li>Stats: +{pct(shadows.growth(sh))}% → <span class="grant">+{pct(shadows.growth(sh) + shadows.AWAKENING.growth)}%</span></li>
+          </ul>
+          {ready && <HoldButton hold={{ label: 'Hold To Awaken', ms: 1800, ticks: 5, holding: 'Awakening…', done: 'Awakened', after: 260 }} onFire={() => void go()} />}
+        </>
+      )}
+    </section>
+  );
+}
+
 /**
  * Its stats: a radar of its creature's own (dim), where its level has them now (lit) and where Lv.MAX
  * would (outlined), every shape on one scale; and each stat with what its level adds.
  */
 function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   const now = shadows.statsOf(sh);
-  const peak = 1 + shadows.MAX_LEVEL * shadows.GROWTH_PER_LEVEL;
+  const peak = 1 + shadows.MAX_GROWTH;
   const top = Math.max(1, ...ORDER.map((k) => e.base[k] * peak));
   const at = (i: number, r: number) => {
     const a = (-90 + i * 72) * (Math.PI / 180);
@@ -532,19 +605,23 @@ function Release({ sh, close }: { sh: Shadow; close: () => void }) {
 // ------------------------------------------------------------------ after a run
 
 /**
- * What a run gave each deployed Shadow, on the results: an alert each, its badge, its level and the XP
- * it took, and a meter that moves from where it stood. One that can be promoted says so, and nothing
- * more: the Shadows tab's mark shows where to go.
+ * What a run did to the deployed Shadows, on the results: an alert to each that levelled up or that the
+ * run made ready for promotion, its badge, its level and the XP it took, and a meter that moves from
+ * where it stood. A Shadow that only took XP gets none. One made ready says so, and nothing more: the
+ * Shadows tab's mark shows where to go.
  */
-export function ShadowAlerts({ grew, delay = 500 }: { grew: RaidResult['grew']; delay?: number }) {
+export function ShadowAlerts({ grew, ready, delay = 500 }: { grew: RaidResult['grew']; ready: RaidResult['ready']; delay?: number }) {
   const s = useSave();
-  const rows = grew.map((g) => ({ g, sh: s.shadows.army.find((x) => x.id === g.id) })).filter((x): x is { g: RaidResult['grew'][number]; sh: Shadow } => !!x.sh);
+  const rows = grew
+    .filter((g) => g.to > g.from || ready.some((p) => p.id === g.id))
+    .map((g) => ({ g, sh: s.shadows.army.find((x) => x.id === g.id) }))
+    .filter((x): x is { g: RaidResult['grew'][number]; sh: Shadow } => !!x.sh);
   if (!rows.length) return null;
   return (
     <div class="alerts shadowalerts" aria-label="Army">
       {rows.map(({ g, sh }, i) => {
         const e = enemyById(sh.enemyId)!;
-        const ready = shadows.canPromote(s, sh);
+        const made = ready.some((p) => p.id === g.id);
         const name = shadows.nameOf(sh);
         const up = g.to > g.from;
         const cap = shadows.rankOf(sh).cap;
@@ -554,14 +631,13 @@ export function ShadowAlerts({ grew, delay = 500 }: { grew: RaidResult['grew']; 
         const now = share(g.to, sh.xp);
         const was = share(g.from, sh.xp - g.xp);
         return (
-          <SysAlert key={g.id} kind="shadow" fyi delay={delay + i * 180} class={`is-shadowline ${ready ? 'is-ready' : ''}`}
+          <SysAlert key={g.id} kind="shadow" fyi delay={delay + i * 180} class={`is-shadowline ${made ? 'is-ready' : ''}`}
             icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={34} />}
             meter={{ from: up ? was : Math.min(was, now), to: now, up }}
             aside={g.xp > 0 ? <span class="num">XP <span class="grant">+{g.xp}</span></span> : null}
-            sub={ready ? undefined : <span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>
-            {ready ? <><strong>[{name}]</strong> has met the requirements for promotion.</>
-              : up ? <><strong>[{name}]</strong> has levelled up.</>
-              : <strong>[{name}]</strong>}
+            sub={made ? undefined : <span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>
+            {made ? <><strong>[{name}]</strong> has met the requirements for promotion.</>
+              : <><strong>[{name}]</strong> has levelled up.</>}
           </SysAlert>
         );
       })}

@@ -311,3 +311,49 @@ describe('extraction', () => {
     expect(raid.reachesLeft(l)).toBe(1);
   });
 });
+
+describe('awakening', () => {
+  it('lets an Ascendant at its cap take stars for Shadow Essence, each growing it further', () => {
+    const s = defaults();
+    const sh = shadows.bind(s, two.id);
+    shadows.raise(sh, 2);
+    s.shadows.essence = 1000;
+    // Not Ascendant: no star to take.
+    expect(shadows.canAwaken(s, sh)).toBe(false);
+    shadows.raise(sh, 3);
+    const before = shadows.growth(sh);
+    expect(shadows.awaken(s, sh.id)).toEqual({ id: sh.id, from: 0, to: 1, essence: shadows.AWAKENING.cost[0] });
+    expect(s.shadows.essence).toBe(1000 - shadows.AWAKENING.cost[0]);
+    expect(shadows.growth(sh)).toBeCloseTo(before + shadows.AWAKENING.growth);
+    // Every star, and no more.
+    shadows.awakenAll(s);
+    expect(shadows.starsOf(sh)).toBe(shadows.MAX_STARS);
+    expect(shadows.awakenCost(sh)).toBeNull();
+    expect(shadows.awaken(s, sh.id)).toBeNull();
+    expect(shadows.growth(sh)).toBeCloseTo(shadows.MAX_GROWTH);
+    expect(s.shadows.essence).toBe(1000 - shadows.AWAKENING.cost.reduce((a, b) => a + b, 0));
+  });
+
+  it('asks for the cap, and the Essence the star costs', () => {
+    const s = defaults();
+    const sh = shadows.raise(shadows.bind(s, two.id), 3);
+    sh.xp = shadows.xpAt(shadows.MAX_LEVEL - 1);
+    s.shadows.essence = 1000;
+    expect(shadows.canAwaken(s, sh)).toBe(false);
+    shadows.raise(sh, 3);
+    s.shadows.essence = shadows.AWAKENING.cost[0] - 1;
+    expect(shadows.canAwaken(s, sh)).toBe(false);
+    expect(shadows.waiting(s, sh)).toBe(false);
+    s.shadows.essence += 1;
+    expect(shadows.waiting(s, sh)).toBe(true);
+  });
+
+  it('releasing an awakened Shadow returns half of what its stars cost too', () => {
+    const s = defaults();
+    const sh = shadows.raise(shadows.bind(s, two.id), 3);
+    s.shadows.essence = shadows.AWAKENING.cost[0];
+    shadows.awaken(s, sh.id);
+    const ranks = shadows.SHADOW_RANKS.slice(1).reduce((n, r) => n + r.essence, 0);
+    expect(shadows.releaseValue(sh)).toBe(shadows.essenceOf(two, false) + Math.floor((ranks + shadows.AWAKENING.cost[0]) / 2));
+  });
+});

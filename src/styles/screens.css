@@ -1455,3 +1455,11 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 @media (prefers-reduced-motion: reduce) {
   .bagtile, .itemhero::after, .itemhero__art, .figure__scan, .figure__node.is-lit circle:last-child, .fusion__arrow i { animation: none; }
 }
+
+/* Awakening: a Shadow's stars, lit for those taken, and its panel once it is Ascendant. */
+.sp-stars { display: inline-flex; gap: 1px; margin-left: 6px; letter-spacing: 0; }
+.sp-stars i { font-style: normal; font-size: 0.9em; line-height: 1; color: color-mix(in srgb, var(--sys-ink) 22%, transparent); }
+.sp-stars i.is-on { color: #f1e6ff; text-shadow: 0 0 4px #fff, 0 0 10px var(--arcane-glow); }
+.sp-awaken .sp-next__head .sp-stars { font-size: 1.15rem; }
+.sp-awaken:not(.promote) { border-color: color-mix(in srgb, var(--arcane) 45%, var(--sys-hair)); background: linear-gradient(180deg, color-mix(in srgb, var(--arcane) 10%, transparent), rgba(3, 8, 20, 0.5)); }
+.sp-awaken.promote .sp-stars i.is-on { color: #fff6dc; text-shadow: 0 0 4px #fff, 0 0 10px var(--gold-glow); }

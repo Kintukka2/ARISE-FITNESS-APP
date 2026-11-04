@@ -6,7 +6,7 @@
  * extracted again when one like it already serves, and from a Shadow released. A Sworn Shadow
  * remembers a second ability.
  */
-import { ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
+import { AWAKENING, ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
 import { ALL_ENEMIES, enemyById } from './gates';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
@@ -18,7 +18,7 @@ export const EXTRACT_MP: Record<string, number> = { E: 50, D: 60, C: 70, B: 80, 
 /** A lingering Shadow can be reached for this many times, until it holds; each reach costs `step` times the one before. */
 export const EXTRACT_TRIES = { max: 3, step: 2 } as const;
 
-export { ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS };
+export { AWAKENING, ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS };
 
 // ------------------------------------------------------------------ levels
 
@@ -64,8 +64,45 @@ export function earn(sh: Shadow, xp: number): number {
   return took;
 }
 
-/** Every attribute's growth over its creature's own: GROWTH_PER_LEVEL for each level. */
-export const growth = (sh: Shadow) => levelOf(sh) * GROWTH_PER_LEVEL;
+/** Every attribute's growth over its creature's own: GROWTH_PER_LEVEL for each level, and AWAKENING's for each star. */
+export const growth = (sh: Shadow) => levelOf(sh) * GROWTH_PER_LEVEL + starsOf(sh) * AWAKENING.growth;
+/** The most growth a Shadow reaches: the top level, every star. */
+export const MAX_GROWTH = MAX_LEVEL * GROWTH_PER_LEVEL + AWAKENING.cost.length * AWAKENING.growth;
+
+// ------------------------------------------------------------------ awakening
+
+/** The stars a Shadow can be awakened to. */
+export const MAX_STARS = AWAKENING.cost.length;
+export const starsOf = (sh: Shadow) => Math.max(0, Math.min(MAX_STARS, sh.stars ?? 0));
+/** Ascendant at its cap: the rank and level awakening asks for. */
+export const atTop = (sh: Shadow) => rankIndex(sh) === SHADOW_RANKS.length - 1 && atCap(sh);
+/** What the next star costs, or null once every star is held. */
+export const awakenCost = (sh: Shadow) => AWAKENING.cost[starsOf(sh)] ?? null;
+/** Ascendant at its cap, with a star still to take and the Essence it costs. */
+export const canAwaken = (s: Save, sh: Shadow) => atTop(sh) && awakenCost(sh) !== null && (s.shadows.essence ?? 0) >= awakenCost(sh)!;
+export const awakenable = (s: Save) => s.shadows.army.filter((sh) => canAwaken(s, sh));
+/** Awaken a Shadow one star, spending the Essence it costs. Returns the stars before and after, or null. Mutates. */
+export function awaken(s: Save, id: string): { id: string; from: number; to: number; essence: number } | null {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh || !canAwaken(s, sh)) return null;
+  const from = starsOf(sh);
+  const cost = awakenCost(sh)!;
+  s.shadows.essence = (s.shadows.essence ?? 0) - cost;
+  sh.stars = from + 1;
+  return { id, from, to: from + 1, essence: cost };
+}
+/** A Shadow waiting on the hunter: a promotion or a star it can take now. */
+export const waiting = (s: Save, sh: Shadow) => canPromote(s, sh) || canAwaken(s, sh);
+export const waitingAll = (s: Save) => s.shadows.army.filter((sh) => waiting(s, sh));
+/** Every star the Essence left after promotions pays for, the deployed Shadows first: what a hunter who keeps up does. Mutates. */
+export function awakenAll(s: Save) {
+  const out = squad(s);
+  const order = s.shadows.army.slice().sort((a, b) => Number(out.includes(b)) - Number(out.includes(a)) || starsOf(a) - starsOf(b));
+  for (let more = true; more;) {
+    more = false;
+    for (const sh of order) if (awaken(s, sh.id)) more = true;
+  }
+}
 
 // ------------------------------------------------------------------ promotion
 
@@ -119,9 +156,10 @@ export function raise(sh: Shadow, rank: number) {
 
 /** The Essence a creature already in the army gives when it is extracted again. */
 export const essenceOf = (e: Pick<Enemy, 'rank'>, boss: boolean) => (ESSENCE[e.rank as Rank] ?? 1) * (boss ? 2 : 1);
-/** What a Shadow's ranks cost in Essence, all told. */
-export const spentOn = (sh: Shadow) => SHADOW_RANKS.slice(1, rankIndex(sh) + 1).reduce((n, r) => n + r.essence, 0);
-/** What releasing a Shadow returns: its creature's Essence, and half of what its ranks cost. */
+/** What a Shadow's ranks and stars cost in Essence, all told. */
+export const spentOn = (sh: Shadow) => SHADOW_RANKS.slice(1, rankIndex(sh) + 1).reduce((n, r) => n + r.essence, 0)
+  + AWAKENING.cost.slice(0, starsOf(sh)).reduce((n, c) => n + c, 0);
+/** What releasing a Shadow returns: its creature's Essence, and half of what its ranks and stars cost. */
 export const releaseValue = (sh: Shadow) => {
   const e = enemyById(sh.enemyId);
   return (e ? essenceOf(e, false) : 1) + Math.floor(spentOn(sh) / 2);

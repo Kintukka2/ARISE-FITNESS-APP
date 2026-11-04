@@ -133,6 +133,8 @@ export interface Shadow {
   rank: number;
   /** Experience, all told. Its level is what this reaches, as far as its rank's cap; the rest is banked. */
   xp: number;
+  /** Awakening stars, bought with Shadow Essence once Ascendant at its cap. */
+  stars?: number;
   /** The name the hunter bestowed on it, if any. Unset, it goes by what it was: `Shadow {creature}`. */
   name?: string;
 }

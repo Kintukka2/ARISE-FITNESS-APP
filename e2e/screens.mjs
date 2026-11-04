@@ -310,6 +310,21 @@ try {
   // A whole build, as the sky draws it.
   await nav('inventory');
   await page.locator('.btile--skills .btile__hit').click(); await sleep(700); await snap('asc-skills'); await close(); await sleep(250);
+  // Igris, Ascendant at the top with two stars and the Essence for a third: the Awakening panel and its hold.
+  await nav('shadows');
+  await page.locator('.btile--army .btile__hit').click(); await sleep(700);
+  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit', { hasText: 'Igris' }).first().click(); await sleep(900);
+  if (!(await page.locator('.sheet.is-top .sp-awaken.promote').count())) throw new Error('THE AWAKENING DID NOT WAIT ON THE HUNTER');
+  await page.locator('.sheet.is-top .sp-awaken').scrollIntoViewIfNeeded(); await sleep(300); await snap('shadow-awaken');
+  {
+    const box = await page.locator('.sheet.is-top .sp-awaken .holdbtn').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down(); await sleep(2100); await page.mouse.up();
+  }
+  await page.waitForSelector('.syswin', { timeout: 6000 }); await sleep(500); await snap('shadow-awakened');
+  if (!(await page.locator('.syswin', { hasText: 'has awakened' }).isVisible())) throw new Error('THE AWAKENING WAS NOT REPORTED');
+  await page.locator('.syswin__foot .btn').last().click(); await sleep(300);
+  await close(); await close();
   await nav('gates');
   if (!(await page.locator('.btile--ascension').isVisible())) throw new Error('THE ASCENSION TILE IS MISSING AT S-RANK');
   if (await page.locator('.gatesgrid', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');
