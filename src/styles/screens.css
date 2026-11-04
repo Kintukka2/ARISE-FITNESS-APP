@@ -959,15 +959,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .sysframe .partylist { gap: 6px; }
 .sysframe .partylist li { padding: 7px 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
 .sysframe .partylist li b { font-weight: 600; font-size: 0.86rem; }
-/* The squad sheet: a row to each slot, a row to each Shadow behind it, and a button at each row's end. */
-.sysframe .squadlist li.squadrow { display: flex; gap: 8px; padding: 0 0 0 10px; }
-.squadrow__who { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 7px 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
-.squadrow__who b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--arcane); }
-.squadrow__act { display: grid; place-items: center; width: 40px; flex: none; border-width: 0 0 0 1px; color: #c9a7ff; background: rgba(155, 107, 255, 0.1); }
-.squadrow__act.is-plus:not(:disabled) { color: #e2d2ff; background: rgba(155, 107, 255, 0.24); }
-.squadrow__act:disabled { opacity: 0.35; }
-.squadrow__act .ico { width: 16px; height: 16px; }
-.sysframe .squadlist li.squadrow.is-empty { justify-content: center; padding: 10px; border-style: dashed; color: var(--ink-3); }
 .sysframe .partylist li small { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); font-size: 0.74rem; }
 .sysframe .gnode { border-color: var(--sys-hair); border-radius: 0; }
 .sysframe .empty { border-color: var(--sys-hair); border-radius: 0; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
@@ -1005,14 +996,108 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 /* ------------------------------------------------------------------ the Shadows screen's pictures */
 
 /* The squad: a slot to each Shadow that can walk in, filled or waiting. */
-.sa-squad { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; }
-.sa-squad__slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 92px; height: 78px; padding: 6px; border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); animation: qaIn 520ms var(--ease) both; }
-.sa-squad__slot:nth-child(2) { animation-delay: 110ms; }
-.sa-squad__slot:nth-child(3) { animation-delay: 220ms; }
-.sa-squad__slot:nth-child(4) { animation-delay: 330ms; }
-.sa-squad__slot.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 70%, transparent); color: var(--sys-ink); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 25%, transparent), 0 0 10px var(--win-glow); }
-.sa-squad__slot small { display: -webkit-box; overflow: hidden; font-size: 0.6rem; font-weight: 600; line-height: 1.2; text-align: center; text-shadow: var(--sys-glow); -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.sa-squad__slot > .ico { width: 18px; height: 18px; }
+
+/* The Army, on its tile: the squad's slots, each a badge in smoke with its grade, name and level; the reserve under them, a glyph each. */
+.sa-host { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.sa-host__squad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sa-host__slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 104px; padding: 12px 4px 7px; border-color: color-mix(in srgb, var(--win) 60%, transparent); color: var(--sys-ink); background: radial-gradient(80% 70% at 50% 35%, color-mix(in srgb, var(--win) 18%, transparent), transparent 75%), rgba(6, 3, 18, 0.55); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 20%, transparent); animation: qaIn 520ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
+.sa-host__slot .emblem { position: relative; color: var(--win); filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.6s); }
+.sa-host__smoke { position: absolute; top: 10px; left: 50%; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 45%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; }
+.sa-host__slot small { position: relative; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.64rem; font-weight: 600; text-shadow: var(--sys-glow); }
+.sa-host__slot b { position: relative; font-size: 0.62rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.sa-host__grade { position: absolute; top: 5px; left: 5px; z-index: 1; }
+.sa-host__slot.is-free { border-style: dashed; border-color: var(--sys-hair); background: none; box-shadow: none; color: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
+.sa-host__slot.is-free .ico { width: 18px; height: 18px; }
+.sa-host__slot.is-ready { border-color: var(--gold); box-shadow: inset 0 0 14px color-mix(in srgb, var(--gold) 22%, transparent), 0 0 10px var(--gold-glow); }
+.sa-host__slot.is-ready .emblem { filter: drop-shadow(0 0 10px var(--gold-glow)); }
+.sa-host__reserve { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.sa-host__reserve .label { flex: none; font-size: 0.56rem; }
+.sa-host__ones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.sa-host__one { position: relative; display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--win) 40%, transparent); border-radius: 50%; color: #c9a7ff; background: color-mix(in srgb, var(--win) 10%, transparent); animation: saRise 520ms var(--ease) both; animation-delay: calc(var(--i) * 50ms); }
+.sa-host__one.is-ready { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.sa-host__one.is-new::after { content: ''; position: absolute; top: -1px; right: -1px; width: 7px; height: 7px; border-radius: 50%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+.sa-host__more { font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+
+/* ARMY: the roster. Its counts, the squad's slots, then a row to every Shadow, made into the squad from here. */
+.roster { gap: 12px; }
+.roster__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.roster__slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 9px 4px 7px; border-color: color-mix(in srgb, var(--win) 60%, transparent); color: inherit; font: inherit; background: radial-gradient(80% 60% at 50% 30%, color-mix(in srgb, var(--win) 16%, transparent), transparent 75%), rgba(6, 3, 18, 0.5); }
+.roster__slot-grade { position: absolute; top: 4px; left: 4px; }
+.roster__slot-badge { display: grid; place-items: center; color: var(--win); filter: drop-shadow(0 0 7px var(--win-glow)); }
+.roster__slot b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.7rem; font-weight: 700; color: #e2d2ff; }
+.roster__slot small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.roster__slot.is-free { justify-content: center; min-height: 92px; border-style: dashed; border-color: var(--sys-hair); background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.roster__slot.is-free .ico { width: 16px; height: 16px; }
+.roster__slot.is-ready { border-color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.roster__acts { gap: 8px; margin-top: 8px; }
+.roster__tools { display: flex; flex-direction: column; gap: 6px; scroll-margin-top: 8px; }
+.rostabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.rostab { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 0 6px; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; }
+.rostab small { font-size: 0.6rem; font-weight: 700; opacity: 0.8; }
+.rostab.is-on { color: #fff; border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 22%, rgba(3, 8, 20, 0.5)); box-shadow: 0 0 12px color-mix(in srgb, var(--win) 30%, transparent); }
+.rostab.is-call small { color: var(--gold); opacity: 1; }
+.roster__bar { display: flex; align-items: center; gap: 6px; }
+.roster__sort { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; }
+.roster__sort .ico { width: 13px; height: 13px; }
+.roster__views { display: flex; gap: 4px; margin-left: auto; }
+.roster__view { display: grid; place-items: center; width: 34px; height: 32px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.roster__view .ico { width: 14px; height: 14px; }
+.roster__view.is-on { color: #fff; border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 20%, rgba(3, 8, 20, 0.5)); }
+/* The table: a head of labels over a row to each Shadow; the deployed ones lit along their start. */
+.roster__table { display: flex; flex-direction: column; }
+.roster__head { display: grid; grid-template-columns: 34px minmax(0, 1fr) 40px 42px; column-gap: 8px; align-items: end; padding: 0 10px 6px 0; border-bottom: 1px solid var(--sys-hair); }
+.roster__head > * { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.roster__head button { padding: 0; border: 0; background: none; font-family: inherit; text-align: right; cursor: pointer; }
+.roster__head button { white-space: nowrap; }
+.roster__head button.is-on { color: #e2d2ff; text-shadow: 0 0 8px var(--win-glow); }
+.roster__head button.is-on::after { content: ' ▾'; }
+.roster__sum .essence { width: 13px; height: 13px; }
+.roster__sum .is-call b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.roster__list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.roster__row { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; column-gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-hair) 60%, transparent); animation: qaIn 380ms var(--ease) both; animation-delay: calc(var(--i) * 25ms); }
+.roster__row.is-on { background: linear-gradient(90deg, color-mix(in srgb, var(--win) 14%, transparent), transparent 70%); }
+.roster__toggle { display: grid; place-items: center; width: 34px; height: 34px; border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.roster__toggle .ico { width: 14px; height: 14px; }
+.roster__toggle.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 85%, transparent); color: #fff; background: color-mix(in srgb, var(--win) 38%, transparent); box-shadow: 0 0 10px var(--win-glow); }
+.roster__toggle:disabled { opacity: 0.3; }
+.roster__who { display: grid; grid-template-columns: 42px minmax(0, 1fr) 40px 42px; align-items: center; column-gap: 8px; min-width: 0; padding: 0 10px 0 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.roster__badge { position: relative; display: grid; place-items: center; width: 42px; height: 42px; color: var(--win); filter: drop-shadow(0 0 6px var(--win-glow)); }
+.roster__row:not(.is-on) .roster__badge { opacity: 0.78; }
+.roster__row.is-ready .roster__badge { opacity: 1; filter: drop-shadow(0 0 8px var(--gold-glow)) drop-shadow(0 0 4px var(--win-glow)); }
+.roster__name { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.roster__line { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.roster__name b { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.82rem; font-weight: 700; color: #d9c4ff; }
+.roster__name small { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 0.64rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.roster__name small .famglyph, .roster__name small .insignia, .roster__name small .rankplate { flex: none; }
+.roster__name small .famglyph, .roster__name small .insignia { color: #c9a7ff; }
+.roster__stars { flex: none; color: var(--gold); font-size: 0.62rem; font-weight: 700; }
+.roster__badge .roster__tag { position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: rgba(10, 5, 26, 0.95); }
+.roster__tag { padding: 0 5px; border: 1px solid color-mix(in srgb, var(--win) 70%, transparent); font-size: 0.52rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #e2d2ff; }
+.roster__badge .roster__tag.is-ready, .roster__tag.is-ready { border-color: var(--gold); color: #1a1205; background: var(--gold); }
+.roster__lv { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.roster__lv b { font-size: 0.9rem; font-weight: 700; color: var(--sys-ink); }
+.roster__lv b small { font-size: 0.6rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.roster__bar-lv { display: block; width: 100%; height: 3px; background: var(--sys-hair); }
+.roster__bar-lv > i { display: block; height: 100%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+.roster__row.is-ready .roster__bar-lv > i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+.roster__power { font-size: 0.9rem; font-weight: 700; text-align: right; color: var(--sys-ink); text-shadow: var(--sys-glow); }
+/* The grid: a card to each Shadow, its power over its badge, ringed by its levels through its rank. */
+.rostergrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.rostercard { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 6px 3px 7px; color: inherit; font: inherit; animation: qaIn 380ms var(--ease) both; animation-delay: calc(var(--i) * 25ms); }
+.rostercard.is-on { border-color: color-mix(in srgb, var(--win) 70%, transparent); background: color-mix(in srgb, var(--win) 12%, rgba(3, 8, 20, 0.5)); }
+.rostercard.is-on::before { content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 2px; background: var(--win); box-shadow: 0 0 8px var(--win-glow); }
+.rostercard.is-ready { border-color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.rostercard__top { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 2px; }
+.rostercard__top b { font-size: 0.78rem; font-weight: 700; text-shadow: var(--sys-glow); }
+.rostercard__art { position: relative; display: grid; place-items: center; width: 60px; height: 60px; color: var(--win); }
+.rostercard__ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.rostercard__track { fill: none; stroke: var(--sys-hair); stroke-width: 3; }
+.rostercard__fill { fill: none; stroke: var(--win); stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 0 3px var(--win-glow)); animation: saFill 900ms var(--ease) both; }
+.rostercard.is-ready .rostercard__fill { stroke: var(--gold); }
+.rostercard__art .emblem { position: relative; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.rostercard__name { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.62rem; font-weight: 700; color: #d9c4ff; }
+.rostercard__lv { font-size: 0.58rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.rostercard:not(.is-on):not(.is-ready) .rostercard__art { opacity: 0.8; }
 
 /* Orders, on its tile: the four standing orders, the one the army fights on lit. */
 .sa-orders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
@@ -1046,6 +1131,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ordrow__body small .label { display: inline-block; min-width: 66px; font-size: 0.56rem; }
 .ordrow__own { color: #e2d2ff; text-shadow: 0 0 8px var(--win-glow); }
 .ordrow__who > .ico { width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.ordrow__who > .ico { transition: transform 160ms var(--ease); }
+.ordrow.is-open .ordrow__who > .ico { transform: rotate(90deg); }
+.ordrow .sp-orders { border-top: 1px solid var(--sys-hair); }
+.ordrow__badge { width: 38px; height: 38px; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); border-radius: 50%; color: #c9a7ff; background: color-mix(in srgb, var(--win) 10%, transparent); }
 .sysframe .ordlist li.ordrow.is-own { border-color: color-mix(in srgb, var(--win) 55%, transparent); }
 
 /* Its orders, on its card: whom it goes for, then the skill it reaches for. */
@@ -1056,29 +1145,11 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .sp-orders .chips--orders .chip--btn { min-height: 38px; font-size: 0.74rem; }
 .sp-orders__sealed { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px dashed var(--sys-hair); font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .sp-orders__sealed .ico { width: 13px; height: 13px; }
-.sp-skill__focus { display: inline-block; margin-left: 8px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--win) 80%, transparent); font-size: 0.56rem; font-style: normal; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; vertical-align: 2px; background: color-mix(in srgb, var(--win) 22%, transparent); }
 
-/* A Shadow: its shape in smoke, ringed by the kills toward its next rank. */
-.sa-shade { position: relative; display: grid; place-items: center; width: 92px; height: 92px; color: var(--win); }
-.sa-shade__ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-.sa-shade__track { fill: none; stroke: var(--sys-hair); stroke-width: 2; }
-.sa-shade__fill { fill: none; stroke: var(--win); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--win-glow)); animation: saFill 1100ms var(--ease) both; }
 @keyframes saFill { from { stroke-dasharray: 0 999; } }
-.sa-shade__smoke { position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 48%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; }
 @keyframes saSmoke { 50% { opacity: 0.6; transform: scale(1.22) translateY(-3px); } }
-.sa-shade > .ico { position: relative; width: 34px; height: 34px; filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
-.sa-shade > .emblem { position: relative; margin-top: -8px; filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
-.sa-shade > b { position: absolute; bottom: 13px; font-size: 0.68rem; font-weight: 600; color: var(--sys-ink); text-shadow: var(--sys-glow); }
-/* Kills that have earned the next rank: the ring lit gold, as advancement is, and the badge brighter. */
-.sa-shade.is-ready .sa-shade__fill { stroke: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
-.sa-shade.is-ready .sa-shade__smoke { background: radial-gradient(circle, color-mix(in srgb, var(--gold) 34%, transparent), color-mix(in srgb, var(--win) 30%, transparent) 45%, transparent 72%); }
-.sa-shade.is-ready > .emblem { filter: drop-shadow(0 0 10px var(--gold-glow)) drop-shadow(0 0 6px var(--win-glow)); }
-.btile.is-shadow.is-ready .sa-shade { opacity: 1; }
 .sa-rank { display: inline-flex; align-items: center; gap: 5px; }
 .sa-rank .insignia, .sa-rank .famglyph { flex: none; }
-.sa-army__one.is-ready::before { content: ''; position: absolute; inset: -4px; border: 1px solid var(--gold); box-shadow: 0 0 10px var(--gold-glow); animation: btileCount 1.5s ease-in-out infinite; }
-.btile.is-shadow:not(.is-deployed) .sa-shade { opacity: 0.72; }
-.btile.is-deployed { box-shadow: -2px 0 16px -2px var(--win-glow), 2px 0 16px -2px var(--win-glow), 0 0 26px color-mix(in srgb, var(--win) 35%, transparent); }
 
 /* A Shadow's card (Shadows.tsx, ShadowCard): a profile, violet, in the System's frame. */
 .shadowcard { gap: 14px; }
@@ -1273,12 +1344,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ga-board__one.is-none { opacity: 0.25; }
 .ga-board__one.is-shut .ga-portal__swirl, .ga-board__one.is-shut .ga-portal__core { animation: none; opacity: 0.35; }
 
-/* The army as one tile: its strongest, rising out of their smoke; the deployed ones underlined. */
-.sa-army { display: flex; justify-content: center; gap: 14px; }
-.sa-army__one { position: relative; display: grid; place-items: center; width: 46px; height: 46px; animation: saRise 640ms var(--ease) both; animation-delay: calc(var(--i) * 90ms); }
-.sa-army__smoke { position: absolute; inset: -5px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 48%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; animation-delay: calc(var(--i) * -0.7s); }
-.sa-army__one .rankplate { position: relative; }
-.sa-army__one.is-on::after { content: ''; position: absolute; bottom: -8px; left: 28%; right: 28%; height: 2px; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
 @keyframes saRise { from { opacity: 0; transform: translateY(10px); } }
 
 /* ================================================================== gear (screens/Gear.tsx)

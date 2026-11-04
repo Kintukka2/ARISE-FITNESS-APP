@@ -77,11 +77,12 @@ hunter's turns to the System and presses on between chambers, for grinding.
   they hold for the fights still to come in it (`raid.setTactic`); set while a step is underway they
   reach the run when its next step is chosen (`raid.choose`), never the step underway, whose replay
   reads the orders it opened with.
-- **A Shadow's own orders**, set on its card: standing orders of its own over the army's
-  (`Shadow.tactic`, read by `combat.aim`), and from Sworn, when it knows two skills, a focus: the
-  skill it uses whenever that skill is ready (`Shadow.focus`, read by `choose()`). Both reach an open
-  run the way the standing orders do, at its next step. The orders sheet lists every Shadow with
-  what it follows, and a tap opens its card at its orders. Nothing is changed for a Shadow given
+- **A Shadow's own orders**, set on its row in the orders sheet: standing orders of its own over the
+  army's (`Shadow.tactic`, read by `combat.aim`), and from Sworn, when it knows two skills, a focus:
+  the skill it uses whenever that skill is ready (`Shadow.focus`, read by `choose()`). Both reach an
+  open run the way the standing orders do, at its next step. The orders sheet lists every Shadow with
+  what it follows, and a tap opens its row to set them. They sat on its card at first; the card is a
+  profile, so they moved to the sheet that holds every order. Nothing is changed for a Shadow given
   none, so the auto fight, calibration and the campaign stand.
 - **The save** records the hunter's orders for the chamber being fought, not the fight state. The
   engine is deterministic for a seed and a list of orders, so a reload replays to the same turn.
@@ -112,8 +113,9 @@ layer is all fights and every layer holds at least one.
   blessings and debuffs, an event can give or drain MP and ease or add fatigue, both on the hunter at
   once. Each has one choice the System makes on its road, and that one never hurts or curses
   (`tests/map.test.ts`).
-- **The squad sheet** puts a Shadow in and takes one out: a row to each slot, then the army behind
-  it, and its header counts as it changes. It no longer lists the slots by rank; the Guide does.
+- **The squad is made on the Army's roster** (see Depth for the Shadows): a row's box puts a Shadow
+  in and takes one out, and the squad's count follows. It no longer lists the slots by rank; the
+  Guide does.
 - **What the run finds is banked on it** (`haul`, `purse`, `blessings`) and paid in `finish`: kept
   walking out, at the end or from a rest; lost when carried out.
 - **The brief's verdict walks the System's road**, marked on the map: fight first, rest when it
@@ -407,8 +409,21 @@ fight was tried and did not narrow it.
 - **More slots through Secret Quests.** Three make room for one more Shadow each: a first Sworn
   Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions' (`shadows.slots`).
 - **Orders.** Every Shadow follows the army's standing orders, set on the Shadows screen, unless it
-  is given its own on its card: whom it goes for, and a skill to use whenever it is ready (see
-  Turn-based combat). Orders a Shadow kept of its own were once removed for the map's; the map no
+  is given its own on the orders sheet: whom it goes for, and a skill to use whenever it is ready
+  (see Turn-based combat).
+- **The Army, one tile and one roster.** The Squad and the Army were two tiles and two sheets; the
+  Army's tiles were large, so a big army was hard to take in, and the Squad sheet did the managing.
+  They are one now. The Army tile is the screen's centre: the squad's slots, each a badge with its
+  grade, name and level, the free ones dashed, and the reserve under them, a glyph each; it calls
+  while a slot is free, a Shadow is ready or one is new. It opens ARMY, a roster after a team sheet's:
+  Shadow Essence, the squad's power, Bound and Ready across its head; the squad's slots, a tap from
+  each card, a free one showing the reserve; **Auto Deploy** (`shadows.autoDeploy`, the strongest by
+  power, as many as the slots hold, spent once they are deployed) and **Recall**; tabs for All,
+  Squad, Reserve and Ready; a sort by Power, Level, Rank, Grade or Newest; and a list or a grid. A
+  row is the box that deploys it, its badge (marked Ready or New), its name over its grade, family
+  and rank (and stars), its level over a bar through its rank's levels, and its power; it opens the
+  card. The grid is a card to each, its power over its badge in the ring of its levels. The tab,
+  sort and view hold while the app stays open. Orders a Shadow kept of its own were once removed for the map's; the map no
   longer holds orders, and a Shadow's own came back with a focus beside them.
 - **A save from before** (v7 migration) gives every Shadow the rank its kills had earned and the
   level its growth stood at (a Vanguard with 75% growth is Lv.30), with no Essence. Its kills carry

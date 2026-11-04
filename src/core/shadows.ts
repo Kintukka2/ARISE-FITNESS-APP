@@ -7,6 +7,7 @@
  * remembers a second ability.
  */
 import { AWAKENING, ECHO, ECHO_COST, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
+import { powerOf } from './combat';
 import { ALL_ENEMIES, enemyById } from './gates';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
@@ -264,6 +265,21 @@ export function toggleDeploy(s: Save, id: string): boolean {
   s.shadows.squad = s.shadows.squad.filter((x) => s.shadows.army.some((a) => a.id === x));
   s.shadows.squad.push(id);
   return true;
+}
+
+/** What a Shadow's stats come to, as the screens and the squad's order read it. */
+export const power = (sh: Shadow) => powerOf(statsOf(sh));
+
+/** What the deployed Shadows' power comes to. */
+export const squadPower = (s: Save) => squad(s).reduce((n, sh) => n + power(sh), 0);
+
+/** The strongest Shadows, as many as the slots hold, strongest first: the squad Auto Deploy makes. */
+export const bestSquad = (s: Save): string[] => s.shadows.army.slice().sort((a, b) => power(b) - power(a)).slice(0, slots(s)).map((x) => x.id);
+
+/** Deploy the strongest Shadows (`bestSquad`). Returns the ids deployed. Mutates. */
+export function autoDeploy(s: Save): string[] {
+  s.shadows.squad = bestSquad(s);
+  return s.shadows.squad;
 }
 
 export function bind(s: Save, enemyId: string, day = dayKey()): Shadow {

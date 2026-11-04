@@ -234,8 +234,10 @@ try {
   await nav('shadows');
   await snap('shadows', true);
   await sleep(600);
-  await page.locator('.btile--army .btile__hit').click(); await sleep(600); await snap('army', true);
-  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(1200); await snap('shadow-detail');
+  // The Army is one tile: the squad's slots over the reserve. There is no Squad tile beside it.
+  if (await page.locator('.btile--squad').count()) throw new Error('THE SQUAD IS STILL A TILE OF ITS OWN');
+  await page.locator('.btile--army .btile__hit').click(); await sleep(700); await snap('army'); await snap('army-full', true);
+  await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
@@ -245,10 +247,12 @@ try {
   await page.locator('.syswin .namefield__input').click(); await page.keyboard.type('Bellion'); await sleep(200); await snap('shadow-name');
   await page.locator('.syswin .namefield .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   if (await page.locator('.syswin').count()) throw new Error('CANCEL LEFT THE NAME WINDOW OPEN');
+  // Orders are the orders sheet's: the card gives none.
+  if (await page.locator('.sheet.is-top .sp-orders').count()) throw new Error('THE CARD STILL GIVES ORDERS');
   await close();
-  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its tile calls, its card holds the promotion, and the hold plays it.
-  if (!(await page.locator('.sheet.is-top .btile.is-shadow.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
-  await page.locator('.sheet.is-top .btile.is-shadow.is-ready .btile__hit').first().click(); await sleep(500);
+  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, its card holds the promotion, and the hold plays it.
+  if (!(await page.locator('.sheet.is-top .roster__row.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
+  await page.locator('.sheet.is-top .roster__row.is-ready .roster__who').first().click(); await sleep(500);
   await snap('shadow-promote');
   {
     const box = await page.locator('.sheet.is-top .promote .holdbtn').boundingBox();
@@ -263,28 +267,46 @@ try {
   await page.waitForFunction(() => !document.querySelector('canvas.arrival'), null, { timeout: 8000 });
   await sleep(400); await snap('shadow-promoted');
   if (await page.locator('.sheet.is-top .promote').count()) throw new Error('THE PROMOTION STAYED ON THE CARD');
-  await close(); await close();
-  // The squad sheet puts a Shadow in and takes one out, and its header counts as it goes.
-  await page.locator('.btile--squad .btile__hit').click(); await sleep(400); await snap('squad');
-  if (await page.locator('.sheet.is-top', { hasText: 'Squad slots:' }).count()) throw new Error('THE SQUAD SHEET STILL LISTS ITS SLOTS BY RANK');
-  const head = async () => (await page.locator('.sheet.is-top .syshead__title').innerText()).replace(/\s+/g, ' ');
-  const before = await head();
-  await page.locator('.sheet.is-top .squadrow__act.is-minus').first().click(); await sleep(250);
-  if ((await head()) === before) throw new Error('TAKING A SHADOW OUT DID NOT COUNT');
-  await page.locator('.sheet.is-top .squadrow__act.is-plus:not(:disabled)').first().click(); await sleep(250);
-  if ((await head()) !== before) throw new Error('PUTTING A SHADOW IN DID NOT COUNT');
-  await snap('squad-edit'); await close();
+  await close();
+  // The roster makes the squad: a row's box takes a Shadow out and puts one in, and the squad's count follows.
+  const count = async () => (await page.locator('.sheet.is-top .roster__count').innerText()).trim();
+  const before = await count();
+  await page.locator('.sheet.is-top .roster__toggle.is-on').first().click(); await sleep(250);
+  if ((await count()) === before) throw new Error('TAKING A SHADOW OUT DID NOT COUNT');
+  await page.locator('.sheet.is-top .roster__slot.is-free').first().click(); await sleep(700);
+  if (!(await page.locator('.sheet.is-top .rostab.is-on', { hasText: 'Reserve' }).count())) throw new Error('A FREE SLOT DID NOT SHOW THE RESERVE');
+  if (await page.locator('.sheet.is-top .roster__toggle.is-on').count()) throw new Error('THE RESERVE SHOWS A DEPLOYED SHADOW');
+  await snap('army-reserve');
+  await page.locator('.sheet.is-top .roster__toggle:not(.is-on):not(:disabled)').first().click(); await sleep(250);
+  if ((await count()) !== before) throw new Error('PUTTING A SHADOW IN DID NOT COUNT');
+  await page.locator('.sheet.is-top .rostab', { hasText: 'All' }).click(); await sleep(200);
+  // Its sort and its grid.
+  await page.locator('.sheet.is-top .roster__sort').click(); await sleep(200);
+  if (!(await page.locator('.sheet.is-top .roster__sort', { hasText: 'Level' }).count())) throw new Error('THE ROSTER DID NOT SORT');
+  await page.locator('.sheet.is-top .roster__view[aria-label="Grid"]').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .rostercard').count())) throw new Error('THE GRID DID NOT SHOW');
+  await page.locator('.sheet.is-top .rostergrid').scrollIntoViewIfNeeded(); await snap('army-grid');
+  await page.locator('.sheet.is-top .roster__view[aria-label="List"]').click(); await sleep(200);
+  for (let i = 0; i < 6 && !(await page.locator('.sheet.is-top .roster__sort', { hasText: 'Power' }).count()); i++) { await page.locator('.sheet.is-top .roster__sort').click(); await sleep(120); }
+  // Auto Deploy puts the strongest in, and is spent once they are.
+  const auto = page.locator('.sheet.is-top .btn', { hasText: 'Auto Deploy' });
+  if (await auto.isEnabled()) { await auto.click(); await sleep(400); }
+  if (await auto.isEnabled()) throw new Error('AUTO DEPLOY LEFT A STRONGER SQUAD UNMADE');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200); await snap('army-edit');
+  await close();
   // ARMY: ORDERS: the standing orders change and hold, and a Shadow given its own shows it on its row.
   await page.locator('.btile--orders .btile__hit').click(); await sleep(500); await snap('orders', true);
   await page.locator('.sheet.is-top .ord-card', { hasText: 'Protect The Hunter' }).click(); await sleep(250);
   if (!(await page.locator('.sheet.is-top .ord-card.is-on', { hasText: 'Protect The Hunter' }).count())) throw new Error('THE STANDING ORDERS DID NOT CHANGE');
-  await page.locator('.sheet.is-top .ordrow__who').first().click(); await sleep(900);
-  await page.locator('.sheet.is-top .sp-orders .chip--btn', { hasText: 'Finish The Weakest' }).click(); await sleep(200);
-  const skills = page.locator('.sheet.is-top .sp-orders__line').nth(1).locator('.chip--btn');
+  // A Shadow's own orders are set on its row, opened under it.
+  await page.locator('.sheet.is-top .ordrow__who').first().click(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .ordrow.is-open .sp-orders').count())) throw new Error('A SHADOW’S ROW DID NOT OPEN ITS ORDERS');
+  await page.locator('.sheet.is-top .ordrow.is-open .sp-orders .chip--btn', { hasText: 'Finish The Weakest' }).click(); await sleep(200);
+  const skills = page.locator('.sheet.is-top .ordrow.is-open .sp-orders__line').nth(1).locator('.chip--btn');
   if (await skills.count()) { await skills.last().click(); await sleep(200); }
-  await snap('shadow-orders');
-  await close(); await sleep(300);
+  await page.locator('.sheet.is-top .ordrow.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('shadow-orders');
   if (!(await page.locator('.sheet.is-top .ordrow.is-own').count())) throw new Error('A SHADOW’S OWN ORDERS DID NOT SHOW ON ITS ROW');
+  await page.locator('.sheet.is-top .ordrow.is-open .ordrow__who').click(); await sleep(300);
   await snap('orders-own'); await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
@@ -322,8 +344,11 @@ try {
   await page.locator('.btile--skills .btile__hit').click(); await sleep(700); await snap('asc-skills'); await close(); await sleep(250);
   // Igris, Ascendant at the top with two stars and the Essence for a third: the Awakening panel and its hold.
   await nav('shadows');
-  await page.locator('.btile--army .btile__hit').click(); await sleep(700);
-  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit', { hasText: 'Igris' }).first().click(); await sleep(900);
+  await sleep(600); await snap('asc-shadows', true);
+  await page.locator('.btile--army .btile__hit').click(); await sleep(900); await snap('asc-army'); await snap('asc-army-full', true);
+  await page.locator('.sheet.is-top .roster__view[aria-label="Grid"]').click(); await sleep(700); await snap('asc-army-grid', true);
+  await page.locator('.sheet.is-top .roster__view[aria-label="List"]').click(); await sleep(300);
+  await page.locator('.sheet.is-top .roster__row .roster__who', { hasText: 'Igris' }).first().click(); await sleep(900);
   if (!(await page.locator('.sheet.is-top .sp-awaken.promote').count())) throw new Error('THE AWAKENING DID NOT WAIT ON THE HUNTER');
   await page.locator('.sheet.is-top .sp-awaken').scrollIntoViewIfNeeded(); await sleep(300); await snap('shadow-awaken');
   {

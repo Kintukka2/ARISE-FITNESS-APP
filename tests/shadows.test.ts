@@ -416,3 +416,19 @@ describe('orders', () => {
     expect(raid.shadowSpec(sh, 0).focus).toBeUndefined();
   });
 });
+
+describe('the squad', () => {
+  it('Auto Deploy puts the strongest in, as many as the slots hold, and the squad’s power is theirs summed', () => {
+    const s = defaults();
+    for (const e of ALL_ENEMIES.slice(0, 8)) shadows.bind(s, e.id);
+    s.shadows.army.forEach((sh, i) => shadows.raise(sh, 1 + i * 2));
+    s.shadows.squad = [s.shadows.army[0].id];
+    const n = shadows.slots(s);
+    const ids = shadows.autoDeploy(s);
+    expect(ids).toHaveLength(n);
+    const best = s.shadows.army.map(shadows.power).sort((a, b) => b - a).slice(0, n);
+    expect(shadows.squad(s).map(shadows.power)).toEqual(best);
+    expect(shadows.bestSquad(s)).toEqual(ids);
+    expect(shadows.squadPower(s)).toBe(best.reduce((a, b) => a + b, 0));
+  });
+});
