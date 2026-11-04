@@ -75,7 +75,7 @@ export function TopBar() {
       <div class="topbar__mid">
         <div class="topbar__name">{[s.hunter.name, cls?.name].filter(Boolean).join(' · ')}</div>
         <div class="topbar__row">
-          <div class="xpbar" role="progressbar" aria-label="Experience" aria-valuenow={s.hunter.xp} aria-valuemax={need}>
+          <div class="xpbar" role="progressbar" aria-label="XP" aria-valuenow={s.hunter.xp} aria-valuemax={need}>
             <div class="xpbar__fill" style={{ transform: `scaleX(${Math.min(1, s.hunter.xp / need)})` }} />
             <span class="xpbar__label num">LV {s.hunter.level} · {s.hunter.xp} / {need}</span>
           </div>

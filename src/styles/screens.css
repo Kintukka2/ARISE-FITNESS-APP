@@ -1129,14 +1129,13 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .sp-head.is-ready .sp-head__lv { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 14px var(--gold-glow); }
 .sp-head.is-ready .sp-exp > i { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 55%, transparent), var(--gold)); box-shadow: 0 0 8px var(--gold-glow); }
 
-/* Growth: a bar for every level, rising with what it adds; lit, banked, open, or shut behind the seal. */
+/* Growth: a bar for every level, rising with what it adds; lit, open, or shut behind the seal. */
 .sp-growth { display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
 .sp-graph { display: block; width: 100%; height: auto; overflow: visible; }
 .sp-bar { transform-box: fill-box; transform-origin: bottom; animation: spRise 600ms var(--ease) both; animation-delay: calc(var(--i) * 18ms); }
 @keyframes spRise { from { transform: scaleY(0); } }
 .sp-bar.is-lit { fill: var(--win); filter: drop-shadow(0 0 2px var(--win-glow)); }
 .sp-bar.is-here { fill: #fff; filter: drop-shadow(0 0 4px var(--win)); }
-.sp-bar.is-banked { fill: color-mix(in srgb, var(--win) 32%, transparent); stroke: color-mix(in srgb, var(--win) 80%, transparent); stroke-width: 0.6; stroke-dasharray: 1.5 1.5; }
 .sp-bar.is-open { fill: color-mix(in srgb, var(--sys-ink) 14%, transparent); }
 .sp-bar.is-shut { fill: color-mix(in srgb, var(--sys-ink) 6%, transparent); }
 .sp-seal line { stroke: var(--sys-hair-hot); stroke-width: 1; stroke-dasharray: 2 2; }

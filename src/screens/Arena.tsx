@@ -33,7 +33,7 @@ import { Bar, Btn, Chip, GearArt, HpBar, RankPlate, Shards } from '@/ui/componen
 import { QuestLines } from '@/ui/contracts';
 import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
-import { SysAlert, SysFrame } from '@/ui/frame';
+import { SysAlert } from '@/ui/frame';
 import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { MapView } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
@@ -42,7 +42,7 @@ import { drinkFlow, openItem } from './Inventory';
 import { LootCell, useReveal } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
-import { EssenceMark, NameField, SquadGains } from './Shadows';
+import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 import { skillLine } from './Skills';
 
 interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
@@ -747,7 +747,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
         </header>
         <div class="tiles">
-          <div class="tile"><span class="label">Experience</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>
+          <div class="tile"><span class="label">XP</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>
           <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">{shardSub.join(' · ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the Practice Gate pays in kit</small> : null}</div>
           <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small></div>
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of {vitals.FATIGUE_MAX}</small></div>
@@ -795,38 +795,30 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             })}
           </div>
         )}
-        {r.chosen && (
-          <SysFrame title="Notification" kind="gates" class="extract is-bound">
-            <p>You have defeated<br /><span class="warn">[{r.chosen.name}]</span>.</p>
-            {r.chosen.item ? <div class="row"><GearArt item={r.chosen.item} size={52} /><p class="grow">You have acquired <strong>[Item: {gear.defOf(r.chosen.item)?.name}]</strong>.<br /><span class="muted">Quality: Perfect +{r.chosen.level}</span></p></div>
-              : <p>Mana Shards <span class="grant">+{r.chosen.shards}</span></p>}
-            <p class="muted">[{r.chosen.name}] will return to the Gates.</p>
-          </SysFrame>
-        )}
-        {r.ascended !== null && (
-          <SysFrame title="Notification" kind="gold" class="extract is-bound">
-            <p class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</p>
-            <p><strong>[Ascension {r.ascended}: {ascension.levelInfo(r.ascended).name}]</strong></p>
-            <p class="muted">Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span><br />Marks <span class="grant">+1</span></p>
-          </SysFrame>
-        )}
-        <SquadGains grew={r.grew} />
-        {r.ready.length > 0 && (
+        {/* A Chosen felled and a level proved: alerts, as everything the System reports here is. */}
+        {(r.chosen || r.ascended !== null) && (
           <div class="alerts">
-            {r.ready.map((p, i) => {
-              const sh = s.shadows.army.find((x) => x.id === p.id);
-              const e = sh && enemyById(sh.enemyId);
-              if (!sh || !e) return null;
-              return (
-                <SysAlert key={p.id} kind="shadow" delay={500 + i * 220} label={`${shadows.nameOf(sh)}: promotion ready`}
-                  icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={36} />}>
-                  <strong>[{shadows.nameOf(sh)}]</strong> has met the requirements for <strong>[Promotion: {p.rank} Rank]</strong>.
-                </SysAlert>
-              );
-            })}
-            <p class="hint">{r.ready.length === 1 ? 'Promote it' : 'Promote them'} on the Shadows screen.</p>
+            {r.chosen && (
+              <SysAlert kind="gates" delay={450} class="is-chosen"
+                icon={r.chosen.item ? <GearArt item={r.chosen.item} size={38} /> : <Glyph name="crown" />}
+                onTap={r.chosen.item ? () => openItem(r.chosen!.item!.id) : undefined}
+                label={r.chosen.item ? `You have acquired ${gear.defOf(r.chosen.item)?.name}. Open its card.` : undefined}
+                aside={r.chosen.item ? null : <span class="num">Mana Shards <span class="grant">+{r.chosen.shards}</span></span>}
+                sub={r.chosen.item
+                  ? <>You have acquired <strong>[Item: {gear.defOf(r.chosen.item)?.name}]</strong>. Quality: Perfect +{r.chosen.level}<br />[{r.chosen.name}] will return to the Gates.</>
+                  : <>[{r.chosen.name}] will return to the Gates.</>}>
+                You have defeated <span class="warn">[{r.chosen.name}]</span>.
+              </SysAlert>
+            )}
+            {r.ascended !== null && (
+              <SysAlert kind="gold" delay={600} class="is-ascended" icon={<Glyph name="up" />}
+                sub={<>[Ascension {r.ascended}: {ascension.levelInfo(r.ascended).name}] · Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span> · Marks <span class="grant">+1</span></>}>
+                <span class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</span>
+              </SysAlert>
+            )}
           </div>
         )}
+        <ShadowAlerts grew={r.grew} />
         {!isPractice(d) && deal.moved.length > 0 && <QuestLines c={s.contracts} report={deal} />}
         {r.assoc && association.current(s) && <AssocStrip q={association.current(s)!} move={r.assoc} />}
         <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>

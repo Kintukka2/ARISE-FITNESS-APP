@@ -1,8 +1,8 @@
 /**
  * The Shadow army. A creature you felled can linger after a clear; reach for it with mana and it may
  * follow you home. A bound Shadow fights beside you and levels on every creature it helps fell, as far
- * as its rank's cap; experience past the cap is banked. Promotion, claimed one rank at a time from its
- * card, costs Shadow Essence and wants bosses felled, and lifts the cap. Essence comes from a creature
+ * as its rank's cap, where it takes no more XP. Promotion, claimed one rank at a time from its card,
+ * costs Shadow Essence and wants bosses felled, and lifts the cap; the level stays where it was. Essence comes from a creature
  * extracted again when one like it already serves, and from a Shadow released. A Sworn Shadow
  * remembers a second ability.
  */
@@ -47,15 +47,22 @@ export const nextRank = (sh: Shadow) => SHADOW_RANKS[rankIndex(sh) + 1] ?? null;
 export const levelOf = (sh: Shadow) => Math.min(rankOf(sh).cap, levelFor(sh.xp ?? 0));
 /** Its level stands at its rank's cap. */
 export const atCap = (sh: Shadow) => levelOf(sh) >= rankOf(sh).cap;
-/** Experience into the level it holds, and what the next one needs; at the cap, `banked` is everything past it. */
-export function progress(sh: Shadow): { into: number; need: number; banked: number } {
+/** XP into the level it holds, and what the next one needs. At the cap it needs nothing: it takes no more. */
+export function progress(sh: Shadow): { into: number; need: number } {
   const l = levelOf(sh);
-  const xp = sh.xp ?? 0;
-  if (atCap(sh)) return { into: 0, need: 0, banked: Math.max(0, xp - xpAt(l)) };
-  return { into: xp - xpAt(l), need: xpToNext(l), banked: 0 };
+  if (atCap(sh)) return { into: 0, need: 0 };
+  return { into: Math.max(0, (sh.xp ?? 0) - xpAt(l)), need: xpToNext(l) };
 }
-/** What a run's creatures pay a Shadow in experience. */
+/** What a run's creatures pay a Shadow in XP, before its cap. */
 export const xpFrom = (kills: number, bosses: number) => kills * SHADOW_XP.kill + bosses * (SHADOW_XP.boss - SHADOW_XP.kill);
+/** XP a Shadow still has room for under its rank's cap. */
+export const xpRoom = (sh: Shadow) => Math.max(0, xpAt(rankOf(sh).cap) - (sh.xp ?? 0));
+/** Pay a Shadow XP, as far as its cap: what lies past it is not kept. Returns what it took. Mutates. */
+export function earn(sh: Shadow, xp: number): number {
+  const took = Math.max(0, Math.min(xp, xpRoom(sh)));
+  sh.xp = (sh.xp ?? 0) + took;
+  return took;
+}
 
 /** Every attribute's growth over its creature's own: GROWTH_PER_LEVEL for each level. */
 export const growth = (sh: Shadow) => levelOf(sh) * GROWTH_PER_LEVEL;
@@ -77,17 +84,19 @@ export const canPromote = (s: Save, sh: Shadow) => !!nextRank(sh) && requirement
 /** Every Shadow that can be promoted now. */
 export const promotable = (s: Save) => s.shadows.army.filter((sh) => canPromote(s, sh));
 
-export interface Promotion { id: string; from: number; to: number; second: string | null; level: number; essence: number }
-/** Promote a Shadow one rank, spending the Essence it costs. Returns what changed, or null. Mutates. */
+export interface Promotion { id: string; from: number; to: number; second: string | null; essence: number }
+/** Promote a Shadow one rank, spending the Essence it costs. Its level stays; its cap rises. Returns what changed, or null. Mutates. */
 export function promote(s: Save, id: string): Promotion | null {
   const sh = s.shadows.army.find((x) => x.id === id);
   if (!sh || !canPromote(s, sh)) return null;
   const from = rankIndex(sh);
   const cost = SHADOW_RANKS[from + 1].essence;
   s.shadows.essence = (s.shadows.essence ?? 0) - cost;
+  // Nothing past the old cap carries into the new rank: it starts the next level from nothing.
+  sh.xp = Math.min(sh.xp ?? 0, xpAt(SHADOW_RANKS[from].cap));
   sh.rank = from + 1;
   const e = enemyById(sh.enemyId);
-  return { id, from, to: from + 1, second: from + 1 === SECOND_AT && e ? secondOf(e) : null, level: levelOf(sh), essence: cost };
+  return { id, from, to: from + 1, second: from + 1 === SECOND_AT && e ? secondOf(e) : null, essence: cost };
 }
 /**
  * Every promotion the Essence pays for, the deployed Shadows first and the highest level before the
@@ -102,7 +111,7 @@ export function promoteAll(s: Save) {
 /** Set a Shadow at a rank and its cap, as the balance tools' hunters are. Mutates. */
 export function raise(sh: Shadow, rank: number) {
   sh.rank = Math.max(0, Math.min(SHADOW_RANKS.length - 1, rank));
-  sh.xp = Math.max(sh.xp ?? 0, xpAt(SHADOW_RANKS[sh.rank].cap));
+  sh.xp = xpAt(SHADOW_RANKS[sh.rank].cap);
   return sh;
 }
 

@@ -97,8 +97,8 @@ export function ContractsWindow({ c, fresh = [], bare, children }: {
           fresh={fresh.includes(k.kind)} count={k.done ? (fresh.includes(k.kind) ? 'Done' : 'Paid') : undefined} />
       ))}
       rewards={[
-        <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · Experience <b class="num grant">+{pay.xp}</b></>,
-        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · Experience <b class="num grant">+{bonus.xp}</b></>}</>,
+        <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · XP <b class="num grant">+{pay.xp}</b></>,
+        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · XP <b class="num grant">+{bonus.xp}</b></>}</>,
       ]}>
       {children}
     </QuestWindow>

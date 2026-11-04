@@ -55,7 +55,7 @@ if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[w
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));
 // One Sworn at Level 14; one at the Bound cap with the Essence to be promoted, waiting; one new.
 Object.assign(s.shadows.army[0], { rank: 1, xp: xpAt(14) + 4, kills: 58, bosses: 1, out: 19 });
-Object.assign(s.shadows.army[1], { xp: xpAt(10) + 9, kills: 47, bosses: 0, out: 15 });
+Object.assign(s.shadows.army[1], { xp: xpAt(10), kills: 47, bosses: 0, out: 15 });
 Object.assign(s.shadows.army[2], { xp: xpAt(3) + 1, kills: 6, out: 2 });
 s.shadows.essence = 9;
 s.shadows.fresh = [s.shadows.army[2].id];
@@ -111,7 +111,7 @@ for (const rank of ['A', 'S', 'S'] as const) for (const slot of ['Head', 'Chest'
 autoEquip(a);
 for (const id of ['ENM-099', 'ENM-101', 'ENM-103', 'ENM-105', 'ENM-106']) bind(a, id, addDays(today, -30));
 // An Ascendant, two Vanguards and two Sworn, and the Essence towards the next.
-a.shadows.army.forEach((x, i) => { raise(x, [3, 2, 2, 1, 1][i]); x.xp = xpAt([36, 30, 27, 20, 16][i]) + 3; x.kills = 420 - i * 70; x.bosses = 14 - i * 3; x.out = 160 - i * 25; });
+a.shadows.army.forEach((x, i) => { raise(x, [3, 2, 2, 1, 1][i]); x.xp = Math.min(xpAt([36, 30, 27, 20, 16][i]) + 3, x.xp); x.kills = 420 - i * 70; x.bosses = 14 - i * 3; x.out = 160 - i * 25; });
 a.shadows.essence = 34;
 a.wallet = { shards: 6400, earned: 41000, spent: 34600, bought: 0, receipts: [] };
 a.gates.clears = 240; a.gates.fails = 9; a.gates.withdrawn = 7;

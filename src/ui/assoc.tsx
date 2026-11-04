@@ -123,7 +123,7 @@ export async function reportAssoc() {
   const line = w?.kind === 'satchel' ? ASSOC_PAID.satchel : w?.kind === 'survey' ? ASSOC_PAID.survey
     : w ? ASSOC_PAID.paid[paid.quest.n % ASSOC_PAID.paid.length] : ASSOC_PAID.bare[paid.quest.n % ASSOC_PAID.bare.length];
   const got = [
-    `Experience +${paid.quest.xp}`,
+    `XP +${paid.quest.xp}`,
     ...(w?.kind === 'field' ? [paid.field ? `Field Potion ×${paid.field}` : null, paid.shards ? `Mana Shards +${paid.shards} (the satchel was full)` : null]
       : w?.kind === 'shards' ? [`Mana Shards +${paid.shards}`]
       : [rewardText(w)]),

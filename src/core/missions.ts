@@ -77,7 +77,7 @@ export const MISSIONS: Mission[] = [
   { id: 'hundred_unbroken', name: 'A Hundred Unbroken', tier: 'legend', did: 'Clear 100 Gates in a row without being carried out.', grant: { all: 1 }, check: (s) => s.gates.bestUnbroken >= 100 },
   { id: 'never_missed', name: 'Not Once', tier: 'legend', did: 'Clear 50 Gates without ever being carried out.', grant: { all: 1 }, check: (s) => s.gates.clears >= 50 && s.gates.fails === 0 },
   { id: 'three_hundred', name: 'Three Hundred', tier: 'legend', did: 'Clear 300 Gates.', grant: { STR: 2, VIT: 2, INT: 1 }, check: (s) => s.gates.clears >= 300 },
-  { id: 'six_figures', name: 'Six Figures', tier: 'legend', did: 'Earn 100,000 experience in total.', grant: { free: 5 }, check: (s) => s.stats.xpTotal >= 100000 },
+  { id: 'six_figures', name: 'Six Figures', tier: 'legend', did: 'Earn 100,000 XP in total.', grant: { free: 5 }, check: (s) => s.stats.xpTotal >= 100000 },
   { id: 'every_gate', name: 'Nothing Left Standing', tier: 'legend', did: `Clear every Gate on file: ${DUNGEONS.length}.`, grant: { STR: 2, AGI: 2 }, check: (s) => DUNGEONS.every((d) => s.gates.cleared.includes(d.id)) },
   { id: 's_rank', name: 'The Highest Grant', tier: 'legend', did: 'Reach S-Rank.', grant: { free: 4 }, check: (s) => gateRank(s) === 'S' },
   { id: 'sovereign', name: 'Beyond Classification', tier: 'legend', did: 'Reach Level 100.', grant: { all: 1 }, check: (s) => s.hunter.level >= 100 },

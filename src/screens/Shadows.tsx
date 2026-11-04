@@ -13,7 +13,7 @@ import type { RaidResult } from '@/core/raid';
 import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
 import { skillLine } from './Skills';
-import { Field, SysFrame } from '@/ui/frame';
+import { Field, SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
@@ -258,7 +258,7 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
   );
 }
 
-/** The head of the card: its badge inside the ring of its next level, its rank, what it was, its power, and the experience to come. */
+/** The head of the card: its badge inside the ring of its next level, its rank, what it was, its power, and its XP to the next level. */
 function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) {
   const s = useSave();
   const squad = shadows.squad(s);
@@ -296,9 +296,9 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           <span class="sp-head__power"><span class="label">Power</span><b class="num">{powerOf(shadows.statsOf(sh))}</b></span>
         </div>
         <div class="sp-head__exp">
-          <span class="label">EXP</span>
+          <span class="label">XP</span>
           <span class="sp-exp"><i style={`width: ${pct(unit(share))}%`} /></span>
-          <span class="num">{top ? 'Lv.MAX' : p.need ? `${p.into}/${p.need}` : `Level cap${p.banked ? ` · Banked ${p.banked}` : ''}`}</span>
+          <span class="num">{top ? 'Lv.MAX' : p.need ? `${p.into}/${p.need}` : 'Level cap'}</span>
         </div>
       </section>
       <div class="row">
@@ -314,15 +314,14 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
 
 /**
  * Its growth, as a graph: a bar for every level, rising with what each adds, in a run for each rank.
- * Lit to the level held; ghosted past it as far as its banked experience reaches; dark past its cap,
- * where a seal stands across the road until it is promoted.
+ * Lit to the level held, open to its cap, and dark past it, where a seal stands across the road until
+ * it is promoted.
  */
 function Growth({ sh }: { sh: Shadow }) {
   const R = shadows.SHADOW_RANKS;
   const MAX = shadows.MAX_LEVEL;
   const at = shadows.rankIndex(sh);
   const lv = shadows.levelOf(sh);
-  const reach = shadows.levelFor(sh.xp ?? 0);
   const cap = R[at].cap;
   const W = 300, H = 60, GAP = 9;
   const run = (W - GAP * (R.length - 1)) / R.length;
@@ -332,7 +331,7 @@ function Growth({ sh }: { sh: Shadow }) {
     return Array.from({ length: r.cap - lo + 1 }, (_, j) => {
       const l = lo + j;
       const h = 6 + (H - 8) * (l / MAX);
-      const state = l <= lv ? 'is-lit' : l <= reach ? 'is-banked' : l <= cap ? 'is-open' : 'is-shut';
+      const state = l <= lv ? 'is-lit' : l <= cap ? 'is-open' : 'is-shut';
       return <rect key={l} x={ri * (run + GAP) + j * w + 0.7} y={H - h} width={Math.max(1, w - 1.4)} height={h} class={`sp-bar ${state} ${l === lv ? 'is-here' : ''}`} style={`--i: ${l}`} />;
     });
   });
@@ -532,32 +531,45 @@ function Release({ sh, close }: { sh: Shadow; close: () => void }) {
 
 // ------------------------------------------------------------------ after a run
 
-/** What a run gave each deployed Shadow, on the results: its level, the experience it took, and how far it stands to the next. */
-export function SquadGains({ grew }: { grew: RaidResult['grew'] }) {
+/**
+ * What a run gave each deployed Shadow, on the results: an alert each, its badge, its level and the XP
+ * it took, and a meter that moves from where it stood. One that can be promoted waits on the hunter,
+ * so it is gold, says so, and opens its card, where the hold is; promoted there, it says so no more.
+ */
+export function ShadowAlerts({ grew, delay = 500 }: { grew: RaidResult['grew']; delay?: number }) {
   const s = useSave();
   const rows = grew.map((g) => ({ g, sh: s.shadows.army.find((x) => x.id === g.id) })).filter((x): x is { g: RaidResult['grew'][number]; sh: Shadow } => !!x.sh);
   if (!rows.length) return null;
+  const waiting = rows.filter(({ sh }) => shadows.canPromote(s, sh)).length;
   return (
-    <SysFrame title="Army" kind="shadow" class="sp-gains">
-      <ul class="sp-gains__list">
-        {rows.map(({ g, sh }, i) => {
-          const e = enemyById(sh.enemyId)!;
-          const p = shadows.progress(sh);
-          const up = g.to > g.from;
-          return (
-            <li key={g.id} class={up ? 'is-up' : ''} style={`--i: ${i}`}>
-              <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={32} />
-              <span class="sp-gains__who">
-                <b>[{shadows.nameOf(sh)}]</b>
-                <small class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{p.need ? '' : ' · Level cap'}</small>
-              </span>
-              <span class="sp-gains__xp num">EXP <span class="grant">+{g.xp}</span></span>
-              <span class="sp-exp"><i style={`width: ${pct(p.need ? unit(p.into / p.need) : 1)}%`} /></span>
-            </li>
-          );
-        })}
-      </ul>
-    </SysFrame>
+    <div class="alerts shadowalerts" aria-label="Army">
+      {rows.map(({ g, sh }, i) => {
+        const e = enemyById(sh.enemyId)!;
+        const next = shadows.canPromote(s, sh) ? shadows.nextRank(sh) : null;
+        const name = shadows.nameOf(sh);
+        const up = g.to > g.from;
+        const cap = shadows.rankOf(sh).cap;
+        const capped = g.to >= cap;
+        // Where the meter stood before the run, and where it stands now, as shares of a level: full at the cap.
+        const share = (lv: number, xp: number) => (lv >= cap ? 1 : unit((xp - shadows.xpAt(lv)) / shadows.xpToNext(lv)));
+        const now = share(g.to, sh.xp);
+        const was = share(g.from, sh.xp - g.xp);
+        return (
+          <SysAlert key={g.id} kind={next ? 'gold' : 'shadow'} delay={delay + i * 180} class={`is-shadowline ${next ? 'is-ready' : ''}`}
+            label={next ? `${name}: promotion ready. Open its card.` : undefined}
+            icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={34} />}
+            onTap={next ? () => { sfx.tap(); openShadow(sh.id); } : undefined}
+            meter={{ from: up ? was : Math.min(was, now), to: now, up }}
+            aside={g.xp > 0 ? <span class="num">XP <span class="grant">+{g.xp}</span></span> : null}
+            sub={<span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>
+            {next ? <><strong>[{name}]</strong> has met the requirements for <strong>[Promotion: {next.name} Rank]</strong>.</>
+              : up ? <><strong>[{name}]</strong> has levelled up.</>
+              : <strong>[{name}]</strong>}
+          </SysAlert>
+        );
+      })}
+      {waiting > 0 && <p class="hint">{waiting === 1 ? 'Promote it from its card.' : 'Promote them from their cards.'}</p>}
+    </div>
   );
 }
 

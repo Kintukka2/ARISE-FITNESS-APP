@@ -11,6 +11,7 @@ import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Kind } from './overlays';
 import { Glyph } from './icons';
+import type { Header } from './system';
 
 /** One of the lit rails along the top or the bottom of the frame. */
 export function Rail({ at }: { at: 'top' | 'bottom' }) {
@@ -105,30 +106,36 @@ export function Rewards({ items }: { items: ComponentChildren[] }) {
   );
 }
 
+/** An alert's meter: how far something stands, `from` where it stood to `to`, both 0 to 1. `up` fills it to the end and starts it again first, for a level gained. */
+export interface AlertMeter { from: number; to: number; up?: boolean }
+
 /**
  * A System alert set into a screen: news that asks for nothing where it shows, as a strip rather than
  * a window. The frame's glass, lit down its left edge in its kind's colour, the icon box, a header word
- * small (`Notification`, `Quest Info`, `Quest Rewards`), one line, and what it comes to at the right.
- * It slides in once, a light crossing it as it lands. One that opens a window is a button, and says so
- * with a chevron.
+ * small (`Notification`, `Quest Info`, `Quest Rewards`), one line and a smaller one under it, what it
+ * comes to at the right, and a meter along its foot that moves once it has landed. It slides in once,
+ * a light crossing it as it lands. One that opens a window is a button, and says so with a chevron.
  */
-export function SysAlert({ kind = 'system', icon, label, children, aside, head = 'Notification', delay = 0, onTap, class: cls, attrs }: {
-  kind?: FrameKind; icon: ComponentChildren; label?: string; children: ComponentChildren; aside?: ComponentChildren;
-  head?: 'Notification' | 'Quest Info' | 'Quest Rewards'; delay?: number; onTap?: () => void; class?: string; attrs?: Record<string, string>;
+export function SysAlert({ kind = 'system', icon, label, children, sub, aside, meter, head = 'Notification', delay = 0, onTap, class: cls, attrs }: {
+  kind?: FrameKind; icon: ComponentChildren; label?: string; children: ComponentChildren; sub?: ComponentChildren; aside?: ComponentChildren;
+  meter?: AlertMeter; head?: Header; delay?: number; onTap?: () => void; class?: string; attrs?: Record<string, string>;
 }) {
+  const unit = (x: number) => Math.max(0, Math.min(1, x));
   const inner = (
     <>
       <span class="sysbox sysalert__icon">{icon}</span>
       <div class="sysalert__body">
         <span class="sysalert__head">{head}</span>
         <p>{children}</p>
+        {sub != null && <small class="sysalert__sub">{sub}</small>}
       </div>
       {aside != null && <span class="sysalert__aside">{aside}</span>}
       {onTap && <span class="sysbox sysalert__go" aria-hidden="true"><Glyph name="chevron" /></span>}
+      {meter && <span class={`sysalert__meter ${meter.up ? 'is-up' : ''}`} aria-hidden="true"><i style={`--from: ${unit(meter.from)}; --to: ${unit(meter.to)}`} /></span>}
       <i class="sysalert__scan" aria-hidden="true" />
     </>
   );
-  const klass = `sysframe sysframe--${kind} sysalert ${onTap ? 'is-tap' : ''} ${cls ?? ''}`;
+  const klass = `sysframe sysframe--${kind} sysalert ${onTap ? 'is-tap' : ''} ${meter ? 'has-meter' : ''} ${cls ?? ''}`;
   return onTap
     ? <button type="button" class={klass} aria-label={label} style={`--delay: ${delay}ms`} onClick={onTap} {...attrs}>{inner}</button>
     : <aside class={klass} role="status" aria-label={label} style={`--delay: ${delay}ms`} {...attrs}>{inner}</aside>;

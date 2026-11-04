@@ -341,18 +341,20 @@ fight was tried and did not narrow it.
 
 - **Levels, capped by rank** (`data/shadows.ts`, `core/shadows.ts`). A Shadow levels on every
   creature it helps fell: it landed a hit on it, whoever landed the last (`Unit.hurtBy`, credited in
-  `raid.openChamber`). Each pays 1 experience, a boss 5 (`SHADOW_XP`), and each level asks a little
+  `raid.openChamber`). Each pays XP 1, a boss 5 (`SHADOW_XP`), and each level asks a little
   more than the last (`LEVEL_XP`). Every level grows each attribute by 2.5% of its creature's own.
   Its rank caps the level: Bound Lv.10, Sworn Lv.20, Vanguard Lv.30, Ascendant Lv.40, so the old kill
-  limits' +25%, +50%, +75% and +100% stand. Experience past the cap is banked (`xp` is the whole
-  sum; the level is read from it), and spent the moment it is promoted.
+  limits' +25%, +50%, +75% and +100% stand. At the cap a Shadow takes no more XP (`shadows.earn`):
+  what the run pays past it is not kept. *Changed after playtest:* XP past the cap was banked and
+  spent the moment it was promoted, so a promotion raised the level too; the hunter read Level
+  10 → 12 as a promotion doing what it should not, so the promotion now lifts only the cap.
 - **Promotion** asks for the level at the cap, Shadow Essence (Sworn 4, Vanguard 12, Ascendant 30)
   and, from Vanguard, bosses it helped fell (1, then 4). The hunter claims it, one rank at a time,
   from its card (`shadows.promote`, which spends the Essence). `raid.finish` pays each deployed
-  Shadow its experience (`grew`, shown on the results in an `ARMY` window) and reports the Shadows the
-  run made ready (`ready`). The hold plays the promotion's cinematic, and the System's window says
-  what the rank brought: the rank, the new cap, the level banked experience bought, the Essence spent
-  and any skill learned.
+  Shadow its XP (`grew`) and reports the Shadows the run made ready (`ready`); the results show an
+  alert to each deployed Shadow, gold and opening its card when it is ready. The hold plays the
+  promotion's cinematic, and the System's window says what the rank brought: the rank, the new cap
+  and any skill learned. The Essence it cost is shown on the card before, not repeated after.
 - **Shadow Essence** (`s.shadows.essence`). A creature already in the army lingers three times as
   often (`ECHO`); its alert carries the Essence it would give, and a reach that holds turns it to
   Essence instead of a second copy (`raid.extract` returns `essence`): 1 at E to 4 at S, twice that
@@ -363,13 +365,19 @@ fight was tried and did not narrow it.
   its kin it lacks (its family's, or its role's for a family that shares one).
 - **Its card** is a profile, in the System's violet. The head is its badge inside the ring of its
   next level, with its rank, what it was, its grade, family, role and whether it is deployed, its
-  Power, and its EXP. Under it: Deploy or Recall and Name; Growth, a graph of a bar for every level,
-  rising with what each adds, lit to the level held, ghosted as far as banked experience reaches and
-  dark past a seal at its cap; Next rank, each ask ticked with its own bar and what the rank brings,
+  Power, and its XP. Under it: Deploy or Recall and Name; Growth, a graph of a bar for every level,
+  rising with what each adds, lit to the level held, open to its cap and dark past a seal there; Next rank, each ask ticked with its own bar and what the rank brings,
   which becomes the gold promotion with Hold To Promote once all is met; Stats, a radar of its
   creature's own, its stats now and at Lv.MAX, beside each number and what its level adds; Skills,
   the second sealed until Sworn; Traits, its passive, immunities and resistances; Record: runs
   deployed, creatures and bosses felled, days served; and Release.
+- **The results are alerts.** Every report on a run's results is a System alert, never a window
+  set into the screen: each deployed Shadow's level and XP, a lingering Shadow, the Daily Quests, a
+  Chosen felled and a level proved. `SysAlert` took a second, smaller line and a meter along its
+  foot for them; the meter moves from where it stood once the alert lands, and a level gained fills
+  it, lights it and starts it again.
+- **XP, one word.** The hunter's and a Shadow's are XP everywhere a player reads them, the Guide
+  included; EXP and Experience are gone, and the voice test refuses them.
 - **Badges.** Every family has a glyph, and a Shadow's badge is its family's glyph with its
   shadow behind it and its rank's insignia under them (`ui/emblems.tsx`).
 - **More slots through Secret Quests.** Three make room for one more Shadow each: a first Sworn
@@ -383,16 +391,16 @@ fight was tried and did not narrow it.
   (`shadows.raise`), the same +75% the 75 kills gave, so `npm run balance` came out identical and
   `gatetune.ts` stands. The campaign's hunters now fill a slot left free with their strongest Shadow,
   as the Squad tile calls for; without it the squad was whatever lingered first. With that in both,
-  the evening hunter reaches S-Rank on day 60 (59 before) and Sovereign on day 111 (117), and the
-  three-session hunter day 31 (33) and day 62 (72); both clear 96% (95% and 93%). The evening
-  hunter's squad is mostly Vanguard by day 56 and Ascendant by day 112; the three-session hunter's
-  is Vanguard by day 28 and Ascendant by day 56. Because the whole squad levels together, a squad
-  rises as one, where kills once went to its strongest. Sovereign comes sooner mostly through the
-  Daily Quests (1.02 a day, was 0.85; 1.55, was 1.16): the Shadows' quest, set at about two runs'
-  worth, took four or five when only the last blow counted. It now asks what a Shadow helps fell in
-  two runs at each grade (`SHADOW_KILLS_PER`, measured: about 2.5 a Shadow a run, 3 to 4.5 at S).
-  Essence runs short until about day 28 and piles up once every Shadow is Ascendant (771 held by
-  day 112 for the three-session hunter): a sink for it is still to come.
+  the evening hunter reaches S-Rank on day 60 (59 before) and Sovereign on day 114 (117), and the
+  three-session hunter day 31 (33) and day 62 (72); they clear 93% and 94% (95% and 93%). The
+  evening hunter's squad is mostly Sworn and Vanguard by day 56 and Ascendant by day 112; the
+  three-session hunter's is Vanguard by day 28 and mostly Ascendant by day 56. Because the whole
+  squad levels together, a squad rises as one, where kills once went to its strongest. Sovereign
+  comes sooner mostly through the Daily Quests (0.94 a day, was 0.85; 1.46, was 1.16): the Shadows'
+  quest, set at about two runs' worth, took four or five when only the last blow counted. It now
+  asks what a Shadow helps fell in two runs at each grade (`SHADOW_KILLS_PER`, measured: about 2.5 a
+  Shadow a run, 3 to 4.5 at S). Essence runs short until about day 28 and piles up once every Shadow
+  is Ascendant (841 held by day 112 for the three-session hunter): a sink for it is still to come.
 
 ## What a campaign showed
 

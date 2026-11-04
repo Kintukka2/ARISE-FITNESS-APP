@@ -167,6 +167,8 @@ describe('the words', () => {
         const code = line.replace(/\s\/\/\s.*$/, '');
         if (/[—–]/.test(code)) found.push(`${f}:${i + 1} dash`);
         if (/(?<!first_)\b[Aa]rtifacts?\b|Secret Missions?\b/.test(code)) found.push(`${f}:${i + 1} old word`);
+        // XP is XP everywhere a player reads it: never EXP, never Experience.
+        if (/\bEXP\b|\b[Ee]xperience\b/.test(code)) found.push(`${f}:${i + 1} XP written another way`);
         if (/[\d}%] (a|an|per) (round|hour|turn|day)\b/.test(code)) found.push(`${f}:${i + 1} rate not written "each"`);
         if (/toast\(\s*[`'"]\+|\+\$\{[^}]*\}\s*(Mana Shards|shards)/.test(code)) found.push(`${f}:${i + 1} gain written value first`);
         for (const m of code.matchAll(/<Empty(?:\s[^>]*)?>([^<{]+)<\/Empty>/g)) if (m[1].length > 40) found.push(`${f}:${i + 1} empty state says more than the fact`);

@@ -529,7 +529,7 @@ export interface RaidResult {
   contracts: contracts.ContractReport;
   /** A Spire block: the floor it reached, and whether that is the week's best. */
   spire: { floor: number; best: boolean } | null;
-  /** What each deployed Shadow took from the run: the creatures it helped fell, its experience, and its level before and after. */
+  /** What each deployed Shadow took from the run: the creatures it helped fell, the XP it took under its cap, and its level before and after. */
   grew: { id: string; kills: number; xp: number; from: number; to: number }[];
   /** Shadows the run made ready for promotion, and the rank each can now be promoted to. */
   ready: { id: string; rank: string }[];
@@ -695,11 +695,11 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       const was = shadows.canPromote(s, sh);
       const from = shadows.levelOf(sh);
       const k = run.kills[id] ?? { kills: 0, bosses: 0 };
-      const xp = shadows.xpFrom(k.kills, k.bosses);
       sh.out++;
       sh.kills += k.kills;
       sh.bosses += k.bosses;
-      sh.xp = (sh.xp ?? 0) + xp;
+      // At its rank's cap it takes no more XP until it is promoted.
+      const xp = shadows.earn(sh, shadows.xpFrom(k.kills, k.bosses));
       grew.push({ id, kills: k.kills, xp, from, to: shadows.levelOf(sh) });
       // The hunter promotes it, from its card, once everything the rank above asks is met.
       if (!was && shadows.canPromote(s, sh)) ready.push({ id: sh.id, rank: shadows.nextRank(sh)!.name });

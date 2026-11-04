@@ -28,20 +28,30 @@ describe('levels', () => {
     expect(shadows.levelFor(1e9)).toBe(shadows.MAX_LEVEL);
   });
 
-  it('the rank held caps the level, and what lies past the cap is banked', () => {
+  it('the rank held caps the level, and a Shadow at its cap takes no more XP', () => {
     const R = shadows.SHADOW_RANKS;
     const sh = shadow(two.id, 1);
-    sh.xp = shadows.xpAt(R[0].cap) + 25;
+    expect(shadows.earn(sh, shadows.xpAt(R[0].cap) + 25)).toBe(shadows.xpAt(R[0].cap));
     expect(shadows.levelOf(sh)).toBe(R[0].cap);
     expect(shadows.atCap(sh)).toBe(true);
-    expect(shadows.progress(sh)).toEqual({ into: 0, need: 0, banked: 25 });
+    expect(shadows.progress(sh)).toEqual({ into: 0, need: 0 });
+    expect(shadows.earn(sh, 40)).toBe(0);
+    expect(sh.xp).toBe(shadows.xpAt(R[0].cap));
     expect(shadows.growth(sh)).toBeCloseTo(R[0].cap * shadows.GROWTH_PER_LEVEL);
-    // Promoted, the banked experience is spent at once.
-    sh.rank = 1;
-    expect(shadows.levelOf(sh)).toBe(shadows.levelFor(sh.xp));
-    expect(shadows.levelOf(sh)).toBeGreaterThan(R[0].cap);
     // The ranks' caps keep the growth the old kill limits allowed: +25%, +50%, +75%, +100%.
     expect(R.map((r) => r.cap * shadows.GROWTH_PER_LEVEL)).toEqual([0.25, 0.5, 0.75, 1]);
+  });
+
+  it('a promotion lifts the cap and leaves the level where it was', () => {
+    const R = shadows.SHADOW_RANKS;
+    const s = defaults();
+    const sh = shadows.bind(s, two.id);
+    // Even XP past the cap, from a save that once kept it, does not carry into the new rank.
+    sh.xp = shadows.xpAt(R[0].cap) + 60;
+    s.shadows.essence = R[1].essence;
+    expect(shadows.promote(s, sh.id)?.to).toBe(1);
+    expect(shadows.levelOf(sh)).toBe(R[0].cap);
+    expect(shadows.progress(sh)).toEqual({ into: 0, need: shadows.xpToNext(R[0].cap) });
   });
 
   it('stats grow with the level', () => {
@@ -67,7 +77,7 @@ describe('promotion', () => {
     expect(shadows.promotable(s)).toEqual([sh]);
     const first = shadows.promote(s, sh.id)!;
     // Sworn remembers a second ability, and the promotion says so.
-    expect(first).toEqual({ id: sh.id, from: 0, to: 1, second: shadows.secondOf(one), level: R[0].cap, essence: R[1].essence });
+    expect(first).toEqual({ id: sh.id, from: 0, to: 1, second: shadows.secondOf(one), essence: R[1].essence });
     expect(s.shadows.essence).toBe(3);
     expect(shadows.kitOf(sh)).toHaveLength(2);
     // Vanguard wants bosses felled as well.
@@ -149,32 +159,40 @@ describe('the kills a Shadow takes part in', () => {
     if (Object.keys(got).length === 2) expect(Object.values(got).reduce((x, y) => x + y, 0)).toBeGreaterThanOrEqual(res.felled.length);
   });
 
-  it('a run pays each deployed Shadow its experience, a boss five times a creature', () => {
+  it('a run pays each deployed Shadow its XP, a boss five times a creature, as far as its cap', () => {
     const s = defaults();
     grantXP(s, totalXpFor(20));
     reclassifyAll(s);
     autoAllocate(s);
     const d = dungeonById('DNG-001')!;
     const sh = shadows.bind(s, d.mobs[0]);
-    sh.xp = shadows.xpAt(shadows.SHADOW_RANKS[0].cap) - 1;
+    const cap = shadows.SHADOW_RANKS[0].cap;
+    sh.xp = shadows.xpAt(cap - 1);
     s.shadows.essence = shadows.SHADOW_RANKS[1].essence;
     const run = raid.begin(s, d, now);
     walk(s, d, now);
-    run.kills[sh.id] = { kills: 3, bosses: 1 };
+    run.kills[sh.id] = { kills: 20, bosses: 1 };
     const res = raid.finish(s, d, run, 'cleared', now);
-    expect(sh.kills).toBe(3);
+    expect(sh.kills).toBe(20);
     expect(sh.bosses).toBe(1);
-    expect(sh.xp).toBe(shadows.xpAt(shadows.SHADOW_RANKS[0].cap) - 1 + 2 * shadows.SHADOW_XP.kill + shadows.SHADOW_XP.boss);
-    expect(res.grew).toEqual([{ id: sh.id, kills: 3, xp: 2 * shadows.SHADOW_XP.kill + shadows.SHADOW_XP.boss, from: shadows.SHADOW_RANKS[0].cap - 1, to: shadows.SHADOW_RANKS[0].cap }]);
+    // It had room for one level's XP; the rest of what the creatures paid is not kept.
+    const room = shadows.xpToNext(cap - 1);
+    expect(shadows.xpFrom(20, 1)).toBe(19 * shadows.SHADOW_XP.kill + shadows.SHADOW_XP.boss);
+    expect(shadows.xpFrom(20, 1)).toBeGreaterThan(room);
+    expect(sh.xp).toBe(shadows.xpAt(cap));
+    expect(res.grew).toEqual([{ id: sh.id, kills: 20, xp: room, from: cap - 1, to: cap }]);
     // It reached its cap with the Essence held: the run reports it ready, and promotes nothing.
     expect(res.ready).toEqual([{ id: sh.id, rank: shadows.SHADOW_RANKS[1].name }]);
     expect(sh.rank).toBe(0);
-    // Ready already, the next run reports it no more.
+    // Ready already, the next run reports it no more, and pays it nothing.
     const again = raid.begin(s, d, now);
     walk(s, d, now);
     again.kills[sh.id] = { kills: 2, bosses: 0 };
-    expect(raid.finish(s, d, again, 'cleared', now).ready).toEqual([]);
+    const next = raid.finish(s, d, again, 'cleared', now);
+    expect(next.ready).toEqual([]);
+    expect(next.grew[0].xp).toBe(0);
   });
+
 });
 
 describe('Shadow Essence', () => {
