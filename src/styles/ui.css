@@ -543,6 +543,14 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysalert__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .sysalert__head { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--win); text-shadow: 0 0 8px var(--win-glow); }
 .sysalert__body p { margin: 0; font-size: 0.82rem; line-height: 1.4; text-shadow: var(--sys-glow); }
+/* An alert that only reports goes when it is tapped, or of itself: it slides out, then closes up so the ones under it rise. */
+button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
+.sysalert.is-leaving { animation: alertOut 560ms var(--ease) forwards; pointer-events: none; }
+@keyframes alertOut {
+  0% { opacity: 1; transform: none; max-height: var(--h, 120px); }
+  45% { opacity: 0; transform: translateX(-32px); max-height: var(--h, 120px); }
+  100% { opacity: 0; transform: translateX(-32px); max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: -8px; border-width: 0; }
+}
 .sysalert__sub { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 76%, transparent); }
 /* The meter along an alert's foot: it moves from where it stood once the alert has landed. A level gained fills it, lights it and starts it again. */
 .sysalert.has-meter { padding-bottom: 12px; }

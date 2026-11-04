@@ -114,8 +114,7 @@ alone.
 
 **An alert is the System's frame as a strip.** For news that asks for nothing where it shows (a
 Shadow's promotion earned, on the results), the System does not open a window: a strip of its frame,
-lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. One that opens something ends in a lit box with a chevron at its right edge. What to do
-about it is the interface's hint under it. A window is for what the player answers or must stop for.
+lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. One that opens something ends in a lit box with a chevron at its right edge, and stays until it is used. One that only reports goes when it is tapped, or of itself eight seconds after it lands (`ALERT_STAYS`), and the alerts under it close up. A window is for what the player answers or must stop for.
 
 ### The System's frame
 

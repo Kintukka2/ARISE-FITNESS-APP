@@ -123,7 +123,7 @@ export function QuestLines({ c, report }: { c: Contracts; report: ContractReport
     <div class="alerts questlines" aria-label="Daily Quests">
       {report.moved.map((k, i) => <QuestLine key={k.kind} k={k} grade={c.grade} pay={pay} delay={300 + i * 180} />)}
       {report.bonus && (
-        <SysAlert head="Quest Rewards" class="is-done" delay={300 + report.moved.length * 180} icon={<Ring p={1} done mark="star" />} aside={<Pay {...bonus} />}>
+        <SysAlert head="Quest Rewards" fyi class="is-done" delay={300 + report.moved.length * 180} icon={<Ring p={1} done mark="star" />} aside={<Pay {...bonus} />}>
           <strong>[Daily Quests]</strong> Completion bonus.
         </SysAlert>
       )}
@@ -139,7 +139,7 @@ function QuestLine({ k, grade, pay, delay }: { k: Moved; grade: Contracts['grade
   }, []);
   const done = k.done && at >= k.got;
   return (
-    <SysAlert head={done ? 'Quest Rewards' : 'Quest Info'} class={done ? 'is-done' : ''} delay={delay} attrs={{ 'data-contract': k.kind }}
+    <SysAlert head={done ? 'Quest Rewards' : 'Quest Info'} fyi class={done ? 'is-done' : ''} delay={delay} attrs={{ 'data-contract': k.kind }}
       icon={<Ring p={Math.min(1, at / Math.max(1, k.need))} done={done} />}
       aside={done ? <Pay {...pay} /> : <span class="num">{Math.min(at, k.need)}/{k.need}</span>}>
       {contractText(k, grade)}

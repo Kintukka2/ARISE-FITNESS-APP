@@ -377,6 +377,10 @@ fight was tried and did not narrow it.
   Chosen felled and a level proved. `SysAlert` took a second, smaller line and a meter along its
   foot for them; the meter moves from where it stood once the alert lands, and a level gained fills
   it, lights it and starts it again.
+  An alert that only reports goes when it is tapped, or of itself eight seconds after it lands
+  (`ALERT_STAYS`); one that opens something (a lingering Shadow, a masterwork) stays until it is used.
+- **Skip keeps the log.** At Skip the fight plays out at once between the hunter's turns, as before,
+  but its lines are still written, so what happened since the last turn can be read.
 - **XP, one word.** The hunter's and a Shadow's are XP everywhere a player reads them, the Guide
   included; EXP and Experience are gone, and the voice test refuses them.
 - **Badges.** Every family has a glyph, and a Shadow's badge is its family's glyph with its

@@ -272,9 +272,10 @@ export function Arena() {
     for (const b of toBeats(log.slice(from))) {
       apply(local, b);
       const p = paceRef.current;
-      if (p === 'skip') continue;
-      setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
       const ls = lines(b, name);
+      // Skip still writes the log, so what happened between turns can be read; it only takes no time.
+      if (p === 'skip') { say(ls); continue; }
+      setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
       // A beat with nothing to say (a foe settling its next move) costs no time.
       if (!ls.length) continue;
       say(ls);
@@ -779,7 +780,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               const done = out === 'bound' || out === 'essence' || out === 'lost';
               const sh = joined[i] ? s.shadows.army.find((x) => x.id === joined[i]) : undefined;
               return (
-                <SysAlert key={`${l.enemyId}-${i}`} kind="shadow" delay={400 + i * 200} class={out ? `is-${out}` : ''}
+                <SysAlert key={`${l.enemyId}-${i}`} kind="shadow" fyi={done} delay={400 + i * 200} class={out ? `is-${out}` : ''}
                   label={done ? undefined : `The mana of ${e.name} ${out ? 'still lingers' : 'lingers'}. Open the extraction.`}
                   icon={sh ? <ShadowEmblem family={e.family} rank={0} size={36} /> : <FamilyGlyph family={e.family} size={30} />}
                   onTap={done ? undefined : () => openExtraction(i)}
@@ -799,7 +800,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         {(r.chosen || r.ascended !== null) && (
           <div class="alerts">
             {r.chosen && (
-              <SysAlert kind="gates" delay={450} class="is-chosen"
+              <SysAlert kind="gates" fyi delay={450} class="is-chosen"
                 icon={r.chosen.item ? <GearArt item={r.chosen.item} size={38} /> : <Glyph name="crown" />}
                 onTap={r.chosen.item ? () => openItem(r.chosen!.item!.id) : undefined}
                 label={r.chosen.item ? `You have acquired ${gear.defOf(r.chosen.item)?.name}. Open its card.` : undefined}
@@ -811,7 +812,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               </SysAlert>
             )}
             {r.ascended !== null && (
-              <SysAlert kind="gold" delay={600} class="is-ascended" icon={<Glyph name="up" />}
+              <SysAlert kind="gold" fyi delay={600} class="is-ascended" icon={<Glyph name="up" />}
                 sub={<>[Ascension {r.ascended}: {ascension.levelInfo(r.ascended).name}] · Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span> · Marks <span class="grant">+1</span></>}>
                 <span class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</span>
               </SysAlert>

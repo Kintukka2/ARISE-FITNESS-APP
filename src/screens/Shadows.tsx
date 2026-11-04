@@ -554,7 +554,7 @@ export function ShadowAlerts({ grew, delay = 500 }: { grew: RaidResult['grew']; 
         const now = share(g.to, sh.xp);
         const was = share(g.from, sh.xp - g.xp);
         return (
-          <SysAlert key={g.id} kind="shadow" delay={delay + i * 180} class={`is-shadowline ${ready ? 'is-ready' : ''}`}
+          <SysAlert key={g.id} kind="shadow" fyi delay={delay + i * 180} class={`is-shadowline ${ready ? 'is-ready' : ''}`}
             icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={34} />}
             meter={{ from: up ? was : Math.min(was, now), to: now, up }}
             aside={g.xp > 0 ? <span class="num">XP <span class="grant">+{g.xp}</span></span> : null}

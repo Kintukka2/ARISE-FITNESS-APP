@@ -189,6 +189,17 @@ try {
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);
+  {
+    // An alert that only reports goes when it is tapped, and the rest go of themselves.
+    const fyi = () => page.locator('.arena--results .sysalert.is-fyi').count();
+    const n = await fyi();
+    if (!n) throw new Error('THE RESULTS SHOWED NO ALERT THAT ONLY REPORTS');
+    await page.locator('.arena--results .sysalert.is-fyi').first().click(); await sleep(900);
+    if ((await fyi()) !== n - 1) throw new Error('A TAPPED ALERT DID NOT GO');
+    await snap('raid-results-tapped', true);
+    await sleep(8000);
+    if (await fyi()) throw new Error('AN ALERT THAT ONLY REPORTS STAYED');
+  }
   await page.locator('text=Leave The Gate').click(); await drain();
 
   // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in: its brief from its Weekly Quest.

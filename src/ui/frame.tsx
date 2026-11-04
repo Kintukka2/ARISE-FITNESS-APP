@@ -8,7 +8,7 @@
  * advancement, orange for Gates, violet for Shadows. The text inside is white and glows that colour.
  */
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Kind } from './overlays';
 import { Glyph } from './icons';
 import type { Header } from './system';
@@ -109,18 +109,41 @@ export function Rewards({ items }: { items: ComponentChildren[] }) {
 /** An alert's meter: how far something stands, `from` where it stood to `to`, both 0 to 1. `up` fills it to the end and starts it again first, for a level gained. */
 export interface AlertMeter { from: number; to: number; up?: boolean }
 
+/** How long an alert that only reports stays once it has landed, before it goes of itself. */
+export const ALERT_STAYS = 8000;
+
 /**
  * A System alert set into a screen: news that asks for nothing where it shows, as a strip rather than
  * a window. The frame's glass, lit down its left edge in its kind's colour, the icon box, a header word
  * small (`Notification`, `Quest Info`, `Quest Rewards`), one line and a smaller one under it, what it
  * comes to at the right, and a meter along its foot that moves once it has landed. It slides in once,
  * a light crossing it as it lands. One that opens a window is a button, and says so with a chevron.
+ * One that only reports (`fyi`) goes when it is tapped, or of itself `ALERT_STAYS` after it lands:
+ * it slides out and the alerts under it close up.
  */
-export function SysAlert({ kind = 'system', icon, label, children, sub, aside, meter, head = 'Notification', delay = 0, onTap, class: cls, attrs }: {
+export function SysAlert({ kind = 'system', icon, label, children, sub, aside, meter, head = 'Notification', delay = 0, onTap, fyi, class: cls, attrs }: {
   kind?: FrameKind; icon: ComponentChildren; label?: string; children: ComponentChildren; sub?: ComponentChildren; aside?: ComponentChildren;
-  meter?: AlertMeter; head?: Header; delay?: number; onTap?: () => void; class?: string; attrs?: Record<string, string>;
+  meter?: AlertMeter; head?: Header; delay?: number; onTap?: () => void; fyi?: boolean; class?: string; attrs?: Record<string, string>;
 }) {
   const unit = (x: number) => Math.max(0, Math.min(1, x));
+  const el = useRef<HTMLElement>(null);
+  const born = useRef(performance.now());
+  const [leaving, setLeaving] = useState(false);
+  const [gone, setGone] = useState(false);
+  const goes = !!fyi && !onTap;
+  const leave = () => {
+    if (leaving) return;
+    if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) { setGone(true); return; }
+    el.current?.style.setProperty('--h', `${el.current.offsetHeight}px`);
+    setLeaving(true);
+  };
+  // Counted from when it lands, however late it became one that only reports.
+  useEffect(() => {
+    if (!goes) return;
+    const t = setTimeout(leave, Math.max(0, delay - (performance.now() - born.current)) + ALERT_STAYS);
+    return () => clearTimeout(t);
+  }, [goes]);
+  if (gone) return null;
   const inner = (
     <>
       <span class="sysbox sysalert__icon">{icon}</span>
@@ -135,8 +158,9 @@ export function SysAlert({ kind = 'system', icon, label, children, sub, aside, m
       <i class="sysalert__scan" aria-hidden="true" />
     </>
   );
-  const klass = `sysframe sysframe--${kind} sysalert ${onTap ? 'is-tap' : ''} ${meter ? 'has-meter' : ''} ${cls ?? ''}`;
-  return onTap
-    ? <button type="button" class={klass} aria-label={label} style={`--delay: ${delay}ms`} onClick={onTap} {...attrs}>{inner}</button>
-    : <aside class={klass} role="status" aria-label={label} style={`--delay: ${delay}ms`} {...attrs}>{inner}</aside>;
+  const klass = `sysframe sysframe--${kind} sysalert ${onTap ? 'is-tap' : ''} ${goes ? 'is-fyi' : ''} ${leaving ? 'is-leaving' : ''} ${meter ? 'has-meter' : ''} ${cls ?? ''}`;
+  const end = (e: AnimationEvent) => { if (e.animationName === 'alertOut') setGone(true); };
+  if (onTap) return <button type="button" ref={el as never} class={klass} aria-label={label} style={`--delay: ${delay}ms`} onClick={onTap} {...attrs}>{inner}</button>;
+  if (goes) return <button type="button" ref={el as never} class={klass} aria-label={label ? `${label} Dismiss.` : undefined} title="Dismiss" style={`--delay: ${delay}ms`} onClick={leave} onAnimationEnd={end} {...attrs}>{inner}</button>;
+  return <aside ref={el as never} class={klass} role="status" aria-label={label} style={`--delay: ${delay}ms`} {...attrs}>{inner}</aside>;
 }
