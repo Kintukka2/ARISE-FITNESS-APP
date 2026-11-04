@@ -79,7 +79,12 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification", "Tutorial") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
-| The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Inventory.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
+| The Status sheet, Skills, Inventory, the Exchange, item and Shadow cards | The System | `screens/Inventory.tsx`, `screens/Gear.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
+| The Inventory: its counts (`Items`, `New`, `Designs`, `Mana Shards`), Items and Sets, a tab to every kind, `Sort: Score`, the filters (`Better`, `Fusable`, `Set pieces`, `Starred`), `Select` and its bar (`3 selected · Mana Shards +120`, Recycle); a square to every item, `New` until it has been seen, `×2` while a duplicate can be fused into it | The System; the tabs, the filters and the bar's count are the interface's labels inside its frame | `screens/Gear.tsx` |
+| The Sets view: `Designs discovered` by rarity, and a card to every set, its pieces held, seen or `-- --`, what 2 and 3 worn pay, and its home Gate | The System | `SetCard` in `screens/Gear.tsx` |
+| An item's card: its rarity and kind, its tags (`Worn · Weapon`, its set, `✦ Perfect`, `Masterwork`), Score and what it gains over the piece it would replace (`▲ 27`), `Compared with`, Quality and its bar, each stat with its difference, each property with a bar from its design's worst to its best and the range (`9 to 13%`), its set, Fusion, Upgrade, Equip, the star and Recycle | The System; differences are drawn as ▲ and ▼ with their signed values, gains in green and losses in red | `ItemCard` in `screens/Gear.tsx` |
+| Fusion offered: `Would you like to fuse these items?`, the item and its quality before and after, `The duplicate is consumed.`; done: `[Item: …] has been fused.` and its quality | The System's Offer, then a Notification | `Fusion` in `screens/Gear.tsx` |
+| The Equipment sheet: `Equipment score`, what is worn adds stat by stat and its properties and sets in a line, the figure with a slot to either side, Auto Equip, Loadouts (`Loadout I`, `Worn`, Wear, Save, `Save Worn`, `Missing: 1`) and the sets worn | The System | `Equipment` in `screens/Gear.tsx` |
 
 Ascension rule text belongs to the interface (the Gates screen, the Guide). When the System announces
 a new level it names the level and what it opened, never the rule.
@@ -958,6 +963,9 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
 | Shadow | shadow | Capitalised everywhere, as a game term, like Gate |
+| Fusion, fuse | merge, combine, sacrifice, feed | A duplicate of an item's design fed into it: "Would you like to fuse these items?" The one fed in is "the duplicate" |
+| Loadout | build, preset, outfit | What was worn, saved: `Loadout I`, `Loadout II`, `Loadout III` |
+| New | unseen, fresh | An item in the bag the hunter has not looked at yet |
 | Shadow Essence | essence, shards, souls | Spent on a Shadow's promotion. In System text always in full, as Mana Shards is; a label may say "Essence" where the line already names it |
 | help fell | assist, participate, land a kill | A Shadow helps fell every creature it landed a hit on, whoever landed the last: "Have one Shadow help fell 100 creatures." Its record calls the count `Felled` |
 | Level, Lv. | rank level, tier | A Shadow's level, `Lv.14`, as a skill's is. Its rank is the name: Bound, Sworn, Vanguard, Ascendant |

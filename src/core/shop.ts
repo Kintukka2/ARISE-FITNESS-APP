@@ -105,6 +105,7 @@ export function recycle(s: Save, itemId: string): number {
   const paid = scrapValue(it);
   s.items = s.items.filter((i) => i.id !== itemId);
   s.favourites = s.favourites.filter((f) => f !== itemId);
+  s.newItems = (s.newItems ?? []).filter((f) => f !== itemId);
   earn(s, paid);
   return paid;
 }
@@ -116,6 +117,18 @@ export function scrapMatches(s: Save, ranks: string[]): Item[] {
     const d = gearDef(it.defId);
     return d && !d.issued && !worn.has(it.id) && !s.favourites.includes(it.id) && ranks.includes(d.rank);
   });
+}
+
+/** Break down the pieces chosen, skipping any worn, issued or starred. Returns how many went and what they paid. Mutates. */
+export function recycleSome(s: Save, ids: string[]) {
+  let paid = 0;
+  let count = 0;
+  for (const id of ids) {
+    if (s.favourites.includes(id)) continue;
+    const got = recycle(s, id);
+    if (got) { paid += got; count++; }
+  }
+  return { count, paid };
 }
 
 export function recycleAll(s: Save, ranks: string[]) {

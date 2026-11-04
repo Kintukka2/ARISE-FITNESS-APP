@@ -28,6 +28,9 @@ export interface GearDef {
   desc?: string;
 }
 
+/** A loadout: what was worn in each slot when it was saved. */
+export interface Loadout { slots: Partial<Record<SlotKey, string>>; at: string }
+
 export interface Item {
   id: string;
   defId: string;
@@ -268,6 +271,10 @@ export interface Save {
   favourites: string[];
   /** Every design id ever held. */
   found: string[];
+  /** Items come into the bag since the hunter last looked: marked New until they have been. */
+  newItems: string[];
+  /** Equipment saved to be worn again in one tap, a slot to item map each. Three at most. */
+  loadouts: (Loadout | null)[];
 
   gates: {
     clears: number;

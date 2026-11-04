@@ -53,3 +53,12 @@ export const SET_KEEP = 0.6;
  * for each point of score the step adds to a piece of its rarity.
  */
 export const UPGRADE = { share: 0.1, rate: 50 } as const;
+
+/**
+ * Fusion: a duplicate of a piece's design, fed into it. The piece keeps the better roll of the two for
+ * its quality and each property, then takes `steps` upgrade steps toward perfect, never past it.
+ */
+export const FUSE = { steps: 3 } as const;
+
+/** Loadouts a hunter can keep: what was worn, saved to be worn again in one tap. */
+export const LOADOUTS = 3;

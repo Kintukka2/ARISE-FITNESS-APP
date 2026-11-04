@@ -10,7 +10,7 @@ import { writeFileSync } from 'node:fs';
 import { defaults } from '@/core/save';
 import { autoAllocate, grantXP, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
 import { autoLearn, equip, learn, points } from '@/core/skilltree';
-import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
+import { autoEquip, defOf, grant, issueKit, ofRank, saveLoadout, setPieces, upgradeStep } from '@/core/gear';
 import { bind, raise, xpAt } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
@@ -52,6 +52,11 @@ autoEquip(s);
 // Something worn, upgraded three steps at the Exchange.
 const worn = s.items.findIndex((it) => it.id === s.equipped.hands);
 if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[worn]) ?? s.items[worn];
+// Two duplicates of the worn weapon's design, to fuse; the last three pieces still New; what is worn, saved as Loadout I.
+const weapon = s.items.find((it) => it.id === s.equipped.weapon);
+if (weapon && !defOf(weapon)?.issued) for (let k = 0; k < 2; k++) grant(s, weapon.defId, `fixture|dupe|${k}`);
+s.newItems = s.items.slice(-3).map((it) => it.id);
+saveLoadout(s, 0, addDays(today, -2));
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));
 // One Sworn at Level 14; one at the Bound cap with the Essence to be promoted, waiting; one new.
 Object.assign(s.shadows.army[0], { rank: 1, xp: xpAt(14) + 4, kills: 58, bosses: 1, out: 19 });
@@ -109,6 +114,7 @@ for (const rank of ['A', 'S', 'S'] as const) for (const slot of ['Head', 'Chest'
   grant(a, pool[Math.floor(ra() * pool.length)].id);
 }
 autoEquip(a);
+a.newItems = [];
 for (const id of ['ENM-099', 'ENM-101', 'ENM-103', 'ENM-105', 'ENM-106']) bind(a, id, addDays(today, -30));
 // An Ascendant, two Vanguards and two Sworn, and the Essence towards the next.
 a.shadows.army.forEach((x, i) => { raise(x, [3, 2, 2, 1, 1][i]); x.xp = Math.min(xpAt([36, 30, 27, 20, 16][i]) + 3, x.xp); x.kills = 420 - i * 70; x.bosses = 14 - i * 3; x.out = 160 - i * 25; });
