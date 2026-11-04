@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
-import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
+import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE, TACTICS } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
@@ -29,7 +29,7 @@ import { arena } from '@/app/router';
 import * as store from '@/store';
 import * as system from '@/ui/system';
 import { useSave } from '@/store';
-import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
+import { Bar, Btn, Chip, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { QuestLines } from '@/ui/contracts';
 import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
@@ -49,6 +49,28 @@ interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; m
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
+
+/**
+ * The standing orders for the fights still to come in this run, set on the map between them: whom the
+ * hunter's Shadows go for, and whom Auto aims the hunter at. The Association's hunters pick their own.
+ */
+function RunOrders({ d }: { d: NonNullable<ReturnType<typeof dungeonById>> }) {
+  const s = useSave();
+  const run = s.gates.raid;
+  if (!run) return null;
+  const t = run.tactic ?? 'default';
+  return (
+    <section class="runorders" aria-label="Orders for the next fight">
+      <div class="runorders__head"><span class="label">Orders for the next fight</span><small>For your Shadows, and for Auto</small></div>
+      <div class="chips chips--orders" data-tour="orders">
+        {TACTICS.map((x) => (
+          <Chip key={x.key} on={t === x.key} onClick={() => { if (t !== x.key) store.update((y) => raid.setTactic(y, d, y.gates.raid, x.key)); }}>{x.name}</Chip>
+        ))}
+      </div>
+      <p class="muted runorders__desc">{TACTICS.find((x) => x.key === t)?.desc}</p>
+    </section>
+  );
+}
 
 /** What an action does, in full, for its details: its line, and a line for each status it inflicts. */
 function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { name: string; level: string | null; ready: string | null; lines: string[] } {
@@ -122,7 +144,10 @@ function apply(local: UnitView[], b: Beat) {
     else if (e.t === 'expire') { const t = u(e.v); if (t) t.status = t.status.filter((x) => x !== e.s); }
     else if (e.t === 'passive' && e.k === 'stand') { const t = u(e.u); if (t) t.hp = 1; }
     else if (e.t === 'passive' && e.hp !== undefined) { const t = u(e.u); if (t) t.hp = e.hp; }
-    else if (e.t === 'support') for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0 && !t.status.includes('Rallied')) t.status.push('Rallied');
+    else if (e.t === 'support') {
+      const st = e.s === undefined ? 'Rallied' : e.s;
+      if (st) for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0 && !t.status.includes(st)) t.status.push(st);
+    } else if (e.t === 'cast' && e.k === 'taunt') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
   }
 }
 
@@ -393,6 +418,7 @@ export function Arena() {
               {raid.canWithdraw(d, run)
                 ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
                 : <small class="muted center">Tap a step that glows.</small>}
+              {!raid.pending(d, run) && <RunOrders d={d} />}
             </>}
         </div>
       ) : (

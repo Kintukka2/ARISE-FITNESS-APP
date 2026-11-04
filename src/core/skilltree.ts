@@ -13,7 +13,7 @@
  */
 import { CLASS_SKILLS } from '@/data/abilities';
 import { classById } from '@/data/classes';
-import { NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, type TreeNode } from '@/data/tree';
+import { isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_SKILLS, type TreeNode } from '@/data/tree';
 import { gateRank, leadStat, RANK_LADDER, rankOf } from './progression';
 import * as shop from './shop';
 import type { Ability, Attrs, Save, Stat } from './types';
@@ -140,7 +140,7 @@ export function reset(s: Save): { refunded: number; cost: number } | null {
 
 // ------------------------------------------------------------------ the tree as a fight reads it
 
-const baseSkill = new Map<string, Ability>(CLASS_SKILLS.map(({ line: _l, rung: _r, ...a }) => [a.name, a]));
+const baseSkill = new Map<string, Ability>([...CLASS_SKILLS.map(({ line: _l, rung: _r, ...a }) => a), ...TREE_SKILLS].map((a) => [a.name, a]));
 
 /** A skill as it fights at a level: Lv.1 is the ability as written, each level past it adds its step. */
 export function skillAt(n: TreeNode, level: number): Ability {
@@ -232,11 +232,15 @@ export function autoLearn(s: Save): number {
   return n;
 }
 
-/** Fill the skill slots with the strongest skills learned: the highest tier first, the class's Path before others. Mutates. */
+/**
+ * Fill the skill slots with the strongest skills learned: skills that do damage before those that do
+ * not, then the highest tier, the class's Path before others. Mutates.
+ */
 export function autoEquip(s: Save): void {
   const lead = pathOrder(s)[0];
+  const utility = (n: TreeNode) => Number(isUtility(skillAt(n, 1)));
   const order = NODES.filter((n) => n.kind === 'skill' && levelOf(s, n.id) > 0)
-    .sort((a, b) => b.tier - a.tier || Number(b.path === lead) - Number(a.path === lead) || a.col - b.col || levelOf(s, b.id) - levelOf(s, a.id));
+    .sort((a, b) => utility(a) - utility(b) || b.tier - a.tier || Number(b.path === lead) - Number(a.path === lead) || a.col - b.col || levelOf(s, b.id) - levelOf(s, a.id));
   treeOf(s).equip = order.slice(0, slots(s)).map((n) => n.id);
 }
 

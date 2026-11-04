@@ -45,15 +45,21 @@ export interface Item {
 
 // ------------------------------------------------------------------ combat data
 
-export type AbilityProfile = 'single' | 'cleave' | 'volley' | 'spread' | 'burst' | 'wild' | 'all' | 'support';
+export type AbilityProfile = 'single' | 'cleave' | 'volley' | 'spread' | 'burst' | 'wild' | 'all' | 'support' | 'taunt';
 
 export interface Ability {
   name: string;
   type: 'physical' | 'magic';
+  /** Who it reaches. `support` is the user's whole side; `taunt` turns every foe's next action on the user. */
   profile: AbilityProfile | string;
+  /** Its force. 0 is a curse: it does no damage, cannot miss, and what it inflicts lands unless the target is immune. */
   mult: number;
   cd: number;
   inflicts: string[];
+  /** A support's share of each ally's maximum HP restored. */
+  heal?: number;
+  /** A support's good status for the whole side. A support with neither this nor `heal` rallies. */
+  grant?: string;
 }
 
 export type PassiveStyle =
@@ -103,7 +109,7 @@ export interface Dungeon {
 /** What the hunter does with a turn: a skill from the kit by name, or `Strike`, `Guard` or `Potion`. `at` is the foe aimed at. */
 export interface Order { use: string; at?: string }
 
-/** Standing orders for allies and Shadows, set before a gate. */
+/** Standing orders: whom the hunter's Shadows aim at, and the hunter too when Auto fights their turns. The Association's hunters pick their own. */
 export type Tactic = 'default' | 'finish' | 'protect' | 'spread';
 
 // ------------------------------------------------------------------ save

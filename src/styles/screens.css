@@ -259,6 +259,11 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .unit__intent { margin-top: 4px; font-size: 0.68rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .unit__intent.is-you { color: var(--blood); font-weight: 700; }
 .unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
+/* The orders for the next fight, under the map, in the room the map leaves. */
+.runorders { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 520px; margin: 4px auto 0; padding: 12px; border: 1px solid rgba(255, 154, 60, 0.3); border-radius: var(--r-md); background: rgba(20, 10, 4, 0.5); }
+.runorders__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.runorders__head small { color: var(--ink-3); font-size: 0.72rem; }
+.runorders__desc { margin: 0; font-size: 0.8rem; line-height: 1.4; }
 .turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
 /* An action's details, over the foot of the feed, so nothing under the finger moves when they open. */
 .actinfo { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 4; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(10, 6, 4, 0.96); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55); animation: feedIn 160ms var(--ease) both; pointer-events: none; }
@@ -465,8 +470,6 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 @keyframes stTwinkle { 50% { opacity: 0.85; } }
 .st-sky__ring { fill: none; stroke: var(--st-shut); stroke-width: 0.6; stroke-dasharray: 2 4; }
 .st-sky__ring.is-open { stroke: rgba(79, 214, 255, 0.42); stroke-dasharray: none; }
-.st-sky__rank { fill: var(--st-shut); font: 700 8px var(--font-sys); text-anchor: middle; letter-spacing: 0.05em; }
-.st-sky__rank.is-open { fill: var(--mana); }
 .st-sky__axis { stroke: rgba(160, 200, 240, 0.12); stroke-width: 0.8; }
 .st-sky__link { stroke: var(--st-shut); stroke-width: 0.8; }
 .st-sky__link.is-lit { stroke: var(--mana); stroke-width: 1.3; filter: drop-shadow(0 0 2px var(--mana)); stroke-dasharray: 3 3; animation: stFlow 1.6s linear infinite; }
@@ -1051,6 +1054,24 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 
 /* The board as one tile: a portal to each grade, with its count of Gates open. */
 .ga-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+/* Open Gates: the centre of the Gates screen. Bigger portals over a slow orange light, a frame that
+   glows of its own, and a call along its foot. Orange, the Gates' colour; never gold, which waits. */
+.btile--focus { filter: drop-shadow(0 0 16px var(--ember-glow)); animation: gaFocus 3.6s ease-in-out infinite; }
+@keyframes gaFocus { 50% { filter: drop-shadow(0 0 26px var(--ember-glow)); } }
+.btile--focus .btile__hit { min-height: 220px; }
+.btile--focus .btile__art { padding: 20px 10px 8px; -webkit-mask-image: none; mask-image: none; }
+.btile--focus .btile__text strong { font-size: 1rem; letter-spacing: 0.22em; }
+.btile--focus .ga-portal--mini { width: 46px; height: 46px; }
+.btile--focus .ga-portal--mini > b { font-size: 1rem; }
+.btile--focus .ga-board { flex-wrap: nowrap; gap: 8px; }
+.ga-focus { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.ga-focus::before { content: ''; position: absolute; inset: -30% -10% -10%; background: radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255, 154, 60, 0.26), transparent 70%); pointer-events: none; }
+.ga-focus__rays { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; translate: -50% -50%; background: repeating-conic-gradient(from 0deg, rgba(255, 154, 60, 0.08) 0deg 5deg, transparent 5deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 58%); mask-image: radial-gradient(circle, #000 18%, transparent 58%); animation: gaRays 48s linear infinite; pointer-events: none; }
+@keyframes gaRays { to { transform: rotate(360deg); } }
+.ga-focus .ga-board { position: relative; }
+.ga-focus__cta { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border: 1px solid color-mix(in srgb, var(--ember) 70%, transparent); background: linear-gradient(90deg, rgba(255, 154, 60, 0.08), rgba(255, 154, 60, 0.22), rgba(255, 154, 60, 0.08)); color: #ffd9b3; font: 700 0.72rem var(--font-sys); letter-spacing: 0.18em; text-transform: uppercase; text-shadow: 0 0 8px var(--ember-glow); box-shadow: 0 0 14px rgba(255, 154, 60, 0.25) inset; }
+.ga-focus__cta .ico { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) { .btile--focus, .ga-focus__rays { animation: none; } }
 .ga-board__one { display: flex; flex-direction: column; align-items: center; gap: 4px; animation: qaIn 520ms var(--ease) both; }
 .ga-board__one:nth-child(2) { animation-delay: 70ms; }
 .ga-board__one:nth-child(3) { animation-delay: 140ms; }

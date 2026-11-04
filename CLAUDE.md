@@ -56,7 +56,12 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `foresee()`). A hunter who gives no orders must fight exactly the auto fight;
   `tests/combat.test.ts` checks it. Change the auto policy and you must recalibrate.
 - A foe's shown intent is a promise: it does exactly that unless its target fell or it is stunned.
-  Anything that changes what a foe does must keep that true; the intent test checks it.
+  Anything that changes what a foe does must keep that true; the intent test checks it. A taunt
+  (`profile: 'taunt'`) is the one thing that changes an intent, and it does so by showing the new one
+  (an `intent` event) before the foe acts.
+- Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
+  never the Association's hunters (`combat.aim`). They are set on the map between steps
+  (`raid.setTactic`), never while a step is underway.
 - Copy that quotes a number reads it from the engine's constants (see `screens/Guide.tsx`), so the
   text cannot drift from the rules.
 - Save shape: adding a field with a default needs nothing beyond `defaults()` in `core/save.ts`.

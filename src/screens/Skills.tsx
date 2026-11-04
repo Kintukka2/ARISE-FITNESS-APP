@@ -12,7 +12,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { passiveText, REACH_TEXT } from '@/core/combat';
+import { passiveText, REACH_TEXT, STATUS_TEXT } from '@/core/combat';
 import { bonusText } from '@/core/gear';
 import * as tree from '@/core/skilltree';
 import type { TreeNode } from '@/core/skilltree';
@@ -38,7 +38,14 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /** What a skill does at a level: its type, force, reach, cooldown and what it inflicts. */
 export function skillLine(a: Ability): string {
-  if (a.profile === 'support') return `Rallies the whole party${a.cd ? ` · Cooldown ${a.cd}` : ''}.`;
+  const cd = a.cd ? ` · Cooldown ${a.cd}` : '';
+  if (a.profile === 'support') {
+    if (a.heal) return `The whole party: HP +${Math.round(a.heal * 100)}%${cd}`;
+    if (a.grant) return `The whole party: ${a.grant}${STATUS_TEXT[a.grant] ? ` (${STATUS_TEXT[a.grant]})` : ''}${cd}`;
+    return `Rallies the whole party${cd}`;
+  }
+  if (a.profile === 'taunt') return `Every foe's next action goes at you. You guard until your next turn${cd}`;
+  if (a.mult === 0) return `${cap(REACH_TEXT[a.profile] ?? 'one target')} · Inflicts ${a.inflicts.join(' and ')} · No damage. Never misses${cd}`;
   return [
     `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult}`,
     cap(REACH_TEXT[a.profile] ?? 'one target'),
@@ -177,7 +184,6 @@ export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?
       {TIER_RANKS.map((rk, t) => (
         <g key={rk}>
           <circle cx={CX} cy={CY} r={RING(t)} class={`st-sky__ring ${t <= open ? 'is-open' : ''}`} />
-          {!mini && <text x={CX + Math.cos(ANGLE(0.5)) * RING(t)} y={CY + Math.sin(ANGLE(0.5)) * RING(t) + 3} class={`st-sky__rank ${t <= open ? 'is-open' : ''}`}>{rk}</text>}
         </g>
       ))}
       {PATHS.map((p, i) => {

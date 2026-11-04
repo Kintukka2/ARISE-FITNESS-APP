@@ -278,26 +278,44 @@ describe('the practice gate', () => {
 });
 
 describe('standing orders', () => {
-  it('finish sends every ally at the foe nearest to falling', () => {
-    const ally = new Unit({ uid: 'a0', name: 'A', side: 'p', base, tag: 'ally' });
+  /** Who a unit of this tag goes at first, under these orders, across a run of seeds. */
+  const firsts = (tag: 'shadow' | 'hero' | 'ally', tactic: 'finish' | 'default') => ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((seed) => {
+    const u = new Unit({ uid: 'p0', name: 'P', side: 'p', base, tag });
     const weak = new Unit({ uid: 'e0', name: 'W', side: 'e', base, hpMult: 1 });
     const strong = new Unit({ uid: 'e1', name: 'S', side: 'e', base, hpMult: 20 });
     weak.hp = 5;
-    const res = fight([ally], [strong, weak], rng('finish'), 1, () => {}, 'finish');
-    const first = res.log.find((e) => (e.t === 'hit' || e.t === 'miss') && e.a === 'a0');
-    expect(first && 'v' in first && first.v).toBe('e0');
+    const res = fight([u], [strong, weak], rng(`finish|${seed}`), 1, () => {}, tactic);
+    const first = res.log.find((e) => (e.t === 'hit' || e.t === 'miss') && e.a === 'p0');
+    return first && 'v' in first ? first.v : null;
   });
 
-  it('the run keeps the orders it went in with', () => {
+  it('finish sends a Shadow, and the hunter on Auto, at the foe nearest to falling', () => {
+    for (const tag of ['shadow', 'hero'] as const) expect(new Set(firsts(tag, 'finish'))).toEqual(new Set(['e0']));
+  });
+
+  it('the Association’s hunters pick their own targets, whatever the orders', () => {
+    expect(firsts('ally', 'finish')).toEqual(firsts('ally', 'default'));
+    expect(new Set(firsts('ally', 'finish')).size).toBe(2);
+  });
+
+  it('the run keeps its orders until they are changed between steps, and the next runs go in with them', () => {
     const s = hunter(20);
     s.gates.tactic = 'protect';
-    const run = raid.begin(s, dungeonById('DNG-015')!, now);
-    s.gates.tactic = 'spread';
+    const d = dungeonById('DNG-015')!;
+    const run = raid.begin(s, d, now);
     expect(run.tactic).toBe('protect');
+    expect(raid.setTactic(s, d, run, 'spread')).toBe(true);
+    expect(run.tactic).toBe('spread');
+    expect(s.gates.tactic).toBe('spread');
+    // A step underway keeps the orders it opened with.
+    raid.choose(s, d, run, raid.options(d, run)[0].id, now);
+    expect(raid.setTactic(s, d, run, 'finish')).toBe(false);
+    expect(run.tactic).toBe('spread');
   });
 
-  it('the brief projects with the party’s actual orders', () => {
-    const s = hunter(16);
+  it('the brief projects with the hunter’s actual orders', () => {
+    // A hunter who wins some and loses some, so the orders their Auto turns follow can move the count.
+    const s = hunter(24);
     const moved = ['DNG-015', 'DNG-016', 'DNG-017', 'DNG-018', 'DNG-019', 'DNG-020'].some((id) => {
       const d = dungeonById(id)!;
       s.gates.tactic = 'default';
