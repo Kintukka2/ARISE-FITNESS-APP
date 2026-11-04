@@ -383,40 +383,6 @@ describe('awakening', () => {
   });
 });
 
-describe('orders', () => {
-  it('a Shadow’s focus and orders of its own reach an open run at its next step, and are cleared as easily', () => {
-    const s = defaults();
-    grantXP(s, totalXpFor(20));
-    reclassifyAll(s);
-    autoAllocate(s);
-    const sh = shadows.bind(s, two.id);
-    sh.rank = shadows.SECOND_AT;
-    const kit = shadows.kitOf(sh);
-    expect(kit).toHaveLength(2);
-    const d = dungeonById('DNG-015')!;
-    const run = raid.begin(s, d, now);
-    const spec = () => run.party.find((p) => p.ref === sh.id)!;
-    expect(spec().focus).toBeUndefined();
-    expect(shadows.setFocus(s, sh.id, 'Not A Skill')).toBe(false);
-    expect(shadows.setFocus(s, sh.id, kit[1])).toBe(true);
-    expect(shadows.setTactic(s, sh.id, 'finish')).toBe(true);
-    expect(shadows.ordered(s)).toEqual([sh]);
-    expect(spec().focus).toBeUndefined();
-    raid.choose(s, d, run, raid.options(d, run)[0].id, now);
-    expect(spec().focus).toBe(kit[1]);
-    expect(spec().tactic).toBe('finish');
-    expect(raid.shadowSpec(sh, 0).focus).toBe(kit[1]);
-    shadows.setFocus(s, sh.id, null);
-    shadows.setTactic(s, sh.id, null);
-    expect(shadows.ordered(s)).toEqual([]);
-    // A focus on a skill it no longer knows is no focus.
-    sh.focus = kit[1];
-    sh.rank = 0;
-    expect(shadows.focusOf(sh)).toBeUndefined();
-    expect(raid.shadowSpec(sh, 0).focus).toBeUndefined();
-  });
-});
-
 describe('the squad', () => {
   it('Auto Deploy puts the strongest in, as many as the slots hold, and the squad’s power is theirs summed', () => {
     const s = defaults();
@@ -430,5 +396,30 @@ describe('the squad', () => {
     expect(shadows.squad(s).map(shadows.power)).toEqual(best);
     expect(shadows.bestSquad(s)).toEqual(ids);
     expect(shadows.squadPower(s)).toBe(best.reduce((a, b) => a + b, 0));
+  });
+
+  it('a drop places a Shadow: two deployed change places, one from the reserve takes the place, a free slot takes it at the end, and -1 takes it out', () => {
+    const s = defaults();
+    grantXP(s, totalXpFor(60));
+    reclassifyAll(s);
+    const [a, b, c] = ALL_ENEMIES.slice(0, 3).map((e) => shadows.bind(s, e.id).id);
+    s.shadows.squad = [a, b];
+    const ids = () => shadows.squad(s).map((x) => x.id);
+    expect(shadows.slots(s)).toBeGreaterThanOrEqual(3);
+    expect(shadows.placeAt(s, b, 0)).toBe(true);
+    expect(ids()).toEqual([b, a]);
+    expect(shadows.placeAt(s, b, 0)).toBe(false);
+    expect(shadows.placeAt(s, c, 1)).toBe(true);
+    expect(ids()).toEqual([b, c]);
+    expect(shadows.placeAt(s, b, -1)).toBe(true);
+    expect(ids()).toEqual([c]);
+    expect(shadows.placeAt(s, b, -1)).toBe(false);
+    const n = shadows.slots(s);
+    expect(shadows.placeAt(s, a, n - 1)).toBe(true);
+    expect(ids()).toEqual([c, a]);
+    expect(shadows.placeAt(s, c, n - 1)).toBe(true);
+    expect(ids()).toEqual([a, c]);
+    expect(shadows.placeAt(s, 'no-such-shadow', 0)).toBe(false);
+    expect(shadows.placeAt(s, a, n)).toBe(false);
   });
 });

@@ -77,13 +77,11 @@ hunter's turns to the System and presses on between chambers, for grinding.
   they hold for the fights still to come in it (`raid.setTactic`); set while a step is underway they
   reach the run when its next step is chosen (`raid.choose`), never the step underway, whose replay
   reads the orders it opened with.
-- **A Shadow's own orders**, set on its row in the orders sheet: standing orders of its own over the
-  army's (`Shadow.tactic`, read by `combat.aim`), and from Sworn, when it knows two skills, a focus:
-  the skill it uses whenever that skill is ready (`Shadow.focus`, read by `choose()`). Both reach an
-  open run the way the standing orders do, at its next step. The orders sheet lists every Shadow with
-  what it follows, and a tap opens its row to set them. They sat on its card at first; the card is a
-  profile, so they moved to the sheet that holds every order. Nothing is changed for a Shadow given
-  none, so the auto fight, calibration and the campaign stand.
+- **No Shadow takes orders of its own.** For a while a Shadow could be given standing orders of its
+  own and a focus, a skill it used whenever it was ready, first on its card and then on the orders
+  sheet. They were more to manage than they were worth, so they are gone: every Shadow follows the
+  army's standing orders, and the auto policy chooses its skill. A save that set them keeps the
+  fields, and nothing reads them.
 - **The save** records the hunter's orders for the chamber being fought, not the fight state. The
   engine is deterministic for a seed and a list of orders, so a reload replays to the same turn.
   Each order is written before it plays out, so a turn cannot be rerolled.
@@ -408,9 +406,8 @@ fight was tried and did not narrow it.
   shadow behind it and its rank's insignia under them (`ui/emblems.tsx`).
 - **More slots through Secret Quests.** Three make room for one more Shadow each: a first Sworn
   Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions' (`shadows.slots`).
-- **Orders.** Every Shadow follows the army's standing orders, set on the Shadows screen, unless it
-  is given its own on the orders sheet: whom it goes for, and a skill to use whenever it is ready
-  (see Turn-based combat).
+- **Orders.** Every Shadow follows the army's standing orders, set on the Shadows screen's Orders
+  tile (see Turn-based combat).
 - **The Army, one tile and one roster.** The Squad and the Army were two tiles and two sheets; the
   Army's tiles were large, so a big army was hard to take in, and the Squad sheet did the managing.
   They are one now. The Army tile is the screen's centre: the squad's slots, each a badge with its
@@ -423,8 +420,14 @@ fight was tried and did not narrow it.
   row is the box that deploys it, its badge (marked Ready or New), its name over its grade, family
   and rank (and stars), its level over a bar through its rank's levels, and its power; it opens the
   card. The grid is a card to each, its power over its badge in the ring of its levels. The tab,
-  sort and view hold while the app stays open. Orders a Shadow kept of its own were once removed for the map's; the map no
-  longer holds orders, and a Shadow's own came back with a focus beside them.
+  sort and view hold while the app stays open.
+- **The squad by hand.** A Shadow is dragged to its place (`ui/drag.ts`): a mouse drags once it
+  moves, a finger once it has held still a quarter second, so a swipe still scrolls the sheet. A slot
+  dropped on another changes places with it; a reserve Shadow dropped on a slot takes it, and the
+  one there goes to the reserve; dropped on a free slot it joins the squad; a deployed Shadow dropped
+  on the list leaves it (`shadows.placeAt`). The lifted Shadow fades where it was, the slot under it
+  lights, a ghost of its badge follows the pointer, and the sheet scrolls near its edge. Each
+  deployed slot has an x in its top right that takes it out.
 - **A save from before** (v7 migration) gives every Shadow the rank its kills had earned and the
   level its growth stood at (a Vanguard with 75% growth is Lv.30), with no Essence. Its kills carry
   on, now counting every creature it helps fell.
