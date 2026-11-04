@@ -538,11 +538,16 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
   const again = !out || out.res === 'failed';
   return (
     <div class={`stack extract ${out ? `is-${out.res}` : ''}`}>
-      <div class="extract__who"><FamilyGlyph family={e.family} size={30} /><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
-      {out?.res === 'failed' && <p class="warn extract__failed" key={`f${l.tries}`}>[Skill: Extraction] has failed.</p>}
+      <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
       {again && <>
         <p>The mana of <strong>[{e.name}]</strong> {l.tries ? 'still lingers' : 'lingers'}.</p>
-        <p class="muted">Extraction cost: <b class={l.tries ? 'warn' : ''}>{cost} MP</b>{l.tries ? ` (×${Math.pow(shadows.EXTRACT_TRIES.step, l.tries)})` : ''}<br />MP held: {v.mp} · Success rate: <b>{odds}%</b><br />Attempts left: <b>{left}</b></p>
+        {/* After a failure the reach's terms are the warning, in red: what failed, what is left, what the next one costs. */}
+        <p class={`extract__terms ${l.tries ? 'warn' : ''}`} key={`t${l.tries}`}>
+          {l.tries ? <>[Skill: Extraction] has failed.<br /></> : null}
+          Attempts left: {left}<br />
+          Extraction cost: {cost} MP
+        </p>
+        <p class="muted">Success rate: <b>{odds}%</b></p>
         {v.mp >= cost || rolled.current?.res === 'bound'
           // A fresh hold for every reach; it stays up while it settles, though the reach has spent the MP it showed.
           ? <HoldButton key={l.tries} hold={{ label: l.tries ? 'Hold To Extract Again' : 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE', failed: 'Failed', after: 900 }}

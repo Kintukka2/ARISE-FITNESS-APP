@@ -554,14 +554,14 @@ The panel after a clear, in a violet frame.
 
 | | Now | System |
 |---|---|---|
-| Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | `The mana of [{foe}] lingers.` / `Extraction cost: 60 MP` / `Success rate: 34%` |
+| Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | The rank and the name, then `The mana of [{foe}] lingers.` / `Attempts left: 3` / `Extraction cost: 60 MP` / `Success rate: 34%` |
 | No mana | "You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some." | `Not enough MP. (40/60)` |
-| Failed, reaches left | | `[Skill: Extraction] has failed.` (red) / `The mana of [{foe}] still lingers.` / `Extraction cost: 120 MP (×2)`, the cost in red / `MP held: 140 · Success rate: 34%` / `Attempts left: 2` / `Hold To Extract Again`. Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
+| Failed, reaches left | | The rank and the name, then `The mana of [{foe}] still lingers.` / `[Skill: Extraction] has failed.` / `Attempts left: 2` / `Extraction cost: 120 MP`, those three in red / `Success rate: 34%` / `Hold To Extract Again`. No multiplier and no MP held: the cost is the number that matters, and MP held shows only when it falls short (`Not enough MP. (100/120)`). Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
 | Failed, the last reach | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Extraction] has failed.` / `The mana has dispersed.` (all red) |
 | Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
 
 That INT raises the rate is a rule, so it goes in the Guide, and so does why the cost doubles: the
-System shows the multiplier (`×2`, `×4`) and the attempts left, never the reason.
+System shows the cost and the attempts left, never the reason.
 
 ### The fight log
 
