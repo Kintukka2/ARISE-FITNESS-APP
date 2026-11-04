@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SKILL_POINTS, SKILL_SLOTS } from '@/data/tree';
 import { defaults } from '@/core/save';
 import { reclassification, waiting } from '@/core/quests';
 import * as ascension from '@/core/ascension';
@@ -45,7 +46,8 @@ describe('reclassification', () => {
     syncClass(c);
     expect(classById(c.hunter.classId)?.name).toBe(toC.cls?.is);
     expect(toC.slots).toEqual([SLOTS.D, SLOTS.C]);
-    expect(toC.pick?.names).toHaveLength(2);
+    expect(toC.skills).toEqual({ points: SKILL_POINTS.rank, tier: 'C', slots: [SKILL_SLOTS.D, SKILL_SLOTS.C] });
+    expect(reclassification(hunter(5))!.skills.tier).toBe('D');
     expect(reclassification(hunter(40))!.slots).toEqual([SLOTS.B, SLOTS.A]);
     expect(reclassification(hunter(60))!.throne).toBe(true);
     const done = hunter(60);

@@ -4,6 +4,7 @@ import { grant, autoEquip, ofRank, upgradeStep, worn } from '@/core/gear';
 import { ALL_DUNGEONS } from '@/core/gates';
 import * as shadows from '@/core/shadows';
 import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, rankFor, syncClass } from '@/core/progression';
+import { autoLearn } from '@/core/skilltree';
 import type { Rank } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
 import { rng } from '@/core/util';
@@ -25,6 +26,8 @@ export function typicalHunter(level: number, gearRank: Rank, seed: string) {
   s.hunter.attrs[STATS[Math.floor(r() * 5)]] += 5;
   autoAllocate(s);
   syncClass(s);
+  // Every Skill Point spent the System's way, as Auto Assign spends them.
+  autoLearn(s);
   for (const t of ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Weapon', 'Off-Hand', 'Amulet', 'Ring', 'Ring']) {
     const gi = RANKS.indexOf(gearRank) - (r() < 0.4 ? 1 : 0);
     if (gi < 0) continue;

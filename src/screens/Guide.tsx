@@ -6,8 +6,8 @@ import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { SLOTS as SQUAD, EXTRACT_MP, GROWTH_PER_KILL, SECOND_AT, SHADOW_RANKS } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
-import { CLASS_RANKS, CLASSES } from '@/data/classes';
-import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
+import { CLASSES } from '@/data/classes';
+import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
@@ -28,11 +28,6 @@ const gatesOf = (g: string) => DUNGEONS.filter((d) => d.rank === g).length;
 const proofOf = (g: string) => (gatesOf(g) < PROOF.gates ? `all ${gatesOf(g)} ${g}-Rank Gates` : `${PROOF.gates} different ${g}-Rank Gates`);
 /** The grades above the one Ascension opens at whose proof differs from it. */
 const SHORT = RANKS.slice(RANKS.indexOf(ASCENSION_FROM) + 1).filter((g) => gatesOf(g) !== gatesOf(ASCENSION_FROM));
-/** The ranks a class line's rungs open at, read from the data. */
-const unlocks = (xs: { rung: number }[]) => {
-  const at = [...new Set(xs.map((x) => x.rung))].sort((a, b) => a - b).map((n) => CLASS_RANKS[n]);
-  return at.length > 1 ? `${at.slice(0, -1).join(', ')} and ${at[at.length - 1]}` : at.join('');
-};
 
 /** The Guide: one fact per line, numbers up front. The interface's reference, set in the System's frame (GUIDE) at the owner's call. */
 export const TOPICS: { title: string; lines: string[] }[] = [
@@ -52,15 +47,22 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
-    title: 'Classes',
+    title: 'Classes and skills',
     lines: [
       `From D-Rank the System assigns a class from your highest stat: ${CLASSES.length} classes in five lines.`,
-      'Your class is reassigned at every rank, and follows your highest stat.',
-      'A class adds flat points to its stat and gives you its line’s combat skills.',
-      `Skills arrive at ${unlocks(CLASS_SKILLS)}-Rank. Passives arrive at ${unlocks(CLASS_PASSIVES)}-Rank.`,
-      'Each of those ranks offers two, and you keep one.',
-      'Until you choose, you fight with the first.',
-      'A choice holds until your next rank, when every choice can be made again.',
+      'Your class is reassigned at every rank, and follows your highest stat. It adds flat points to that stat.',
+      `Skill Points: ${SKILL_POINTS.level} each level, and ${SKILL_POINTS.rank} more for each rank you claim. Spend them on the Skills screen.`,
+      `The skill tree has ${PATHS.length} Paths, one for each stat: ${PATHS.map((p) => `${p.name} (${p.key})`).join(', ')}.`,
+      'You can spend in any Path, whatever your class. The skills of a Path grow stronger with its stat.',
+      `A Path has a tier for each rank from ${TIER_RANKS[0]} to ${TIER_RANKS[TIER_RANKS.length - 1]}. A tier opens at its rank, once the Path holds enough of your points: ${TIER_RANKS.slice(1).map((r, i) => `${r} ${TIER_GATE[i + 1]}`).join(', ')}.`,
+      'A node needs the one it grows from. Each point you spend counts toward the next tier of its Path.',
+      'A skill levels up to Lv.MAX: more force at every level, and its own edge at the top.',
+      'Two passives in each B and S tier are a fork. Learning one seals the other.',
+      `Skill slots: the skills you take into a fight. ${(['D', 'C', 'B', 'A', 'S', 'N'] as const).map((r) => `${r === 'N' ? 'Sovereign' : `${r}-Rank`} ${SKILL_SLOTS[r]}`).join(', ')}.`,
+      'A skill you learn takes a free slot. Equip, Unequip and Swap In change the rest.',
+      'Auto Assign spends every point as the System would, in your class’s Path first.',
+      `A reset hands every point back. The first is free, then each costs the Mana Shards of ${RESET.share === 1 ? 'a clear' : `${RESET.share} clears`} at your grade.`,
+      'The Association’s hunters fight with each class line’s first skills and passives.',
     ],
   },
   {

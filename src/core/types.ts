@@ -58,7 +58,9 @@ export interface Ability {
 
 export type PassiveStyle =
   | 'identity' | 'tempo' | 'brace' | 'escalation' | 'targeting' | 'survival'
-  | 'leadership' | 'arcane' | 'pack' | 'hazard' | 'bulwark' | 'bladework' | 'keen';
+  | 'leadership' | 'arcane' | 'pack' | 'hazard' | 'bulwark' | 'bladework' | 'keen'
+  // The skill tree's own: only a hunter has them (`data/tree.ts`).
+  | 'vamp' | 'momentum' | 'ambush' | 'flurry' | 'execute' | 'deadeye' | 'thorns' | 'stalwart' | 'affliction' | 'exploit';
 
 export interface Passive { name: string; style: PassiveStyle | string; text: string }
 
@@ -241,10 +243,11 @@ export interface Save {
     classId: string | null;
     missions: string[];
     /**
-     * The skill or passive kept at each of a class line's rungs, keyed `LINE:rung`, and the
-     * class tier it was chosen at: a choice holds until the hunter reaches a higher rank.
+     * The skill tree (`core/skilltree.ts`): the points held in each node by its id, the skills
+     * taken into a fight in slot order, and how many times the tree has been reset. Skill Points
+     * are not stored: they are what the level and the rank have earned, less what is held here.
      */
-    picks: Record<string, { name: string; at: number }>;
+    tree: { learned: Record<string, number>; equip: string[]; resets: number };
   };
 
   vitals: { hp: number | null; mp: number | null; fatigue: number; at: number | null; lockedUntil: number | null };

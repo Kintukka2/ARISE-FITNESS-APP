@@ -147,14 +147,15 @@ function RankBody() {
   const q = reclassification(s);
   if (!q) return null;
   const to = q.to.key === 'N' ? q.to.name : q.to.key;
-  const kind = q.pick?.kind === 'skill' ? 'Skill' : 'Passive';
   const rewards: ComponentChildren[] = [
     <>Rank: {q.from.key} → {to}</>,
     <>Ability Points <b class="num grant">+{q.points}</b></>,
+    <>Skill Points <b class="num grant">+{q.skills.points}</b></>,
   ];
   if (q.cls && !q.cls.was) rewards.push(<span class="grant">ACCESS GRANTED: CLASS</span>);
   if (q.cls?.was) rewards.push(<>Class: {q.cls.was} → <strong>[Class: {q.cls.is}]</strong> · {q.cls.lead} <b class="num grant">+{q.cls.bonus}</b></>);
-  if (q.cls?.was && q.pick) rewards.push(<>{kind} available: <strong>[{kind}: {q.pick.names[0]}]</strong> or <strong>[{kind}: {q.pick.names[1]}]</strong></>);
+  if (q.skills.tier) rewards.push(<span class="grant">ACCESS GRANTED: {q.skills.tier}-RANK SKILLS</span>);
+  if (q.skills.slots) rewards.push(<>Skill slots: {q.skills.slots[0]} → {q.skills.slots[1]}</>);
   if (q.slots) rewards.push(<>Shadow slots: {q.slots[0]} → {q.slots[1]}</>);
   if (q.throne) rewards.push(<span class="grant">ACCESS GRANTED: THE HOLLOW THRONE</span>);
   if (q.ascension) rewards.push(<span class="grant">ACCESS GRANTED: ASCENSION</span>);

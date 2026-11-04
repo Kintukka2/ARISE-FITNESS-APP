@@ -94,7 +94,36 @@ try {
   await page.locator('.syswin .dontask').click(); await sleep(150); await snap('drink-offer');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
-  await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true); await close();
+  await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true);
+  // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
+  if (await page.locator('.sheet.is-top .btn', { hasText: 'Allocate' }).count()) throw new Error('THE STATS SHEET STILL ALLOCATES');
+  await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
+  if (!(await page.locator('.sheet.is-top .ia-radar__label.is-on').count())) throw new Error('THE RADAR DID NOT SHOW A VALUE');
+  await page.locator('.sheet.is-top .statsheet__radar').scrollIntoViewIfNeeded(); await snap('stats-radar');
+  await page.locator('.sheet.is-top .sysfield__help').nth(4).click(); await sleep(200);
+  if (!(await page.locator('.sheet.is-top .sysfield.is-open .sysfield__why').isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
+  await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
+  await close();
+  // The skill tree: the tile calls while a point has somewhere to go, and a point spent is reported on its card.
+  if (!(await page.locator('.btile--skills.is-call').count())) throw new Error('THE SKILLS TILE DOES NOT CALL FOR ITS POINTS');
+  await page.locator('.btile--skills .btile__hit').click(); await sleep(700); await snap('skills'); await snap('skills-full', true);
+  const can = page.locator('.sheet.is-top .st-node.is-open, .sheet.is-top .st-node.is-can').first();
+  await can.scrollIntoViewIfNeeded(); await can.click(); await sleep(250);
+  await page.locator('.sheet.is-top .st-card .btn', { hasText: /^(Learn|Level Up)$/ }).click(); await sleep(450);
+  if (!(await page.locator('.sheet.is-top .st-card__flash').isVisible())) throw new Error('A SKILL POINT SPENT WAS NOT REPORTED');
+  await snap('skills-learn');
+  // A skill left out swaps in for one taken in.
+  await page.locator('.sheet.is-top .st-node[aria-label^="Sundering Arc"]').click(); await sleep(200);
+  await page.locator('.sheet.is-top .st-card .btn', { hasText: 'Swap In' }).click(); await sleep(200);
+  await page.locator('.sheet.is-top .st-loadout').scrollIntoViewIfNeeded(); await snap('skills-swap');
+  await page.locator('.sheet.is-top .st-slot').first().click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .st-slot', { hasText: 'Sundering Arc' }).count())) throw new Error('SWAP IN DID NOT TAKE A SLOT');
+  // Another Path, chosen on the sky.
+  await page.locator('.sheet.is-top .st-skywrap').scrollIntoViewIfNeeded();
+  await page.locator('.sheet.is-top .st-sky__hit').nth(1).click(); await sleep(450);
+  if (!(await page.locator('.sheet.is-top .st-pathhead', { hasText: 'Bastion' }).count())) throw new Error('THE SKY DID NOT CHOOSE A PATH');
+  await snap('skills-bastion');
+  await close();
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
   await page.locator('.btile--inventory .btile__hit').click(); await sleep(400); await snap('inventory-grid');
   await page.locator('.invtile').first().click(); await sleep(400); await snap('item'); await close();
@@ -218,6 +247,9 @@ try {
     if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} TILE DID NOT OPEN ITS WINDOW`);
     await snap(`quest-${k}`); await close(); await sleep(250);
   }
+  // A whole build, as the sky draws it.
+  await nav('inventory');
+  await page.locator('.btile--skills .btile__hit').click(); await sleep(700); await snap('asc-skills'); await close(); await sleep(250);
   await nav('gates');
   if (!(await page.locator('.btile--ascension').isVisible())) throw new Error('THE ASCENSION TILE IS MISSING AT S-RANK');
   if (await page.locator('.gatesgrid', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');

@@ -12,7 +12,8 @@ import { trialReady } from './ascension';
 import { ready as assocReady } from './association';
 import { unseen } from './contracts';
 import { licenceRequired, licensedRank, UNLICENSED_CAP } from './licence';
-import { bankedXp, canReclassify, nextRankOf, optionsAt, RANK_UP_POINTS, rankOf, totalXpFor, type RankInfo } from './progression';
+import { SKILL_POINTS, SKILL_SLOTS } from '@/data/tree';
+import { bankedXp, canReclassify, nextRankOf, RANK_UP_POINTS, rankOf, totalXpFor, type RankInfo } from './progression';
 import type { Rank, Save, Stat } from './types';
 import { RANKS } from './types';
 import { dayKey } from './util';
@@ -29,8 +30,8 @@ export interface Reclass {
   points: number;
   /** The class the rank assigns as the hunter's stats stand, and the one it replaces. Null at Sovereign, which assigns none. */
   cls: { was: string | null; is: string; lead: Stat; bonus: number } | null;
-  /** The choice of skill or passive the rank opens in that class's line. */
-  pick: { kind: 'skill' | 'passive'; names: string[] } | null;
+  /** What the rank does for the skill tree: the Skill Points it pays, the tier it opens, and skill slots before and after when it adds one. */
+  skills: { points: number; tier: Rank | null; slots: [number, number] | null };
   /** Shadow slots before and after, when the rank adds some. */
   slots: [number, number] | null;
   /** The rank opens the Hollow Throne. */
@@ -64,7 +65,11 @@ export function reclassification(s: Save): Reclass | null {
     ready: canReclassify(s),
     points: RANK_UP_POINTS,
     cls: next ? { was: classById(s.hunter.classId)?.name ?? null, is: next.name, lead: next.lead, bonus: next.bonus } : null,
-    pick: next && rung >= 0 ? optionsAt(next.lead, rung) : null,
+    skills: {
+      points: SKILL_POINTS.rank,
+      tier: rung >= 0 ? CLASS_RANKS[rung] : null,
+      slots: SKILL_SLOTS[to.key] > SKILL_SLOTS[from.key] ? [SKILL_SLOTS[from.key], SKILL_SLOTS[to.key]] : null,
+    },
     slots: SLOTS[after] > SLOTS[grade] ? [SLOTS[grade], SLOTS[after]] : null,
     throne: after === 'S' && grade !== 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id),
     ascension: RANKS.indexOf(after) >= RANKS.indexOf(ASCENSION_FROM) && RANKS.indexOf(grade) < RANKS.indexOf(ASCENSION_FROM),

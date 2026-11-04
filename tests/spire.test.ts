@@ -5,6 +5,7 @@ import { build, mapSeed } from '@/core/map';
 import * as raid from '@/core/raid';
 import * as spire from '@/core/spire';
 import { autoAllocate, GATE_XP, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
+import { autoLearn } from '@/core/skilltree';
 import { GATE_SHARDS } from '@/core/shop';
 import { RANKS } from '@/core/types';
 import { addDays, dayKey } from '@/core/util';
@@ -24,6 +25,7 @@ function hunter(level: number) {
   reclassifyAll(s);
   autoAllocate(s);
   syncClass(s);
+  autoLearn(s);
   s.gates.cleared.push(PRACTICE_GATE.id);
   s.gates.clears = 10;
   return s;

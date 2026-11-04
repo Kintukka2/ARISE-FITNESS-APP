@@ -11,7 +11,9 @@ import { enemyById } from '@/core/gates';
 import * as shadows from '@/core/shadows';
 import * as spire from '@/core/spire';
 import { grantText, sweep, type Mission } from '@/core/missions';
-import { optionsAt, reclassify, syncClass, waiting, type XpResult } from '@/core/progression';
+import { reclassify, syncClass, type XpResult } from '@/core/progression';
+import { points as skillPoints } from '@/core/skilltree';
+import { SKILL_POINTS } from '@/data/tree';
 import { reclassification } from '@/core/quests';
 import * as story from '@/core/story';
 import * as vitals from '@/core/vitals';
@@ -28,7 +30,7 @@ export async function celebrate(xp: XpResult | null): Promise<Route | null> {
   if (!xp || xp.levels <= 0) return null;
   sfx.levelUp();
   flash('gold');
-  const v = await sys(system.levelUp(xp.levels, xp.to, xp.points));
+  const v = await sys(system.levelUp(xp.levels, xp.to, xp.points, xp.levels * SKILL_POINTS.level));
   return (v as Route | null) ?? null;
 }
 
@@ -49,17 +51,13 @@ export async function checkAwards() {
   }
   const change = store.update(syncClass);
   if (change) {
-    const fresh = waiting(store.get()).includes(change.cls.tier) ? optionsAt(change.cls.lead, change.cls.tier) : null;
-    const kind = fresh?.kind === 'skill' ? 'Skill' : 'Passive';
+    const sp = skillPoints(store.get());
     await sys(system.notify([
       change.was ? 'Class changed.' : 'Class assigned.',
       change.was ? system.change(change.was.name, system.tag(change.cls.name, 'Class')) : system.tag(change.cls.name, 'Class'),
       change.cls.desc,
       `${change.cls.lead} ${system.gain(system.signed(change.cls.bonus))}`,
-      ...(fresh ? [
-        `${kind} available: ${system.tag(fresh.names[0], kind)} or ${system.tag(fresh.names[1], kind)}`,
-        `Selected: ${fresh.names[0]}`,
-      ] : []),
+      ...(sp ? [`Skill Points: ${sp}`] : []),
     ], 'gold'));
     // A class can complete a mission of its own.
     const more = store.update(sweep);

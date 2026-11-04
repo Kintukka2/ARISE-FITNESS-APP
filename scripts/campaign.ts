@@ -21,6 +21,7 @@ import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
 import { sweep } from '@/core/missions';
 import { autoAllocate, rankFor, rankOf, reclassifyAll, syncClass } from '@/core/progression';
+import { autoLearn } from '@/core/skilltree';
 import { licensedRank } from '@/core/licence';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
@@ -62,10 +63,11 @@ function newHunter() {
   return s;
 }
 
-/** Between runs: points, class choices on their defaults, marks as the System sets them, gear, missions, the shelf and upgrades. */
+/** Between runs: points, the skill tree as Auto Assign spends it, marks as the System sets them, gear, missions, the shelf and upgrades. */
 function tidy(s: Save, now: number, t: Tally) {
   autoAllocate(s);
   syncClass(s);
+  autoLearn(s);
   setAllBySystem(s);
   sweep(s);
   gear.autoEquip(s);

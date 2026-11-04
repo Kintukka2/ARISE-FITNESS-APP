@@ -7,11 +7,14 @@
  * The keys are this game's own. The fitness app this was carved from kept
  * `arise:save`; a phone that has both never mixes them up.
  */
+import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
+import { classById } from '@/data/classes';
 import { SHADOW_RANKS } from '@/data/shadows';
+import { NODES } from '@/data/tree';
 import { rankFor } from './progression';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -23,7 +26,7 @@ export function defaults(): Save {
     hunter: {
       name: 'HUNTER', regNo: '', level: 1, xp: 0, rank: 'E',
       attrs: { STR: 5, AGI: 5, PER: 5, VIT: 5, INT: 5 },
-      points: 0, classId: null, missions: [], picks: {},
+      points: 0, classId: null, missions: [], tree: { learned: {}, equip: [], resets: 0 },
     },
     vitals: { hp: null, mp: null, fatigue: 0, at: null, lockedUntil: null },
     wallet: { shards: 0, earned: 0, spent: 0, bought: 0, receipts: [] },
@@ -100,6 +103,28 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
   4: (s) => {
     const army = isObj(s.shadows) && Array.isArray(s.shadows.army) ? s.shadows.army : [];
     for (const sh of army) if (isObj(sh) && typeof sh.rank !== 'number') sh.rank = SHADOW_RANKS.reduce((n, r, i) => ((typeof sh.kills === 'number' ? sh.kills : 0) >= r.kills ? i : n), 0);
+    return s;
+  },
+  // v6: the rungs' choices became the skill tree. What each open rung of the class's line gave, picked
+  // or by default, is learned at Lv.1, its skills taken into the fight; every other point waits to be spent.
+  5: (s) => {
+    const h = isObj(s.hunter) ? s.hunter : null;
+    if (!h) return s;
+    const picks = isObj(h.picks) ? h.picks : {};
+    const cls = typeof h.classId === 'string' ? classById(h.classId) : undefined;
+    const learned: Record<string, number> = {};
+    const equip: string[] = [];
+    for (let rung = 0; cls && rung <= cls.tier; rung++) {
+      const names = [...CLASS_SKILLS, ...CLASS_PASSIVES].filter((x) => x.line === cls.lead && x.rung === rung).map((x) => x.name);
+      const mine = isObj(picks[`${cls.lead}:${rung}`]) ? (picks[`${cls.lead}:${rung}`] as Obj).name : null;
+      const kept = typeof mine === 'string' && names.includes(mine) ? mine : names[0];
+      const node = NODES.find((n) => n.path === cls.lead && (n.skill === kept || n.passive === kept));
+      if (!node) continue;
+      learned[node.id] = 1;
+      if (node.kind === 'skill') equip.push(node.id);
+    }
+    h.tree = { learned, equip, resets: 0 };
+    delete h.picks;
     return s;
   },
 };

@@ -42,14 +42,15 @@ Everything runs on the device. There is no server, no account and no network: th
 | **The Practice Gate** | Valcorde walks every new licence through it once. Clearing it lands you on Level 5 with Ability Points to spend |
 | **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. You go in with hunters the Association sends and your Shadows. The brief simulates the System's road through today's map 24 times: the honest clear rate. It shows the map itself only once you have been inside that Gate; until then the map is unidentified, like its boss |
 | **The map** | A few layers of steps, a rest, then the boss. You pick each step: fights, gatekeepers, rests, and Unknown steps, which are events with stated odds, traps, caches or shrines, each showing what it is only when you step on it. What you find is banked and paid when you walk out; carried out, you lose it. Only a rest lets you withdraw |
-| **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then a class skill, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
+| **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then one of the skills you took in, Strike, Guard or a field potion. Allies and Shadows follow the standing orders you set in the brief. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
 | **The Pale Spire** | The one Gate that never closed, beside the board. It is climbed five floors at a time (three of choices, a rest, a boss), each block costing and paying like a Gate of its grade. Floor N is built for Level N up to Floor 100, and it keeps getting harder above that. Your best floor this week is kept; on Monday the week pays by the grade of your highest floor, the floors rearrange, and everyone climbs again |
 | **Ascension** | What comes after the climb: it opens at S-Rank, for a hunter the board no longer troubles, and is a ladder with no top. The first ten levels each make every foe stronger and add a rule of their own on top of the ones below, from thinner rests to bosses you must fight by hand; past them every level is stronger again. Each pays more. A level opens when you prove the one below it and win its Trial, the System's own: a run of named Chosen bosses with no rest between them, which no Association hunter walks into with you. Every level opened earns a mark, a lasting bonus you choose, lets your gear be upgraded a step past perfect, and sends its Trial's last Chosen out into the Gates, where it holds a Gate a day and leaves a masterwork the first time it falls. You choose the level before every Gate, on the Ascension tile, which walks you through itself the first time and shows what the next level asks |
 | **Daily Quests** | The System issues three a day for your grade: clear so many Gates, fell so many of one family, beat a gatekeeper, walk off the marked road, clear one on tired legs. Each pays a clear's shards and a tenth of its experience, all three pay a bonus, and one left undone lapses at midnight for nothing |
 | **Experience** | Every Gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and locks you out for twelve hours |
 | **Fatigue** | Each Gate adds fatigue, and fatigue drags every stat down until it fades, about five each hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). A level only qualifies you for a rank: you claim it from its Reclassification quest, and the rank-up plays. Three Ability Points per level, five per rank, spent by you |
-| **Classes** | From D-Rank the System assigns a class from your highest stat (25 classes in five lines). A class adds flat points to that stat and gives you combat skills: at D, C and A, with passives at B and S. Each of those ranks offers two and you keep one, until your next rank lets you choose again |
+| **Classes** | From D-Rank the System assigns a class from your highest stat (25 classes in five lines). A class adds flat points to that stat |
+| **The skill tree** | Every level pays a Skill Point and every rank claimed pays two more. You spend them on a tree of five Paths, one for each stat, drawn as a constellation around the hunter: Ruin, Bastion, Tempest, Arcana and Sight. Each Path holds six skills that level up to Lv.MAX, stats that take several points, notable passives and two forks where learning one passive seals the other. A tier opens at its rank once its Path holds enough points, so you choose between going deep and spreading wide; not even a Sovereign can learn it all. You take as many skills into a fight as your rank has slots, from two at D-Rank to five at Sovereign. The first reset is free |
 | **Shadows** | Felled creatures can linger after a clear. Reach for one with mana (the odds rise with INT) and it joins your army, growing with every kill. Kills earn it the next rank, from Bound through Sworn and Vanguard to Ascendant, and you promote it from its card, lifting how far it can grow; a Sworn Shadow remembers a second ability. Each wears a badge of its own: its family's glyph, its shadow, and its rank's insignia, and you may give it a name when it joins you or later from its card. Each can follow the party's standing orders or its own, and Secret Quests make room for more of them |
 | **Equipment** | Ten slots, six rarities, 538 designs. Every piece rolls its own quality and properties, and the properties apply in combat. Sixteen three-piece sets pay a bonus for two pieces worn and another for all three, and each has a home Gate whose clears leave a piece you do not have yet. Anything you hold can be upgraded with shards, a step at a time, to perfect |
 | **The Exchange** | Eight pieces a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
@@ -98,42 +99,42 @@ Combat difficulty is measured, not guessed. `npm run calibrate` runs every Gate 
 hunters from the middle of its grade, down the System's road on twelve different days' maps, and
 sets a per-Gate multiplier so they clear about 75% of the time. Then it tunes the Pale Spire the same
 way: each Gate's creatures as a block of five floors, then every block up to Floor 100 for a hunter
-of the level of its middle floor. Run it after any change to combat, enemies, classes, gear, the
-party or the map. Its hunters are seeded, so two runs give the same answer. `npm run balance`
+of the level of its middle floor. Run it after any change to combat, enemies, classes, the skill
+tree, gear, the party or the map. Its typical hunters spend their Skill Points as Auto Assign does. Its hunters are seeded, so two runs give the same answer. `npm run balance`
 prints the result:
 
 ```
 grade  floor  middle  top   | middle vs one grade up
-  E     59%    67%    78%  |   9%
-  D     62%    65%    72%  |   10%
-  C     74%    84%    88%  |   11%
-  B     78%    82%    90%  |   8%
-  A     64%    73%    81%  |   13%
-  S     41%    62%    85%  |   —
+  E     59%    67%    78%  |   6%
+  D     52%    70%    80%  |   6%
+  C     66%    83%    94%  |   3%
+  B     75%    86%    93%  |   4%
+  A     60%    75%    80%  |   3%
+  S     50%    83%    92%  |   —
 
 The Spire: a hunter on the block holding the floor of their own level (floor / middle / top of each grade).
   E   L3 47%      L6 78%      L9 89%
-  D   L10 100%    L15 92%     L19 100%
-  C   L20 97%     L27 61%     L34 59%
-  B   L35 74%     L42 91%     L49 93%
-  A   L50 99%     L60 88%     L69 64%
-  S   L70 92%     L85 44%     L100 79%
-  Level 100, above Floor 100:  F101 52%  F111 47%  F121 51%  F131 51%  F151 9%
+  D   L10 100%    L15 99%     L19 100%
+  C   L20 93%     L27 52%     L34 74%
+  B   L35 79%     L42 86%     L49 83%
+  A   L50 100%    L60 95%     L69 74%
+  S   L70 98%     L85 90%     L100 91%
+  Level 100, above Floor 100:  F101 77%  F111 70%  F121 52%  F131 39%  F151 24%
 
 Days to each rank (N Gates a day at your own grade, 75% cleared, first clears counted):
-   3 gates/day  D:2d  C:8d  B:19d  A:38d  S:73d  N:135d
-   + contracts  D:2d  C:7d  B:16d  A:32d  S:61d  N:112d
-   6 gates/day  D:1d  C:4d  B:10d  A:19d  S:37d  N:68d
-   + contracts  D:1d  C:4d  B:9d  A:18d  S:34d  N:62d
-  10 gates/day  D:1d  C:3d  B:6d  A:12d  S:22d  N:41d
-   + contracts  D:1d  C:3d  B:6d  A:11d  S:21d  N:39d
+   3 Gates/day    D:2d  C:8d  B:19d  A:38d  S:73d  N:135d
+  + Daily Quests  D:2d  C:7d  B:16d  A:32d  S:61d  N:112d
+   6 Gates/day    D:1d  C:4d  B:10d  A:19d  S:37d  N:68d
+  + Daily Quests  D:1d  C:4d  B:9d  A:18d  S:34d  N:62d
+  10 Gates/day    D:1d  C:3d  B:6d  A:12d  S:22d  N:41d
+  + Daily Quests  D:1d  C:3d  B:6d  A:11d  S:21d  N:39d
 ```
 
 A single day's odds move a lot with its map and the allies the Association sends, on a Gate and on
 the Spire alike; that is what the brief's assessment is for. The figures above average over days.
 
-A hunter at the bottom of a grade clears its Gates about half to two thirds of the time, and one at the top
-about four times in five. Reaching a grade above your own is possible, and costly. Sovereign takes about two
+A hunter at the bottom of a grade clears its Gates about half to three quarters of the time, and one at the top
+four times in five or better, because every level pays a Skill Point as well as Ability Points. Reaching a grade above your own is possible, and costly. Sovereign takes about two
 months at six Gates a day. Each `+ contracts` line also finishes every Daily Quest every day, which
 is worth most to the hunter who raids least. The economy model assumes you raid at your own grade;
 fatigue makes ten a day at S-Rank a hard thing to keep up.

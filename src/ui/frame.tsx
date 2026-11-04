@@ -8,6 +8,7 @@
  * advancement, orange for Gates, violet for Shadows. The text inside is white and glows that colour.
  */
 import type { ComponentChildren } from 'preact';
+import { useState } from 'preact/hooks';
 import type { Kind } from './overlays';
 import { Glyph } from './icons';
 
@@ -67,11 +68,20 @@ export function SysFrame({ title, icon, tools, kind = 'system', class: cls, tour
 }
 
 /** A labelled value, as the source sets its fields: the label small above, the value under it. */
-export function Field({ k, v, wide }: { k: string; v: ComponentChildren; wide?: boolean }) {
+/**
+ * A field: its label small, in capitals, above its value. With `help`, a `?` beside the label opens a
+ * line on what the field means, the interface explaining inside the System's frame; a pointer that
+ * can hover shows it on hover too.
+ */
+export function Field({ k, v, wide, help }: { k: string; v: ComponentChildren; wide?: boolean; help?: string }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div class={`sysfield ${wide ? 'is-wide' : ''}`}>
-      <span>{k}:</span>
+    <div class={`sysfield ${wide ? 'is-wide' : ''} ${help ? 'has-help' : ''} ${open ? 'is-open' : ''}`}>
+      <span>{k}:{help && (
+        <button type="button" class="sysfield__help" aria-label={`What ${k} means`} aria-expanded={open} onClick={() => setOpen(!open)}>?</button>
+      )}</span>
       <b>{v}</b>
+      {help && <small class="sysfield__why">{help}</small>}
     </div>
   );
 }

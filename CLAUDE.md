@@ -16,8 +16,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - `npm run screens` — screenshots every screen from `e2e/fixtures/veteran.json`. Look at them after
   UI work. Regenerate the fixture with `npm run fixture` if the save shape changed.
 - `npm run calibrate`, then `npm run balance` — after any change to combat, enemies, abilities,
-  classes, gear, the party, the map or the Ability Points a hunter earns. Commit the rewritten
-  `src/data/gatetune.ts`.
+  classes, the skill tree, gear, the party, the map or the Ability or Skill Points a hunter earns.
+  Commit the rewritten `src/data/gatetune.ts`.
 - `npm run campaign` — plays two hunters from Level 1 for 120 days through the real engine. Run it
   after a change to what anything pays or costs. It reads the brief before every run, so it takes a few
   minutes.
@@ -44,6 +44,11 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.
 - The brief, Auto and calibration all walk the System's road (`map.systemRoad`) and make the
   System's choices (`raid.systemChoice`). Change either and you must recalibrate.
+- The skill tree (`core/skilltree.ts`, `data/tree.ts`) reaches the fight only through
+  `raid.heroSpec`, and an open run keeps the hero it walked in with. Skill Points are never stored:
+  they are what the level and the ranks claimed have earned, less what the tree holds. The balance
+  tools' hunters spend them with `autoLearn`, as Auto Assign does; change how it spends and you must
+  recalibrate.
 - The fight is deterministic for a seed and a list of orders. The hunter's orders are written to
   the open run (`raid.order`) before they play, and a chamber is resumed by replaying them
   (`raid.resume`). Never let anything in a fight read `Math.random` or the clock.

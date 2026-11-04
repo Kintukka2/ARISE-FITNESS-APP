@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import { upgradeCount } from '@/core/gear';
-import { rankOf, waiting, xpToNext } from '@/core/progression';
+import { rankOf, xpToNext } from '@/core/progression';
+import { canSpend } from '@/core/skilltree';
 import { waiting as questsWaiting } from '@/core/quests';
 import { licensedRank } from '@/core/licence';
 import { promotable } from '@/core/shadows';
@@ -102,7 +103,7 @@ export function NavBar() {
   const r = route.use();
   const badge = (k: Route): string | null => {
     if (k === 'inventory') {
-      const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0) + waiting(s).length;
+      const n = s.hunter.points + (upgradeCount(s) > 0 ? 1 : 0) + (canSpend(s) ? 1 : 0);
       return n > 0 ? String(n) : null;
     }
     // The day's Daily Quests until the Quests screen has shown them, and a Trial with today's attempt unused.
