@@ -8,6 +8,7 @@ import * as shadows from '@/core/shadows';
 import { autoAllocate, grantXP, totalXpFor, reclassifyAll } from '@/core/progression';
 import type { Shadow } from '@/core/types';
 import { rng } from '@/core/util';
+import * as vitals from '@/core/vitals';
 import { walk } from './walk';
 
 const now = Date.parse('2026-02-04T12:00:00');
@@ -140,5 +141,58 @@ describe('orders of its own', () => {
     shadows.setTactic(s, sh.id, null);
     expect(s.shadows.army[0].tactic).toBeUndefined();
     expect(enemyById(two.id)).toBeTruthy();
+  });
+});
+
+describe('extraction', () => {
+  /** A hunter with mana enough for every reach, and a creature lingering at a first reach of 50 MP. */
+  function reaching() {
+    const s = defaults();
+    grantXP(s, totalXpFor(60));
+    s.hunter.attrs.INT = 90;
+    const l: raid.Lingering = { enemyId: one.id, boss: false, cost: 50, tries: 0 };
+    return { s, l, mp: () => vitals.read(s, now).mp };
+  }
+
+  it('a reach that fails leaves the Shadow lingering, each reach at twice the last, three in all', () => {
+    const { s, l, mp } = reaching();
+    const start = mp();
+    expect(raid.reachesLeft(l)).toBe(shadows.EXTRACT_TRIES.max);
+    expect(raid.reachCost(l)).toBe(50);
+    expect(raid.extract(s, l, 0.99, now)).toBe('failed');
+    expect(raid.reachCost(l)).toBe(100);
+    expect(raid.extract(s, l, 0.99, now)).toBe('failed');
+    expect(raid.reachCost(l)).toBe(200);
+    expect(raid.extract(s, l, 0.99, now)).toBe('lost');
+    expect(start - mp()).toBe(50 + 100 + 200);
+    // Dispersed: nothing more to reach for, and nothing spent trying.
+    expect(raid.reachesLeft(l)).toBe(0);
+    expect(raid.extract(s, l, 0, now)).toBe('lost');
+    expect(start - mp()).toBe(350);
+    expect(s.shadows.army).toHaveLength(0);
+    expect(s.stats.extractions).toBe(3);
+  });
+
+  it('a reach that holds binds it, at the cost it showed, and ends the reaching', () => {
+    const { s, l, mp } = reaching();
+    raid.extract(s, l, 0.99, now);
+    const before = mp();
+    expect(raid.extract(s, l, 0, now)).toBe('bound');
+    expect(before - mp()).toBe(100);
+    expect(s.shadows.army.map((x) => x.enemyId)).toEqual([one.id]);
+    expect(raid.reachesLeft(l)).toBe(0);
+    expect(raid.extract(s, l, 0, now)).toBe('lost');
+    expect(s.shadows.army).toHaveLength(1);
+  });
+
+  it('a reach short of mana spends nothing and keeps its place', () => {
+    const { s, l, mp } = reaching();
+    raid.extract(s, l, 0.99, now);
+    raid.extract(s, l, 0.99, now);
+    s.vitals.mp = 150;
+    s.vitals.at = now;
+    expect(raid.extract(s, l, 0, now)).toBe('no-mana');
+    expect(mp()).toBe(150);
+    expect(raid.reachesLeft(l)).toBe(1);
   });
 });

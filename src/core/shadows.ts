@@ -15,6 +15,8 @@ import { STATS } from './types';
 import { clamp, dayKey, uid } from './util';
 
 export const EXTRACT_MP: Record<string, number> = { E: 50, D: 60, C: 70, B: 80, A: 90, S: 100 };
+/** A lingering Shadow can be reached for this many times, until it holds; each reach costs `step` times the one before. */
+export const EXTRACT_TRIES = { max: 3, step: 2 } as const;
 /** +1% to every attribute per kill, up to its rank's cap. */
 export const GROWTH_PER_KILL = 0.01;
 

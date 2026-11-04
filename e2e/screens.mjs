@@ -147,6 +147,13 @@ try {
   await nav('gates');
   await snap('gates', true);
   if (await page.locator('.btile--ascension').count()) throw new Error('THE ASCENSION TILE SHOWED BELOW S-RANK');
+  // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
+  if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
+  if ((await page.locator('.vitalstrip .vrow').count()) < 3) throw new Error('THE CONDITION STRIP IS NOT UNDER VALCORDE');
+  await page.locator('.vitalstrip .pip').nth(1).click(); await sleep(400);
+  if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
+  await snap('gates-potion');
+  await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.btile--grade .btile__hit').click(); await sleep(400); await snap('grade'); await close();
   // The Pale Spire's next block, beside the board.
   await page.locator('.btile--spire .btile__hit').click(); await sleep(800); await snap('spire-brief', true);
@@ -174,7 +181,9 @@ try {
     await page.waitForSelector('.arena', { timeout: 10000 });
     await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
     await page.locator('button.gnode.is-next').first().click();
-    await page.waitForSelector('.turnbar', { timeout: 20000 });
+    // A floor the party clears before the hunter's turn comes back to the map with no turn to give.
+    await sleep(1200);
+    await page.waitForSelector('.turnbar, button.gnode.is-next', { timeout: 20000 });
     await drain();
     if (!/floor \d+ of \d+/i.test(await page.locator('.arena__head').innerText())) throw new Error('THE SPIRE DID NOT COUNT FLOORS');
     await snap('spire-turn');

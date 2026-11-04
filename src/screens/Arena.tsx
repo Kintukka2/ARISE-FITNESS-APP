@@ -523,24 +523,34 @@ const MANA = shop.POTIONS.find((p) => p.id === 'mp')!;
 /**
  * The extraction of one lingering Shadow, on the System's sheet: what it was, the cost and the odds,
  * and the hold. The roll is made the moment the hold completes, so the button finishes on it: ARISE,
- * or Failed. Bound, the System offers a name.
+ * or Failed. A reach that fails leaves it lingering while reaches are left, each at twice the MP of
+ * the last; the last to fail disperses it. Bound, the System offers a name.
  */
-function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => void; onResult: (res: 'bound' | 'lost', id?: string) => void }) {
+function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => void; onResult: (res: Reach, id?: string) => void }) {
   const s = useSave();
   const v = vitals.read(s);
   const e = enemyById(l.enemyId)!;
-  const rolled = useRef<{ res: 'bound' | 'lost' | 'no-mana'; id?: string } | null>(null);
-  const [out, setOut] = useState<{ res: 'bound' | 'lost'; id?: string } | null>(null);
+  const rolled = useRef<{ res: Reach | 'no-mana'; id?: string } | null>(null);
+  const [out, setOut] = useState<{ res: Reach; id?: string } | null>(l.bound ? { res: 'bound' } : raid.reachesLeft(l) <= 0 ? { res: 'lost' } : l.tries ? { res: 'failed' } : null);
   const odds = Math.round(shadows.holdChance(s) * 100);
+  const cost = raid.reachCost(l);
+  const left = raid.reachesLeft(l);
+  const again = !out || out.res === 'failed';
   return (
     <div class={`stack extract ${out ? `is-${out.res}` : ''}`}>
-      <div class="extract__who"><FamilyGlyph family={e.family} size={30} /><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
-      {!out && <>
-        <p>The mana of <strong>[{e.name}]</strong> lingers.</p>
-        <p class="muted">Extraction cost: <b>{l.cost} MP</b> ({v.mp} MP held)<br />Success rate: <b>{odds}%</b></p>
-        {v.mp >= l.cost || rolled.current
-          // It stays up while it settles, though the extraction has spent the MP it showed.
-          ? <HoldButton hold={{ label: 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE', failed: 'Failed', after: 900 }}
+      <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
+      {again && <>
+        <p>The mana of <strong>[{e.name}]</strong> {l.tries ? 'still lingers' : 'lingers'}.</p>
+        {/* After a failure the reach's terms are the warning, in red: what failed, what is left, what the next one costs. */}
+        <p class={`extract__terms ${l.tries ? 'warn' : ''}`} key={`t${l.tries}`}>
+          {l.tries ? <>[Skill: Extraction] has failed.<br /></> : null}
+          Attempts left: {left}<br />
+          Extraction cost: {cost} MP
+        </p>
+        <p class="muted">Success rate: <b>{odds}%</b></p>
+        {v.mp >= cost || rolled.current?.res === 'bound'
+          // A fresh hold for every reach; it stays up while it settles, though the reach has spent the MP it showed.
+          ? <HoldButton key={l.tries} hold={{ label: l.tries ? 'Hold To Extract Again' : 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE', failed: 'Failed', after: 900 }}
             decide={() => {
               const res = store.update((x) => raid.extract(x, l, Math.random()));
               const id = res === 'bound' ? store.get().shadows.army[store.get().shadows.army.length - 1]?.id : undefined;
@@ -550,17 +560,20 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
             onFire={() => {
               const got = rolled.current;
               if (!got || got.res === 'no-mana') return;
+              rolled.current = null;
               setOut({ res: got.res, id: got.id });
               onResult(got.res, got.id);
               if (got.res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); }
+              else buzz(40);
             }} />
           : <>
-            <p class="warn">Not enough MP. ({v.mp}/{l.cost})</p>
+            <p class="warn">Not enough MP. ({v.mp}/{cost})</p>
             {/* Short of mana with the Shadow still lingering: a Mana Potion, held or bought, drunk here, without leaving. */}
             <Btn size="sm" block onClick={() => void drinkFlow('mp')}>
               <Glyph name="potion" /> {shop.held(s, 'mp') ? <>Drink {MANA.name} · Held: {shop.held(s, 'mp')}</> : <>Buy {MANA.name} · <Shard size={12} /> <span class="num">{MANA.price}</span></>}
             </Btn>
           </>}
+        {out?.res === 'failed' && <Btn block onClick={close}>Close</Btn>}
       </>}
       {out?.res === 'bound' && out.id && <>
         <p class="grant">Extraction successful.</p>
@@ -576,12 +589,15 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
   );
 }
 
+/** How a reach for a lingering Shadow ended: it held, it failed with reaches left, or the last failed. */
+type Reach = 'bound' | 'failed' | 'lost';
+
 function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: () => void }) {
   const s = useSave();
   // Everything the run found, to turn over by its grade (ui/loot.tsx).
   const [found] = useState(() => r.loot.map((item) => ({ item })));
   const turn = useReveal(found);
-  const [reach, setReach] = useState<Record<number, 'bound' | 'lost' | 'no-mana'>>({});
+  const [reach, setReach] = useState<Record<number, Reach>>({});
   // The Shadow each extraction bound, by the lingering it came from.
   const [joined, setJoined] = useState<Record<number, string>>({});
   /** The extraction of a lingering Shadow, opened from its alert: the System's sheet, with the hold. */
@@ -612,8 +628,8 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
       });
       if (v !== 'leave') { revealAll(); return; }
     }
-    // A Shadow still lingering disperses when the hunter walks out: a reminder, once.
-    const waiting = r.lingering.findIndex((_, i) => !reach[i]);
+    // A Shadow still lingering, with reaches left, disperses when the hunter walks out: a reminder, once.
+    const waiting = r.lingering.findIndex((l) => raid.reachesLeft(l) > 0);
     if (waiting >= 0) {
       const v = await sys({
         title: 'A Shadow Lingers', kind: 'app', typed: false,
@@ -676,15 +692,17 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             {r.lingering.map((l, i) => {
               const e = enemyById(l.enemyId)!;
               const out = reach[i];
+              const done = out === 'bound' || out === 'lost';
               const sh = joined[i] ? s.shadows.army.find((x) => x.id === joined[i]) : undefined;
               return (
                 <SysAlert key={`${l.enemyId}-${i}`} kind="shadow" delay={400 + i * 200} class={out ? `is-${out}` : ''}
-                  label={out ? undefined : `The mana of ${e.name} lingers. Open the extraction.`}
+                  label={done ? undefined : `The mana of ${e.name} ${out ? 'still lingers' : 'lingers'}. Open the extraction.`}
                   icon={sh ? <ShadowEmblem family={e.family} rank={0} size={36} /> : <FamilyGlyph family={e.family} size={30} />}
-                  onTap={out ? undefined : () => openExtraction(i)}
+                  onTap={done ? undefined : () => openExtraction(i)}
                   aside={out === 'bound' ? <span class="grant">ARISE</span> : out === 'lost' ? <span class="warn">Failed</span> : null}>
                   {out === 'bound' ? <><strong>[{sh ? shadows.nameOf(sh) : e.shadow}]</strong> has joined your army.</>
                     : out === 'lost' ? <>The mana of <strong>[{e.name}]</strong> has dispersed.</>
+                    : out === 'failed' ? <>The mana of <strong>[{e.name}]</strong> still lingers. Attempts left: {raid.reachesLeft(l)}</>
                     : <>The mana of <strong>[{e.name}]</strong> lingers.</>}
                 </SysAlert>
               );

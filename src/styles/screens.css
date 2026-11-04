@@ -72,6 +72,10 @@
 .status__rank { gap: 6px; }
 .status .linkish { text-decoration-color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
 .sysframe .vitals { border: 1px solid var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
+/* The condition strip on the Gates screen: the Status sheet's vitals, as tight as a glance. */
+.vitalstrip > .sysframe__glass { padding: 8px 10px; }
+.vitalstrip .vitals { gap: 6px; padding: 8px 10px; }
+.vitalstrip .pip { min-height: 30px; min-width: 64px; justify-content: center; }
 .sysframe .vrow > .ico { color: var(--sys-ink); filter: drop-shadow(0 0 4px var(--win-glow)); }
 .sysframe .vrow .num { font-size: 0.92rem; }
 .sysframe .pip { border-radius: 0; font-family: var(--font-sys); font-size: 0.72rem; }

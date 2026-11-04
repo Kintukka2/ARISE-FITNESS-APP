@@ -36,12 +36,12 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Card, Chip, RankPlate, Section, Shards, Tile, useNow, Voice } from '@/ui/components';
 import { BentoGrid, type Tile as BTile } from '@/ui/bento';
-import { Field } from '@/ui/frame';
+import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
-import { drinkFlow, MiniBar, openDossier, openStatus } from './Inventory';
+import { drinkFlow, openDossier, VitalsBlock } from './Inventory';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -71,9 +71,18 @@ export function Gates() {
   return (
     <div class="stack">
       <Voice>{coachLine(s)}</Voice>
+      <Condition />
       <BentoGrid class="gatesgrid" tiles={topTiles(s)} label="Gates" />
     </div>
   );
+}
+
+/**
+ * The hunter's condition at a glance, under Valcorde's line: HP, MP and Fatigue, each with its potion
+ * one tap away, held or bought, and the lockout with its elixir while it holds. The System's, so its frame.
+ */
+function Condition() {
+  return <SysFrame class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
 }
 
 /** GATES: every Gate standing open today, filtered by grade, a tile to each. */
@@ -132,7 +141,7 @@ function boardTile(s: Save, gates: Dungeon[]): BTile {
   };
 }
 
-/** What stands above the board: the run left open, the hunter's grade and condition, their record, the Spire and Ascension. */
+/** What stands above the board: the run left open, the hunter's grade, their record, the Spire and Ascension. */
 function topTiles(s: Save): BTile[] {
   const out: BTile[] = [];
   const day = dayKey();
@@ -161,20 +170,6 @@ function topTiles(s: Save): BTile[] {
     status: holding ? `Held at ${mine}-Rank.` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank.`,
     art: <span class="ga-emblem"><i class="ga-emblem__ring" /><i class="ga-emblem__ring" /><Sigil rank={mine} size={50} /></span>,
     open: openGrade,
-  });
-  const v = vitals.read(s);
-  out.push({
-    key: 'condition', kind: 'system', name: 'Condition', head: true, tour: 'vitals', icon: <Glyph name="bolt" />, hot: v.locked,
-    count: `FTG ${Math.round(v.fatigue)}`,
-    status: v.locked ? `Carried out. Fit in ${Math.ceil(v.lockedFor / 36e5)}h.` : `Strength: ${Math.round(v.drag * 100)}%`,
-    art: (
-      <span class="ia-bars ia-bars--stack">
-        <MiniBar label="HP" cur={v.hp} max={v.hpMax} tone="hp" />
-        <MiniBar label="MP" cur={v.mp} max={v.mpMax} tone="mp" />
-        <MiniBar label="FTG" cur={v.fatigue} max={vitals.FATIGUE_MAX} tone="ftg" />
-      </span>
-    ),
-    open: openStatus,
   });
   const entered = s.gates.clears + s.gates.fails + s.gates.withdrawn;
   out.push({
@@ -224,6 +219,9 @@ function topTiles(s: Save): BTile[] {
       open: openAscension,
     });
   }
+  // Tiles go two to a row: an odd one out takes the row's whole width.
+  const halves = out.filter((t) => !t.wide);
+  if (halves.length % 2) halves[halves.length - 1].wide = true;
   return out;
 }
 
