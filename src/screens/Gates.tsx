@@ -1,7 +1,7 @@
 /** The Gates: the board, the brief, and the way in. */
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { powerOf, TACTICS } from '@/core/combat';
+import { powerOf } from '@/core/combat';
 import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
@@ -120,21 +120,26 @@ function BoardSheet() {
 /** The board as one tile: a portal to each grade, the count of its Gates open, dimmed where the licence stops. */
 function boardTile(s: Save, gates: Dungeon[]): BTile {
   return {
-    key: 'board', kind: 'gates', name: 'Open Gates', head: true, wide: true, tour: 'bands', icon: <Glyph name="gates" />,
+    // The screen's centre: the way into everything else on it. It stands out by its size, its light and its call.
+    key: 'board', kind: 'gates', name: 'Open Gates', head: true, wide: true, tour: 'bands', icon: <Glyph name="gates" />, class: 'btile--focus',
     count: gates.length,
     status: <>Redraw: <b class="num">{hhmmss(msUntilMidnight())}</b></>,
     art: (
-      <span class="ga-board">
-        {RANKS.map((r) => {
-          const here = gates.filter((d) => d.rank === r);
-          const open = here.some((d) => entryBlock(s, d) !== 'licence');
-          return (
-            <span key={r} class={`ga-board__one ${here.length ? '' : 'is-none'} ${open ? '' : 'is-shut'}`} style={`--rc: var(--rank-${r})`}>
-              <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
-              <small class="num">{here.length}</small>
-            </span>
-          );
-        })}
+      <span class="ga-focus">
+        <i class="ga-focus__rays" />
+        <span class="ga-board">
+          {RANKS.map((r) => {
+            const here = gates.filter((d) => d.rank === r);
+            const open = here.some((d) => entryBlock(s, d) !== 'licence');
+            return (
+              <span key={r} class={`ga-board__one ${here.length ? '' : 'is-none'} ${open ? '' : 'is-shut'}`} style={`--rc: var(--rank-${r})`}>
+                <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
+                <small class="num">{here.length}</small>
+              </span>
+            );
+          })}
+        </span>
+        <span class="ga-focus__cta">View All Gates <Glyph name="chevron" /></span>
       </span>
     ),
     open: openBoard,
@@ -601,14 +606,6 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             )}
           </Section>
         )}
-
-      <Section title="Standing orders" right={party.length && squad.length ? 'For allies and Shadows' : party.length ? 'For allies' : squad.length ? 'For Shadows' : undefined}>
-        <div class="chips chips--orders" aria-label="Standing orders" data-tour="orders">
-          {TACTICS.map((x) => <Chip key={x.key} on={s.gates.tactic === x.key} onClick={() => store.update((y) => { y.gates.tactic = x.key; })}>{x.name}</Chip>)}
-        </div>
-        <p class="muted">{TACTICS.find((x) => x.key === s.gates.tactic)?.desc}</p>
-        {squad.some((x) => x.tactic) && <small class="muted">Shadows on their own orders: {squad.filter((x) => x.tactic).length}</small>}
-      </Section>
 
       <Section title="Satchel" right={`${s.satchel}/${shop.satchelMax(s)}`}>
         <p><strong>[Item: Field Potion]</strong> <span class="grant">HP +{shop.FIELD_POTION.heal * 100}%</span></p>

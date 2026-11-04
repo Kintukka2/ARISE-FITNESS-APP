@@ -165,11 +165,18 @@ try {
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess'); await close();
   await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
   await page.locator('.sheet.is-top .btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit').first().click(); await sleep(800); await snap('brief', true);
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-orders');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
+  // The Association's hunters are not the hunter's to order: the brief holds no standing orders.
+  if (await page.locator('.sheet.is-top .chips--orders').count()) throw new Error('THE BRIEF STILL GIVES STANDING ORDERS');
   await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
   await page.waitForSelector('.arena', { timeout: 10000 });
   await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
   await sleep(400); await snap('arena-map');
+  // The orders for the next fight are on the map, between fights, and changing them holds.
+  if (!(await page.locator('.runorders .chip--btn').count())) throw new Error('THE MAP DOES NOT OFFER ORDERS FOR THE NEXT FIGHT');
+  await page.locator('.runorders .chip--btn', { hasText: 'Finish The Weakest' }).click(); await sleep(200);
+  if (!(await page.locator('.runorders .chip--btn.is-on', { hasText: 'Finish The Weakest' }).count())) throw new Error('THE ORDERS DID NOT CHANGE');
+  await page.locator('.runorders').scrollIntoViewIfNeeded(); await snap('arena-orders');
   await page.locator('button.gnode.is-next').first().click();
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();

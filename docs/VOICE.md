@@ -721,6 +721,11 @@ Skill level increased.
 Hammerblow  Lv.1  →  Lv.2
 ```
 
+A skill that does no damage reads as what it does: `Every foe · Inflicts Weakened · No damage. Never
+misses`, `Every foe's next action goes at you. You guard until your next turn`, `The whole party: HP
++15%`. In the fight log a curse is its name alone (`✦ Hunter: Dread Roar.`) with the statuses after it,
+a taunt counts what it turned (`Foes turned: 3.`), and a heal gives each HP back on its own line.
+
 Its buttons: `Learn` for a node's first point, `Level Up` for every point after, and for a skill
 learned `Equip`, `Unequip`, or `Swap In` when every slot is full, which lights the slots in gold for
 the hunter to pick one. Under it, the passives learned as boxes, then `Auto Assign` (gold, while a

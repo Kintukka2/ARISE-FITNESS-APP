@@ -295,6 +295,18 @@ export function pending(d: Dungeon, run: OpenRaid): MapNode | null {
   return path.length > run.at ? mapOf(d, run).byId[path[run.at]] ?? null : null;
 }
 
+/**
+ * Set the standing orders. Between steps of an open run they hold for the fights still to come in it;
+ * a fight underway keeps the orders it opened with, since its replay reads them. The hunter's next runs
+ * go in with them too. False if a step is underway. Mutates.
+ */
+export function setTactic(s: Save, d: Dungeon | null, run: OpenRaid | null, t: Tactic): boolean {
+  if (run && d && pending(d, run)) return false;
+  s.gates.tactic = t;
+  if (run) run.tactic = t;
+  return true;
+}
+
 /** Where the hunter can step next. Nothing, while a step is still underway. */
 export function options(d: Dungeon, run: OpenRaid): MapNode[] {
   if (pending(d, run) || run.lost) return [];

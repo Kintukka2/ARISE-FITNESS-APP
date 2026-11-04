@@ -11,6 +11,20 @@
  */
 import type { Ability, Passive, Stat } from '@/core/types';
 
+/**
+ * Each Path's utility: a skill that does no damage. It curses every foe, turns them on the hunter,
+ * or holds the party up. Only the tree teaches them; the Association's hunters never fight with them.
+ */
+export const TREE_SKILLS: Ability[] = [
+  { name: 'Dread Roar', type: 'physical', profile: 'all', mult: 0, cd: 3, inflicts: ['Weakened'] },
+  { name: 'Challenge', type: 'physical', profile: 'taunt', mult: 0, cd: 3, inflicts: [] },
+  { name: 'Smoke Veil', type: 'physical', profile: 'support', mult: 0, cd: 4, inflicts: [], grant: 'Veiled' },
+  { name: 'Renewal', type: 'magic', profile: 'support', mult: 0, cd: 3, inflicts: [], heal: 0.15 },
+  { name: "Hunter's Mark", type: 'physical', profile: 'all', mult: 0, cd: 3, inflicts: ['Marked'] },
+];
+/** A skill that does no damage: a curse, a taunt or a support. */
+export const isUtility = (a: Pick<Ability, 'mult' | 'profile'>) => a.mult === 0 || a.profile === 'support' || a.profile === 'taunt';
+
 /** Skill Points: this many each level past the first, and this many more for each rank claimed. */
 export const SKILL_POINTS = { level: 1, rank: 2 } as const;
 
@@ -118,6 +132,8 @@ interface PathSpec {
   /** The B tier's fork and its notable, then the S tier's. */
   forkB: [string, string];
   noteB: string;
+  /** The right lane's utility, at B, between its C and A skills. */
+  util: string;
   forkS: [string, string];
   noteS: string;
 }
@@ -128,41 +144,41 @@ const SPECS: PathSpec[] = [
     left: [['Hammerblow', lv({ inflicts: ['Staggered'] })], ['Sundering Arc', lv({ profile: 'volley' })], ['Cataclysm', lv({ cd: -1 })]],
     right: [['Rend', lv({ profile: 'cleave' })], ['Skullsplitter', lv({ inflicts: ['Staggered'] })], ["Titan's Fall", lv({ cd: -1 })]],
     attr: ['Might', 2], mid: ['Heavy Hands', { patk: 0.04 }], late: ['Unbowed', { maxHp: 0.05 }],
-    forkB: ['Blood Up', 'Scarred Hide'], noteB: 'Bloodthirst', forkS: ['Immovable Guard', 'Undying Rage'], noteS: 'Rampage',
+    forkB: ['Blood Up', 'Scarred Hide'], noteB: 'Bloodthirst', util: 'Dread Roar', forkS: ['Immovable Guard', 'Undying Rage'], noteS: 'Rampage',
   },
   {
     key: 'VIT',
     left: [['Shield Blow', lv({ profile: 'cleave' })], ['Shieldwall', [{ cd: -1 }]], ['Unyielding Advance', lv({ profile: 'volley' })]],
     right: [['Shoulder Charge', lv({ inflicts: ['Staggered'] })], ['Iron Retort', lv({ profile: 'volley' })], ['Earthshaker', lv({ inflicts: ['Staggered'] })]],
     attr: ['Toughness', 2], mid: ['Iron Skin', { defense: 0.05 }], late: ['Lifeblood', { recovery: 0.06 }],
-    forkB: ['Deep Reserves', 'Stone Footing'], noteB: 'Spiked Guard', forkS: ['Last Word', 'Rallying Wall'], noteS: 'Unbroken',
+    forkB: ['Deep Reserves', 'Stone Footing'], noteB: 'Spiked Guard', util: 'Challenge', forkS: ['Last Word', 'Rallying Wall'], noteS: 'Unbroken',
   },
   {
     key: 'AGI',
     left: [['Quick Cut', lv({ inflicts: ['Bleeding'] })], ['Bladestorm', lv({ profile: 'volley' })], ['Afterimage', lv({ cd: -1 })]],
     right: [['Venom Edge', lv({ profile: 'cleave' })], ['Hamstring', lv({ inflicts: ['Marked'] })], ['Thousand Cuts', lv({ profile: 'burst' })]],
     attr: ['Swiftness', 2], mid: ['Fleet Foot', { evasion: 4 }], late: ['Quicksilver', { initiative: 6 }],
-    forkB: ['Light Step', "Hunter's Read"], noteB: 'Ambush', forkS: ['Bladework', 'Not There'], noteS: 'Flurry',
+    forkB: ['Light Step', "Hunter's Read"], noteB: 'Ambush', util: 'Smoke Veil', forkS: ['Bladework', 'Not There'], noteS: 'Flurry',
   },
   {
     key: 'INT',
     left: [['Mana Bolt', lv({ profile: 'cleave' })], ['Hex', lv({ inflicts: ['Weakened'] })], ['Mindbreak', lv({ cd: -1 })]],
     right: [['Frost Needle', lv({ profile: 'cleave' })], ['Flame Lash', lv({ profile: 'volley' })], ['Starfall', lv({ inflicts: ['Cursed'] })]],
     attr: ['Insight', 2], mid: ['Mana Flow', { mpow: 0.04 }], late: ['Spellcraft', { statusChance: 5 }],
-    forkB: ['Warded Mind', 'Overflow'], noteB: 'Lingering Curse', forkS: ['Field Command', 'Soul Anchor'], noteS: 'Unravel',
+    forkB: ['Warded Mind', 'Overflow'], noteB: 'Lingering Curse', util: 'Renewal', forkS: ['Field Command', 'Soul Anchor'], noteS: 'Unravel',
   },
   {
     key: 'PER',
     left: [['Precise Shot', lv({ inflicts: ['Marked'] })], ['Weak Point', lv({ inflicts: ['Corroded'] })], ['Killing Sight', lv({ cd: -1 })]],
     right: [['Pinning Shot', lv({ inflicts: ['Marked'] })], ['Scatter Shot', lv({ profile: 'burst' })], ['Execution', lv({ cd: -1 })]],
     attr: ['Focus', 2], mid: ['Steady Aim', { accuracy: 5 }], late: ['Deadly Aim', { crit: 2 }],
-    forkB: ['Killer Instinct', 'Patient Eye'], noteB: 'Cull', forkS: ['True Sight', 'Lethal Precision'], noteS: 'Deadeye',
+    forkB: ['Killer Instinct', 'Patient Eye'], noteB: 'Cull', util: "Hunter's Mark", forkS: ['True Sight', 'Lethal Precision'], noteS: 'Deadeye',
   },
 ];
 
 const slug = (n: string) => n.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '');
 
-/** A Path's fifteen nodes, laid out: skills down the edges, the spine down the middle, forks either side of it. */
+/** A Path's sixteen nodes, laid out: skills down the edges, the spine down the middle, forks either side of it, and the utility in the right lane at B. */
 function nodesOf(p: PathSpec): TreeNode[] {
   const id = (n: string) => `${p.key}:${slug(n)}`;
   const skill = (tier: number, col: number, [name, up]: [string, SkillUp[]], req?: string): TreeNode =>
@@ -177,7 +193,8 @@ function nodesOf(p: PathSpec): TreeNode[] {
     skill(0, 0, l0), stat(0, p.attr[0], { attrs: { [p.key]: p.attr[1] } }), skill(0, 4, r0),
     skill(1, 0, l1, l0[0]), stat(1, p.mid[0], { bonus: p.mid[1] }, p.attr[0]), skill(1, 4, r1, r0[0]),
     passive(2, 1, p.forkB[0], p.mid[0], p.forkB[1]), passive(2, 2, p.noteB, p.mid[0]), passive(2, 3, p.forkB[1], p.mid[0], p.forkB[0]),
-    skill(3, 0, l3, l1[0]), stat(3, p.late[0], { bonus: p.late[1] }, p.noteB), skill(3, 4, r3, r1[0]),
+    skill(2, 4, [p.util, [{ cd: -1 }]], r1[0]),
+    skill(3, 0, l3, l1[0]), stat(3, p.late[0], { bonus: p.late[1] }, p.noteB), skill(3, 4, r3, p.util),
     passive(4, 1, p.forkS[0], p.late[0], p.forkS[1]), passive(4, 2, p.noteS, p.late[0]), passive(4, 3, p.forkS[1], p.late[0], p.forkS[0]),
   ];
 }

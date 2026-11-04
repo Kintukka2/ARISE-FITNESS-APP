@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ability, battle, fight, passiveStyle, passiveText, STATUS, Unit, type UnitSpec } from '@/core/combat';
+import { ability, battle, fight, passiveStyle, passiveText, STATUS, STATUS_TEXT, Unit, type Ev, type UnitSpec } from '@/core/combat';
 import { grantXP, kitFor, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
 import * as raid from '@/core/raid';
 import { defaults, migrate, merge, SAVE_VERSION } from '@/core/save';
 import * as tree from '@/core/skilltree';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
-import { EDGE, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TREE_PASSIVES } from '@/data/tree';
+import { EDGE, isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TREE_PASSIVES } from '@/data/tree';
 import { STATS } from '@/core/types';
 import { rng } from '@/core/util';
 
@@ -25,14 +25,18 @@ function hunter(level: number) {
 const learnAll = (s: ReturnType<typeof hunter>, ids: string[]) => ids.forEach((id) => expect(tree.learn(s, id), id).not.toBeNull());
 
 describe('the tree', () => {
-  it('has five Paths of fifteen nodes, every one of them sound', () => {
+  it('has five Paths of sixteen nodes, every one of them sound', () => {
     expect(PATHS.map((p) => p.key).sort()).toEqual([...STATS].sort());
     for (const p of PATHS) {
       const nodes = NODES.filter((n) => n.path === p.key);
-      expect(nodes).toHaveLength(15);
-      // Every class skill of the line is in its Path, and every class passive.
-      const skills = CLASS_SKILLS.filter((x) => x.line === p.key).map((x) => x.name).sort();
-      expect(nodes.filter((n) => n.kind === 'skill').map((n) => n.skill).sort()).toEqual(skills);
+      expect(nodes).toHaveLength(16);
+      // Every class skill of the line is in its Path, and every class passive, and one skill that does no damage.
+      const skills = CLASS_SKILLS.filter((x) => x.line === p.key).map((x) => x.name);
+      const own = nodes.filter((n) => n.kind === 'skill').map((n) => n.skill!);
+      expect(own.filter((n) => skills.includes(n)).sort()).toEqual([...skills].sort());
+      const util = own.filter((n) => !skills.includes(n));
+      expect(util).toHaveLength(1);
+      expect(isUtility(ability(util[0])!)).toBe(true);
       for (const x of CLASS_PASSIVES.filter((y) => y.line === p.key)) expect(nodes.some((n) => n.passive === x.name)).toBe(true);
     }
     expect(new Set(NODES.map((n) => n.id)).size).toBe(NODES.length);
@@ -284,5 +288,65 @@ describe('an older save', () => {
     expect(out.hunter.tree.equip).toEqual(['STR:rend', 'STR:sundering-arc']);
     expect(raid.heroSpec(out, now).kit).toEqual(['Rend', 'Sundering Arc']);
     expect(tree.points(out)).toBe(tree.earned(out) - 3);
+  });
+});
+
+describe('the skills that do no damage', () => {
+  const foe = (uid: string, over: Partial<UnitSpec> = {}): Unit => new Unit({ uid, name: uid, side: 'e', base: { STR: 20, AGI: 1, PER: 1, VIT: 20, INT: 99 }, hpMult: 40, kit: ['Strike'], ...over });
+  const hero = (kit: string[], over: Partial<UnitSpec> = {}): Unit => new Unit({ uid: 'hero', name: 'H', side: 'p', base: { STR: 20, AGI: 99, PER: 20, VIT: 20, INT: 20 }, tag: 'hero', hpMult: 40, kit, ...over });
+  /** The hero's first turn, given an order, then everything up to their next. */
+  function turn(h: Unit, party: Unit[], foes: Unit[], use: string) {
+    const log: Ev[] = [];
+    const g = battle([h, ...party], foes, rng('util'), 1, () => {}, log, { hero: 'hero' });
+    g.next();
+    const at = log.length;
+    g.next({ use });
+    return log.slice(at);
+  }
+
+  it('a curse lands on every foe, without a roll and without damage, unless it is immune', () => {
+    const foes = [foe('e0'), foe('e1', { imm: ['Weakened'] }), foe('e2')];
+    const ev = turn(hero(['Dread Roar']), [], foes, 'Dread Roar');
+    expect(ev.some((e) => e.t === 'cast' && e.ab === 'Dread Roar')).toBe(true);
+    expect(ev.filter((e) => e.t === 'hit' && e.a === 'hero')).toHaveLength(0);
+    expect(foes.map((f) => !!f.status.Weakened)).toEqual([true, false, true]);
+  });
+
+  it('a taunt turns every foe’s shown next action on the hunter, and they do what they show', () => {
+    const ally = new Unit({ uid: 'a0', name: 'A', side: 'p', base: { STR: 10, AGI: 1, PER: 10, VIT: 10, INT: 10 }, tag: 'ally', hpMult: 40 });
+    const foes = [foe('e0'), foe('e1')];
+    const h = hero(['Challenge']);
+    const ev = turn(h, [ally], foes, 'Challenge');
+    const cast = ev.findIndex((e) => e.t === 'cast' && e.k === 'taunt');
+    expect(cast).toBeGreaterThanOrEqual(0);
+    // Each foe's next blow, after the taunt, goes at the hunter, who guards.
+    const blows = ev.slice(cast).filter((e) => (e.t === 'hit' || e.t === 'miss') && e.a.startsWith('e'));
+    expect(blows.length).toBeGreaterThan(0);
+    for (const b of blows.slice(0, foes.length)) expect('v' in b && b.v).toBe('hero');
+    expect(ev.some((e) => e.t === 'expire' && e.v === 'hero' && e.s === 'Guarded') || !!h.status.Guarded).toBe(true);
+  });
+
+  it('a heal restores a share of every ally’s HP, and a veil grants its status to the side', () => {
+    const ally = new Unit({ uid: 'a0', name: 'A', side: 'p', base: { STR: 10, AGI: 1, PER: 10, VIT: 10, INT: 10 }, tag: 'ally', hpMult: 40 });
+    const h = hero(['Renewal', 'Smoke Veil']);
+    h.hp = h.maxHp / 2;
+    ally.hp = ally.maxHp / 2;
+    const ev = turn(h, [ally], [foe('e0')], 'Renewal');
+    const heals = ev.filter((e) => e.t === 'heal' && e.ab === 'Renewal');
+    expect(heals.map((e) => e.t === 'heal' && e.a).sort()).toEqual(['a0', 'hero']);
+    const v = hero(['Smoke Veil']);
+    const ev2 = turn(v, [ally], [foe('e0')], 'Smoke Veil');
+    expect(ev2.some((e) => e.t === 'support' && e.s === 'Veiled')).toBe(true);
+    expect(STATUS.Veiled.good).toBe(true);
+    expect(STATUS_TEXT.Veiled).toBe('Evasion +50%');
+  });
+
+  it('the System fills its slots with skills that do damage first', () => {
+    const s = hunter(45);
+    tree.autoLearn(s);
+    const kit = raid.heroSpec(s, now).kit!;
+    const utility = kit.filter((n) => isUtility(ability(n)!));
+    const damage = NODES.filter((n) => n.kind === 'skill' && tree.levelOf(s, n.id) > 0 && !isUtility(ability(n.skill!)!)).length;
+    if (damage >= tree.slots(s)) expect(utility).toHaveLength(0);
   });
 });

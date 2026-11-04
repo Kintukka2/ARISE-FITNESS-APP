@@ -58,7 +58,7 @@ is ours: our gates, foes, gear, skills and numbers. docs/VOICE.md has the templa
 
 ### 1. Turn-based combat — built
 
-The hunter acts by hand. Allies and Shadows act on standing orders. An **Auto** toggle hands the
+The hunter acts by hand. Shadows act on standing orders; the Association's hunters pick their own targets. An **Auto** toggle hands the
 hunter's turns to the System and presses on between chambers, for grinding.
 
 - **Engine.** `battle()` in `core/combat.ts` is the fight as a generator: it pauses on the
@@ -68,8 +68,12 @@ hunter's turns to the System and presses on between chambers, for grinding.
 - **Hunter actions:** a skill from the class kit, Strike, *Guard* (half damage until your next
   turn), or a field potion (30% of maximum HP). Field potions are bought at the Exchange into a
   satchel of three; the other potions are still drunk on purchase.
-- **Standing orders**, set in the brief: *As They See Fit*, *Finish The Weakest*, *Protect The
-  Hunter*, *Spread The Pain*. Each is a target rule. The run keeps the orders it went in with.
+- **Standing orders**, set on the map between fights: *As They See Fit*, *Finish The Weakest*,
+  *Protect The Hunter*, *Spread The Pain*. Each is a target rule for the hunter's Shadows, and for the
+  hunter's own turns when Auto plays them. They used to be set in the brief and to steer the
+  Association's hunters too; ordering strangers about made no sense, so those pick their own targets
+  now, and the orders moved to the map, where they hold for the fights still to come
+  (`raid.setTactic`), never for a step underway.
 - **The save** records the hunter's orders for the chamber being fought, not the fight state. The
   engine is deterministic for a seed and a list of orders, so a reload replays to the same turn.
   Each order is written before it plays out, so a turn cannot be rerolled.
@@ -286,6 +290,16 @@ fight was tried and did not narrow it.
     up has a little less of an edge over them than before.
   - **Open:** whether a deep build (one Path to S, then the next) beats the System's spread by enough
     to matter. Calibration plays only the System's way.
+  - **Skills that do no damage.** Every Path has one, at B, in its right lane between the C and A
+    skills (`TREE_SKILLS`): Dread Roar (Ruin) and Hunter's Mark (Sight) are curses that weaken or mark
+    every foe, never miss and do no damage; Challenge (Bastion) is a taunt, turning every foe's next
+    action on the hunter, who guards; Smoke Veil (Tempest) veils the party (Evasion +50% for two
+    turns); Renewal (Arcana) heals the party 15% of its HP. Each takes two levels, the second a turn off
+    its cooldown. The taunt keeps the intent promise by showing every changed intent before the foe
+    acts. The System's slots take skills that do damage first, so calibration's hunters rarely carry
+    them, and they are the player's own edge. Recalibrated; the middle of every grade stays at 70% to 85%.
+    In the campaign S-Rank comes on day 58 and day 33 as before, and Sovereign on day 114 and day 69
+    (was 110 and 65): the B tier's extra point slows the spine a little.
 - **Skill choices at rank-up — built, then replaced by the skill tree.** Each rung of every line offered two options, two skills
   or two passives, and the hunter keeps one. There are 15 new skills and 10 new passives, all data
   built from abilities and passive styles the combat engine already plays. A line's four passives

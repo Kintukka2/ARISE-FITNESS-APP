@@ -12,7 +12,7 @@
  * passives are data; statuses are a table of multipliers.
  */
 import { ABILITIES, CLASS_PASSIVES, CLASS_SKILLS, PASSIVES } from '@/data/abilities';
-import { EDGE, TREE_PASSIVES } from '@/data/tree';
+import { EDGE, TREE_PASSIVES, TREE_SKILLS } from '@/data/tree';
 import type { Ability, Attrs, Order, Tactic } from './types';
 import { clamp, type Rand } from './util';
 
@@ -74,6 +74,7 @@ export const STATUS: Record<string, { turns: number; dot?: number; pdef?: number
   Weakened: { turns: 3, atk: 0.75 },
   Chilled: { turns: 3, ini: 0.75 },
   Rallied: { turns: 3, good: true, ini: 1.2, acc: 1.1 },
+  Veiled: { turns: 2, good: true, eva: 1.5 },
   // Two, so it outlives the end of the round it was raised in; the unit's next turn takes it down.
   Guarded: { turns: 2, good: true },
 };
@@ -83,22 +84,23 @@ const pctOf = (x: number) => Math.round(Math.abs(1 - x) * 100);
 export const STATUS_TEXT: Record<string, string> = Object.fromEntries(Object.entries(STATUS).map(([k, st]) => {
   const parts: string[] = [];
   if (st.dot) parts.push(`HP -${Math.round(st.dot * 100)}% each round`);
-  if (st.pdef) parts.push(`Physical defence -${pctOf(st.pdef)}%`);
-  if (st.mdef) parts.push(`Magical resistance -${pctOf(st.mdef)}%`);
-  if (st.eva) parts.push(`Evasion -${pctOf(st.eva)}%`);
+  const sign = (x: number) => (x > 1 ? '+' : '-');
+  if (st.pdef) parts.push(`Physical defence ${sign(st.pdef)}${pctOf(st.pdef)}%`);
+  if (st.mdef) parts.push(`Magical resistance ${sign(st.mdef)}${pctOf(st.mdef)}%`);
+  if (st.eva) parts.push(`Evasion ${sign(st.eva)}${pctOf(st.eva)}%`);
   if (st.acc) parts.push(`Accuracy ${st.acc > 1 ? '+' : '-'}${pctOf(st.acc)}%`);
-  if (st.atk) parts.push(`Attack -${pctOf(st.atk)}%`);
+  if (st.atk) parts.push(`Attack ${sign(st.atk)}${pctOf(st.atk)}%`);
   if (st.ini) parts.push(`Initiative ${st.ini > 1 ? '+' : '-'}${pctOf(st.ini)}%`);
   if (st.skip) parts.push('Next action lost');
   return [k, parts.join(' · ')];
 }));
 
-const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0 };
+const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0, taunt: 0 };
 /** How many an ability reaches, by its profile. */
 export const reachOf = (profile: string) => REACH[profile] ?? 1;
 export const REACH_TEXT: Record<string, string> = {
   single: 'one target', cleave: 'two targets', volley: 'three targets', spread: 'three targets',
-  burst: 'four targets', wild: 'three targets', all: 'every foe', support: 'the whole party',
+  burst: 'four targets', wild: 'three targets', all: 'every foe', support: 'the whole party', taunt: 'every foe',
 };
 
 const STRIKE: Ability = { name: 'Strike', type: 'physical', profile: 'single', mult: 1, cd: 0, inflicts: [] };
@@ -108,7 +110,7 @@ export const GUARD = 0.5;
 STATUS_TEXT.Guarded = `Damage taken -${(1 - GUARD) * 100}% until its next turn`;
 /** A field potion restores this share of the drinker's maximum HP. */
 export const FIELD_POTION_HEAL = 0.3;
-const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS].map((a) => [a.name, a]));
+const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS, ...TREE_SKILLS].map((a) => [a.name, a]));
 const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES];
 const passiveMap = new Map<string, string>(ALL_PASSIVES.map((p) => [p.name, p.style]));
 export const ability = (n: string) => abilityMap.get(n);
@@ -205,7 +207,10 @@ export type Ev =
   | { t: 'round'; n: number }
   | { t: 'hit'; a: string; v: string; ab: string; dmg: number; crit: boolean; hp: number }
   | { t: 'miss'; a: string; v: string; ab: string }
-  | { t: 'support'; a: string; ab: string }
+  /** `s`: the status it granted the side; unset is Rallied, null none (a heal). */
+  | { t: 'support'; a: string; ab: string; s?: string | null }
+  /** A curse cast, or a taunt: no damage. `n` counts the foes a taunt turned. */
+  | { t: 'cast'; a: string; ab: string; k: 'curse' | 'taunt'; n?: number }
   | { t: 'stun'; a: string }
   | { t: 'status'; v: string; s: string }
   | { t: 'tick'; v: string; s: string; dmg: number; hp: number }
@@ -213,7 +218,8 @@ export type Ev =
   | { t: 'down'; v: string }
   | { t: 'guard'; a: string }
   | { t: 'intent'; u: string; ab: string; at?: string }
-  | { t: 'heal'; a: string; amt: number; hp: number }
+  /** `ab`: the support that healed; unset is a Field Potion. */
+  | { t: 'heal'; a: string; amt: number; hp: number; ab?: string }
   | { t: 'passive'; u: string; p: string; k: string; hp?: number; amt?: number };
 
 const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva), HIT.min, HIT.max);
@@ -271,19 +277,22 @@ function ordered(u: Unit, o: Order): Ability | null {
   return u.ab(o.use) ?? null;
 }
 
-/** The standing orders, as the brief offers them, and as one Shadow's own. */
+/** The standing orders, as the map between fights offers them, and as one Shadow's own. */
 export const TACTICS: { key: Tactic; name: string; desc: string; one: string }[] = [
-  { key: 'default', name: 'As They See Fit', desc: 'Everyone picks their own targets.', one: 'It picks its own targets.' },
-  { key: 'finish', name: 'Finish The Weakest', desc: 'Every ally and Shadow goes for the foe nearest to falling.', one: 'It goes for the foe nearest to falling.' },
-  { key: 'protect', name: 'Protect The Hunter', desc: 'They go for what is about to hit you, then what last hit you, then what hits hardest.', one: 'It goes for what is about to hit you, then what last hit you, then what hits hardest.' },
-  { key: 'spread', name: 'Spread The Pain', desc: 'They aim their bleeds, curses and stuns at foes not already carrying them.', one: 'It aims its bleeds, curses and stuns at foes not already carrying them.' },
+  { key: 'default', name: 'As They See Fit', desc: 'Your Shadows pick their own targets, and so does Auto.', one: 'It picks its own targets.' },
+  { key: 'finish', name: 'Finish The Weakest', desc: 'Your Shadows go for the foe nearest to falling, and so does Auto.', one: 'It goes for the foe nearest to falling.' },
+  { key: 'protect', name: 'Protect The Hunter', desc: 'Your Shadows go for what is about to hit you, then what last hit you, then what hits hardest. So does Auto.', one: 'It goes for what is about to hit you, then what last hit you, then what hits hardest.' },
+  { key: 'spread', name: 'Spread The Pain', desc: 'Your Shadows aim their bleeds, curses and stuns at foes not already carrying them. So does Auto.', one: 'It aims its bleeds, curses and stuns at foes not already carrying them.' },
 ];
 
 const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
 
-/** Where standing orders point an ally or a Shadow. Undefined leaves it to chance. */
+/**
+ * Where standing orders point a Shadow, and the hunter when nobody gives their turn an order (Auto,
+ * the projection). The Association's hunters pick their own targets. Undefined leaves it to chance.
+ */
 function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Unit | undefined {
-  if (u.side !== 'p' || u.tag === 'hero' || tactic === 'default') return undefined;
+  if (u.side !== 'p' || u.tag === 'ally' || tactic === 'default') return undefined;
   const live = foes.filter((f) => f.alive());
   if (!live.length) return undefined;
   if (tactic === 'finish') return live.reduce((x, y) => (y.hp < x.hp ? y : x));
@@ -335,14 +344,50 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   const a = (o && ordered(u, o)) ?? intended(u) ?? choose(u, r);
   if (a.cd) u.cd[a.name] = a.cd;
   if (a.profile === 'support') {
-    for (const f of friends) if (f.alive()) f.status.Rallied = STATUS.Rallied.turns;
-    log.push({ t: 'support', a: u.uid, ab: a.name });
+    // A heal, a status for the side, or, with neither, a rally.
+    const grant = a.grant ?? (a.heal ? null : 'Rallied');
+    if (grant) for (const f of friends) if (f.alive()) f.status[grant] = STATUS[grant]?.turns ?? 2;
+    log.push({ t: 'support', a: u.uid, ab: a.name, s: grant === 'Rallied' ? undefined : grant });
+    if (a.heal) {
+      for (const f of friends) {
+        if (!f.alive() || f.hp >= f.maxHp) continue;
+        const was = f.hp;
+        f.hp = Math.min(f.maxHp, f.hp + f.maxHp * a.heal);
+        log.push({ t: 'heal', a: f.uid, amt: Math.round(f.hp - was), hp: Math.round(f.hp), ab: a.name });
+      }
+    }
+    return;
+  }
+  if (a.profile === 'taunt') {
+    // Every foe's next action, shown, turns on the one who taunted: the intent it shows is still what it
+    // does. The taunter guards until its next turn.
+    u.status.Guarded = STATUS.Guarded.turns;
+    let n = 0;
+    for (const f of foes) {
+      if (!f.alive() || !f.intent?.at || f.intent.at === u.uid) continue;
+      f.intent = { ab: f.intent.ab, at: u.uid };
+      log.push({ t: 'intent', u: f.uid, ab: f.intent.ab, at: u.uid });
+      n++;
+    }
+    log.push({ t: 'cast', a: u.uid, ab: a.name, k: 'taunt', n });
     return;
   }
   const magic = a.type === 'magic';
   const meant = u.intent?.ab === a.name ? u.intent.at : undefined;
   const at = o?.at ?? meant;
   const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, u.tactic ?? ctx.tactic, ctx.hero);
+  if (a.mult === 0) {
+    // A curse: no damage and no roll; what it inflicts lands on every target unless it is immune.
+    log.push({ t: 'cast', a: u.uid, ab: a.name, k: 'curse' });
+    for (const t of targets(a, foes, r, first)) {
+      for (const st of a.inflicts) {
+        if (!STATUS[st] || t.imm.includes(st)) continue;
+        t.status[st] = STATUS[st].turns + (u.has('affliction') && !STATUS[st].skip && !STATUS[st].good ? EDGE.affliction : 0);
+        log.push({ t: 'status', v: t.uid, s: st });
+      }
+    }
+    return;
+  }
   let drawn = 0;
   let quick = false;
   for (const t of targets(a, foes, r, first)) {
