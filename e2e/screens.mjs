@@ -160,9 +160,8 @@ try {
   await snap('gates-potion');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.btile--grade .btile__hit').click(); await sleep(400); await snap('grade'); await close();
-  // The Pale Spire's next block, beside the board.
-  await page.locator('.btile--spire .btile__hit').click(); await sleep(800); await snap('spire-brief', true);
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess'); await close();
+  // The Pale Spire is a Weekly Quest, not a Gates tile.
+  if (await page.locator('.btile--spire').count()) throw new Error('THE PALE SPIRE IS STILL ON THE GATES SCREEN');
   await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
   await page.locator('.sheet.is-top .btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit').first().click(); await sleep(800); await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
@@ -192,8 +191,11 @@ try {
   await sleep(600); await snap('raid-results', true);
   await page.locator('text=Leave The Gate').click(); await drain();
 
-  // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in.
-  await page.locator('.btile--spire .btile__hit').click(); await sleep(600);
+  // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in: its brief from its Weekly Quest.
+  await nav('quests');
+  await page.locator('.btile--spire .btile__hit').click(); await sleep(500);
+  await page.locator('.sheet.is-top .btn', { hasText: /^Brief: Floors/ }).click(); await sleep(800); await snap('spire-brief', true);
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess');
   if (await page.locator('text=Enter The Gate').isVisible()) {
     await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
     await page.waitForSelector('.arena', { timeout: 10000 });

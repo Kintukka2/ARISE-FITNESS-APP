@@ -119,7 +119,7 @@ export const BEATS: Beat[] = [
     lines: [
       `${SPIRE_OPENS} Gates cleared. Then you’re ready to hear about the one that never closes.`,
       'The Pale Spire. It opened over the old reservoir before I had a licence, and every boss killed inside opens another floor above it. I got as far as the thirties, once.',
-      'It rearranges itself every Monday. The Association pays at the end of the week for how high you got. It’s on the Gates screen when you want it.',
+      'It rearranges itself every Monday. The Association pays at the end of the week for how high you got. It’s on the Quests screen when you want it.',
     ],
   },
   {

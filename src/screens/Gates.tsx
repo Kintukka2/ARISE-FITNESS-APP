@@ -18,7 +18,6 @@ import { ask } from '@/ui/ask';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
-import { SPIRE_NAME } from '@/data/spire';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import * as system from '@/ui/system';
 import { MapView } from '@/ui/map';
@@ -146,7 +145,7 @@ function boardTile(s: Save, gates: Dungeon[]): BTile {
   };
 }
 
-/** What stands above the board: the run left open, the hunter's grade, their record, the Spire and Ascension. */
+/** What stands above the board: the run left open, the hunter's grade, their record and Ascension. The Pale Spire is a Weekly Quest, on the Quests screen. */
 function topTiles(s: Save): BTile[] {
   const out: BTile[] = [];
   const day = dayKey();
@@ -189,24 +188,6 @@ function topTiles(s: Save): BTile[] {
     ),
     open: openDossier,
   });
-  if (spire.spireOpen(s)) {
-    const d = spire.nextSpire(s);
-    const b = spire.blockOf(d.floor ?? 1);
-    const best = spire.weekBest(s);
-    const goal = spire.tierGoal(s);
-    const lit = Math.min(6, Math.floor((7 * best) / goal));
-    const locked = entryBlock(s, d) === 'licence';
-    out.push({
-      key: 'spire', kind: 'gates', name: SPIRE_NAME, icon: <Glyph name="spire" />, shut: locked,
-      count: `${best}/${goal}`,
-      status: `Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} next.`,
-      art: <span class="qa-tower">{Array.from({ length: 7 }, (_, i) => <i key={i} class={i < lit ? 'is-lit' : i === lit ? 'is-next' : ''} style={{ width: `${72 - i * 7}px` }} />)}</span>,
-      open: () => {
-        if (locked) toast(`Floors ${spire.firstFloor(b)} to ${spire.lastFloor(b)} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
-        else openBrief(d);
-      },
-    });
-  }
   const a = s.ascension;
   // From Ascension's grade, before its first level opens too: the tile holds the road to it.
   if (ascension.ascensionOpen(s)) {

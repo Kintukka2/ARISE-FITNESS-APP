@@ -259,11 +259,15 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .unit__intent { margin-top: 4px; font-size: 0.68rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .unit__intent.is-you { color: var(--blood); font-weight: 700; }
 .unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
-/* The orders for the next fight, under the map, in the room the map leaves. */
-.runorders { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 520px; margin: 4px auto 0; padding: 12px; border: 1px solid rgba(255, 154, 60, 0.3); border-radius: var(--r-md); background: rgba(20, 10, 4, 0.5); }
+/* The orders for the next fight, under the map: Shadows' violet, as small as four choices can be. */
+.runorders { --accent: var(--arcane); display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 420px; margin: 2px auto 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--arcane) 40%, transparent); border-radius: var(--r-sm); background: linear-gradient(180deg, rgba(155, 107, 255, 0.1), rgba(20, 10, 40, 0.45)); box-shadow: 0 0 18px rgba(155, 107, 255, 0.12) inset; }
 .runorders__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.runorders__head small { color: var(--ink-3); font-size: 0.72rem; }
-.runorders__desc { margin: 0; font-size: 0.8rem; line-height: 1.4; }
+.runorders__head .label { color: #c9a7ff; font-size: 0.6rem; }
+.runorders__head small { color: color-mix(in srgb, #c9a7ff 70%, transparent); font-size: 0.64rem; }
+.runorders .chips--orders { gap: 5px; }
+.runorders .chips--orders .chip--btn { min-height: 30px; padding: 4px 8px; border-color: color-mix(in srgb, var(--arcane) 30%, transparent); border-radius: var(--r-sm); background: rgba(14, 8, 30, 0.7); font-size: 0.7rem; }
+.runorders .chips--orders .chip--btn.is-on { border-color: var(--arcane); color: #e2d2ff; background: color-mix(in srgb, var(--arcane) 26%, transparent); box-shadow: 0 0 10px var(--arcane-glow); }
+.runorders__desc { margin: 0; color: color-mix(in srgb, #c9a7ff 75%, transparent) !important; font-size: 0.7rem; line-height: 1.35; }
 .turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
 /* An action's details, over the foot of the feed, so nothing under the finger moves when they open. */
 .actinfo { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 4; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(10, 6, 4, 0.96); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55); animation: feedIn 160ms var(--ease) both; pointer-events: none; }
@@ -1058,12 +1062,18 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
    glows of its own, and a call along its foot. Orange, the Gates' colour; never gold, which waits. */
 .btile--focus { filter: drop-shadow(0 0 16px var(--ember-glow)); animation: gaFocus 3.6s ease-in-out infinite; }
 @keyframes gaFocus { 50% { filter: drop-shadow(0 0 26px var(--ember-glow)); } }
-.btile--focus .btile__hit { min-height: 220px; }
-.btile--focus .btile__art { padding: 20px 10px 8px; -webkit-mask-image: none; mask-image: none; }
-.btile--focus .btile__text strong { font-size: 1rem; letter-spacing: 0.22em; }
-.btile--focus .ga-portal--mini { width: 46px; height: 46px; }
-.btile--focus .ga-portal--mini > b { font-size: 1rem; }
-.btile--focus .ga-board { flex-wrap: nowrap; gap: 8px; }
+.btile--focus .btile__hit { min-height: 290px; }
+.btile--focus .btile__art { padding: 30px 10px 14px; -webkit-mask-image: none; mask-image: none; }
+.btile--focus .btile__foot { padding: 12px 12px 13px; }
+.btile--focus .btile__text strong { font-size: 1.12rem; letter-spacing: 0.24em; }
+.btile--focus .btile__count { font-size: 1.05rem; padding: 6px 12px; }
+/* As big as the row allows: six portals across, from a phone's width to a desktop's. */
+.btile--focus .ga-portal--mini { width: clamp(44px, 11.5vw, 66px); height: clamp(44px, 11.5vw, 66px); }
+.btile--focus .ga-portal--mini > b { font-size: clamp(1rem, 3.2vw, 1.3rem); }
+.btile--focus .ga-board { flex-wrap: nowrap; gap: clamp(8px, 2.4vw, 16px); }
+.btile--focus .ga-board__one small { font-size: 0.82rem; }
+.btile--focus .ga-focus { gap: 20px; }
+.btile--focus .ga-focus__cta { padding: 9px 20px; font-size: 0.78rem; }
 .ga-focus { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
 .ga-focus::before { content: ''; position: absolute; inset: -30% -10% -10%; background: radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255, 154, 60, 0.26), transparent 70%); pointer-events: none; }
 .ga-focus__rays { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; translate: -50% -50%; background: repeating-conic-gradient(from 0deg, rgba(255, 154, 60, 0.08) 0deg 5deg, transparent 5deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 58%); mask-image: radial-gradient(circle, #000 18%, transparent 58%); animation: gaRays 48s linear infinite; pointer-events: none; }

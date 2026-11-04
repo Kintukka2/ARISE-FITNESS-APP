@@ -444,7 +444,8 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 
 - **Every main screen is a grid of these tiles** (`ui/bento.tsx`): Inventory (Status, Stats, Skills,
   Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
-  cleared, the open run, Open Gates, Grade, Record, the Pale Spire, Ascension), Quests,
+  cleared, the open run, Open Gates, Grade, Record, Ascension; Open Gates is the screen's centre, larger
+  than the rest and lit in orange), Quests (where the Pale Spire is a Weekly Quest),
   and Shadows (the Squad and the Army). A list is one tile that opens its window: Open Gates opens
   GATES, a tile to every Gate, its portal in its grade's colour; the Army opens ARMY, a tile to
   every Shadow, ringed by its kills toward the next rank. On Gates, the hunter's condition is not a
