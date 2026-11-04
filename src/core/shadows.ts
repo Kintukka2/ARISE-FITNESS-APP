@@ -1,51 +1,134 @@
 /**
- * The Shadow army. A creature you felled can linger after a clear; reach for
- * it with mana and it may follow you home. A bound Shadow fights beside you,
- * and grows a little with every kill it lands, as far as its rank allows.
- * Enough kills qualify it for the next rank, and the hunter promotes it, one
- * rank at a time, from the Shadows screen. A Sworn Shadow remembers a second
- * ability.
+ * The Shadow army. A creature you felled can linger after a clear; reach for it with mana and it may
+ * follow you home. A bound Shadow fights beside you and levels on every creature it helps fell, as far
+ * as its rank's cap; experience past the cap is banked. Promotion, claimed one rank at a time from its
+ * card, costs Shadow Essence and wants bosses felled, and lifts the cap. Essence comes from a creature
+ * extracted again when one like it already serves, and from a Shadow released. A Sworn Shadow
+ * remembers a second ability.
  */
-import { SECOND_AT, SHADOW_RANKS, SLOTS } from '@/data/shadows';
+import { ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
 import { ALL_ENEMIES, enemyById } from './gates';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
-import type { Attrs, Enemy, Save, Shadow, Tactic } from './types';
+import type { Attrs, Enemy, Rank, Save, Shadow } from './types';
 import { STATS } from './types';
 import { clamp, dayKey, uid } from './util';
 
 export const EXTRACT_MP: Record<string, number> = { E: 50, D: 60, C: 70, B: 80, A: 90, S: 100 };
 /** A lingering Shadow can be reached for this many times, until it holds; each reach costs `step` times the one before. */
 export const EXTRACT_TRIES = { max: 3, step: 2 } as const;
-/** +1% to every attribute per kill, up to its rank's cap. */
-export const GROWTH_PER_KILL = 0.01;
 
-export { SECOND_AT, SHADOW_RANKS, SLOTS };
+export { ECHO, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS };
 
-/** The rank a Shadow's kills qualify it for, by index. */
-export const qualifiedIndex = (sh: Pick<Shadow, 'kills'>) => SHADOW_RANKS.reduce((n, r, i) => (sh.kills >= r.kills ? i : n), 0);
-/** The rank a Shadow holds, by index: what it fights at, whatever its kills qualify it for. */
+// ------------------------------------------------------------------ levels
+
+/** The highest level any Shadow reaches: the last rank's cap. */
+export const MAX_LEVEL = SHADOW_RANKS[SHADOW_RANKS.length - 1].cap;
+/** Experience from `level` to the one above it. */
+export const xpToNext = (level: number) => LEVEL_XP.base + Math.floor(level * LEVEL_XP.step);
+/** Experience a Shadow needs, all told, to stand at `level`. Level 1 needs none. */
+export const xpAt = (level: number) => {
+  let n = 0;
+  for (let l = 1; l < Math.min(level, MAX_LEVEL); l++) n += xpToNext(l);
+  return n;
+};
+/** The level an amount of experience reaches, before any rank caps it. */
+export function levelFor(xp: number): number {
+  let l = 1;
+  while (l < MAX_LEVEL && xp >= xpAt(l + 1)) l++;
+  return l;
+}
+
+/** The rank a Shadow holds, by index. */
 export const rankIndex = (sh: Shadow) => Math.max(0, Math.min(SHADOW_RANKS.length - 1, sh.rank ?? 0));
 export const rankOf = (sh: Shadow) => SHADOW_RANKS[rankIndex(sh)];
 export const nextRank = (sh: Shadow) => SHADOW_RANKS[rankIndex(sh) + 1] ?? null;
-/** Its kills have earned the rank above the one it holds. */
-export const canPromote = (sh: Shadow) => qualifiedIndex(sh) > rankIndex(sh);
-/** Every Shadow waiting to be promoted. */
-export const promotable = (s: Save) => s.shadows.army.filter(canPromote);
+/** The level a Shadow fights at: what its experience reaches, as far as its rank's cap. */
+export const levelOf = (sh: Shadow) => Math.min(rankOf(sh).cap, levelFor(sh.xp ?? 0));
+/** Its level stands at its rank's cap. */
+export const atCap = (sh: Shadow) => levelOf(sh) >= rankOf(sh).cap;
+/** Experience into the level it holds, and what the next one needs; at the cap, `banked` is everything past it. */
+export function progress(sh: Shadow): { into: number; need: number; banked: number } {
+  const l = levelOf(sh);
+  const xp = sh.xp ?? 0;
+  if (atCap(sh)) return { into: 0, need: 0, banked: Math.max(0, xp - xpAt(l)) };
+  return { into: xp - xpAt(l), need: xpToNext(l), banked: 0 };
+}
+/** What a run's creatures pay a Shadow in experience. */
+export const xpFrom = (kills: number, bosses: number) => kills * SHADOW_XP.kill + bosses * (SHADOW_XP.boss - SHADOW_XP.kill);
 
-export interface Promotion { id: string; from: number; to: number; second: string | null }
-/** Promote a Shadow one rank, if its kills have earned it. Returns what changed, or null. Mutates. */
+/** Every attribute's growth over its creature's own: GROWTH_PER_LEVEL for each level. */
+export const growth = (sh: Shadow) => levelOf(sh) * GROWTH_PER_LEVEL;
+
+// ------------------------------------------------------------------ promotion
+
+export interface Requirement { key: 'level' | 'essence' | 'bosses'; label: string; have: number; need: number; met: boolean }
+/** What the rank above asks: its current cap reached, the Essence it costs, the bosses it wants felled. Empty at the top. */
+export function requirements(s: Save, sh: Shadow): Requirement[] {
+  const next = nextRank(sh);
+  if (!next) return [];
+  const need: Requirement[] = [{ key: 'level', label: 'Level', have: levelOf(sh), need: rankOf(sh).cap, met: atCap(sh) }];
+  if (next.essence) need.push({ key: 'essence', label: 'Shadow Essence', have: s.shadows.essence ?? 0, need: next.essence, met: (s.shadows.essence ?? 0) >= next.essence });
+  if (next.bosses) need.push({ key: 'bosses', label: 'Bosses felled', have: sh.bosses, need: next.bosses, met: sh.bosses >= next.bosses });
+  return need;
+}
+/** Everything the rank above asks is met. */
+export const canPromote = (s: Save, sh: Shadow) => !!nextRank(sh) && requirements(s, sh).every((r) => r.met);
+/** Every Shadow that can be promoted now. */
+export const promotable = (s: Save) => s.shadows.army.filter((sh) => canPromote(s, sh));
+
+export interface Promotion { id: string; from: number; to: number; second: string | null; level: number; essence: number }
+/** Promote a Shadow one rank, spending the Essence it costs. Returns what changed, or null. Mutates. */
 export function promote(s: Save, id: string): Promotion | null {
   const sh = s.shadows.army.find((x) => x.id === id);
-  if (!sh || !canPromote(sh)) return null;
+  if (!sh || !canPromote(s, sh)) return null;
   const from = rankIndex(sh);
+  const cost = SHADOW_RANKS[from + 1].essence;
+  s.shadows.essence = (s.shadows.essence ?? 0) - cost;
   sh.rank = from + 1;
   const e = enemyById(sh.enemyId);
-  return { id, from, to: from + 1, second: from + 1 === SECOND_AT && e ? secondOf(e) : null };
+  return { id, from, to: from + 1, second: from + 1 === SECOND_AT && e ? secondOf(e) : null, level: levelOf(sh), essence: cost };
 }
-/** Every promotion waiting, claimed: what a hunter who keeps up does after every run. Mutates. */
+/**
+ * Every promotion the Essence pays for, the deployed Shadows first and the highest level before the
+ * rest: what a hunter who keeps up does after every run. Mutates.
+ */
 export function promoteAll(s: Save) {
-  for (const sh of s.shadows.army) while (canPromote(sh)) promote(s, sh.id);
+  const out = squad(s);
+  const order = s.shadows.army.slice().sort((a, b) => Number(out.includes(b)) - Number(out.includes(a)) || levelOf(b) - levelOf(a));
+  for (const sh of order) while (canPromote(s, sh)) promote(s, sh.id);
+}
+
+/** Set a Shadow at a rank and its cap, as the balance tools' hunters are. Mutates. */
+export function raise(sh: Shadow, rank: number) {
+  sh.rank = Math.max(0, Math.min(SHADOW_RANKS.length - 1, rank));
+  sh.xp = Math.max(sh.xp ?? 0, xpAt(SHADOW_RANKS[sh.rank].cap));
+  return sh;
+}
+
+// ------------------------------------------------------------------ essence
+
+/** The Essence a creature already in the army gives when it is extracted again. */
+export const essenceOf = (e: Pick<Enemy, 'rank'>, boss: boolean) => (ESSENCE[e.rank as Rank] ?? 1) * (boss ? 2 : 1);
+/** What a Shadow's ranks cost in Essence, all told. */
+export const spentOn = (sh: Shadow) => SHADOW_RANKS.slice(1, rankIndex(sh) + 1).reduce((n, r) => n + r.essence, 0);
+/** What releasing a Shadow returns: its creature's Essence, and half of what its ranks cost. */
+export const releaseValue = (sh: Shadow) => {
+  const e = enemyById(sh.enemyId);
+  return (e ? essenceOf(e, false) : 1) + Math.floor(spentOn(sh) / 2);
+};
+/** A Shadow walking an open run: it cannot be released until the run is over. */
+export const inRun = (s: Save, id: string) => !!s.gates.raid?.squad.includes(id);
+/** Release a Shadow from the army for its Essence. Returns the Essence it gave, or null. Mutates. */
+export function release(s: Save, id: string): number | null {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh || inRun(s, id)) return null;
+  const got = releaseValue(sh);
+  s.shadows.army = s.shadows.army.filter((x) => x.id !== id);
+  s.shadows.squad = s.shadows.squad.filter((x) => x !== id);
+  s.shadows.fresh = s.shadows.fresh.filter((x) => x !== id);
+  s.shadows.essence = (s.shadows.essence ?? 0) + got;
+  return got;
 }
 
 /** The longest name a Shadow can be given. */
@@ -71,8 +154,6 @@ export const slots = (s: Save) => SLOTS[licensedRank(s)] + missionSlots(s);
 export const squad = (s: Save) => s.shadows.squad.slice(0, slots(s)).map((id) => s.shadows.army.find((x) => x.id === id)).filter((x): x is Shadow => !!x);
 export const freeSlots = (s: Save) => Math.max(0, Math.min(slots(s), s.shadows.army.length) - squad(s).length);
 export const isBound = (s: Save, enemyId: string) => s.shadows.army.some((x) => x.enemyId === enemyId);
-
-export const growth = (sh: Shadow) => Math.min(rankOf(sh).cap, sh.kills * GROWTH_PER_KILL);
 
 /**
  * A creature's second ability: the second in its own kit, or, for one that has
@@ -109,16 +190,8 @@ export function toggleDeploy(s: Save, id: string): boolean {
   return true;
 }
 
-/** Give a Shadow standing orders of its own, or null to have it follow the party's. Mutates. */
-export function setTactic(s: Save, id: string, tactic: Tactic | null) {
-  const sh = s.shadows.army.find((x) => x.id === id);
-  if (!sh) return;
-  if (tactic) sh.tactic = tactic;
-  else delete sh.tactic;
-}
-
 export function bind(s: Save, enemyId: string, day = dayKey()): Shadow {
-  const sh: Shadow = { id: uid('sh'), enemyId, boundAt: day, out: 0, kills: 0, bosses: 0, rank: 0 };
+  const sh: Shadow = { id: uid('sh'), enemyId, boundAt: day, out: 0, kills: 0, bosses: 0, rank: 0, xp: 0 };
   s.shadows.army.push(sh);
   s.shadows.fresh.push(sh.id);
   // Fill a free slot automatically: a bound Shadow that is not deployed does nothing.
@@ -129,5 +202,5 @@ export function bind(s: Save, enemyId: string, day = dayKey()): Shadow {
 /** The odds a reach holds: `base`, and `perInt` more for each point of Intelligence, up to `max`. The Guide states them. */
 export const HOLD = { base: 0.45, perInt: 0.004, max: 0.9 } as const;
 export const holdChance = (s: Save) => clamp(HOLD.base + s.hunter.attrs.INT * HOLD.perInt, HOLD.base, HOLD.max);
-/** Per-kill odds a felled creature lingers. The boss is far likelier to. */
-export const lingerChance = (s: Save, boss: boolean) => (boss ? 0.12 + s.hunter.attrs.INT * 0.0012 : 0.02 + s.hunter.attrs.INT * 0.0002);
+/** Per-kill odds a felled creature lingers. The boss is far likelier to, and one already in the army ECHO times as likely. */
+export const lingerChance = (s: Save, boss: boolean, owned = false) => Math.min(0.9, (boss ? 0.12 + s.hunter.attrs.INT * 0.0012 : 0.02 + s.hunter.attrs.INT * 0.0002) * (owned ? ECHO : 1));

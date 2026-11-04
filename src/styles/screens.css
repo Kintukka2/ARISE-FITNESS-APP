@@ -1074,6 +1074,159 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .btile.is-shadow:not(.is-deployed) .sa-shade { opacity: 0.72; }
 .btile.is-deployed { box-shadow: -2px 0 16px -2px var(--win-glow), 2px 0 16px -2px var(--win-glow), 0 0 26px color-mix(in srgb, var(--win) 35%, transparent); }
 
+/* A Shadow's card (Shadows.tsx, ShadowCard): a profile, violet, in the System's frame. */
+.shadowcard { gap: 14px; }
+.shadowcard .section { animation: qaIn 460ms var(--ease) both; }
+.shadowcard .section:nth-of-type(2) { animation-delay: 60ms; }
+.shadowcard .section:nth-of-type(3) { animation-delay: 120ms; }
+.shadowcard .section:nth-of-type(4) { animation-delay: 180ms; }
+
+/* The head: the badge in the ring of its next level, beside who it is; the experience under both. */
+.sp-head {
+  position: relative; display: grid; grid-template-columns: 118px minmax(0, 1fr); align-items: center; gap: 4px 14px; overflow: hidden;
+  padding: 14px 12px 12px;
+  background:
+    radial-gradient(120% 90% at 18% 40%, color-mix(in srgb, var(--win) 26%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--win) 10%, transparent), rgba(3, 8, 20, 0.55));
+  box-shadow: inset 0 0 26px color-mix(in srgb, var(--win) 16%, transparent);
+}
+.sp-head::before { content: ''; position: absolute; inset: auto -30% -60% 10%; height: 120%; background: radial-gradient(closest-side, color-mix(in srgb, var(--win) 18%, transparent), transparent); filter: blur(10px); animation: saSmoke 6s ease-in-out infinite; pointer-events: none; }
+.sp-head__badge { position: relative; display: grid; place-items: center; width: 118px; height: 118px; }
+.sp-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+.sp-ring__runes { fill: none; stroke: color-mix(in srgb, var(--win) 55%, transparent); stroke-width: 1; stroke-dasharray: 1.5 5.5; transform-origin: 60px 60px; animation: spSpin 40s linear infinite; }
+.sp-ring__track { fill: none; stroke: var(--sys-hair); stroke-width: 2; opacity: 0.5; }
+.sp-ring__fill { fill: none; stroke: var(--win); stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 0 5px var(--win-glow)); animation: saFill 1200ms var(--ease) both; }
+@keyframes spSpin { to { transform: rotate(360deg); } }
+.sp-head__smoke { position: absolute; inset: 22px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 55%, transparent), transparent 70%); filter: blur(5px); animation: saSmoke 3.6s ease-in-out infinite; }
+.sp-head__badge > .emblem { position: relative; margin-top: -10px; filter: drop-shadow(0 0 10px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
+.sp-head__lv {
+  position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); padding: 1px 9px; border: 1px solid var(--sys-hair-hot);
+  background: rgba(8, 4, 22, 0.92); font-size: 1rem; font-weight: 800; line-height: 1.25; white-space: nowrap; text-shadow: var(--sys-glow);
+  box-shadow: 0 0 12px var(--win-glow);
+}
+.sp-head__lv small { margin-right: 1px; font-size: 0.62rem; font-weight: 600; opacity: 0.8; }
+.sp-head__who { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sp-head__rank { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #d9c6ff; text-shadow: 0 0 8px var(--win-glow); }
+.sp-head__rank .insignia { color: #d9c6ff; }
+.sp-head__was { font-size: 0.78rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.sp-head__was .label { margin-right: 4px; font-size: 0.56rem; }
+.sp-head__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.sp-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); background: color-mix(in srgb, var(--win) 10%, transparent); font-size: 0.66rem; font-weight: 600; }
+.sp-head__power { display: flex; align-items: baseline; gap: 8px; }
+.sp-head__power b { font-size: 1.7rem; font-weight: 800; line-height: 1; letter-spacing: 0.02em; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 16px var(--win-glow); }
+.sp-tag.sp-head__state { border-style: dashed; border-color: var(--sys-hair); background: none; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.sp-tag.sp-head__state.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 80%, transparent); color: #fff; background: color-mix(in srgb, var(--win) 24%, transparent); box-shadow: 0 0 10px var(--win-glow); }
+.sp-head__exp { position: relative; grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; margin-top: 6px; }
+.sp-head__exp .label { font-size: 0.6rem; }
+.sp-head__exp > .num { font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+.sp-exp { position: relative; display: block; height: 6px; overflow: hidden; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.6); }
+.sp-exp > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 55%, transparent), var(--win)); box-shadow: 0 0 8px var(--win-glow); animation: spGrow 1100ms var(--ease) both; }
+.sp-exp > i::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent); animation: qaSweep 2.8s ease-in-out infinite; }
+@keyframes spGrow { from { width: 0; } }
+.sp-head.is-capped .sp-ring__fill { stroke-dasharray: none !important; opacity: 0.85; }
+/* Ready to be promoted: it waits on the hunter, so the ring and the level turn gold. */
+.sp-head.is-ready .sp-ring__fill { stroke: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
+.sp-head.is-ready .sp-head__lv { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 14px var(--gold-glow); }
+.sp-head.is-ready .sp-exp > i { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 55%, transparent), var(--gold)); box-shadow: 0 0 8px var(--gold-glow); }
+
+/* Growth: a bar for every level, rising with what it adds; lit, banked, open, or shut behind the seal. */
+.sp-growth { display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.sp-graph { display: block; width: 100%; height: auto; overflow: visible; }
+.sp-bar { transform-box: fill-box; transform-origin: bottom; animation: spRise 600ms var(--ease) both; animation-delay: calc(var(--i) * 18ms); }
+@keyframes spRise { from { transform: scaleY(0); } }
+.sp-bar.is-lit { fill: var(--win); filter: drop-shadow(0 0 2px var(--win-glow)); }
+.sp-bar.is-here { fill: #fff; filter: drop-shadow(0 0 4px var(--win)); }
+.sp-bar.is-banked { fill: color-mix(in srgb, var(--win) 32%, transparent); stroke: color-mix(in srgb, var(--win) 80%, transparent); stroke-width: 0.6; stroke-dasharray: 1.5 1.5; }
+.sp-bar.is-open { fill: color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.sp-bar.is-shut { fill: color-mix(in srgb, var(--sys-ink) 6%, transparent); }
+.sp-seal line { stroke: var(--sys-hair-hot); stroke-width: 1; stroke-dasharray: 2 2; }
+.sp-seal rect { fill: rgba(8, 4, 22, 0.95); stroke: var(--sys-hair-hot); stroke-width: 1; }
+.sp-ranks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3%; margin: 0; padding: 0; list-style: none; }
+.sp-ranks li { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); font-size: 0.62rem; text-align: center; }
+.sp-ranks li b { max-width: 100%; overflow: hidden; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+.sp-ranks li small { font-size: 0.56rem; opacity: 0.8; }
+.sp-ranks li.is-held { color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.sp-ranks li.is-here { color: #fff; text-shadow: var(--sys-glow); }
+.sp-ranks li.is-here .insignia { color: #d9c6ff; filter: drop-shadow(0 0 4px var(--win-glow)); }
+
+/* The rank above: its asks, each a line with its own bar, ticked once met. */
+.sp-next { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; animation: qaIn 420ms var(--ease) both; }
+.sp-next__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sp-next__head .sa-rank { font-size: 0.8rem; font-weight: 700; }
+.sp-next.promote .sp-next__head .label { color: var(--gold); }
+.sp-reqs { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sp-reqs li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 2px 8px; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.sp-reqs li > .ico { width: 14px; height: 14px; opacity: 0.6; }
+.sp-reqs li > b { font-weight: 700; }
+.sp-reqs__bar { position: relative; grid-column: 2 / -1; display: block; height: 3px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.sp-reqs__bar > i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--win) 80%, transparent); animation: spGrow 900ms var(--ease) both; }
+.sp-reqs li.is-met { color: var(--sys-ink); }
+.sp-reqs li.is-met > .ico, .sp-reqs li.is-met > b { color: var(--verdant); opacity: 1; filter: drop-shadow(0 0 4px var(--verdant-glow)); }
+.sp-reqs li.is-met .sp-reqs__bar > i { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
+
+/* Stats: the radar beside the numbers. */
+.sp-stats { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.sp-radar { display: block; width: 100%; max-width: 190px; height: auto; margin: 0 auto; overflow: visible; }
+.sp-radar__ring { fill: none; stroke: color-mix(in srgb, var(--sys-ink) 16%, transparent); stroke-width: 0.5; }
+.sp-radar__axis { stroke: color-mix(in srgb, var(--sys-ink) 14%, transparent); stroke-width: 0.5; }
+.sp-radar__max { fill: none; stroke: color-mix(in srgb, var(--win) 75%, white); stroke-width: 0.7; stroke-dasharray: 2 1.6; opacity: 0.8; }
+.sp-radar__base { fill: color-mix(in srgb, var(--sys-ink) 12%, transparent); stroke: color-mix(in srgb, var(--sys-ink) 40%, transparent); stroke-width: 0.5; }
+.sp-radar__now { fill: color-mix(in srgb, var(--win) 42%, transparent); stroke: var(--win); stroke-width: 1.1; filter: drop-shadow(0 0 3px var(--win-glow)); transform-origin: 50px 50px; animation: spBloom 900ms var(--ease) both; }
+@keyframes spBloom { from { transform: scale(0.3); opacity: 0; } }
+.sp-radar__label { fill: var(--sys-ink); font-family: var(--font-sys); font-size: 5.4px; font-weight: 700; letter-spacing: 0.06em; text-anchor: middle; dominant-baseline: middle; }
+.sp-statlist { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.sp-statlist li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: baseline; gap: 6px; padding: 3px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.sp-statlist li:last-child { border-bottom: 0; }
+.sp-statlist b { font-size: 1rem; font-weight: 700; text-shadow: var(--sys-glow); }
+.sp-statlist small { font-size: 0.7rem; }
+.sp-legend { display: inline-flex; align-items: center; gap: 5px; font-size: 0.62rem; }
+.sp-legend i { display: inline-block; width: 9px; height: 9px; margin-left: 4px; }
+.sp-legend i.is-now { background: color-mix(in srgb, var(--arcane) 55%, transparent); border: 1px solid var(--arcane); }
+.sp-legend i.is-max { border: 1px dashed color-mix(in srgb, var(--arcane) 75%, white); }
+
+/* Skills and traits: a card each, its kind's glyph in a box at its side. */
+.sp-skills, .sp-traits { display: flex; flex-direction: column; gap: 8px; }
+.sp-skill { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: stretch; min-height: 50px; }
+.sp-skill__ico { display: grid; place-items: center; border-right: 1px solid var(--sys-hair); background: color-mix(in srgb, var(--win) 14%, transparent); color: #e2d2ff; }
+.sp-skill__ico .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 5px var(--win-glow)); }
+.sp-skill__body { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 7px 10px; }
+.sp-skill__body b { font-size: 0.86rem; font-style: italic; font-weight: 700; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 10px var(--win-glow); }
+.sp-skill__body small { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.sp-skill.is-sealed { border-style: dashed; opacity: 0.6; }
+.sp-skill.is-sealed .sp-skill__ico { background: none; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.sp-skill.is-passive .sp-skill__ico { background: color-mix(in srgb, var(--win) 8%, transparent); }
+
+/* The record: four numbers, a column each. */
+.sp-record { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.sp-record > span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px; text-align: center; }
+.sp-record > span + span { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.sp-record b { font-size: 1.15rem; font-weight: 800; text-shadow: var(--sys-glow); }
+.sp-record small { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 64%, transparent); }
+
+/* Release: the one act that cannot be taken back, a red hairline. */
+.sysframe .btn.sp-release { border-color: rgba(255, 59, 75, 0.55); color: #ff8a94; text-shadow: 0 0 8px rgba(255, 47, 62, 0.4); }
+.sysframe .btn.sp-release:disabled { opacity: 0.45; }
+
+/* Shadow Essence: its mark, a drop of the dark. */
+.essence { flex: none; overflow: visible; }
+.essence path { fill: color-mix(in srgb, var(--arcane) 60%, #1a0a3a); stroke: #d9c6ff; stroke-width: 1.4; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--arcane-glow)); }
+.essence .essence__glint { fill: none; stroke: #fff; stroke-width: 1.4; stroke-linecap: round; opacity: 0.75; }
+.sp-essence { display: inline-flex; align-items: center; gap: 5px; }
+.extract__essence { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+
+/* After a run: each deployed Shadow, its level, the experience it took and its bar. */
+.sp-gains__list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sp-gains__list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; animation: alertIn 520ms var(--ease) calc(300ms + var(--i) * 160ms) both; }
+.sp-gains__who { display: flex; flex-direction: column; min-width: 0; }
+.sp-gains__who b { overflow: hidden; font-size: 0.84rem; white-space: nowrap; text-overflow: ellipsis; }
+.sp-gains__who small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.sp-gains__xp { font-size: 0.74rem; white-space: nowrap; }
+.sp-gains__list .sp-exp { grid-column: 2 / -1; height: 4px; }
+.sp-gains__list li.is-up .emblem { filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sp-ring__runes, .sp-head::before, .sp-head__smoke, .sp-head__badge > .emblem, .sp-bar, .sp-exp > i, .sp-exp > i::after, .sp-radar__now, .shadowcard .section, .sp-gains__list li { animation: none; }
+}
+
 /* The board as one tile: a portal to each grade, with its count of Gates open. */
 .ga-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 /* Open Gates: the centre of the Gates screen. Bigger portals over a slow orange light, a frame that

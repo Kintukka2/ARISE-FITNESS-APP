@@ -11,7 +11,7 @@ import { defaults } from '@/core/save';
 import { autoAllocate, grantXP, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
 import { autoLearn, equip, learn, points } from '@/core/skilltree';
 import { autoEquip, grant, issueKit, ofRank, setPieces, upgradeStep } from '@/core/gear';
-import { bind, promoteAll } from '@/core/shadows';
+import { bind, raise, xpAt } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
 import { MISSIONS } from '@/core/missions';
@@ -53,11 +53,11 @@ autoEquip(s);
 const worn = s.items.findIndex((it) => it.id === s.equipped.hands);
 if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[worn]) ?? s.items[worn];
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));
-// One Sworn, with orders of its own; one whose kills have earned Sworn, waiting to be promoted.
-s.shadows.army[0].kills = 31;
-s.shadows.army[0].rank = 1;
-s.shadows.army[0].tactic = 'finish';
-s.shadows.army[1].kills = 27;
+// One Sworn at Level 14; one at the Bound cap with the Essence to be promoted, waiting; one new.
+Object.assign(s.shadows.army[0], { rank: 1, xp: xpAt(14) + 4, kills: 58, bosses: 1, out: 19 });
+Object.assign(s.shadows.army[1], { xp: xpAt(10) + 9, kills: 47, bosses: 0, out: 15 });
+Object.assign(s.shadows.army[2], { xp: xpAt(3) + 1, kills: 6, out: 2 });
+s.shadows.essence = 9;
 s.shadows.fresh = [s.shadows.army[2].id];
 s.wallet = { shards: 2480, earned: 6200, spent: 3720, bought: 0, receipts: [] };
 s.gates.clears = 61; s.gates.fails = 3; s.gates.withdrawn = 4;
@@ -110,8 +110,9 @@ for (const rank of ['A', 'S', 'S'] as const) for (const slot of ['Head', 'Chest'
 }
 autoEquip(a);
 for (const id of ['ENM-099', 'ENM-101', 'ENM-103', 'ENM-105', 'ENM-106']) bind(a, id, addDays(today, -30));
-a.shadows.army.forEach((x, i) => { x.kills = 120 - i * 20; });
-promoteAll(a);
+// An Ascendant, two Vanguards and two Sworn, and the Essence towards the next.
+a.shadows.army.forEach((x, i) => { raise(x, [3, 2, 2, 1, 1][i]); x.xp = xpAt([36, 30, 27, 20, 16][i]) + 3; x.kills = 420 - i * 70; x.bosses = 14 - i * 3; x.out = 160 - i * 25; });
+a.shadows.essence = 34;
 a.wallet = { shards: 6400, earned: 41000, spent: 34600, bought: 0, receipts: [] };
 a.gates.clears = 240; a.gates.fails = 9; a.gates.withdrawn = 7;
 a.gates.cleared = ['DNG-000', ...Array.from({ length: 50 }, (_, i) => `DNG-${String(i + 1).padStart(3, '0')}`)];

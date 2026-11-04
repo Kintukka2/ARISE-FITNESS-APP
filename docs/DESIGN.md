@@ -136,7 +136,7 @@ gate a contract names with a Quest chip, and the Quests tab counts the day's unt
 - **Six kinds:** clear two or three gates at your grade or above; fell so many of one family (kills
   in any gate count, cleared or not); beat a gatekeeper; clear a gate off the System's marked road;
   clear one walked into carrying three gates' worth of fatigue (the hint says how weak that makes
-  you); and, from D-Rank with a Shadow out, let the Shadows land so many kills.
+  you); and, from D-Rank with a Shadow out, let the Shadows help fell so many creatures.
 - **Pay:** each contract pays a clear's shards and a tenth of a clear's experience at the grade it
   was issued for; all three pay twice the shards and a fifth of the experience on top. Nothing
   expires into a penalty.
@@ -186,7 +186,7 @@ row allows, a slow orange light behind them and a View All Gates call. The hunte
 as the Status sheet's HP, MP and Fatigue rows with their potions, so nothing has to be opened to
 check it or to drink. A list is one tile: Open Gates opens the
 board (`GATES`), a grid of Gate tiles, each a portal in its grade's colour; on Shadows, the Army
-opens `ARMY`, a tile to every Shadow ringed by its kills toward the next rank, beside the squad's
+opens `ARMY`, a tile to every Shadow ringed by its levels through the rank it holds, beside the squad's
 slots. The brief, the dossier, the slot picker, recycling, Settings and the Guide all take the
 System's frame; Settings and the Guide keep the interface's words.
 
@@ -339,35 +339,60 @@ fight was tried and did not narrow it.
 
 ### 6. Depth for the Shadows — built
 
-- **Shadow ranks** (`data/shadows.ts`). Kills promote a Shadow: Bound, Sworn at 25 kills, Vanguard
-  at 75 and Ascendant at 150. Each rank lifts how far kills can grow it (+25%, +50%, +75%, +100%),
-  so a promotion is a visible jump.
-  - A newly bound Shadow fights with its creature's first ability. Sworn, it remembers a second:
-    the second in its own kit or, for the 58 creatures that have only one, the first ability of
-    its kin it lacks (its family's, or its role's for a family that shares one).
-  - **Claimed, as ranks are.** Kills earn a Shadow the next rank; the hunter promotes it, one rank
-    at a time, from its card on the Shadows screen (`shadows.promote`). Until then it keeps its rank,
-    its growth limit and its kit, and its kills keep counting. `raid.finish` reports the Shadows a
-    run's kills qualified (`ready`), and the results show each as a System alert, not a window. The
-    hold plays the promotion's cinematic, the rank-up's in violet, and the System's window after it
-    says what the rank brought. A save from before (v5 migration) keeps every rank its Shadows'
-    kills had given them. The Secret Quests for a Sworn and an Ascendant Shadow pay on the
-    promotion. Calibration's and the campaign's hunters promote at once, so `gatetune.ts` and the
-    campaign came out identical.
-  - **Badges.** Every family has a glyph, and a Shadow's badge is its family's glyph with its
-    shadow behind it and its rank's insignia under them (`ui/emblems.tsx`). The Army tells its
-    Shadows apart at a glance; it drew every one with the same two silhouettes before.
-- **More slots through Secret Quests.** Three new ones each make room for one more Shadow: a
-  first Sworn Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions'
-  (`shadows.slots`).
-- **Standing orders per Shadow.** A Shadow can keep orders of its own, set on its sheet, over the
-  party's. They ride on its unit spec (`tactic`), so a run frozen at entry keeps them. A Shadow
-  without orders of its own fights exactly as before.
-- **Balance.** Calibration's typical hunters have no Shadows, so `npm run calibrate` wrote an
-  identical `gatetune.ts`. A mid-grade hunter with a full squad of Bound Shadows of their grade's
-  creatures clears about four to nine points more, and promoting them all the way adds up to four
-  more. A Shadow bound before this change, with fewer than 25 kills, now fights with one ability
-  until it is Sworn.
+- **Levels, capped by rank** (`data/shadows.ts`, `core/shadows.ts`). A Shadow levels on every
+  creature it helps fell: it landed a hit on it, whoever landed the last (`Unit.hurtBy`, credited in
+  `raid.openChamber`). Each pays 1 experience, a boss 5 (`SHADOW_XP`), and each level asks a little
+  more than the last (`LEVEL_XP`). Every level grows each attribute by 2.5% of its creature's own.
+  Its rank caps the level: Bound Lv.10, Sworn Lv.20, Vanguard Lv.30, Ascendant Lv.40, so the old kill
+  limits' +25%, +50%, +75% and +100% stand. Experience past the cap is banked (`xp` is the whole
+  sum; the level is read from it), and spent the moment it is promoted.
+- **Promotion** asks for the level at the cap, Shadow Essence (Sworn 4, Vanguard 12, Ascendant 30)
+  and, from Vanguard, bosses it helped fell (1, then 4). The hunter claims it, one rank at a time,
+  from its card (`shadows.promote`, which spends the Essence). `raid.finish` pays each deployed
+  Shadow its experience (`grew`, shown on the results in an `ARMY` window) and reports the Shadows the
+  run made ready (`ready`). The hold plays the promotion's cinematic, and the System's window says
+  what the rank brought: the rank, the new cap, the level banked experience bought, the Essence spent
+  and any skill learned.
+- **Shadow Essence** (`s.shadows.essence`). A creature already in the army lingers three times as
+  often (`ECHO`); its alert carries the Essence it would give, and a reach that holds turns it to
+  Essence instead of a second copy (`raid.extract` returns `essence`): 1 at E to 4 at S, twice that
+  from a boss. Releasing a Shadow from its card (`shadows.release`, refused while it walks an open
+  run) gives its creature's Essence and half of what its ranks cost.
+- **Skills.** A newly bound Shadow fights with its creature's first ability. Sworn, it remembers a
+  second: the second in its own kit or, for the 58 creatures that have only one, the first ability of
+  its kin it lacks (its family's, or its role's for a family that shares one).
+- **Its card** is a profile, in the System's violet. The head is its badge inside the ring of its
+  next level, with its rank, what it was, its grade, family, role and whether it is deployed, its
+  Power, and its EXP. Under it: Deploy or Recall and Name; Growth, a graph of a bar for every level,
+  rising with what each adds, lit to the level held, ghosted as far as banked experience reaches and
+  dark past a seal at its cap; Next rank, each ask ticked with its own bar and what the rank brings,
+  which becomes the gold promotion with Hold To Promote once all is met; Stats, a radar of its
+  creature's own, its stats now and at Lv.MAX, beside each number and what its level adds; Skills,
+  the second sealed until Sworn; Traits, its passive, immunities and resistances; Record: runs
+  deployed, creatures and bosses felled, days served; and Release.
+- **Badges.** Every family has a glyph, and a Shadow's badge is its family's glyph with its
+  shadow behind it and its rank's insignia under them (`ui/emblems.tsx`).
+- **More slots through Secret Quests.** Three make room for one more Shadow each: a first Sworn
+  Shadow, ten bound, and a first Ascendant. Slots are the grade's plus the missions' (`shadows.slots`).
+- **Orders.** Every Shadow follows the standing orders set on the map. The orders a Shadow once kept
+  of its own, set on its card, are gone: the map sets them for the next step.
+- **A save from before** (v7 migration) gives every Shadow the rank its kills had earned and the
+  level its growth stood at (a Vanguard with 75% growth is Lv.30), with no Essence. Its kills carry
+  on, now counting every creature it helps fell.
+- **Balance.** Calibration's hunter who keeps up has a full squad of Vanguard Shadows at Lv.30
+  (`shadows.raise`), the same +75% the 75 kills gave, so `npm run balance` came out identical and
+  `gatetune.ts` stands. The campaign's hunters now fill a slot left free with their strongest Shadow,
+  as the Squad tile calls for; without it the squad was whatever lingered first. With that in both,
+  the evening hunter reaches S-Rank on day 60 (59 before) and Sovereign on day 111 (117), and the
+  three-session hunter day 31 (33) and day 62 (72); both clear 96% (95% and 93%). The evening
+  hunter's squad is mostly Vanguard by day 56 and Ascendant by day 112; the three-session hunter's
+  is Vanguard by day 28 and Ascendant by day 56. Because the whole squad levels together, a squad
+  rises as one, where kills once went to its strongest. Sovereign comes sooner mostly through the
+  Daily Quests (1.02 a day, was 0.85; 1.55, was 1.16): the Shadows' quest, set at about two runs'
+  worth, took four or five when only the last blow counted. It now asks what a Shadow helps fell in
+  two runs at each grade (`SHADOW_KILLS_PER`, measured: about 2.5 a Shadow a run, 3 to 4.5 at S).
+  Essence runs short until about day 28 and piles up once every Shadow is Ascendant (771 held by
+  day 112 for the three-session hunter): a sink for it is still to come.
 
 ## What a campaign showed
 

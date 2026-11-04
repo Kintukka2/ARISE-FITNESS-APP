@@ -120,15 +120,18 @@ export interface Shadow {
   /** The enemy it was. */
   enemyId: string;
   boundAt: string;
+  /** Runs it walked into. */
   out: number;
+  /** Creatures it helped fell: it landed a hit on each, whoever landed the last. */
   kills: number;
+  /** Of those, bosses. */
   bosses: number;
-  /** The rank it holds, by index into SHADOW_RANKS. Kills qualify it for the next; the hunter claims it. */
+  /** The rank it holds, by index into SHADOW_RANKS. The hunter claims the next, for Shadow Essence. */
   rank: number;
+  /** Experience, all told. Its level is what this reaches, as far as its rank's cap; the rest is banked. */
+  xp: number;
   /** The name the hunter bestowed on it, if any. Unset, it goes by what it was: `Shadow {creature}`. */
   name?: string;
-  /** Standing orders of its own. Unset, it follows the party's. */
-  tactic?: Tactic;
 }
 
 export interface OpenRaid {
@@ -298,6 +301,8 @@ export interface Save {
     squad: string[];
     /** Bound since the Shadows screen was last opened. */
     fresh: string[];
+    /** Shadow Essence, spent on promotions. */
+    essence: number;
   };
 
   shop: { day: string | null; taken: number[] };

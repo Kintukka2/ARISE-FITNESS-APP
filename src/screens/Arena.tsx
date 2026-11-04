@@ -42,7 +42,7 @@ import { drinkFlow, openItem } from './Inventory';
 import { LootCell, useReveal } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
-import { NameField } from './Shadows';
+import { EssenceMark, NameField, SquadGains } from './Shadows';
 import { skillLine } from './Skills';
 
 interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
@@ -608,7 +608,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
   const v = vitals.read(s);
   const e = enemyById(l.enemyId)!;
   const rolled = useRef<{ res: Reach | 'no-mana'; id?: string } | null>(null);
-  const [out, setOut] = useState<{ res: Reach; id?: string } | null>(l.bound ? { res: 'bound' } : raid.reachesLeft(l) <= 0 ? { res: 'lost' } : l.tries ? { res: 'failed' } : null);
+  const [out, setOut] = useState<{ res: Reach; id?: string } | null>(l.bound ? { res: l.essence ? 'essence' : 'bound' } : raid.reachesLeft(l) <= 0 ? { res: 'lost' } : l.tries ? { res: 'failed' } : null);
   const cost = raid.reachCost(l);
   const left = raid.reachesLeft(l);
   const again = !out || out.res === 'failed';
@@ -617,20 +617,22 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
       <div class="extract__who"><RankPlate rank={e.rank} size={30} /><b>{e.shadow}</b></div>
       {again && <>
         <p>The mana of <strong>[{e.name}]</strong> {l.tries ? 'still lingers' : 'lingers'}.</p>
+        {/* One like it already serves: this reach is for its Essence. */}
+        {l.essence && <p class="extract__essence"><strong>[{e.shadow}]</strong> serves in your army.<br />Extraction: Shadow Essence <span class="grant">+{l.essence}</span></p>}
         {/* After a failure the reach's terms are the warning, in red: what failed, what is left, what the next one costs. */}
         <p class={`extract__terms ${l.tries ? 'warn' : ''}`} key={`t${l.tries}`}>
           {l.tries ? <>[Skill: Extraction] has failed.<br /></> : null}
           Attempts left: {left}<br />
           Extraction cost: {cost} MP
         </p>
-        {v.mp >= cost || rolled.current?.res === 'bound'
+        {v.mp >= cost || rolled.current?.res === 'bound' || rolled.current?.res === 'essence'
           // A fresh hold for every reach; it stays up while it settles, though the reach has spent the MP it showed.
           ? <HoldButton key={l.tries} hold={{ label: l.tries ? 'Hold To Extract Again' : 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE', failed: 'Failed', after: 900 }}
             decide={() => {
               const res = store.update((x) => raid.extract(x, l, Math.random()));
               const id = res === 'bound' ? store.get().shadows.army[store.get().shadows.army.length - 1]?.id : undefined;
               rolled.current = { res, id };
-              return res === 'bound';
+              return res === 'bound' || res === 'essence';
             }}
             onFire={() => {
               const got = rolled.current;
@@ -639,6 +641,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
               setOut({ res: got.res, id: got.id });
               onResult(got.res, got.id);
               if (got.res === 'bound') { sfx.rankUp(); flash('shadow'); buzz([60, 90, 30, 60, 140]); }
+              else if (got.res === 'essence') { sfx.success(); flash('shadow'); buzz([30, 50, 60]); }
               else buzz(40);
             }} />
           : <>
@@ -656,6 +659,12 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
         <p>You may bestow a name.</p>
         <NameField id={out.id} close={() => close()} />
       </>}
+      {out?.res === 'essence' && <>
+        <p class="grant">Extraction successful.</p>
+        <p><strong>[{e.shadow}]</strong> has become Shadow Essence.</p>
+        <p class="extract__essence"><EssenceMark size={18} /> Shadow Essence <span class="grant">+{l.essence}</span> · Held: <span class="num">{s.shadows.essence}</span></p>
+        <Btn block onClick={close}>Close</Btn>
+      </>}
       {out?.res === 'lost' && <>
         <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>
         <Btn block onClick={close}>Close</Btn>
@@ -664,8 +673,8 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
   );
 }
 
-/** How a reach for a lingering Shadow ended: it held, it failed with reaches left, or the last failed. */
-type Reach = 'bound' | 'failed' | 'lost';
+/** How a reach for a lingering Shadow ended: it held and joined, it held and became Essence, it failed with reaches left, or the last failed. */
+type Reach = 'bound' | 'essence' | 'failed' | 'lost';
 
 function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: () => void }) {
   const s = useSave();
@@ -767,15 +776,17 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             {r.lingering.map((l, i) => {
               const e = enemyById(l.enemyId)!;
               const out = reach[i];
-              const done = out === 'bound' || out === 'lost';
+              const done = out === 'bound' || out === 'essence' || out === 'lost';
               const sh = joined[i] ? s.shadows.army.find((x) => x.id === joined[i]) : undefined;
               return (
                 <SysAlert key={`${l.enemyId}-${i}`} kind="shadow" delay={400 + i * 200} class={out ? `is-${out}` : ''}
                   label={done ? undefined : `The mana of ${e.name} ${out ? 'still lingers' : 'lingers'}. Open the extraction.`}
                   icon={sh ? <ShadowEmblem family={e.family} rank={0} size={36} /> : <FamilyGlyph family={e.family} size={30} />}
                   onTap={done ? undefined : () => openExtraction(i)}
-                  aside={out === 'bound' ? <span class="grant">ARISE</span> : out === 'lost' ? <span class="warn">Failed</span> : null}>
+                  aside={out === 'bound' ? <span class="grant">ARISE</span> : out === 'lost' ? <span class="warn">Failed</span>
+                    : l.essence ? <span class="sp-essence"><EssenceMark /><span class="grant num">+{l.essence}</span></span> : null}>
                   {out === 'bound' ? <><strong>[{sh ? shadows.nameOf(sh) : e.shadow}]</strong> has joined your army.</>
+                    : out === 'essence' ? <><strong>[{e.shadow}]</strong> has become Shadow Essence.</>
                     : out === 'lost' ? <>The mana of <strong>[{e.name}]</strong> has dispersed.</>
                     : out === 'failed' ? <>The mana of <strong>[{e.name}]</strong> still lingers. Attempts left: {raid.reachesLeft(l)}</>
                     : <>The mana of <strong>[{e.name}]</strong> lingers.</>}
@@ -799,6 +810,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             <p class="muted">Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span><br />Marks <span class="grant">+1</span></p>
           </SysFrame>
         )}
+        <SquadGains grew={r.grew} />
         {r.ready.length > 0 && (
           <div class="alerts">
             {r.ready.map((p, i) => {

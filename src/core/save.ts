@@ -9,12 +9,13 @@
  */
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { classById } from '@/data/classes';
-import { SHADOW_RANKS } from '@/data/shadows';
+import { GROWTH_PER_LEVEL, SHADOW_RANKS } from '@/data/shadows';
 import { NODES } from '@/data/tree';
 import { rankFor } from './progression';
+import { xpAt } from './shadows';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -39,7 +40,7 @@ export function defaults(): Save {
       runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [], surveyed: [],
       last: null, unbroken: 0, bestUnbroken: 0, tactic: 'default',
     },
-    shadows: { army: [], squad: [], fresh: [] },
+    shadows: { army: [], squad: [], fresh: [], essence: 0 },
     shop: { day: null, taken: [] },
     contracts: { day: null, grade: 'E', list: [], bonus: false, seen: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
@@ -75,6 +76,10 @@ export function merge<T>(base: T, saved: unknown): T {
   return out as T;
 }
 
+/** The kills each Shadow rank once asked, and the growth each allowed, before Shadows had levels (v7). */
+const KILL_RANKS = [{ kills: 0, cap: 0.25 }, { kills: 25, cap: 0.5 }, { kills: 75, cap: 0.75 }, { kills: 150, cap: 1 }];
+const killRank = (kills: number) => KILL_RANKS.reduce((n, r, i) => (kills >= r.kills ? i : n), 0);
+
 const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
   // v2: a gate is a map, not a straight line. A run left open across the change starts its map
   // from the beginning, as it stood, unless it had already lost a chamber: then it is lost.
@@ -102,7 +107,7 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
   // v5: a Shadow's promotion is claimed, not given by its kills. Every Shadow keeps the rank its kills had already given it.
   4: (s) => {
     const army = isObj(s.shadows) && Array.isArray(s.shadows.army) ? s.shadows.army : [];
-    for (const sh of army) if (isObj(sh) && typeof sh.rank !== 'number') sh.rank = SHADOW_RANKS.reduce((n, r, i) => ((typeof sh.kills === 'number' ? sh.kills : 0) >= r.kills ? i : n), 0);
+    for (const sh of army) if (isObj(sh) && typeof sh.rank !== 'number') sh.rank = killRank(typeof sh.kills === 'number' ? sh.kills : 0);
     return s;
   },
   // v6: the rungs' choices became the skill tree. What each open rung of the class's line gave, picked
@@ -125,6 +130,23 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
     }
     h.tree = { learned, equip, resets: 0 };
     delete h.picks;
+    return s;
+  },
+  // v7: a Shadow levels on what it helps fell, and promotion costs Shadow Essence. Every Shadow takes the
+  // rank its kills had earned and the level its growth stood at; its own standing orders are gone.
+  6: (s) => {
+    const sh = isObj(s.shadows) ? s.shadows : null;
+    const army = sh && Array.isArray(sh.army) ? sh.army : [];
+    for (const x of army) {
+      if (!isObj(x)) continue;
+      const kills = typeof x.kills === 'number' ? x.kills : 0;
+      const rank = Math.min(SHADOW_RANKS.length - 1, Math.max(typeof x.rank === 'number' ? x.rank : 0, killRank(kills)));
+      const grown = Math.min(KILL_RANKS[rank].cap, kills * 0.01);
+      x.rank = rank;
+      x.xp = xpAt(Math.max(1, Math.min(SHADOW_RANKS[rank].cap, Math.round(grown / GROWTH_PER_LEVEL))));
+      delete x.tactic;
+    }
+    if (sh && typeof sh.essence !== 'number') sh.essence = 0;
     return s;
   },
 };
