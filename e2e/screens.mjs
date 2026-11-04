@@ -189,6 +189,17 @@ try {
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);
+  {
+    // An alert that only reports goes when it is tapped, and the rest go of themselves.
+    const fyi = () => page.locator('.arena--results .sysalert.is-fyi').count();
+    const n = await fyi();
+    if (!n) throw new Error('THE RESULTS SHOWED NO ALERT THAT ONLY REPORTS');
+    await page.locator('.arena--results .sysalert.is-fyi').first().click(); await sleep(900);
+    if ((await fyi()) !== n - 1) throw new Error('A TAPPED ALERT DID NOT GO');
+    await snap('raid-results-tapped', true);
+    await sleep(8000);
+    if (await fyi()) throw new Error('AN ALERT THAT ONLY REPORTS STAYED');
+  }
   await page.locator('text=Leave The Gate').click(); await drain();
 
   // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in: its brief from its Weekly Quest.
@@ -218,7 +229,10 @@ try {
   await snap('shadows', true);
   await sleep(600);
   await page.locator('.btile--army .btile__hit').click(); await sleep(600); await snap('army', true);
-  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(400); await snap('shadow-detail');
+  await page.locator('.sheet.is-top .btile.is-shadow .btile__hit').first().click(); await sleep(1200); await snap('shadow-detail');
+  // The card runs past the fold: its stats, skills, record and release, scrolled to.
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
   // Naming from the card: the System's line, the field across the window, and the two acts under it.
   await page.locator('.sheet.is-top .btn', { hasText: /^(Name|Rename)$/ }).click(); await sleep(400);
   if (!(await page.locator('.syswin .namefield__input').isVisible())) throw new Error('THE NAME WINDOW DID NOT OPEN');
@@ -226,7 +240,7 @@ try {
   await page.locator('.syswin .namefield .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   if (await page.locator('.syswin').count()) throw new Error('CANCEL LEFT THE NAME WINDOW OPEN');
   await close();
-  // The veteran's second Shadow has earned Sworn: its tile calls, its card holds the promotion, and the hold plays it.
+  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its tile calls, its card holds the promotion, and the hold plays it.
   if (!(await page.locator('.sheet.is-top .btile.is-shadow.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
   await page.locator('.sheet.is-top .btile.is-shadow.is-ready .btile__hit').first().click(); await sleep(500);
   await snap('shadow-promote');

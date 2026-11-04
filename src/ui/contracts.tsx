@@ -97,8 +97,8 @@ export function ContractsWindow({ c, fresh = [], bare, children }: {
           fresh={fresh.includes(k.kind)} count={k.done ? (fresh.includes(k.kind) ? 'Done' : 'Paid') : undefined} />
       ))}
       rewards={[
-        <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · Experience <b class="num grant">+{pay.xp}</b></>,
-        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · Experience <b class="num grant">+{bonus.xp}</b></>}</>,
+        <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · XP <b class="num grant">+{pay.xp}</b></>,
+        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · XP <b class="num grant">+{bonus.xp}</b></>}</>,
       ]}>
       {children}
     </QuestWindow>
@@ -123,7 +123,7 @@ export function QuestLines({ c, report }: { c: Contracts; report: ContractReport
     <div class="alerts questlines" aria-label="Daily Quests">
       {report.moved.map((k, i) => <QuestLine key={k.kind} k={k} grade={c.grade} pay={pay} delay={300 + i * 180} />)}
       {report.bonus && (
-        <SysAlert head="Quest Rewards" class="is-done" delay={300 + report.moved.length * 180} icon={<Ring p={1} done mark="star" />} aside={<Pay {...bonus} />}>
+        <SysAlert head="Quest Rewards" fyi class="is-done" delay={300 + report.moved.length * 180} icon={<Ring p={1} done mark="star" />} aside={<Pay {...bonus} />}>
           <strong>[Daily Quests]</strong> Completion bonus.
         </SysAlert>
       )}
@@ -139,7 +139,7 @@ function QuestLine({ k, grade, pay, delay }: { k: Moved; grade: Contracts['grade
   }, []);
   const done = k.done && at >= k.got;
   return (
-    <SysAlert head={done ? 'Quest Rewards' : 'Quest Info'} class={done ? 'is-done' : ''} delay={delay} attrs={{ 'data-contract': k.kind }}
+    <SysAlert head={done ? 'Quest Rewards' : 'Quest Info'} fyi class={done ? 'is-done' : ''} delay={delay} attrs={{ 'data-contract': k.kind }}
       icon={<Ring p={Math.min(1, at / Math.max(1, k.need))} done={done} />}
       aside={done ? <Pay {...pay} /> : <span class="num">{Math.min(at, k.need)}/{k.need}</span>}>
       {contractText(k, grade)}

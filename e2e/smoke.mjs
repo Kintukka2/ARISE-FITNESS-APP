@@ -114,6 +114,8 @@ async function raidGate(row, name, auto = false) {
       continue;
     }
     if (await visible('.turnbar')) {
+      // At Skip the fight between turns takes no time, but its lines are still written to the log.
+      if (turns === 1 && (await page.locator('.arena__feed li').count()) < 2) throw new Error('SKIP LEFT THE FIGHT LOG EMPTY');
       if (!turns++) {
         await snap(`${name}-turn`);
         // Aim at the last foe standing in the list, so aiming is exercised as well as striking.
@@ -168,6 +170,17 @@ async function raidGate(row, name, auto = false) {
     const moved = Object.keys(after).filter((k) => after[k] > (before[k] ?? 0)).sort().join();
     const shown = (await page.locator('.arena--results .questlines [data-contract]').evaluateAll((els) => els.map((e) => e.dataset.contract))).sort().join();
     if (shown !== moved) throw new Error(`THE RESULTS SHOWED DAILY QUESTS [${shown}] BUT THE RUN MOVED [${moved}]`);
+    // An alert that only reports goes when it is tapped, and the rest go of themselves; one that opens something stays.
+    const fyi = () => page.locator('.arena--results .sysalert.is-fyi').count();
+    const n = await fyi();
+    if (n) {
+      await sleep(900);
+      await page.locator('.arena--results .sysalert.is-fyi').first().click();
+      await sleep(900);
+      if ((await fyi()) !== n - 1) throw new Error('A TAPPED ALERT DID NOT GO');
+      await sleep(8500);
+      if (await fyi()) throw new Error('AN ALERT THAT ONLY REPORTS STAYED');
+    }
   }
   // Leaving with loot face down asks first; Reveal All turns it over and stays.
   if (await visible('.flip:not(.is-open)')) {

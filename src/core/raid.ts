@@ -66,7 +66,7 @@ export function allySpec(a: Ally, i: number): UnitSpec {
 /** A Shadow as it fights. `bonus` is what the hunter's marks give every Shadow. */
 export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, tactic: sh.tactic };
+  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id };
 }
 
 /** The hunters the Association sends with you at an Ascension level. The Trial is the System's, so it sends none there. */
@@ -154,10 +154,14 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
   const log: Ev[] = [];
   const g = battle(party, foes, rng(`arise|raid|${seed}|${index}`), enemyActions(d), (killer, victim) => {
     if (victim.side === 'e' && victim.ref) felled.push(victim.ref);
-    if (killer?.tag === 'shadow' && killer.ref && victim.side === 'e') {
-      const t = (kills[killer.ref] ??= { kills: 0, bosses: 0 });
+    if (victim.side !== 'e') return;
+    // Every Shadow that landed a hit helped fell it, whoever landed the last.
+    const helped = new Set([...victim.hurtBy, ...(killer ? [killer] : [])]);
+    for (const u of helped) {
+      if (u.tag !== 'shadow' || !u.ref) continue;
+      const t = (kills[u.ref] ??= { kills: 0, bosses: 0 });
       t.kills++;
-      if (c.boss) t.bosses++;
+      if (c.boss && victim === foes[0]) t.bosses++;
     }
   }, log, { hero: opts.manual ? party[0]?.uid : undefined, tactic: opts.tactic, potions: opts.potions });
   let step: IteratorResult<Turn, FightResult> = g.next();
@@ -495,7 +499,11 @@ export type Outcome = 'cleared' | 'withdrawn' | 'defeated';
  * A creature lingering after a clear. `cost` is the first reach's MP; `tries` counts the reaches that
  * failed, and `bound` is set once one holds.
  */
-export interface Lingering { enemyId: string; boss: boolean; cost: number; tries: number; bound?: boolean }
+export interface Lingering {
+  enemyId: string; boss: boolean; cost: number; tries: number; bound?: boolean;
+  /** Set when one like it already serves in the army: the Shadow Essence it gives when it holds. */
+  essence?: number;
+}
 
 /** What the next reach for a lingering Shadow costs: the first reach's MP, doubled for every one that failed. */
 export const reachCost = (l: Lingering) => Math.round(l.cost * Math.pow(shadows.EXTRACT_TRIES.step, l.tries ?? 0));
@@ -521,7 +529,9 @@ export interface RaidResult {
   contracts: contracts.ContractReport;
   /** A Spire block: the floor it reached, and whether that is the week's best. */
   spire: { floor: number; best: boolean } | null;
-  /** Shadows the run's kills qualified for promotion, and the rank each can now be promoted to. */
+  /** What each deployed Shadow took from the run: the creatures it helped fell, the XP it took under its cap, and its level before and after. */
+  grew: { id: string; kills: number; xp: number; from: number; to: number }[];
+  /** Shadows the run made ready for promotion, and the rank each can now be promoted to. */
   ready: { id: string; rank: string }[];
   /** How far the run moved the Association Quest in hand. */
   assoc: AssocMove | null;
@@ -640,15 +650,21 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     const kills = [...run.felled].reverse(); // boss last in, first considered
     for (const id of kills) {
       const e = enemyById(id);
-      if (!e || seen.has(id) || shadows.isBound(s, id) || lingering.length >= 2) continue;
+      if (!e || seen.has(id) || lingering.length >= 2) continue;
       seen.add(id);
       const boss = id === d.boss || (!!run.chosen && id === walkers.walkerOf(run.chosen, d.rank as Rank).id);
-      if (r() < shadows.lingerChance(s, boss)) lingering.push({ enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level)), tries: 0 });
+      const owned = shadows.isBound(s, id);
+      if (r() >= shadows.lingerChance(s, boss, owned)) continue;
+      const l: Lingering = { enemyId: id, boss, cost: Math.round((shadows.EXTRACT_MP[e.rank] ?? 50) * asc.manaShare(level)), tries: 0 };
+      // One like it already serves: extracted again, it gives Shadow Essence.
+      if (owned) l.essence = shadows.essenceOf(e, boss);
+      lingering.push(l);
     }
   }
 
   // Records.
   const ready: RaidResult['ready'] = [];
+  const grew: RaidResult['grew'] = [];
   if (!practice) {
     if (!tower) {
       const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
@@ -676,12 +692,17 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     for (const id of run.squad) {
       const sh = s.shadows.army.find((x) => x.id === id);
       if (!sh) continue;
-      const was = shadows.qualifiedIndex(sh);
+      const was = shadows.canPromote(s, sh);
+      const from = shadows.levelOf(sh);
+      const k = run.kills[id] ?? { kills: 0, bosses: 0 };
       sh.out++;
-      sh.kills += run.kills[id]?.kills ?? 0;
-      sh.bosses += run.kills[id]?.bosses ?? 0;
-      // Kills qualify a Shadow; the hunter promotes it, from the Shadows screen.
-      if (shadows.qualifiedIndex(sh) > was && shadows.canPromote(sh)) ready.push({ id: sh.id, rank: shadows.nextRank(sh)!.name });
+      sh.kills += k.kills;
+      sh.bosses += k.bosses;
+      // At its rank's cap it takes no more XP until it is promoted.
+      const xp = shadows.earn(sh, shadows.xpFrom(k.kills, k.bosses));
+      grew.push({ id, kills: k.kills, xp, from, to: shadows.levelOf(sh) });
+      // The hunter promotes it, from its card, once everything the rank above asks is met.
+      if (!was && shadows.canPromote(s, sh)) ready.push({ id: sh.id, rank: shadows.nextRank(sh)!.name });
     }
   }
   // A Chosen in the boss's place is not the gate's own boss: meeting it shows nothing of that one.
@@ -702,24 +723,32 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
-    steps: run.at, depth, contracts: deal, spire: climb, ready, assoc: job, ascended, chosen,
+    steps: run.at, depth, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }
 
 /**
  * Reach for a lingering Shadow, at what this reach costs (`reachCost`). MP is spent whether or not it
- * holds. A reach that fails leaves it lingering while reaches are left (`failed`); the last to fail
- * disperses it (`lost`). Mutates the save and the lingering.
+ * holds. Held, it joins the army (`bound`), or, when one like it already serves, it gives its Shadow
+ * Essence (`essence`). A reach that fails leaves it lingering while reaches are left (`failed`); the
+ * last to fail disperses it (`lost`). Mutates the save and the lingering.
  */
-export function extract(s: Save, l: Lingering, roll: number, now = Date.now()): 'bound' | 'failed' | 'lost' | 'no-mana' {
+export function extract(s: Save, l: Lingering, roll: number, now = Date.now()): 'bound' | 'essence' | 'failed' | 'lost' | 'no-mana' {
   if (reachesLeft(l) <= 0) return 'lost';
   if (!vitals.spendMp(s, reachCost(l), now)) return 'no-mana';
   s.stats.extractions++;
   if (roll < shadows.holdChance(s)) {
     s.stats.extractionsWon++;
-    shadows.bind(s, l.enemyId, dayKey(now));
     l.bound = true;
+    const e = enemyById(l.enemyId);
+    if (shadows.isBound(s, l.enemyId) && e) {
+      l.essence = shadows.essenceOf(e, l.boss);
+      s.shadows.essence = (s.shadows.essence ?? 0) + l.essence;
+      return 'essence';
+    }
+    delete l.essence;
+    shadows.bind(s, l.enemyId, dayKey(now));
     return 'bound';
   }
   l.tries = (l.tries ?? 0) + 1;

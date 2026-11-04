@@ -58,18 +58,22 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | The Arrival: the cut between the office and the first Notification | No one. It carries no words, so the System's first words are its Notification | `ui/arrival.ts`, `screens/Onboarding.tsx` |
 | The rank-up: the cut between a held Reclassification and "Reclassification approved." | No one, as the Arrival | `ui/arrival.ts` (`rankUp`), `app/flow.ts` (`claimRank`) |
 | The promotion: the cut between a held Hold To Promote and "[Shadow …] has been promoted." | No one, as the Arrival | `ui/arrival.ts` (`promotion`), `app/flow.ts` (`claimPromotion`) |
-| A Shadow's promotion earned, on the results: `[Shadow …] has met the requirements for [Promotion: Sworn Rank].` | The System, as an alert: a strip of its frame, not a window (`SysAlert`) | `screens/Arena.tsx`, `ui/frame.tsx` |
+| A Shadow's promotion earned, on the results: `[Shadow …] has met the requirements for promotion.`, on that Shadow's alert, in its violet, with nothing under it and nothing to tap: the Shadows tab's mark shows where to go | The System, as an alert: a strip of its frame, not a window (`SysAlert`) | `ShadowAlerts` in `screens/Shadows.tsx`, `ui/frame.tsx` |
 | The Daily Quests a run moved, on the results: one alert each, `QUEST INFO` under way and `QUEST REWARDS` once done, with what it paid | The System, as alerts | `QuestLines` in `ui/contracts.tsx` |
 | A Shadow lingering, on the results: `The mana of [Clay Sentinel] lingers.`, an alert that opens the extraction | The System, as an alert that is a button | `screens/Arena.tsx` |
 | The extraction: what lingers, the cost and the odds, Hold To Extract; bound, `You may bestow a name.` and the name field | The System, on its sheet headed `NOTIFICATION`; the field and Not Now are the interface's | `Extraction` in `screens/Arena.tsx`, `NameField` in `screens/Shadows.tsx` |
+| A creature already in the army, extracted again: before the reach `[Shadow Ghoul] serves in your army.` / `Extraction: Shadow Essence +2`; held, `[Shadow Ghoul] has become Shadow Essence.`. Its alert carries the Essence it would give | The System, on the same sheet and alert | `Extraction` in `screens/Arena.tsx` |
+| What a run gave each deployed Shadow, on the results: an alert each, `[Shadow Ghoul] has levelled up.` over `Lv.9 → Lv.11`, or its name over `Lv.10 · Level cap`, `XP +14` at its right and a meter along its foot | The System, as alerts | `ShadowAlerts` in `screens/Shadows.tsx` |
+| A Chosen felled, on the results: `You have defeated [The Pale Duelist].` over what it left and `[The Pale Duelist] will return to the Gates.`; a masterwork's alert opens its card. A level proved: `ACCESS GRANTED: ASCENSION 4` over its name, the upgrade limit and `Marks +1` | The System, as alerts: every report on the results is one, never a window | `screens/Arena.tsx` |
 | Leaving with a Shadow still lingering: `A Shadow Lingers` | The interface, as the unrevealed loot's reminder is | `screens/Arena.tsx` |
 | A purchase or a use offered: `Would you like to purchase?` / `Would you like to drink?` / `Would you like to use?`, and under it **Do not ask again** | The System's Offer; the toggle is the interface's control, and Settings lists what it skips | `ui/ask.tsx`, `screens/Settings.tsx` |
 | Ryn's Association Quests: his card at the top of the Quests screen, his windows when he hands a job over and pays for one, the alert on a run's results (shaped as the System's alerts, in his blue, his corner brackets and his face) | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
 | The board's `Association` chip, and the brief's `Association Quest:` hint | The interface | `screens/Gates.tsx` |
 | The `?` on a Stats sheet field, and the line it opens on what the number does and where it comes from | The interface, inside the System's frame, as a hint is; one line each, its numbers read from the engine (`CRIT`, `HIT`). The `?` sits in the top right corner of every such box; the whole box is the button, and the line shows only once it is tapped, never on hover | `FIGHT_HELP` in `screens/Inventory.tsx`, `Field` in `ui/frame.tsx` |
 | An action's details in a fight: its `?` opens, over the foot of the feed, the name, `Lv.2` for a skill of the tree, `Ready` or `Ready in 2`, its line (`Physical ×1.1 · Two targets · Cooldown 2 · Inflicts Staggered`) and a line for each status it inflicts (`Staggered: Physical defence -25%`). A pointer resting on the action opens it too | The interface, as the turn bar is | `Acts` in `screens/Arena.tsx`, `skillLine` in `screens/Skills.tsx` |
-| Where to claim it, under the alerts: `Promote it on the Shadows screen.` | The interface, as a hint | `screens/Arena.tsx` |
-| A Shadow's promotion on its card: its badge now and at the rank above, what the rank brings, Hold To Promote | The System, in the card's violet, the promotion itself in advancement's gold | `Promotion` in `screens/Shadows.tsx` |
+| A Shadow's card: its badge in the ring of its next level, its rank, `Was` and what it was, its tags, Power and XP; then Growth, Stats, Skills, Traits and Record | The System, in the Shadows' violet. The section labels, the graph's rank names and the radar's legend (`Now`, `Lv.MAX`) are labels, as the Status sheet's are | `ShadowCard` in `screens/Shadows.tsx` |
+| A Shadow's next rank on its card: `Next rank`, what it asks (`Level 14/20`, `Shadow Essence 9/12`, `Bosses felled 1/1`), each ticked once met, and what it brings (`Level cap: 20 → 30`); once all is met, `Promotion`, its badge now and at the rank above, Hold To Promote | The System, in the card's violet, the promotion itself in advancement's gold | `NextRank` in `screens/Shadows.tsx` |
+| Releasing a Shadow: `Would you like to release this Shadow?`, its name, `Shadow Essence +5`, and the warning `A Shadow released is gone.` | The System's Offer, its warning in red | `Release` in `screens/Shadows.tsx` |
 | The family glyphs, the rank insignia and the Shadow badge | No one: art, as the rank plates are | `ui/emblems.tsx` |
 | A rank's requirements met: `You have met the requirements for [Reclassification: D-Rank].` | The System | `app/flow.ts` (`reclassReady`) |
 | Speaker labels on Valcorde's voice box and on tours ("Ryn Valcorde", "Notification", "Tutorial") | The interface | `ui/components.tsx`, `ui/overlays.tsx` |
@@ -110,8 +114,7 @@ alone.
 
 **An alert is the System's frame as a strip.** For news that asks for nothing where it shows (a
 Shadow's promotion earned, on the results), the System does not open a window: a strip of its frame,
-lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. One that opens something ends in a lit box with a chevron at its right edge. What to do
-about it is the interface's hint under it. A window is for what the player answers or must stop for.
+lit down its left edge, its icon box, `NOTIFICATION` small, and one line, sliding in once. One that opens something ends in a lit box with a chevron at its right edge, and stays until it is used. One that only reports goes when it is tapped, or of itself eight seconds after it lands (`ALERT_STAYS`), and the alerts under it close up. A window is for what the player answers or must stop for.
 
 ### The System's frame
 
@@ -213,7 +216,7 @@ and no dashes.
   run's results, where `raid.finish` settled it.
 - **A run's Daily Quests are one notice on its results**, in the Gates' orange: a line to each quest
   the run moved, its ring, its goal, its count, or what it paid once done, and a line for the
-  completion bonus. There it stands in for QUEST INFO and QUEST REWARDS, and the Experience and
+  completion bonus. There it stands in for QUEST INFO and QUEST REWARDS, and the XP and
   Shards tiles do not repeat what it paid. The full window stays on the Quests screen.
 - **A rank is told twice, as two events:** once when the level meets its requirements
   (`You have met the requirements for [Reclassification: D-Rank].`), once when the hunter claims it
@@ -414,8 +417,8 @@ GOAL
 {Hint, smaller.}
 REWARDS
 ┌──────────────────────────────────────────────┐
-│ 1. Each quest: {shards} · Experience +{n}    │
-│ 2. All 3: {shards} · Experience +{n}         │
+│ 1. Each quest: {shards} · XP +{n}            │
+│ 2. All 3: {shards} · XP +{n}                 │
 └──────────────────────────────────────────────┘
 New Daily Quests in: {countdown}
 ```
@@ -436,7 +439,7 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 | Quest | Name | Goals |
 |---|---|---|
 | The day's | `[Daily Quests]` | As above |
-| The next rank | `[Reclassification: D-Rank]`, `[Reclassification: Sovereign]` | `Reach Level 10.` / `Experience needed: {n}` |
+| The next rank | `[Reclassification: D-Rank]`, `[Reclassification: Sovereign]` | `Reach Level 10.` / `XP needed: {n}` |
 | The Spire's week | `[Weekly Quest: The Pale Spire]` | `Clear Floor 36.` / `Floors 26 to 30 next.` |
 | The next Ascension level | `[Trial: Ascension 4]` | `Clear all 3 S-Rank Gates at Ascension 3.` / `Win The Trial of Ascension 4: 5 of the Chosen in a row.` |
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Fell [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
@@ -490,7 +493,7 @@ QUEST REWARDS
 You got rewards.
 ┌──────────────────────────┐
 │ 1. Mana Shards +{n}      │
-│ 2. Experience +{n}       │
+│ 2. XP +{n}               │
 └──────────────────────────┘
                      Close
 ```
@@ -890,7 +893,7 @@ two lines.
 
 ```
 LEVELS, RANKS AND STATS
-- A clear pays experience by grade: 6 at E to 50 at S.
+- A clear pays XP by grade: 6 at E to 50 at S.
 - The first clear of each Gate pays double.
 - Withdrawing pays a share of what you cleared. Being carried out pays a little.
 ```
@@ -955,6 +958,10 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
 | Shadow | shadow | Capitalised everywhere, as a game term, like Gate |
+| Shadow Essence | essence, shards, souls | Spent on a Shadow's promotion. In System text always in full, as Mana Shards is; a label may say "Essence" where the line already names it |
+| help fell | assist, participate, land a kill | A Shadow helps fell every creature it landed a hit on, whoever landed the last: "Have one Shadow help fell 100 creatures." Its record calls the count `Felled` |
+| Level, Lv. | rank level, tier | A Shadow's level, `Lv.14`, as a skill's is. Its rank is the name: Bound, Sworn, Vanguard, Ascendant |
+| XP | EXP, Experience, exp | The hunter's and a Shadow's, on every surface and in the Guide: `XP +65`, `XP needed: 1,240`, a Shadow's `XP 4/9`. `tests/voice.test.ts` refuses the others |
 | ally | Ally | A hunter in the party. Not a game term, so lowercase inside a sentence: "For allies and Shadows" |
 | Arise | ARISE | The app's name in prose: "How Arise Works". The splash wordmark and the extraction button set it in capitals. The store title is `Arise: Dungeon RPG` |
 | Mana Shards | | In System text, always in full. The interface may say "shards" |

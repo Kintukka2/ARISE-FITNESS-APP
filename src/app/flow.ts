@@ -122,7 +122,7 @@ export async function claimRank(plate: Element | null) {
 export async function claimPromotion(id: string, badge: Element | null) {
   const sh = store.get().shadows.army.find((x) => x.id === id);
   const e = sh && enemyById(sh.enemyId);
-  if (!sh || !e || !shadows.canPromote(sh)) return;
+  if (!sh || !e || !shadows.canPromote(store.get(), sh)) return;
   const was = shadows.rankIndex(sh);
   const lifted = badge instanceof HTMLElement || badge instanceof SVGElement ? badge : null;
   const from = fromEl(badge);
@@ -140,7 +140,7 @@ export async function claimPromotion(id: string, badge: Element | null) {
         ...system.notify([
           `${system.tag(shadows.nameOf(sh))} has been promoted.`,
           system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`),
-          `Growth limit: ${system.change(`+${Math.round(R[p.from].cap * 100)}%`, `+${Math.round(R[p.to].cap * 100)}%`)}`,
+          `Level cap: ${system.change(R[p.from].cap, system.gain(R[p.to].cap))}`,
           ...(p.second ? [`Skill learned: ${system.tag(p.second)}`] : []),
         ], 'shadow'),
         typed: false,

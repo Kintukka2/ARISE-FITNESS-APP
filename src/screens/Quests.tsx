@@ -124,7 +124,7 @@ function rankTile(s: Save): QuestTile | null {
   return {
     key: 'rank', kind: 'system', sheet: 'gold', name: `Reclassification: ${q.to.name}`, icon: <Glyph name="up" />, wide: q.ready, call: q.ready,
     count: q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`,
-    status: q.ready ? 'Requirements met.' : <>Experience needed: <b class="num">{group(q.left)}</b></>,
+    status: q.ready ? 'Requirements met.' : <>XP needed: <b class="num">{group(q.left)}</b></>,
     art: (
       <span class={`qa-rank ${q.ready ? 'is-ready' : ''}`}>
         <Sigil rank={q.from.key} size={q.ready ? 46 : 34} />
@@ -168,7 +168,7 @@ function RankBody() {
           <span class="rankplates__to"><Sigil rank={q.to.key} size={58} /></span>
         </div>
       )}
-      goals={<QuestGoal id="rank" text={`Reach Level ${q.to.min}.`} hint={`Experience needed: ${group(q.left)}`}
+      goals={<QuestGoal id="rank" text={`Reach Level ${q.to.min}.`} hint={`XP needed: ${group(q.left)}`}
         got={Math.min(s.hunter.level, q.to.min)} need={q.to.min} done={q.ready} pct={q.share} />}
       rewards={rewards}>
       {q.ready && (

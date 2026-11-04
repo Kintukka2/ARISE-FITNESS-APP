@@ -26,6 +26,7 @@ import { licensedRank } from '@/core/licence';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
 import * as shadows from '@/core/shadows';
+import { powerOf } from '@/core/combat';
 import * as association from '@/core/association';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
@@ -71,6 +72,9 @@ function tidy(s: Save, now: number, t: Tally) {
   setAllBySystem(s);
   sweep(s);
   gear.autoEquip(s);
+  // A slot left free is filled with the strongest Shadow not deployed, as the Squad tile calls for.
+  const bench = s.shadows.army.filter((x) => !shadows.squad(s).includes(x)).sort((a, b) => powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
+  for (const x of bench) if (shadows.freeSlots(s) > 0) shadows.toggleDeploy(s, x.id);
   const day = dayKey(now);
   // The best thing on the shelf that beats what is worn, if it costs no more than half the purse.
   const shelf = shop.shelf(s, day).filter((o) => !o.sold && o.price <= s.wallet.shards / 2 && gear.beatsWorn(s, o.item));
@@ -146,9 +150,8 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   // Auto walks the System's road to the boss; it never withdraws.
   const outcome = won ? 'cleared' : 'defeated';
   const res = raid.finish(s, d, run, outcome, now);
-  // A hunter who keeps up claims each rank the moment its level is reached, and promotes each Shadow the moment its kills earn it.
+  // A hunter who keeps up claims each rank the moment its level is reached, and promotes each Shadow the moment the Essence pays for it.
   reclassifyAll(s);
-  shadows.promoteAll(s);
   // And takes Ryn's Association work, reporting each job the moment it is done.
   association.issue(s);
   if (association.ready(s)) { association.report(s); t.assoc++; }
@@ -160,6 +163,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   if (res.chosen) { t.chosen++; if (res.chosen.item) t.masterworks++; }
   // Every reach it has the mana for, up to the last, while the Shadow lingers.
   for (const l of res.lingering) while (raid.reachesLeft(l) > 0 && vitals.read(s, now).mp >= raid.reachCost(l)) raid.extract(s, l, r(), now);
+  shadows.promoteAll(s);
   t.shardsIn += s.wallet.earned - before;
 }
 
@@ -207,7 +211,7 @@ function campaign(p: Profile) {
     }
     if ((day + 1) % 28 === 0) {
       weekly.push(`  day ${String(day + 1).padStart(3)}  L${String(s.hunter.level).padStart(3)} ${licensedRank(s)}  Ascension ${String(s.ascension.level).padStart(2)}  shards ${String(s.wallet.shards).padStart(5)}  score ${String(Math.round(gear.power(s))).padStart(4)}  ` +
-        `Shadows ${s.shadows.army.length} (best ${s.shadows.army.reduce((n, x) => Math.max(n, x.kills), 0)} kills, slots ${shadows.slots(s)})  ` +
+        `Shadows ${s.shadows.army.length} (squad ${shadows.squad(s).map((x) => `${shadows.rankOf(x).name[0]}${shadows.levelOf(x)}`).join('/') || '-'}, essence ${s.shadows.essence}, slots ${shadows.slots(s)})  ` +
         `sets ${[...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}  Spire best ${s.spire.top}`);
     }
   }

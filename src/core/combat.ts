@@ -139,8 +139,6 @@ export interface UnitSpec {
   atkMult?: number;
   tag?: 'hero' | 'ally' | 'shadow' | 'foe';
   ref?: string;
-  /** Standing orders of its own, over the party's. */
-  tactic?: Tactic;
 }
 
 export class Unit {
@@ -151,15 +149,17 @@ export class Unit {
   /** Foes this unit has put down this fight, for Rampage. */
   mom = 0;
   own: Map<string, Ability>;
-  atkMult: number; tag: UnitSpec['tag']; ref?: string; tactic?: Tactic;
+  atkMult: number; tag: UnitSpec['tag']; ref?: string;
   /** The last foe to land a hit on this unit, for allies told to protect it. */
   hitBy?: Unit;
+  /** Everyone who landed a hit on this unit: each helped fell it. */
+  hurtBy = new Set<Unit>();
   /** A foe's next action, settled in advance and shown: an ability, and the unit it goes at first. */
   intent?: { ab: string; at?: string };
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
-    this.tag = sp.tag; this.ref = sp.ref; this.tactic = sp.tactic;
+    this.tag = sp.tag; this.ref = sp.ref;
     this.kit = sp.kit ?? [];
     this.own = new Map((sp.own ?? []).map((a) => [a.name, a]));
     this.names = sp.passives ?? [];
@@ -375,7 +375,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   const magic = a.type === 'magic';
   const meant = u.intent?.ab === a.name ? u.intent.at : undefined;
   const at = o?.at ?? meant;
-  const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, u.tactic ?? ctx.tactic, ctx.hero);
+  const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, ctx.tactic, ctx.hero);
   if (a.mult === 0) {
     // A curse: no damage and no roll; what it inflicts lands on every target unless it is immune.
     log.push({ t: 'cast', a: u.uid, ab: a.name, k: 'curse' });
@@ -423,6 +423,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     const took = Math.min(dmg, Math.max(0, t.hp));
     t.hp -= dmg;
     t.hitBy = u;
+    t.hurtBy.add(u);
     survive(t, log);
     if (u.has('escalation') && u.esc < 2) u.esc += 1;
     if (u.has('vamp')) drawn += took * EDGE.vamp;

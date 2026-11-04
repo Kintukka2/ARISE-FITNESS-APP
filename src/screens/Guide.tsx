@@ -4,7 +4,7 @@ import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
-import { SLOTS as SQUAD, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_KILL, HOLD, SECOND_AT, SHADOW_RANKS } from '@/core/shadows';
+import { SLOTS as SQUAD, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
@@ -34,7 +34,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Levels, ranks and stats',
     lines: [
-      `A clear pays experience by grade: ${GATE_XP.E} at E to ${GATE_XP.S} at S.`,
+      `A clear pays XP by grade: ${GATE_XP.E} at E to ${GATE_XP.S} at S.`,
       'The first clear of each Gate pays double.',
       'Withdrawing pays a share of what you cleared. Being carried out pays a little.',
       `The Practice Gate lands you on Level ${PRACTICE_LEVEL}.`,
@@ -138,7 +138,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'The job’s Gate is pinned to your board, marked Association, until the job is done.',
       'Creatures count in any Gate, however the run ends. A clear counts only when you clear.',
       'When it is done, report to him from his card on the Quests screen. He pays, then hands over the next.',
-      `Every job pays ${Math.round(ASSOC.xp * 100)}% of a clear’s experience at its grade.`,
+      `Every job pays ${Math.round(ASSOC.xp * 100)}% of a clear’s XP at its grade.`,
       `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, a field potion, shards or a ${SURVEY.name}.`,
       `Jobs ${ASSOC.satchelAt.map((n) => n + 1).join(', ')} widen your satchel by one field potion each.`,
       'The line loops through the three kinds, and asks for more creatures and stronger Gates each time round.',
@@ -152,8 +152,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `The System issues ${CONTRACTS_PER_DAY} Daily Quests a day, for your grade when they are issued.`,
       'They are on the Quests screen. Each one says where it can be done.',
       'A Gate on the board that a Daily Quest names is marked Quest.',
-      `Each pays ${CONTRACT_PAY.shards === 1 ? 'a clear’s' : `${CONTRACT_PAY.shards} clears’`} shards at that grade and ${CONTRACT_PAY.xp * 100}% of a clear’s experience.`,
-      `All ${CONTRACTS_PER_DAY} together pay ${CONTRACT_BONUS.shards} clears’ shards and ${CONTRACT_BONUS.xp * 100}% of a clear’s experience on top.`,
+      `Each pays ${CONTRACT_PAY.shards === 1 ? 'a clear’s' : `${CONTRACT_PAY.shards} clears’`} shards at that grade and ${CONTRACT_PAY.xp * 100}% of a clear’s XP.`,
+      `All ${CONTRACTS_PER_DAY} together pay ${CONTRACT_BONUS.shards} clears’ shards and ${CONTRACT_BONUS.xp * 100}% of a clear’s XP on top.`,
       'A run counts once it is settled, however it ends.',
       'Kills count even when you are carried out. A clear counts only when you clear.',
       'New Daily Quests arrive at midnight. One left undone costs nothing.',
@@ -226,15 +226,18 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `A Shadow that does not hold still lingers: you can reach for it ${EXTRACT_TRIES.max} times in all. Each reach costs ${EXTRACT_TRIES.step === 2 ? 'twice' : `${EXTRACT_TRIES.step} times`} the one before.`,
       `You can deploy ${SQUAD.E} at E, ${SQUAD.C} at C and ${SQUAD.A} at A. Some Secret Quests add more.`,
       'Shadows never make a Gate harder.',
-      `A Shadow grows ${GROWTH_PER_KILL * 100}% with every kill it lands, up to its rank’s limit.`,
-      `Kills earn it the next rank: ${SHADOW_RANKS.map((r) => `${r.name}${r.kills ? ` at ${r.kills} kills` : ''} (up to +${Math.round(r.cap * 100)}%)`).join(', ')}.`,
-      'Promote it from its card on the Shadows screen, by holding Hold To Promote. A Shadow waiting to be promoted lights its tile.',
-      'Until it is promoted it keeps its rank and its limit, and its kills keep counting.',
+      `A Shadow levels on every creature it helps fell: XP ${SHADOW_XP.kill} for each one it landed a hit on, and ${SHADOW_XP.boss} for a boss.`,
+      `Each level grows every attribute by ${GROWTH_PER_LEVEL * 100}% of its creature’s own.`,
+      `Each rank caps its level: ${SHADOW_RANKS.map((r) => `${r.name} Lv.${r.cap}`).join(', ')}. At the cap it takes no more XP until it is promoted, and the promotion lifts the cap without changing its level.`,
+      `Promotion asks for its level at the cap and Shadow Essence, and from ${SHADOW_RANKS.find((r) => r.bosses)?.name} Rank bosses it helped fell: ${SHADOW_RANKS.slice(1).map((r) => `${r.name} ${r.essence} Essence${r.bosses ? ` and ${r.bosses} bosses` : ''}`).join(', ')}.`,
+      'Promote it from its card on the Shadows screen, by holding Hold To Promote. A Shadow ready to be promoted lights its tile.',
+      `A creature like one already in your army gives Shadow Essence when its extraction holds: ${ESSENCE.E} at E to ${ESSENCE.S} at S, and twice that from a boss.`,
+      'Release a Shadow from its card for Shadow Essence: its creature’s, and half of what its ranks cost. A Shadow released is gone.',
       `Each rank has its insignia: ${SHADOW_RANKS.map((r, i) => `${r.name} ${['one chevron', 'two', 'three', 'three over a rocker'][i] ?? ''}`.trim()).join(', ')}.`,
       'A Shadow’s badge shows what it was, its family’s glyph, with its shadow behind it.',
       'A newly bound Shadow fights with its creature’s first ability.',
       `At ${SHADOW_RANKS[SECOND_AT].name} it remembers a second, from its own kit or, if it had only one, from its kin.`,
-      'Each Shadow follows the standing orders set on the map, unless you give it its own on its sheet.',
+      'Every Shadow follows the standing orders set on the map.',
       'You may bestow a name on a Shadow when it joins your army, or later from its card. It goes by that name everywhere.',
     ],
   },

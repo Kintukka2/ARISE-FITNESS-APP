@@ -735,7 +735,7 @@ export function openDossier() {
               <Field k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top}${weekBest(s) ? ` · this week ${weekBest(s)}` : ''}` : '-- --'} wide />
               <Field k="Creatures felled" v={group(felled)} />
               <Field k="Shadows bound" v={`${s.shadows.army.length} · ${s.stats.extractionsWon}/${s.stats.extractions}`} />
-              <Field k="Experience" v={group(s.stats.xpTotal)} />
+              <Field k="XP earned" v={group(s.stats.xpTotal)} />
               <Field k="Mana Shards earned" v={group(s.wallet.earned)} />
             </div>
           </Section>

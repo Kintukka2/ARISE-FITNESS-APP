@@ -543,12 +543,12 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           {level > 0 && <small>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''} · Pay +{Math.round((pay - 1) * 100)}%</small>}
         </div>
         <div class="tiles">
-          <Tile label="Clear" value={<span class="num">{xp} XP</span>} sub={isPractice(d) ? `enough for Level ${PRACTICE_LEVEL}` : <>and <Shards n={sh} /></>} />
+          <Tile label="Clear" value={<span class="num">XP +{xp}</span>} sub={isPractice(d) ? `enough for Level ${PRACTICE_LEVEL}` : <>and <Shards n={sh} /></>} />
           {isTrial(d)
             ? <Tile label="Opens" value={`Ascension ${s.ascension.unlocked + 1}`} sub="if you win it" />
             : tower
             ? <Tile label="This week" value={`Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`} sub="a new best, if you clear it" />
-            : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">+{xp} XP</span> : '-- --'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
+            : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">XP +{xp}</span> : '-- --'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
           <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={raid.homeSets(d).length ? `and a ${raid.homeSets(d).map((x) => x.id).join(' or ')} piece on a clear` : d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
           <Tile label="Depth" value={`${map.layers.length} ${isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}`} sub={isTrial(d) ? 'no rest between them' : 'a rest, then the boss'} />
         </div>

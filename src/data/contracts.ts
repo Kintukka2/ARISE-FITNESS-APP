@@ -35,8 +35,11 @@ export const CLEAR_COUNT = { base: 2, more: 3, moreOdds: 0.35 } as const;
  */
 export const FELL_COUNT: Record<Rank, number> = { E: 8, D: 9, C: 9, B: 9, A: 12, S: 14 };
 
-/** Kills the deployed Shadows must land, per Shadow deployed: about two runs' worth. At E they land too few to ask. */
-export const SHADOW_KILLS_PER: Record<Rank, number> = { E: 0, D: 2, C: 1.5, B: 3, A: 3, S: 3 };
+/**
+ * Creatures the deployed Shadows must help fell, per Shadow deployed, each counted once for every Shadow
+ * that hit it: about two runs' worth. At E they fell too few to ask.
+ */
+export const SHADOW_KILLS_PER: Record<Rank, number> = { E: 0, D: 5, C: 5, B: 4, A: 6, S: 7 };
 
 /** Fatigue to walk in carrying: three gates' worth at the hunter's grade, never more than this. */
 export const TIRED_GATES = 3;

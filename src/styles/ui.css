@@ -543,12 +543,30 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysalert__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .sysalert__head { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--win); text-shadow: 0 0 8px var(--win-glow); }
 .sysalert__body p { margin: 0; font-size: 0.82rem; line-height: 1.4; text-shadow: var(--sys-glow); }
+/* An alert that only reports goes when it is tapped, or of itself: it slides out, then closes up so the ones under it rise. */
+button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
+.sysalert.is-leaving { animation: alertOut 560ms var(--ease) forwards; pointer-events: none; }
+@keyframes alertOut {
+  0% { opacity: 1; transform: none; max-height: var(--h, 120px); }
+  45% { opacity: 0; transform: translateX(-32px); max-height: var(--h, 120px); }
+  100% { opacity: 0; transform: translateX(-32px); max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: -8px; border-width: 0; }
+}
+.sysalert__sub { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 76%, transparent); }
+/* The meter along an alert's foot: it moves from where it stood once the alert has landed. A level gained fills it, lights it and starts it again. */
+.sysalert.has-meter { padding-bottom: 12px; }
+.sysalert__meter { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--sys-ink) 10%, transparent); pointer-events: none; }
+.sysalert__meter > i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--to)); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 55%, transparent), var(--win)); box-shadow: 0 0 8px var(--win-glow); animation: meterGo 900ms var(--ease) calc(var(--delay, 0ms) + 520ms) both; }
+.sysalert__meter.is-up > i { animation: meterUp 1400ms var(--ease) calc(var(--delay, 0ms) + 520ms) both; }
+.sysalert__meter.is-up::after { content: ''; position: absolute; inset: -3px 0; background: linear-gradient(90deg, transparent, #fff, transparent); opacity: 0; animation: meterFlash 1400ms ease-out calc(var(--delay, 0ms) + 520ms) both; }
+@keyframes meterGo { from { transform: scaleX(var(--from)); } }
+@keyframes meterUp { 0% { transform: scaleX(var(--from)); } 44% { transform: scaleX(1); } 45% { transform: scaleX(0); } 100% { transform: scaleX(var(--to)); } }
+@keyframes meterFlash { 40% { opacity: 0; } 46% { opacity: 0.9; } 70% { opacity: 0; } }
 .sysalert__scan { position: absolute; inset: 0 auto 0 0; width: 40%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--win) 40%, transparent), transparent); pointer-events: none; animation: alertScan 900ms var(--ease) calc(var(--delay, 0ms) + 260ms) both; }
 @keyframes alertIn { from { opacity: 0; transform: translateX(28px); } 60% { opacity: 1; } }
 @keyframes alertScan { from { transform: translateX(-100%); } to { transform: translateX(260%); opacity: 0; } }
 .alerts { display: flex; flex-direction: column; gap: 8px; }
 .alerts > .hint { margin: 0; text-align: center; }
-@media (prefers-reduced-motion: reduce) { .sysalert, .sysalert__scan { animation: none; } .sysalert__scan { display: none; } }
+@media (prefers-reduced-motion: reduce) { .sysalert, .sysalert__scan, .sysalert__meter > i, .sysalert__meter::after { animation: none; } .sysalert__scan { display: none; } }
 
 /* The family glyphs, the insignia and the Shadow badge (ui/emblems.tsx). */
 .famglyph path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }

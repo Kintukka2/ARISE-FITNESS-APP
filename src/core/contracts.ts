@@ -186,7 +186,7 @@ export function contractText(c: Contract, grade: Rank): string {
   switch (c.kind) {
     case 'clear': return `Clear ${c.need} Gates of ${grade}-Rank or higher.`;
     case 'fell': return `Fell ${c.need} ${c.family} creatures.`;
-    case 'shadows': return `Let your Shadows land ${c.need} kills.`;
+    case 'shadows': return `Let your Shadows help fell ${c.need} creatures.`;
     case 'tired': return `Clear a Gate you walked into carrying ${c.at} fatigue or more.`;
     case 'gatekeeper': return 'Defeat a Gatekeeper.';
     case 'offroad': return 'Clear a Gate off the marked road.';
@@ -198,7 +198,7 @@ export function contractHint(c: Contract): string {
   switch (c.kind) {
     case 'clear': return 'Only a clear counts.';
     case 'fell': return `Found in: ${names(c.where)}. Kills in any Gate count, cleared or not.`;
-    case 'shadows': return 'Kills by any deployed Shadow count, cleared or not.';
+    case 'shadows': return 'A creature counts once for every deployed Shadow that hit it, cleared or not.';
     case 'tired': return `Fatigue is read on entry. At ${c.at} fatigue you fight at ${Math.round(drag(c.at ?? 0) * 100)}% strength.`;
     case 'gatekeeper': return `Found in: ${names(c.where)}. It is off the marked road.`;
     case 'offroad': return 'Any step off the marked road counts.';
