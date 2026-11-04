@@ -533,19 +533,18 @@ function Release({ sh, close }: { sh: Shadow; close: () => void }) {
 
 /**
  * What a run gave each deployed Shadow, on the results: an alert each, its badge, its level and the XP
- * it took, and a meter that moves from where it stood. One that can be promoted waits on the hunter,
- * so it is gold, says so, and opens its card, where the hold is; promoted there, it says so no more.
+ * it took, and a meter that moves from where it stood. One that can be promoted says so, and nothing
+ * more: the Shadows tab's mark shows where to go.
  */
 export function ShadowAlerts({ grew, delay = 500 }: { grew: RaidResult['grew']; delay?: number }) {
   const s = useSave();
   const rows = grew.map((g) => ({ g, sh: s.shadows.army.find((x) => x.id === g.id) })).filter((x): x is { g: RaidResult['grew'][number]; sh: Shadow } => !!x.sh);
   if (!rows.length) return null;
-  const waiting = rows.filter(({ sh }) => shadows.canPromote(s, sh)).length;
   return (
     <div class="alerts shadowalerts" aria-label="Army">
       {rows.map(({ g, sh }, i) => {
         const e = enemyById(sh.enemyId)!;
-        const next = shadows.canPromote(s, sh) ? shadows.nextRank(sh) : null;
+        const ready = shadows.canPromote(s, sh);
         const name = shadows.nameOf(sh);
         const up = g.to > g.from;
         const cap = shadows.rankOf(sh).cap;
@@ -555,20 +554,17 @@ export function ShadowAlerts({ grew, delay = 500 }: { grew: RaidResult['grew']; 
         const now = share(g.to, sh.xp);
         const was = share(g.from, sh.xp - g.xp);
         return (
-          <SysAlert key={g.id} kind={next ? 'gold' : 'shadow'} delay={delay + i * 180} class={`is-shadowline ${next ? 'is-ready' : ''}`}
-            label={next ? `${name}: promotion ready. Open its card.` : undefined}
+          <SysAlert key={g.id} kind="shadow" delay={delay + i * 180} class={`is-shadowline ${ready ? 'is-ready' : ''}`}
             icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={34} />}
-            onTap={next ? () => { sfx.tap(); openShadow(sh.id); } : undefined}
             meter={{ from: up ? was : Math.min(was, now), to: now, up }}
             aside={g.xp > 0 ? <span class="num">XP <span class="grant">+{g.xp}</span></span> : null}
-            sub={<span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>
-            {next ? <><strong>[{name}]</strong> has met the requirements for <strong>[Promotion: {next.name} Rank]</strong>.</>
+            sub={ready ? undefined : <span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>
+            {ready ? <><strong>[{name}]</strong> has met the requirements for promotion.</>
               : up ? <><strong>[{name}]</strong> has levelled up.</>
               : <strong>[{name}]</strong>}
           </SysAlert>
         );
       })}
-      {waiting > 0 && <p class="hint">{waiting === 1 ? 'Promote it from its card.' : 'Promote them from their cards.'}</p>}
     </div>
   );
 }

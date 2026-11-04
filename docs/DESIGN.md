@@ -352,7 +352,8 @@ fight was tried and did not narrow it.
   and, from Vanguard, bosses it helped fell (1, then 4). The hunter claims it, one rank at a time,
   from its card (`shadows.promote`, which spends the Essence). `raid.finish` pays each deployed
   Shadow its XP (`grew`) and reports the Shadows the run made ready (`ready`); the results show an
-  alert to each deployed Shadow, gold and opening its card when it is ready. The hold plays the
+  alert to each deployed Shadow, which says only that it has met the requirements for promotion once
+  it has. It stays violet and opens nothing: the Shadows tab's mark shows where to go. The hold plays the
   promotion's cinematic, and the System's window says what the rank brought: the rank, the new cap
   and any skill learned. The Essence it cost is shown on the card before, not repeated after.
 - **Shadow Essence** (`s.shadows.essence`). A creature already in the army lingers three times as
