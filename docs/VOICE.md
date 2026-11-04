@@ -708,7 +708,8 @@ Colour follows CLAUDE.md: learned is the System's cyan, Lv.MAX is cyan nearly wh
 can take a point is gold, because it waits on the hunter. A node shut is slate; a fork's sealed half
 is struck through.
 
-The card of the node tapped sits at the foot of the sheet: `SKILL · Ruin · D-Rank`, the name,
+The card of the node tapped sits at the foot of the sheet. Nothing is chosen when the sheet opens or
+the Path changes, so the card shows only once a node is tapped, and a second tap puts it away. It reads `SKILL · Ruin · D-Rank`, the name,
 `Lv.2/3`, what it does now (`Physical ×1.25 · One target`), what the next level adds in green
 (`Lv.3 (MAX): ×1.35 · Inflicts Staggered`), and why it takes no point, as a report:
 `Requires: [Might]`, `Sealed: [Blood Up] is held.`, `Skill Points: 0`. A point spent is reported on

@@ -546,7 +546,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .st-tier { position: relative; height: 112px; }
 .st-tier + .st-tier::before { content: ''; position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed rgba(160, 200, 240, 0.1); }
 .st-tier__head { display: flex; justify-content: space-between; align-items: center; height: 20px; padding: 0 2px; }
-.st-tier__rank { color: var(--mana); font: 700 0.62rem var(--font-sys); letter-spacing: 0.2em; }
+/* The tier's labels sit on the panel's own dark, as the node names do, so a link passes behind them. */
+.st-tier__head { position: relative; z-index: 1; }
+.st-tier__rank, .st-tier__gate { padding: 1px 4px; border-radius: 3px; background: rgba(3, 9, 22, 0.94); }
+.st-tier__rank { margin-left: -4px; color: var(--mana); font: 700 0.62rem var(--font-sys); letter-spacing: 0.2em; }
 .st-tier.is-shut .st-tier__rank { color: var(--ink-3); }
 .st-tier__gate { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-3); font-size: 0.66rem; }
 .st-tier__gate .ico { width: 11px; height: 11px; }

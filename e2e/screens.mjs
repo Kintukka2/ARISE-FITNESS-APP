@@ -114,7 +114,10 @@ try {
   if (!(await page.locator('.sheet.is-top .st-card__flash').isVisible())) throw new Error('A SKILL POINT SPENT WAS NOT REPORTED');
   await snap('skills-learn');
   // A skill left out swaps in for one taken in.
-  await page.locator('.sheet.is-top .st-node[aria-label^="Sundering Arc"]').click(); await sleep(200);
+  // Nothing is chosen when the sheet opens or a Path changes; a second tap on a node puts its card away.
+  const arc = page.locator('.sheet.is-top .st-node[aria-label^="Sundering Arc"]');
+  if (!(await arc.evaluate((el) => el.classList.contains('is-sel')))) await arc.click();
+  await sleep(200);
   await page.locator('.sheet.is-top .st-card .btn', { hasText: 'Swap In' }).click(); await sleep(200);
   await page.locator('.sheet.is-top .st-loadout').scrollIntoViewIfNeeded(); await snap('skills-swap');
   await page.locator('.sheet.is-top .st-slot').first().click(); await sleep(300);
@@ -123,6 +126,7 @@ try {
   await page.locator('.sheet.is-top .st-skywrap').scrollIntoViewIfNeeded();
   await page.locator('.sheet.is-top .st-sky__hit').nth(1).click(); await sleep(450);
   if (!(await page.locator('.sheet.is-top .st-pathhead', { hasText: 'Bastion' }).count())) throw new Error('THE SKY DID NOT CHOOSE A PATH');
+  if (await page.locator('.sheet.is-top .st-card').count()) throw new Error('A NEW PATH OPENED WITH A NODE ALREADY CHOSEN');
   await snap('skills-bastion');
   await close();
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(400); await snap('equipment'); await close();
