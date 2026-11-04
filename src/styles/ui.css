@@ -858,10 +858,11 @@ button.sysalert { width: 100%; text-align: left; cursor: pointer; }
 .art__worn + .art__set { bottom: 15px; }
 
 /* A field that explains itself: a small `?` beside its label, and the line under its value, on a tap or a hover. */
-.sysfield.has-help { position: relative; }
-.sysfield__help { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 6px; padding: 0; vertical-align: 1px; border: 1px solid var(--sys-hair-hot, rgba(160, 220, 255, 0.6)); border-radius: 0; background: rgba(3, 8, 20, 0.5); color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 80%, transparent); font: 700 0.6rem var(--font-sys); line-height: 1; cursor: pointer; }
+/* A field with a line to give: the box is the button, and its ? sits in the same corner on every one. */
+.sysfield.has-help { position: relative; padding-right: 30px; color: inherit; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sysfield.has-help:hover { border-color: var(--sys-hair-hot, rgba(160, 220, 255, 0.6)); }
+.sysfield__help { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--sys-hair-hot, rgba(160, 220, 255, 0.6)); background: rgba(3, 8, 20, 0.5); color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 80%, transparent); font: 700 0.6rem var(--font-sys); font-style: normal; line-height: 1; }
+.sysfield.is-open { border-color: var(--win, var(--mana)); }
 .sysfield.is-open .sysfield__help { color: #04121f; background: var(--win, var(--mana)); border-color: var(--win, var(--mana)); box-shadow: 0 0 8px var(--win-glow, var(--mana-glow)); }
-.sysfield__why { display: none; margin-top: 4px; font: 500 0.72rem/1.4 var(--font-sys); letter-spacing: 0; text-transform: none; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 72%, transparent); }
-.sysfield.is-open .sysfield__why { display: block; }
-@media (hover: hover) { .sysfield.has-help:hover .sysfield__why { display: block; } }
+.sysfield__why { display: block; margin-top: 4px; font: 500 0.72rem/1.4 var(--font-sys); letter-spacing: 0; text-transform: none; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 72%, transparent); animation: qaIn 220ms var(--ease) both; }
 .sysfields > .sysfield.has-help.is-open { grid-column: 1 / -1; }

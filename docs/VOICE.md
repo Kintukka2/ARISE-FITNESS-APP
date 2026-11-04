@@ -66,7 +66,8 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | A purchase or a use offered: `Would you like to purchase?` / `Would you like to drink?` / `Would you like to use?`, and under it **Do not ask again** | The System's Offer; the toggle is the interface's control, and Settings lists what it skips | `ui/ask.tsx`, `screens/Settings.tsx` |
 | Ryn's Association Quests: his card at the top of the Quests screen, his windows when he hands a job over and pays for one, the alert on a run's results (shaped as the System's alerts, in his blue, his corner brackets and his face) | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
 | The board's `Association` chip, and the brief's `Association Quest:` hint | The interface | `screens/Gates.tsx` |
-| The `?` on a Stats sheet field, and the line it opens on what the number does and where it comes from | The interface, inside the System's frame, as a hint is; one line each, its numbers read from the engine (`CRIT`, `HIT`) | `FIGHT_HELP` in `screens/Inventory.tsx`, `Field` in `ui/frame.tsx` |
+| The `?` on a Stats sheet field, and the line it opens on what the number does and where it comes from | The interface, inside the System's frame, as a hint is; one line each, its numbers read from the engine (`CRIT`, `HIT`). The `?` sits in the top right corner of every such box; the whole box is the button, and the line shows only once it is tapped, never on hover | `FIGHT_HELP` in `screens/Inventory.tsx`, `Field` in `ui/frame.tsx` |
+| An action's details in a fight: its `?` opens, over the foot of the feed, the name, `Lv.2` for a skill of the tree, `Ready` or `Ready in 2`, its line (`Physical ×1.1 · Two targets · Cooldown 2 · Inflicts Staggered`) and a line for each status it inflicts (`Staggered: Physical defence -25%`). A pointer resting on the action opens it too | The interface, as the turn bar is | `Acts` in `screens/Arena.tsx`, `skillLine` in `screens/Skills.tsx` |
 | Where to claim it, under the alerts: `Promote it on the Shadows screen.` | The interface, as a hint | `screens/Arena.tsx` |
 | A Shadow's promotion on its card: its badge now and at the rank above, what the rank brings, Hold To Promote | The System, in the card's violet, the promotion itself in advancement's gold | `Promotion` in `screens/Shadows.tsx` |
 | The family glyphs, the rank insignia and the Shadow badge | No one: art, as the rank plates are | `ui/emblems.tsx` |
@@ -554,14 +555,14 @@ The panel after a clear, in a violet frame.
 
 | | Now | System |
 |---|---|---|
-| Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | The rank and the name, then `The mana of [{foe}] lingers.` / `Attempts left: 3` / `Extraction cost: 60 MP` / `Success rate: 34%` |
+| Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | The rank and the name, then `The mana of [{foe}] lingers.` / `Attempts left: 3` / `Extraction cost: 60 MP`. The odds are not shown here; the Guide states them |
 | No mana | "You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some." | `Not enough MP. (40/60)` |
-| Failed, reaches left | | The rank and the name, then `The mana of [{foe}] still lingers.` / `[Skill: Extraction] has failed.` / `Attempts left: 2` / `Extraction cost: 120 MP`, those three in red / `Success rate: 34%` / `Hold To Extract Again`. No multiplier and no MP held: the cost is the number that matters, and MP held shows only when it falls short (`Not enough MP. (100/120)`). Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
+| Failed, reaches left | | The rank and the name, then `The mana of [{foe}] still lingers.` / `[Skill: Extraction] has failed.` / `Attempts left: 2` / `Extraction cost: 120 MP`, those three in red / `Hold To Extract Again`. No multiplier and no MP held: the cost is the number that matters, and MP held shows only when it falls short (`Not enough MP. (100/120)`). Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
 | Failed, the last reach | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Extraction] has failed.` / `The mana has dispersed.` (all red) |
 | Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
 
-That INT raises the rate is a rule, so it goes in the Guide, and so does why the cost doubles: the
-System shows the cost and the attempts left, never the reason.
+The odds, and that INT raises them, are rules, so they go in the Guide, and so does why the cost
+doubles: the sheet shows the attempts left and the cost, never the odds or the reason.
 
 ### The fight log
 

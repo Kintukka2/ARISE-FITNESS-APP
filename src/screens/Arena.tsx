@@ -7,7 +7,9 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
-import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT } from '@/core/combat';
+import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
+import * as skilltree from '@/core/skilltree';
+import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
 import type { Order } from '@/core/types';
 import { dungeonById, enemyById, isPractice } from '@/core/gates';
@@ -41,11 +43,71 @@ import { LootCell, useReveal } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { NameField } from './Shadows';
+import { skillLine } from './Skills';
 
 interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
+
+/** What an action does, in full, for its details: its line, and a line for each status it inflicts. */
+function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { name: string; level: string | null; ready: string | null; lines: string[] } {
+  if (use === 'Strike') return { name: 'Strike', level: null, ready: null, lines: [skillLine(STRIKE)] };
+  if (use === 'Guard') return { name: 'Guard', level: null, ready: null, lines: [`Damage taken -${(1 - GUARD) * 100}% until your next turn.`] };
+  if (use === 'Potion') return { name: 'Field Potion', level: null, ready: null, lines: [`HP +${FIELD_POTION_HEAL * 100}% · Held: ${turn.potions}`] };
+  const k = turn.skills.find((x) => x.ability.name === use);
+  if (!k) return { name: use, level: null, ready: null, lines: [] };
+  const node = NODES.find((n) => n.kind === 'skill' && n.skill === use && skilltree.levelOf(s, n.id) > 0);
+  const lv = node ? skilltree.levelOf(s, node.id) : 0;
+  return {
+    name: use,
+    level: node ? (lv >= node.max ? 'Lv.MAX' : `Lv.${lv}`) : null,
+    ready: k.cd > 0 ? `Ready in ${k.cd}` : 'Ready',
+    lines: [skillLine(k.ability), ...k.ability.inflicts.filter((st) => STATUS_TEXT[st]).map((st) => `${st}: ${STATUS_TEXT[st]}`)],
+  };
+}
+
+/**
+ * The hunter's actions on their turn. A tap on an action uses it; its `?` opens what it does in full
+ * above the bar, without using it, and a pointer resting on it does the same.
+ */
+function Acts({ turn, canDrink, give }: { turn: Turn; canDrink: boolean; give: (use: string) => void }) {
+  const s = useSave();
+  const [pinned, setPinned] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
+  const shown = over ?? pinned;
+  const acts: { use: string; label: string; sub: string; cls?: string; off?: boolean }[] = [
+    ...turn.skills.map((k) => ({ use: k.ability.name, label: k.ability.name, sub: k.cd > 0 ? `ready in ${k.cd}` : REACH_TEXT[k.ability.profile] ?? 'one target', off: k.cd > 0 })),
+    { use: 'Strike', label: 'Strike', sub: REACH_TEXT.single },
+    { use: 'Guard', label: 'Guard', sub: `Damage taken -${(1 - GUARD) * 100}%`, cls: 'act--guard' },
+    { use: 'Potion', label: `Potion · ${turn.potions}`, sub: `HP +${FIELD_POTION_HEAL * 100}%`, cls: 'act--potion', off: !canDrink },
+  ];
+  const info = shown ? actLines(s, shown, turn) : null;
+  return (
+    <>
+      {info && (
+        <div class="actinfo" role="status" key={shown}>
+          <header class="actinfo__head"><b>{info.name}</b>{info.level && <small class="num">{info.level}</small>}{info.ready && <small class={`actinfo__ready ${info.ready === 'Ready' ? 'is-ready' : ''}`}>{info.ready}</small>}</header>
+          {info.lines.map((l) => <p key={l}>{l}</p>)}
+        </div>
+      )}
+      <div class="turnbar__acts">
+        {acts.map((a) => (
+          <div class={`actcell ${shown === a.use ? 'is-shown' : ''}`} key={a.use}>
+            <button type="button" class={`act ${a.cls ?? ''}`} disabled={a.off}
+              onPointerEnter={(e) => { if (e.pointerType === 'mouse') setOver(a.use); }}
+              onPointerLeave={(e) => { if (e.pointerType === 'mouse') setOver((x) => (x === a.use ? null : x)); }}
+              onClick={() => { setPinned(null); setOver(null); give(a.use); }}>
+              <b>{a.label}</b><small>{a.sub}</small>
+            </button>
+            <button type="button" class="act__info" aria-label={`What ${a.label} does`} aria-expanded={pinned === a.use}
+              onClick={() => { sfx.tap(); setPinned((x) => (x === a.use ? null : a.use)); }}>?</button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
 
 /** Move the arena's picture of everyone forward by one beat's events. */
 function apply(local: UnitView[], b: Beat) {
@@ -353,18 +415,7 @@ export function Arena() {
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
             <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</small>
-            <div class="turnbar__acts">
-              {turn.skills.map((k) => (
-                <button type="button" key={k.ability.name} class="act" disabled={k.cd > 0} onClick={() => give({ use: k.ability.name, at: aim ?? undefined })}>
-                  <b>{k.ability.name}</b><small>{k.cd > 0 ? `ready in ${k.cd}` : REACH_TEXT[k.ability.profile] ?? 'one target'}</small>
-                </button>
-              ))}
-              <button type="button" class="act" onClick={() => give({ use: 'Strike', at: aim ?? undefined })}><b>Strike</b><small>{REACH_TEXT.single}</small></button>
-              <button type="button" class="act act--guard" onClick={() => give({ use: 'Guard' })}><b>Guard</b><small>Damage taken -{(1 - GUARD) * 100}%</small></button>
-              <button type="button" class="act act--potion" disabled={!turn.potions || !hero || hero.hp >= hero.mx} onClick={() => give({ use: 'Potion' })}>
-                <b>Potion · {turn.potions}</b><small>HP +{FIELD_POTION_HEAL * 100}%</small>
-              </button>
-            </div>
+            <Acts turn={turn} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} give={(use) => give({ use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
           </div>
         )}
         {phase !== 'decide' && (
@@ -532,7 +583,6 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
   const e = enemyById(l.enemyId)!;
   const rolled = useRef<{ res: Reach | 'no-mana'; id?: string } | null>(null);
   const [out, setOut] = useState<{ res: Reach; id?: string } | null>(l.bound ? { res: 'bound' } : raid.reachesLeft(l) <= 0 ? { res: 'lost' } : l.tries ? { res: 'failed' } : null);
-  const odds = Math.round(shadows.holdChance(s) * 100);
   const cost = raid.reachCost(l);
   const left = raid.reachesLeft(l);
   const again = !out || out.res === 'failed';
@@ -547,7 +597,6 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
           Attempts left: {left}<br />
           Extraction cost: {cost} MP
         </p>
-        <p class="muted">Success rate: <b>{odds}%</b></p>
         {v.mp >= cost || rolled.current?.res === 'bound'
           // A fresh hold for every reach; it stays up while it settles, though the reach has spent the MP it showed.
           ? <HoldButton key={l.tries} hold={{ label: l.tries ? 'Hold To Extract Again' : 'Hold To Extract', ms: 3000, ticks: 8, holding: 'Extracting…', done: 'ARISE', failed: 'Failed', after: 900 }}

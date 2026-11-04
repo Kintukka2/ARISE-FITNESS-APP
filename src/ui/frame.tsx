@@ -75,14 +75,24 @@ export function SysFrame({ title, icon, tools, kind = 'system', class: cls, tour
  */
 export function Field({ k, v, wide, help }: { k: string; v: ComponentChildren; wide?: boolean; help?: string }) {
   const [open, setOpen] = useState(false);
+  if (!help) {
+    return (
+      <div class={`sysfield ${wide ? 'is-wide' : ''}`}>
+        <span>{k}:</span>
+        <b>{v}</b>
+      </div>
+    );
+  }
+  // With a line to give, the whole box is the button: a tap opens it, another closes it. The `?` in
+  // its corner only says there is something to open.
   return (
-    <div class={`sysfield ${wide ? 'is-wide' : ''} ${help ? 'has-help' : ''} ${open ? 'is-open' : ''}`}>
-      <span>{k}:{help && (
-        <button type="button" class="sysfield__help" aria-label={`What ${k} means`} aria-expanded={open} onClick={() => setOpen(!open)}>?</button>
-      )}</span>
+    <button type="button" class={`sysfield has-help ${wide ? 'is-wide' : ''} ${open ? 'is-open' : ''}`}
+      aria-expanded={open} aria-label={`${k}: what it means`} onClick={() => setOpen(!open)}>
+      <span>{k}:</span>
       <b>{v}</b>
-      {help && <small class="sysfield__why">{help}</small>}
-    </div>
+      <i class="sysfield__help" aria-hidden="true">?</i>
+      {open && <small class="sysfield__why">{help}</small>}
+    </button>
   );
 }
 

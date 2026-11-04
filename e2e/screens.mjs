@@ -100,7 +100,8 @@ try {
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
   if (!(await page.locator('.sheet.is-top .ia-radar__label.is-on').count())) throw new Error('THE RADAR DID NOT SHOW A VALUE');
   await page.locator('.sheet.is-top .statsheet__radar').scrollIntoViewIfNeeded(); await snap('stats-radar');
-  await page.locator('.sheet.is-top .sysfield__help').nth(4).click(); await sleep(200);
+  if (await page.locator('.sheet.is-top .sysfield__why').count()) throw new Error('A FIGHT NUMBER EXPLAINED ITSELF BEFORE IT WAS TAPPED');
+  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).click(); await sleep(200);
   if (!(await page.locator('.sheet.is-top .sysfield.is-open .sysfield__why').isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
   await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
   await close();
@@ -169,6 +170,12 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
+  // An action's ? shows what it does, in full, without using it.
+  await page.locator('.act__info').first().click(); await sleep(250);
+  if (!(await page.locator('.actinfo').isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
+  await snap('arena-skill-info');
+  await page.locator('.act__info').first().click(); await sleep(150);
+  if (await page.locator('.actinfo').count()) throw new Error('A SKILL’S DETAILS DID NOT CLOSE');
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);

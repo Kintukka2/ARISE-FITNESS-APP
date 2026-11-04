@@ -126,7 +126,8 @@ export function bind(s: Save, enemyId: string, day = dayKey()): Shadow {
   return sh;
 }
 
-/** Odds a reach holds, read off Intelligence. Shown to the player as is. */
-export const holdChance = (s: Save) => clamp(0.45 + s.hunter.attrs.INT * 0.004, 0.45, 0.9);
+/** The odds a reach holds: `base`, and `perInt` more for each point of Intelligence, up to `max`. The Guide states them. */
+export const HOLD = { base: 0.45, perInt: 0.004, max: 0.9 } as const;
+export const holdChance = (s: Save) => clamp(HOLD.base + s.hunter.attrs.INT * HOLD.perInt, HOLD.base, HOLD.max);
 /** Per-kill odds a felled creature lingers. The boss is far likelier to. */
 export const lingerChance = (s: Save, boss: boolean) => (boss ? 0.12 + s.hunter.attrs.INT * 0.0012 : 0.02 + s.hunter.attrs.INT * 0.0002);
