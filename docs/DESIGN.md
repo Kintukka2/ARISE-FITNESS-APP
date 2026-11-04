@@ -68,7 +68,7 @@ hunter's turns to the System and presses on between chambers, for grinding.
 - **Hunter actions:** a skill from the class kit, Strike, *Guard* (half damage until your next
   turn), or a field potion (30% of maximum HP). Field potions are bought at the Exchange into a
   satchel of three; the other potions are still drunk on purchase.
-- **Standing orders**, set on the map between fights: *As They See Fit*, *Finish The Weakest*,
+- **Standing orders**, set on the map between fights, in a small panel in the Shadows' violet: *As They See Fit*, *Finish The Weakest*,
   *Protect The Hunter*, *Spread The Pain*. Each is a target rule for the hunter's Shadows, and for the
   hunter's own turns when Auto plays them. They used to be set in the brief and to steer the
   Association's hunters too; ordering strangers about made no sense, so those pick their own targets
@@ -176,7 +176,8 @@ the engine and opening its window. Inventory holds Status, a radar of the five s
 Equipment, what is held, the Exchange and the hunter's card; Equipment became a System window of its
 own (`EQUIPMENT`, added to the closed list of headers). Gates keeps Valcorde's line above tiles for
 the Practice Gate until it is cleared, the open run, the open Gates, the grade and its licence, the
-record, the Spire and Ascension. The hunter's condition sits between Valcorde's line and the tiles,
+record and Ascension. Open Gates is the screen's centre: the largest tile, its portals as big as the
+row allows, a slow orange light behind them and a View All Gates call. The hunter's condition sits between Valcorde's line and the tiles,
 as the Status sheet's HP, MP and Fatigue rows with their potions, so nothing has to be opened to
 check it or to drink. A list is one tile: Open Gates opens the
 board (`GATES`), a grid of Gate tiles, each a portal in its grade's colour; on Shadows, the Army
@@ -195,8 +196,9 @@ being carried out locks them out for twelve hours, so it would cost the day's ot
 
 ### 4. The endless climb — built
 
-**The Pale Spire** is the one Gate that never closed. It stands beside the board on the Gates
-screen, and opens once a hunter has cleared five gates. Valcorde introduces it; he can, since
+**The Pale Spire** is the one Gate that never closed. It is a Weekly Quest on the Quests screen,
+whose window holds its brief (it stood beside the board on the Gates screen too, until the Weekly
+Quest made the second tile a repeat), and it opens once a hunter has cleared five gates. Valcorde introduces it; he can, since
 everyone knows the Spire is there.
 
 - **Blocks of five floors** (`core/spire.ts`, rules in `data/spire.ts`). Each block is played as a
