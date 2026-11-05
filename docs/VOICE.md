@@ -38,14 +38,14 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | A Trial's brief: `TRIAL: Ascension {n}`, in advancement's gold | The System alone. The Trial is the System's, so it has no Association file and no Association hunter walks in: its terms are fields (`CHOSEN: 5, in a row`, `REST: None`, `WITHDRAWAL: Not possible`, `ALLIES: None`) | `openBrief` in `screens/Gates.tsx` |
 | Setting a mark: `Would you like to set this mark?`, the mark, what it adds, `Set: 1/4 → 2/4`, and in red that it cannot be moved | The System, as an Offer, in gold | `MarkList` in `screens/Gates.tsx` |
 | The Ascension walkthrough: the sheet explained a part at a time, the first time it opens and from its help button | The interface, as a tour headed `Tutorial` (`tour()` with `who: 'app'`) | `ascensionTour` in `screens/Gates.tsx` |
-| Every main screen's bento tiles (Inventory, Gates, Quests, Shadows) | The System | `ui/bento.tsx`, `screens/` |
+| Every main screen's bento tiles (Inventory, Gates, Shadows), and the Quests screen's rail and rows | The System | `ui/bento.tsx`, `screens/` |
 | The Equipment, Army, Licence and Ascension windows, and the hunter's card (`HUNTER: {name}`) | The System | `screens/Inventory.tsx`, `screens/Shadows.tsx`, `screens/Gates.tsx` |
 | `GATES`, the board: `Open`, `Never Cleared`, `Closed Today` and `Redraw` across its head; the rail `All`, a star for the marked, and the grades, each with its count; a band to each grade, `C-Rank` over `Clear: XP 650 · ` and the shards, and `3 Gates` or `Licence` with a lock; a row to each Gate, `[Warcaller’s Muster]` over `Boss: Orc Warcaller` (`Boss: ?` until it is known, `Licence: A-Rank` beyond the licence), and its chips: `Training`, `Chosen`, `Association`, `Quest`, `Bounty` and the shards, the Shadows bound from it (`1/4`, read aloud as `Shadows bound: 1 of 4`), and `{Set} Set`. On the Gates screen, a star on a grade's portal where a marked Gate stands | The System, in the Gates' orange; the rail and the chips are the interface's controls and labels inside it. The marks keep the colours the tiles' counts had: Quest the System's cyan, Chosen gold, Association Ryn's blue | `BoardSheet`, `GradeBand`, `GateRow` and `boardTile` in `screens/Gates.tsx` |
 | The Army tile and `ARMY`: on the tile, the squad's slots (a free one `Free`) over `Reserve`, the count `3/5`, and `Promotion ready: 2`, `Awakening ready: 1` or `Bound: 12 · Shadow Essence: 56` under it; in the window, `Shadow Essence`, `Squad Power`, `Bound`, `Ready`; `Squad` and its slots; **Auto Deploy** and **Recall · 3**; the tabs `All`, `Squad`, `Reserve`, `Ready`, each with its count; `Sort: Power` (`Level`, `Rank`, `Grade`, `Newest`); the heads `Shadow`, `Lv`, `Power`; a row's `Ready` or `New` on its badge and `★2` for its stars; the empty lists `No Shadow is ready.`, `No Shadow is deployed.`, `No Shadow is held in reserve.`; the toast `Squad deployed.`; the x on a deployed slot, read aloud as `Take out: {name}`. A drag says nothing: the slot under it lights and its ghost is the badge and the name | The System, in the Shadows' violet; the tabs, sort and views are the interface's controls inside it. A row names the Shadow without `Shadow`, as a slot does: the column is headed `Shadow` | `tiles` and `ArmySheet` in `screens/Shadows.tsx` |
 | The fight log | The System | `lines()` in `screens/Arena.tsx` |
 | What an outcome inside a Gate cost or paid | The System | `system.outcome()` |
 | The extraction panel, promotions, the Chosen, Daily Quests | The System | `screens/Arena.tsx`, `ui/contracts.tsx` |
-| The Quests screen: its tiles, and the QUEST INFO window each opens (Daily Quests, Reclassification, the Weekly Quest, the Trial, the Chosen, the Secret Quests) | The System | `screens/Quests.tsx`, `ui/contracts.tsx` |
+| The Quests screen: its rail, its rows, and the QUEST INFO window each opens (Daily Quests, Reclassification, the Weekly Quest, the Trial, the Chosen, the Secret Quests) | The System | `screens/Quests.tsx`, `ui/contracts.tsx` |
 | The Quest chip on the board | The interface | `screens/Gates.tsx` |
 | Onboarding dialogue, coach windows, the Gates screen line, the Gates tour | Valcorde | `data/narrative.ts` |
 | The `???` windows | Another voice | `data/narrative.ts` |
@@ -442,10 +442,17 @@ that there is none.
 - **A hint says where or how, flat:** `Found in: {places}.`, `Kills in any Gate count, cleared or
   not.`, `It is off the marked road.` A hint never explains why.
 
-**The Quests screen.** One page: a grid of tiles, one to a quest, each in the frame of its subject:
-cyan for the System's own (the Daily Quests, the Secret Quests), gold for advancement
-(Reclassification, the Trial, the Chosen), orange for the Pale Spire. Tapping a tile opens the
-quest's QUEST INFO window in a sheet. Every quest's name wears its type, and these are the names:
+**The Quests screen.** One page, a log: Ryn's card, then a rail of rings, one to each quest that
+stands, labelled `Daily`, `Rank`, `Trial`, `Chosen`, `Weekly` and `Secret` under its count, a ring
+filled as far as its quest stands, gold while it waits on the hunter and green once done; a ring
+jumps to its quest. Then the quests in System frames: the Daily Quests, a line to each with its bar,
+its count and its pay, and `Completion bonus` with the day's bonus; `Advancement` (Reclassification,
+the Trial, the Chosen); `Weekly` (the Pale Spire, its frame orange); `Record` (the Secret Quests, the
+latest done and each tier's count). A quest's row carries its bracketed name and count, one line of
+where it stands (`Reach Level 35 · XP needed: 7,073`), a bar, and its pay as chips (`Ability Points
++5`, `Reward tier: B-Rank`, `Masterwork: Legendary Off-Hand`). A row waiting on the hunter (a rank to
+claim, the Trial open) is gold. Tapping a row opens the quest's QUEST INFO window in a sheet, gold
+for advancement. Every quest's name wears its type, and these are the names:
 
 | Quest | Name | Goals |
 |---|---|---|
@@ -456,10 +463,10 @@ quest's QUEST INFO window in a sheet. Every quest's name wears its type, and the
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Fell [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
-- **Every main screen is a grid of these tiles** (`ui/bento.tsx`): Inventory (Status, Stats, Skills,
+- **Every main screen but Quests is a grid of these tiles** (`ui/bento.tsx`; Quests is a log, above): Inventory (Status, Stats, Skills,
   Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
   cleared, the open run, Open Gates, Grade, Record, Ascension; Open Gates is the screen's centre, larger
-  than the rest and lit in orange), Quests (where the Pale Spire is a Weekly Quest),
+  than the rest and lit in orange),
   and Shadows (the Army and the Orders; the Army is the screen's centre, larger than the rest: the
   squad's slots over the reserve). A list is one tile that opens its window: Open Gates opens
   GATES, a band to each grade and a row to each Gate, its portal in its grade's colour; the Army opens ARMY, a roster with a

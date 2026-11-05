@@ -267,19 +267,19 @@ try {
   await sleep(1400);
   await snap('quests-arrival');
   await drain();
-  // One page of tiles: the day's quests, the next rank and the Secret Quests, each opening its window.
-  if ((await page.locator('.btile--daily .qa-row').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
-  if (!(await visible('.btile--rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
-  if (!(await visible('.btile--secret'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE SECRET QUESTS');
+  // One log: the day's quests, the next rank and the Secret Quests, each opening its window.
+  if ((await page.locator('.qdaily__one').count()) !== 3) throw new Error('THE SYSTEM ISSUED NO CONTRACTS');
+  if (!(await visible('.qrow--rank'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE NEXT RANK');
+  if (!(await visible('.qrow--secret'))) throw new Error('THE QUESTS SCREEN DID NOT SHOW THE SECRET QUESTS');
   await sleep(800);
   await snap('quests');
-  await page.locator('.btile--daily .btile__hit').click();
+  await page.locator('.qdaily').click();
   await sleep(500);
   if ((await page.locator('.sheet.is-top .contracts .contract').count()) !== 3) throw new Error('THE DAILY QUESTS TILE DID NOT OPEN ITS WINDOW');
   await snap('quests-daily');
   await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').click();
   await sleep(300);
-  await page.locator('.btile--secret .btile__hit').click();
+  await page.locator('.qrow--secret').click();
   await sleep(500);
   if (!(await visible('.sheet.is-top .quest-secret .contract.is-done'))) throw new Error('THE SECRET QUESTS TILE DID NOT OPEN ITS WINDOW');
   await snap('quests-secret');
