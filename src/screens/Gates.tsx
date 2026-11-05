@@ -34,7 +34,7 @@ import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Card, Chip, RankPlate, Section, Shards, Tile, useNow, Voice } from '@/ui/components';
+import { Btn, Card, Chip, RankPlate, Section, Shards, useNow, Voice } from '@/ui/components';
 import { BentoGrid, type Tile as BTile } from '@/ui/bento';
 import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
@@ -594,47 +594,92 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
     close();
   };
 
-  return (
-    <div class="stack brief">
-      {/* A Gate comes with the Association's file. The Trial is the System's own: it states its terms, and no hunter of the Association walks in. */}
-      {isTrial(d)
-        ? (
-          <div class="sysfields brief__file">
-            <Field k="Chosen" v={`${d.trial}, in a row`} />
-            <Field k="Rest" v="None" />
-            <Field k="Withdrawal" v="Not possible" />
-            <Field k="Allies" v="None" />
-          </div>
-        )
-        : <div class="sysfields brief__file"><Field k="Association file" v={d.theme} wide /></div>}
-      <Card class="bosscard" tour="boss">
-        {/* What it is, once it is known: its family's glyph. */}
-        {known || met ? <FamilyGlyph family={(met ?? boss).family} size={40} /> : <Glyph name="unknown" />}
-        <div class="grow">
-          <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
-          <b>{met ? met.name : known ? boss.name : '?'}</b>
-          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
-        </div>
-      </Card>
-      {holds && <ChosenCard d={d} w={holds} level={level} />}
+  // What walks in it: its creatures and its gatekeeper, named once the hunter has been inside, as the map is;
+  // the boss counts once it is known. The violet ones already serve as Shadows.
+  const inside = [...new Set([...d.mobs, ...(d.elite ? [d.elite] : [])])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
+  const seen = mapKnown(s, d);
+  const counted = [...inside, ...(known ? [boss] : [])];
+  const bound = counted.filter((e) => shadows.isBound(s, e.id)).length;
+  const mark = markOf(s, d, contracts.named(s, dayKey()).has(d.id), dayKey());
+  const partyPower = powerOf(hero.base) + party.reduce((n, a) => n + powerOf(a.base), 0) + squad.reduce((n, x) => n + shadows.power(x), 0);
+  const C = 2 * Math.PI * 21;
+  const rate = Math.round(proj.rate * 100);
+  const sets = raid.homeSets(d);
 
-      <Section title="The assessment">
-        <div class={`verdict verdict--${v.tone}`} data-tour="assess">
+  return (
+    <div class={`stack brief ${isTrial(d) ? 'is-trial' : ''}`} style={`--rc: ${isTrial(d) ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
+      {/* The banner: the Gate's portal in its grade's colour, and the Association's file. The Trial is the System's own: it states its terms. */}
+      <header class="sysbox bhead">
+        <span class="bhead__portal ga-portal" aria-hidden="true">
+          <i class="ga-portal__swirl" /><i class="ga-portal__core" />
+          <RankPlate rank={d.rank} size={34} />
+        </span>
+        <span class="bhead__body">
+          <span class="label">{isTrial(d) ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}</span>
+          {isTrial(d)
+            ? <p class="bhead__file">{d.trial} of the Chosen, in a row.</p>
+            : <p class="bhead__file"><span class="label">Association file:</span> {d.theme}</p>}
+          <span class="bhead__tags">
+            {!isTrial(d) && !tower && !isPractice(d) && <span class={`gtag ${s.gates.cleared.includes(d.id) ? 'is-done' : 'is-bounty'}`}>{s.gates.cleared.includes(d.id) ? 'Cleared' : 'Never cleared'}</span>}
+            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
+            {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
+            {isTrial(d) && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
+          </span>
+        </span>
+      </header>
+
+      {/* The assessment: the clear rate as a ring, in the verdict's colour, and what bears on it. */}
+      <section class={`verdict verdict--${v.tone} bassess`} data-tour="assess">
+        <span class="bassess__ring" aria-hidden="true">
+          <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" class="bassess__track" /><circle cx="25" cy="25" r="21" class="bassess__arc" style={`stroke-dasharray: ${C * proj.rate} ${C}`} /></svg>
+          <b class="num">{rate}<small>%</small></b>
+        </span>
+        <span class="bassess__body">
           <b>Assessment: {v.text}</b>
-          <small>Clear rate: {Math.round(proj.rate * 100)}%</small>
+          <small>Clear rate: {rate}%</small>
           {hpNow.hp < hpNow.hpMax * 0.9 && <small>HP: {hpNow.hp}/{hpNow.hpMax}</small>}
           {level > 0 && <small>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''} · Pay +{Math.round((pay - 1) * 100)}%</small>}
-        </div>
-        <div class="tiles">
-          <Tile label="Clear" value={<span class="num">XP +{xp}</span>} sub={isPractice(d) ? `enough for Level ${PRACTICE_LEVEL}` : <>and <Shards n={sh} /></>} />
-          {isTrial(d)
-            ? <Tile label="Opens" value={`Ascension ${s.ascension.unlocked + 1}`} sub="if you win it" />
-            : tower
-            ? <Tile label="This week" value={`Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`} sub="a new best, if you clear it" />
-            : <Tile label="First clear" value={first && !isPractice(d) ? <span class="num">XP +{xp}</span> : '-- --'} sub={first && !isPractice(d) ? <>and <Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'} />}
-          <Tile label="Loot" value={`${RARITY[d.rank as Rank].name}`} sub={raid.homeSets(d).length ? `and a ${raid.homeSets(d).map((x) => x.id).join(' or ')} piece on a clear` : d.rank === 'S' ? 'and below' : 'sometimes one grade up'} />
-          <Tile label="Depth" value={`${map.layers.length} ${isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}`} sub={isTrial(d) ? 'no rest between them' : 'a rest, then the boss'} />
-        </div>
+        </span>
+      </section>
+
+      {/* What it pays: a cell each, small, so the threat and the map stand above the fold. */}
+      <div class="brewards">
+        <span class="sysbox brewards__one"><small class="label">Clear</small><b class="num">XP +{xp}</b><small>{isPractice(d) ? `enough for Level ${PRACTICE_LEVEL}` : <><Shards n={sh} /></>}</small></span>
+        {isTrial(d)
+          ? <span class="sysbox brewards__one"><small class="label">Opens</small><b>Ascension {s.ascension.unlocked + 1}</b><small>if you win it</small></span>
+          : tower
+          ? <span class="sysbox brewards__one"><small class="label">This week</small><b>Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}</b><small>a new best, if you clear it</small></span>
+          : <span class={`sysbox brewards__one ${first && !isPractice(d) ? 'is-bounty' : ''}`}><small class="label">First clear</small><b class="num">{first && !isPractice(d) ? `XP +${xp}` : '-- --'}</b><small>{first && !isPractice(d) ? <><Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'}</small></span>}
+        <span class="sysbox brewards__one"><small class="label">Loot</small><b>{RARITY[d.rank as Rank].name}</b><small>{sets.length ? `${sets.map((x) => x.id).join(' or ')} Set` : d.rank === 'S' ? 'and below' : 'sometimes one grade up'}</small></span>
+        <span class="sysbox brewards__one"><small class="label">Depth</small><b>{map.layers.length} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}</b><small>{isTrial(d) ? 'no rest between them' : 'a rest, then the boss'}</small></span>
+      </div>
+
+      {/* What stands in it: the boss, one of the Chosen if it holds the Gate today, and the rest of what walks there. */}
+      <Section title="Threat" right={!isPractice(d) && !isTrial(d) && counted.length ? `Shadows bound: ${bound}/${counted.length}` : undefined}>
+        <Card class="bosscard" tour="boss">
+          {known || met ? <FamilyGlyph family={(met ?? boss).family} size={40} /> : <Glyph name="unknown" />}
+          <div class="grow">
+            <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
+            <b>{met ? met.name : known ? boss.name : '?'}</b>
+            <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
+          </div>
+          {known && !met && shadows.isBound(s, boss.id) && <span class="bthreat__bound" title="Serves as a Shadow"><Glyph name="shadows" /></span>}
+        </Card>
+        {holds && <ChosenCard d={d} w={holds} level={level} />}
+        {!isTrial(d) && inside.length > 0 && (
+          <div class="bthreat">
+            {inside.map((e) => (
+              <span key={e.id} class={`sysbox bthreat__one ${seen && shadows.isBound(s, e.id) ? 'is-bound' : ''} ${e.id === d.elite ? 'is-elite' : ''}`}>
+                {seen ? <FamilyGlyph family={e.family} size={16} /> : <Glyph name="unknown" />}
+                <span class="bthreat__name">
+                  <b>{seen ? e.name : '?'}</b>
+                  <small>{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small>
+                </span>
+                {seen && shadows.isBound(s, e.id) && <Glyph name="shadows" class="bthreat__mark" />}
+              </span>
+            ))}
+          </div>
+        )}
       </Section>
 
       {/* The job Ryn gave for this Gate, if one is in hand: the interface saying what it is. */}
@@ -672,33 +717,37 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           </Section>
         )}
 
-      <Section title="Satchel" right={`${s.satchel}/${shop.satchelMax(s)}`}>
-        <p><strong>[Item: Field Potion]</strong> <span class="grant">HP +{shop.FIELD_POTION.heal * 100}%</span></p>
-        {s.satchel < shop.satchelMax(s) && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
-      </Section>
-
-      {block === 'open' ? open?.id === d.id
-        ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
-        : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
-        : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
-        : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
-          : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
-            : <Btn kind={isTrial(d) ? 'gold' : 'primary'} size="lg" block onClick={enter} sound="none" tour="enter">{isTrial(d) ? 'Enter The Trial' : 'Enter The Gate'}</Btn>}
-
-      <Section title={isTrial(d) ? 'Entering' : 'Your party'} right={isTrial(d) ? `You${squad.length ? ` · Shadows: ${squad.length}` : ''}` : `Hunters: ${1 + party.length}${squad.length ? ` · Shadows: ${squad.length}` : ''}`}>
-        <ul class="partylist" data-tour="party">
-          <li class="is-you"><RankPlate rank={licensedRank(s)} size={22} /><b>{s.hunter.name}</b><small>you</small><span class="num">{powerOf(hero.base)}</span></li>
+      {/* The party, a card each, after a squad's roster: who walks in, and their power together. */}
+      <Section title={isTrial(d) ? 'Entering' : 'Your party'} right={<>Power <b class="num">{partyPower}</b></>}>
+        <ul class="partylist bparty" data-tour="party">
+          <li class="is-you"><RankPlate rank={licensedRank(s)} size={20} /><span class="bparty__who"><b>{s.hunter.name}</b><small>You</small></span><span class="num">{powerOf(hero.base)}</span></li>
           {party.map((a) => (
-            <li key={a.id}><RankPlate rank={a.rank} size={22} /><b>{a.name}</b><small>{a.note ?? a.role}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small><span class="num">{powerOf(a.base)}</span></li>
+            <li key={a.id}><RankPlate rank={a.rank} size={20} /><span class="bparty__who"><b>{a.name}</b><small>{a.note ?? a.role}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></span><span class="num">{powerOf(a.base)}</span></li>
           ))}
           {squad.map((x) => (
-            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={22} /><b>{shadows.nameOf(x)}</b><small>Shadow</small><span class="num">{powerOf(shadows.statsOf(x))}</span></li>
+            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={20} /><span class="bparty__who"><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small>Shadow</small></span><span class="num">{shadows.power(x)}</span></li>
           ))}
         </ul>
         {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">Shadow slots empty: {shadows.freeSlots(s)}</p>}
         {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
       </Section>
 
+      <div class="bsatchel">
+        <span><strong>[Item: Field Potion]</strong> <span class="grant">HP +{shop.FIELD_POTION.heal * 100}%</span></span>
+        <span class="num">Satchel {s.satchel}/{shop.satchelMax(s)}</span>
+        {s.satchel < shop.satchelMax(s) && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
+      </div>
+
+      {/* The way in stays at the foot of the window, whatever is scrolled past. */}
+      <div class="bdock">
+        {block === 'open' ? open?.id === d.id
+          ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
+          : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
+          : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
+          : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
+            : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
+              : <Btn kind={isTrial(d) ? 'gold' : 'primary'} size="lg" block onClick={enter} sound="none" tour="enter">{isTrial(d) ? 'Enter The Trial' : 'Enter The Gate'}</Btn>}
+      </div>
     </div>
   );
 }

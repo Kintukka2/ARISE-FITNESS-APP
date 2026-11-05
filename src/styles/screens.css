@@ -1050,7 +1050,67 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .sysframe .gnode { border-color: var(--sys-hair); border-radius: 0; }
 .sysframe .empty { border-color: var(--sys-hair); border-radius: 0; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .sysframe .linkish { color: var(--sys-ink); }
-.brief__file .sysfield > b { font-size: 0.84rem; font-weight: 500; line-height: 1.5; text-shadow: none; }
+/* THE BRIEF: a mission's planning sheet. The banner, the assessment, what it pays, the threat, the map, the party, and the way in docked at the foot. */
+.brief { gap: 12px; }
+.bhead { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 12px 10px 8px; border-color: color-mix(in srgb, var(--rc) 55%, var(--sys-hair)); background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--rc) 22%, transparent), transparent 60%), rgba(6, 4, 2, 0.55); }
+.bhead__portal.ga-portal { width: 64px; height: 64px; }
+.bhead__portal .ga-portal__core { inset: 11px; }
+.bhead__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bhead__body > .label { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
+.bhead__file { margin: 0; font-size: 0.8rem; line-height: 1.45; color: var(--sys-ink); }
+.bhead__file .label { margin-right: 2px; font-size: 0.56rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bhead__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.gtag.is-done { --tc: var(--verdant); }
+.gtag.is-ascension { --tc: var(--gold); }
+/* The assessment: its ring, in the verdict's colour, and the lines that bear on it. */
+.bassess { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 12px; }
+.bassess__ring { position: relative; display: grid; place-items: center; width: 64px; height: 64px; }
+.bassess__ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); filter: drop-shadow(0 0 4px currentColor); }
+.bassess__ring circle { fill: none; stroke-width: 4; }
+.bassess__track { stroke: rgba(255, 255, 255, 0.1); }
+.bassess__arc { stroke: currentColor; stroke-linecap: round; animation: saFill 1000ms var(--ease) both; }
+.bassess__ring b { position: relative; font-size: 1.05rem; font-weight: 800; text-shadow: 0 0 8px currentColor; }
+.bassess__ring b small { font-size: 0.6rem; }
+.bassess__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bassess__body b { font-size: 0.95rem; }
+.bassess__body small { font-size: 0.72rem; line-height: 1.35; }
+/* What it pays: four small cells, two to a row. */
+.brewards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.brewards__one { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; }
+.brewards__one > .label { font-size: 0.54rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.brewards__one > b { font-size: 0.95rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.brewards__one > small { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.brewards__one.is-bounty { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); }
+.brewards__one.is-bounty > b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+/* The threat: the boss's card, then a chip to each creature and the gatekeeper; violet where it already serves. */
+.brief .bosscard { position: relative; }
+.bthreat__bound { margin-left: auto; color: #c9a7ff; filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.bthreat__bound .ico { width: 16px; height: 16px; }
+.bthreat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.bthreat__one { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; }
+.bthreat__one > .famglyph, .bthreat__one > .ico { color: #ff6b77; }
+.bthreat__one > .ico { width: 15px; height: 15px; }
+.bthreat__name { display: flex; flex-direction: column; min-width: 0; }
+.bthreat__name b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.74rem; font-weight: 600; color: var(--sys-ink); }
+.bthreat__name small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bthreat__one.is-elite { border-color: color-mix(in srgb, var(--gold) 45%, var(--sys-hair)); }
+.bthreat__one.is-elite .bthreat__name small { color: var(--gold); }
+.bthreat__one.is-bound { border-color: color-mix(in srgb, var(--arcane) 55%, transparent); background: color-mix(in srgb, var(--arcane) 8%, transparent); }
+.bthreat__mark { width: 13px; height: 13px; color: #c9a7ff; }
+/* The party: a card each, two to a row, the Shadows in their violet. */
+.sysframe .brief .bparty { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.sysframe .brief .bparty li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--sys-hair); }
+.sysframe .brief .bparty li > .num { font-size: 0.82rem; }
+.bparty__who { display: flex; flex-direction: column; min-width: 0; }
+.bparty__who b { display: -webkit-box; overflow: hidden; font-size: 0.78rem !important; line-height: 1.2; word-break: break-word; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.bparty__who small { font-size: 0.6rem !important; }
+.sysframe .brief .bparty li.is-you { border-color: color-mix(in srgb, var(--mana) 55%, transparent); }
+.sysframe .brief .bparty li.is-shadow { border-color: color-mix(in srgb, var(--arcane) 50%, transparent); background: color-mix(in srgb, var(--arcane) 8%, rgba(3, 8, 20, 0.45)); }
+.bsatchel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border: 1px dashed var(--sys-hair); font-size: 0.74rem; }
+.bsatchel > .num { margin-left: auto; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* The way in: docked to the foot of the window, the sheet fading behind it. */
+.bdock { position: sticky; bottom: -1px; z-index: 2; margin: 0 -2px -2px; padding: 22px 2px 4px; background: linear-gradient(180deg, transparent, rgba(4, 3, 2, 0.96) 45%); }
+.bdock .btn--primary:not([disabled]) { border-color: var(--ember); color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--ember) 42%, rgba(10, 6, 2, 0.8)), color-mix(in srgb, var(--ember) 18%, rgba(10, 6, 2, 0.9))); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ember) 50%, transparent), 0 0 20px var(--ember-glow); text-shadow: 0 0 8px var(--ember-glow); }
 .sysframe .ascension__rules { gap: 6px; padding-left: 0; list-style: none; color: var(--sys-ink); }
 .sysframe .ascension__rules li { padding: 7px 10px; font-size: 0.82rem; }
 .sysframe .ascension__proof { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
@@ -1476,6 +1536,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .bagpick__chip[data-rarity='E'] { --rank-c: var(--rank-E); } .bagpick__chip[data-rarity='D'] { --rank-c: var(--rank-D); } .bagpick__chip[data-rarity='C'] { --rank-c: var(--rank-C); }
 .bagpick__chip[data-rarity='B'] { --rank-c: var(--rank-B); } .bagpick__chip[data-rarity='A'] { --rank-c: var(--rank-A); } .bagpick__chip[data-rarity='S'] { --rank-c: var(--rank-S); }
 .bagpick__chip.is-clear { color: #ff8a94; }
+/* A chip whose pieces are all picked: filled in its rarity's colour, with a tick; tapped again, it unpicks them. */
+.bagpick__chip { display: inline-flex; align-items: center; gap: 5px; transition: background 140ms, box-shadow 140ms, color 140ms; }
+.bagpick__chip .ico { width: 11px; height: 11px; }
+.bagpick__chip.is-on { border-color: var(--rank-c, var(--sys-hair-hot)); color: #fff; background: color-mix(in srgb, var(--rank-c, var(--win)) 34%, rgba(3, 8, 20, 0.6)); box-shadow: inset 0 0 0 1px var(--rank-c, var(--sys-hair-hot)), 0 0 12px color-mix(in srgb, var(--rank-c, var(--win)) 45%, transparent); text-shadow: 0 0 6px color-mix(in srgb, var(--rank-c, var(--win)) 70%, transparent); }
 
 /* The grid: a square each, rising in as the bag opens. */
 .baggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 7px; }

@@ -138,7 +138,15 @@ try {
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close();
   // Select: the rarity chips pick every piece that can go, and the bar counts what they would pay.
   await page.locator('.bagtools__pick').click(); await sleep(200);
-  await page.locator('.bagpick__chip[data-rarity="E"]').first().click().catch(() => {}); await sleep(300); await snap('inventory-select');
+  // A rarity chip picked shows it, in its colour with a tick; tapped again, it unpicks its pieces.
+  const chip = page.locator('.bagpick__chip[data-rarity]').first();
+  await chip.click(); await sleep(300);
+  if (!(await page.locator('.bagpick__chip[data-rarity].is-on').count())) throw new Error('A PICKED RARITY CHIP DOES NOT SHOW IT');
+  const picked = await page.locator('.baggrid .bagtile.is-picked').count();
+  await snap('inventory-select');
+  await chip.click(); await sleep(300);
+  if (await page.locator('.bagpick__chip[data-rarity].is-on').count()) throw new Error('TAPPING A PICKED CHIP AGAIN DID NOT UNPICK IT');
+  if (picked && (await page.locator('.baggrid .bagtile.is-picked').count())) throw new Error('THE UNPICKED CHIP LEFT ITS PIECES PICKED');
   await page.locator('.bagtools__pick').click(); await sleep(200);
   await page.locator('.bag__views .seg__btn', { hasText: 'Sets' }).click(); await sleep(700); await snap('inventory-sets');
   await close();

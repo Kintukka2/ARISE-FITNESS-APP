@@ -84,8 +84,8 @@ const sorted = (s: Save, list: Item[], by: Sort) => {
   });
 };
 
-/** A piece that can go: not worn, not issued, not starred. */
-const loose = (s: Save, it: Item) => !gear.slotOf(s, it) && !gear.defOf(it)?.issued && !s.favourites.includes(it.id);
+/** A piece that can go: not worn, not starred. Issued kit can go as well, once it is outgrown. */
+const loose = (s: Save, it: Item) => !gear.slotOf(s, it) && !s.favourites.includes(it.id);
 
 function Items() {
   const s = useSave();
@@ -106,6 +106,8 @@ function Items() {
   };
   const list = sorted(s, s.items.filter(match), sort);
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  /** A chip of the select row: all of its pieces picked, or, tapped again while they are, none of them. */
+  const toggleAll = (ids: string[], on: boolean) => setPicked((p) => (on ? p.filter((x) => !ids.includes(x)) : [...new Set([...p, ...ids])]));
   const chosen = picked.map((id) => s.items.find((x) => x.id === id)).filter((x): x is Item => !!x && loose(s, x));
   const worth = chosen.reduce((n, it) => n + shop.scrapValue(it), 0);
   /** Every duplicate but the best of its design: what fusion or the Exchange would take. */
@@ -155,10 +157,24 @@ function Items() {
       {picking && (
         <div class="bagpick">
           <span class="label">Select</span>
-          {(['E', 'D', 'C', 'B', 'A', 'S'] as const).filter((r) => s.items.some((it) => gear.defOf(it)?.rank === r && loose(s, it))).map((r) => (
-            <button type="button" key={r} class="sysbox bagpick__chip" data-rarity={r} onClick={() => { sfx.tap(); setPicked((p) => [...new Set([...p, ...s.items.filter((it) => gear.defOf(it)?.rank === r && loose(s, it)).map((x) => x.id)])]); }}>{rarity(r)}</button>
-          ))}
-          <button type="button" class="sysbox bagpick__chip" onClick={() => { sfx.tap(); setPicked((p) => [...new Set([...p, ...spares()])]); }}>Duplicates</button>
+          {(['E', 'D', 'C', 'B', 'A', 'S'] as const).filter((r) => s.items.some((it) => gear.defOf(it)?.rank === r && loose(s, it))).map((r) => {
+            const ids = s.items.filter((it) => gear.defOf(it)?.rank === r && loose(s, it)).map((x) => x.id);
+            const on = ids.every((id) => picked.includes(id));
+            return (
+              <button type="button" key={r} aria-pressed={on} class={`sysbox bagpick__chip ${on ? 'is-on' : ''}`} data-rarity={r} onClick={() => { sfx.tap(); toggleAll(ids, on); }}>
+                {on && <Glyph name="check" />}{rarity(r)}
+              </button>
+            );
+          })}
+          {(() => {
+            const ids = spares();
+            const on = ids.length > 0 && ids.every((id) => picked.includes(id));
+            return (
+              <button type="button" aria-pressed={on} class={`sysbox bagpick__chip ${on ? 'is-on' : ''}`} onClick={() => { sfx.tap(); toggleAll(ids, on); }}>
+                {on && <Glyph name="check" />}Duplicates
+              </button>
+            );
+          })()}
           {picked.length > 0 && <button type="button" class="sysbox bagpick__chip is-clear" onClick={() => { sfx.tap(); setPicked([]); }}>Clear</button>}
         </div>
       )}
@@ -175,7 +191,7 @@ function Items() {
           <Btn kind="danger" size="sm" disabled={!chosen.length} onClick={() => void recycle()}><Glyph name="trash" /> Recycle</Btn>
         </div>
       )}
-      {picking && <small class="muted">Worn, issued and starred items cannot be selected.</small>}
+      {picking && <small class="muted">Worn and starred items cannot be selected.</small>}
     </div>
   );
 }
@@ -378,7 +394,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
         }}>{worn ? 'Unequip' : 'Equip'}</Btn>
         <IconBtn icon="star" on={s.favourites.includes(it.id)} label={s.favourites.includes(it.id) ? 'Unstar' : 'Star: kept from recycling and fusion'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
       </div>
-      {!d.issued && !worn && !s.favourites.includes(it.id) && (
+      {!worn && !s.favourites.includes(it.id) && (
         <Btn kind="ghost" onClick={async () => {
           const v = shop.scrapValue(it);
           if (!(await confirm('Recycle Item', `Break <em>${d.name}</em> down for <strong>${v} Mana Shards</strong>?`, 'Recycle', true))) return;

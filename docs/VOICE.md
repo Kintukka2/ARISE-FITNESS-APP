@@ -34,7 +34,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | System windows: Notification, Quest Info, Quest Rewards | The System | `src/ui/system.ts`, `src/app/flow.ts`, `data/narrative.ts` |
 | Cards: items, skills, classes, potions, stats | The System | `data/equipment.ts`, `data/classes.ts`, `data/abilities.ts`, `core/shop.ts`, `core/progression.ts` |
 | The brief's assessment | The System | `raid.verdict`, `GRADES` |
-| The brief itself: a Gate card, `GATE: {name}`, in the Gates' orange | The System, with the Association's file as its first field | `openBrief` in `screens/Gates.tsx` |
+| The brief itself: a Gate card, `GATE: {name}`, in the Gates' orange. Its banner: the Gate's portal, `C-Rank Gate` (`C-Rank floors` on the Spire, `Trial of Ascension`), `Association file:` and the file, and its chips (`Cleared` or `Never cleared`, its mark, `Ascension 3`; the Trial's `Rest: None`, `Withdrawal: Not possible`, `Allies: None`); the assessment's ring and lines; four cells, `Clear`, `First clear` (`This week`, `Opens`), `Loot` and `Depth`; `Threat`, with `Shadows bound: 1/6`, the boss's card and a chip to each creature (`Gatekeeper` for the elite, `?` and `Unidentified` until the hunter has been inside); the map; `Your party` with `Power 426`, a card each; the satchel; and Enter The Gate docked at the foot | The System, with the Association's file in its banner | `openBrief` in `screens/Gates.tsx` |
 | A Trial's brief: `TRIAL: Ascension {n}`, in advancement's gold | The System alone. The Trial is the System's, so it has no Association file and no Association hunter walks in: its terms are fields (`CHOSEN: 5, in a row`, `REST: None`, `WITHDRAWAL: Not possible`, `ALLIES: None`) | `openBrief` in `screens/Gates.tsx` |
 | Setting a mark: `Would you like to set this mark?`, the mark, what it adds, `Set: 1/4 → 2/4`, and in red that it cannot be moved | The System, as an Offer, in gold | `MarkList` in `screens/Gates.tsx` |
 | The Ascension walkthrough: the sheet explained a part at a time, the first time it opens and from its help button | The interface, as a tour headed `Tutorial` (`tour()` with `who: 'app'`) | `ascensionTour` in `screens/Gates.tsx` |
@@ -568,11 +568,11 @@ sell it in the store.`
 
 | Item | Was | Is |
 |---|---|---|
-| Hunter Recruit Shirt | Association grey, reinforced at the shoulders, and issued in one size that fits nobody. Every hunter alive owned one of these first. | A shirt issued by the Hunter Association. Reinforced at the shoulders. Cannot be recycled. |
-| Hunter Recruit Trousers | Hard-wearing, unflattering, and cut for crouching in. Valcorde will tell you the last part is not an accident. | Trousers issued by the Hunter Association. Cut for crouching. Cannot be recycled. |
-| Hunter Recruit Boots | Flat, stiff, and honest. You will feel the ground through them, which is the only thing a boot has to do. | Boots issued by the Hunter Association. Thin-soled. Cannot be recycled. |
-| Training Shield | Battered plywood over a steel rim, and heavier than it looks. Handed out because a recruit who has never held a shield puts it in the wrong place. | A training shield of plywood over a steel rim, issued by the Hunter Association. Cannot be recycled. |
-| Training Sword | Blunt, nose-heavy, and deliberately worse than a real blade. Valcorde issues it with the licence and tells every recruit the same thing: the sword is not the point, the swinging is. | A blunt training sword issued by the Hunter Association. Cannot be recycled. |
+| Hunter Recruit Shirt | Association grey, reinforced at the shoulders, and issued in one size that fits nobody. Every hunter alive owned one of these first. | A shirt issued by the Hunter Association. Reinforced at the shoulders. |
+| Hunter Recruit Trousers | Hard-wearing, unflattering, and cut for crouching in. Valcorde will tell you the last part is not an accident. | Trousers issued by the Hunter Association. Cut for crouching. |
+| Hunter Recruit Boots | Flat, stiff, and honest. You will feel the ground through them, which is the only thing a boot has to do. | Boots issued by the Hunter Association. Thin-soled. |
+| Training Shield | Battered plywood over a steel rim, and heavier than it looks. Handed out because a recruit who has never held a shield puts it in the wrong place. | A training shield of plywood over a steel rim, issued by the Hunter Association. |
+| Training Sword | Blunt, nose-heavy, and deliberately worse than a real blade. Valcorde issues it with the licence and tells every recruit the same thing: the sword is not the point, the swinging is. | A blunt training sword issued by the Hunter Association. |
 
 ### Worked example: extraction
 

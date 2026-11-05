@@ -244,6 +244,19 @@ describe('the bag', () => {
     expect(r.count).toBe(1);
     expect(s.items.map((x) => x.id)).toEqual([a.id, b.id]);
   });
+
+  it('recycles the issued kit once it is taken off, for what its score is worth', () => {
+    const s = defaults();
+    gear.issueKit(s);
+    const kit = s.items.filter((x) => gear.defOf(x)?.issued);
+    expect(kit.length).toBe(5);
+    const off = kit.find((x) => !gear.slotOf(s, x)) ?? kit[0];
+    if (gear.slotOf(s, off)) gear.unequip(s, gear.slotOf(s, off)!);
+    const v = shop.scrapValue(off);
+    expect(v).toBeGreaterThan(0);
+    expect(shop.recycle(s, off.id)).toBe(v);
+    expect(s.items.some((x) => x.id === off.id)).toBe(false);
+  });
 });
 
 describe('properties in a fight', () => {

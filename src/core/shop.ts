@@ -101,7 +101,7 @@ export function buy(s: Save, index: number, day = dayKey()): Item | null {
 export function recycle(s: Save, itemId: string): number {
   const it = s.items.find((i) => i.id === itemId);
   const d = it && gearDef(it.defId);
-  if (!it || !d || d.issued || Object.values(s.equipped).includes(itemId)) return 0;
+  if (!it || !d || Object.values(s.equipped).includes(itemId)) return 0;
   const paid = scrapValue(it);
   s.items = s.items.filter((i) => i.id !== itemId);
   s.favourites = s.favourites.filter((f) => f !== itemId);
@@ -110,16 +110,16 @@ export function recycle(s: Save, itemId: string): number {
   return paid;
 }
 
-/** Everything not worn, not issued and not starred, of these grades. */
+/** Everything not worn and not starred, of these grades. */
 export function scrapMatches(s: Save, ranks: string[]): Item[] {
   const worn = new Set(Object.values(s.equipped));
   return s.items.filter((it) => {
     const d = gearDef(it.defId);
-    return d && !d.issued && !worn.has(it.id) && !s.favourites.includes(it.id) && ranks.includes(d.rank);
+    return d && !worn.has(it.id) && !s.favourites.includes(it.id) && ranks.includes(d.rank);
   });
 }
 
-/** Break down the pieces chosen, skipping any worn, issued or starred. Returns how many went and what they paid. Mutates. */
+/** Break down the pieces chosen, skipping any worn or starred. Returns how many went and what they paid. Mutates. */
 export function recycleSome(s: Save, ids: string[]) {
   let paid = 0;
   let count = 0;

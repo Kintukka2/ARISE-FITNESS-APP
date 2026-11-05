@@ -3,11 +3,11 @@ import type { GearDef } from '@/core/types';
 
 /** Issued with the licence, at the Association desk. Never sold or scrapped. */
 export const ISSUED: GearDef[] = [
-  {"id":"RECRUIT_SHIRT","name":"Hunter Recruit Shirt","rank":"E","slot":"Chest","core":{"VIT":1},"issued":true,"desc":"A shirt issued by the Hunter Association. Reinforced at the shoulders. Cannot be recycled."},
-  {"id":"RECRUIT_TROUSERS","name":"Hunter Recruit Trousers","rank":"E","slot":"Legs","core":{"VIT":1},"issued":true,"desc":"Trousers issued by the Hunter Association. Cut for crouching. Cannot be recycled."},
-  {"id":"RECRUIT_BOOTS","name":"Hunter Recruit Boots","rank":"E","slot":"Feet","core":{"PER":1},"issued":true,"desc":"Boots issued by the Hunter Association. Thin-soled. Cannot be recycled."},
-  {"id":"TRAINING_SHIELD","name":"Training Shield","rank":"D","slot":"Off-Hand","core":{"VIT":2},"issued":true,"desc":"A training shield of plywood over a steel rim, issued by the Hunter Association. Cannot be recycled."},
-  {"id":"TRAINING_SWORD","name":"Training Sword","rank":"D","slot":"Weapon","core":{"STR":2},"issued":true,"desc":"A blunt training sword issued by the Hunter Association. Cannot be recycled."},
+  {"id":"RECRUIT_SHIRT","name":"Hunter Recruit Shirt","rank":"E","slot":"Chest","core":{"VIT":1},"issued":true,"desc":"A shirt issued by the Hunter Association. Reinforced at the shoulders."},
+  {"id":"RECRUIT_TROUSERS","name":"Hunter Recruit Trousers","rank":"E","slot":"Legs","core":{"VIT":1},"issued":true,"desc":"Trousers issued by the Hunter Association. Cut for crouching."},
+  {"id":"RECRUIT_BOOTS","name":"Hunter Recruit Boots","rank":"E","slot":"Feet","core":{"PER":1},"issued":true,"desc":"Boots issued by the Hunter Association. Thin-soled."},
+  {"id":"TRAINING_SHIELD","name":"Training Shield","rank":"D","slot":"Off-Hand","core":{"VIT":2},"issued":true,"desc":"A training shield of plywood over a steel rim, issued by the Hunter Association."},
+  {"id":"TRAINING_SWORD","name":"Training Sword","rank":"D","slot":"Weapon","core":{"STR":2},"issued":true,"desc":"A blunt training sword issued by the Hunter Association."},
 ];
 
 export const EQUIPMENT: GearDef[] = [

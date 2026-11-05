@@ -349,7 +349,7 @@ fight was tried and did not narrow it.
 - **Upgrading — built.** From a piece's sheet, each step moves its quality and every property a tenth
   of the way across its design's range, until it is perfect, for a price shown up front (by rarity:
   60 shards a step at Rare, 270 at Legendary). The issued kit is not upgraded. Recycling stays the
-  way to turn spares into shards.
+  way to turn spares into shards; the issued kit can be recycled too, once it is outgrown.
 
 ### 6. Depth for the Shadows — built
 
@@ -817,6 +817,25 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
   window for them all (`shadows.claimAll`, `flow.claimAll`): every promotion first, one rank apiece,
   the deployed and the highest level before the rest, then one star apiece for each awakening the
   Essence left pays for.
+- **The brief, overhauled,** after a mission planner's sheet. It was a column of large boxes, so the
+  boss, the map and the party sat far below what the Gate pays. Now:
+  - **A banner:** the Gate's portal in its grade's colour (the Trial's gold), its grade, the
+    Association's file, and chips: Cleared or Never cleared, its mark from the board, its Ascension
+    level; the Trial's terms (no rest, no withdrawal, no allies) as chips.
+  - **The assessment:** the clear rate as a ring in the verdict's colour, beside its lines.
+  - **What it pays:** four small cells (Clear, First clear, Loot, Depth), the bounty in green while
+    unclaimed.
+  - **Threat:** the boss's card, the Chosen's if one holds the Gate, and a chip to each creature and
+    the gatekeeper, after an investigation's other monsters: named once the hunter has been inside,
+    as the map is, and violet where one already serves; the head counts the Shadows bound from it,
+    as the board's row does.
+  - **The map**, then **the party** as cards, two to a row, with their power summed.
+  - **Enter The Gate** docked to the foot of the window, lit in the Gates' orange, so it is in reach
+    wherever the brief is scrolled.
+- **The bag's Select chips** show what they picked: a rarity's chip fills in its colour, with a tick,
+  once all its pieces are picked, and a tap while it is unpicks them; Duplicates the same.
+- **The issued kit can be recycled** once it is taken off. It was kept for good, but a hunter at
+  A-Rank has no use for a recruit's shirt. Starred and worn pieces still cannot go.
 - **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
   tapped; its line no longer opens on hover.
 - **A duplicate's extraction** reads as an offer: the Shadow lingers, the sheet says one like it
