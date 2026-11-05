@@ -691,6 +691,9 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
   for the day (`gates.board`). Creatures count in any Gate, however the run ends; a clear counts only
   its own Gate, cleared. Progress is counted in `raid.finish` and shown on the results as a strip on
   Ryn's channel.
+  A Chosen standing in the boss's place is that boss for a boss job: a clear of the job's Gate past it
+  does the job, as it fells the Chosen (`walkers.fell`). Without it, a boss job on the Gate the Chosen
+  held was shut out for the day, short of walking in below the Chosen's level.
 - **Reported, not paid on the tap.** A job done waits on Ryn's card at the top of the Quests screen
   until the hunter reports it (`association.report`). He pays, then hands over the next. A job is
   written to the save when it is handed over, so nothing redraws it.
@@ -800,6 +803,9 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     done. A ring scrolls to its quest and lights it.
   - **The Daily Quests:** their head and the time to the next, a line to each with its bar, its
     count and what it pays (`payOf`), and the completion bonus (`bonusOf`). The block opens the window.
+    Once all are done, the three lines and the bonus told the hunter nothing new and pushed the
+    rest of the log down a screen, so the block folds to its head: a green tick, the time to the
+    next, and `Complete` where the count stood. A tap still opens the window with every quest.
   - **Advancement:** Reclassification (both plates, the level and the XP to it, Ability and Skill
     Points, a class, Shadow slots or Ascension where the rank brings them), the Trial (the Gates
     proved and the Chosen after them; Ascension, a mark, the upgrade limit) and the Chosen (where it

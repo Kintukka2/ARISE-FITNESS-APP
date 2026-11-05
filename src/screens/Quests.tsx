@@ -181,7 +181,8 @@ function dailyEntry(s: Save, day: string): Entry | null {
 
 /**
  * The day's Daily Quests: their head, the time left, and a line to each, with its bar, its count and
- * what it pays; then the completion bonus. The whole block opens their window.
+ * what it pays; then the completion bonus. Once all are done the block folds to its head, `Complete`
+ * where the count stood. The whole block opens their window.
  */
 function DailySection({ s, day }: { s: Save; day: string }) {
   const c = contracts.today(s, day);
@@ -193,12 +194,14 @@ function DailySection({ s, day }: { s: Save; day: string }) {
     <SysFrame class="qsec qsec--daily" label="Daily Quests">
       <button type="button" id="quest-daily" class={`qdaily ${all ? 'is-done' : ''}`} onClick={() => { sfx.tap(); openQuest(DailyBody); }}>
         <span class="qdaily__head">
-          <span class="qrow__art"><Glyph name="quest" /></span>
+          <span class="qrow__art"><Glyph name={all ? 'check' : 'quest'} /></span>
           <span class="qdaily__name"><b>[Daily Quests]</b><small>New Daily Quests in: <b class="num">{hhmmss(msUntilMidnight())}</b></small></span>
-          <span class="qrow__count num">{done}/{c.list.length}</span>
+          {all
+            ? <span class="qrow__count qdaily__complete" aria-label={`Complete: ${done} of ${c.list.length}`}>Complete</span>
+            : <span class="qrow__count num">{done}/{c.list.length}</span>}
           <Glyph name="chevron" class="qrow__go" />
         </span>
-        {c.list.map((k, i) => (
+        {!all && c.list.map((k, i) => (
           <span key={k.kind} class={`sysbox qdaily__one ${k.done ? 'is-done' : ''}`} style={`--i: ${i}`}>
             <span class="qdaily__mark">{k.done && <Glyph name="check" />}</span>
             <span class="qdaily__body">
@@ -208,11 +211,13 @@ function DailySection({ s, day }: { s: Save; day: string }) {
             <span class="qdaily__side"><span class="num">{Math.min(k.got, k.need)}/{k.need}</span><Pay {...pay} /></span>
           </span>
         ))}
-        <span class={`qdaily__bonus ${all ? 'is-done' : ''}`}>
-          <Ring p={done / Math.max(1, c.list.length)} done={all} mark="star" />
-          <span>Completion bonus</span>
-          <Pay {...bonus} />
-        </span>
+        {!all && (
+          <span class="qdaily__bonus">
+            <Ring p={done / Math.max(1, c.list.length)} mark="star" />
+            <span>Completion bonus</span>
+            <Pay {...bonus} />
+          </span>
+        )}
       </button>
     </SysFrame>
   );

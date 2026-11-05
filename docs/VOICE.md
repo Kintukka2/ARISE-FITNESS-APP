@@ -448,7 +448,8 @@ that there is none.
 stands, labelled `Ryn` (his face in it, in his blue: his job, `Report` once it is done), `Daily`, `Rank`, `Trial`, `Chosen`, `Weekly` and `Secret` under its count, a ring
 filled as far as its quest stands, gold while it waits on the hunter and green once done; a ring
 jumps to its quest. Then the quests in System frames: the Daily Quests, a line to each with its bar,
-its count and its pay, and `Completion bonus` with the day's bonus; `Advancement` (Reclassification,
+its count and its pay, and `Completion bonus` with the day's bonus (once all are done, the block
+folds to its head, `Complete` in green where its count stood); `Advancement` (Reclassification,
 the Trial, the Chosen); `Weekly` (the Pale Spire, its frame orange); `Record` (the Secret Quests, the
 latest done and each tier's count). A quest's row carries its bracketed name and count, one line of
 where it stands (`Reach Level 35 · XP needed: 7,073`), a bar, and its pay as chips (`Ability Points

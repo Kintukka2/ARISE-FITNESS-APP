@@ -97,13 +97,16 @@ export interface AssocMove { from: number; to: number; need: number }
 
 /**
  * Count a run toward the job in hand: a clear of its Gate, or its creature or boss felled, anywhere.
- * Kills count however the run ended; a clear only when it cleared. Returns the move, or null. Mutates.
+ * Kills count however the run ended; a clear only when it cleared. A Chosen standing in the boss's
+ * place in the job's Gate is that boss, for a boss job: a clear there fells it (as `walkers.fell`
+ * has it), so the job is never shut out while the Chosen holds the Gate. Returns the move, or null. Mutates.
  */
 export function count(s: Save, d: Dungeon, run: OpenRaid, outcome: 'cleared' | 'withdrawn' | 'defeated'): AssocMove | null {
   const q = current(s);
   if (!q || done(q)) return null;
+  const inPlace = q.kind === 'boss' && d.id === q.gate && !!run.chosen && outcome === 'cleared' ? 1 : 0;
   const add = q.kind === 'clear' ? (d.id === q.gate && outcome === 'cleared' ? 1 : 0)
-    : run.felled.filter((id) => id === q.target).length;
+    : run.felled.filter((id) => id === q.target).length + inPlace;
   if (!add) return null;
   const from = q.got;
   q.got = Math.min(q.need, q.got + add);

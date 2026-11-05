@@ -173,6 +173,21 @@ try {
     if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} ROW DID NOT OPEN ITS WINDOW`);
     await snap(`quest-${k}`); await close(); await sleep(250);
   }
+  // All three done, the Daily Quests fold to their head, `Complete` where the count stood; a tap still opens them.
+  await sleep(1500);
+  const dailies = await page.evaluate(() => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); const was = JSON.stringify(x.contracts); for (const q of x.contracts.list) { q.got = q.need; q.done = true; } x.contracts.bonus = true; localStorage.setItem(k, JSON.stringify(x)); return was; });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('quests'); await sleep(800);
+  if (await page.locator('.qdaily__one, .qdaily__bonus').count()) throw new Error('THE DAILY QUESTS DID NOT FOLD ONCE ALL WERE DONE');
+  if ((await page.locator('.qdaily.is-done .qdaily__complete').innerText()).trim().toLowerCase() !== 'complete') throw new Error('THE FOLDED DAILY QUESTS DO NOT SAY COMPLETE');
+  await snap('quests-daily-done');
+  await page.locator('.qdaily').click(); await sleep(450);
+  if ((await page.locator('.sheet.is-top .contracts .contract').count()) !== 3) throw new Error('THE FOLDED DAILY QUESTS DID NOT OPEN THEIR WINDOW');
+  await close(); await sleep(250);
+  // The day's quests as they stood, for the runs ahead to move.
+  await sleep(1500);
+  await page.evaluate((was) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.contracts = JSON.parse(was); localStorage.setItem(k, JSON.stringify(x)); }, dailies);
+  await page.reload(); await sleep(1400); await drain();
 
   await nav('gates');
   await snap('gates', true);
