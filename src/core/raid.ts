@@ -66,7 +66,7 @@ export function allySpec(a: Ally, i: number): UnitSpec {
 /** A Shadow as it fights. `bonus` is what the hunter's marks give every Shadow. */
 export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, focus: shadows.focusOf(sh), tactic: sh.tactic };
+  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id };
 }
 
 /** The hunters the Association sends with you at an Ascension level. The Trial is the System's, so it sends none there. */
@@ -361,18 +361,8 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
   if (!x) return null;
   run.path = [...(run.path ?? []), id];
   run.orders = [];
-  // Orders given while the last step was underway reach the run here, before this one plays: the
-  // standing orders, and each Shadow's focus.
+  // Orders given while the last step was underway reach the run here, before this one plays.
   run.tactic = s.gates.tactic;
-  for (const sp of run.party ?? []) {
-    if (sp.tag !== 'shadow') continue;
-    const sh = s.shadows.army.find((y) => y.id === sp.ref);
-    const f = sh && shadows.focusOf(sh);
-    if (f) sp.focus = f;
-    else delete sp.focus;
-    if (sh?.tactic) sp.tactic = sh.tactic;
-    else delete sp.tactic;
-  }
   const out: StepResult = { node: x };
   if (x.kind === 'rest') {
     const party = partyFor(s, d, run, now);

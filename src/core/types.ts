@@ -135,10 +135,6 @@ export interface Shadow {
   xp: number;
   /** Awakening stars, bought with Shadow Essence once Ascendant at its cap. */
   stars?: number;
-  /** A skill of its kit it uses whenever that skill is ready, from its orders. Unset, it chooses for itself. */
-  focus?: string;
-  /** Standing orders of its own, over the army's. Unset, it follows the army's. */
-  tactic?: Tactic;
   /** The name the hunter bestowed on it, if any. Unset, it goes by what it was: `Shadow {creature}`. */
   name?: string;
 }

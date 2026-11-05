@@ -11,7 +11,7 @@ import { powerOf } from './combat';
 import { ALL_ENEMIES, enemyById } from './gates';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
-import type { Attrs, Enemy, Rank, Save, Shadow, Tactic } from './types';
+import type { Attrs, Enemy, Rank, Save, Shadow } from './types';
 import { STATS } from './types';
 import { clamp, dayKey, uid } from './util';
 
@@ -179,35 +179,6 @@ export function release(s: Save, id: string): number | null {
   return got;
 }
 
-/** A Shadow's focus, if it still knows it: the skill it uses whenever that skill is ready. */
-export function focusOf(sh: Shadow): string | undefined {
-  return sh.focus && kitOf(sh).includes(sh.focus) ? sh.focus : undefined;
-}
-
-/** Give a Shadow a focus, a skill of its kit it uses whenever that skill is ready, or none. It reaches an open run at its next step. Mutates. */
-export function setFocus(s: Save, id: string, skill: string | null): boolean {
-  const sh = s.shadows.army.find((x) => x.id === id);
-  if (!sh) return false;
-  if (skill && !kitOf(sh).includes(skill)) return false;
-  if (skill) sh.focus = skill;
-  else delete sh.focus;
-  return true;
-}
-
-/** Give a Shadow standing orders of its own, or none, so it follows the army's. It reaches an open run at its next step. Mutates. */
-export function setTactic(s: Save, id: string, t: Tactic | null): boolean {
-  const sh = s.shadows.army.find((x) => x.id === id);
-  if (!sh) return false;
-  if (t) sh.tactic = t;
-  else delete sh.tactic;
-  return true;
-}
-
-/** Shadows given orders of their own: a focus, or standing orders. */
-export function ordered(s: Save): Shadow[] {
-  return s.shadows.army.filter((sh) => !!focusOf(sh) || !!sh.tactic);
-}
-
 /** The longest name a Shadow can be given. */
 export const NAME_MAX = 16;
 /** What a Shadow goes by: the name bestowed on it, or what it was. */
@@ -280,6 +251,36 @@ export const bestSquad = (s: Save): string[] => s.shadows.army.slice().sort((a, 
 export function autoDeploy(s: Save): string[] {
   s.shadows.squad = bestSquad(s);
   return s.shadows.squad;
+}
+
+/**
+ * Put a Shadow in a place in the squad, as a drag drops it. Onto a deployed Shadow, the two change
+ * places, or, from the reserve, it takes that place and the one there goes to the reserve. Onto a
+ * free slot, it joins the squad at its end. At -1 it is taken out. False if nothing changed. Mutates.
+ */
+export function placeAt(s: Save, id: string, at: number): boolean {
+  if (!s.shadows.army.some((x) => x.id === id)) return false;
+  const sq = squad(s).map((x) => x.id);
+  const from = sq.indexOf(id);
+  const n = slots(s);
+  if (at < 0) {
+    if (from < 0) return false;
+    sq.splice(from, 1);
+  } else if (at >= n) {
+    return false;
+  } else if (at >= sq.length) {
+    if (from === sq.length - 1) return false;
+    if (from >= 0) sq.splice(from, 1);
+    else if (sq.length >= n) return false;
+    sq.push(id);
+  } else if (from >= 0) {
+    if (from === at) return false;
+    [sq[from], sq[at]] = [sq[at], sq[from]];
+  } else {
+    sq[at] = id;
+  }
+  s.shadows.squad = sq;
+  return true;
 }
 
 export function bind(s: Save, enemyId: string, day = dayKey()): Shadow {

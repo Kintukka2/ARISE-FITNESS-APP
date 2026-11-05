@@ -247,8 +247,8 @@ try {
   await page.locator('.syswin .namefield__input').click(); await page.keyboard.type('Bellion'); await sleep(200); await snap('shadow-name');
   await page.locator('.syswin .namefield .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   if (await page.locator('.syswin').count()) throw new Error('CANCEL LEFT THE NAME WINDOW OPEN');
-  // Orders are the orders sheet's: the card gives none.
-  if (await page.locator('.sheet.is-top .sp-orders').count()) throw new Error('THE CARD STILL GIVES ORDERS');
+  // The card gives no orders.
+  if (await page.locator('.sheet.is-top .chip--btn', { hasText: 'Army Orders' }).count()) throw new Error('THE CARD STILL GIVES ORDERS');
   await close();
   // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, its card holds the promotion, and the hold plays it.
   if (!(await page.locator('.sheet.is-top .roster__row.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
@@ -288,26 +288,48 @@ try {
   await page.locator('.sheet.is-top .rostergrid').scrollIntoViewIfNeeded(); await snap('army-grid');
   await page.locator('.sheet.is-top .roster__view[aria-label="List"]').click(); await sleep(200);
   for (let i = 0; i < 6 && !(await page.locator('.sheet.is-top .roster__sort', { hasText: 'Power' }).count()); i++) { await page.locator('.sheet.is-top .roster__sort').click(); await sleep(120); }
+  // Drag and drop: a slot dropped on another changes places with it, the x takes one out, a reserve row
+  // dropped on a free slot joins the squad, and a slot dropped on the list leaves it.
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
+  const names = () => page.locator('.sheet.is-top .roster__slot-open b').allInnerTexts();
+  const drag = async (from, to, shot) => {
+    const a = await from.boundingBox(), b = await to.boundingBox();
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(a.x + a.width / 2 + 10, a.y + a.height / 2 + 6, { steps: 3 });
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 10 });
+    await sleep(200);
+    if (shot) await snap(shot);
+    await page.mouse.up(); await sleep(350);
+  };
+  const was = await names();
+  if (was.length < 2) throw new Error('THE VETERAN HAS TOO FEW DEPLOYED TO SWAP');
+  await drag(page.locator('.sheet.is-top .roster__slot:not(.is-free)').nth(1), page.locator('.sheet.is-top .roster__slot:not(.is-free)').nth(0), 'army-drag');
+  const swapped = await names();
+  if (swapped[0] !== was[1] || swapped[1] !== was[0]) throw new Error('A SLOT DROPPED ON ANOTHER DID NOT CHANGE PLACES WITH IT');
+  if (await page.locator('.sheet.is-top .sp-head').count()) throw new Error('A DRAG OPENED A CARD');
+  if (await page.locator('.dragghost:not([hidden])').count()) throw new Error('THE GHOST STAYED AFTER THE DROP');
+  const n0 = await count();
+  await page.locator('.sheet.is-top .roster__slot-x').first().click(); await sleep(250);
+  if ((await count()) === n0) throw new Error('THE SLOT’S X DID NOT TAKE IT OUT');
+  if (await page.locator('.sheet.is-top .sp-head').count()) throw new Error('THE X OPENED A CARD');
+  await drag(page.locator('.sheet.is-top .roster__row:not(.is-on) .roster__who').first(), page.locator('.sheet.is-top .roster__slot.is-free').first());
+  if ((await count()) !== n0) throw new Error('A RESERVE ROW DROPPED ON A FREE SLOT DID NOT JOIN THE SQUAD');
+  await drag(page.locator('.sheet.is-top .roster__slot:not(.is-free)').first(), page.locator('.sheet.is-top .rostabs'));
+  if ((await count()) === n0) throw new Error('A SLOT DROPPED ON THE LIST WAS NOT TAKEN OUT');
   // Auto Deploy puts the strongest in, and is spent once they are.
   const auto = page.locator('.sheet.is-top .btn', { hasText: 'Auto Deploy' });
   if (await auto.isEnabled()) { await auto.click(); await sleep(400); }
   if (await auto.isEnabled()) throw new Error('AUTO DEPLOY LEFT A STRONGER SQUAD UNMADE');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200); await snap('army-edit');
   await close();
-  // ARMY: ORDERS: the standing orders change and hold, and a Shadow given its own shows it on its row.
+  // ARMY: ORDERS: the standing orders change and hold.
   await page.locator('.btile--orders .btile__hit').click(); await sleep(500); await snap('orders', true);
   await page.locator('.sheet.is-top .ord-card', { hasText: 'Protect The Hunter' }).click(); await sleep(250);
   if (!(await page.locator('.sheet.is-top .ord-card.is-on', { hasText: 'Protect The Hunter' }).count())) throw new Error('THE STANDING ORDERS DID NOT CHANGE');
-  // A Shadow's own orders are set on its row, opened under it.
-  await page.locator('.sheet.is-top .ordrow__who').first().click(); await sleep(400);
-  if (!(await page.locator('.sheet.is-top .ordrow.is-open .sp-orders').count())) throw new Error('A SHADOW’S ROW DID NOT OPEN ITS ORDERS');
-  await page.locator('.sheet.is-top .ordrow.is-open .sp-orders .chip--btn', { hasText: 'Finish The Weakest' }).click(); await sleep(200);
-  const skills = page.locator('.sheet.is-top .ordrow.is-open .sp-orders__line').nth(1).locator('.chip--btn');
-  if (await skills.count()) { await skills.last().click(); await sleep(200); }
-  await page.locator('.sheet.is-top .ordrow.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('shadow-orders');
-  if (!(await page.locator('.sheet.is-top .ordrow.is-own').count())) throw new Error('A SHADOW’S OWN ORDERS DID NOT SHOW ON ITS ROW');
-  await page.locator('.sheet.is-top .ordrow.is-open .ordrow__who').click(); await sleep(300);
-  await snap('orders-own'); await close();
+  // The orders are the army's alone: no Shadow takes orders of its own.
+  if (await page.locator('.sheet.is-top .ordrow, .sheet.is-top .chip--btn', { hasText: 'Army Orders' }).count()) throw new Error('A SHADOW STILL TAKES ORDERS OF ITS OWN');
+  await close();
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
   await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);

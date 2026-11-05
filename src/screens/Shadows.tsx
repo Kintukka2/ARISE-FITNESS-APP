@@ -25,6 +25,8 @@ import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
 import { claimPromotion } from '@/app/flow';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { createPortal } from 'preact/compat';
+import { useDrag } from '@/ui/drag';
 
 export function Shadows() {
   const s = useSave();
@@ -107,10 +109,8 @@ function tiles(s: Save, news: string[]): BTile[] {
     open: () => openArmy(news),
   };
   const t = s.gates.tactic ?? 'default';
-  const own = shadows.ordered(s).length;
   const ordersTile: BTile = {
     key: 'orders', kind: 'shadow', name: 'Orders', head: true, wide: true, icon: <Glyph name="orders" />,
-    count: own ? `${own} own` : undefined,
     status: <>Standing orders: <b>{tacticName(t)}</b></>,
     art: (
       <span class="sa-orders">
@@ -178,10 +178,18 @@ function ArmySheet({ news }: { news: string[] }) {
   const order = (k: Sort) => { sfx.tap(); roster.sort = k; setSort(k); };
   const look = (k: View) => { sfx.tap(); roster.view = k; setView(k); };
   const move = (id: string) => { store.update((x) => shadows.toggleDeploy(x, id)); sfx.blip(); };
+  // A drop onto a slot places the Shadow there; onto the list, it is taken out of the squad.
+  const drag = useDrag((id, at) => {
+    const slot = at === 'out' ? -1 : Number(at.replace('slot:', ''));
+    if (Number.isNaN(slot)) return;
+    if (store.update((x) => shadows.placeAt(x, id, slot))) sfx.blip();
+  });
+  const held = drag.lifted ? s.shadows.army.find((x) => x.id === drag.lifted) : undefined;
+  const heldE = held && enemyById(held.enemyId);
   const best = shadows.bestSquad(s);
   const settled = best.length === squad.length && best.every((id) => squad.some((x) => x.id === id));
   return (
-    <div class="stack roster">
+    <div class={`stack roster ${drag.lifted ? 'is-dragging' : ''}`} {...drag.guard}>
       <div class="bag__head roster__sum">
         <span><b class="num"><EssenceMark />{s.shadows.essence ?? 0}</b><small>Shadow Essence</small></span>
         <span><b class="num">{shadows.squadPower(s)}</b><small>Squad Power</small></span>
@@ -193,21 +201,26 @@ function ArmySheet({ news }: { news: string[] }) {
           {Array.from({ length: n }, (_, i) => {
             const sh = squad[i];
             const e = sh && enemyById(sh.enemyId);
+            const hit = drag.over === `slot:${i}` ? 'is-over' : '';
             if (!sh || !e) {
               return (
-                <button key={`free-${i}`} type="button" class="sysbox roster__slot is-free" aria-label="Free slot: show the reserve"
+                <button key={`free-${i}`} type="button" data-drop={`slot:${i}`} class={`sysbox roster__slot is-free ${hit}`} aria-label="Free slot: show the reserve"
                   onClick={() => { pick('reserve'); listRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }}>
                   <Glyph name="plus" /><small>Free</small>
                 </button>
               );
             }
             return (
-              <button key={sh.id} type="button" class={`sysbox roster__slot ${ready(sh) ? 'is-ready' : ''}`} onClick={() => { sfx.tap(); openShadow(sh.id); }}>
-                <span class="roster__slot-grade"><RankPlate rank={e.rank} size={16} /></span>
-                <span class="roster__slot-badge"><ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} /></span>
-                <b>{shortName(sh)}</b>
-                <small class="num">Lv.{shadows.levelOf(sh)} · {shadows.power(sh)}</small>
-              </button>
+              <div key={sh.id} data-drop={`slot:${i}`} class={`sysbox roster__slot ${ready(sh) ? 'is-ready' : ''} ${hit} ${drag.lifted === sh.id ? 'is-lifted' : ''}`} {...drag.handle(sh.id)}>
+                <button type="button" class="roster__slot-open" onClick={() => { sfx.tap(); openShadow(sh.id); }}>
+                  <span class="roster__slot-grade"><RankPlate rank={e.rank} size={16} /></span>
+                  <span class="roster__slot-badge"><ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} /></span>
+                  <b>{shortName(sh)}</b>
+                  <small class="num">Lv.{shadows.levelOf(sh)} · {shadows.power(sh)}</small>
+                </button>
+                <button type="button" class="roster__slot-x" aria-label={`Take out: ${shadows.nameOf(sh)}`} title="Take out"
+                  onPointerDown={(ev) => ev.stopPropagation()} onClick={() => move(sh.id)}><Glyph name="close" /></button>
+              </div>
             );
           })}
         </div>
@@ -216,6 +229,7 @@ function ArmySheet({ news }: { news: string[] }) {
           <Btn class="grow" disabled={!squad.length} onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall · {squad.length}</Btn>
         </div>
       </Section>
+      <div class={`roster__out ${drag.over === 'out' && held && squad.includes(held) ? 'is-over' : ''}`} data-drop="out">
       <div class="roster__tools" ref={listRef}>
         <div class="rostabs" role="tablist" aria-label="Show">
           {SHOWS.map((x) => (
@@ -244,14 +258,22 @@ function ArmySheet({ news }: { news: string[] }) {
             <button type="button" class={sort === 'power' ? 'is-on' : ''} tabIndex={-1} onClick={() => order('power')}>Power</button>
           </div>
           <ul class="roster__list">
-            {list.map((sh, i) => <RosterRow key={sh.id} sh={sh} i={i} on={squad.includes(sh)} full={full} ready={ready(sh)} fresh={news.includes(sh.id)} move={move} />)}
+            {list.map((sh, i) => <RosterRow key={sh.id} sh={sh} i={i} on={squad.includes(sh)} full={full} ready={ready(sh)} fresh={news.includes(sh.id)} move={move} drag={drag.handle(sh.id)} lifted={drag.lifted === sh.id} />)}
           </ul>
         </div>
       )}
       {list.length > 0 && view === 'grid' && (
         <div class="rostergrid">
-          {list.map((sh, i) => <RosterCard key={sh.id} sh={sh} i={i} on={squad.includes(sh)} ready={ready(sh)} fresh={news.includes(sh.id)} />)}
+          {list.map((sh, i) => <RosterCard key={sh.id} sh={sh} i={i} on={squad.includes(sh)} ready={ready(sh)} fresh={news.includes(sh.id)} drag={drag.handle(sh.id)} lifted={drag.lifted === sh.id} />)}
         </div>
+      )}
+      </div>
+      {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
+      {createPortal(
+        <div class="dragghost" ref={drag.ghost} hidden={!held} aria-hidden="true">
+          {held && heldE && <><ShadowEmblem family={heldE.family} rank={shadows.rankIndex(held)} size={40} /><b>{shortName(held)}</b></>}
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -269,19 +291,21 @@ function share(sh: Shadow) {
  * over a bar through its rank's levels, and its power. The row opens its card; the box at its start
  * puts it in the squad or takes it out.
  */
-function RosterRow({ sh, i, on, full, ready, fresh, move }: { sh: Shadow; i: number; on: boolean; full: boolean; ready: boolean; fresh: boolean; move: (id: string) => void }) {
+type DragHandle = ReturnType<ReturnType<typeof useDrag>['handle']>;
+
+function RosterRow({ sh, i, on, full, ready, fresh, move, drag, lifted }: { sh: Shadow; i: number; on: boolean; full: boolean; ready: boolean; fresh: boolean; move: (id: string) => void; drag: DragHandle; lifted: boolean }) {
   const e = enemyById(sh.enemyId)!;
   const at = shadows.rankIndex(sh);
   const stars = shadows.starsOf(sh);
   const cap = shadows.rankOf(sh).cap;
   const lv = shadows.levelOf(sh);
   return (
-    <li class={`roster__row ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''}`} style={`--i: ${Math.min(i, 12)}`}>
+    <li class={`roster__row ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${lifted ? 'is-lifted' : ''}`} style={`--i: ${Math.min(i, 12)}`}>
       <button type="button" class={`sysbox roster__toggle ${on ? 'is-on' : ''}`} aria-pressed={on} disabled={!on && full}
         aria-label={`${on ? 'Take out' : 'Put in'}: ${shadows.nameOf(sh)}`} title={on ? 'Take out' : full ? 'Squad full' : 'Put in'} onClick={() => move(sh.id)}>
         <Glyph name={on ? 'check' : 'plus'} />
       </button>
-      <button type="button" class="roster__who" onClick={() => { sfx.tap(); openShadow(sh.id); }}>
+      <button type="button" class="roster__who" {...drag} onClick={() => { sfx.tap(); openShadow(sh.id); }}>
         <span class="roster__badge">
           <ShadowEmblem family={e.family} rank={at} size={40} />
           {ready ? <span class="roster__tag is-ready">Ready</span> : fresh ? <span class="roster__tag">New</span> : null}
@@ -308,11 +332,11 @@ function RosterRow({ sh, i, on, full, ready, fresh, move }: { sh: Shadow; i: num
 }
 
 /** A Shadow on the roster's grid: its power over its badge, ringed by its levels through its rank, and its name. */
-function RosterCard({ sh, i, on, ready, fresh }: { sh: Shadow; i: number; on: boolean; ready: boolean; fresh: boolean }) {
+function RosterCard({ sh, i, on, ready, fresh, drag, lifted }: { sh: Shadow; i: number; on: boolean; ready: boolean; fresh: boolean; drag: DragHandle; lifted: boolean }) {
   const e = enemyById(sh.enemyId)!;
   const c = 2 * Math.PI * 40;
   return (
-    <button type="button" class={`sysbox rostercard ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''}`} style={`--i: ${Math.min(i, 16)}`} onClick={() => { sfx.tap(); openShadow(sh.id); }}>
+    <button type="button" class={`sysbox rostercard ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${lifted ? 'is-lifted' : ''}`} style={`--i: ${Math.min(i, 16)}`} {...drag} onClick={() => { sfx.tap(); openShadow(sh.id); }}>
       <span class="rostercard__top"><RankPlate rank={e.rank} size={14} /><b class="num">{shadows.power(sh)}</b></span>
       <span class="rostercard__art">
         <svg viewBox="0 0 100 100" class="rostercard__ring" aria-hidden="true">
@@ -341,9 +365,9 @@ export function EssenceMark({ size = 14 }: { size?: number }) {
 
 /** Each standing order's mark: an eye for their own judgement, a skull for the kill, the hunter, and the bolt of what spreads. */
 const TACTIC_GLYPH: Record<Tactic, string> = { default: 'eye', finish: 'skull', protect: 'profile', spread: 'bolt' };
-const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.name ?? 'Army Orders';
+const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.name ?? TACTICS[0].name;
 
-/** ARMY: ORDERS: the standing orders the army fights on, and every Shadow's own, set on its row. */
+/** ARMY: ORDERS: the standing orders the army fights on. */
 function openOrders() {
   openSheet({ title: 'Army: Orders', system: { icon: <Glyph name="orders" />, kind: 'shadow' }, render: () => <OrdersSheet /> });
 }
@@ -359,9 +383,6 @@ function OrdersSheet() {
     store.update((x) => { const r = x.gates.raid ?? null; raid.setTactic(x, r ? dungeonById(r.dungeonId) ?? null : null, r, k); });
     sfx.blip();
   };
-  const squad = shadows.squad(s);
-  const reserve = ranked(s).filter((x) => !squad.includes(x));
-  const own = shadows.ordered(s);
   return (
     <div class="stack">
       <Section title="Standing Orders" right="Shadows and Auto">
@@ -376,74 +397,7 @@ function OrdersSheet() {
         </div>
         {held && <div class="sysfields"><Field k="Step underway" v={held} /></div>}
       </Section>
-      {squad.length > 0 && (
-        <Section title="Squad" right={`Own orders: ${own.filter((x) => squad.includes(x)).length}/${squad.length}`}>
-          <ul class="partylist ordlist">{squad.map((sh) => <OrdersRow key={sh.id} sh={sh} />)}</ul>
-        </Section>
-      )}
-      {reserve.length > 0 && (
-        <Section title="Reserve" right={`Own orders: ${own.filter((x) => !squad.includes(x)).length}/${reserve.length}`}>
-          <ul class="partylist ordlist">{reserve.map((sh) => <OrdersRow key={sh.id} sh={sh} />)}</ul>
-        </Section>
-      )}
-      {own.length > 0 && (
-        <Btn block onClick={() => { store.update((x) => { for (const sh of x.shadows.army) { shadows.setFocus(x, sh.id, null); shadows.setTactic(x, sh.id, null); } }); toast('Every Shadow follows the army’s orders.'); }}>
-          <Glyph name="recall" /> Clear Own Orders · {own.length}
-        </Btn>
-      )}
     </div>
-  );
-}
-
-/**
- * A Shadow in the orders sheet: whom it goes for and the skill it reaches for. Tapped, it opens under
- * itself to set them: the army's standing orders or its own, and from Sworn the skill it uses whenever
- * that skill is ready.
- */
-function OrdersRow({ sh }: { sh: Shadow }) {
-  const s = useSave();
-  const [open, setOpen] = useState(false);
-  const e = enemyById(sh.enemyId)!;
-  const kit = shadows.kitOf(sh);
-  const focus = shadows.focusOf(sh);
-  const aim = (k: Tactic | null) => store.update((x) => shadows.setTactic(x, sh.id, k));
-  const use = (n: string | null) => store.update((x) => shadows.setFocus(x, sh.id, n));
-  return (
-    <li class={`is-shadow ordrow ${focus || sh.tactic ? 'is-own' : ''} ${open ? 'is-open' : ''}`}>
-      <button type="button" class="ordrow__who" aria-expanded={open} onClick={() => { sfx.tap(); setOpen(!open); }}>
-        <span class="ordrow__badge"><FamilyGlyph family={e.family} size={22} /></span>
-        <span class="ordrow__body">
-          <b>{shadows.nameOf(sh)}</b>
-          <small><span class="label">Targets</span> <span class={sh.tactic ? 'ordrow__own' : ''}>{tacticName(sh.tactic)}</span></small>
-          <small><span class="label">Skill</span> <span class={focus ? 'ordrow__own' : ''}>{focus ?? 'As It Sees Fit'}</span></small>
-        </span>
-        <Glyph name="chevron" />
-      </button>
-      {open && (
-        <div class="sp-orders">
-          <div class="sp-orders__line">
-            <span class="label">Targets</span>
-            <div class="chips chips--orders">
-              <Chip on={!sh.tactic} onClick={() => aim(null)}>Army Orders</Chip>
-              {TACTICS.map((x) => <Chip key={x.key} on={sh.tactic === x.key} onClick={() => aim(x.key)}>{x.name}</Chip>)}
-            </div>
-            <small class="muted">{sh.tactic ? TACTICS.find((x) => x.key === sh.tactic)?.one : <>Standing orders: {tacticName(s.gates.tactic ?? 'default')}</>}</small>
-          </div>
-          <div class="sp-orders__line">
-            <span class="label">Skill</span>
-            {kit.length > 1 ? (
-              <div class="chips chips--orders">
-                <Chip on={!focus} onClick={() => use(null)}>As It Sees Fit</Chip>
-                {kit.map((n) => <Chip key={n} on={focus === n} onClick={() => use(n)}>{n}</Chip>)}
-              </div>
-            ) : (
-              <span class="sp-orders__sealed"><Glyph name="lock" /> {shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank</span>
-            )}
-            {focus && <small class="muted">[Skill: {focus}] whenever it is ready.</small>}
-          </div>
-        </div>
-      )}
-    </li>
   );
 }
 

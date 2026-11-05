@@ -1021,8 +1021,25 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 /* ARMY: the roster. Its counts, the squad's slots, then a row to every Shadow, made into the squad from here. */
 .roster { gap: 12px; }
 .roster__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.roster__slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 9px 4px 7px; border-color: color-mix(in srgb, var(--win) 60%, transparent); color: inherit; font: inherit; background: radial-gradient(80% 60% at 50% 30%, color-mix(in srgb, var(--win) 16%, transparent), transparent 75%), rgba(6, 3, 18, 0.5); }
+.roster__slot { position: relative; min-width: 0; padding: 0; border-color: color-mix(in srgb, var(--win) 60%, transparent); color: inherit; font: inherit; background: radial-gradient(80% 60% at 50% 30%, color-mix(in srgb, var(--win) 16%, transparent), transparent 75%), rgba(6, 3, 18, 0.5); }
+.roster__slot.is-free, .roster__slot-open { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; min-width: 0; padding: 9px 4px 7px; }
+.roster__slot-open { border: 0; background: none; color: inherit; font: inherit; }
 .roster__slot-grade { position: absolute; top: 4px; left: 4px; }
+/* The x that takes a Shadow out of the squad, in its slot's top right. */
+.roster__slot-x { position: absolute; top: 3px; right: 3px; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); background: rgba(10, 5, 26, 0.85); color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.roster__slot-x .ico { width: 10px; height: 10px; }
+.roster__slot-x:hover, .roster__slot-x:focus-visible { border-color: var(--win); color: #fff; background: color-mix(in srgb, var(--win) 30%, rgba(10, 5, 26, 0.9)); }
+/* A drag: what is lifted fades where it was, the target under it lights, and its ghost follows the pointer. */
+.roster [data-drag] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.roster.is-dragging, .roster.is-dragging * { cursor: grabbing; }
+.roster__slot.is-lifted, .roster__row.is-lifted, .rostercard.is-lifted { opacity: 0.35; }
+.roster__slot.is-over { border-style: solid; border-color: #e2d2ff; box-shadow: 0 0 0 1px var(--win), 0 0 16px var(--win-glow); transform: scale(1.03); transition: transform 120ms var(--ease); }
+.roster__out { display: flex; flex-direction: column; gap: 12px; }
+.roster.is-dragging .roster__out { outline: 1px dashed transparent; outline-offset: 4px; transition: outline-color 120ms; }
+.roster.is-dragging .roster__out.is-over { outline-color: color-mix(in srgb, var(--win) 80%, transparent); background: color-mix(in srgb, var(--win) 6%, transparent); }
+.dragghost { position: fixed; top: 0; left: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 84px; margin: -92px 0 0 -42px; padding: 6px 4px; border: 1px solid #e2d2ff; background: rgba(14, 6, 34, 0.92); box-shadow: 0 0 22px var(--arcane-glow), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--arcane); pointer-events: none; }
+.dragghost[hidden] { display: none; }
+.dragghost b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-sys, inherit); font-size: 0.64rem; font-weight: 700; color: #e2d2ff; }
 .roster__slot-badge { display: grid; place-items: center; color: var(--win); filter: drop-shadow(0 0 7px var(--win-glow)); }
 .roster__slot b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.7rem; font-weight: 700; color: #e2d2ff; }
 .roster__slot small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
@@ -1122,29 +1139,7 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ord-card.is-on .ord-card__ico { border-color: color-mix(in srgb, var(--win) 80%, transparent); color: #e2d2ff; background: color-mix(in srgb, var(--win) 22%, transparent); }
 .ord-card.is-on .ord-card__ico .ico { filter: drop-shadow(0 0 6px var(--win-glow)); }
 .ord-card.is-on small { color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
-.sysframe .ordlist li.ordrow { display: block; padding: 0; }
-.ordrow__who { display: grid; grid-template-columns: 38px minmax(0, 1fr) 16px; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
-.ordrow__badge { display: grid; place-items: center; color: var(--win); filter: drop-shadow(0 0 6px var(--win-glow)); }
-.ordrow__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ordrow__body b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--arcane); }
-.ordrow__body small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.ordrow__body small .label { display: inline-block; min-width: 66px; font-size: 0.56rem; }
-.ordrow__own { color: #e2d2ff; text-shadow: 0 0 8px var(--win-glow); }
-.ordrow__who > .ico { width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-.ordrow__who > .ico { transition: transform 160ms var(--ease); }
-.ordrow.is-open .ordrow__who > .ico { transform: rotate(90deg); }
-.ordrow .sp-orders { border-top: 1px solid var(--sys-hair); }
-.ordrow__badge { width: 38px; height: 38px; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); border-radius: 50%; color: #c9a7ff; background: color-mix(in srgb, var(--win) 10%, transparent); }
-.sysframe .ordlist li.ordrow.is-own { border-color: color-mix(in srgb, var(--win) 55%, transparent); }
 
-/* Its orders, on its card: whom it goes for, then the skill it reaches for. */
-.sp-orders { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
-.sp-orders__line { display: flex; flex-direction: column; gap: 6px; }
-.sp-orders__line + .sp-orders__line { padding-top: 12px; border-top: 1px solid var(--sys-hair); }
-.sp-orders__line small { font-size: 0.7rem; }
-.sp-orders .chips--orders .chip--btn { min-height: 38px; font-size: 0.74rem; }
-.sp-orders__sealed { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px dashed var(--sys-hair); font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.sp-orders__sealed .ico { width: 13px; height: 13px; }
 
 @keyframes saFill { from { stroke-dasharray: 0 999; } }
 @keyframes saSmoke { 50% { opacity: 0.6; transform: scale(1.22) translateY(-3px); } }

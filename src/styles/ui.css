@@ -260,9 +260,6 @@
 }
 .chip--btn { min-height: 34px; padding: 5px 12px; transition: all 160ms; }
 /* Standing orders: equal rectangles, two to a row. An odd one out (a Shadow's "Party's orders") takes the top row. */
-.chips--orders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.chips--orders .chip--btn { justify-content: center; min-height: 44px; padding: 8px 10px; text-align: center; white-space: normal; line-height: 1.2; }
-.chips--orders > :first-child:nth-last-child(odd) { grid-column: 1 / -1; }
 .chip--btn.is-on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .chip small { opacity: 0.7; }
 .chip[data-tone='gold'] { border-color: rgba(255, 203, 92, 0.55); color: var(--gold); }
