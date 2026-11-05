@@ -297,9 +297,9 @@ try {
   // The open Gates are one tile; it opens the board.
   await page.locator('.btile--board .btile__hit').click();
   await sleep(400);
-  if (!(await visible('.sheet.is-top .board .btile.is-gate'))) throw new Error('THE BOARD TILE DID NOT OPEN THE GATES');
+  if (!(await visible('.sheet.is-top .gboard .gaterow'))) throw new Error('THE BOARD TILE DID NOT OPEN THE GATES');
   await snap('board');
-  await raidGate('.sheet.is-top .btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit', 'first-gate', true);
+  await raidGate('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)', 'first-gate', true);
   if ((await page.locator('.xpbar__label').innerText()) === before) throw new Error('A GATE PAID NO EXPERIENCE');
 
   await nav('shadows');
