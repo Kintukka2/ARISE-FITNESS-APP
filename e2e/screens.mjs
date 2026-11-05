@@ -153,6 +153,9 @@ try {
   if (await page.locator('.qrow--trial, .qrow--chosen').count()) throw new Error('THE TRIAL OR THE CHOSEN SHOWED BELOW S-RANK');
   // The log: a ring to each quest on the rail; a ring jumps to its quest.
   if ((await page.locator('.qrail__one').count()) < 4) throw new Error('THE QUEST RAIL DOES NOT RING EVERY QUEST');
+  // Ryn's job leads the log, on his channel: his ring first on the rail, his card shaped as the log's rows.
+  if (!(await page.locator('.qrail__one.is-coach').first().count())) throw new Error('RYN’S JOB HAS NO RING ON THE RAIL');
+  if (!(await page.locator('.assoccard .assoccard__row').count())) throw new Error('RYN’S CARD IS NOT SHAPED AS THE LOG’S ROWS');
   if ((await page.locator('.qdaily__one').count()) !== 3) throw new Error('THE LOG DOES NOT LIST THE DAY’S THREE');
   await page.locator('.qrail__one', { hasText: 'Secret' }).click(); await sleep(700);
   if (!(await page.locator('#quest-secret').isVisible())) throw new Error('A RING DID NOT JUMP TO ITS QUEST');

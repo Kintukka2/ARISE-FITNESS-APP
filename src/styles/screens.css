@@ -700,6 +700,8 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .qrail__rings { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; }
 .qrail__one { --qc: var(--mana); display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 2px 0; border: 0; background: none; color: inherit; font: inherit; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--i) * 60ms); }
 .qrail__one.is-gates { --qc: var(--ember); }
+.qrail__one.is-coach { --qc: var(--coach); }
+.qrail__ring > .portrait { position: relative; border-radius: 50%; }
 .qrail__one.is-call { --qc: var(--gold); }
 .qrail__one.is-done { --qc: var(--verdant); }
 .qrail__ring { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; color: var(--qc); }

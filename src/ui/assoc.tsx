@@ -13,7 +13,8 @@ import { SURVEY } from '@/data/association';
 import { ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Bar, Btn, CoachHead } from './components';
+import { useState } from 'preact/hooks';
+import { Bar, Btn } from './components';
 import { CoachPortrait } from './icons';
 import { sys } from './overlays';
 
@@ -56,26 +57,42 @@ export function rewardText(w: AssocReward | null): string | null {
   return `Mana Shards: ${w.n === 1 ? 'a clear’s worth' : `${w.n} clears’ worth`}`;
 }
 
-/** His card on the Quests screen: the job in hand. Null until the line opens. */
+/**
+ * His card on the Quests screen: the first section of the log, shaped as its rows are (his face where a
+ * row's picture stands, the job and its count, his line, a bar and the pay as chips) but on his channel,
+ * in his blue and his corner brackets. A job done waits on the hunter: gold, with the report under it.
+ * Null until the line opens.
+ */
 export function AssocCard() {
   const s = useSave();
+  const [full, setFull] = useState(false);
   const q = association.current(s);
   if (!q) return null;
   const done = association.done(q);
   const pay = rewardText(q.reward);
   return (
-    <section class={`assoccard coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
-      {/* A job done is waiting on the hunter: gold, with the light crossing it, as every tile that waits is. */}
+    <section id="quest-assoc" class={`assoccard coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
       {done && <i class="assoccard__sweep" aria-hidden="true" />}
-      <CoachHead size={34} />
-      <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
-      <p class="assoccard__line">“{briefOf(q)}”</p>
-      <div class="assoccard__goal">
-        <span>{goalOf(q)}</span>
-        <b class="num">{q.got}/{q.need}</b>
+      <header class="assoccard__head">
+        <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
+        <span class="assoccard__who">Ryn Valcorde</span>
+      </header>
+      <div class="assoccard__row">
+        <span class="assoccard__face coachface"><CoachPortrait size={36} /></span>
+        <div class="assoccard__body">
+          <div class="assoccard__goal">
+            <b>{goalOf(q)}</b>
+            <span class="assoccard__count num">{q.got}/{q.need}</span>
+          </div>
+          {/* His line, held to two; a tap gives the whole of it. */}
+          <p class={`assoccard__line ${full ? 'is-full' : ''}`} onClick={() => setFull(!full)}>“{briefOf(q)}”</p>
+          <Bar pct={(q.got / Math.max(1, q.need)) * 100} tone={done ? 'verdant' : 'mana'} thin />
+          <span class="assoccard__pay">
+            <span class="assocpay">XP <b class="num">+{q.xp}</b></span>
+            {pay && <span class="assocpay">{pay}</span>}
+          </span>
+        </div>
       </div>
-      <Bar pct={(q.got / Math.max(1, q.need)) * 100} tone={done ? 'verdant' : 'mana'} thin />
-      <p class="assoccard__pay">Pay: XP +{q.xp}{pay ? ` · ${pay}` : ''}</p>
       {done && <Btn kind="primary" block onClick={() => void reportAssoc()}>Report To Ryn</Btn>}
     </section>
   );

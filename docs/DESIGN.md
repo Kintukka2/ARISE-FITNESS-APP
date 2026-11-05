@@ -785,7 +785,10 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a
   quest paid waited in its window. It is a quest log now, after a journal's list:
-  - **Ryn's card** stays at the top, his channel as before.
+  - **Ryn's card** leads the log, on his channel: shaped as its rows now (his face where a row's
+    picture stands, the job and its count, his line held to two lines until tapped, a bar, the pay
+    as chips), in his blue and corner brackets, never the System's frame. His ring leads the rail, his
+    face in it; it reads Report and turns gold once the job is done.
   - **The rail:** a ring to every quest that stands (Daily, Rank, Trial, Chosen, Weekly, Secret), its
     count under it, filled as far as the quest stands; gold while it waits on the hunter, green once
     done. A ring scrolls to its quest and lights it.

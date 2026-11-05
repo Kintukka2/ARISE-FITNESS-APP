@@ -35,7 +35,7 @@ import { useSave } from '@/store';
 import { Btn, useNow } from '@/ui/components';
 import { ContractsWindow, Pay, QuestGoal, QuestWindow, Ring } from '@/ui/contracts';
 import { Field, SysFrame, type FrameKind } from '@/ui/frame';
-import { Glyph, Sigil } from '@/ui/icons';
+import { CoachPortrait, Glyph, Sigil } from '@/ui/icons';
 import { HoldButton, openSheet, toast } from '@/ui/overlays';
 import { openBrief } from './Gates';
 
@@ -45,7 +45,7 @@ const openQuest = (Body: FunctionComponent<{ close: () => void }>, kind: FrameKi
 
 /** One quest on the log, as the rail rings it: how far it stands, and whether it waits on the hunter. */
 interface Entry {
-  key: 'daily' | 'rank' | 'spire' | 'trial' | 'chosen' | 'secret';
+  key: 'assoc' | 'daily' | 'rank' | 'spire' | 'trial' | 'chosen' | 'secret';
   label: string;
   icon: string;
   kind: FrameKind;
@@ -53,6 +53,8 @@ interface Entry {
   count: string;
   call?: boolean;
   done?: boolean;
+  /** Ryn's job: his face in the ring and his blue, for his channel's. */
+  coach?: boolean;
 }
 
 export function Quests() {
@@ -68,9 +70,10 @@ export function Quests() {
     if (association.open(now) && !association.current(now)) store.update((x) => association.issue(x));
     void playBeats().then(firstJob);
   }, [day]);
+  const job = assocEntry(s);
   const daily = dailyEntry(s, day), rank = rankEntry(s), spireE = spireEntry(s, day), trial = trialEntry(s, day), chosen = chosenEntry(s, day), secret = secretEntry(s);
   // A rank waiting to be claimed leads the climbs.
-  const entries = [daily, rank, trial, chosen, spireE, secret].filter((e): e is Entry => !!e);
+  const entries = [job, daily, rank, trial, chosen, spireE, secret].filter((e): e is Entry => !!e);
   return (
     <div class="stack qlog">
       <AssocCard />
@@ -119,14 +122,14 @@ function QuestRail({ entries }: { entries: Entry[] }) {
     <SysFrame class="qrail" label="Quest log">
       <div class="qrail__rings" style={`--n: ${entries.length}`}>
         {entries.map((e, i) => (
-          <button key={e.key} type="button" class={`qrail__one is-${e.kind} ${e.call ? 'is-call' : ''} ${e.done ? 'is-done' : ''}`} style={`--i: ${i}`}
+          <button key={e.key} type="button" class={`qrail__one is-${e.kind} ${e.coach ? 'is-coach' : ''} ${e.call ? 'is-call' : ''} ${e.done ? 'is-done' : ''}`} style={`--i: ${i}`}
             aria-label={`${e.label}: ${e.count}`} onClick={() => jump(e.key)}>
             <span class="qrail__ring">
               <svg class="qrail__svg" viewBox="0 0 50 50" aria-hidden="true">
                 <circle class="qrail__track" cx="25" cy="25" r="21" />
                 <circle class="qrail__arc" cx="25" cy="25" r="21" style={`stroke-dasharray: ${C * Math.max(0, Math.min(1, e.p))} ${C}`} />
               </svg>
-              <Glyph name={e.done ? 'check' : e.icon} />
+              {e.coach ? <CoachPortrait size={26} /> : <Glyph name={e.done ? 'check' : e.icon} />}
             </span>
             <b class="num">{e.count}</b>
             <small>{e.label}</small>
@@ -154,6 +157,16 @@ function QuestRow({ id, art, name, sub, p, count, call, done, pay, onOpen }: {
       <Glyph name="chevron" class="qrow__go" />
     </button>
   );
+}
+
+// ------------------------------------------------------------------ Ryn's job
+
+/** Ryn's Association Quest on the rail, in his blue: gold once it is done and waits to be reported. */
+function assocEntry(s: Save): Entry | null {
+  const q = association.current(s);
+  if (!q) return null;
+  const done = association.done(q);
+  return { key: 'assoc', label: 'Ryn', icon: 'profile', kind: 'system', coach: true, p: q.got / Math.max(1, q.need), count: done ? 'Report' : `${q.got}/${q.need}`, call: done };
 }
 
 // ------------------------------------------------------------------ the Daily Quests
