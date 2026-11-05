@@ -794,7 +794,13 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .promote__gains { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 0.84rem; color: var(--sys-ink); }
 /* Advancement is gold, in the Shadows' frame too: the path, the hold and its fill. */
 .promote { --win: var(--gold); --win-glow: var(--gold-glow); }
-.promote .holdbtn { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: 0 0 14px rgba(255, 203, 92, 0.18); }
+/* The hold that claims it: gold, breathing, a light crossing it, until it is held. */
+.promote .holdbtn { border: 1px solid var(--gold); color: #fff6dc; text-shadow: 0 0 8px var(--gold-glow); background: linear-gradient(180deg, rgba(255, 203, 92, 0.3), rgba(255, 170, 40, 0.12)); box-shadow: inset 0 0 0 1px rgba(255, 203, 92, 0.3), 0 0 16px var(--gold-glow); }
+.promote .holdbtn:not(.is-holding):not(.is-done):not(.is-failed):not([disabled]) { animation: holdCall 1.6s ease-in-out infinite; }
+.promote .holdbtn:not(.is-holding):not(.is-done):not(.is-failed):not([disabled])::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 246, 220, 0.45), transparent); animation: holdSweep 2.4s ease-in-out infinite; pointer-events: none; }
+.promote .holdbtn__fill { background: linear-gradient(90deg, rgba(255, 203, 92, 0.45), rgba(255, 203, 92, 0.95)); }
+@keyframes holdCall { 50% { box-shadow: inset 0 0 0 1px rgba(255, 203, 92, 0.6), 0 0 32px var(--gold-glow); scale: 1.015; } }
+@keyframes holdSweep { from { transform: translateX(-120%); } 60%, to { transform: translateX(320%); } }
 .rankclaim { display: flex; padding-top: 8px; }
 
 @keyframes qaCall { 50% { background: color-mix(in srgb, var(--win) 38%, transparent); box-shadow: 0 0 14px var(--win-glow); } }
@@ -833,7 +839,7 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 /* Stats: the hunter's shape across the five, growing in. */
 .ia-radar { width: 108px; height: 108px; overflow: visible; }
 /* STATS: the figure large, a box per stat with where it comes from, then the fight's numbers. */
-.statsheet__radar { display: grid; place-items: center; padding: 6px 0 2px; }
+.statsheet__radar { display: grid; place-items: center; gap: 4px; padding: 6px 0 2px; }
 .statsheet__radar .ia-radar { width: min(64vw, 220px); height: min(64vw, 220px); }
 .statrows { display: flex; flex-direction: column; gap: 8px; }
 .statrow { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; }
@@ -845,8 +851,14 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .ia-radar__ring { fill: none; stroke: var(--sys-hair); stroke-width: 0.5; }
 .ia-radar__axis { stroke: color-mix(in srgb, var(--sys-ink) 22%, transparent); stroke-width: 0.5; }
 .ia-radar__shape { fill: color-mix(in srgb, var(--win) 30%, transparent); stroke: var(--win); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--win-glow)); transform-origin: 50px 50px; animation: iaGrow 900ms var(--ease) both; }
-.ia-radar__over { fill: var(--gold); filter: drop-shadow(0 0 3px var(--gold-glow)); }
-.ia-radar__label.is-over { fill: var(--gold); }
+/* The stats without gear, under the shape: dashed and fainter. */
+.ia-radar__shape--base { fill: color-mix(in srgb, var(--win) 14%, transparent); stroke: color-mix(in srgb, var(--sys-ink) 70%, transparent); stroke-width: 0.8; stroke-dasharray: 2 1.5; filter: none; }
+.ia-radar__tick { fill: color-mix(in srgb, var(--sys-ink) 60%, transparent); font-family: var(--font-num); font-size: 3.4px; dominant-baseline: middle; paint-order: stroke; stroke: rgba(3, 8, 20, 0.92); stroke-width: 1.2px; stroke-linejoin: round; }
+.radarkey { display: flex; justify-content: center; gap: 14px; margin-top: 2px; }
+.radarkey__one { display: inline-flex; align-items: center; gap: 6px; font-size: 0.66rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.radarkey__one i { display: block; width: 14px; height: 8px; }
+.radarkey__one.is-gear i { border: 1.5px solid var(--win); background: color-mix(in srgb, var(--win) 30%, transparent); }
+.radarkey__one.is-base i { border: 1.5px dashed color-mix(in srgb, var(--sys-ink) 70%, transparent); background: color-mix(in srgb, var(--win) 14%, transparent); }
 /* Pointing at a stat, or tapping it, shows its value at its corner. */
 .ia-radar__hit { cursor: pointer; }
 .ia-radar__reach { fill: transparent; }
@@ -1145,6 +1157,12 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .roster__head button.is-on::after { content: ' ▾'; }
 .roster__sum .essence { width: 13px; height: 13px; }
 .roster__sum .is-call b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+/* Ready, while any Shadow is: a button in its cell, gold and breathing, its arrow saying it can be claimed. */
+.roster__ready { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 2px; border: 0; border-left: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 20%, transparent), color-mix(in srgb, var(--gold) 6%, transparent)); color: inherit; font: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent); animation: readyCall 1.6s ease-in-out infinite; cursor: pointer; }
+.roster__ready b { display: inline-flex; align-items: center; gap: 3px; }
+.roster__ready small { color: var(--gold) !important; }
+.roster__ready-up { width: 12px; height: 12px; color: var(--gold); animation: floaty 1.6s ease-in-out infinite; }
+@keyframes readyCall { 50% { box-shadow: inset 0 0 0 1px var(--gold), 0 0 16px var(--gold-glow); } }
 .roster__list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
 .roster__row { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; column-gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-hair) 60%, transparent); animation: qaIn 380ms var(--ease) both; animation-delay: calc(var(--i) * 25ms); }
 .roster__row.is-on { background: linear-gradient(90deg, color-mix(in srgb, var(--win) 14%, transparent), transparent 70%); }

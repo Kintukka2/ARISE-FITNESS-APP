@@ -422,4 +422,41 @@ describe('the squad', () => {
     expect(shadows.placeAt(s, 'no-such-shadow', 0)).toBe(false);
     expect(shadows.placeAt(s, a, n)).toBe(false);
   });
+
+  it('claiming every ready Shadow promotes each one rank, the deployed first, then awakens each one star, and leaves what the Essence cannot pay for', () => {
+    const setup = () => {
+      const s = defaults();
+      const [a, b, c] = ALL_ENEMIES.slice(0, 3).map((e) => shadows.bind(s, e.id));
+      a.xp = shadows.xpAt(shadows.SHADOW_RANKS[0].cap);
+      b.xp = shadows.xpAt(shadows.SHADOW_RANKS[0].cap);
+      shadows.raise(c, shadows.SHADOW_RANKS.length - 1);
+      s.shadows.squad = [a.id, c.id];
+      return { s, a, b, c };
+    };
+    const sworn = shadows.SHADOW_RANKS[1].essence;
+    const star = shadows.AWAKENING.cost[0];
+    {
+      const { s, a, b, c } = setup();
+      s.shadows.essence = 2 * sworn + star;
+      expect(shadows.waitingAll(s)).toHaveLength(3);
+      const got = shadows.claimAll(s);
+      expect(got.promoted.map((p) => p.id)).toEqual([a.id, b.id]);
+      expect(got.awakened.map((w) => w.id)).toEqual([c.id]);
+      expect(got.essence).toBe(2 * sworn + star);
+      expect(s.shadows.essence).toBe(0);
+      expect([shadows.rankIndex(a), shadows.rankIndex(b), shadows.starsOf(c)]).toEqual([1, 1, 1]);
+      expect(shadows.waitingAll(s)).toEqual([]);
+    }
+    {
+      // Enough for one promotion: the deployed Shadow takes it, and the rest wait.
+      const { s, a, b, c } = setup();
+      s.shadows.essence = sworn;
+      const got = shadows.claimAll(s);
+      expect(got.promoted.map((p) => p.id)).toEqual([a.id]);
+      expect(got.awakened).toEqual([]);
+      expect(shadows.rankIndex(b)).toBe(0);
+      expect(shadows.starsOf(c)).toBe(0);
+    }
+  });
 });
+

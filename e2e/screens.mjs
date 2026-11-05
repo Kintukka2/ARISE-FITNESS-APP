@@ -416,6 +416,30 @@ try {
   if (!(await page.locator('.syswin', { hasText: 'has awakened' }).isVisible())) throw new Error('THE AWAKENING WAS NOT REPORTED');
   await page.locator('.syswin__foot .btn').last().click(); await sleep(300);
   await close(); await close();
+  // The Ready count claims every ready Shadow at once: the System's offer, the cinematic once, and one window for all.
+  // The awakening spent the Essence, so the save is given more, and two Shadows at their caps are ready again.
+  await sleep(1500);
+  await page.evaluate(() => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.shadows.essence = 200; localStorage.setItem(k, JSON.stringify(x)); });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('shadows');
+  await page.locator('.btile--army .btile__hit').click(); await sleep(900);
+  if (!(await page.locator('.sheet.is-top .roster__ready').count())) throw new Error('THE READY COUNT IS NOT A BUTTON WHILE SHADOWS ARE READY');
+  {
+    const n = Number((await page.locator('.sheet.is-top .roster__ready b').innerText()).trim());
+    await page.locator('.sheet.is-top .roster__ready').click(); await sleep(500);
+    if (!(await page.locator('.syswin', { hasText: /Would you like to (promote|awaken)/ }).isVisible())) throw new Error('THE READY COUNT DID NOT OFFER TO CLAIM THEM ALL');
+    await snap('claim-all-offer');
+    await page.locator('.syswin__foot .btn', { hasText: /Promote All|Awaken All/ }).click();
+    await page.waitForSelector('.syswin', { timeout: 12000 }); await sleep(500); await snap('claim-all-window');
+    if (!(await page.locator('.syswin', { hasText: /has been promoted|has awakened/ }).isVisible())) throw new Error('CLAIMING THEM ALL WAS NOT REPORTED');
+    await page.locator('.syswin__foot .btn').last().click();
+    await page.waitForFunction(() => !document.querySelector('canvas.arrival'), null, { timeout: 8000 });
+    await sleep(400);
+    const after = await page.locator('.sheet.is-top .roster__ready b').count() ? Number((await page.locator('.sheet.is-top .roster__ready b').innerText()).trim()) : 0;
+    if (after >= n) throw new Error('CLAIMING THEM ALL LEFT AS MANY WAITING');
+    await snap('claim-all-after');
+  }
+  await close();
   await nav('gates');
   if (!(await page.locator('.btile--ascension').isVisible())) throw new Error('THE ASCENSION TILE IS MISSING AT S-RANK');
   if (await page.locator('.gatesgrid', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');
