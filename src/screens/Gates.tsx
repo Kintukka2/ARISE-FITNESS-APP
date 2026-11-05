@@ -4,7 +4,8 @@ import { sfx } from '@/audio/audio';
 import { powerOf } from '@/core/combat';
 import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
-import { RARITY } from '@/core/gear';
+import { RARITY, setHue } from '@/core/gear';
+import { SETS } from '@/data/sets';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
@@ -85,7 +86,24 @@ function Condition() {
   return <SysFrame class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
 }
 
-/** GATES: every Gate standing open today, filtered by grade, a tile to each. */
+/** What marks a Gate on the board today: the Practice Gate, one of the Chosen holding it, Ryn's job, or a Daily Quest naming it. */
+function markOf(s: Save, d: Dungeon, quest: boolean, day: string): 'Training' | 'Chosen' | 'Association' | 'Quest' | undefined {
+  if (isPractice(d)) return 'Training';
+  if (walkers.walking(s, day)?.gateId === d.id) return 'Chosen';
+  // The Association pins its job's Gate: Ryn's, so it carries his name for it.
+  const job = association.current(s);
+  if (job && !association.done(job) && job.gate === d.id) return 'Association';
+  return quest ? 'Quest' : undefined;
+}
+
+type Band = 'all' | 'marked' | Rank;
+/** The board's filter, held while the app stays open. */
+let boardBand: Band = 'all';
+
+/**
+ * GATES: every Gate standing open today. Its counts across the head, a rail to filter by grade or to
+ * the marked ones, then each grade as a band: what a clear there pays, and a row to each of its Gates.
+ */
 function openBoard() {
   openSheet({ title: 'Gates', system: { icon: null, kind: 'gates' }, render: () => <BoardSheet /> });
 }
@@ -93,32 +111,119 @@ function openBoard() {
 function BoardSheet() {
   const s = useSave();
   useNow();
-  const [band, setBand] = useState<'all' | Rank>('all');
   const day = dayKey();
   const gates = board(s, day);
   const named = contracts.named(s, day);
-  const shown = gates.filter((d) => band === 'all' || d.rank === band);
+  const marks = new Map(gates.map((d) => [d.id, markOf(s, d, named.has(d.id), day)]));
+  const marked = gates.filter((d) => marks.get(d.id)).length;
+  const [band, setBand] = useState<Band>(boardBand === 'marked' && !marked ? 'all' : boardBand);
+  const pick = (b: Band) => { sfx.tap(); boardBand = b; setBand(b); };
+  const shown = gates.filter((d) => band === 'all' || (band === 'marked' ? !!marks.get(d.id) : d.rank === band));
+  const closed = s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0;
+  const fresh = gates.filter((d) => !isPractice(d) && !s.gates.cleared.includes(d.id)).length;
+  const grades = RANKS.filter((r) => shown.some((d) => d.rank === r));
   return (
-    <div class="stack">
-      <div class="bands" role="tablist" aria-label="Filter Gates by grade">
-        <button type="button" role="tab" aria-selected={band === 'all'} class={`band ${band === 'all' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setBand('all'); }}>All</button>
+    <div class="stack gboard">
+      <div class="bag__head gboard__sum">
+        <span><b class="num">{gates.length}</b><small>Open</small></span>
+        <span class={fresh ? 'is-new' : ''}><b class="num">{fresh}</b><small>Never Cleared</small></span>
+        <span><b class="num">{closed}</b><small>Closed Today</small></span>
+        <span><b class="num countdown">{hhmmss(msUntilMidnight())}</b><small>Redraw</small></span>
+      </div>
+      <div class="gbands" role="tablist" aria-label="Filter Gates">
+        <button type="button" role="tab" aria-selected={band === 'all'} class={`gband-tab ${band === 'all' ? 'is-on' : ''}`} onClick={() => pick('all')}>All<small class="num">{gates.length}</small></button>
+        {marked > 0 && (
+          <button type="button" role="tab" aria-selected={band === 'marked'} aria-label="Marked" title="Marked" class={`gband-tab is-marked ${band === 'marked' ? 'is-on' : ''}`} onClick={() => pick('marked')}>
+            <Glyph name="star" /><small class="num">{marked}</small>
+          </button>
+        )}
         {RANKS.map((r) => {
-          const any = gates.some((d) => d.rank === r);
-          return <button type="button" role="tab" key={r} aria-selected={band === r} data-rank={r} class={`band ${band === r ? 'is-on' : ''} ${any ? '' : 'is-empty'}`} onClick={() => { sfx.tap(); if (any) setBand(r); else toast(`No ${r}-Rank Gate opened today.`, 'warn'); }}>{r}</button>;
+          const n = gates.filter((d) => d.rank === r).length;
+          return (
+            <button type="button" role="tab" key={r} aria-selected={band === r} data-rank={r} class={`gband-tab ${band === r ? 'is-on' : ''} ${n ? '' : 'is-empty'}`}
+              onClick={() => { if (n) pick(r); else { sfx.tap(); toast(`No ${r}-Rank Gate opened today.`, 'warn'); } }}>
+              {r}<small class="num">{n}</small>
+            </button>
+          );
         })}
       </div>
-      <div class="boardhead">
-        <span class="label">{band === 'all' ? 'Open Gates' : `${band}-Rank Gates`}</span>
-        <span class="label">Redraw <b class="num countdown">{hhmmss(msUntilMidnight())}</b></span>
-        <span class="label">Closed today: {s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0}</span>
-      </div>
-      <BentoGrid class="board" tiles={shown.map((d) => gateTile(s, d, named.has(d.id), day))} label="Open Gates" />
+      {grades.map((r, k) => <GradeBand key={r} s={s} r={r} gates={shown.filter((d) => d.rank === r)} marks={marks} k={k} />)}
     </div>
   );
 }
 
-/** The board as one tile: a portal to each grade, the count of its Gates open, dimmed where the licence stops. */
+/** A grade's band on the board: its portal and name, what a clear there pays at the level the hunter walks in at, and its Gates. */
+function GradeBand({ s, r, gates, marks, k }: { s: Save; r: Rank; gates: Dungeon[]; marks: Map<string, string | undefined>; k: number }) {
+  const lead = gates.find((d) => !isPractice(d)) ?? gates[0];
+  const pay = ascension.payShare(ascension.entryLevel(s, lead, isPractice(lead)));
+  const shut = gates.every((d) => entryBlock(s, d) === 'licence');
+  return (
+    <section class={`gband ${shut ? 'is-shut' : ''}`} style={`--rc: var(--rank-${r}); --k: ${k}`}>
+      <header class="gband__head">
+        <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
+        <span class="gband__name">
+          <b>{r}-Rank</b>
+          <small>Clear: XP <b class="num">{Math.round(GATE_XP[r] * pay)}</b> · <Shards n={shop.gateShards(r, pay)} /></small>
+        </span>
+        <span class="gband__count">{shut ? <><Glyph name="lock" /> Licence</> : <><b class="num">{gates.length}</b> {gates.length === 1 ? 'Gate' : 'Gates'}</>}</span>
+      </header>
+      <ul class="glist">
+        {gates.map((d, i) => <GateRow key={d.id} s={s} d={d} mark={marks.get(d.id)} i={i} />)}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * A Gate's row: its portal, its name and what stands at its end, what marks it, its first-clear bounty
+ * while it has never been cleared, the set it is home to, and how many of the creatures known to walk
+ * in it already serve as Shadows. It opens the brief.
+ */
+function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefined; i: number }) {
+  const locked = entryBlock(s, d) === 'licence';
+  const known = bossKnown(s, d);
+  const boss = enemyById(d.boss);
+  const practice = isPractice(d);
+  const cleared = s.gates.cleared.includes(d.id);
+  // The creatures it holds; the boss counts once it is known, as the brief shows it.
+  const inside = [...new Set([...d.mobs, d.elite, known ? d.boss : undefined].filter((x): x is string => !!x))];
+  const bound = inside.filter((id) => shadows.isBound(s, id)).length;
+  const sets = SETS.filter((x) => x.home === d.id);
+  // What a first clear adds: the bounty, at the level the hunter walks in at.
+  const bounty = !cleared && !practice ? shop.gateShards(d.rank, 2 * ascension.payShare(ascension.entryLevel(s, d, false))) : 0;
+  return (
+    <li style={`--i: ${Math.min(i, 8)}`}>
+      <button type="button"
+        class={`sysbox gaterow ${locked ? 'is-shut' : ''} ${practice ? 'is-practice' : ''} ${cleared ? 'is-cleared' : ''} ${mark ? `is-${mark.toLowerCase()}` : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''}`}
+        onClick={() => { sfx.tap(); if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
+        <span class="gaterow__portal ga-portal">
+          <i class="ga-portal__swirl" /><i class="ga-portal__core" />
+          {locked ? <Glyph name="lock" /> : <Glyph name={known ? 'skull' : 'unknown'} />}
+        </span>
+        <span class="gaterow__body">
+          <span class="gaterow__name"><b>[{d.name}]</b>{cleared && !practice && <Glyph name="check" class="gaterow__done" />}</span>
+          <small>{locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?'}</small>
+          <span class="gaterow__tags">
+            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
+            {bounty > 0 && <span class="gtag is-bounty" title="First-clear bounty">Bounty <Shards n={bounty} /></span>}
+            {inside.length > 0 && !practice && (
+              <span class={`gtag is-shadows ${bound === inside.length ? 'is-full' : ''}`} aria-label={`Shadows bound: ${bound} of ${inside.length}`}>
+                <Glyph name="shadows" /><span class="num">{bound}/{inside.length}</span>
+              </span>
+            )}
+            {sets.map((x) => <span key={x.id} class="gtag is-set" style={`--set-h: ${setHue(x.id)}`}>{x.id} Set</span>)}
+          </span>
+        </span>
+        <Glyph name="chevron" class="gaterow__go" />
+      </button>
+    </li>
+  );
+}
+
+/** The board as one tile: a portal to each grade, the count of its Gates open, dimmed where the licence stops, starred where one is marked. */
 function boardTile(s: Save, gates: Dungeon[]): BTile {
+  const day = dayKey();
+  const named = contracts.named(s, day);
   return {
     // The screen's centre: the way into everything else on it. It stands out by its size, its light and its call.
     key: 'board', kind: 'gates', name: 'Open Gates', head: true, wide: true, tour: 'bands', icon: <Glyph name="gates" />, class: 'btile--focus',
@@ -131,9 +236,10 @@ function boardTile(s: Save, gates: Dungeon[]): BTile {
           {RANKS.map((r) => {
             const here = gates.filter((d) => d.rank === r);
             const open = here.some((d) => entryBlock(s, d) !== 'licence');
+            const marked = here.some((d) => markOf(s, d, named.has(d.id), day) && !isPractice(d));
             return (
               <span key={r} class={`ga-board__one ${here.length ? '' : 'is-none'} ${open ? '' : 'is-shut'}`} style={`--rc: var(--rank-${r})`}>
-                <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
+                <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b>{marked && <Glyph name="star" class="ga-board__mark" />}</span>
                 <small class="num">{here.length}</small>
               </span>
             );
@@ -215,15 +321,11 @@ function topTiles(s: Save): BTile[] {
 
 /** A Gate on the board: its grade's portal, its name, and what stands at its end. */
 function gateTile(s: Save, d: Dungeon, quest: boolean, day: string): BTile {
-  const held = walkers.walking(s, day)?.gateId === d.id;
   const locked = entryBlock(s, d) === 'licence';
   const known = bossKnown(s, d);
   const boss = enemyById(d.boss);
   const practice = isPractice(d);
-  // The Association pins its job's Gate: Ryn's, so it carries his name for it.
-  const job = association.current(s);
-  const pinned = job && !association.done(job) && job.gate === d.id;
-  const tag = practice ? 'Training' : held ? 'Chosen' : pinned ? 'Association' : quest ? 'Quest' : undefined;
+  const tag = markOf(s, d, quest, day);
   return {
     key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, call: practice, shut: locked,
     class: `is-gate ${practice ? 'is-practice' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''} ${tag ? `is-${tag.toLowerCase()}` : ''}`,

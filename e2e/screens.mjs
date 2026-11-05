@@ -171,7 +171,16 @@ try {
   // The Pale Spire is a Weekly Quest, not a Gates tile.
   if (await page.locator('.btile--spire').count()) throw new Error('THE PALE SPIRE IS STILL ON THE GATES SCREEN');
   await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
-  await page.locator('.sheet.is-top .btile.is-gate:not(.is-shut):not(.is-practice) .btile__hit').first().click(); await sleep(800); await snap('brief', true);
+  // The board: a band to each grade, a row to each Gate; the rail filters by grade, and to the marked ones.
+  if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('board-foot');
+  await page.locator('.sheet.is-top .gband-tab[data-rank]:not(.is-empty)').last().click(); await sleep(400);
+  if ((await page.locator('.sheet.is-top .gband').count()) !== 1) throw new Error('A GRADE TAB DID NOT FILTER THE BOARD');
+  await snap('board-grade');
+  if (await page.locator('.sheet.is-top .gband-tab.is-marked').count()) { await page.locator('.sheet.is-top .gband-tab.is-marked').click(); await sleep(400); await snap('board-marked'); }
+  await page.locator('.sheet.is-top .gband-tab', { hasText: 'All' }).click(); await sleep(300);
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
+  await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800); await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
   // The Association's hunters are not the hunter's to order: the brief holds no standing orders.
   if (await page.locator('.sheet.is-top .chips--orders').count()) throw new Error('THE BRIEF STILL GIVES STANDING ORDERS');

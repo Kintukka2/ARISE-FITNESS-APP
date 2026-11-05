@@ -194,9 +194,8 @@ record and Ascension. Open Gates is the screen's centre: the largest tile, its p
 row allows, a slow orange light behind them and a View All Gates call. The hunter's condition sits between Valcorde's line and the tiles,
 as the Status sheet's HP, MP and Fatigue rows with their potions, so nothing has to be opened to
 check it or to drink. A list is one tile: Open Gates opens the
-board (`GATES`), a grid of Gate tiles, each a portal in its grade's colour; on Shadows, the Army
-opens `ARMY`, a tile to every Shadow ringed by its levels through the rank it holds, beside the squad's
-slots. The brief, the dossier, the slot picker, recycling, Settings and the Guide all take the
+board (`GATES`, see The Gates board, below); on Shadows, the Army opens `ARMY`, a roster with a row
+to every Shadow. The brief, the dossier, the slot picker, recycling, Settings and the Guide all take the
 System's frame; Settings and the Guide keep the interface's words.
 
 The Trial and the Chosen live only here. The Gates screen keeps what bears on the next run: its
@@ -769,6 +768,21 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
 - **A run is in the Gates' orange** wherever it was entered from. The Spire and the Trial are entered
   from Quests, and the arena took that screen's cyan for its buttons; while a run is played the root
   carries `data-arena`, which sets the accent to the Gates' ember.
+- **The Gates board, overhauled.** `GATES` was a grid of large tiles, two to a row, each a portal
+  and a name, so ten Gates ran to several screens and said little. It is a roster now, after a
+  dungeon list's rows:
+  - **Its head:** Open, Never Cleared, Closed Today and the redraw's countdown.
+  - **Its rail:** All, a star for the marked Gates (shown while one is), and each grade, each with its
+    count. The filter holds while the app stays open.
+  - **A band to each grade:** its portal and its name in its colour, what a clear there pays at the
+    level the hunter walks in at (XP and Mana Shards, as the brief reads them), and its count, or
+    Licence and a lock where the licence stops.
+  - **A row to each Gate:** its portal with the boss's mark (or a lock), its name (green once ever
+    cleared, with a tick), its boss or `?`, and a line of chips: what marks it (Training, Chosen,
+    Association, Quest, in their own colours, as the tiles' counts had them), its first-clear bounty
+    in shards while it has never been cleared, how many of the creatures known to walk in it already
+    serve as Shadows (the boss counts once known), and the set it is home to. A row opens the brief.
+  - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
   tapped; its line no longer opens on hover.
 - **A duplicate's extraction** reads as an offer: the Shadow lingers, the sheet says one like it
