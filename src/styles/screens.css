@@ -772,7 +772,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .qdaily__bonus .qline__ring { width: 24px; height: 24px; }
 .qdaily__bonus .qline__arc { stroke: var(--gold); }
 .qdaily__bonus .qline__pay { font-size: 0.62rem; }
-.qdaily__bonus.is-done { border-style: solid; border-color: var(--verdant); color: var(--verdant); }
+/* All done: the block folds to its head, ticked, `Complete` in green where the count stood. */
+.qdaily.is-done .qdaily__head { padding-bottom: 0; }
+.qdaily.is-done .qrow__art { border-color: var(--verdant); background: color-mix(in srgb, var(--verdant) 12%, transparent); color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); }
+.qdaily__complete { border-color: var(--verdant); color: var(--verdant); background: color-mix(in srgb, var(--verdant) 12%, transparent); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.64rem; box-shadow: 0 0 8px var(--verdant-glow); animation: qaIn 420ms var(--ease) both; }
 
 
 @keyframes qaIn { from { opacity: 0; transform: translateY(-12px) scale(0.97); } }
@@ -1016,7 +1019,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .gtag.is-association { --tc: var(--coach); }
 .gtag.is-training { --tc: var(--rank-E); }
 .gtag.is-bounty { --tc: var(--verdant); }
-.gtag.is-set { --tc: hsl(var(--set-h) 75% 66%); }
+/* The set pieces a Gate's clears leave, held of all: plain, and green once every one is held. */
+.gtag.is-pieces { --tc: var(--sys-ink); letter-spacing: 0.02em; }
+.gtag.is-pieces .ico { width: 11px; height: 11px; }
+.gtag.is-pieces.is-full { --tc: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
 .gtag .shards { gap: 2px; font-size: 0.6rem; }
 .gtag .shards .ico, .gtag .shards svg { width: 9px; height: 9px; }
 .gtag.is-shadows { --tc: #c9a7ff; letter-spacing: 0.02em; }

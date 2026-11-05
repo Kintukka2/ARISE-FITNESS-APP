@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as asc from '@/core/ascension';
+import * as association from '@/core/association';
 import { dayOrder, dungeonById, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
 import { build, mapSeed } from '@/core/map';
@@ -76,6 +77,32 @@ describe('the Chosen sent into the world', () => {
     // A gate it does not hold never meets it.
     const other = dayOrder('S', day)[1];
     expect(walkers.meets(s, dungeonById(other)!, day, 2)).toBeNull();
+  });
+
+  it('stands in for the boss of Ryn’s boss job: a clear of its Gate past it does the job', () => {
+    const s = hunter([1]);
+    const w = walkers.walking(s, day)!;
+    const d = dungeonById(w.gateId)!;
+    const job = () => ({ ...association.make(3, 'S'), gate: d.id, target: d.boss, got: 0 });
+    s.assoc = { n: 3, quest: job(), reported: 0 };
+    expect(s.assoc.quest!.kind).toBe('boss');
+    // Beaten short of it, the job stands.
+    s.vitals.lockedUntil = null;
+    const lost = enterAt(s, d.id, 1);
+    lost.lost = true;
+    expect(raid.finish(s, d, lost, 'defeated', now).assoc).toBeNull();
+    s.vitals.lockedUntil = null;
+    const met = enterAt(s, d.id, 1);
+    expect(met.chosen).toBe(1);
+    expect(raid.finish(s, d, met, 'cleared', now).assoc).toEqual({ from: 0, to: 1, need: 1 });
+    expect(association.ready(s)).toBe(true);
+    // Below its level the boss stands, and felling it does the job as ever.
+    s.assoc = { n: 3, quest: job(), reported: 0 };
+    s.vitals.lockedUntil = null;
+    const low = enterAt(s, d.id, 0);
+    expect(low.chosen).toBeNull();
+    low.felled.push(d.boss);
+    expect(raid.finish(s, d, low, 'cleared', now).assoc).toEqual({ from: 0, to: 1, need: 1 });
   });
 
   it('leaves a masterwork the first time it falls, and a bounty after', () => {

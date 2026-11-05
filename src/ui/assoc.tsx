@@ -14,8 +14,9 @@ import { ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { useState } from 'preact/hooks';
-import { Bar, Btn } from './components';
-import { CoachPortrait } from './icons';
+import { Bar } from './components';
+import { sfx } from '@/audio/audio';
+import { CoachPortrait, Glyph } from './icons';
 import { sys } from './overlays';
 
 /** A creature's name for more than one: "Dire Wolves", "Rootlings". */
@@ -60,8 +61,8 @@ export function rewardText(w: AssocReward | null): string | null {
 /**
  * His card on the Quests screen: the first section of the log, shaped as its rows are (his face where a
  * row's picture stands, the job and its count, his line, a bar and the pay as chips) but on his channel,
- * in his blue and his corner brackets. A job done waits on the hunter: gold, with the report under it.
- * Null until the line opens.
+ * in his blue and his corner brackets. A job done waits on the hunter: the row itself is the report,
+ * gold, its pay carried on the strip along its foot. Null until the line opens.
  */
 export function AssocCard() {
   const s = useSave();
@@ -70,13 +71,38 @@ export function AssocCard() {
   if (!q) return null;
   const done = association.done(q);
   const pay = rewardText(q.reward);
+  const head = (
+    <header class="assoccard__head">
+      <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
+      <span class="assoccard__who">Ryn Valcorde</span>
+    </header>
+  );
+  if (done) {
+    return (
+      <section id="quest-assoc" class="assoccard coachframe is-done" aria-label="Association Quest">
+        {head}
+        <button type="button" class="assoccard__row is-report" onClick={() => { sfx.tap(); void reportAssoc(); }}>
+          <span class="assoccard__face coachface"><CoachPortrait size={36} /></span>
+          <span class="assoccard__body">
+            <span class="assoccard__goal">
+              <b>{goalOf(q)}</b>
+              <span class="assoccard__count num"><Glyph name="check" />{q.got}/{q.need}</span>
+            </span>
+            <span class="assoccard__line is-one">“{briefOf(q)}”</span>
+          </span>
+          <span class="assoccard__report">
+            <i class="assoccard__sweep" aria-hidden="true" />
+            <b>Report To Ryn</b>
+            <span class="assoccard__reportpay">XP <span class="num">+{q.xp}</span>{pay ? <> · {pay}</> : null}</span>
+            <Glyph name="chevron" />
+          </span>
+        </button>
+      </section>
+    );
+  }
   return (
-    <section id="quest-assoc" class={`assoccard coachframe ${done ? 'is-done' : ''}`} aria-label="Association Quest">
-      {done && <i class="assoccard__sweep" aria-hidden="true" />}
-      <header class="assoccard__head">
-        <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
-        <span class="assoccard__who">Ryn Valcorde</span>
-      </header>
+    <section id="quest-assoc" class="assoccard coachframe" aria-label="Association Quest">
+      {head}
       <div class="assoccard__row">
         <span class="assoccard__face coachface"><CoachPortrait size={36} /></span>
         <div class="assoccard__body">
@@ -86,14 +112,13 @@ export function AssocCard() {
           </div>
           {/* His line, held to two; a tap gives the whole of it. */}
           <p class={`assoccard__line ${full ? 'is-full' : ''}`} onClick={() => setFull(!full)}>“{briefOf(q)}”</p>
-          <Bar pct={(q.got / Math.max(1, q.need)) * 100} tone={done ? 'verdant' : 'mana'} thin />
+          <Bar pct={(q.got / Math.max(1, q.need)) * 100} tone="mana" thin />
           <span class="assoccard__pay">
             <span class="assocpay">XP <b class="num">+{q.xp}</b></span>
             {pay && <span class="assocpay">{pay}</span>}
           </span>
         </div>
       </div>
-      {done && <Btn kind="primary" block onClick={() => void reportAssoc()}>Report To Ryn</Btn>}
     </section>
   );
 }

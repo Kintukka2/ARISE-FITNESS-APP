@@ -691,6 +691,9 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
   for the day (`gates.board`). Creatures count in any Gate, however the run ends; a clear counts only
   its own Gate, cleared. Progress is counted in `raid.finish` and shown on the results as a strip on
   Ryn's channel.
+  A Chosen standing in the boss's place is that boss for a boss job: a clear of the job's Gate past it
+  does the job, as it fells the Chosen (`walkers.fell`). Without it, a boss job on the Gate the Chosen
+  held was shut out for the day, short of walking in below the Chosen's level.
 - **Reported, not paid on the tap.** A job done waits on Ryn's card at the top of the Quests screen
   until the hunter reports it (`association.report`). He pays, then hands over the next. A job is
   written to the save when it is handed over, so nothing redraws it.
@@ -781,7 +784,9 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     cleared, with a tick), its boss or `?`, and a line of chips: what marks it (Training, Chosen,
     Association, Quest, in their own colours, as the tiles' counts had them), its first-clear bounty
     in shards while it has never been cleared, how many of the creatures known to walk in it already
-    serve as Shadows (the boss counts once known), and the set it is home to. A row opens the brief.
+    serve as Shadows (the boss counts once known), and the set pieces held of all its home sets' (`1/6`).
+    The set pieces once named each set in a chip; a Gate home to two sets carried two long chips, so
+    it is one count now, green once every piece is held. A row opens the brief.
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a
   quest paid waited in its window. It is a quest log now, after a journal's list:
@@ -789,11 +794,18 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     picture stands, the job and its count, his line held to two lines until tapped, a bar, the pay
     as chips), in his blue and corner brackets, never the System's frame. His ring leads the rail, his
     face in it; it reads Report and turns gold once the job is done.
+  - **The report.** A job done once put a light-blue bar the width of the card under it, louder
+    than anything on the page. Now the row itself is the report: its border and his face gold, the
+    job ticked green, his line held to one, and a strip along its foot, `REPORT TO RYN` in gold and
+    the pay at its right, breathing, a chevron nudging. A tap anywhere on the row reports.
   - **The rail:** a ring to every quest that stands (Daily, Rank, Trial, Chosen, Weekly, Secret), its
     count under it, filled as far as the quest stands; gold while it waits on the hunter, green once
     done. A ring scrolls to its quest and lights it.
   - **The Daily Quests:** their head and the time to the next, a line to each with its bar, its
     count and what it pays (`payOf`), and the completion bonus (`bonusOf`). The block opens the window.
+    Once all are done, the three lines and the bonus told the hunter nothing new and pushed the
+    rest of the log down a screen, so the block folds to its head: a green tick, the time to the
+    next, and `Complete` where the count stood. A tap still opens the window with every quest.
   - **Advancement:** Reclassification (both plates, the level and the XP to it, Ability and Skill
     Points, a class, Shadow slots or Ascension where the rank brings them), the Trial (the Gates
     proved and the Chosen after them; Ascension, a mark, the upgrade limit) and the Chosen (where it

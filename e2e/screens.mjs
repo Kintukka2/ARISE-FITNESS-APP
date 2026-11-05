@@ -173,6 +173,21 @@ try {
     if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} ROW DID NOT OPEN ITS WINDOW`);
     await snap(`quest-${k}`); await close(); await sleep(250);
   }
+  // All three done, the Daily Quests fold to their head, `Complete` where the count stood; a tap still opens them.
+  await sleep(1500);
+  const dailies = await page.evaluate(() => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); const was = JSON.stringify(x.contracts); for (const q of x.contracts.list) { q.got = q.need; q.done = true; } x.contracts.bonus = true; localStorage.setItem(k, JSON.stringify(x)); return was; });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('quests'); await sleep(800);
+  if (await page.locator('.qdaily__one, .qdaily__bonus').count()) throw new Error('THE DAILY QUESTS DID NOT FOLD ONCE ALL WERE DONE');
+  if ((await page.locator('.qdaily.is-done .qdaily__complete').innerText()).trim().toLowerCase() !== 'complete') throw new Error('THE FOLDED DAILY QUESTS DO NOT SAY COMPLETE');
+  await snap('quests-daily-done');
+  await page.locator('.qdaily').click(); await sleep(450);
+  if ((await page.locator('.sheet.is-top .contracts .contract').count()) !== 3) throw new Error('THE FOLDED DAILY QUESTS DID NOT OPEN THEIR WINDOW');
+  await close(); await sleep(250);
+  // The day's quests as they stood, for the runs ahead to move.
+  await sleep(1500);
+  await page.evaluate((was) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.contracts = JSON.parse(was); localStorage.setItem(k, JSON.stringify(x)); }, dailies);
+  await page.reload(); await sleep(1400); await drain();
 
   await nav('gates');
   await snap('gates', true);
@@ -190,6 +205,8 @@ try {
   await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
   // The board: a band to each grade, a row to each Gate; the rail filters by grade, and to the marked ones.
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
+  // A Gate home to a set counts its pieces held, of all; it names no set.
+  if (await page.locator('.sheet.is-top .gtag.is-set').count()) throw new Error('THE BOARD STILL NAMES SETS');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('board-foot');
   await page.locator('.sheet.is-top .gband-tab[data-rank]:not(.is-empty)').last().click(); await sleep(400);
   if ((await page.locator('.sheet.is-top .gband').count()) !== 1) throw new Error('A GRADE TAB DID NOT FILTER THE BOARD');
@@ -388,7 +405,10 @@ try {
   if (!(await page.locator('.qrow--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN AT S-RANK');
   if (!(await page.locator('.qrow--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN AT S-RANK');
   // Ryn's job is done: reporting it pays, then he hands over the next.
-  await page.locator('.assoccard .btn', { hasText: 'Report To Ryn' }).click();
+  // A job done: its row is the report, gold, the strip along its foot naming it and its pay.
+  if (!(await page.locator('.assoccard__row.is-report .assoccard__report', { hasText: 'Report To Ryn' }).count())) throw new Error('A JOB DONE IS NOT ITS OWN REPORT');
+  await page.locator('.assoccard').scrollIntoViewIfNeeded(); await snap('assoc-done');
+  await page.locator('.assoccard__row.is-report').click();
   await page.waitForSelector('.syswin--coach', { timeout: 5000 });
   await sleep(1800); await snap('assoc-paid');
   for (let i = 0; i < 8 && !(await page.locator('.syswin--coach', { hasText: /“?[A-Z]/ }).filter({ hasNotText: 'Received' }).count()); i++) {
@@ -396,7 +416,7 @@ try {
   }
   await sleep(1800); await snap('assoc-next');
   await drain();
-  if (await page.locator('.assoccard .btn', { hasText: 'Report To Ryn' }).count()) throw new Error('THE REPORT LEFT THE JOB IN HAND');
+  if (await page.locator('.assoccard__row.is-report').count()) throw new Error('THE REPORT LEFT THE JOB IN HAND');
   await snap('assoc-card');
   for (const k of ['trial', 'chosen']) {
     await page.locator(`.qrow--${k}`).click(); await sleep(450);
