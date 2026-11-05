@@ -223,11 +223,27 @@ try {
     await page.waitForSelector('.turnbar, button.gnode.is-next', { timeout: 20000 });
     await drain();
     if (!/floor \d+ of \d+/i.test(await page.locator('.arena__head').innerText())) throw new Error('THE SPIRE DID NOT COUNT FLOORS');
+    // A run is a Gate's: entered from Quests, it still takes the Gates' orange.
+    const accent = () => page.evaluate(() => { const c = getComputedStyle(document.documentElement); return [c.getPropertyValue('--accent').trim(), c.getPropertyValue('--ember').trim()]; });
+    { const [a, e] = await accent(); if (a !== e) throw new Error(`THE SPIRE'S RUN IS NOT IN THE GATES' ORANGE (${a} against ${e})`); }
     await snap('spire-turn');
     await autoToResults();
     await sleep(600); await snap('spire-results', true);
     // Turn the loot over first: leaving with it face down asks, and the drain would answer Reveal All.
     await revealLoot();
+    const climb = page.locator('.arena--results .btn.climb');
+    if (await page.locator('.arena--results.is-cleared').count()) {
+      // A floor taken offers the next ones, straight from the results.
+      if (!(await climb.count())) throw new Error('A FLOOR TAKEN DID NOT OFFER THE NEXT FLOORS');
+      const [, to] = (await climb.innerText()).match(/floors (\d+) to \d+/i) ?? [];
+      if (!to) throw new Error('CLIMB ON DOES NOT NAME THE NEXT FLOORS');
+      await climb.scrollIntoViewIfNeeded(); await snap('spire-climb-offer');
+      await climb.click(); await sleep(600); await drain();
+      await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
+      if (!new RegExp(`floors ${to} to`, 'i').test(await page.locator('.arena__head').innerText())) throw new Error('CLIMBING ON DID NOT OPEN THE NEXT FLOORS');
+      await sleep(400); await snap('spire-climbed');
+      await autoToResults(); await sleep(400); await revealLoot();
+    }
     await page.locator('text=Leave The Gate').click(); await drain();
   } else await close();
 

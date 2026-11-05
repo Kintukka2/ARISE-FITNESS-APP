@@ -26,6 +26,12 @@ export function App() {
     void catchUp();
   }, [s.onboarded]);
 
+  // A run is a Gate's: while one is played, the accent is the Gates' orange, whatever screen is behind it.
+  useEffect(() => {
+    if (a) document.documentElement.dataset.arena = '';
+    else delete document.documentElement.dataset.arena;
+  }, [a]);
+
   if (!s.onboarded) return <><Fx /><Awakening /><Overlays /></>;
 
   const Screen = SCREENS[r];
@@ -39,7 +45,8 @@ export function App() {
         </main>
         <NavBar />
       </div>
-      {a && <Arena />}
+      {/* Keyed by the Gate, so climbing on to the next floors opens a fresh arena. */}
+      {a && <Arena key={a} />}
       <Overlays />
     </>
   );

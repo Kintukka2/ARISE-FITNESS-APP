@@ -172,6 +172,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'You climb from your own grade’s floors, or from above your best this week.',
       'As with any Gate, you can go one grade above your own.',
       'Your best floor this week is kept.',
+      'A block taken offers the next one on its results: Climb On walks straight into it, if you are fit to enter.',
       `On Monday the week pays ${SEASON_PAY.shards} clears’ shards at the grade of your highest floor, and a piece of that grade’s gear.`,
       `It pays ${SEASON_PAY.step * 100}% more for every ${SEASON_PAY.beyond} floors past ${SPIRE_TOP}.`,
       'Then the floors rearrange, and everyone climbs again.',

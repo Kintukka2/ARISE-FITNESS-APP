@@ -24,6 +24,12 @@ import { closeAllSheets, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
 import { openStatus } from '@/screens/Inventory';
 import { arena, go, type Route } from './router';
+import * as ascension from '@/core/ascension';
+import { isPractice } from '@/core/gates';
+import * as raid from '@/core/raid';
+import type { Dungeon } from '@/core/types';
+import { buzz } from '@/ui/feedback';
+import { drinkFlow } from '@/screens/Inventory';
 
 /** Level-ups. Rank changes are announced by their story beat, once. */
 export async function celebrate(xp: XpResult | null): Promise<Route | null> {
@@ -170,8 +176,8 @@ export async function weekClosed() {
   ], 'gates'));
 }
 
-/** After any payout: level-ups, missions, class, story. Honours an "Allocate" choice. */
-export async function rewardChain(xp: XpResult | null, then?: Route) {
+/** After any payout: level-ups, missions, class, story. Honours an "Allocate" choice, and returns where it went. */
+export async function rewardChain(xp: XpResult | null, then?: Route): Promise<Route | null> {
   await weekClosed();
   const want = await celebrate(xp);
   await checkAwards();
@@ -181,6 +187,36 @@ export async function rewardChain(xp: XpResult | null, then?: Route) {
   else if (then) go(then);
   // Allocate means spend them: the Status sheet is where Ability Points go.
   if (want === 'inventory') openStatus();
+  return want;
+}
+
+/**
+ * Walk into a Gate: past the fatigue warning first, as the brief gives it, then the run begins and the
+ * arena opens on it. False if the hunter turned back, or drank a potion instead.
+ */
+export async function enterGate(d: Dungeon): Promise<boolean> {
+  const s = store.get();
+  const f = vitals.read(s).fatigue;
+  if (f > 20 && !isPractice(d)) {
+    const level = ascension.entryLevel(s, d, isPractice(d));
+    const cost = Math.round((vitals.RAID_FATIGUE[d.rank] ?? 10) * raid.fatigueShare(s, level));
+    const want = await sys({
+      ...system.notify([
+        system.counter('Fatigue', f),
+        `You will fight at ${system.red(`${Math.round(vitals.drag(f) * 100)}%`)} strength.`,
+        `Fatigue on entry: +${cost}`,
+      ], 'gates', [{ label: 'Rest First', value: false }, { label: 'Drink Fatigue Potion', value: 'drink' }, { label: 'Enter Anyway', value: true, primary: true }]),
+      glyph: 'warn', typed: false,
+    });
+    if (want === 'drink') { await drinkFlow('fatigue'); return false; }
+    if (!want) return false;
+  }
+  closeAllSheets();
+  store.update((x) => raid.begin(x, d));
+  sfx.gate();
+  buzz([26, 40, 20, 40, 90]);
+  arena.set(d.id);
+  return true;
 }
 
 let catching = false;

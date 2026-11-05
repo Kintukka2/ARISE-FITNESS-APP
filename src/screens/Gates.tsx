@@ -40,7 +40,8 @@ import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
-import { drinkFlow, openDossier, VitalsBlock } from './Inventory';
+import { openDossier, VitalsBlock } from './Inventory';
+import { enterGate } from '@/app/flow';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -482,27 +483,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
   const hpNow = vitals.read(s);
 
-  const enter = async () => {
-    const f = vitals.read(store.get()).fatigue;
-    if (f > 20 && !isPractice(d)) {
-      const cost = Math.round((vitals.RAID_FATIGUE[d.rank] ?? 10) * raid.fatigueShare(store.get(), level));
-      const want = await sys({
-        ...system.notify([
-          system.counter('Fatigue', f),
-          `You will fight at ${system.red(`${Math.round(vitals.drag(f) * 100)}%`)} strength.`,
-          `Fatigue on entry: +${cost}`,
-        ], 'gates', [{ label: 'Rest First', value: false }, { label: 'Drink Fatigue Potion', value: 'drink' }, { label: 'Enter Anyway', value: true, primary: true }]),
-        glyph: 'warn', typed: false,
-      });
-      if (want === 'drink') { await drinkFlow('fatigue'); return; }
-      if (!want) return;
-    }
-    closeAllSheets();
-    store.update((x) => raid.begin(x, d));
-    sfx.gate();
-    buzz([26, 40, 20, 40, 90]);
-    arena.set(d.id);
-  };
+  const enter = () => enterGate(d);
 
   const abandon = async () => {
     const run = store.get().gates.raid;
