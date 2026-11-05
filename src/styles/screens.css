@@ -1016,7 +1016,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .gtag.is-association { --tc: var(--coach); }
 .gtag.is-training { --tc: var(--rank-E); }
 .gtag.is-bounty { --tc: var(--verdant); }
-.gtag.is-set { --tc: hsl(var(--set-h) 75% 66%); }
+/* The set pieces a Gate's clears leave, held of all: plain, and green once every one is held. */
+.gtag.is-pieces { --tc: var(--sys-ink); letter-spacing: 0.02em; }
+.gtag.is-pieces .ico { width: 11px; height: 11px; }
+.gtag.is-pieces.is-full { --tc: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
 .gtag .shards { gap: 2px; font-size: 0.6rem; }
 .gtag .shards .ico, .gtag .shards svg { width: 9px; height: 9px; }
 .gtag.is-shadows { --tc: #c9a7ff; letter-spacing: 0.02em; }

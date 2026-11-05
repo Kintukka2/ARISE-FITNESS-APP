@@ -781,7 +781,9 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     cleared, with a tick), its boss or `?`, and a line of chips: what marks it (Training, Chosen,
     Association, Quest, in their own colours, as the tiles' counts had them), its first-clear bounty
     in shards while it has never been cleared, how many of the creatures known to walk in it already
-    serve as Shadows (the boss counts once known), and the set it is home to. A row opens the brief.
+    serve as Shadows (the boss counts once known), and the set pieces held of all its home sets' (`1/6`).
+    The set pieces once named each set in a chip; a Gate home to two sets carried two long chips, so
+    it is one count now, green once every piece is held. A row opens the brief.
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a
   quest paid waited in its window. It is a quest log now, after a journal's list:
@@ -789,6 +791,10 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     picture stands, the job and its count, his line held to two lines until tapped, a bar, the pay
     as chips), in his blue and corner brackets, never the System's frame. His ring leads the rail, his
     face in it; it reads Report and turns gold once the job is done.
+  - **The report.** A job done once put a light-blue bar the width of the card under it, louder
+    than anything on the page. Now the row itself is the report: its border and his face gold, the
+    job ticked green, his line held to one, and a strip along its foot, `REPORT TO RYN` in gold and
+    the pay at its right, breathing, a chevron nudging. A tap anywhere on the row reports.
   - **The rail:** a ring to every quest that stands (Daily, Rank, Trial, Chosen, Weekly, Secret), its
     count under it, filled as far as the quest stands; gold while it waits on the hunter, green once
     done. A ring scrolls to its quest and lights it.

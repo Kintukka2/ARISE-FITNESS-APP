@@ -4,7 +4,8 @@ import { sfx } from '@/audio/audio';
 import { powerOf } from '@/core/combat';
 import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
-import { RARITY, setHue } from '@/core/gear';
+import * as gear from '@/core/gear';
+import { RARITY } from '@/core/gear';
 import { SETS } from '@/data/sets';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
@@ -188,7 +189,10 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
   // The creatures it holds; the boss counts once it is known, as the brief shows it.
   const inside = [...new Set([...d.mobs, d.elite, known ? d.boss : undefined].filter((x): x is string => !!x))];
   const bound = inside.filter((id) => shadows.isBound(s, id)).length;
+  // The set pieces its clears leave, as one count: the designs of its home sets held, of all of them.
   const sets = SETS.filter((x) => x.home === d.id);
+  const pieces = sets.flatMap((x) => gear.setPieces(x.id).map((p) => p.id));
+  const held = sets.reduce((n, x) => n + gear.heldOf(s, x.id).size, 0);
   // What a first clear adds: the bounty, at the level the hunter walks in at.
   const bounty = !cleared && !practice ? shop.gateShards(d.rank, 2 * ascension.payShare(ascension.entryLevel(s, d, false))) : 0;
   return (
@@ -211,7 +215,11 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
                 <Glyph name="shadows" /><span class="num">{bound}/{inside.length}</span>
               </span>
             )}
-            {sets.map((x) => <span key={x.id} class="gtag is-set" style={`--set-h: ${setHue(x.id)}`}>{x.id} Set</span>)}
+            {pieces.length > 0 && (
+              <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set pieces held: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set pieces held: ${held} of ${pieces.length}`}>
+                <Glyph name="bag" /><span class="num">{held}/{pieces.length}</span>
+              </span>
+            )}
           </span>
         </span>
         <Glyph name="chevron" class="gaterow__go" />
