@@ -85,6 +85,8 @@
 
 :root[data-screen='gates'] { --accent: var(--ember); --accent-glow: var(--ember-glow); }
 :root[data-screen='shadows'] { --accent: var(--arcane); --accent-glow: var(--arcane-glow); }
+/* A run is a Gate's, whichever screen it was entered from (the Pale Spire and the Trial from Quests). */
+:root[data-arena] { --accent: var(--ember); --accent-glow: var(--ember-glow); }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }

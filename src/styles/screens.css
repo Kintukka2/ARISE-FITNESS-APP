@@ -210,7 +210,10 @@
 .arena { position: fixed; inset: 0; z-index: var(--z-player); display: flex; flex-direction: column; background: radial-gradient(100% 60% at 50% 0%, rgba(120, 50, 10, 0.35), transparent 60%), #05060c; animation: fadein 240ms both; }
 .arena.is-boss { background: radial-gradient(100% 60% at 50% 0%, rgba(140, 20, 40, 0.45), transparent 60%), #06040a; }
 .arena__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; padding: calc(var(--safe-t) + 12px) 16px 10px; border-bottom: 1px solid rgba(255, 154, 60, 0.3); }
-.arena__head > div { display: flex; flex-direction: column; }
+.arena__head > div { display: flex; flex-direction: column; min-width: 0; }
+/* The step count keeps to one line beside the name, and a long name (the Spire's, with its floors) keeps to one too. */
+.arena__head > div .label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; letter-spacing: 0.14em; }
+.arena__head > .label { flex: none; white-space: nowrap; letter-spacing: 0.14em; }
 .arena__head b { font-size: 1.2rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .arena.is-boss .arena__head b { color: var(--blood); text-shadow: 0 0 14px var(--blood-glow); }
 .arena__field { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; max-width: 640px; width: 100%; margin: 0 auto; }

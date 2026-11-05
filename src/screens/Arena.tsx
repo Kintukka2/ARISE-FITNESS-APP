@@ -11,8 +11,9 @@ import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
-import type { Order } from '@/core/types';
-import { dungeonById, enemyById, isPractice } from '@/core/gates';
+import type { Dungeon, Order } from '@/core/types';
+import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
+import * as spire from '@/core/spire';
 import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
 import { BLOCK } from '@/data/spire';
@@ -24,7 +25,7 @@ import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
-import { rewardChain } from '@/app/flow';
+import { enterGate, rewardChain } from '@/app/flow';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import * as system from '@/ui/system';
@@ -355,9 +356,11 @@ export function Arena() {
     if (outcome === 'cleared') { sfx.rankUp(); flash('gold'); buzz([26, 40, 20, 40, 90]); }
   }
 
-  async function leave() {
+  /** Out of the Gate, through what the run paid; and on into the next floors of the Spire, if the hunter climbs on. */
+  async function leave(next?: Dungeon) {
     arena.set(null);
-    await rewardChain(result?.xp ?? null, 'gates');
+    const went = await rewardChain(result?.xp ?? null, next ? undefined : 'gates');
+    if (next && !went) await enterGate(next);
   }
 
   if (phase === 'results' && result) return <Results d={d} r={result} onDone={leave} />;
@@ -671,7 +674,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
 /** How a reach for a lingering Shadow ended: it held and joined, it held and became Essence, it failed with reaches left, or the last failed. */
 type Reach = 'bound' | 'essence' | 'failed' | 'lost';
 
-function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: () => void }) {
+function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: (next?: Dungeon) => void }) {
   const s = useSave();
   // Everything the run found, to turn over by its grade (ui/loot.tsx).
   const [found] = useState(() => r.loot.map((item) => ({ item })));
@@ -698,7 +701,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
     return () => clearTimeout(t);
   }, []);
   // The loot is already in the Inventory; leaving with some face down only gets a reminder to look.
-  const leave = async () => {
+  const leave = async (next?: Dungeon) => {
     if (faceDown > 0) {
       const v = await sys({
         title: 'Unrevealed Loot', kind: 'app', typed: false,
@@ -717,8 +720,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
       });
       if (v !== 'leave') { openExtraction(waiting); return; }
     }
-    onDone();
+    onDone(next);
   };
+  // A floor of the Spire taken opens the next ones: the hunter may climb straight on, while fit to enter.
+  const block = r.outcome === 'cleared' && r.spire && spire.isSpire(d) ? spire.nextBlock(s) : null;
+  const next = block !== null ? spire.nextSpire(s) : null;
+  const climb = next && !entryBlock(s, next) ? next : null;
   const v = vitals.read(s);
   const trial = isTrial(d);
   const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
@@ -816,7 +823,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         <ShadowAlerts grew={r.grew} ready={r.ready} />
         {!isPractice(d) && deal.moved.length > 0 && <QuestLines c={s.contracts} report={deal} />}
         {r.assoc && association.current(s) && <AssocStrip q={association.current(s)!} move={r.assoc} />}
-        <Btn kind="primary" size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
+        {climb && block !== null && (
+          <Btn kind="primary" size="lg" block class="climb" onClick={() => void leave(climb)} sound="tap">
+            <Glyph name="up" /> Climb On · Floors {spire.firstFloor(block)} to {spire.lastFloor(block)}
+          </Btn>
+        )}
+        <Btn kind={climb ? undefined : 'primary'} size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
       </div>
     </div>
   );

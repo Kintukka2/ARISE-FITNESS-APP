@@ -69,8 +69,9 @@ function tiles(s: Save, news: string[]): BTile[] {
   const promos = shadows.promotable(s).length;
   const armyTile: BTile = {
     key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="shadows" />,
-    // A slot free, a Shadow waiting to be promoted or awakened, one just bound: each waits on the hunter.
-    call: shadows.freeSlots(s) > 0 || waiting.length > 0 || news.length > 0,
+    // A slot free, or a Shadow waiting to be promoted or awakened: each waits on the hunter. One just
+    // bound is news, told by the notification above and its New mark, not a call.
+    call: shadows.freeSlots(s) > 0 || waiting.length > 0,
     count: `${squad.length}/${slots}`,
     status: promos ? `Promotion ready: ${promos}` : waiting.length ? `Awakening ready: ${waiting.length}` : <>Bound: {army.length} · Shadow Essence: <b class="num">{s.shadows.essence ?? 0}</b></>,
     art: (

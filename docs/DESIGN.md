@@ -219,6 +219,12 @@ everyone knows the Spire is there.
   gate of its own: three floors of choices from step 2's map, a rest, then a boss. A block costs the
   fatigue of one gate of its grade and pays like one, with no first-clear bounty. The rest is the only
   place to walk out, as in any gate.
+- **Climb On.** A block taken offers the next one on its results: **Climb On · Floors 86 to 90**, over
+  Leave The Gate. It leaves as Leave The Gate does (the face-down loot and a lingering Shadow ask
+  first, and the run's payout is narrated), then walks into the next block as the brief's Enter The
+  Gate does (`flow.enterGate`, with its fatigue warning). It shows only while the hunter is fit to
+  enter (`entryBlock`), and an Allocate chosen on a level-up goes to the Status sheet instead. The
+  arena is keyed by its Gate, so the next block opens fresh.
 - **Floor N is built for a hunter of Level N** as far as Floor 100. Each grade's floors start where the
   level ladder does (E 1, D 11, C 21, B 36, A 51, S 71). A hunter climbs from their own grade's first
   floor, or from above their best this week. As with the board, they can go one grade above their own.
@@ -412,7 +418,9 @@ fight was tried and did not narrow it.
   Army's tiles were large, so a big army was hard to take in, and the Squad sheet did the managing.
   They are one now. The Army tile is the screen's centre: the squad's slots, each a badge with its
   grade, name and level, the free ones dashed, and the reserve under them, a glyph each; it calls
-  while a slot is free, a Shadow is ready or one is new. It opens ARMY, a roster after a team sheet's:
+  while a slot is free or a Shadow is ready. *Changed after playtest:* it called for a Shadow just
+  bound too, so a full squad turned the tile gold with nothing to do; news is the notification's and
+  the New mark's now, and gold is only what waits on the hunter. It opens ARMY, a roster after a team sheet's:
   Shadow Essence, the squad's power, Bound and Ready across its head; the squad's slots, a tap from
   each card, a free one showing the reserve; **Auto Deploy** (`shadows.autoDeploy`, the strongest by
   power, as many as the slots hold, spent once they are deployed) and **Recall**; tabs for All,
@@ -758,6 +766,9 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
 - **What an action does, in a fight.** Every action on the turn bar has a `?` in its corner that opens
   its details above the bar without using it: its level from the tree, whether it is ready, its full
   line and what each status it inflicts does. On a desktop, resting the pointer on it opens them too.
+- **A run is in the Gates' orange** wherever it was entered from. The Spire and the Trial are entered
+  from Quests, and the arena took that screen's cyan for its buttons; while a run is played the root
+  carries `data-arena`, which sets the accent to the Gates' ember.
 - **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
   tapped; its line no longer opens on hover.
 - **A duplicate's extraction** reads as an offer: the Shadow lingers, the sheet says one like it
