@@ -146,6 +146,31 @@ export function promoteAll(s: Save) {
   for (const sh of order) while (canPromote(s, sh)) promote(s, sh.id);
 }
 
+export interface Claimed { promoted: Promotion[]; awakened: { id: string; from: number; to: number; essence: number }[]; essence: number }
+
+/**
+ * Claim every Shadow waiting on the hunter, as the Army's Ready count offers: each promotion first, one
+ * rank apiece, the deployed and the highest level before the rest; then one star apiece for each
+ * awakening the Essence left pays for, the deployed first. What the Essence cannot pay for waits. Mutates.
+ */
+export function claimAll(s: Save): Claimed {
+  const out = squad(s);
+  const first = (a: Shadow, b: Shadow) => Number(out.includes(b)) - Number(out.includes(a));
+  const had = s.shadows.essence ?? 0;
+  const promoted: Promotion[] = [];
+  for (const sh of s.shadows.army.slice().sort((a, b) => first(a, b) || levelOf(b) - levelOf(a))) {
+    const p = promote(s, sh.id);
+    if (p) promoted.push(p);
+  }
+  const awakened: Claimed['awakened'] = [];
+  for (const sh of s.shadows.army.slice().sort((a, b) => first(a, b) || starsOf(a) - starsOf(b))) {
+    if (promoted.some((p) => p.id === sh.id)) continue;
+    const w = awaken(s, sh.id);
+    if (w) awakened.push(w);
+  }
+  return { promoted, awakened, essence: had - (s.shadows.essence ?? 0) };
+}
+
 /** Set a Shadow at a rank and its cap, as the balance tools' hunters are. Mutates. */
 export function raise(sh: Shadow, rank: number) {
   sh.rank = Math.max(0, Math.min(SHADOW_RANKS.length - 1, rank));

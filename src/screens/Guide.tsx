@@ -233,6 +233,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each rank caps its level: ${SHADOW_RANKS.map((r) => `${r.name} Lv.${r.cap}`).join(', ')}. At the cap it takes no more XP until it is promoted, and the promotion lifts the cap without changing its level.`,
       `Promotion asks for its level at the cap and Shadow Essence, and from ${SHADOW_RANKS.find((r) => r.bosses)?.name} Rank bosses it helped fell: ${SHADOW_RANKS.slice(1).map((r) => `${r.name} ${r.essence} Essence${r.bosses ? ` and ${r.bosses} bosses` : ''}`).join(', ')}.`,
       'Promote it from its card on the Shadows screen, by holding Hold To Promote. A Shadow ready to be promoted is marked Ready on the Army, and lights its tile.',
+      'Tap Ready on the Army to promote and awaken every ready Shadow at once, as far as your Shadow Essence goes.',
       `An Ascendant Shadow at Lv.${SHADOW_RANKS[SHADOW_RANKS.length - 1].cap} can be awakened from its card with Shadow Essence, ${AWAKENING.cost.length} stars in all: ${AWAKENING.cost.join(', ')}.`,
       `Each star grows every attribute by ${AWAKENING.growth * 100}% more of its creature’s own.`,
       `A creature like one already in your army gives Shadow Essence when its extraction holds: ${ESSENCE.E} at E to ${ESSENCE.S} at S, and twice that from a boss.`,

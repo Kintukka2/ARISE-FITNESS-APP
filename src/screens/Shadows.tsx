@@ -23,7 +23,7 @@ import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
-import { claimPromotion } from '@/app/flow';
+import { claimAll, claimPromotion } from '@/app/flow';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { useDrag } from '@/ui/drag';
@@ -195,7 +195,14 @@ function ArmySheet({ news }: { news: string[] }) {
         <span><b class="num"><EssenceMark />{s.shadows.essence ?? 0}</b><small>Shadow Essence</small></span>
         <span><b class="num">{shadows.squadPower(s)}</b><small>Squad Power</small></span>
         <span><b class="num">{s.shadows.army.length}</b><small>Bound</small></span>
-        <span class={counts.ready ? 'is-call' : ''}><b class="num">{counts.ready}</b><small>Ready</small></span>
+        {/* Ready waits on the hunter: a tap offers to promote and awaken them all at once. */}
+        {counts.ready > 0
+          ? (
+            <button type="button" class="is-call roster__ready" aria-label={`Ready: ${counts.ready}. Promote all`} onClick={(ev) => { sfx.tap(); void claimAll(ev.currentTarget); }}>
+              <b class="num">{counts.ready}<Glyph name="up" class="roster__ready-up" /></b><small>Ready</small>
+            </button>
+          )
+          : <span><b class="num">0</b><small>Ready</small></span>}
       </div>
       <Section title="Squad" right={<span class="num roster__count">{squad.length}/{n}</span>}>
         <div class="roster__slots">

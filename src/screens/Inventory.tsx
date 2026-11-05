@@ -167,33 +167,45 @@ export function MiniBar({ label, cur, max, tone }: { label: string; cur: number;
 }
 
 /**
- * The five stats as a figure, every axis out to `STAT_CAP` (100), the most Ability Points take a stat: where
- * the hunter stands against the world, not against their own best. A stat past it holds the rim and lights.
+ * How far the figure's axes reach: the largest stat shown, rounded up to the next 50, and never less
+ * than `STAT_CAP`, the most Ability Points take a stat. A stat always lands inside the rim.
  */
-/** The five stats out of the cap. `live`: pointing at a stat, or tapping it, shows its value at its corner. */
-function Radar({ values, live }: { values: Record<Stat, number>; live?: boolean }) {
+export const radarScale = (...sets: Record<Stat, number>[]) =>
+  Math.max(STAT_CAP, Math.ceil(Math.max(0, ...sets.flatMap((v) => STATS.map((k) => v[k] ?? 0))) / 50) * 50);
+
+/**
+ * The five stats as a figure, out to `radarScale`, its rings at each quarter. With `base`, the stats
+ * without gear are drawn under them, dashed, so what the gear adds is the space between the two.
+ * `live`: pointing at a stat, or tapping it, shows its value at its corner, and the rings carry their values.
+ */
+function Radar({ values, base, live }: { values: Record<Stat, number>; base?: Record<Stat, number>; live?: boolean }) {
   const [on, setOn] = useState<Stat | null>(null);
   const order: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
+  const max = base ? radarScale(values, base) : radarScale(values);
   const at = (i: number, r: number) => {
     const a = (-90 + i * 72) * (Math.PI / 180);
     return [50 + Math.cos(a) * r, 50 + Math.sin(a) * r];
   };
+  const reach = (v: number) => 2 + 36 * Math.min(1, Math.max(0, v) / max);
   const ring = (r: number) => order.map((_, i) => at(i, r).join(',')).join(' ');
-  const shape = order.map((k, i) => at(i, 2 + 36 * Math.min(1, Math.max(0, values[k]) / STAT_CAP)).join(',')).join(' ');
+  const shape = (v: Record<Stat, number>) => order.map((k, i) => at(i, reach(v[k])).join(',')).join(' ');
+  const rings = [0.25, 0.5, 0.75, 1];
   return (
     <svg viewBox="0 0 100 100" class="ia-radar" role="img" aria-label={order.map((k) => `${k} ${Math.round(values[k])}`).join(', ')}>
-      {[11, 20, 29, 38].map((r) => <polygon key={r} points={ring(r)} class="ia-radar__ring" />)}
+      {rings.map((f) => <polygon key={f} points={ring(2 + 36 * f)} class="ia-radar__ring" />)}
       {order.map((_, i) => { const [x, y] = at(i, 38); return <line key={i} x1="50" y1="50" x2={x} y2={y} class="ia-radar__axis" />; })}
-      <polygon points={shape} class="ia-radar__shape" />
-      {order.map((k, i) => values[k] >= STAT_CAP && (() => { const [x, y] = at(i, 38); return <circle key={`o${k}`} cx={x} cy={y} r="2.2" class="ia-radar__over" />; })())}
-      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class={`ia-radar__label ${values[k] >= STAT_CAP ? 'is-over' : ''} ${on === k ? 'is-on' : ''}`}>{on === k ? `${k} ${Math.round(values[k])}` : k}</text>; })}
+      {/* Each ring's value, beside the STR axis: the scale, read off the figure itself. */}
+      {live && rings.map((f) => { const [, y] = at(0, 2 + 36 * f); return <text key={`v${f}`} x="52.5" y={y + 0.6} class="ia-radar__tick">{Math.round(max * f)}</text>; })}
+      {base && <polygon points={shape(base)} class="ia-radar__shape ia-radar__shape--base" />}
+      <polygon points={shape(values)} class="ia-radar__shape" />
+      {order.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class={`ia-radar__label ${on === k ? 'is-on' : ''}`}>{on === k ? `${k} ${Math.round(values[k])}` : k}</text>; })}
       {live && order.map((k, i) => {
-        const [px, py] = at(i, 2 + 36 * Math.min(1, Math.max(0, values[k]) / STAT_CAP));
+        const [px, py] = at(i, reach(values[k]));
         const [lx, ly] = at(i, 44);
         return (
           <g key={`h${k}`} class={`ia-radar__hit ${on === k ? 'is-on' : ''}`}
             onMouseEnter={() => setOn(k)} onMouseLeave={() => setOn((x) => (x === k ? null : x))} onClick={() => setOn(k)}>
-            <title>{`${k} ${Math.round(values[k])}`}</title>
+            <title>{`${k} ${Math.round(values[k])}${base ? ` · Without gear ${Math.round(base[k])}` : ''}`}</title>
             <circle cx={px} cy={py} r={on === k ? 2.4 : 1.6} class="ia-radar__dot" />
             {/* A wide, invisible reach: the corner's label and the shape's point both answer a finger. */}
             <circle cx={(px + lx) / 2} cy={(py + ly) / 2} r="11" class="ia-radar__reach" />
@@ -265,6 +277,9 @@ function StatsSheet() {
   const bonus = classBonus(s);
   const fromTree = skilltree.treeAttrs(s);
   const total = gear.boosted(s.hunter.attrs, gear.worn(s), skilltree.flatBonus(s), BOOST_CAP);
+  // The same hunter with nothing worn: what the gear adds is the space between the two shapes.
+  const bare = gear.boosted(s.hunter.attrs, [], skilltree.flatBonus(s), BOOST_CAP);
+  const geared = STATS.some((k) => total[k] > bare[k]);
   const v = vitals.read(s);
   // The hunter exactly as the fight builds them: class, gear, sets, marks, passives, and fatigue.
   const d = new Unit(heroSpec(s)).d;
@@ -276,7 +291,16 @@ function StatsSheet() {
   ];
   return (
     <div class="stack statsheet">
-      <div class="statsheet__radar"><Radar values={total} live /><small class="muted">Scale: 0 to {STAT_CAP} · Tap a stat for its value</small></div>
+      <div class="statsheet__radar">
+        <Radar values={total} base={geared ? bare : undefined} live />
+        {geared && (
+          <span class="radarkey" aria-hidden="true">
+            <span class="radarkey__one is-gear"><i />With gear</span>
+            <span class="radarkey__one is-base"><i />Without gear</span>
+          </span>
+        )}
+        <small class="muted">Tap a stat for its value</small>
+      </div>
       <ul class="statrows">
         {STAT_ORDER.map((k) => {
           const a = ATTRS.find((x) => x.key === k)!;

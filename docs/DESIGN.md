@@ -803,6 +803,20 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
   - **Record:** the Secret Quests, the latest done, the sealed, and each tier's count.
   - Each row opens its QUEST INFO window, as the tiles did; nothing here pays. The screen is no longer
     a bento grid: Inventory, Gates and Shadows still are.
+- **The Stats radar, to scale.** It said 0 to 100 and drew every axis out to the Ability Point cap, so a
+  stat of 182 sat on the rim with 100. It reaches the largest stat now, rounded up to the next 50 and
+  never under 100 (`radarScale`), its rings at each quarter with their values beside the STR axis,
+  and the line that named the scale is gone. On the Stats sheet the stats without gear are drawn
+  under the shape, dashed, and a key names the two, so what the gear adds is the space between them.
+- **Hold To Promote is gold,** as advancement is: its border and fill, a slow breath and a light
+  crossing it until it is held. Hold To Awaken shares the panel, so it is gold too.
+- **Promote All, from the Ready count.** The Army's Ready count is a button while any Shadow is ready:
+  gold, breathing, with an arrow. It offers, as the System's Offer, to promote and awaken every one,
+  naming each and what it takes and the Essence it all costs; what the Essence cannot pay for is said
+  in red and waits. Held, it plays the promotion's cinematic once, on the first promoted, then one
+  window for them all (`shadows.claimAll`, `flow.claimAll`): every promotion first, one rank apiece,
+  the deployed and the highest level before the rest, then one star apiece for each awakening the
+  Essence left pays for.
 - **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
   tapped; its line no longer opens on hover.
 - **A duplicate's extraction** reads as an offer: the Shadow lingers, the sheet says one like it
