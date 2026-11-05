@@ -150,10 +150,19 @@ try {
   if (!(await page.locator('.assoccard').isVisible())) throw new Error('RYN’S ASSOCIATION QUEST IS NOT ON THE QUESTS SCREEN');
   await snap('quests-full', true);
   // The veteran is C-Rank: Ascension opens at S-Rank, so neither the Trial nor the Chosen is here yet.
-  if (await page.locator('.btile--trial, .btile--chosen').count()) throw new Error('THE TRIAL OR THE CHOSEN SHOWED BELOW S-RANK');
+  if (await page.locator('.qrow--trial, .qrow--chosen').count()) throw new Error('THE TRIAL OR THE CHOSEN SHOWED BELOW S-RANK');
+  // The log: a ring to each quest on the rail; a ring jumps to its quest.
+  if ((await page.locator('.qrail__one').count()) < 4) throw new Error('THE QUEST RAIL DOES NOT RING EVERY QUEST');
+  // Ryn's job leads the log, on his channel: his ring first on the rail, his card shaped as the log's rows.
+  if (!(await page.locator('.qrail__one.is-coach').first().count())) throw new Error('RYN’S JOB HAS NO RING ON THE RAIL');
+  if (!(await page.locator('.assoccard .assoccard__row').count())) throw new Error('RYN’S CARD IS NOT SHAPED AS THE LOG’S ROWS');
+  if ((await page.locator('.qdaily__one').count()) !== 3) throw new Error('THE LOG DOES NOT LIST THE DAY’S THREE');
+  await page.locator('.qrail__one', { hasText: 'Secret' }).click(); await sleep(700);
+  if (!(await page.locator('#quest-secret').isVisible())) throw new Error('A RING DID NOT JUMP TO ITS QUEST');
+  await snap('quests-jump'); await page.evaluate(() => window.scrollTo(0, 0)); await sleep(300);
   for (const k of ['rank', 'spire', 'secret']) {
-    await page.locator(`.btile--${k} .btile__hit`).click(); await sleep(450);
-    if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} TILE DID NOT OPEN ITS WINDOW`);
+    await page.locator(`.qrow--${k}`).click(); await sleep(450);
+    if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} ROW DID NOT OPEN ITS WINDOW`);
     await snap(`quest-${k}`); await close(); await sleep(250);
   }
 
@@ -219,7 +228,7 @@ try {
 
   // A block of the Spire, on Auto, if the gate before it left the hunter fit to go in: its brief from its Weekly Quest.
   await nav('quests');
-  await page.locator('.btile--spire .btile__hit').click(); await sleep(500);
+  await page.locator('.qrow--spire').click(); await sleep(500);
   await page.locator('.sheet.is-top .btn', { hasText: /^Brief: Floors/ }).click(); await sleep(800); await snap('spire-brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 420; }); await sleep(300); await snap('spire-assess');
   if (await page.locator('text=Enter The Gate').isVisible()) {
@@ -368,8 +377,8 @@ try {
   await nav('quests');
   await sleep(600);
   await snap('asc-quests', true);
-  if (!(await page.locator('.btile--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN AT S-RANK');
-  if (!(await page.locator('.btile--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN AT S-RANK');
+  if (!(await page.locator('.qrow--trial').isVisible())) throw new Error('THE TRIAL IS NOT ON THE QUESTS SCREEN AT S-RANK');
+  if (!(await page.locator('.qrow--chosen').isVisible())) throw new Error('THE CHOSEN IS NOT ON THE QUESTS SCREEN AT S-RANK');
   // Ryn's job is done: reporting it pays, then he hands over the next.
   await page.locator('.assoccard .btn', { hasText: 'Report To Ryn' }).click();
   await page.waitForSelector('.syswin--coach', { timeout: 5000 });
@@ -382,8 +391,8 @@ try {
   if (await page.locator('.assoccard .btn', { hasText: 'Report To Ryn' }).count()) throw new Error('THE REPORT LEFT THE JOB IN HAND');
   await snap('assoc-card');
   for (const k of ['trial', 'chosen']) {
-    await page.locator(`.btile--${k} .btile__hit`).click(); await sleep(450);
-    if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} TILE DID NOT OPEN ITS WINDOW`);
+    await page.locator(`.qrow--${k}`).click(); await sleep(450);
+    if (!(await page.locator(`.sheet.is-top .quest-${k}`).isVisible())) throw new Error(`THE ${k.toUpperCase()} ROW DID NOT OPEN ITS WINDOW`);
     await snap(`quest-${k}`); await close(); await sleep(250);
   }
   // A whole build, as the sky draws it.

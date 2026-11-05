@@ -184,7 +184,7 @@ System announces them (`[Daily Quests have arrived.]`) on the hunter's first vis
 counts the day's contracts until the screen has shown them, and the Trial while it stands open with
 today's attempt unused (`quests.waiting`), as the Inventory tab counts unspent points.
 
-**Every main screen is one page of tiles.** After the Quests screen, Inventory, Gates and Shadows
+**Every main screen is one page of tiles** (the Quests screen has since become a log; see below). After the Quests screen, Inventory, Gates and Shadows
 were laid out the same way (`ui/bento.tsx`): a grid of System tiles, each with a picture drawn from
 the engine and opening its window. Inventory holds Status, a radar of the five stats, Skills,
 Equipment, what is held, the Exchange and the hunter's card; Equipment became a System window of its
@@ -783,6 +783,26 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     in shards while it has never been cleared, how many of the creatures known to walk in it already
     serve as Shadows (the boss counts once known), and the set it is home to. A row opens the brief.
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
+- **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a
+  quest paid waited in its window. It is a quest log now, after a journal's list:
+  - **Ryn's card** leads the log, on his channel: shaped as its rows now (his face where a row's
+    picture stands, the job and its count, his line held to two lines until tapped, a bar, the pay
+    as chips), in his blue and corner brackets, never the System's frame. His ring leads the rail, his
+    face in it; it reads Report and turns gold once the job is done.
+  - **The rail:** a ring to every quest that stands (Daily, Rank, Trial, Chosen, Weekly, Secret), its
+    count under it, filled as far as the quest stands; gold while it waits on the hunter, green once
+    done. A ring scrolls to its quest and lights it.
+  - **The Daily Quests:** their head and the time to the next, a line to each with its bar, its
+    count and what it pays (`payOf`), and the completion bonus (`bonusOf`). The block opens the window.
+  - **Advancement:** Reclassification (both plates, the level and the XP to it, Ability and Skill
+    Points, a class, Shadow slots or Ascension where the rank brings them), the Trial (the Gates
+    proved and the Chosen after them; Ascension, a mark, the upgrade limit) and the Chosen (where it
+    walks, and its masterwork or bounty).
+  - **Weekly:** the Pale Spire, the floor that raises the week's pay, the next floors, the time to the
+    new week, and the tier, the shards and the gear.
+  - **Record:** the Secret Quests, the latest done, the sealed, and each tier's count.
+  - Each row opens its QUEST INFO window, as the tiles did; nothing here pays. The screen is no longer
+    a bento grid: Inventory, Gates and Shadows still are.
 - **The Stats sheet's `?`** sits in the same corner of every box, and the box itself is what is
   tapped; its line no longer opens on hover.
 - **A duplicate's extraction** reads as an offer: the Shadow lingers, the sheet says one like it

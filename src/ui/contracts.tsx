@@ -148,7 +148,7 @@ function QuestLine({ k, grade, pay, delay }: { k: Moved; grade: Contracts['grade
 }
 
 /** How far a quest has come, as a ring; a tick, or a star for the bonus, once it is done. */
-function Ring({ p, done, mark = 'check' }: { p: number; done?: boolean; mark?: 'check' | 'star' }) {
+export function Ring({ p, done, mark = 'check' }: { p: number; done?: boolean; mark?: 'check' | 'star' }) {
   const C = 2 * Math.PI * 12;
   return (
     <svg class="qline__ring" viewBox="0 0 30 30" aria-hidden="true">
@@ -162,7 +162,7 @@ function Ring({ p, done, mark = 'check' }: { p: number; done?: boolean; mark?: '
 }
 
 /** What a quest paid, name first, as every gain is. */
-function Pay({ xp, shards }: { xp: number; shards: number }) {
+export function Pay({ xp, shards }: { xp: number; shards: number }) {
   return (
     <span class="qline__pay">
       <span>XP <b class="grant num">+{xp}</b></span>
