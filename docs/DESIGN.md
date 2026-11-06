@@ -849,11 +849,11 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
     Licence and a lock where the licence stops.
   - **A row to each Gate:** its portal with the boss's mark (or a lock), and a tick on the portal's
     corner once ever cleared (the name was green with a tick, and a board of green names was too
-    much green), its name, its boss or `?`, and a line of chips: what marks it (Training, Chosen,
-    Association, Quest, in their own colours, as the tiles' counts had them), its first-clear bounty
-    in shards while it has never been cleared, how many of the creatures known to walk in it already
-    serve as Shadows (the boss counts once known), and the set blueprints known of all its home
-    sets' (`1/6`). The set pieces once named each set in a chip; a Gate home to two sets carried two
+    much green), its name, its boss or `?`, and a line of chips, the counts first so they line up from row to
+    row: how many of the creatures known to walk in it already serve as Shadows (the boss counts
+    once known), and the set blueprints known of all its home sets' (`1/6`); then what marks it
+    (Training, Chosen, Association, Quest, in their own colours, as the tiles' counts had them), its
+    first-clear bounty in shards while it has never been cleared, and the anvil of a tracked material. The set pieces once named each set in a chip; a Gate home to two sets carried two
     long chips, so it is one count now, green once every blueprint is known. A row opens the brief.
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a

@@ -214,23 +214,24 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
         <span class="gaterow__body">
           <span class="gaterow__name"><b>[{d.name}]</b></span>
           <small>{locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?'}</small>
+          {/* The counts first, the Shadows bound and the set blueprints known, so they line up row to row; then what marks it. */}
           <span class="gaterow__tags">
-            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
-            {bounty > 0 && <span class="gtag is-bounty" title="First-clear bounty">Bounty <Shards n={bounty} /></span>}
             {inside.length > 0 && !practice && (
               <span class={`gtag is-shadows ${bound === inside.length ? 'is-full' : ''}`} aria-label={`Shadows bound: ${bound} of ${inside.length}`}>
                 <Glyph name="shadows" /><span class="num">{bound}/{inside.length}</span>
               </span>
             )}
+            {pieces.length > 0 && (
+              <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
+                <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>
+              </span>
+            )}
+            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
+            {bounty > 0 && <span class="gtag is-bounty" title="First-clear bounty">Bounty <Shards n={bounty} /></span>}
             {tracked.length > 0 && (
               <span class="gtag is-tracked" title={`Tracked: ${tracked.map((id) => forge.materialById(id)?.name).join(', ')}`}
                 aria-label={`Tracked materials here: ${tracked.map((id) => forge.materialById(id)?.name).join(', ')}`}>
                 <Glyph name="forge" />{tracked.length > 1 && <span class="num">{tracked.length}</span>}
-              </span>
-            )}
-            {pieces.length > 0 && (
-              <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
-                <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>
               </span>
             )}
           </span>
