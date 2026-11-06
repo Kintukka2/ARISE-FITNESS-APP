@@ -177,7 +177,7 @@ function Recipe({ defId }: { defId: string }) {
             {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
           </span>
           <span class="itemhero__score">
-            <span class="label">Score</span><b class="num">{Math.round(base * qLo)} to {Math.round(base * gear.Q_HIGH)}</b>
+            <span class="label">Score</span><b class="num" aria-label={`${Math.round(base * qLo)} to ${Math.round(base * gear.Q_HIGH)}`}>{Math.round(base * qLo)}-{Math.round(base * gear.Q_HIGH)}</b>
           </span>
         </div>
       </section>
