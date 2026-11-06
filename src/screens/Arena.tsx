@@ -41,7 +41,10 @@ import { buzz, flash } from '@/ui/feedback';
 import { Glyph, Shard } from '@/ui/icons';
 import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
-import { LootCell, useReveal } from '@/ui/loot';
+import { openBlueprint } from './Forge';
+import * as forge from '@/core/forge';
+import { bundleText, MatList } from '@/ui/forge';
+import { LootCell, useReveal, type Loot } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
@@ -137,7 +140,7 @@ interface Room { label: string; boss: boolean; index: number }
 type Phase = 'map' | 'fight' | 'turn' | 'decide' | 'node' | 'results';
 
 /** A step being shown: a rest or a cache as it happened, or a choice waiting, then how it went. */
-interface Panel { node: MapNode; item?: string; done?: raid.Resolution }
+interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; done?: raid.Resolution }
 
 export function Arena() {
   const s = useSave();
@@ -225,7 +228,7 @@ export function Arena() {
       const res = store.update((x) => raid.choose(x, d!, x.gates.raid!, nodeId));
       if (!res) return;
       if (isFight(res.node)) return chamber();
-      open({ node: res.node, item: res.item });
+      open({ node: res.node, item: res.item, mats: res.mats });
     });
   }
 
@@ -243,7 +246,7 @@ export function Arena() {
       const out = store.update((x) => raid.resolve(x, d!, x.gates.raid!, i));
       if (!out) return;
       if (out.effect.hurt) { sfx.hit(-40); flash('danger'); } else if (out.won) sfx.success();
-      open({ node: out.node, item: out.item, done: out });
+      open({ node: out.node, item: out.item, mats: out.mats, done: out });
     });
   }
 
@@ -459,7 +462,7 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
       <div class="runstrip__cells">
         <span><small>Allies</small><b class="num">{up}/{party.length - 1}</b></span>
         <span><small>Banked</small><b class="num"><Shards n={run.purse ?? 0} /></b></span>
-        <span><small>Items found</small><b class="num">{(run.haul ?? []).length}</b></span>
+        <span><small>Found</small><b class="num">{(run.haul ?? []).length + Object.values(run.stash ?? {}).reduce((n, x) => n + x, 0)}</b></span>
       </div>
       {(run.blessings ?? []).length > 0 && (
         <div class="boons">
@@ -512,7 +515,9 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
     <section class={`nodepanel nodepanel--${x.kind}`}>
       <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
       {x.kind === 'rest' && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{REST_HEAL * 100}%</span> · Debuffs cleared</p></>}
-      {x.kind === 'treasure' && (item ? <CacheFind key={x.id} defId={p.item!} /> : <p>The cache is empty.</p>)}
+      {x.kind === 'treasure' && (item ? <CacheFind key={x.id} defId={p.item!} />
+        : p.mats ? <><p>Something lies under the dust. You take what is worth carrying.</p><MatList b={p.mats} gain /></>
+        : <p>The cache is empty.</p>)}
       {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one.</p>}
       {ev && !p.done && <p>{ev.text}</p>}
       {p.done && <p>{x.kind === 'shrine' ? 'You take the offering.' : p.done.effect.text}</p>}
@@ -521,6 +526,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
         const lines = system.outcome(p.done.effect, {
           shards: p.done.effect.shards && !isPractice(d) ? shop.gateShards(d.rank, p.done.effect.shards) : undefined,
           item: p.done.item ? gear.gearDef(p.done.item)?.name : undefined,
+          mats: p.done.mats ? bundleText(p.done.mats) : undefined,
           blessing: b ? { name: b.name, text: b.text } : undefined,
         });
         return lines.length ? <p class="muted" dangerouslySetInnerHTML={{ __html: lines.join('<br />') }} /> : null;
@@ -676,8 +682,8 @@ type Reach = 'bound' | 'essence' | 'failed' | 'lost';
 
 function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: (next?: Dungeon) => void }) {
   const s = useSave();
-  // Everything the run found, to turn over by its grade (ui/loot.tsx).
-  const [found] = useState(() => r.loot.map((item) => ({ item })));
+  // Everything the run found, to turn over by its grade (ui/loot.tsx): the blueprints first, then any piece found whole.
+  const [found] = useState<Loot[]>(() => [...r.blueprints.map((defId) => ({ defId, blueprint: true })), ...r.loot.map((item) => ({ item }))]);
   const turn = useReveal(found);
   const [reach, setReach] = useState<Record<number, Reach>>({});
   // The Shadow each extraction bound, by the lingering it came from.
@@ -705,7 +711,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
     if (faceDown > 0) {
       const v = await sys({
         title: 'Unrevealed Loot', kind: 'app', typed: false,
-        lines: [`${faceDown === 1 ? '1 item is' : `${faceDown} items are`} still face down. ${faceDown === 1 ? 'It is' : 'They are'} already in your Inventory.`],
+        lines: [`${faceDown === 1 ? '1 find is' : `${faceDown} finds are`} still face down. ${faceDown === 1 ? 'It is' : 'They are'} already yours.`],
         actions: [{ label: 'Leave Anyway', value: 'leave' }, { label: 'Reveal All', value: 'reveal', primary: true }],
       });
       if (v !== 'leave') { revealAll(); return; }
@@ -754,12 +760,33 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small></div>
           <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of {vitals.FATIGUE_MAX}</small></div>
         </div>
-        {r.loot.length > 0 && (
+        {Object.keys(r.mats).length > 0 && (
+          <section class="sysbox spoils">
+            <span class="label">Materials</span>
+            <MatList b={r.mats} gain />
+          </section>
+        )}
+        {/* The weapon carried in, growing familiar: the System reports it, and a rank reached says so. */}
+        {r.familiarity && (() => {
+          const f = r.familiarity;
+          const up = f.rankTo > f.rankFrom;
+          return (
+            <div class="alerts">
+              <SysAlert fyi delay={250} class={`famalert ${up ? 'is-up' : ''}`} icon={<Glyph name="Weapon" />}
+                aside={<span class="fampips" aria-label={`Familiarity ${f.rankTo} of ${forge.FAMILIARITY_MAX}`}>{Array.from({ length: forge.FAMILIARITY_MAX }, (_, i) => <i key={i} class={i < f.rankTo ? 'is-on' : ''} />)}</span>}
+                sub={up ? undefined : <>Familiarity points <span class="grant num">+{f.to - f.from}</span></>}>
+                <strong>[{gear.gearDef(f.defId)?.name}]</strong> {up ? <>Familiarity: {f.rankFrom} → <span class="grant">{f.rankTo}</span></> : <>Familiarity {f.rankTo}</>}
+              </SysAlert>
+            </div>
+          );
+        })()}
+        {found.length > 0 && (
           <section class="loot">
-            <span class="label">{faceDown ? 'Tap to reveal' : 'Tap an item for its card'}</span>
+            <span class="label">{faceDown ? 'Tap to reveal' : 'Tap a find for its card'}</span>
             <div class="haul">
               {found.map((l, i) => (
-                <LootCell key={l.item.id} loot={l} i={i} state={turn.stateOf(i)} onTap={() => turn.reveal(i)} onOpen={() => { sfx.tap(); openItem(l.item.id); }} />
+                <LootCell key={'item' in l ? l.item.id : `bp-${l.defId}`} loot={l} i={i} state={turn.stateOf(i)} onTap={() => turn.reveal(i)}
+                  onOpen={() => { sfx.tap(); if ('item' in l) openItem(l.item.id); else openBlueprint(l.defId); }} />
               ))}
             </div>
             {upgradeWaits && (

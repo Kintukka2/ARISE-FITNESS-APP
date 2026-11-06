@@ -13,6 +13,7 @@ import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
 import type { Item } from '@/core/types';
 import { GearArt } from './components';
+import { Glyph } from './icons';
 import { buzz, reducedMotion } from './feedback';
 
 /** How long loot of each grade gathers itself before it turns over, in ms, and how it lands in the hand. */
@@ -25,8 +26,11 @@ const SPARKS: Record<string, number> = { E: 0, D: 0, C: 8, B: 12, A: 18, S: 26 }
 
 export type LootState = 'down' | 'charging' | 'open';
 
-/** A piece to turn over: an item the hunter holds, or a design found and not yet granted (a cache's, until the run is settled). */
-export type Loot = { item: Item } | { defId: string };
+/**
+ * A find to turn over: an item the hunter holds, a design found and not yet granted (a cache's, until
+ * the run is settled), or a blueprint learned.
+ */
+export type Loot = { item: Item } | { defId: string; blueprint?: boolean };
 const defOf = (l: Loot) => ('item' in l ? gear.defOf(l.item) : gear.gearDef(l.defId));
 
 /**
@@ -82,9 +86,10 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
   const def = defOf(loot);
   const rank = def?.rank ?? 'E';
   const sparks = state === 'open' ? SPARKS[rank] ?? 0 : 0;
-  const name = `${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}`.trim();
+  const bp = 'blueprint' in loot && !!loot.blueprint;
+  const name = `${bp ? 'Blueprint: ' : ''}${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}`.trim();
   return (
-    <button type="button" class={`haul__item flip is-${state} ${state === 'open' && onOpen ? 'is-link' : ''}`} style={`--i:${i}`} data-rarity={rank}
+    <button type="button" class={`haul__item flip is-${state} ${state === 'open' && onOpen ? 'is-link' : ''} ${bp ? 'is-blueprint' : ''}`} style={`--i:${i}`} data-rarity={rank}
       aria-label={state === 'open' ? (onOpen ? `${name}, open its card` : name) : 'Reveal this item'}
       onClick={() => { if (state === 'down') onTap(); else if (state === 'open') onOpen?.(); }}>
       <span class="loot-cell">
@@ -96,8 +101,9 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
           {state === 'open' && (rank === 'A' || rank === 'S') && <><i class="aura__orbit" /><i class="aura__orbit aura__orbit--2" /></>}
         </span>
         {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={56} /> : <GearArt defId={loot.defId} size={56} />) : <span class="flip__back">?</span>}
+        {state === 'open' && bp && <span class="haul__bp" aria-hidden="true"><Glyph name="blueprint" /></span>}
       </span>
-      <small>{state === 'open' ? def?.name : ''}</small>
+      <small>{state === 'open' ? <>{bp && <b class="haul__bpname">Blueprint</b>}{def?.name}</> : ''}</small>
     </button>
   );
 }

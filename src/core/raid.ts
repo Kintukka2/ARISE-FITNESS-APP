@@ -5,7 +5,7 @@
  * every step, so closing the app can neither dodge a loss nor reroll a turn.
  * What the run finds is banked on it and paid out once, in `finish`.
  */
-import { LOOT } from '@/data/dungeons';
+import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
@@ -13,7 +13,8 @@ import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
 import { build, chamberOf, isFight, mapSeed, next, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
-import { boosted, grant, heldOf, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
+import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
+import * as forge from './forge';
 import { BOOST_CAP, GATE_XP, grantXP, kitFor, practiceAward, type XpResult } from './progression';
 import * as tree from './skilltree';
 import { licensedRank } from './licence';
@@ -51,9 +52,10 @@ export type { Chamber };
 export function heroSpec(s: Save, now = Date.now(), level = 0): UnitSpec {
   const items = wornItems(s);
   const base = vitals.worn(boosted(s.hunter.attrs, items, tree.flatBonus(s), BOOST_CAP), Math.min(vitals.FATIGUE_MAX, vitals.read(s, now).fatigue * asc.dragShare(level)));
-  // The skill tree: the skills taken in at their levels, every passive learned, and its fight bonuses.
+  // The skill tree: the skills taken in at their levels, every passive learned, and its fight bonuses;
+  // and what the worn weapon's familiarity adds.
   const b = tree.buildOf(s);
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: b.passives, bonus: sumBonuses(rollBonuses(items), setBonuses(items), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: b.passives, bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
@@ -284,7 +286,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), path: [], haul: [], purse: 0, blessings: [], lost: false, fatigue, ascension: level,
+    map: mapSeed(d, day), path: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
   };
   return s.gates.raid;
@@ -331,11 +333,27 @@ export const walked = (d: Dungeon, run: OpenRaid) => {
   return (run.path ?? []).slice(0, run.at).map((id) => m.byId[id]).filter(Boolean);
 };
 
-/** A piece of gear for the haul, drawn for one step: at the gate's grade, or `shift` grades from it. */
-function haulPiece(d: Dungeon, roll: () => number, shift: number): string | null {
+/** The part a Gate's creatures leave most: drawn from its creatures, by family. */
+const partOfGate = (d: Dungeon, roll: () => number) => {
+  const e = enemyById(d.mobs[Math.floor(roll() * d.mobs.length)]);
+  return forge.partId(FAMILY_PART[e?.family ?? ''] ?? 'hide');
+};
+
+/**
+ * What a cache or a find leaves for the haul, drawn for one step: now and then a piece found whole, of
+ * the gate's grade or `shift` grades from it; otherwise alloy of that grade and a part. Banked on the
+ * run, paid when it ends. Mutates the run.
+ */
+function haulFind(d: Dungeon, run: OpenRaid, roll: () => number, shift: number): { item?: string; mats?: forge.Bundle } {
   const rank = RANKS[clamp(rankIdx(d.rank) + shift, 0, 5)];
-  const pool = ofRank(rank);
-  return pool[Math.floor(roll() * pool.length)]?.id ?? null;
+  if (roll() < FORGED.cache) {
+    const pool = ofRank(rank);
+    const item = pool[Math.floor(roll() * pool.length)]?.id;
+    if (item) { (run.haul ??= []).push(item); return { item }; }
+  }
+  const mats = forge.addUp({ [forge.alloyId(rank)]: CACHE.alloy + Math.floor(roll() * 3) }, { [partOfGate(d, roll)]: 1 });
+  run.stash = forge.addUp(run.stash ?? {}, mats);
+  return { mats };
 }
 
 /** Write the run's party back after a step changed it, and the hunter's health to their vitals. Mutates. */
@@ -347,8 +365,10 @@ function settleParty(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], now: num
 
 export interface StepResult {
   node: MapNode;
-  /** A cache's piece, banked for the end of the run. */
+  /** A cache's piece found whole, banked for the end of the run. */
   item?: string;
+  /** Or the materials it held, banked the same way. */
+  mats?: forge.Bundle;
 }
 
 /**
@@ -370,14 +390,13 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
     settleParty(s, d, run, party, now);
     run.at += 1;
   } else if (x.kind === 'treasure') {
-    const item = haulPiece(d, rng(`arise|cache|${run.seed}|${id}`), -1);
-    if (item) { (run.haul ??= []).push(item); out.item = item; }
+    Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), -1));
     run.at += 1;
   }
   return out;
 }
 
-export interface Resolution { node: MapNode; choice: number; odds: number; won: boolean; effect: Effect; item?: string; blessing?: string }
+export interface Resolution { node: MapNode; choice: number; odds: number; won: boolean; effect: Effect; item?: string; mats?: forge.Bundle; blessing?: string }
 
 /** Make the waiting choice at a shrine, a trap or an event. The roll is the run's own. Null if nothing waits. Mutates. */
 export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now = Date.now()): Resolution | null {
@@ -409,10 +428,7 @@ export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now 
       if (effect.fatigue > 0) vitals.tire(s, effect.fatigue, now);
       else vitals.ease(s, -effect.fatigue, now);
     }
-    if (effect.item) {
-      const item = haulPiece(d, roll, 0);
-      if (item) { (run.haul ??= []).push(item); out.item = item; }
-    }
+    if (effect.item) Object.assign(out, haulFind(d, run, roll, 0));
     if (effect.shards && !isPractice(d)) run.purse = (run.purse ?? 0) + shop.gateShards(d.rank, effect.shards);
     if (effect.bless) {
       const free = BLESSINGS.filter((b) => !(run.blessings ?? []).includes(b.id));
@@ -523,7 +539,14 @@ export interface RaidResult {
   bounty: number;
   /** Experience paid, and the levels it bought. Null when it paid nothing. */
   xp: XpResult | null;
+  /** Pieces found whole: rare, since gear is forged. */
   loot: Item[];
+  /** The materials it left, what the haul banked among them. */
+  mats: forge.Bundle;
+  /** The blueprints it left, learned. */
+  blueprints: string[];
+  /** How far the weapon carried in grew familiar. */
+  familiarity: forge.FamiliarityMove | null;
   lingering: Lingering[];
   /** Steps taken, of the steps from the gate to the boss. */
   steps: number;
@@ -554,51 +577,64 @@ export const withdrawShare = (done: number, total: number) => FAIL_SHARE + (1 - 
 export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?? d.id));
 
 /**
- * The piece of a home set a clear leaves: one the hunter does not hold yet,
- * while there is one. Null when the gate is home to no set.
+ * What a run leaves (`data/forge.ts`): alloy from every fight, gatekeeper and the clear, a share of the
+ * grade below, parts from the creatures felled, a trophy from a set's home Gate, and Ember from a clear
+ * at an Ascension level. A blueprint for a Gate's first clear (a set's own, at its home), by chance on
+ * other clears and from gatekeepers; and now and then a piece found whole. Blueprints are learned here.
+ * Mutates.
  */
-function setPiece(s: Save, d: Dungeon, r: () => number): string | null {
-  const sets = homeSets(d);
-  if (!sets.length) return null;
-  const set = sets[Math.floor(r() * sets.length)];
-  const pieces = setPieces(set.id);
-  const held = heldOf(s, set.id);
-  const missing = pieces.filter((p) => !held.has(p.id));
-  const pool = missing.length ? missing : pieces;
-  return pool[Math.floor(r() * pool.length)]?.id ?? null;
-}
-
-/** What the fights paid in gear: a chance per fight, a sure piece per gatekeeper, and the clear's, the first of it a home set's piece. */
-function rollLoot(d: Dungeon, r: () => number, fights: number, elites: number, complete: boolean, home: string | null = null): string[] {
-  const at = rankIdx(d.rank);
-  const shift = (n: number) => RANKS[clamp(at + n, 0, 5)];
-  const pick = (rank: Rank) => {
-    const pool = ofRank(rank);
-    return pool[Math.floor(r() * pool.length)]?.id;
-  };
-  const out: string[] = [];
+function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number) {
+  const g = rankIdx(d.rank);
+  const rank = RANKS[g];
+  const lower = RANKS[Math.max(0, g - 1)];
+  const parts: forge.Bundle[] = [];
+  let alloy = 0, low = 0;
   for (let i = 0; i < fights; i++) {
-    if (r() > LOOT.mobFoundChance) continue;
-    const n = LOOT.mobQuantity[0] + Math.floor(r() * (LOOT.mobQuantity[1] - LOOT.mobQuantity[0] + 1));
-    for (let k = 0; k < n; k++) {
-      const x = r();
-      const id = pick(x < LOOT.mobRank.same ? shift(0) : x < LOOT.mobRank.same + LOOT.mobRank.minus1 ? shift(-1) : shift(-2));
-      if (id) out.push(id);
+    alloy += DROPS.fight + (r() < DROPS.fightExtra ? 1 : 0);
+    if (r() < DROPS.fightLower) low++;
+  }
+  for (let i = 0; i < elites; i++) { alloy += DROPS.elite; parts.push({ [partOfGate(d, r)]: DROPS.elitePart }); }
+  if (cleared) {
+    alloy += DROPS.clear + Math.floor(r() * (DROPS.clearSpread + 1));
+    low += DROPS.clearLower;
+    for (const k of ['hide', 'bone', 'core'] as const) parts.push({ [forge.partId(k)]: DROPS.clearParts });
+  }
+  for (const id of run.felled) {
+    const fam = enemyById(id)?.family;
+    if (fam && r() < DROPS.part) parts.push({ [forge.partId(FAMILY_PART[fam] ?? 'hide')]: 1 });
+  }
+  const trophy = cleared ? forge.trophyAt(d) : null;
+  const mats = forge.addUp(
+    { [forge.alloyId(rank)]: alloy + (g === 0 ? low : 0) }, g > 0 ? { [forge.alloyId(lower)]: low } : {}, ...parts,
+    trophy ? { [trophy]: 1 } : {}, cleared && level > 0 ? { [forge.EMBER.id]: Math.ceil(DROPS.ember * level) } : {},
+  );
+  // Blueprints: a set's from its home Gate, then the Gate's own.
+  const blueprints: string[] = [];
+  const leave = (at: Rank, pool?: ReturnType<typeof setPieces>) => {
+    const got = forge.leaveBlueprint(s, at, r, pool);
+    if (got.blueprint) blueprints.push(got.blueprint);
+    Object.assign(mats, forge.addUp(mats, got.mats));
+  };
+  const up = () => (g < 5 && r() < BLUEPRINTS.up ? RANKS[g + 1] : rank);
+  let firstPaid = false;
+  if (cleared) {
+    const sets = homeSets(d).filter((x) => forge.setBlueprintsLeft(s, x.id).length);
+    if (sets.length && (first || r() < BLUEPRINTS.home)) {
+      const set = sets[Math.floor(r() * sets.length)];
+      leave(setPieces(set.id)[0]?.rank as Rank ?? rank, forge.setBlueprintsLeft(s, set.id));
+      firstPaid = first;
     }
+    if ((first && !firstPaid) || (!first && r() < BLUEPRINTS.clear)) leave(up());
   }
-  for (let i = 0; i < elites; i++) {
-    const id = pick(d.rank !== 'S' && r() > LOOT.completionRank.same ? shift(1) : shift(0));
-    if (id) out.push(id);
+  for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
+  // A piece found whole, rarely.
+  const forged: string[] = [];
+  if (cleared && r() < FORGED.clear) {
+    const pool = ofRank(rank);
+    const id = pool[Math.floor(r() * pool.length)]?.id;
+    if (id) forged.push(id);
   }
-  if (complete) {
-    const n = LOOT.completionQuantity[0] + Math.floor(r() * (LOOT.completionQuantity[1] - LOOT.completionQuantity[0] + 1));
-    for (let k = 0; k < n; k++) {
-      if (k === 0 && home) { out.push(home); continue; }
-      const id = pick(d.rank !== 'S' && r() > LOOT.completionRank.same ? shift(1) : shift(0));
-      if (id) out.push(id);
-    }
-  }
-  return out;
+  return { mats, blueprints, forged };
 }
 
 /** Close an open run: pay out, record, seal. A withdrawal is only ever from a rest. Mutates. */
@@ -640,12 +676,19 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
 
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
   const cleared = outcome === 'cleared';
-  let lootIds = kept ? [...rollLoot(d, r, fights, elites, cleared, cleared ? setPiece(s, d, rng('arise|set|' + run.seed)) : null), ...(run.haul ?? [])] : [];
+  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
+  let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
+  let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};
   if (practice) {
+    // The Practice Gate pays in kit: a ring found whole, and the iron and hide for a first piece at the Forge.
     const rings = ofRank('E').filter((g) => g.slot === 'Ring');
     lootIds = [rings[Math.floor(rng('arise|practice|' + s.hunter.name)() * rings.length)].id, ...(kept ? run.haul ?? [] : [])];
+    mats = forge.addUp(mats, { [forge.alloyId('E')]: 8, [forge.partId('hide')]: 2 });
   }
+  forge.give(s, mats);
   const loot = lootIds.map((id, i) => grant(s, id, `${run.seed}|${i}`) ?? make(id)).filter(Boolean);
+  // The weapon carried in grows familiar with every creature the party felled, however the run ended.
+  const familiarity = practice ? null : forge.grow(s, run.weapon, run.felled.length);
 
   const lingering: Lingering[] = [];
   if (outcome === 'cleared' && !practice) {
@@ -716,6 +759,11 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const ascended = outcome === 'cleared' && !practice ? asc.prove(s, d, run) : null;
   if (ascended) walkers.send(s, ascended);
   const chosen = outcome === 'cleared' ? walkers.fell(s, d, run, pay) : null;
+  if (chosen) {
+    const ember = { [forge.EMBER.id]: DROPS.chosenEmber * chosen.level };
+    forge.give(s, ember);
+    mats = forge.addUp(mats, ember);
+  }
   if (outcome === 'cleared' && !tower) {
     if (!s.gates.cleared.includes(d.id)) s.gates.cleared.push(d.id);
     seal(s, d, dayKey(now));
@@ -726,7 +774,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}: ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, 400);
   return {
-    outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, lingering,
+    outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
     steps: run.at, depth, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };

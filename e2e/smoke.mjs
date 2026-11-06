@@ -196,10 +196,10 @@ async function raidGate(row, name, auto = false) {
   await revealLoot();
   await sleep(1500);
   await snap(`${name}-results`);
-  // A piece turned over opens its card.
+  // A find turned over opens its card: a piece's, or a blueprint's.
   if (await visible('.flip.is-open')) {
     await page.locator('.flip.is-open').first().click();
-    await page.waitForSelector('.sheet.is-top[aria-label^="Item:"]', { timeout: 3000 }).catch(() => { throw new Error('A REVEALED ITEM DID NOT OPEN ITS CARD'); });
+    await page.waitForSelector('.sheet.is-top[aria-label^="Item:"], .sheet.is-top[aria-label^="Blueprint:"]', { timeout: 3000 }).catch(() => { throw new Error('A REVEALED FIND DID NOT OPEN ITS CARD'); });
     await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click();
     await sleep(300);
   }
@@ -300,7 +300,38 @@ try {
   if (!(await visible('.sheet.is-top .gboard .gaterow'))) throw new Error('THE BOARD TILE DID NOT OPEN THE GATES');
   await snap('board');
   await raidGate('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)', 'first-gate', true);
+  const firstCleared = await page.evaluate(() => JSON.parse(localStorage.getItem('arise-rpg:save') ?? '{}').gates?.clears > 0).catch(() => false);
   if ((await page.locator('.xpbar__label').innerText()) === before) throw new Error('A GATE PAID NO EXPERIENCE');
+
+  // The first real Gate's first clear left a blueprint and its materials: the Forge forges it.
+  await nav('inventory');
+  await drain();
+  await page.locator('.btile--forge .btile__hit').click();
+  await sleep(500);
+  // A clear leaves a blueprint; a party carried out leaves with nothing, and the Practice Gate's iron is all there is.
+  const blueprints = await page.locator('.sheet.is-top .bprow').count();
+  if (firstCleared && blueprints < 1) throw new Error('THE FIRST CLEAR LEFT NO BLUEPRINT IN THE FORGE');
+  await snap('forge');
+  await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click();
+  await sleep(300);
+  if (!(await visible('.sheet.is-top .matrow:not(.is-none)'))) throw new Error('THE PRACTICE GATE LEFT NO MATERIALS IN THE FORGE');
+  await snap('forge-materials');
+  await page.locator('.sheet.is-top .seg__btn', { hasText: 'Blueprints' }).click();
+  await sleep(300);
+  if (blueprints) {
+  await page.locator('.sheet.is-top .bprow').first().click();
+  await page.waitForSelector('.sheet.is-top[aria-label^="Blueprint:"]', { timeout: 3000 });
+  await sleep(400);
+  await snap('forge-blueprint');
+  const forgeBtn = page.locator('.sheet.is-top .recipe > .btn--gold');
+  if (await forgeBtn.isEnabled()) {
+    const held = await page.locator('.sheet.is-top .heldrow').count();
+    await forgeBtn.click();
+    await sleep(1600);
+    if ((await page.locator('.sheet.is-top .heldrow').count()) !== held + 1) throw new Error('FORGING PUT NO PIECE IN THE BAG');
+    await snap('forge-forged');
+  }
+  }
 
   await nav('shadows');
   await drain();

@@ -3,7 +3,7 @@
  * all three of them pays a bonus, in the units the combat engine's gear
  * bonuses use (fractions for attack, magic, defence, resistance, maximum HP and
  * healing; flat points for the rest). Each set has a home gate: a clear there
- * leaves one of its pieces. Numbers here are rules; the screens quote them.
+ * can leave one of its blueprints, and leaves the trophy its pieces are forged with. Numbers here are rules; the screens quote them.
  */
 export interface GearSet {
   /** The name equipment designs carry in `set`. */
@@ -49,16 +49,11 @@ export const SET_KEEP = 0.6;
 
 /**
  * Upgrading: each step moves a piece's quality and every property `share` of
- * the way across its design's range, toward the best, and costs `rate` shards
- * for each point of score the step adds to a piece of its rarity.
+ * the way across its design's range, toward the best. `rate` prices a point of
+ * the score a step adds; `data/forge.ts` says what share of it a step charges,
+ * and the alloys it takes.
  */
 export const UPGRADE = { share: 0.1, rate: 50 } as const;
-
-/**
- * Fusion: a duplicate of a piece's design, fed into it. The piece keeps the better roll of the two for
- * its quality and each property, then takes `steps` upgrade steps toward perfect, never past it.
- */
-export const FUSE = { steps: 3 } as const;
 
 /** Loadouts a hunter can keep: what was worn, saved to be worn again in one tap. */
 export const LOADOUTS = 3;

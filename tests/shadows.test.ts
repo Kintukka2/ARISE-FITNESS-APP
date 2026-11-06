@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaults, parse } from '@/core/save';
+import { defaults, parse, SAVE_VERSION } from '@/core/save';
 import { Unit } from '@/core/combat';
 import { ALL_ENEMIES, dungeonById, enemyById } from '@/core/gates';
 import { MISSIONS, sweep } from '@/core/missions';
@@ -126,7 +126,7 @@ describe('promotion', () => {
     delete old.shadows.essence;
     old.shadows.army = [[0, 0], [30, 1], [80, 1], [400, 3]].map(([kills, rank], i) => ({ id: `sh${i}`, enemyId: two.id, boundAt: '2026-02-04', out: 1, kills, bosses: 0, rank, tactic: 'finish' }));
     const s = parse(JSON.stringify(old))!;
-    expect(s.v).toBe(7);
+    expect(s.v).toBe(SAVE_VERSION);
     expect(s.shadows.essence).toBe(0);
     expect(s.shadows.army.map((x) => x.rank)).toEqual([0, 1, 2, 3]);
     expect(s.shadows.army.map((x) => shadows.levelOf(x))).toEqual([1, 12, 30, 40]);

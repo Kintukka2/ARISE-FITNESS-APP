@@ -2,13 +2,13 @@
  * Equipment: ten slots, six rarities. Every piece's core bonus rolls between
  * 75% and 125% of its design, and its unique properties roll inside their
  * ranges. Both are seeded off the item id, so a piece never changes unless it
- * is upgraded or fused. Three-piece sets pay a bonus for two pieces worn, and for all three.
+ * is upgraded. Three-piece sets pay a bonus for two pieces worn, and for all three.
  * Each level of Ascension opened lets a piece go one upgrade step past perfect.
- * A duplicate of a piece's design can be fused into it; what is worn can be saved as a loadout.
+ * Pieces are forged from blueprints (`core/forge.ts`); what is worn can be saved as a loadout.
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
 import { OVERCHARGE } from '@/data/ascension';
-import { FUSE, LOADOUTS, SET_KEEP, setById, SETS, UPGRADE } from '@/data/sets';
+import { LOADOUTS, SET_KEEP, setById, SETS, UPGRADE } from '@/data/sets';
 import type { Attrs, GearDef, Item, Loadout, Rank, Save, SlotKey, Stat } from './types';
 import { STATS } from './types';
 import { dayKey, rng, round2, uid } from './util';
@@ -47,12 +47,17 @@ export { ISSUED };
 export const slotsFor = (d: GearDef | undefined) => (d ? SLOTS.filter((s) => s.accepts === d.slot) : []);
 export const ofRank = (r: Rank) => EQUIPMENT.filter((d) => d.rank === r);
 
-/** Roll a new instance of a design. */
-export function make(defId: string, id = uid('it')): Item {
+/**
+ * Roll a new instance of a design. `floor` lifts every roll that share of the way from its worst
+ * toward its best before it is drawn: what familiarity with a design does to a piece forged from it.
+ */
+export function make(defId: string, id = uid('it'), floor = 0): Item {
   const d = defs.get(defId)!;
   const r = rng('arise|item|' + id);
-  const q = d.issued ? 1 : round2(Q_LOW + r() * (Q_HIGH - Q_LOW));
-  const rolls = (d.rolls ?? []).map((x) => round2(x.min + r() * (x.max - x.min)));
+  const f = Math.max(0, Math.min(1, floor));
+  const at = () => f + r() * (1 - f);
+  const q = d.issued ? 1 : round2(Q_LOW + at() * (Q_HIGH - Q_LOW));
+  const rolls = (d.rolls ?? []).map((x) => round2(x.min + at() * (x.max - x.min)));
   return { id, defId, q, rolls };
 }
 
@@ -68,9 +73,9 @@ export function issueKit(s: Save): Item[] {
   return out;
 }
 
-export function grant(s: Save, defId: string, id?: string): Item | null {
+export function grant(s: Save, defId: string, id?: string, floor = 0): Item | null {
   if (!defs.has(defId)) return null;
-  const it = make(defId, id);
+  const it = make(defId, id, floor);
   s.items.push(it);
   if (!s.found.includes(defId)) s.found.push(defId);
   (s.newItems ??= []).push(it.id);
@@ -384,57 +389,6 @@ export function pastPerfect(it: Item, over: number): Item {
   };
 }
 
-// ------------------------------------------------------------------ fusion
-
-/** Duplicates of a piece's design it can take in: held, not worn, not starred, not issued, not a masterwork. The weakest first. */
-export function fodderFor(s: Save, it: Item): Item[] {
-  const d = defOf(it);
-  if (!d || d.issued) return [];
-  const worn = new Set(Object.values(s.equipped));
-  return s.items.filter((x) => x.id !== it.id && x.defId === it.defId && !worn.has(x.id) && !s.favourites.includes(x.id) && !x.master)
-    .sort((a, b) => score(a) - score(b) || a.q - b.q);
-}
-
-/**
- * A piece with a duplicate fed into it: the better quality and the better of each property, then
- * FUSE.steps upgrade steps toward perfect, never past it. Null when it would gain nothing.
- */
-export function fusedWith(it: Item, f: Item): Item | null {
-  const base: Item = { ...it, q: Math.max(it.q, f.q), rolls: it.rolls.map((v, k) => Math.max(v, f.rolls[k] ?? v)) };
-  let x = base;
-  for (let n = 0; n < FUSE.steps; n++) {
-    const next = upgradeStep(x, 0);
-    if (!next) break;
-    x = next;
-  }
-  return x.q !== it.q || x.rolls.some((v, k) => v !== it.rolls[k]) ? x : null;
-}
-
-/** Feed a duplicate into a piece. Returns the piece as it now is, or null if it could not be done. Mutates. */
-export function fuse(s: Save, targetId: string, fodderId: string): Item | null {
-  const i = s.items.findIndex((x) => x.id === targetId);
-  const it = s.items[i];
-  const f = it && fodderFor(s, it).find((x) => x.id === fodderId);
-  const next = it && f ? fusedWith(it, f) : null;
-  if (!next || !f) return null;
-  s.items[i] = next;
-  remove(s, f.id);
-  return next;
-}
-
-/** Every duplicate fed into every worn piece that can still take one: what a hunter who keeps up does. Mutates. */
-export function fuseWorn(s: Save): number {
-  let n = 0;
-  for (const it of worn(s)) {
-    for (const f of fodderFor(s, it)) {
-      const cur = s.items.find((x) => x.id === it.id)!;
-      if (!fuse(s, cur.id, f.id)) break;
-      n++;
-    }
-  }
-  return n;
-}
-
 // ------------------------------------------------------------------ comparing
 
 /** The worn piece a piece would take the place of: what is worn where it goes, the weaker for a ring. Null if it is worn, or a slot for it is empty. */
@@ -470,7 +424,7 @@ export function saveLoadout(s: Save, i: number, day = dayKey()) {
 export function clearLoadout(s: Save, i: number) {
   if (s.loadouts?.[i]) s.loadouts[i] = null;
 }
-/** The pieces of a loadout still held, slot by slot; those recycled or fused away are missing. */
+/** The pieces of a loadout still held, slot by slot; those recycled are missing. */
 export function loadoutHeld(s: Save, l: Loadout): { held: Partial<Record<SlotKey, Item>>; missing: number } {
   const held: Partial<Record<SlotKey, Item>> = {};
   let missing = 0;

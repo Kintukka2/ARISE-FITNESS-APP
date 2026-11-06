@@ -3,7 +3,8 @@ import { defaults } from '@/core/save';
 import { dungeonById } from '@/core/gates';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
-import * as shop from '@/core/shop';
+import * as forge from '@/core/forge';
+import { ALLOYS, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import * as spire from '@/core/spire';
 import type { Save } from '@/core/types';
 import { SETS, UPGRADE } from '@/data/sets';
@@ -81,15 +82,19 @@ describe('a set’s home gate', () => {
     return raid.finish(s, d, run, 'cleared', now);
   }
 
-  it('leaves a piece of its set on every clear, one the hunter does not hold yet', () => {
+  it('its first clear leaves a blueprint of its set the hunter does not know, and every clear its boss’s trophy', () => {
     const s = typicalHunter(34, 'C', 'home');
     const pieces = gear.setPieces('Champion').map((d) => d.id);
-    s.items = s.items.filter((it) => !pieces.includes(it.defId));
-    gear.grant(s, pieces[0], 'held');
+    s.blueprints = [pieces[0]];
+    const trophy = forge.trophyOfSet('Champion')!;
+    expect(trophy).toBe(forge.trophyAt(dungeonById('DNG-015')!));
     const res = clear(s, 'DNG-015');
-    const got = res.loot.map((it) => it.defId).filter((id) => pieces.includes(id));
-    expect(got.length).toBeGreaterThan(0);
+    const got = res.blueprints.filter((id) => pieces.includes(id));
+    expect(got).toHaveLength(1);
     expect(got[0]).not.toBe(pieces[0]);
+    expect(forge.knows(s, got[0])).toBe(true);
+    expect(res.mats[trophy]).toBe(1);
+    expect(forge.held(s, trophy)).toBe(1);
   });
 
   it('a gate that is home to no set leaves none, and a Spire block in a home gate’s shape does', () => {
@@ -102,19 +107,20 @@ describe('a set’s home gate', () => {
 });
 
 describe('upgrading', () => {
-  it('raises quality and every property a step at a time, to perfect, for a stated price', () => {
+  it('raises quality and every property a step at a time, to perfect, for alloys and shards', () => {
     const def = gear.ofRank('C').find((d) => (d.rolls ?? []).length > 0)!;
     const s = holding(def.id);
     s.wallet.shards = 100000;
+    forge.give(s, { [forge.alloyId('C')]: 1000 });
     const it = () => s.items[0];
     it().q = gear.Q_LOW;
     it().rolls = (def.rolls ?? []).map((r) => r.min);
-    const cost = shop.upgradeCost(it())!;
-    expect(cost).toBe(shop.stepCost('C'));
+    const cost = forge.upgradeCost(it())!;
+    expect(cost.mats).toEqual({ [forge.alloyId('C')]: UPGRADE_COST.alloy[2] });
     let steps = 0;
-    while (shop.upgradeCost(it()) !== null) {
+    while (forge.upgradeCost(it()) !== null) {
       const before = it();
-      expect(shop.upgrade(s, before.id)).toBe(true);
+      expect(forge.upgrade(s, before.id)).toBe(true);
       expect(it().q).toBeGreaterThanOrEqual(before.q);
       steps++;
     }
@@ -122,62 +128,26 @@ describe('upgrading', () => {
     expect(it().q).toBe(gear.Q_HIGH);
     expect(it().rolls).toEqual((def.rolls ?? []).map((r) => r.max));
     expect(it().up).toBe(steps);
-    expect(s.wallet.shards).toBe(100000 - steps * cost);
-    expect(shop.upgrade(s, it().id)).toBe(false);
+    expect(s.wallet.shards).toBe(100000 - steps * cost.shards);
+    expect(forge.held(s, forge.alloyId('C'))).toBe(1000 - steps * UPGRADE_COST.alloy[2]);
+    expect(forge.upgrade(s, it().id)).toBe(false);
   });
 
-  it('is refused when the shards are short, and the issued kit is not for upgrading', () => {
+  it('is refused when the shards or the alloy are short, and the issued kit is not for upgrading', () => {
     const def = gear.ofRank('B')[0];
     const s = holding(def.id);
     s.items[0].q = gear.Q_LOW;
-    s.wallet.shards = shop.stepCost('B') - 1;
-    expect(shop.upgrade(s, s.items[0].id)).toBe(false);
+    const cost = forge.upgradeCost(s.items[0])!;
+    s.wallet.shards = cost.shards;
+    expect(forge.upgrade(s, s.items[0].id)).toBe(false);
+    forge.give(s, cost.mats);
+    s.wallet.shards = cost.shards - 1;
+    expect(forge.upgrade(s, s.items[0].id)).toBe(false);
     expect(s.items[0].q).toBe(gear.Q_LOW);
-    expect(s.wallet.shards).toBe(shop.stepCost('B') - 1);
+    expect(forge.held(s, forge.alloyId('B'))).toBe(UPGRADE_COST.alloy[3]);
     gear.issueKit(s);
     const kit = s.items.find((x) => gear.defOf(x)?.issued)!;
-    expect(shop.upgradeCost(kit)).toBeNull();
-  });
-});
-
-describe('fusion', () => {
-  const D = 'CHAMPION_HELM';
-  it('feeds a duplicate into a piece: the better rolls of the two, then steps toward perfect', () => {
-    const s = holding(D, D, 'WARDEN_HELM');
-    const [a, b] = s.items;
-    // Make the duplicate the better roll, so the piece takes its quality.
-    s.items[0] = { ...a, q: 0.8, rolls: [3.2] };
-    s.items[1] = { ...b, q: 1.1, rolls: [4.6] };
-    expect(gear.fodderFor(s, s.items[0]).map((x) => x.id)).toEqual([b.id]);
-    const next = gear.fuse(s, a.id, b.id)!;
-    expect(next.q).toBeGreaterThan(1.1);
-    expect(next.rolls[0]).toBeGreaterThan(4.6);
-    expect(s.items.some((x) => x.id === b.id)).toBe(false);
-    expect(s.items.find((x) => x.id === a.id)).toEqual(next);
-  });
-
-  it('never fuses past perfect, a different design, a worn, starred or masterwork piece', () => {
-    const s = holding(D, D, D, D, 'WARDEN_HELM');
-    const [a, b, c, m, w] = s.items;
-    gear.equip(s, b.id);
-    gear.toggleFav(s, c.id);
-    s.items[3] = { ...m, master: 1 };
-    expect(gear.fodderFor(s, a).map((x) => x.id)).toEqual([]);
-    expect(gear.fuse(s, a.id, w.id)).toBeNull();
-    // A perfect piece takes nothing more from a duplicate.
-    gear.toggleFav(s, c.id);
-    let p = s.items[0];
-    for (let x = gear.upgradeStep(p, 0); x; x = gear.upgradeStep(x, 0)) p = x;
-    s.items[0] = p;
-    expect(gear.fusedWith(p, c)).toBeNull();
-    expect(gear.fuse(s, a.id, c.id)).toBeNull();
-  });
-
-  it('a hunter who keeps up feeds every duplicate into what is worn', () => {
-    const s = holding(D, D, D);
-    gear.equip(s, s.items[0].id);
-    expect(gear.fuseWorn(s)).toBe(2);
-    expect(s.items).toHaveLength(1);
+    expect(forge.upgradeCost(kit)).toBeNull();
   });
 });
 
@@ -204,7 +174,7 @@ describe('loadouts', () => {
     gear.equip(s, h1.id);
     gear.saveLoadout(s, 2);
     gear.equip(s, h2.id);
-    shop.recycle(s, h1.id);
+    forge.recycle(s, h1.id);
     expect(gear.loadoutHeld(s, s.loadouts[2]!).missing).toBe(1);
     gear.wearLoadout(s, 2);
     expect(s.equipped.head).toBe(h2.id);
@@ -218,7 +188,7 @@ describe('the bag', () => {
     expect(s.newItems).toEqual([a.id, b.id, c.id]);
     gear.seeItem(s, a.id);
     expect(gear.isNew(s, a.id)).toBe(false);
-    shop.recycle(s, b.id);
+    forge.recycle(s, b.id);
     expect(s.newItems).toEqual([c.id]);
     gear.seeAllItems(s);
     expect(s.newItems).toEqual([]);
@@ -240,21 +210,21 @@ describe('the bag', () => {
     const [a, b, c] = s.items;
     gear.equip(s, a.id);
     gear.toggleFav(s, b.id);
-    const r = shop.recycleSome(s, [a.id, b.id, c.id]);
+    const r = forge.recycleSome(s, [a.id, b.id, c.id]);
     expect(r.count).toBe(1);
     expect(s.items.map((x) => x.id)).toEqual([a.id, b.id]);
   });
 
-  it('recycles the issued kit once it is taken off, for what its score is worth', () => {
+  it('recycles the issued kit once it is taken off, into Iron Scrap', () => {
     const s = defaults();
     gear.issueKit(s);
     const kit = s.items.filter((x) => gear.defOf(x)?.issued);
     expect(kit.length).toBe(5);
     const off = kit.find((x) => !gear.slotOf(s, x)) ?? kit[0];
+    expect(forge.recycle(s, off.id)).toBeNull();
     if (gear.slotOf(s, off)) gear.unequip(s, gear.slotOf(s, off)!);
-    const v = shop.scrapValue(off);
-    expect(v).toBeGreaterThan(0);
-    expect(shop.recycle(s, off.id)).toBe(v);
+    expect(forge.recycle(s, off.id)).toEqual({ [ALLOYS.E.id]: SALVAGE.issued });
+    expect(forge.held(s, ALLOYS.E.id)).toBe(SALVAGE.issued);
     expect(s.items.some((x) => x.id === off.id)).toBe(false);
   });
 });

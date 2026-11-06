@@ -5,6 +5,7 @@
 import { DUNGEONS } from '@/data/dungeons';
 import { BEATS } from '@/data/narrative';
 import { ISSUED } from '@/data/equipment';
+import { FAMILIARITY, FAMILIARITY_MAX } from '@/data/forge';
 import { SHADOW_RANKS } from '@/data/shadows';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
 import { defOf, power, setPieces, setsIn, SLOTS, worn } from './gear';
@@ -51,9 +52,15 @@ export const MISSIONS: Mission[] = [
   { id: 'bestiary', name: 'Bestiary', tier: 'minor', did: 'Fell creatures of 5 different families.', grant: { INT: 1 }, check: (s) => families(s) >= 5 },
   { id: 'full_set', name: 'Matched', tier: 'minor', did: 'Equip every piece of a set at once.', grant: { free: 1 }, check: (s) => [...setsIn(worn(s))].some(([id, n]) => n >= setPieces(id).length) },
   { id: 'spire_first', name: 'Up', tier: 'minor', did: 'Clear a block of the Pale Spire.', grant: { AGI: 1 }, check: (s) => s.spire.top >= BLOCK },
+  { id: 'first_forge', name: 'Made, Not Found', tier: 'minor', did: 'Forge an item.', grant: { STR: 1 }, check: (s) => (s.stats.crafted ?? 0) >= 1 },
+  {
+    id: 'second_nature', name: 'Second Nature', tier: 'minor', did: `Reach Familiarity ${FAMILIARITY_MAX} with a weapon.`, grant: { free: 1 },
+    check: (s) => Object.values(s.familiarity ?? {}).some((p) => p >= FAMILIARITY.at[FAMILIARITY_MAX - 1]),
+  },
 
   // Directive: 2 to 3 points
   { id: 'thirty_unbroken', name: 'Thirty Unbroken', tier: 'major', did: 'Clear 30 Gates in a row without being carried out.', grant: { STR: 1, VIT: 1 }, check: (s) => s.gates.bestUnbroken >= 30 },
+  { id: 'master_smith', name: 'Master Smith', tier: 'major', did: 'Forge 50 items.', grant: { STR: 1, PER: 1 }, check: (s) => (s.stats.crafted ?? 0) >= 50 },
   { id: 'reaching', name: 'Reaching', tier: 'major', did: 'Clear 10 Gates one grade above your own.', grant: { INT: 1, PER: 1 }, check: (s) => s.stats.reachClears >= 10 },
   { id: 'well_rounded', name: 'No Weak Side', tier: 'major', did: `Raise all ${STATS.length} stats to 20 or more.`, grant: { INT: 2 }, check: (s) => STATS.every((k) => s.hunter.attrs[k] >= 20) },
   { id: 'specialist', name: 'Specialist', tier: 'major', did: 'Raise one stat to 50.', grant: { free: 3 }, check: (s) => STATS.some((k) => s.hunter.attrs[k] >= 50) },

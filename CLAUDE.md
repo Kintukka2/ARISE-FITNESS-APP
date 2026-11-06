@@ -27,8 +27,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - `src/core/` never touches the DOM. Engine functions take the save and mutate it. Screens call
   them inside `store.update(...)`, and `src/app/flow.ts` narrates what happened. Put game logic in
   `core/` so it can be tested, not in a screen.
-- Every reward from a raid (experience, shards, loot, records, Daily Quests) is settled in one
-  engine call, `raid.finish`. Nothing pays out on a tap that can be undone.
+- Every reward from a raid (experience, shards, materials, blueprints, pieces found whole, weapon
+  Familiarity, records, Daily Quests) is settled in one engine call, `raid.finish`. Nothing pays out on a
+  tap that can be undone.
 - The day's Daily Quests (`contracts` in code) are written to the save the first time they are shown (`contracts.issue`),
   so nothing redraws them that day. Change what they pay and rerun `npm run balance`; its
   days-to-rank count them.
@@ -44,6 +45,12 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.
 - The brief, Auto and calibration all walk the System's road (`map.systemRoad`) and make the
   System's choices (`raid.systemChoice`). Change either and you must recalibrate.
+- Gear is forged (`core/forge.ts`, `data/forge.ts`): Gates leave materials and now and then a
+  blueprint, and a blueprint forges its design as often as the materials allow. There is no fusion.
+  Weapon Familiarity reaches the fight only through `raid.heroSpec` (`forge.familiarityBonus`); the
+  balance tools' hunters carry it (`typicalHunter` Familiarity 2, `keptUpHunter` the most). Change
+  what it adds, or what they carry, and you must recalibrate. The campaign forges, recycles and
+  upgrades as `smith` in `scripts/campaign.ts` does; change what anything costs or drops and rerun it.
 - The skill tree (`core/skilltree.ts`, `data/tree.ts`) reaches the fight only through
   `raid.heroSpec`, and an open run keeps the hero it walked in with. Skill Points are never stored:
   they are what the level and the ranks claimed have earned, less what the tree holds. The balance

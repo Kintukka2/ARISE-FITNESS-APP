@@ -10,7 +10,7 @@ import type { Effect } from '@/data/nodes';
 import type { Action, Kind, WinOpts } from './overlays';
 
 /** The only headers a System window may carry. Cards carry their own name instead. */
-export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Stats', 'Skills', 'Equipment', 'Inventory', 'Exchange', 'Gates', 'Army', 'Settings', 'Guide'] as const;
+export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Stats', 'Skills', 'Equipment', 'Inventory', 'Forge', 'Exchange', 'Gates', 'Army', 'Settings', 'Guide'] as const;
 export type Header = (typeof HEADERS)[number];
 
 /** The window kinds the System speaks in. The others belong to Valcorde, the app and the `???` voice. */
@@ -92,12 +92,13 @@ export function questRewards(rewards: string[], kind: Kind = 'system'): WinOpts 
  * What an event inside a Gate did, as System lines under its narration: the cost in red, the gain
  * in green. The narration says what happened; this says what it was worth.
  */
-export function outcome(e: Effect, got: { shards?: number; item?: string; blessing?: { name: string; text: string } } = {}): string[] {
+export function outcome(e: Effect, got: { shards?: number; item?: string; mats?: string; blessing?: { name: string; text: string } } = {}): string[] {
   const out: string[] = [];
   if (e.hurt) out.push(red(`HP ${signed(-Math.round(e.hurt * 100), '%')}`));
   if (e.heal) out.push(gain(`Party HP ${signed(Math.round(e.heal * 100), '%')}`));
   if (got.shards) out.push(`Mana Shards ${gain(signed(got.shards))} banked`);
   if (got.item) out.push(`${tag(got.item, 'Item')} banked`);
+  if (got.mats) out.push(`${gain(got.mats)} banked`);
   if (got.blessing) out.push(`${tag(got.blessing.name, 'Blessing')} ${gain(got.blessing.text)}`);
   if (e.mana) out.push(e.mana > 0 ? gain(`MP ${signed(Math.round(e.mana * 100), '%')}`) : red(`MP ${signed(Math.round(e.mana * 100), '%')}`));
   if (e.fatigue) out.push(e.fatigue < 0 ? gain(`Fatigue ${signed(e.fatigue)}`) : red(`Fatigue ${signed(e.fatigue)}`));

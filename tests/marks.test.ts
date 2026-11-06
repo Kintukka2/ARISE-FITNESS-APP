@@ -7,7 +7,8 @@ import * as marks from '@/core/marks';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
 import * as shadows from '@/core/shadows';
-import * as shop from '@/core/shop';
+import * as forge from '@/core/forge';
+import { UPGRADE_COST } from '@/data/forge';
 import { RAID_FATIGUE } from '@/core/vitals';
 import { ASCENSION_RULED, MARK_MAX, MARKS, OVERCHARGE } from '@/data/ascension';
 import { UPGRADE } from '@/data/sets';
@@ -103,6 +104,7 @@ describe('past perfect', () => {
     s.hunter.rank = 'S';
     gear.grant(s, def.id, 'past|0');
     s.wallet.shards = 100000;
+    forge.give(s, { [forge.alloyId('C')]: 1000, [forge.EMBER.id]: 1000 });
     s.items[0].q = gear.Q_HIGH;
     s.items[0].rolls = (def.rolls ?? []).map((r) => r.max);
     return { s, def };
@@ -111,8 +113,8 @@ describe('past perfect', () => {
   it('goes nowhere until a level is opened', () => {
     const { s } = perfect();
     expect(gear.upgradeStep(s.items[0])).toBeNull();
-    expect(shop.upgradeCost(s.items[0], overCap(s))).toBeNull();
-    expect(shop.upgrade(s, s.items[0].id)).toBe(false);
+    expect(forge.upgradeCost(s.items[0], overCap(s))).toBeNull();
+    expect(forge.upgrade(s, s.items[0].id, overCap(s))).toBe(false);
   });
 
   it('takes a step past perfect for every level opened, each dearer than the last', () => {
@@ -123,20 +125,21 @@ describe('past perfect', () => {
     let last = 0;
     for (let k = 1; k <= cap; k++) {
       const before = s.items[0];
-      const cost = shop.upgradeCost(before, cap)!;
-      expect(cost).toBe(shop.overCost('C', k));
-      expect(cost).toBeGreaterThan(last);
-      last = cost;
-      expect(shop.upgrade(s, before.id)).toBe(true);
+      const cost = forge.upgradeCost(before, cap)!;
+      // Each step past takes Ember, one more than the last, besides its alloy.
+      expect(cost.mats[forge.EMBER.id]).toBe(UPGRADE_COST.ember * k);
+      expect(cost.mats[forge.alloyId('C')]).toBe(UPGRADE_COST.overAlloy);
+      expect(cost.shards).toBeGreaterThan(last);
+      last = cost.shards;
+      expect(forge.upgrade(s, before.id, cap)).toBe(true);
       expect(s.items[0].over).toBe(k);
       expect(s.items[0].q).toBeCloseTo(before.q + (gear.Q_HIGH - gear.Q_LOW) * OVERCHARGE.share, 6);
       (def.rolls ?? []).forEach((r, i) => expect(s.items[0].rolls[i]).toBeCloseTo(before.rolls[i] + (r.max - r.min) * OVERCHARGE.share, 1));
     }
-    expect(shop.upgrade(s, s.items[0].id)).toBe(false);
+    expect(forge.upgrade(s, s.items[0].id, cap)).toBe(false);
     expect(gear.qualityText(s.items[0])).toBe(`100% +${cap}`);
     expect(gear.score(s.items[0])).toBeGreaterThan(gear.RARITY.C.score * gear.Q_HIGH);
-    // The first step past perfect costs no more than a step toward it; it raises half as much.
-    expect(shop.overCost('C', 1)).toBe(shop.stepCost('C'));
+    // A step past perfect raises half as much as a step toward it.
     expect(OVERCHARGE.share).toBeLessThan(UPGRADE.share);
   });
 
@@ -145,15 +148,16 @@ describe('past perfect', () => {
     s.hunter.rank = 'A';
     s.ascension.unlocked = 6;
     expect(overCap(s)).toBe(0);
-    expect(shop.upgradeCost(s.items[0], overCap(s))).toBeNull();
-    expect(shop.upgrade(s, s.items[0].id)).toBe(false);
+    expect(forge.upgradeCost(s.items[0], overCap(s))).toBeNull();
+    expect(forge.upgrade(s, s.items[0].id, overCap(s))).toBe(false);
   });
 
-  it('a piece below perfect is raised toward it first, at the usual price', () => {
+  it('a piece below perfect is raised toward it first, at the usual cost', () => {
     const { s } = perfect();
     s.ascension.unlocked = 2;
     s.items[0].q = gear.Q_LOW;
-    expect(shop.upgradeCost(s.items[0], overCap(s))).toBe(shop.stepCost('C'));
+    expect(forge.upgradeCost(s.items[0], overCap(s))).toEqual(forge.upgradeCost(s.items[0], 0));
+    expect(forge.upgradeCost(s.items[0], overCap(s))!.mats[forge.EMBER.id]).toBeUndefined();
     expect(gear.upgradeStep(s.items[0], overCap(s))!.over).toBeUndefined();
   });
 });

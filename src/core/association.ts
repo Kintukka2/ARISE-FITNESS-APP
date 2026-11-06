@@ -9,6 +9,7 @@
 import { ASSOC, ASSOC_LOOP, ASSOC_PAY, type AssocKind } from '@/data/association';
 import { DUNGEONS } from '@/data/dungeons';
 import { powerOf } from './combat';
+import * as forge from './forge';
 import { enemyById, PRACTICE_GATE } from './gates';
 import { licensedRank } from './licence';
 import { GATE_XP, grantXP, type XpResult } from './progression';
@@ -19,7 +20,7 @@ import { rng } from './util';
 
 export type AssocReward =
   | { kind: 'potion'; id: 'hp' | 'mp' | 'fatigue'; n: number }
-  | { kind: 'field' | 'shards' | 'survey' | 'satchel'; n: number };
+  | { kind: 'field' | 'shards' | 'survey' | 'satchel' | 'blueprint' | 'alloy'; n: number };
 
 export interface AssocQuest {
   /** Its place in the line, from 0. */
@@ -113,7 +114,11 @@ export function count(s: Save, d: Dungeon, run: OpenRaid, outcome: 'cleared' | '
   return { from, to: q.got, need: q.need };
 }
 
-export interface AssocPaid { quest: AssocQuest; xp: XpResult | null; shards: number; field: number; next: AssocQuest | null }
+export interface AssocPaid {
+  quest: AssocQuest; xp: XpResult | null; shards: number; field: number; next: AssocQuest | null;
+  /** The blueprint it paid, if it paid one; or the alloy it paid, for a blueprint when every design of its grade was known, or as alloy. */
+  blueprint: string | null; mats: Record<string, number>;
+}
 
 /**
  * Report a finished job: its experience, and what else it pays, then the next job. A field potion
@@ -127,6 +132,10 @@ export function report(s: Save): AssocPaid | null {
   let shards = 0;
   let field = 0;
   const w = q.reward;
+  let blueprint: string | null = null;
+  let mats: Record<string, number> = {};
+  if (w?.kind === 'blueprint') ({ blueprint, mats } = forge.leaveBlueprint(s, q.grade, rng(`arise|assoc-blueprint|${q.n}|${q.grade}`)));
+  else if (w?.kind === 'alloy') { mats = { [forge.alloyId(q.grade)]: w.n }; forge.give(s, mats); }
   if (w?.kind === 'potion') shop.stockUp(s, w.id, w.n);
   else if (w?.kind === 'survey') shop.stockUp(s, 'survey', w.n);
   else if (w?.kind === 'satchel') s.satchelPlus = (s.satchelPlus ?? 0) + w.n;
@@ -140,7 +149,7 @@ export function report(s: Save): AssocPaid | null {
   s.assoc!.n += 1;
   s.assoc!.quest = null;
   const next = issue(s);
-  return { quest: q, xp, shards, field, next };
+  return { quest: q, xp, shards, field, next, blueprint, mats };
 }
 
 /** Use a Gate Survey on a Gate: its map shows in the brief from then on. False if none is held, or it shows already. Mutates. */

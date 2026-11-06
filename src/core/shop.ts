@@ -1,26 +1,24 @@
 /**
- * Mana Shards and the Exchange. Eight pieces a day, redrawn at midnight with
- * the Gate board, most at the hunter's grade and some well above it at a
+ * Mana Shards and the Exchange. A shelf of blueprints a day, redrawn at midnight
+ * with the Gate board, most at the hunter's grade and some well above it at a
  * premium. Potions are always in stock: most are drunk on purchase, and
  * field potions go in the satchel for the hunter's turn in a fight.
  */
 import { EQUIPMENT } from '@/data/equipment';
-import { overCap } from './ascension';
-import { defOf, gearDef, grant, make, Q_HIGH, Q_LOW, RARITY, score, upgradeStep } from './gear';
-import { OVERCHARGE } from '@/data/ascension';
-import { UPGRADE } from '@/data/sets';
-import type { Item, Rank, Save, StockId } from './types';
+import { BLUEPRINTS } from '@/data/forge';
+import * as forge from './forge';
+import { gearDef, RARITY } from './gear';
+import type { Rank, Save, StockId } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
 import * as vitals from './vitals';
 import { FIELD_POTION_HEAL } from './combat';
 import { licensedRank } from './licence';
 
-export const STOCK = 8;
+export const STOCK = BLUEPRINTS.shelf;
+export const BLUEPRINT_SHELF = STOCK;
 export const GATE_SHARDS: Record<Rank, number> = { E: 10, D: 16, C: 26, B: 42, A: 68, S: 110 };
-const PRICE_PER_SCORE = 10;
 export const REACH_PREMIUM = 0.5;
-const RECYCLE_SHARE = 0.05;
 
 /** How far from the hunter's grade an offer lands, and how often. */
 const SPREAD = [
@@ -57,15 +55,18 @@ export function pay(s: Save, n: number): boolean {
 export const gateShards = (rank: string, share = 1) => Math.round((GATE_SHARDS[rank as Rank] ?? 0) * share);
 
 const round5 = (n: number) => Math.round(n / 5) * 5;
-export const basePrice = (it: Item) => round5(score(it) * PRICE_PER_SCORE);
-export const scrapValue = (it: Item) => Math.max(1, Math.round(basePrice(it) * RECYCLE_SHARE));
+/** What a blueprint costs at the Exchange: its design's score at its middle roll, at a price a point. */
+export const blueprintPrice = (defId: string) => {
+  const d = gearDef(defId);
+  return d ? round5(RARITY[d.rank as Rank].score * BLUEPRINTS.price) : 0;
+};
 
 const GEAR_BY_RANK: Record<Rank, string[]> = { E: [], D: [], C: [], B: [], A: [], S: [] };
 for (const d of EQUIPMENT) GEAR_BY_RANK[d.rank as Rank]?.push(d.id);
 
-export interface Offer { index: number; item: Item; price: number; reach: number; sold: boolean }
+export interface Offer { index: number; defId: string; price: number; reach: number; sold: boolean; known: boolean }
 
-/** Today's shelf. Deterministic per day and grade; `sold` reads the save. */
+/** Today's shelf of blueprints. Deterministic per day and grade; `sold` and `known` read the save. */
 export function shelf(s: Save, day = dayKey()): Offer[] {
   const win = dayIndex(day);
   const r = rng('arise|shop|' + win);
@@ -82,87 +83,22 @@ export function shelf(s: Save, day = dayKey()): Offer[] {
     const defId = pool[Math.floor(r() * pool.length)];
     used.add(defId);
     const index = out.length;
-    const item = make(defId, `shp${win}-${index}`);
     const reach = Math.max(0, at - mine - 1);
-    out.push({ index, item, reach, price: round5(basePrice(item) * (1 + REACH_PREMIUM * reach)), sold: s.shop.day === day && s.shop.taken.includes(index) });
+    out.push({
+      index, defId, reach, price: round5(blueprintPrice(defId) * (1 + REACH_PREMIUM * reach)),
+      sold: s.shop.day === day && s.shop.taken.includes(index), known: forge.knows(s, defId),
+    });
   }
   return out;
 }
 
-
-export function buy(s: Save, index: number, day = dayKey()): Item | null {
+/** Buy a blueprint off the shelf: it is learned. False if it is sold, known or the shards are short. Mutates. */
+export function buy(s: Save, index: number, day = dayKey()): boolean {
   const offer = shelf(s, day).find((o) => o.index === index);
-  if (!offer || offer.sold || !pay(s, offer.price)) return null;
+  if (!offer || offer.sold || offer.known || !pay(s, offer.price)) return false;
   if (s.shop.day !== day) s.shop = { day, taken: [] };
   s.shop.taken.push(index);
-  return grant(s, offer.item.defId, offer.item.id);
-}
-
-export function recycle(s: Save, itemId: string): number {
-  const it = s.items.find((i) => i.id === itemId);
-  const d = it && gearDef(it.defId);
-  if (!it || !d || Object.values(s.equipped).includes(itemId)) return 0;
-  const paid = scrapValue(it);
-  s.items = s.items.filter((i) => i.id !== itemId);
-  s.favourites = s.favourites.filter((f) => f !== itemId);
-  s.newItems = (s.newItems ?? []).filter((f) => f !== itemId);
-  earn(s, paid);
-  return paid;
-}
-
-/** Everything not worn and not starred, of these grades. */
-export function scrapMatches(s: Save, ranks: string[]): Item[] {
-  const worn = new Set(Object.values(s.equipped));
-  return s.items.filter((it) => {
-    const d = gearDef(it.defId);
-    return d && !worn.has(it.id) && !s.favourites.includes(it.id) && ranks.includes(d.rank);
-  });
-}
-
-/** Break down the pieces chosen, skipping any worn or starred. Returns how many went and what they paid. Mutates. */
-export function recycleSome(s: Save, ids: string[]) {
-  let paid = 0;
-  let count = 0;
-  for (const id of ids) {
-    if (s.favourites.includes(id)) continue;
-    const got = recycle(s, id);
-    if (got) { paid += got; count++; }
-  }
-  return { count, paid };
-}
-
-export function recycleAll(s: Save, ranks: string[]) {
-  let paid = 0;
-  const doomed = scrapMatches(s, ranks);
-  for (const it of doomed) paid += recycle(s, it.id);
-  return { count: doomed.length, paid };
-}
-
-// ------------------------------------------------------------------ upgrades
-
-/** What an upgrade step costs at a rarity: the score a step adds to a piece of it, at a price per point. */
-export const stepCost = (rank: Rank) => Math.max(5, round5(RARITY[rank].score * (Q_HIGH - Q_LOW) * UPGRADE.share * UPGRADE.rate));
-
-/** What the k-th step past perfect costs at a rarity: the score it adds at the usual rate, (1 + k) times over. */
-export const overCost = (rank: Rank, k: number) => Math.max(5, round5(RARITY[rank].score * (Q_HIGH - Q_LOW) * OVERCHARGE.share * UPGRADE.rate * (1 + k)));
-
-/** What the next upgrade step on a piece costs, with `cap` steps past perfect allowed. Null when there is nothing left to raise. */
-export function upgradeCost(it: Item, cap = 0): number | null {
-  const d = defOf(it);
-  const next = d ? upgradeStep(it, cap) : null;
-  if (!d || !next) return null;
-  return next.over ? overCost(d.rank as Rank, next.over) : stepCost(d.rank as Rank);
-}
-
-/** Buy one upgrade step on a held piece, as far past perfect as the hunter's Ascension allows. False if it cannot be raised or the shards are short. Mutates. */
-export function upgrade(s: Save, itemId: string): boolean {
-  const i = s.items.findIndex((x) => x.id === itemId);
-  const it = s.items[i];
-  const cost = it ? upgradeCost(it, overCap(s)) : null;
-  const next = it ? upgradeStep(it, overCap(s)) : null;
-  if (cost === null || !next || !pay(s, cost)) return false;
-  s.items[i] = next;
-  return true;
+  return forge.learn(s, offer.defId);
 }
 
 // ------------------------------------------------------------------ potions

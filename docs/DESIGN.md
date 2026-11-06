@@ -339,17 +339,17 @@ fight was tried and did not narrow it.
   are for two and three pieces worn, not two and four. They are defined as data in `data/sets.ts`,
   in the units the combat engine's gear bonuses already use, and reach the fight through
   `raid.heroSpec`.
-  - **Home gates:** each set has a home gate of its grade, named for it. A clear there turns the
-    first piece of the clear's gear into a piece of the set, one the hunter does not hold yet while
-    there is one, so a set takes three clears of its gate. A Spire block in that gate's shape counts.
+  - **Home gates:** each set has a home gate of its grade, named for it. A clear there turned the
+    first piece of the clear's gear into a piece of the set. Since the Forge it leaves the set's
+    blueprints and its boss's trophy instead. A Spire block in that gate's shape counts.
   - **Auto Equip** leans toward a set the hunter holds two or more pieces of, by more than quality
     can span, so only a much rarer piece breaks a set.
   - **Effect:** a full set lifts a mid-grade hunter's clear rate by two to eight points. Typical
     hunters almost never wear one, so calibration did not move.
 - **Upgrading — built.** From a piece's sheet, each step moves its quality and every property a tenth
   of the way across its design's range, until it is perfect, for a price shown up front (by rarity:
-  60 shards a step at Rare, 270 at Legendary). The issued kit is not upgraded. Recycling stays the
-  way to turn spares into shards; the issued kit can be recycled too, once it is outgrown.
+  60 shards a step at Rare, 270 at Legendary). The issued kit is not upgraded. Recycling turned spares
+  into shards; since the Forge, a step takes alloys too and recycling gives materials (below).
 
 ### 6. Depth for the Shadows — built
 
@@ -711,9 +711,8 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
 
 - **The Inventory** counts what is held, what is New and the designs found, and has two views.
   *Items* is a square to every piece: its rarity's frame, its quality along its foot, and its marks
-  (worn, starred, a set's, better than what is worn, `New`, and `×2` while a duplicate can be fused
-  into it). A tab to every kind, a sort (score, rarity, newest, quality) and four filters (Better,
-  Fusable, Set pieces, Starred) narrow it. *Select* picks pieces to recycle together, by tapping or
+  (worn, starred, a set's, better than what is worn, `New`). A tab to every kind, a sort (score,
+  rarity, newest, quality) and three filters (Better, Set pieces, Starred) narrow it. *Select* picks pieces to recycle together, by tapping or
   by rarity or every duplicate but the best of each design, and a bar counts what they would pay;
   worn, issued and starred pieces cannot be picked. It replaced the separate Recycle sheet.
   *Sets* shows the designs found by rarity and a card to every set: its pieces held, seen or not yet
@@ -724,23 +723,85 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
   score, with what it gains or loses over the worn piece it would replace (`gear.counterpart`, the
   weaker for a ring). Under it: that piece, to tap through to; quality on a bar with the steps to
   perfect and any past it; each stat with its difference; each property with a bar from its design's
-  worst to its best; its set as a card; Fusion; Upgrade; and Equip, the star and Recycle.
-- **Fusion** (`gear.fuse`, `FUSE`). A duplicate of a piece's design, not worn, starred or a
-  masterwork, is fed into it: the piece keeps the better quality and the better of each property,
-  then takes three upgrade steps toward perfect, never past it, for no shards. Duplicates were only
-  worth a little in shards; now they are the cheap way to perfect. The campaign's hunters fuse every
-  duplicate of what they wear before they spend on upgrades.
+  worst to its best; its set as a card; Upgrade; and Equip, the star and Recycle.
+- **Fusion** fed a duplicate into a piece: the better roll of the two and three steps toward
+  perfect. The Forge replaced it (below): a duplicate is now a roll to keep or recycle.
 - **The Equipment sheet** sums what is worn (score, each stat, and the properties and sets as one
   line), shows it on a figure with a slot either side and a line running in to it, the set's hue down
   the edge of a slot whose set is paying, and keeps **three loadouts** (`gear.saveLoadout`,
-  `gear.wearLoadout`): what was worn, saved, and worn again in one tap. A piece of a loadout recycled or
-  fused away is counted missing, and its slot keeps what is worn there.
+  `gear.wearLoadout`): what was worn, saved, and worn again in one tap. A piece of a loadout recycled
+  is counted missing, and its slot keeps what is worn there.
 - **Properties apply as they read.** `rollBonuses` divided every property written as a percentage by
   100, but critical chance and status chance are counted in points, so Critical Chance +9.9% added 0.1
   points. It now divides only for a stat the fight multiplies. `npm run calibrate` was rerun against it:
   37 tunings moved, none by much, and the middle of every grade clears as before (67% at E to 85%
   at B). In the campaign the evening hunter reaches S-Rank on day 59 and Sovereign on day 111, the
   three-session hunter day 31 and day 61, fusing 19 and 27 duplicates on the way.
+
+## The Forge — built
+
+A player asked for gear driven by blueprints and materials, after Warframe's blueprints and
+affinity, Diablo's salvage and the Witcher 3's crafting list: recycling gives materials instead of
+shards, upgrades take materials, Gates leave materials, blueprints are rare and kept for good, a
+blueprint forges its design as often as the materials allow and every piece rolls anew, and a piece
+found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` and `data/forge.ts`.
+
+- **Materials,** four kinds, so a hunter can read a recipe at a glance:
+  - **Alloys,** one to each rarity: Iron Scrap, Gatesteel, Mana Silver, Runesteel, Abyssal Iron,
+    Sovereign Steel. A Gate leaves its own grade's and some of the grade below, so last grade's alloy
+    stays useful as the second line of this grade's recipes.
+  - **Parts,** by the family of the creature felled (`FAMILY_PART`): Monster Hide (Beasts, Dragonkin,
+    Insectoids and their like) for armour, Monster Bone (the Undead, Orcs, Giantkin) for weapons, Mana
+    Cores (Demons, Elementals, Slimes, Constructs) for off-hands and jewellery. Each creature leaves its
+    part 15% of the time and every clear one of each, so which Gates a hunter runs decides what comes
+    fastest, but no recipe stalls for want of one.
+  - **Trophies,** one to the boss of each Gate a set calls home, named for the boss (`Demon Lord
+    Trophy`; a boss ruling two home Gates is told apart by grade). Every clear there leaves one, and a
+    set's piece is forged with one: the home Gate stays where a set is made.
+  - **Ascendant Ember,** half a point a level, rounded up, on every clear entered at Ascension, and
+    twice its level from a Chosen felled. A step past perfect takes it, one more for every step
+    already past, so Ascension pays for its own upgrades.
+- **Recipes** (`forge.recipe`): alloys of the rarity (8 at Common to 24 at Legendary), a few of the
+  rarity below (2 to 5), the part (2 to 8) and a clear and a half's shards; a set's piece also takes
+  its trophy. A row of the Forge says only whether everything is held; the recipe shows each material
+  held over needed, green with enough and red without, after the Witcher's `6/1`.
+- **Blueprints** are kept for good (`s.blueprints`). They come from every Gate's first clear (a sure
+  one; at a set's home, one of the set's), from 10% of other clears and 3% of gatekeepers, from a set's
+  home Gate 30% of the time, from every rank claimed (3 of its grade), from the Pale Spire's week
+  (which paid a piece before), from some of Ryn's jobs, and from the Exchange, whose shelf is four
+  blueprints a day now. A blueprint left is drawn for the kind of piece the hunter is weakest at, its
+  best blueprint the lowest rarity (none at all first), so an empty slot is filled before a full one
+  is bettered. Every design of a rarity known, a blueprint comes as 10 of its alloy instead.
+- **Forging** (`forge.forge`) pays the recipe and grants a new piece, rolled from its own id, New. The
+  recipe sheet turns it over where the Forge button is, by its grade, and lists every piece of the
+  design held with its quality and Recycle: forge, compare, send the poor roll back, forge again.
+- **Recycling** (`forge.recycle`) gives back 40% of the recipe's alloy and half its part, and half the
+  alloy its upgrades took; a masterwork twice that, issued kit 2 Iron Scrap. A reroll costs about half
+  a recipe, a few upgrade steps' worth, so a bottom-third roll is worth sending back and a fair one is
+  worth raising.
+- **Upgrades** (`forge.upgradeCost`) take alloys of the piece's rarity (1 at Common to 4 at Legendary)
+  and shards at 45% of the old price; past perfect, 5 alloys, the Ember and its shards.
+- **Found whole:** 4% of clears and 10% of caches leave a piece; a cache otherwise leaves alloy of the
+  grade below and a part, and an event that found gear finds materials. The Practice Gate still pays
+  its ring, with the iron and hide for a first piece. The Chosen's masterworks are as they were.
+- **Weapon Familiarity** (`s.familiarity`, by design): every creature the party fells while a weapon is
+  carried in is a point toward it, however the run ends. Five ranks, at 40, 120, 260, 480 and 800. Each
+  adds attack and magic +2% while the weapon is worn (`forge.familiarityBonus`, through `heroSpec`), and
+  lifts every roll of that design forged 8% of the way up its range, so a mastered weapon forges from
+  40%. It belongs to the design, so a reforged weapon is known as well as the old, and a new design
+  starts at nothing: changing weapons costs something. The results report it as a System alert.
+- **Saves.** `SAVE_VERSION` 8: every design a save holds becomes a blueprint known, so nothing worn or
+  kept is a design the hunter cannot make again.
+- **Secret Quests:** Made, Not Found (forge an item), Second Nature (a weapon at Familiarity 5) and
+  Master Smith (forge 50).
+- **Balance.** `typicalHunter` carries its weapon at Familiarity 2 and `keptUpHunter` at 5;
+  `npm run calibrate` was rerun, and every tuning moved by a few hundredths. The campaign's hunters
+  forge every slot from the rarest blueprint known for it, reforge a bottom-third roll once, recycle
+  what is not worn, keep the alloy a waiting forge needs, and upgrade only what will stay. Their kit
+  keeps up: the three-session hunter wears a full A kit on day 28 and a full S kit on day 56. They
+  climb a little slower than when every Gate rained gear (the evening hunter reaches S-Rank on day
+  65, the three-session hunter on day 40, against 59 and 31), and clear 93 and 94% of their runs. The
+  heavy player runs short of shards at the top of Ascension, the light player of alloy at A-Rank.
 
 ## Smaller changes from the same playtest
 
@@ -784,9 +845,9 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     cleared, with a tick), its boss or `?`, and a line of chips: what marks it (Training, Chosen,
     Association, Quest, in their own colours, as the tiles' counts had them), its first-clear bounty
     in shards while it has never been cleared, how many of the creatures known to walk in it already
-    serve as Shadows (the boss counts once known), and the set pieces held of all its home sets' (`1/6`).
-    The set pieces once named each set in a chip; a Gate home to two sets carried two long chips, so
-    it is one count now, green once every piece is held. A row opens the brief.
+    serve as Shadows (the boss counts once known), and the set blueprints known of all its home
+    sets' (`1/6`). The set pieces once named each set in a chip; a Gate home to two sets carried two
+    long chips, so it is one count now, green once every blueprint is known. A row opens the brief.
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a
   quest paid waited in its window. It is a quest log now, after a journal's list:
@@ -835,8 +896,9 @@ The gear screens were rebuilt in `screens/Gear.tsx`, and gear took two new mecha
     Association's file, and chips: Cleared or Never cleared, its mark from the board, its Ascension
     level; the Trial's terms (no rest, no withdrawal, no allies) as chips.
   - **The assessment:** the clear rate as a ring in the verdict's colour, beside its lines.
-  - **What it pays:** four small cells (Clear, First clear, Loot, Depth), the bounty in green while
-    unclaimed.
+  - **What it pays:** four small cells (Clear, First clear, Materials, Depth), the bounty in green
+    while unclaimed. Materials names the Gate's alloy and what else its clear leaves: a blueprint on
+    the first, a trophy and its sets' blueprints at a set's home.
   - **Threat:** the boss's card, the Chosen's if one holds the Gate, and a chip to each creature and
     the gatekeeper, after an investigation's other monsters: named once the hunter has been inside,
     as the map is, and violet where one already serves; the head counts the Shadows bound from it,

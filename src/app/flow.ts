@@ -11,7 +11,8 @@ import { enemyById } from '@/core/gates';
 import * as shadows from '@/core/shadows';
 import * as spire from '@/core/spire';
 import { grantText, sweep, type Mission } from '@/core/missions';
-import { reclassify, syncClass, type XpResult } from '@/core/progression';
+import { syncClass, type XpResult } from '@/core/progression';
+import { claim as claimNext } from '@/core/quests';
 import { points as skillPoints } from '@/core/skilltree';
 import { SKILL_POINTS } from '@/data/tree';
 import { reclassification } from '@/core/quests';
@@ -21,6 +22,7 @@ import * as store from '@/store';
 import { fromEl, promotion, rankUp } from '@/ui/arrival';
 import { closeAllSheets, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
+import { bundleText } from '@/ui/forge';
 import { openStatus } from '@/screens/Inventory';
 import { arena, go, type Route } from './router';
 import * as ascension from '@/core/ascension';
@@ -102,11 +104,22 @@ export async function claimRank(plate: Element | null) {
   if (lifted) lifted.style.visibility = 'hidden';
   let claimed = false;
   // A new grade redraws a job of Ryn's left below it (`association.issue`).
-  const claim = () => { if (!claimed) { claimed = !!store.update(reclassify); store.update((x) => association.issue(x)); } };
+  let paid: string[] = [];
+  const claim = () => {
+    if (claimed) return;
+    const r = store.update(claimNext);
+    claimed = !!r;
+    paid = r?.blueprints ?? [];
+    store.update((x) => association.issue(x));
+  };
   const cut = rankUp({ from, was: q.from.key, now: q.to.key, onDark: claim });
   try {
     await cut.ready;
     claim();
+    // The rank's blueprints, reported once the rank has landed.
+    if (paid.length) {
+      await sys({ ...system.notify([...system.event('acquired', paid.map((id) => system.tag(`Blueprint: ${gearDef(id)?.name ?? id}`, 'Item')).join('<br />'))], 'gear'), typed: false });
+    }
     await playBeats();
     await checkAwards();
     await reclassReady();
@@ -225,12 +238,15 @@ export async function weekClosed() {
   sfx.rankUp();
   flash('gold');
   const item = last.item ? gearDef(last.item)?.name : null;
+  const blueprint = last.blueprint ? gearDef(last.blueprint)?.name : null;
   await sys(system.notify([
     '[The Pale Spire has reset.]',
     system.counter('Highest floor last week', last.best),
     `Reward tier: ${last.tier}`,
     `Mana Shards ${system.gain(system.signed(last.shards))}`,
     ...(item ? system.event('acquired', system.tag(item, 'Item')) : []),
+    ...(blueprint ? system.event('acquired', system.tag(`Blueprint: ${blueprint}`, 'Item')) : []),
+    ...(last.mats && Object.keys(last.mats).length ? [system.gain(bundleText(last.mats))] : []),
   ], 'gates'));
 }
 

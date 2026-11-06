@@ -1,5 +1,7 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
-import { FIELD_POTION, GATE_SHARDS, POTIONS, stepCost } from '@/core/shop';
+import { BLUEPRINT_SHELF, FIELD_POTION, GATE_SHARDS, gateShards, POTIONS } from '@/core/shop';
+import * as forge from '@/core/forge';
+import { ALLOYS, BLUEPRINTS, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -9,7 +11,7 @@ import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } 
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
-import { FUSE, LOADOUTS, SETS, UPGRADE } from '@/data/sets';
+import { LOADOUTS, SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
 import { markText, MARKS_MOST } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
@@ -113,7 +115,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'The brief runs the Gate 24 times with your party and grades how often it cleared.',
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade: ${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S. The first clear pays double, once.`,
-      'A clear can also leave gear.',
+      'A clear leaves materials for the Forge, and now and then a blueprint.',
       `Being carried out locks you out of Gates for ${WIPE_LOCK / 36e5} hours.`,
     ],
   },
@@ -260,20 +262,44 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `${SETS.length} sets of three pieces, Rare and up.`,
       'Two pieces of a set worn together pay a bonus, and all three pay another.',
       'The item’s sheet says what each set pays.',
-      'Each set has a home Gate. Every clear there leaves a piece you do not hold yet, while there is one.',
       `An upgrade moves an item’s quality and every property ${UPGRADE.share * 100}% across its design’s range, until it is perfect.`,
       'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
-      `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank.`,
-      `A step costs ${UPGRADE.rate} shards for every point of score it adds: ${stepCost('C')} at Rare, ${stepCost('S')} at Legendary.`,
-      `Fusion feeds a duplicate of an item’s design into it: it keeps the better roll of the two, then takes ${FUSE.steps} upgrade steps toward perfect. The duplicate is gone.`,
-      'A worn, starred or masterwork item is never fed into another.',
+      `A step takes alloys of the item’s rarity and Mana Shards: ${UPGRADE_COST.alloy[2]} ${ALLOYS.C.name} at Rare, ${UPGRADE_COST.alloy[5]} ${ALLOYS.S.name} at Legendary.`,
+      `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank. Each step past also takes ${forge.EMBER.name}, ${UPGRADE_COST.ember} more for every step already past.`,
       'Properties apply in the fight as they read: Critical Chance +9% is 9 points of critical chance.',
       `Save what you wear as a loadout from the Equipment sheet, ${LOADOUTS} in all, and wear it again in one tap.`,
       'An item stays marked New until you look at it, or leave the Inventory.',
       'Select in the Inventory picks items to recycle together. Worn and starred items cannot be picked.',
       'A rarity tapped in Select picks all of it, and tapped again unpicks it.',
-      'The Exchange redraws eight pieces at midnight, mostly at your grade.',
+      `The Exchange redraws ${BLUEPRINT_SHELF} blueprints at midnight, mostly at your grade.`,
       `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}. The Field Potion costs ${FIELD_POTION.price}.`,
+    ],
+  },
+  {
+    title: 'The Forge',
+    lines: [
+      'Gear is forged from blueprints. A blueprint is yours for good, and forges its design as often as you have the materials.',
+      'Every piece forged rolls anew. Forge it again for a better roll, and recycle the one you do not keep.',
+      `Alloys, one to each rarity: ${RANKS.map((r) => ALLOYS[r].name).join(', ')}.`,
+      `Parts: ${PARTS.hide.name} for armour, ${PARTS.bone.name} for weapons, ${PARTS.core.name} for off-hands and jewellery.`,
+      ...(['hide', 'bone', 'core'] as const).map((k) => `${PARTS[k].name} comes from ${Object.keys(FAMILY_PART).filter((f) => FAMILY_PART[f] === k).join(', ')}.`),
+      `A recipe takes alloys of its rarity, a few of the rarity below, its part and Mana Shards: ${RECIPE.alloy[5]} ${ALLOYS.S.name}, ${RECIPE.lower[5]} ${ALLOYS.A.name}, ${RECIPE.part[5]} parts and ${gateShards('S', RECIPE.shards)} shards at Legendary.`,
+      `A set’s piece also takes ${RECIPE.trophy} trophy of its home Gate’s boss. Every clear there leaves one.`,
+      `Fights, gatekeepers and the clear leave alloys of the Gate’s grade, and some of the grade below. Each creature felled leaves its part ${Math.round(DROPS.part * 100)}% of the time.`,
+      `The clear also leaves ${DROPS.clearParts} of every part.`,
+      `${forge.EMBER.name} comes from clears entered at an Ascension level, more the higher it is, and from the Chosen.`,
+      'Every Gate’s first clear leaves a blueprint, for the kind of piece your best blueprint is weakest at. A set’s home Gate leaves one of its own.',
+      `Each rank you claim pays ${BLUEPRINTS.rank} blueprints of its grade, chosen the same way.`,
+      `Any other clear leaves one ${Math.round(BLUEPRINTS.clear * 100)}% of the time, and a gatekeeper ${Math.round(BLUEPRINTS.elite * 100)}%. A set’s home Gate leaves one of its own ${Math.round(BLUEPRINTS.home * 100)}% of the time.`,
+      `When you know every design of a rarity, a blueprint of it comes as ${BLUEPRINTS.known} of its alloy instead.`,
+      'Blueprints also come from the Exchange, from the Pale Spire’s week, and sometimes from Ryn Valcorde.',
+      `A piece found whole is rare: ${Math.round(FORGED.clear * 100)}% of clears, ${Math.round(FORGED.cache * 100)}% of caches.`,
+      `Recycling gives back ${Math.round(SALVAGE.alloy * 100)}% of the recipe’s alloy and ${Math.round(SALVAGE.part * 100)}% of its part, and half the alloy its upgrades took.`,
+      `Issued kit recycles into ${SALVAGE.issued} ${ALLOYS.E.name}.`,
+      `Weapon Familiarity: every creature felled while you carry a weapon is a point toward knowing its design. ${FAMILIARITY_MAX} ranks, at ${FAMILIARITY.at.join(', ')} points.`,
+      `Each rank adds Attack and magic +${FAMILIARITY.bonus * 100}% while it is worn.`,
+      `Each rank also lifts every roll when you forge that design: its quality starts ${FAMILIARITY.floor * 100}% further up its range, and so do its properties.`,
+      'Familiarity belongs to the design. Forge it again and the new piece is known as well as the old.',
     ],
   },
   {

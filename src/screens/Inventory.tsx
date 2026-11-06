@@ -1,11 +1,12 @@
 /**
  * Inventory: the hunter's page, as a bento grid. Status, the stats, the skills, the equipment, what
- * is held, the Exchange and the hunter's record each take a tile, and each tile opens its window.
+ * is held, the Forge, the Exchange and the hunter's record each take a tile, and each tile opens its window.
  */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import * as gear from '@/core/gear';
+import * as forge from '@/core/forge';
 import { reclassification } from '@/core/quests';
 import { ATTRS, autoAllocate, BOOST_CAP, classBonus, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, spendPoint, STAT_CAP } from '@/core/progression';
 import * as skilltree from '@/core/skilltree';
@@ -30,6 +31,7 @@ import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
 import { ask } from '@/ui/ask';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { openExchange } from './Exchange';
+import { openForge } from './Forge';
 import { openEquipment, openInventory } from './Gear';
 import { Constellation, openSkills } from './Skills';
 
@@ -71,6 +73,9 @@ function tiles(s: Save): Tile[] {
   const best = s.items.slice().sort((a, b) => gear.score(b) - gear.score(a)).slice(0, 3);
   const top = best.length === 3 ? [best[1], best[0], best[2]] : best;
   const rc = reclassification(s);
+  const known = (s.blueprints ?? []).length;
+  const ready = forge.FORGEABLE.filter((d) => forge.canForge(s, d)).length;
+  const better = forge.betterForges(s);
   return [
     {
       // Waiting on the hunter (a rank to claim, points to spend): gold, a word in the count, and the light crossing it.
@@ -130,6 +135,14 @@ function tiles(s: Save): Tile[] {
         ? <span class="ia-fan">{top.map((it, i) => <span key={it.id} class="ia-fan__card" style={`--i: ${i - (top.length - 1) / 2}`}><GearArt item={it} size={50} /></span>)}</span>
         : <span class="ia-shard"><Glyph name="bag" /></span>,
       open: openInventory,
+    },
+    {
+      // A blueprint that can be forged into something rarer than what is worn waits on the hunter: gold.
+      key: 'forge', kind: 'gear', name: 'Forge', head: true, icon: <Glyph name="forge" />, call: better.length > 0,
+      count: better.length ? `${better.length} better` : ready ? `${ready} ready` : known,
+      status: better.length ? <>Can forge: <b class="num">{ready}</b></> : <>Blueprints: <b class="num">{known}</b>{ready ? <> · Can forge: <b class="num">{ready}</b></> : null}</>,
+      art: <span class="ia-forge"><i class="ia-forge__glow" /><Glyph name="forge" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /></span>,
+      open: () => openForge(),
     },
     {
       key: 'exchange', kind: 'gear', name: 'Exchange', head: true, icon: <Shard size={18} />,
