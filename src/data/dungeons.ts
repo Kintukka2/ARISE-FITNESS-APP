@@ -54,23 +54,3 @@ export const DUNGEONS: Dungeon[] = [
   {"id":"DNG-050","rank":"S","name":"Eclipse at the End of Death","theme":"Reality fracture. Sovereign undeath, consumed by an aberrant void.","identity":"Aberration-led","mobs":["ENM-109","ENM-099","ENM-100","ENM-098"],"elite":"ENM-109","boss":"ENM-110","mobRounds":6},
 ];
 
-export const LOOT = {
-  "mobFoundChance": 0.35,
-  "mobQuantity": [
-    1,
-    3
-  ],
-  "mobRank": {
-    "same": 0.25,
-    "minus1": 0.45,
-    "minus2": 0.3
-  },
-  "completionQuantity": [
-    1,
-    3
-  ],
-  "completionRank": {
-    "same": 0.9,
-    "plus1": 0.1
-  }
-} as const;

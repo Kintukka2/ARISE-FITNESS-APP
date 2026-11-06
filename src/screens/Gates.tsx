@@ -7,6 +7,8 @@ import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import * as gear from '@/core/gear';
 import { RARITY } from '@/core/gear';
 import { SETS } from '@/data/sets';
+import * as forge from '@/core/forge';
+import { ALLOYS } from '@/data/forge';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
@@ -189,10 +191,10 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
   // The creatures it holds; the boss counts once it is known, as the brief shows it.
   const inside = [...new Set([...d.mobs, d.elite, known ? d.boss : undefined].filter((x): x is string => !!x))];
   const bound = inside.filter((id) => shadows.isBound(s, id)).length;
-  // The set pieces its clears leave, as one count: the designs of its home sets held, of all of them.
+  // The set blueprints its clears leave, as one count: the designs of its home sets known, of all of them.
   const sets = SETS.filter((x) => x.home === d.id);
   const pieces = sets.flatMap((x) => gear.setPieces(x.id).map((p) => p.id));
-  const held = sets.reduce((n, x) => n + gear.heldOf(s, x.id).size, 0);
+  const held = pieces.filter((id) => forge.knows(s, id)).length;
   // What a first clear adds: the bounty, at the level the hunter walks in at.
   const bounty = !cleared && !practice ? shop.gateShards(d.rank, 2 * ascension.payShare(ascension.entryLevel(s, d, false))) : 0;
   return (
@@ -216,8 +218,8 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
               </span>
             )}
             {pieces.length > 0 && (
-              <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set pieces held: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set pieces held: ${held} of ${pieces.length}`}>
-                <Glyph name="bag" /><span class="num">{held}/{pieces.length}</span>
+              <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
+                <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>
               </span>
             )}
           </span>
@@ -658,7 +660,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           : tower
           ? <span class="sysbox brewards__one"><small class="label">This week</small><b>Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}</b><small>a new best, if you clear it</small></span>
           : <span class={`sysbox brewards__one ${first && !isPractice(d) ? 'is-bounty' : ''}`}><small class="label">First clear</small><b class="num">{first && !isPractice(d) ? `XP +${xp}` : '-- --'}</b><small>{first && !isPractice(d) ? <><Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'}</small></span>}
-        <span class="sysbox brewards__one"><small class="label">Loot</small><b>{RARITY[d.rank as Rank].name}</b><small>{sets.length ? `${sets.map((x) => x.id).join(' or ')} Set` : d.rank === 'S' ? 'and below' : 'sometimes one grade up'}</small></span>
+        <span class="sysbox brewards__one"><small class="label">Materials</small><b>{isPractice(d) ? ALLOYS.E.name : ALLOYS[d.rank as Rank].name}</b><small>{isPractice(d) ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small></span>
         <span class="sysbox brewards__one"><small class="label">Depth</small><b>{map.layers.length} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}</b><small>{isTrial(d) ? 'no rest between them' : 'a rest, then the boss'}</small></span>
       </div>
 

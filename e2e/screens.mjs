@@ -147,9 +147,40 @@ try {
   await chip.click(); await sleep(300);
   if (await page.locator('.bagpick__chip[data-rarity].is-on').count()) throw new Error('TAPPING A PICKED CHIP AGAIN DID NOT UNPICK IT');
   if (picked && (await page.locator('.baggrid .bagtile.is-picked').count())) throw new Error('THE UNPICKED CHIP LEFT ITS PIECES PICKED');
+  // What the picked pieces would give back is counted in materials, not shards.
+  await chip.click(); await sleep(300);
+  if (!(await page.locator('.bagbar .matchip').count())) throw new Error('THE SELECT BAR DOES NOT COUNT MATERIALS');
+  await snap('inventory-recycle');
+  await chip.click(); await sleep(200);
   await page.locator('.bagtools__pick').click(); await sleep(200);
+  if (await page.locator('.bagtile__dupe').count()) throw new Error('A FUSION MARK IS STILL ON THE BAG');
   await page.locator('.bag__views .seg__btn', { hasText: 'Sets' }).click(); await sleep(700); await snap('inventory-sets');
   await close();
+  // The Forge: every blueprint known, a row each; a recipe's materials held over needed; forging turns a new piece over.
+  await page.locator('.btile--forge .btile__hit').click(); await sleep(700);
+  if ((await page.locator('.sheet.is-top .bprow').count()) < 5) throw new Error('THE FORGE DOES NOT LIST THE BLUEPRINTS KNOWN');
+  await snap('forge'); await snap('forge-full', true);
+  await page.locator('.sheet.is-top .bagtools__only', { hasText: 'Can forge' }).click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .bprow.is-ready').count())) throw new Error('THE VETERAN CAN FORGE NOTHING');
+  await snap('forge-ready');
+  await page.locator('.sheet.is-top .bprow.is-ready').first().click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .costgrid__one').count())) throw new Error('A BLUEPRINT SHOWS NO MATERIALS');
+  await snap('blueprint'); await snap('blueprint-full', true);
+  const held = await page.locator('.sheet.is-top .heldrow').count();
+  await page.locator('.sheet.is-top .recipe > .btn--gold').click(); await sleep(1800);
+  if ((await page.locator('.sheet.is-top .heldrow').count()) !== held + 1) throw new Error('FORGING PUT NO PIECE IN THE BAG');
+  if (!(await page.locator('.sheet.is-top .recipe__reveal .flip.is-open').count())) throw new Error('THE FORGED PIECE WAS NOT TURNED OVER');
+  await page.locator('.sheet.is-top .recipe__reveal').scrollIntoViewIfNeeded(); await snap('blueprint-forged');
+  await close();
+  await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click(); await sleep(400); await snap('forge-materials', true);
+  await close();
+  // A worn weapon's card: its familiarity, and the upgrade's alloys held over needed.
+  await page.locator('.btile--equipment .btile__hit').click(); await sleep(700);
+  await page.locator('.sheet.is-top .dollslot', { hasText: 'Weapon' }).click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .famcard').count())) throw new Error('THE WORN WEAPON SHOWS NO FAMILIARITY');
+  await page.locator('.sheet.is-top .famcard').scrollIntoViewIfNeeded(); await snap('item-weapon');
+  if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
+  await close(); await close();
   await page.locator('.btile--dossier .btile__hit').click(); await sleep(400); await snap('dossier'); await close();
 
   await nav('quests');
@@ -389,7 +420,11 @@ try {
   // The orders are the army's alone: no Shadow takes orders of its own.
   if (await page.locator('.sheet.is-top .ordrow, .sheet.is-top .chip--btn', { hasText: 'Army Orders' }).count()) throw new Error('A SHADOW STILL TAKES ORDERS OF ITS OWN');
   await close();
-  await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true); await close();
+  await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true);
+  // The shelf is blueprints now: a row each, marked as one.
+  if ((await page.locator('.sheet.is-top .shopbp').count()) < 1) throw new Error('THE EXCHANGE SHELF HOLDS NO BLUEPRINTS');
+  await page.locator('.sheet.is-top .shopbp').first().scrollIntoViewIfNeeded(); await sleep(300); await snap('exchange-blueprints');
+  await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
   await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);
   await page.locator('.sheet.is-top .fold__head').first().click(); await sleep(300); await snap('guide');

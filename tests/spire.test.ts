@@ -134,11 +134,13 @@ describe('the week', () => {
     s.spire = { ...s.spire, season, best: 45, top: 45 };
     expect(spire.settle(s, now)).toBeNull();
     const shards = s.wallet.shards;
-    const items = s.items.length;
+    const known = s.blueprints.length;
     const paid = spire.settle(s, nextWeek)!;
-    expect(paid).toMatchObject({ season, best: 45, tier: 'B-Rank', shards: GATE_SHARDS.B * SEASON_PAY.shards });
+    expect(paid).toMatchObject({ season, best: 45, tier: 'B-Rank', shards: GATE_SHARDS.B * SEASON_PAY.shards, item: null });
     expect(s.wallet.shards - shards).toBe(paid.shards);
-    expect(s.items.length).toBe(items + 1);
+    // The week pays a blueprint of its tier's rarity, one not yet known.
+    expect(s.blueprints.length).toBe(known + 1);
+    expect(s.blueprints).toContain(paid.blueprint);
     expect(s.spire.best).toBe(0);
     expect(s.spire.top).toBe(45);
     expect(s.spire.last).toEqual(paid);

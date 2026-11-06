@@ -1,6 +1,7 @@
 /** Synthetic hunters for the balance tools: a typical player at a given level. */
 import { defaults } from '@/core/save';
-import { grant, autoEquip, ofRank, upgradeStep, worn } from '@/core/gear';
+import { grant, autoEquip, equippedIn, ofRank, upgradeStep, worn } from '@/core/gear';
+import { FAMILIARITY } from '@/data/forge';
 import { ALL_DUNGEONS } from '@/core/gates';
 import * as shadows from '@/core/shadows';
 import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, rankFor, syncClass } from '@/core/progression';
@@ -36,13 +37,22 @@ export function typicalHunter(level: number, gearRank: Rank, seed: string) {
     if (pool.length) grant(s, pool[Math.floor(r() * pool.length)].id, `${seed}|${t}|${s.items.length}`);
   }
   autoEquip(s);
+  // In the middle of a grade, the weapon a hunter carries has grown familiar: Familiarity 2.
+  familiar(s, 2);
   return s;
+}
+
+/** The worn weapon's design known to a rank of Familiarity. */
+function familiar(s: ReturnType<typeof defaults>, rank: number) {
+  const w = equippedIn(s, 'weapon');
+  if (w && rank > 0) s.familiarity[w.defId] = FAMILIARITY.at[rank - 1];
 }
 
 /**
  * A hunter who keeps up, as `npm run campaign` finds one: a typical hunter whose worn gear has been
- * upgraded to perfect, with a full squad of Vanguard Shadows taken from their grade's gates. Not past
- * perfect: that is the edge a hunter with shards to spare buys. Calibration sets the marks.
+ * upgraded to perfect, whose weapon they know to its last rank of Familiarity, with a full squad of
+ * Vanguard Shadows taken from their grade's gates. Not past perfect: that is the edge a hunter with
+ * materials to spare buys. Calibration sets the marks.
  */
 export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
   const s = typicalHunter(level, gearRank, seed);
@@ -50,6 +60,7 @@ export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
     const i = s.items.indexOf(it);
     for (let k = 0; k < 20; k++) s.items[i] = upgradeStep(s.items[i]) ?? s.items[i];
   }
+  familiar(s, FAMILIARITY.at.length);
   const r = rng(seed + '|shadows');
   const mobs = ALL_DUNGEONS.filter((d) => d.rank === gearRank).flatMap((d) => d.mobs);
   // A hunter who keeps up has promoted every Shadow to Vanguard, and levelled each to its cap.

@@ -122,7 +122,7 @@ describe('walking it', () => {
     expect(b.loot).toEqual([]);
   });
 
-  it('a cache banks a piece of gear, paid out with the clear', () => {
+  it('a cache banks what it holds, materials or a piece found whole, paid out with the clear', () => {
     const s = hunter(30);
     for (const d of ALL_DUNGEONS) {
       const day = '2026-02-02';
@@ -142,9 +142,12 @@ describe('walking it', () => {
       const road = back(cache.id);
       run.path = road.slice(0, -1);
       run.at = run.path.length;
-      const res = raid.choose(x, d, run, cache.id, now);
-      expect(res?.item).toBeTruthy();
-      expect(run.haul).toContain(res!.item);
+      const res = raid.choose(x, d, run, cache.id, now)!;
+      if (res.item) expect(run.haul).toContain(res.item);
+      else {
+        expect(Object.keys(res.mats ?? {}).length).toBeGreaterThan(0);
+        expect(run.stash).toEqual(res.mats);
+      }
       return;
     }
     throw new Error('no gate held a cache today');

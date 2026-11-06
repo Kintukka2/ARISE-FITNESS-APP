@@ -13,7 +13,9 @@ import { ready as assocReady } from './association';
 import { unseen } from './contracts';
 import { licenceRequired, licensedRank, UNLICENSED_CAP } from './licence';
 import { SKILL_POINTS, SKILL_SLOTS } from '@/data/tree';
-import { bankedXp, canReclassify, nextRankOf, RANK_UP_POINTS, rankOf, totalXpFor, type RankInfo } from './progression';
+import { bankedXp, canReclassify, nextRankOf, RANK_UP_POINTS, rankOf, reclassify, syncClass, totalXpFor, type RankInfo } from './progression';
+import * as forge from './forge';
+import { BLUEPRINTS } from '@/data/forge';
 import type { Rank, Save, Stat } from './types';
 import { RANKS } from './types';
 import { dayKey } from './util';
@@ -38,6 +40,8 @@ export interface Reclass {
   throne: boolean;
   /** The rank opens Ascension. */
   ascension: boolean;
+  /** Blueprints of the rank's grade it pays, and the rarity they are. */
+  blueprints: { n: number; rank: Rank };
 }
 
 /** The grade the board would answer to at a rank, with the Association Licence's hold applied. */
@@ -73,7 +77,26 @@ export function reclassification(s: Save): Reclass | null {
     slots: SLOTS[after] > SLOTS[grade] ? [SLOTS[grade], SLOTS[after]] : null,
     throne: after === 'S' && grade !== 'S' && !s.gates.cleared.includes(HOLLOW_THRONE.id),
     ascension: RANKS.indexOf(after) >= RANKS.indexOf(ASCENSION_FROM) && RANKS.indexOf(grade) < RANKS.indexOf(ASCENSION_FROM),
+    blueprints: { n: BLUEPRINTS.rank, rank: (to.key === 'N' ? 'S' : to.key) as Rank },
   };
+}
+
+/**
+ * Claim the next rank: `progression.reclassify`, then the blueprints of its grade it pays
+ * (`forge.rankBlueprints`). Null if the level does not reach it yet. Mutates.
+ */
+export function claim(s: Save) {
+  const r = reclassify(s);
+  if (!r) return null;
+  return { ...r, ...forge.rankBlueprints(s, r.to.key) };
+}
+
+/** Claim every rank the level has reached, then the class: a hunter who keeps up, as the campaign plays one. Mutates. */
+export function claimAll(s: Save): number {
+  let n = 0;
+  while (claim(s)) n++;
+  if (n) syncClass(s);
+  return n;
 }
 
 /**

@@ -8,7 +8,7 @@
 import { DUNGEONS } from '@/data/dungeons';
 import { BLOCK_TUNE, SPIRE_TUNE } from '@/data/gatetune';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_THEME, SPIRE_TOP } from '@/data/spire';
-import { grant, ofRank } from './gear';
+import * as forge from './forge';
 import { licensedRank } from './licence';
 import * as shop from './shop';
 import type { Dungeon, Rank, Save, SeasonPay } from './types';
@@ -115,11 +115,10 @@ export function settle(s: Save, now = Date.now()): SeasonPay | null {
   s.spire.best = 0;
   const pay = was ? seasonTier(best) : null;
   if (!was || !pay) return null;
-  const pool = ofRank(pay.rank);
-  const def = pool[Math.floor(rng(`arise|season|${was}|${s.hunter.regNo}`)() * pool.length)];
-  const item = def ? grant(s, def.id, `season|${was}`) : null;
+  // The week pays a blueprint of its tier's rarity, one not yet known; every one known, its alloy.
+  const left = forge.leaveBlueprint(s, pay.rank, rng(`arise|season|${was}|${s.hunter.regNo}`));
   s.spire.seasons++;
-  s.spire.last = { season: was, best, tier: pay.tier, shards: shop.earn(s, pay.shards), item: item?.defId ?? null };
+  s.spire.last = { season: was, best, tier: pay.tier, shards: shop.earn(s, pay.shards), item: null, blueprint: left.blueprint, mats: left.mats };
   return s.spire.last;
 }
 

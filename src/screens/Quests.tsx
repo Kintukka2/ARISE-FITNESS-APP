@@ -249,6 +249,7 @@ function RankRow({ s }: { s: Save }) {
   const pay: ComponentChildren[] = [<>Ability Points <b class="grant num">+{q.points}</b></>, <>Skill Points <b class="grant num">+{q.skills.points}</b></>];
   if (q.cls && !q.cls.was) pay.push(<span class="grant">Class</span>);
   if (q.slots) pay.push(<>Shadow slots <b class="grant num">+{q.slots[1] - q.slots[0]}</b></>);
+  pay.push(<>{RARITY[q.blueprints.rank].name} blueprints <b class="grant num">+{q.blueprints.n}</b></>);
   if (q.ascension) pay.push(<span class="grant">Ascension</span>);
   return (
     <QuestRow id="rank" name={`Reclassification: ${q.to.name}`} call={q.ready} count={q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`}
@@ -279,6 +280,7 @@ function RankBody() {
   if (q.skills.tier) rewards.push(<span class="grant">ACCESS GRANTED: {q.skills.tier}-RANK SKILLS</span>);
   if (q.skills.slots) rewards.push(<>Skill slots: {q.skills.slots[0]} → {q.skills.slots[1]}</>);
   if (q.slots) rewards.push(<>Shadow slots: {q.slots[0]} → {q.slots[1]}</>);
+  rewards.push(<>{RARITY[q.blueprints.rank].name} blueprints <b class="num grant">+{q.blueprints.n}</b></>);
   if (q.throne) rewards.push(<span class="grant">ACCESS GRANTED: THE HOLLOW THRONE</span>);
   if (q.ascension) rewards.push(<span class="grant">ACCESS GRANTED: ASCENSION</span>);
   return (

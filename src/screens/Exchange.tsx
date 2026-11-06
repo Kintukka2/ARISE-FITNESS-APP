@@ -1,4 +1,4 @@
-/** The Exchange: the System's shop. Eight pieces a day and the potions, paid for in Mana Shards. */
+/** The Exchange: the System's shop. Blueprints, a shelf a day, and the potions, paid for in Mana Shards. */
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
 import * as shop from '@/core/shop';
@@ -16,6 +16,16 @@ import { Glyph } from '@/ui/icons';
 import { ask } from '@/ui/ask';
 import { openSheet, sys, toast } from '@/ui/overlays';
 import { drinkFlow } from './Inventory';
+import { openBlueprint } from './Forge';
+import { STATS } from '@/core/types';
+import type { Save } from '@/core/types';
+
+/** A blueprint rarer than what is worn where its design goes, or for a slot left empty. */
+const rarerThanWorn = (s: Save, defId: string) => {
+  const d = gear.gearDef(defId);
+  const at = (r: string) => ['E', 'D', 'C', 'B', 'A', 'S'].indexOf(r);
+  return !!d && gear.SLOTS.filter((x) => x.accepts === d.slot).some((x) => { const it = gear.equippedIn(s, x.key); return !it || at(gear.defOf(it)?.rank ?? 'E') < at(d.rank); });
+};
 
 export function openExchange() {
   if (!store.get().seen.includes('shop-visited')) store.update((x) => { x.seen.push('shop-visited'); });
@@ -54,27 +64,26 @@ function Exchange() {
   const s = useSave();
   useNow();
   const offers = shop.shelf(s);
-  const left = offers.filter((o) => !o.sold).length;
+  const left = offers.filter((o) => !o.sold && !o.known).length;
   const buy = async (o: shop.Offer) => {
     if (store.get().wallet.shards < o.price) return void short(o.price);
-    const d = gear.defOf(o.item);
+    const d = gear.gearDef(o.defId);
     const want = await ask('buy:shelf', system.offer([
       'Would you like to purchase?',
-      system.tag(d?.name ?? 'Item', 'Item'),
-      system.gain(gear.coreText(o.item)),
+      system.tag(`Blueprint: ${d?.name ?? 'Item'}`, 'Item'),
+      `${gear.RARITY[(d?.rank ?? 'E') as keyof typeof gear.RARITY].name} ${d?.slot ?? ''}`,
       `Price: ${group(o.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
-    const it = store.update((x) => shop.buy(x, o.index));
-    if (!it) return void short(o.price);
+    if (!store.update((x) => shop.buy(x, o.index))) return void short(o.price);
     sfx.success();
     buzz([14, 30, 22, 30, 70]);
     const v = await sys({
-      ...system.notify([...system.event('acquired', system.tag(gear.defOf(it)?.name ?? 'Item', 'Item')), system.gain(gear.coreText(it))], 'gear',
-        [{ label: 'Put In Inventory', value: false }, { label: 'Equip', value: true, primary: true }]),
+      ...system.notify([...system.event('acquired', system.tag(`Blueprint: ${d?.name ?? 'Item'}`, 'Item'))], 'gear',
+        [{ label: 'Close', value: false }, { label: 'Open Blueprint', value: true, primary: true }]),
       typed: false,
     });
-    if (v) store.update((x) => gear.equip(x, it.id));
+    if (v) openBlueprint(o.defId);
     void checkAwards();
   };
   const buyField = async () => {
@@ -99,7 +108,7 @@ function Exchange() {
         <Field k="Mana Shards" v={<Shards n={s.wallet.shards} />} />
         <Field k="New stock in" v={<span class="num">{hhmmss(msUntilMidnight())}</span>} />
       </div>
-      <p class="muted">Most stock is at your grade.</p>
+      <p class="muted">Most blueprints are at your grade.</p>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -128,16 +137,17 @@ function Exchange() {
         </div>
       </Section>
 
-      <Section title="The Manifest" right={`Left: ${left}/${offers.length}`}>
+      <Section title="Blueprints" right={`Left: ${left}/${offers.length}`}>
         <div class="shoplist">
           {offers.map((o) => {
-            const d = gear.defOf(o.item)!;
+            const d = gear.gearDef(o.defId)!;
+            const rarer = !o.sold && !o.known && rarerThanWorn(s, o.defId);
             return (
-              <ShopRow key={o.index} icon={<GearArt item={o.item} size={52} />}
-                name={<>{d.name}{!o.sold && gear.beatsWorn(s, o.item) && <span class="up" title="Better than what you are wearing"> ▲</span>}</>}
-                gives={[gear.coreText(o.item), ...gear.rollText(o.item)].join(' · ')}
-                note={<>{gear.RARITY[d.rank].name} · {d.slot} · Score {Math.round(gear.score(o.item))}{o.reach > 0 && <><br /><span class="hint">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span></>}</>}
-                price={o.price} off={o.sold ? 'Bought' : null} onBuy={() => void buy(o)} />
+              <ShopRow key={o.index} icon={<span class="shopbp"><GearArt defId={o.defId} size={52} /><Glyph name="blueprint" class="shopbp__mark" /></span>}
+                name={<>{d.name}{rarer && <span class="up" title="Rarer than what you are wearing"> ▲</span>}</>}
+                gives={`Blueprint · ${gear.RARITY[d.rank].name} ${d.slot}${d.set ? ` · ${d.set}` : ''}`}
+                note={<>{STATS.filter((k) => d.core[k]).map((k) => k).join(' · ')}{(d.rolls ?? []).length ? ` · ${(d.rolls ?? []).map((r) => (r.stat === 'Defense' ? 'Defence' : r.stat)).join(' · ')}` : ''}{o.reach > 0 && <><br /><span class="hint">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span></>}</>}
+                price={o.price} off={o.sold ? 'Bought' : o.known ? 'Known' : null} onBuy={() => void buy(o)} />
             );
           })}
           {!left && <p class="muted center">Sold out until midnight.</p>}

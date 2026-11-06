@@ -1,7 +1,8 @@
 /**
  * The hunter's gear, in the System's frame: the bag (`INVENTORY`), every set and design found (its Sets
  * view), the piece itself (`ITEM: {name}`), and what is worn (`EQUIPMENT`), on a figure, with loadouts.
- * Every number comes from `core/gear.ts` and `core/shop.ts`; the screens only show and ask.
+ * Pieces are forged at the Forge (`screens/Forge.tsx`) and recycled here for materials. Every number
+ * comes from `core/gear.ts` and `core/forge.ts`; the screens only show and ask.
  */
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -12,19 +13,21 @@ import { OVERCHARGE } from '@/data/ascension';
 import { dungeonById } from '@/core/gates';
 import { licensedRank } from '@/core/licence';
 import { rankOf } from '@/core/progression';
-import * as shop from '@/core/shop';
+import * as forge from '@/core/forge';
 import type { GearDef, Item, Rank, Save, SlotKey, Stat } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
 import { group } from '@/core/util';
-import { FUSE, setById, SETS, type GearSet } from '@/data/sets';
+import { setById, SETS, type GearSet } from '@/data/sets';
 import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import * as system from '@/ui/system';
 import { Btn, Empty, GearArt, IconBtn, RankPlate, Section, SetMark, Shards } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
+import { CostGrid, MatList, bundleText } from '@/ui/forge';
 import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
-import { confirm, openSheet, sys, toast } from '@/ui/overlays';
+import { openSheet, sys, toast } from '@/ui/overlays';
+import { Familiarity, openBlueprint } from './Forge';
 
 const unit = (x: number) => Math.max(0, Math.min(1, x));
 const signed = (n: number, digits = 1) => `${n < 0 ? '-' : '+'}${Math.abs(n).toFixed(digits).replace(/\.0$/, '')}`;
@@ -40,9 +43,9 @@ type Sort = 'score' | 'rarity' | 'newest' | 'quality';
 const SORTS: { key: Sort; name: string }[] = [
   { key: 'score', name: 'Score' }, { key: 'rarity', name: 'Rarity' }, { key: 'newest', name: 'Newest' }, { key: 'quality', name: 'Quality' },
 ];
-type Only = 'better' | 'sets' | 'starred' | 'fuse';
+type Only = 'better' | 'sets' | 'starred';
 const ONLY: { key: Only; name: string }[] = [
-  { key: 'better', name: 'Better' }, { key: 'fuse', name: 'Fusable' }, { key: 'sets', name: 'Set pieces' }, { key: 'starred', name: 'Starred' },
+  { key: 'better', name: 'Better' }, { key: 'sets', name: 'Set pieces' }, { key: 'starred', name: 'Starred' },
 ];
 
 /** INVENTORY: everything held, a square each, or every set and design found. */
@@ -101,7 +104,6 @@ function Items() {
     if (only === 'better') return gear.beatsWorn(s, it);
     if (only === 'sets') return !!d?.set;
     if (only === 'starred') return s.favourites.includes(it.id);
-    if (only === 'fuse') return gear.fodderFor(s, it).length > 0 && gear.stepsToPerfect(it) > 0;
     return true;
   };
   const list = sorted(s, s.items.filter(match), sort);
@@ -109,8 +111,8 @@ function Items() {
   /** A chip of the select row: all of its pieces picked, or, tapped again while they are, none of them. */
   const toggleAll = (ids: string[], on: boolean) => setPicked((p) => (on ? p.filter((x) => !ids.includes(x)) : [...new Set([...p, ...ids])]));
   const chosen = picked.map((id) => s.items.find((x) => x.id === id)).filter((x): x is Item => !!x && loose(s, x));
-  const worth = chosen.reduce((n, it) => n + shop.scrapValue(it), 0);
-  /** Every duplicate but the best of its design: what fusion or the Exchange would take. */
+  const worth = forge.salvageOf(chosen);
+  /** Every duplicate but the best of its design: what the Forge can have back. */
   const spares = () => {
     const best = new Map<string, Item>();
     for (const it of s.items) { const b = best.get(it.defId); if (!b || gear.score(it) > gear.score(b)) best.set(it.defId, it); }
@@ -121,13 +123,13 @@ function Items() {
     const ok = await sys(system.offer([
       'Would you like to recycle these items?',
       `Items: ${chosen.length}`,
-      `Mana Shards ${system.gain(`+${group(worth)}`)}`,
+      system.gain(bundleText(worth)),
       system.red('A recycled item cannot be recovered.'),
     ], 'system', 'Recycle', 'Cancel'));
     if (ok !== true) return;
-    const r = store.update((x) => shop.recycleSome(x, chosen.map((c) => c.id)));
+    const r = store.update((x) => forge.recycleSome(x, chosen.map((c) => c.id)));
     sfx.success();
-    toast(`Recycled: ${r.count} · Mana Shards +${r.paid}`, 'good');
+    toast(`Recycled: ${r.count} · ${bundleText(r.got)}`, 'good');
     setPicked([]);
     setPicking(false);
   };
@@ -187,7 +189,7 @@ function Items() {
       )}
       {picking && (
         <div class="sysbox bagbar">
-          <span><b class="num">{chosen.length}</b> selected · Mana Shards <span class="grant num">+{group(worth)}</span></span>
+          <span class="bagbar__sum"><b class="num">{chosen.length}</b> selected<MatList b={worth} gain /></span>
           <Btn kind="danger" size="sm" disabled={!chosen.length} onClick={() => void recycle()}><Glyph name="trash" /> Recycle</Btn>
         </div>
       )}
@@ -202,8 +204,6 @@ function BagTile({ it, i, picking, picked, locked, onTap }: { it: Item; i: numbe
   const d = gear.defOf(it)!;
   const worn = !!gear.slotOf(s, it);
   const up = gear.beatsWorn(s, it);
-  const dupes = gear.fodderFor(s, it).length;
-  const fusable = dupes > 0 && gear.stepsToPerfect(it) > 0;
   const fresh = gear.isNew(s, it.id);
   return (
     <button type="button" class={`bagtile ${picked ? 'is-picked' : ''} ${picking && locked ? 'is-locked' : ''} ${fresh ? 'is-new' : ''}`} data-rarity={d.rank} style={`--i: ${Math.min(i, 24)}`}
@@ -214,7 +214,6 @@ function BagTile({ it, i, picking, picked, locked, onTap }: { it: Item; i: numbe
       {fresh && <span class="bagtile__new">New</span>}
       {s.favourites.includes(it.id) && <Glyph name="star" class="bagtile__fav" />}
       {up && <span class="bagtile__up" aria-hidden="true">▲</span>}
-      {fusable && <span class="bagtile__dupe num" title={`Duplicates held: ${dupes}`}>×{dupes + 1}</span>}
       {picking && <span class="bagtile__check" aria-hidden="true"><Glyph name={locked ? 'lock' : 'check'} /></span>}
     </button>
   );
@@ -253,8 +252,8 @@ function Codex() {
   );
 }
 
-/** A set: its pieces, held, worn or still to find, what two and three of them pay, and its home Gate. */
-function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
+/** A set: its pieces, held, worn, known as blueprints or still to find, what two and three of them pay, and its home Gate. */
+export function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
   const s = useSave();
   const pieces = gear.setPieces(set.id);
   const held = gear.heldOf(s, set.id);
@@ -273,11 +272,14 @@ function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
         {pieces.map((p) => {
           const it = best(p);
           const on = it && gear.slotOf(s, it);
+          const bp = forge.knows(s, p.id);
+          const seen = bp || s.found.includes(p.id);
           return (
-            <button type="button" key={p.id} class={`setpiece ${it ? 'is-held' : s.found.includes(p.id) ? 'is-seen' : 'is-unknown'} ${on ? 'is-worn' : ''}`} disabled={!it}
-              onClick={() => { if (it) { sfx.tap(); openItem(it.id); } }} aria-label={`${p.name}${it ? on ? ', worn' : ', held' : ', not held'}`}>
-              {it ? <GearArt item={it} size={46} /> : <span class="setpiece__ghost"><Glyph name={s.found.includes(p.id) ? p.slot : 'unknown'} /></span>}
-              <small>{s.found.includes(p.id) ? p.name : '-- --'}</small>
+            <button type="button" key={p.id} class={`setpiece ${it ? 'is-held' : bp ? 'is-known' : seen ? 'is-seen' : 'is-unknown'} ${on ? 'is-worn' : ''}`} disabled={!it && !bp}
+              onClick={() => { sfx.tap(); if (it) openItem(it.id); else if (bp) openBlueprint(p.id); }}
+              aria-label={`${p.name}${it ? on ? ', worn' : ', held' : bp ? ', blueprint known' : ', not held'}`}>
+              {it ? <GearArt item={it} size={46} /> : <span class="setpiece__ghost"><Glyph name={bp ? 'blueprint' : seen ? p.slot : 'unknown'} /></span>}
+              <small>{seen ? p.name : '-- --'}</small>
             </button>
           );
         })}
@@ -384,24 +386,44 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
           <SetCard set={set} compact />
         </Section>
       )}
-      {!d.issued && <Fusion it={it} />}
+      {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {!d.issued && <Upgrade it={it} />}
+      {!d.issued && forge.knows(s, d.id) && (
+        <button type="button" class="sysbox itemvs itemcard__forge" onClick={() => { sfx.tap(); openBlueprint(d.id); }}>
+          <span class="label">Blueprint</span>
+          <Glyph name="forge" />
+          <span class="itemvs__name">Forge another</span>
+          <Glyph name="chevron" />
+        </button>
+      )}
       <div class="row itemacts">
         <Btn kind="primary" class="grow" sound="success" onClick={() => {
           store.update((x) => (worn ? gear.unequip(x, worn) : gear.equip(x, it.id)));
           toast(`${d.name} ${worn ? 'stowed' : 'equipped'}.`, 'xp');
           void checkAwards();
         }}>{worn ? 'Unequip' : 'Equip'}</Btn>
-        <IconBtn icon="star" on={s.favourites.includes(it.id)} label={s.favourites.includes(it.id) ? 'Unstar' : 'Star: kept from recycling and fusion'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
+        <IconBtn icon="star" on={s.favourites.includes(it.id)} label={s.favourites.includes(it.id) ? 'Unstar' : 'Star: kept from recycling'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
       </div>
       {!worn && !s.favourites.includes(it.id) && (
-        <Btn kind="ghost" onClick={async () => {
-          const v = shop.scrapValue(it);
-          if (!(await confirm('Recycle Item', `Break <em>${d.name}</em> down for <strong>${v} Mana Shards</strong>?`, 'Recycle', true))) return;
-          store.update((x) => shop.recycle(x, it.id));
-          toast(`${d.name} recycled · Mana Shards +${v}`, 'xp');
-          close();
-        }}><Glyph name="trash" /> Recycle · <Shards n={shop.scrapValue(it)} /></Btn>
+        <div class="itemcard__recycle">
+          <span class="label">Recycle</span>
+          <MatList b={forge.salvage(it)} gain />
+          <Btn kind="ghost" size="sm" onClick={async () => {
+            const back = forge.salvage(it);
+            const ok = await sys(system.offer([
+              'Would you like to recycle this item?',
+              `${system.tag(d.name, 'Item')} Quality ${gear.qualityText(it)}`,
+              system.gain(bundleText(back)),
+              system.red('A recycled item cannot be recovered.'),
+            ], 'gear', 'Recycle', 'Cancel'));
+            if (ok !== true) return;
+            const got = store.update((x) => forge.recycle(x, it.id));
+            if (!got) return;
+            sfx.success();
+            toast(`${d.name} recycled · ${bundleText(got)}`, 'good');
+            close();
+          }}><Glyph name="trash" /> Recycle</Btn>
+        </div>
       )}
     </div>
   );
@@ -431,71 +453,31 @@ function QualityMeter({ it }: { it: Item }) {
   );
 }
 
-/** Fusion: a duplicate fed into this piece, the weakest first, with what it would become. */
-function Fusion({ it }: { it: Item }) {
-  const s = useSave();
-  const fodder = gear.fodderFor(s, it);
-  if (!fodder.length || !gear.stepsToPerfect(it)) return null;
-  const f = fodder[0];
-  const next = gear.fusedWith(it, f);
-  if (!next) return null;
-  const d = gear.defOf(it)!;
-  const go = async () => {
-    const ok = await sys(system.offer([
-      'Would you like to fuse these items?',
-      `${system.tag(d.name, 'Item')} ${system.gain(`Quality: ${system.change(`${gear.quality(it)}%`, `${gear.quality(next)}%`)}`)}`,
-      `The duplicate is consumed. (Score ${Math.round(gear.score(f))})`,
-    ], 'gear', 'Fuse', 'Cancel'));
-    if (ok !== true) return;
-    const got = store.update((x) => gear.fuse(x, it.id, f.id));
-    if (!got) return;
-    sfx.rankUp();
-    buzz([20, 40, 30, 60]);
-    await sys({ ...system.notify([`${system.tag(d.name, 'Item')} has been fused.`, `Quality: ${system.change(`${gear.quality(it)}%`, system.gain(`${gear.quality(got)}%`))}`], 'gear'), typed: false });
-    void checkAwards();
-  };
-  return (
-    <Section title="Fusion" right={<span class="num">Duplicates held: {fodder.length}</span>}>
-      <div class="sysbox fusion">
-        <span class="fusion__pair">
-          <GearArt item={f} size={44} />
-          <span class="fusion__arrow" aria-hidden="true"><i /><i /><i /></span>
-          <GearArt item={next} size={52} />
-        </span>
-        <span class="fusion__what">
-          <b class="num">Quality {gear.quality(it)}% → <span class="grant">{gear.quality(next)}%</span></b>
-          <small>The better roll of the two, then {FUSE.steps} steps toward perfect.</small>
-        </span>
-        <Btn kind="gold" size="sm" onClick={() => void go()}>Fuse</Btn>
-      </div>
-    </Section>
-  );
-}
-
-/** The next upgrade step on a piece: what it raises, and what it costs. */
+/** The next upgrade step on a piece: what it raises, and the alloys and shards it takes. */
 function Upgrade({ it }: { it: Item }) {
   const s = useSave();
   const cap = overCap(s);
   const next = gear.upgradeStep(it, cap);
-  const cost = shop.upgradeCost(it, cap);
-  if (!next || cost === null) {
+  const cost = forge.upgradeCost(it, cap);
+  if (!next || !cost) {
     const over = it.over ?? 0;
     return <p class="hint">{!ascensionOpen(s) ? 'Perfect. Nothing left to raise.'
       : `Perfect${over ? ` +${over}` : ''}. Each Ascension level opened allows ${OVERCHARGE.per === 1 ? '1 more step' : `${OVERCHARGE.per} more steps`}.`}</p>;
   }
-  const short = s.wallet.shards < cost;
+  const ok = forge.affords(s, cost);
   return (
-    <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? <span class="num">Steps taken: {it.up}</span> : 'at the Exchange'}>
+    <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? <span class="num">Steps taken: {it.up}</span> : <Shards n={cost.shards} />}>
       <div class="sysbox upgrade2">
         <span class="upgrade2__row"><span class="label">Quality</span><b class="num">{gear.qualityText(it)} → <span class="grant">{gear.qualityText(next)}</span></b></span>
         <span class="upgrade2__row"><span class="label">Score</span><b class="num">{Math.round(gear.score(it))} → <span class="grant">{Math.round(gear.score(next))}</span></b></span>
-        <Btn kind="gold" disabled={short} onClick={() => {
-          if (!store.update((x) => shop.upgrade(x, it.id))) return;
+        <CostGrid s={s} c={cost} />
+        <Btn kind="gold" disabled={!ok} onClick={() => {
+          if (!store.update((x) => forge.upgrade(x, it.id, cap))) return;
           sfx.success();
           buzz([14, 24]);
           toast(`${gear.defOf(it)?.name} upgraded.`, 'good');
           void checkAwards();
-        }}>{short ? `Mana Shards ${s.wallet.shards}/${cost}` : <>Upgrade · <Shards n={cost} /></>}</Btn>
+        }}>{ok ? <>Upgrade · <Shards n={cost.shards} /></> : s.wallet.shards < cost.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(cost.shards)}` : 'Materials missing'}</Btn>
       </div>
     </Section>
   );

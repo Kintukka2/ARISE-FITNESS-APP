@@ -166,9 +166,12 @@ export interface OpenRaid {
   /** The map's seed, and the steps chosen on it so far, the last of them perhaps still underway. */
   map: string;
   path: string[];
-  /** Gear and shards found on the way, paid out when the run ends unless the party is carried out. */
+  /** Gear, materials and shards found on the way, paid out when the run ends unless the party is carried out. */
   haul: string[];
+  stash?: Record<string, number>;
   purse: number;
+  /** The design of the weapon carried in: the creatures the run fells are points toward knowing it. */
+  weapon?: string | null;
   /** Blessings picked up at shrines and events, on the hunter for the rest of the run. */
   blessings: string[];
   /** A chamber was lost: the run is over, waiting to be settled. */
@@ -188,8 +191,11 @@ export interface SeasonPay {
   best: number;
   tier: string;
   shards: number;
-  /** The design of the piece of gear it paid, if any. */
+  /** The design of the piece of gear it paid, if any (weeks closed before the Forge). */
   item: string | null;
+  /** The blueprint it paid, if any; or, every design of its rarity known, the alloy it paid instead. */
+  blueprint?: string | null;
+  mats?: Record<string, number>;
 }
 
 /** One of the day's System contracts, and how far along it is. */
@@ -235,6 +241,8 @@ export interface Stats {
   /** System contracts completed, and days on which every one of them was. */
   contracts: number;
   contractDays: number;
+  /** Pieces forged at the Forge. */
+  crafted: number;
 }
 
 export interface Save {
@@ -277,6 +285,10 @@ export interface Save {
   newItems: string[];
   /** Equipment saved to be worn again in one tap, a slot to item map each. Three at most. */
   loadouts: (Loadout | null)[];
+  /** The Forge (`core/forge.ts`): materials held by id, the designs whose blueprints are known, and each weapon design's familiarity in points. */
+  materials: Record<string, number>;
+  blueprints: string[];
+  familiarity: Record<string, number>;
 
   gates: {
     clears: number;

@@ -11,6 +11,7 @@ import { defaults } from '@/core/save';
 import { autoAllocate, grantXP, reclassifyAll, syncClass, totalXpFor } from '@/core/progression';
 import { autoLearn, equip, learn, points } from '@/core/skilltree';
 import { autoEquip, defOf, grant, issueKit, ofRank, saveLoadout, setPieces, upgradeStep } from '@/core/gear';
+import * as forge from '@/core/forge';
 import { bind, raise, xpAt } from '@/core/shadows';
 import { BEATS } from '@/data/narrative';
 import { addDays, dayKey, rng } from '@/core/util';
@@ -49,12 +50,21 @@ grant(s, ofRank('S').find((d) => d.slot === 'Weapon')!.id);
 // Two pieces of the Warden set, and the third still to find.
 for (const d of setPieces('Warden').slice(0, 2)) grant(s, d.id, `fixture|${d.id}`);
 autoEquip(s);
-// Something worn, upgraded three steps at the Exchange.
+// Something worn, upgraded three steps.
 const worn = s.items.findIndex((it) => it.id === s.equipped.hands);
 if (worn >= 0) for (let k = 0; k < 3; k++) s.items[worn] = upgradeStep(s.items[worn]) ?? s.items[worn];
-// Two duplicates of the worn weapon's design, to fuse; the last three pieces still New; what is worn, saved as Loadout I.
+// The worn weapon's design forged twice more, a roll to keep or recycle; the last three pieces still New; what is worn, saved as Loadout I.
 const weapon = s.items.find((it) => it.id === s.equipped.weapon);
 if (weapon && !defOf(weapon)?.issued) for (let k = 0; k < 2; k++) grant(s, weapon.defId, `fixture|dupe|${k}`);
+// The Forge: every design held is a blueprint known, and a few more besides; a stash of materials; the weapon known to Familiarity 2.
+s.blueprints = [...new Set(s.items.filter((it) => !defOf(it)?.issued).map((it) => it.defId))];
+for (const rank of ['C', 'C', 'C', 'B', 'B'] as const) forge.leaveBlueprint(s, rank, r);
+s.materials = {
+  [forge.alloyId('E')]: 22, [forge.alloyId('D')]: 30, [forge.alloyId('C')]: 46, [forge.alloyId('B')]: 18,
+  [forge.partId('hide')]: 24, [forge.partId('bone')]: 31, [forge.partId('core')]: 12, [forge.trophyOfSet('Champion')!]: 2,
+};
+if (weapon) s.familiarity[weapon.defId] = 150;
+s.stats.crafted = 14;
 s.newItems = s.items.slice(-3).map((it) => it.id);
 saveLoadout(s, 0, addDays(today, -2));
 for (const id of ['ENM-007', 'ENM-030', 'ENM-052']) bind(s, id, addDays(today, -20));

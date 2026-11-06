@@ -12,10 +12,11 @@ import { classById } from '@/data/classes';
 import { GROWTH_PER_LEVEL, SHADOW_RANKS } from '@/data/shadows';
 import { NODES } from '@/data/tree';
 import { rankFor } from './progression';
+import { gearDef } from './gear';
 import { xpAt } from './shadows';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -37,6 +38,9 @@ export function defaults(): Save {
     found: [],
     newItems: [],
     loadouts: [],
+    materials: {},
+    blueprints: [],
+    familiarity: {},
     gates: {
       clears: 0, fails: 0, withdrawn: 0, cleared: [], sealed: { day: null, ids: [] },
       runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [], surveyed: [],
@@ -55,7 +59,7 @@ export function defaults(): Save {
     story: [],
     seen: [],
     licence: { granted: false, at: null, tx: null },
-    stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0, contracts: 0, contractDays: 0 },
+    stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0, contracts: 0, contractDays: 0, crafted: 0 },
     settings: { sound: true, music: true, haptics: true, fastText: false, reminders: { on: false }, skipAsk: [] },
   };
 }
@@ -149,6 +153,18 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
       delete x.tactic;
     }
     if (sh && typeof sh.essence !== 'number') sh.essence = 0;
+    return s;
+  },
+  // v8: the Forge. Gear is forged from blueprints now, and fusion is gone. Every design held teaches its
+  // blueprint, so nothing a hunter wears or keeps is a design they cannot make again.
+  7: (s) => {
+    const items = Array.isArray(s.items) ? s.items : [];
+    const known = new Set<string>(Array.isArray(s.blueprints) ? (s.blueprints as string[]) : []);
+    for (const it of items) {
+      const id = isObj(it) && typeof it.defId === 'string' ? it.defId : null;
+      if (id && gearDef(id) && !gearDef(id)!.issued) known.add(id);
+    }
+    s.blueprints = [...known];
     return s;
   },
 };

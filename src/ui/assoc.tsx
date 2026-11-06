@@ -9,6 +9,8 @@ import * as association from '@/core/association';
 import type { AssocQuest, AssocReward } from '@/core/association';
 import { dungeonById, enemyById } from '@/core/gates';
 import { POTIONS } from '@/core/shop';
+import { gearDef } from '@/core/gear';
+import { bundleText } from './forge';
 import { SURVEY } from '@/data/association';
 import { ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID } from '@/data/narrative';
 import * as store from '@/store';
@@ -55,6 +57,8 @@ export function rewardText(w: AssocReward | null): string | null {
   if (w.kind === 'field') return `Field Potion${times}`;
   if (w.kind === 'survey') return `${SURVEY.name}${times}`;
   if (w.kind === 'satchel') return 'Satchel: room for one more Field Potion';
+  if (w.kind === 'blueprint') return 'Blueprint';
+  if (w.kind === 'alloy') return `Alloy${times}`;
   return `Mana Shards: ${w.n === 1 ? 'a clear’s worth' : `${w.n} clears’ worth`}`;
 }
 
@@ -168,6 +172,7 @@ export async function reportAssoc() {
     `XP +${paid.quest.xp}`,
     ...(w?.kind === 'field' ? [paid.field ? `Field Potion ×${paid.field}` : null, paid.shards ? `Mana Shards +${paid.shards} (the satchel was full)` : null]
       : w?.kind === 'shards' ? [`Mana Shards +${paid.shards}`]
+      : w?.kind === 'blueprint' || w?.kind === 'alloy' ? [paid.blueprint ? `Blueprint: ${gearDef(paid.blueprint)?.name}` : null, Object.keys(paid.mats).length ? bundleText(paid.mats) : null]
       : [rewardText(w)]),
   ].filter((x): x is string => !!x);
   await sys({ title: 'Valcorde', kind: 'coach', lines: [line, `<em>Received:</em> ${got.join(' · ')}`], actions: [{ label: 'Next Job', value: null, primary: true }] });

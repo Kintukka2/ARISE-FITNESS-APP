@@ -1,8 +1,8 @@
 /**
  * A campaign: a hunter played from the licence desk through the real engine,
  * day by day, by a simple, sensible policy. The board, fatigue, lockouts,
- * contracts, the Spire's weeks, extraction, the Exchange, upgrades and the
- * point spend all run as they do in the app. Where `npm run balance` models the
+ * contracts, the Spire's weeks, extraction, the Exchange, the Forge, upgrades
+ * and the point spend all run as they do in the app. Where `npm run balance` models the
  * climb with a formula, this plays it. Asserts nothing.
  *
  *   npm run campaign [days]
@@ -19,8 +19,10 @@ import { setAllBySystem } from '@/core/marks';
 import * as walkers from '@/core/walkers';
 import { board, entryBlock, isPractice, PRACTICE_GATE } from '@/core/gates';
 import * as gear from '@/core/gear';
+import * as forge from '@/core/forge';
 import { sweep } from '@/core/missions';
-import { autoAllocate, rankFor, rankOf, reclassifyAll, syncClass } from '@/core/progression';
+import { autoAllocate, rankFor, rankOf, syncClass } from '@/core/progression';
+import { claimAll } from '@/core/quests';
 import { autoLearn } from '@/core/skilltree';
 import { licensedRank } from '@/core/licence';
 import * as raid from '@/core/raid';
@@ -30,7 +32,8 @@ import { powerOf } from '@/core/combat';
 import * as association from '@/core/association';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
-import type { Dungeon, Save } from '@/core/types';
+import type { Dungeon, GearDef, Rank, Save, SlotKey } from '@/core/types';
+import { RANKS } from '@/core/types';
 import { dayKey, rng } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { walk } from '../tests/walk';
@@ -52,7 +55,79 @@ const PROFILES: Profile[] = [
 
 interface Tally {
   runs: number; cleared: number; defeated: number; spire: number; chosen: number; masterworks: number;
-  contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number; assoc: number; fused: number;
+  contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number; assoc: number;
+  forged: number; rerolls: number; recycled: number; blueprints: number; found: number;
+}
+const TALLY: Tally = {
+  runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0,
+  upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0,
+};
+
+const rk = (d: GearDef | undefined) => RANKS.indexOf((d?.rank ?? 'E') as Rank);
+
+/** The design a slot should be forged from: the rarest blueprint known for it, a set's piece first among equals. */
+function bestBlueprint(s: Save, slot: SlotKey): GearDef | null {
+  const accepts = gear.SLOTS.find((x) => x.key === slot)!.accepts;
+  const known = forge.FORGEABLE.filter((d) => d.slot === accepts && forge.knows(s, d.id));
+  // A set's piece first among equals, while its trophy is held; then the design best known.
+  const trophied = (d: GearDef) => !!d.set && forge.held(s, forge.trophyOfSet(d.set) ?? '') > 0;
+  const blocked = (d: GearDef) => !!d.set && !trophied(d);
+  return known.sort((a, b) => rk(b) - rk(a) || Number(blocked(a)) - Number(blocked(b)) || Number(trophied(b)) - Number(trophied(a))
+    || forge.familiarityRank(s, b.id) - forge.familiarityRank(s, a.id))[0] ?? null;
+}
+
+/**
+ * The Forge, as a sensible hunter works it: every slot worn below the rarest blueprint known for it is
+ * forged anew; a worn piece of that rarity that rolled in its bottom third is forged again once, the
+ * better kept; everything not worn is recycled. Then the worn pieces are upgraded, cheapest first.
+ */
+function smith(s: Save, t: Tally) {
+  // The rarities a slot is still waiting to be forged at: their alloy is saved for it, not spent on upgrades.
+  const waiting = new Set<string>();
+  // Slots whose piece is to be replaced by a rarer one: not worth upgrading.
+  const outgrown = new Set<string>();
+  for (const sl of gear.SLOTS) {
+    const best = bestBlueprint(s, sl.key);
+    if (!best) continue;
+    const on = gear.equippedIn(s, sl.key);
+    const od = gear.defOf(on ?? undefined);
+    const fresh = !on || !!od?.issued || rk(od) < rk(best);
+    const poor = !fresh && on && od?.id === best.id && gear.quality(on) < 34 && !on.up;
+    if (fresh && on) outgrown.add(on.id);
+    if (!fresh && !poor) continue;
+    const cost = forge.recipe(best);
+    if (!forge.affords(s, cost) || s.wallet.shards - cost.shards < RESERVE) {
+      // Its own alloy saved for it only when that alloy is all it waits on.
+      const own = forge.alloyId(best.rank as Rank);
+      if (fresh && forge.lines(s, cost).every((x) => x.id === own || x.have >= x.need)) waiting.add(best.rank);
+      continue;
+    }
+    const it = forge.forge(s, best.id);
+    if (!it) continue;
+    t.shardsOut += cost.shards;
+    if (poor) t.rerolls++; else t.forged++;
+    if (!on || fresh || gear.score(it) > gear.score(on)) gear.equip(s, it.id, sl.key);
+  }
+  gear.autoEquip(s);
+  // What is not worn goes back to the Forge.
+  const loose = s.items.filter((it) => !gear.slotOf(s, it)).map((it) => it.id);
+  t.recycled += forge.recycleSome(s, loose).count;
+  // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows;
+  // never with the alloy a slot waiting to be forged needs.
+  const keep = (r: string) => (waiting.has(r) ? forge.RECIPE.alloy[RANKS.indexOf(r as Rank)] : 0);
+  for (;;) {
+    const worn = gear.worn(s).map((it) => ({ it, cost: forge.upgradeCost(it, asc.overCap(s)) }))
+      .filter((x): x is { it: typeof x.it; cost: forge.Cost } => !!x.cost && forge.affords(s, x.cost) && !outgrown.has(x.it.id))
+      .filter((x) => {
+        const r = gear.defOf(x.it)!.rank;
+        return forge.held(s, forge.alloyId(r as Rank)) - (x.cost.mats[forge.alloyId(r as Rank)] ?? 0) >= keep(r);
+      });
+    const next = worn.sort((a, b) => a.cost.shards - b.cost.shards)[0];
+    if (!next || s.wallet.shards - next.cost.shards < RESERVE) break;
+    forge.upgrade(s, next.it.id, asc.overCap(s));
+    t.upgrades++;
+    t.shardsOut += next.cost.shards;
+  }
 }
 
 function newHunter() {
@@ -76,21 +151,15 @@ function tidy(s: Save, now: number, t: Tally) {
   const bench = s.shadows.army.filter((x) => !shadows.squad(s).includes(x)).sort((a, b) => powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
   for (const x of bench) if (shadows.freeSlots(s) > 0) shadows.toggleDeploy(s, x.id);
   const day = dayKey(now);
-  // The best thing on the shelf that beats what is worn, if it costs no more than half the purse.
-  const shelf = shop.shelf(s, day).filter((o) => !o.sold && o.price <= s.wallet.shards / 2 && gear.beatsWorn(s, o.item));
-  const best = shelf.sort((a, b) => gear.score(b.item) - gear.score(a.item))[0];
-  if (best && shop.buy(s, best.index, day)) { t.bought++; t.shardsOut += best.price; gear.autoEquip(s); }
-  // Every duplicate of a worn piece fed into it, before a shard is spent raising it.
-  t.fused += gear.fuseWorn(s);
-  // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows.
-  for (;;) {
-    const worn = gear.worn(s).map((it) => ({ it, cost: shop.upgradeCost(it, asc.overCap(s)) })).filter((x): x is { it: typeof x.it; cost: number } => x.cost !== null);
-    const next = worn.sort((a, b) => a.cost - b.cost)[0];
-    if (!next || s.wallet.shards - next.cost < RESERVE) break;
-    shop.upgrade(s, next.it.id);
-    t.upgrades++;
-    t.shardsOut += next.cost;
-  }
+  // A blueprint off the shelf, if it is rarer than what its slot can be forged from now, for no more than half the purse.
+  const shelf = shop.shelf(s, day).filter((o) => {
+    const d = gear.gearDef(o.defId)!;
+    const slot = gear.SLOTS.find((x) => x.accepts === d.slot)!.key;
+    return !o.sold && !o.known && o.price <= s.wallet.shards / 2 && rk(d) > rk(bestBlueprint(s, slot) ?? undefined);
+  });
+  const best = shelf.sort((a, b) => rk(gear.gearDef(b.defId)) - rk(gear.gearDef(a.defId)))[0];
+  if (best && shop.buy(s, best.index, day)) { t.bought++; t.shardsOut += best.price; }
+  smith(s, t);
 }
 
 /**
@@ -153,7 +222,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   const outcome = won ? 'cleared' : 'defeated';
   const res = raid.finish(s, d, run, outcome, now);
   // A hunter who keeps up claims each rank the moment its level is reached, and promotes each Shadow the moment the Essence pays for it.
-  reclassifyAll(s);
+  claimAll(s);
   // And takes Ryn's Association work, reporting each job the moment it is done.
   association.issue(s);
   if (association.ready(s)) { association.report(s); t.assoc++; }
@@ -163,6 +232,8 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   t.contracts += res.contracts.done.length;
   if (res.contracts.bonus) t.bonusDays++;
   if (res.chosen) { t.chosen++; if (res.chosen.item) t.masterworks++; }
+  t.blueprints += res.blueprints.length;
+  t.found += res.loot.length;
   // Every reach it has the mana for, up to the last, while the Shadow lingers.
   for (const l of res.lingering) while (raid.reachesLeft(l) > 0 && vitals.read(s, now).mp >= raid.reachCost(l)) raid.extract(s, l, r(), now);
   shadows.promoteAll(s);
@@ -174,7 +245,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
 function campaign(p: Profile) {
   const s = newHunter();
   const r = rng('campaign|' + p.name);
-  const t: Tally = { runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0, upgrades: 0, bought: 0, assoc: 0, fused: 0 };
+  const t: Tally = { ...TALLY };
   const ranks: string[] = [];
   const weekly: string[] = [];
   let rank = rankFor(1).key;
@@ -213,8 +284,13 @@ function campaign(p: Profile) {
       const key = rankOf(s).key;
       if (key !== rank) { rank = key; ranks.push(`${key}:${day + 1}d`); }
     }
-    if ((day + 1) % 28 === 0) {
-      weekly.push(`  day ${String(day + 1).padStart(3)}  L${String(s.hunter.level).padStart(3)} ${licensedRank(s)}  Ascension ${String(s.ascension.level).padStart(2)}  shards ${String(s.wallet.shards).padStart(5)}  score ${String(Math.round(gear.power(s))).padStart(4)}  ` +
+    if ((day + 1) % 14 === 0) {
+      const worn = gear.worn(s);
+      const q = worn.filter((it) => !gear.defOf(it)?.issued);
+      const kit = gear.SLOTS.map((sl) => gear.defOf(gear.equippedIn(s, sl.key) ?? undefined)?.rank ?? '-').join('');
+      const w = forge.weaponOf(s);
+      weekly.push(`  day ${String(day + 1).padStart(3)}  L${String(s.hunter.level).padStart(3)} ${licensedRank(s)}  kit ${kit}  q ${q.length ? Math.round(q.reduce((n, it) => n + gear.quality(it), 0) / q.length) : 0}%  weapon F${w ? forge.familiarityRank(s, w) : 0}  ` +
+        `Ascension ${String(s.ascension.level).padStart(2)}  shards ${String(s.wallet.shards).padStart(5)}  score ${String(Math.round(gear.power(s))).padStart(4)}  ` +
         `Shadows ${s.shadows.army.length} (squad ${shadows.squad(s).map((x) => `${shadows.rankOf(x).name[0]}${shadows.levelOf(x)}${shadows.starsOf(x) ? `*${shadows.starsOf(x)}` : ''}`).join('/') || '-'}, essence ${s.shadows.essence}, slots ${shadows.slots(s)})  ` +
         `sets ${[...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}  Spire best ${s.spire.top}`);
     }
@@ -224,7 +300,9 @@ function campaign(p: Profile) {
   console.log(`  ranks      ${ranks.join('  ')}`);
   console.log(`  runs       ${t.runs} (${(t.runs / days).toFixed(1)} a day, ${t.spire} on the Spire): ${Math.round((t.cleared / t.runs) * 100)}% cleared, ${t.defeated} carried out`);
   console.log(`  contracts  ${(t.contracts / days).toFixed(2)} of 3 a day, all three on ${Math.round((t.bonusDays / days) * 100)}% of days${contractsOpen(s) ? '' : ' (never opened)'}`);
-  console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} pieces bought, ${t.upgrades} upgrade steps, ${t.fused} duplicates fused), ${s.wallet.shards} left`);
+  console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} blueprints bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
+  console.log(`  forge      ${s.blueprints.length} blueprints known (${t.blueprints} from Gates), ${t.forged} forged, ${t.rerolls} forged again, ${t.recycled} recycled, ${t.found} found whole`);
+  console.log(`  materials  ${Object.entries(s.materials).filter(([, n]) => n).map(([k, n]) => `${forge.materialById(k)?.name ?? k} ${n}`).join(', ')}`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);

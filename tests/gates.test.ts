@@ -176,15 +176,20 @@ describe('gear and the exchange', () => {
     expect(power(s)).toBeGreaterThan(0);
   });
 
-  it('the shelf is eight pieces, stable for the day, and buying marks it sold', () => {
+  it('the shelf is a day of blueprints, stable for the day; buying one teaches it, and a known one is not for sale', () => {
     const s = hunter(20);
     const a = shop.shelf(s, day);
-    expect(a).toHaveLength(8);
-    expect(shop.shelf(s, day).map((o) => o.item.defId)).toEqual(a.map((o) => o.item.defId));
+    expect(a).toHaveLength(shop.BLUEPRINT_SHELF);
+    expect(shop.shelf(s, day).map((o) => o.defId)).toEqual(a.map((o) => o.defId));
     s.wallet.shards = 100000;
-    expect(shop.buy(s, 0, day)).not.toBeNull();
+    expect(shop.buy(s, 0, day)).toBe(true);
     expect(shop.shelf(s, day)[0].sold).toBe(true);
-    expect(s.items[0].q).toBe(a[0].item.q);
+    expect(s.blueprints).toContain(a[0].defId);
+    expect(s.wallet.shards).toBe(100000 - a[0].price);
+    // A blueprint already known stays on the shelf, marked known, and cannot be bought.
+    s.blueprints.push(a[1].defId);
+    expect(shop.shelf(s, day)[1].known).toBe(true);
+    expect(shop.buy(s, 1, day)).toBe(false);
   });
 
   it('potions refuse to be wasted', () => {
