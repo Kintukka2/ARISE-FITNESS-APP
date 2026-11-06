@@ -10,7 +10,7 @@
  */
 import { DUNGEONS } from '@/data/dungeons';
 import { ENEMIES } from '@/data/enemies';
-import { ALLOYS, BLUEPRINTS, EMBER, FAMILIARITY, FAMILIARITY_MAX, PART_FOR, PARTS, RECIPE, SALVAGE, UPGRADE_COST, type Material, type PartKey } from '@/data/forge';
+import { ALLOYS, BLUEPRINTS, EMBER, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART as PART_FOR_FAMILY, PART_FOR, PARTS, RECIPE, SALVAGE, UPGRADE_COST, type Material, type PartKey } from '@/data/forge';
 import { OVERCHARGE } from '@/data/ascension';
 import { SETS, UPGRADE } from '@/data/sets';
 import { ALL_GEAR, defOf, equippedIn, gearDef, grant, ofRank, Q_HIGH, Q_LOW, RARITY, setPieces, SLOTS, upgradeStep } from './gear';
@@ -96,6 +96,61 @@ export function spend(s: Save, c: Cost): boolean {
 
 const idx = (r: Rank | string) => Math.max(0, RANKS.indexOf(r as Rank));
 const below = (r: Rank): Rank | null => (idx(r) > 0 ? RANKS[idx(r) - 1] : null);
+
+// ------------------------------------------------------------------ tracking
+
+/** Whether the hunter has tagged a material to find. */
+export const isTracked = (s: Save, id: string) => (s.tracked ?? []).includes(id);
+
+/** Tag a material to find, or untag it. Returns whether it is tagged now. Mutates. */
+export function toggleTrack(s: Save, id: string): boolean {
+  if (!materialById(id)) return false;
+  s.tracked ??= [];
+  const i = s.tracked.indexOf(id);
+  if (i >= 0) { s.tracked.splice(i, 1); return false; }
+  s.tracked.push(id);
+  return true;
+}
+
+/**
+ * The materials a Gate leaves, as the board marks them: its grade's alloy and the grade below's, the
+ * parts its creatures' families leave, its boss's trophy where its sets call it home, and Ember when it
+ * is walked into at an Ascension `level`. Every clear leaves one of each part besides; those are not
+ * where a part is found.
+ */
+export function sourcesOf(d: Dungeon, level = 0): string[] {
+  const g = idx(d.rank);
+  const out = [alloyId(RANKS[g])];
+  if (g > 0) out.push(alloyId(RANKS[g - 1]));
+  const fams = [...d.mobs, d.elite, d.boss].map((id) => ENEMIES.find((e) => e.id === id)?.family).filter((f): f is string => !!f);
+  for (const k of new Set(fams.map((f) => PART_FOR_FAMILY[f] ?? 'hide'))) out.push(partId(k));
+  const t = trophyAt(d);
+  if (t) out.push(t);
+  if (level > 0) out.push(EMBER.id);
+  return out;
+}
+
+/** The materials a cost is short of. */
+export const missing = (s: Save, c: Cost) => lines(s, c).filter((x) => x.have < x.need).map((x) => x.id);
+
+/**
+ * Track every material a cost is short of, or, when all of them are tracked already, stop tracking
+ * them. Returns whether they are tracked now. Mutates.
+ */
+export function trackMissing(s: Save, c: Cost): boolean {
+  const ids = missing(s, c);
+  if (!ids.length) return false;
+  s.tracked ??= [];
+  if (ids.every((id) => isTracked(s, id))) {
+    s.tracked = s.tracked.filter((id) => !ids.includes(id));
+    return false;
+  }
+  for (const id of ids) if (!isTracked(s, id)) s.tracked.push(id);
+  return true;
+}
+
+/** The tracked materials a Gate leaves. */
+export const trackedAt = (s: Save, d: Dungeon, level = 0) => (s.tracked?.length ? sourcesOf(d, level).filter((id) => isTracked(s, id)) : []);
 
 // ------------------------------------------------------------------ blueprints
 

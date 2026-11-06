@@ -9,6 +9,7 @@ import { RARITY } from '@/core/gear';
 import { SETS } from '@/data/sets';
 import * as forge from '@/core/forge';
 import { ALLOYS } from '@/data/forge';
+import { MatArt, TrackMark } from '@/ui/forge';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
 import { build, mapSeed } from '@/core/map';
 import * as contracts from '@/core/contracts';
@@ -197,6 +198,8 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
   const held = pieces.filter((id) => forge.knows(s, id)).length;
   // What a first clear adds: the bounty, at the level the hunter walks in at.
   const bounty = !cleared && !practice ? shop.gateShards(d.rank, 2 * ascension.payShare(ascension.entryLevel(s, d, false))) : 0;
+  // The materials the hunter has tagged to find that this Gate leaves: the Forge's anvil, and their names.
+  const tracked = practice ? [] : forge.trackedAt(s, d, ascension.entryLevel(s, d, false));
   return (
     <li style={`--i: ${Math.min(i, 8)}`}>
       <button type="button"
@@ -205,13 +208,14 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
         <span class="gaterow__portal ga-portal">
           <i class="ga-portal__swirl" /><i class="ga-portal__core" />
           {locked ? <Glyph name="lock" /> : <Glyph name={known ? 'skull' : 'unknown'} />}
+          {/* Cleared once: a tick on the portal's corner, the name left as it is. */}
+          {cleared && !practice && <span class="gaterow__done" aria-label="Cleared"><Glyph name="check" /></span>}
         </span>
         <span class="gaterow__body">
-          <span class="gaterow__name"><b>[{d.name}]</b>{cleared && !practice && <Glyph name="check" class="gaterow__done" />}</span>
+          <span class="gaterow__name"><b>[{d.name}]</b></span>
           <small>{locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?'}</small>
+          {/* The counts first, the Shadows bound and the set blueprints known, so they line up row to row; then what marks it. */}
           <span class="gaterow__tags">
-            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
-            {bounty > 0 && <span class="gtag is-bounty" title="First-clear bounty">Bounty <Shards n={bounty} /></span>}
             {inside.length > 0 && !practice && (
               <span class={`gtag is-shadows ${bound === inside.length ? 'is-full' : ''}`} aria-label={`Shadows bound: ${bound} of ${inside.length}`}>
                 <Glyph name="shadows" /><span class="num">{bound}/{inside.length}</span>
@@ -220,6 +224,14 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
             {pieces.length > 0 && (
               <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
                 <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>
+              </span>
+            )}
+            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
+            {bounty > 0 && <span class="gtag is-bounty" title="First-clear bounty">Bounty <Shards n={bounty} /></span>}
+            {tracked.length > 0 && (
+              <span class="gtag is-tracked" title={`Tracked: ${tracked.map((id) => forge.materialById(id)?.name).join(', ')}`}
+                aria-label={`Tracked materials here: ${tracked.map((id) => forge.materialById(id)?.name).join(', ')}`}>
+                <Glyph name="forge" />{tracked.length > 1 && <span class="num">{tracked.length}</span>}
               </span>
             )}
           </span>
@@ -663,6 +675,16 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <span class="sysbox brewards__one"><small class="label">Materials</small><b>{isPractice(d) ? ALLOYS.E.name : ALLOYS[d.rank as Rank].name}</b><small>{isPractice(d) ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small></span>
         <span class="sysbox brewards__one"><small class="label">Depth</small><b>{map.layers.length} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}</b><small>{isTrial(d) ? 'no rest between them' : 'a rest, then the boss'}</small></span>
       </div>
+      {/* The materials tagged at the Forge that this Gate leaves. */}
+      {!isPractice(d) && !isTrial(d) && forge.trackedAt(s, d, level).length > 0 && (
+        <div class="sysbox btracked" aria-label="Tracked materials here">
+          <TrackMark class="btracked__mark" />
+          <span class="label">Tracked</span>
+          <span class="btracked__list">{forge.trackedAt(s, d, level).map((id) => (
+            <span key={id} class="matchip"><MatArt id={id} size={20} /><span class="matchip__name">{forge.materialById(id)?.name}</span></span>
+          ))}</span>
+        </div>
+      )}
 
       {/* What stands in it: the boss, one of the Chosen if it holds the Gate today, and the rest of what walks there. */}
       <Section title="Threat" right={!isPractice(d) && !isTrial(d) && counted.length ? `Shadows bound: ${bound}/${counted.length}` : undefined}>

@@ -792,6 +792,13 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
   starts at nothing: changing weapons costs something. The results report it as a System alert.
 - **Saves.** `SAVE_VERSION` 8: every design a save holds becomes a blueprint known, so nothing worn or
   kept is a design the hunter cannot make again.
+- **Tracking a material** (`s.tracked`, `forge.toggleTrack`). A material tapped in a recipe's tiles or
+  the Forge's Materials is tagged with the Forge's anvil, and so is every Gate on the board that
+  leaves it (`forge.sourcesOf`: its grade's alloy and the grade below's, the parts its creatures'
+  families leave, its trophy, and Ember where it is walked into at Ascension); the brief lists the
+  tracked materials it leaves. The part every clear leaves is not counted: a part is where its
+  families are. Tapped again, the tag goes. A blueprint's Track Missing tracks everything its recipe is
+  short of in one tap (`forge.trackMissing`), and the same button then stops tracking them.
 - **Secret Quests:** Made, Not Found (forge an item), Second Nature (a weapon at Familiarity 5) and
   Master Smith (forge 50).
 - **Balance.** `typicalHunter` carries its weapon at Familiarity 2 and `keptUpHunter` at 5;
@@ -841,12 +848,13 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
   - **A band to each grade:** its portal and its name in its colour, what a clear there pays at the
     level the hunter walks in at (XP and Mana Shards, as the brief reads them), and its count, or
     Licence and a lock where the licence stops.
-  - **A row to each Gate:** its portal with the boss's mark (or a lock), its name (green once ever
-    cleared, with a tick), its boss or `?`, and a line of chips: what marks it (Training, Chosen,
-    Association, Quest, in their own colours, as the tiles' counts had them), its first-clear bounty
-    in shards while it has never been cleared, how many of the creatures known to walk in it already
-    serve as Shadows (the boss counts once known), and the set blueprints known of all its home
-    sets' (`1/6`). The set pieces once named each set in a chip; a Gate home to two sets carried two
+  - **A row to each Gate:** its portal with the boss's mark (or a lock), and a tick on the portal's
+    corner once ever cleared (the name was green with a tick, and a board of green names was too
+    much green), its name, its boss or `?`, and a line of chips, the counts first so they line up from row to
+    row: how many of the creatures known to walk in it already serve as Shadows (the boss counts
+    once known), and the set blueprints known of all its home sets' (`1/6`); then what marks it
+    (Training, Chosen, Association, Quest, in their own colours, as the tiles' counts had them), its
+    first-clear bounty in shards while it has never been cleared, and the anvil of a tracked material. The set pieces once named each set in a chip; a Gate home to two sets carried two
     long chips, so it is one count now, green once every blueprint is known. A row opens the brief.
   - **On the Gates screen**, the Open Gates tile stars each grade's portal that holds a marked Gate.
 - **The Quests screen, a log.** Its tiles were uneven, half of them a picture and a name, and what a

@@ -245,6 +245,51 @@ describe('weapon familiarity', () => {
   });
 });
 
+describe('tracking a material', () => {
+  it('tags and untags it, and marks the Gates that leave it', () => {
+    const s = defaults();
+    const d = dungeonById('DNG-049')!;
+    expect(forge.trackedAt(s, d)).toEqual([]);
+    expect(forge.toggleTrack(s, ALLOYS.S.id)).toBe(true);
+    expect(forge.toggleTrack(s, forge.trophyOfSet('Demon Lord')!)).toBe(true);
+    expect(forge.trackedAt(s, d)).toEqual([ALLOYS.S.id, forge.trophyOfSet('Demon Lord')]);
+    // The grade above leaves it as its lower alloy; a Gate two grades down does not.
+    expect(forge.trackedAt(s, dungeonById('DNG-016')!)).toEqual([]);
+    expect(forge.sourcesOf(dungeonById('DNG-045')!)).not.toContain(ALLOYS.S.id);
+    // Its creatures' families say which parts it leaves; Ember only at an Ascension level.
+    expect(forge.sourcesOf(d)).toContain(PARTS.core.id);
+    expect(forge.sourcesOf(d)).not.toContain(forge.EMBER.id);
+    expect(forge.sourcesOf(d, 2)).toContain(forge.EMBER.id);
+    expect(forge.toggleTrack(s, ALLOYS.S.id)).toBe(false);
+    expect(s.tracked).toEqual([forge.trophyOfSet('Demon Lord')]);
+    expect(forge.toggleTrack(s, 'nothing')).toBe(false);
+  });
+});
+
+describe('tracking what a recipe is short of', () => {
+  it('tracks every missing material at once, and the same tap again stops tracking them', () => {
+    const d = gear.setPieces('Demon Lord')[0];
+    const s = defaults();
+    const c = forge.recipe(d);
+    forge.give(s, { [ALLOYS.S.id]: 999 });
+    const short = forge.missing(s, c);
+    expect(short).not.toContain(ALLOYS.S.id);
+    expect(short).toContain(forge.trophyOfSet('Demon Lord'));
+    // Iron Scrap is no part of a Legendary recipe: tracked besides, it is left alone.
+    forge.toggleTrack(s, ALLOYS.E.id);
+    expect(forge.trackMissing(s, c)).toBe(true);
+    for (const id of short) expect(forge.isTracked(s, id)).toBe(true);
+    expect(forge.trackMissing(s, c)).toBe(false);
+    for (const id of short) expect(forge.isTracked(s, id)).toBe(false);
+    // What was tracked besides is left as it was.
+    expect(s.tracked).toEqual([ALLOYS.E.id]);
+    // Nothing short, nothing to track.
+    for (const [id, n] of Object.entries(c.mats)) forge.give(s, { [id]: n });
+    expect(forge.missing(s, c)).toEqual([]);
+    expect(forge.trackMissing(s, c)).toBe(false);
+  });
+});
+
 describe('Ryn’s blueprint', () => {
   it('pays a blueprint of the job’s grade, one not yet known', () => {
     const s = typicalHunter(27, 'C', 'ryn');
