@@ -158,7 +158,7 @@ describe('the words', () => {
     for (const t of lines) expect(t, t).not.toMatch(/[+-]\d+(?:\.\d+)?%?\s+(STR|VIT|AGI|PER|INT|HP|MP|XP|Mana Shards|shards|attack|magic|defence|resistance|accuracy|evasion|initiative|critical|maximum|fatigue|health|price|grades?)\b/i);
   });
 
-  it('puts no dash or old word in a line a player reads', () => {
+  it('puts no dash, old word or "to" range in a line a player reads', () => {
     const found: string[] = [];
     for (const f of srcFiles) {
       readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
@@ -172,6 +172,8 @@ describe('the words', () => {
         if (/[\d}%] (a|an|per) (round|hour|turn|day)\b/.test(code)) found.push(`${f}:${i + 1} rate not written "each"`);
         if (/toast\(\s*[`'"]\+|\+\$\{[^}]*\}\s*(Mana Shards|shards)/.test(code)) found.push(`${f}:${i + 1} gain written value first`);
         for (const m of code.matchAll(/<Empty(?:\s[^>]*)?>([^<{]+)<\/Empty>/g)) if (m[1].length > 40) found.push(`${f}:${i + 1} empty state says more than the fact`);
+        // A range is written with a hyphen, `30-50`, `Floors 26-30`, never `30 to 50`; only a screen reader hears "to".
+        if (!/aria-label/.test(code) && /[\d%}]\s+to\s+[+-]?(\d|\$\{|\{)/.test(code)) found.push(`${f}:${i + 1} range written with "to"`);
       });
     }
     expect(found).toEqual([]);

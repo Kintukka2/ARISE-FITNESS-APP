@@ -325,7 +325,7 @@ function SpireRow({ s, day }: { s: Save; day: string }) {
   return (
     <QuestRow id="spire" name={`Weekly Quest: ${SPIRE_NAME}`} count={`${best}/${goal}`}
       art={<Glyph name="spire" />}
-      sub={<>Clear Floor {goal} · Floors {spire.firstFloor(b)} to {spire.lastFloor(b)} next · New week in: <b class="num">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</b></>}
+      sub={<>Clear Floor {goal} · Floors {spire.firstFloor(b)}-{spire.lastFloor(b)} next · New week in: <b class="num">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</b></>}
       p={best / Math.max(1, goal)}
       pay={[<>Reward tier: {pay.tier}</>, <>Mana Shards <b class="grant num">+{group(pay.shards)}</b></>, <>{RARITY[pay.rank].name} gear <b class="grant num">+1</b></>]}
       onOpen={() => openQuest(SpireBody, 'gates')} />
@@ -348,7 +348,7 @@ function SpireBody({ close }: { close: () => void }) {
   const days = Math.floor(left / 864e5);
   return (
     <QuestWindow bare name={`Weekly Quest: ${SPIRE_NAME}`} class="quest-spire"
-      goals={<QuestGoal id="spire" text={`Clear Floor ${goal}.`} hint={`Floors ${from} to ${to} next.`} got={best} need={goal} done={false} />}
+      goals={<QuestGoal id="spire" text={`Clear Floor ${goal}.`} hint={`Floors ${from}-${to} next.`} got={best} need={goal} done={false} />}
       rewards={[
         <>Reward tier: {pay.tier}</>,
         <>Mana Shards <b class="num grant">+{group(pay.shards)}</b></>,
@@ -357,10 +357,10 @@ function SpireBody({ close }: { close: () => void }) {
       {now && <p class="questinfo__note">This week: Floor {best} · Reward tier: {now.tier}</p>}
       <small class="questinfo__when">New week in: <b class="num countdown">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</b></small>
       <Btn kind="primary" block onClick={() => {
-        if (locked) return toast(`Floors ${from} to ${to} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
+        if (locked) return toast(`Floors ${from}-${to} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
         close();
         openBrief(d);
-      }}>Brief: Floors {from} to {to}</Btn>
+      }}>Brief: Floors {from}-{to}</Btn>
     </QuestWindow>
   );
 }

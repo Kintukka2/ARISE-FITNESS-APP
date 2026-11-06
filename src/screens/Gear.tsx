@@ -372,7 +372,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
                 <li key={r.stat}>
                   <span class="itemrolls__name">{gear.rollText(it)[k]}</span>
                   <i class={`itemrolls__bar ${at >= 1 ? 'is-full' : ''}`} aria-hidden="true"><i style={`width: ${unit(at) * 100}%`} />{at > 1 && <b style={`width: ${Math.min(1, at - 1) * 100}%`} />}</i>
-                  <small class="num muted">{r.min} to {r.max}{r.pct ? '%' : ''}</small>
+                  <small class="num muted">{r.min}-{r.max}{r.pct ? '%' : ''}</small>
                 </li>
               );
             })}

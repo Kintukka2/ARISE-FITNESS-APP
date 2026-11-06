@@ -36,7 +36,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Levels, ranks and stats',
     lines: [
-      `A clear pays XP by grade: ${GATE_XP.E} at E to ${GATE_XP.S} at S.`,
+      `A clear pays XP by grade, E-S: ${GATE_XP.E}-${GATE_XP.S}.`,
       'The first clear of each Gate pays double.',
       'Withdrawing pays a share of what you cleared. Being carried out pays a little.',
       `The Practice Gate lands you on Level ${PRACTICE_LEVEL}.`,
@@ -56,7 +56,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Skill Points: ${SKILL_POINTS.level} each level, and ${SKILL_POINTS.rank} more for each rank you claim. Spend them on the Skills screen.`,
       `The skill tree has ${PATHS.length} Paths, one for each stat: ${PATHS.map((p) => `${p.name} (${p.key})`).join(', ')}.`,
       'You can spend in any Path, whatever your class. The skills of a Path grow stronger with its stat.',
-      `A Path has a tier for each rank from ${TIER_RANKS[0]} to ${TIER_RANKS[TIER_RANKS.length - 1]}. A tier opens at its rank, once the Path holds enough of your points: ${TIER_RANKS.slice(1).map((r, i) => `${r} ${TIER_GATE[i + 1]}`).join(', ')}.`,
+      `A Path has a tier for each rank, ${TIER_RANKS[0]}-${TIER_RANKS[TIER_RANKS.length - 1]}. A tier opens at its rank, once the Path holds enough of your points: ${TIER_RANKS.slice(1).map((r, i) => `${r} ${TIER_GATE[i + 1]}`).join(', ')}.`,
       'A node needs the one it grows from. Each point you spend counts toward the next tier of its Path.',
       'A skill levels up to Lv.MAX: more force at every level, and its own edge at the top.',
       'Each Path has one skill that does no damage, at B: a curse that never misses, a taunt, or a support for the whole party.',
@@ -114,7 +114,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A cleared Gate is replaced by another of its grade. The board redraws at midnight.',
       'The brief runs the Gate 24 times with your party and grades how often it cleared.',
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
-      `A clear pays shards by grade: ${GATE_SHARDS.E} at E to ${GATE_SHARDS.S} at S. The first clear pays double, once.`,
+      `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear pays double, once.`,
       'A clear leaves materials for the Forge, and now and then a blueprint.',
       `Being carried out locks you out of Gates for ${WIPE_LOCK / 36e5} hours.`,
     ],
@@ -217,7 +217,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Health, mana and fatigue',
     lines: [
       `Health and mana carry between Gates and recover about ${Math.round(PCT_PER_HOUR * 100)}% each hour.`,
-      `Each Gate adds fatigue: ${RAID_FATIGUE.E} at E to ${RAID_FATIGUE.S} at S, out of ${FATIGUE_MAX}.`,
+      `Each Gate adds fatigue by grade, E-S: ${RAID_FATIGUE.E}-${RAID_FATIGUE.S}, out of ${FATIGUE_MAX}.`,
       `Fatigue lowers every stat, to half strength at ${FATIGUE_MAX}.`,
       `It fades about ${FATIGUE_PER_HOUR} each hour.`,
       'It is the only limit on how much you can raid.',
@@ -228,7 +228,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       'A felled creature can linger after a clear.',
       `Extract it with mana and it may join your army. Its success rate is ${Math.round(HOLD.base * 100)}%, plus ${Math.round(HOLD.perInt * 1000) / 10}% for each point of INT, up to ${Math.round(HOLD.max * 100)}%.`,
-      `Extraction costs MP by grade: ${EXTRACT_MP.E} at E to ${EXTRACT_MP.S} at S, whether or not it holds.`,
+      `Extraction costs MP by grade, E-S: ${EXTRACT_MP.E}-${EXTRACT_MP.S}, whether or not it holds.`,
       `A Shadow that does not hold still lingers: you can reach for it ${EXTRACT_TRIES.max} times in all. Each reach costs ${EXTRACT_TRIES.step === 2 ? 'twice' : `${EXTRACT_TRIES.step} times`} the one before.`,
       `You can deploy ${SQUAD.E} at E, ${SQUAD.C} at C and ${SQUAD.A} at A. Some Secret Quests add more.`,
       'Shadows never make a Gate harder.',
@@ -240,7 +240,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Tap Ready on the Army to promote and awaken every ready Shadow at once, as far as your Shadow Essence goes.',
       `An Ascendant Shadow at Lv.${SHADOW_RANKS[SHADOW_RANKS.length - 1].cap} can be awakened from its card with Shadow Essence, ${AWAKENING.cost.length} stars in all: ${AWAKENING.cost.join(', ')}.`,
       `Each star grows every attribute by ${AWAKENING.growth * 100}% more of its creature’s own.`,
-      `A creature like one already in your army gives Shadow Essence when its extraction holds: ${ESSENCE.E} at E to ${ESSENCE.S} at S, and twice that from a boss.`,
+      `A creature like one already in your army gives Shadow Essence when its extraction holds, by grade, E-S: ${ESSENCE.E}-${ESSENCE.S}, and twice that from a boss.`,
       'Release a Shadow from its card for Shadow Essence: its creature’s, and half of what its ranks cost. A Shadow released is gone.',
       `Each rank has its insignia: ${SHADOW_RANKS.map((r, i) => `${r.name} ${['one chevron', 'two', 'three', 'three over a rocker'][i] ?? ''}`.trim()).join(', ')}.`,
       'A Shadow’s badge shows what it was, its family’s glyph, with its shadow behind it.',
@@ -257,7 +257,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Equipment and the Exchange',
     lines: [
       'Ten slots, six rarities.',
-      'Every piece rolls its core bonus between 75% and 125% of its design, plus its own properties.',
+      'Every piece rolls its core bonus at 75-125% of its design, plus its own properties.',
       'Auto Equip picks the best of what you hold, and favours a set you hold two or more pieces of.',
       `${SETS.length} sets of three pieces, Rare and up.`,
       'Two pieces of a set worn together pay a bonus, and all three pay another.',

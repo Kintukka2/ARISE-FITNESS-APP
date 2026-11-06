@@ -852,7 +852,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         {r.assoc && association.current(s) && <AssocStrip q={association.current(s)!} move={r.assoc} />}
         {climb && block !== null && (
           <Btn kind="primary" size="lg" block class="climb" onClick={() => void leave(climb)} sound="tap">
-            <Glyph name="up" /> Climb On · Floors {spire.firstFloor(block)} to {spire.lastFloor(block)}
+            <Glyph name="up" /> Climb On · Floors {spire.firstFloor(block)}-{spire.lastFloor(block)}
           </Btn>
         )}
         <Btn kind={climb ? undefined : 'primary'} size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>
