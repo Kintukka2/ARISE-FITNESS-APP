@@ -797,7 +797,8 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
   leaves it (`forge.sourcesOf`: its grade's alloy and the grade below's, the parts its creatures'
   families leave, its trophy, and Ember where it is walked into at Ascension); the brief lists the
   tracked materials it leaves. The part every clear leaves is not counted: a part is where its
-  families are. Tapped again, the tag goes.
+  families are. Tapped again, the tag goes. A blueprint's Track Missing tracks everything its recipe is
+  short of in one tap (`forge.trackMissing`), and the same button then stops tracking them.
 - **Secret Quests:** Made, Not Found (forge an item), Second Nature (a weapon at Familiarity 5) and
   Master Smith (forge 50).
 - **Balance.** `typicalHunter` carries its weapon at Familiarity 2 and `keptUpHunter` at 5;

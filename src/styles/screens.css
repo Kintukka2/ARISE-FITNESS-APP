@@ -1831,3 +1831,6 @@ button.matrow { width: 100%; color: inherit; font: inherit; text-align: left; cu
 .matrow__track { width: 16px; height: 16px; }
 .btracked { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-color: color-mix(in srgb, var(--forge) 60%, transparent); box-shadow: 0 0 10px var(--forge-glow); }
 .btracked__list { display: flex; flex-wrap: wrap; gap: 6px; }
+.trackall { margin-top: 8px; border-color: color-mix(in srgb, var(--forge) 55%, transparent); color: var(--forge); }
+.trackall .ico { width: 14px; height: 14px; }
+.trackall.is-on { background: rgba(30, 14, 2, 0.6); box-shadow: 0 0 10px var(--forge-glow); }

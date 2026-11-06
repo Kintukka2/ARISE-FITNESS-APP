@@ -130,6 +130,25 @@ export function sourcesOf(d: Dungeon, level = 0): string[] {
   return out;
 }
 
+/** The materials a cost is short of. */
+export const missing = (s: Save, c: Cost) => lines(s, c).filter((x) => x.have < x.need).map((x) => x.id);
+
+/**
+ * Track every material a cost is short of, or, when all of them are tracked already, stop tracking
+ * them. Returns whether they are tracked now. Mutates.
+ */
+export function trackMissing(s: Save, c: Cost): boolean {
+  const ids = missing(s, c);
+  if (!ids.length) return false;
+  s.tracked ??= [];
+  if (ids.every((id) => isTracked(s, id))) {
+    s.tracked = s.tracked.filter((id) => !ids.includes(id));
+    return false;
+  }
+  for (const id of ids) if (!isTracked(s, id)) s.tracked.push(id);
+  return true;
+}
+
 /** The tracked materials a Gate leaves. */
 export const trackedAt = (s: Save, d: Dungeon, level = 0) => (s.tracked?.length ? sourcesOf(d, level).filter((id) => isTracked(s, id)) : []);
 

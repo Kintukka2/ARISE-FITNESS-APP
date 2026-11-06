@@ -266,6 +266,30 @@ describe('tracking a material', () => {
   });
 });
 
+describe('tracking what a recipe is short of', () => {
+  it('tracks every missing material at once, and the same tap again stops tracking them', () => {
+    const d = gear.setPieces('Demon Lord')[0];
+    const s = defaults();
+    const c = forge.recipe(d);
+    forge.give(s, { [ALLOYS.S.id]: 999 });
+    const short = forge.missing(s, c);
+    expect(short).not.toContain(ALLOYS.S.id);
+    expect(short).toContain(forge.trophyOfSet('Demon Lord'));
+    // Iron Scrap is no part of a Legendary recipe: tracked besides, it is left alone.
+    forge.toggleTrack(s, ALLOYS.E.id);
+    expect(forge.trackMissing(s, c)).toBe(true);
+    for (const id of short) expect(forge.isTracked(s, id)).toBe(true);
+    expect(forge.trackMissing(s, c)).toBe(false);
+    for (const id of short) expect(forge.isTracked(s, id)).toBe(false);
+    // What was tracked besides is left as it was.
+    expect(s.tracked).toEqual([ALLOYS.E.id]);
+    // Nothing short, nothing to track.
+    for (const [id, n] of Object.entries(c.mats)) forge.give(s, { [id]: n });
+    expect(forge.missing(s, c)).toEqual([]);
+    expect(forge.trackMissing(s, c)).toBe(false);
+  });
+});
+
 describe('Ryn’s blueprint', () => {
   it('pays a blueprint of the job’s grade, one not yet known', () => {
     const s = typicalHunter(27, 'C', 'ryn');

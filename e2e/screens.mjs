@@ -172,7 +172,14 @@ try {
   if (!(await page.locator('.sheet.is-top .recipe__reveal .flip.is-open').count())) throw new Error('THE FORGED PIECE WAS NOT TURNED OVER');
   await page.locator('.sheet.is-top .recipe__reveal').scrollIntoViewIfNeeded(); await snap('blueprint-forged');
   // A material tapped is tracked: its tile carries the anvil, and so will every Gate on the board that leaves it.
-  await page.locator('.sheet.is-top .costgrid__one').first().click(); await sleep(300);
+  // Track Missing tracks every material the recipe is short of at once.
+  if (await page.locator('.sheet.is-top .trackall').count()) {
+    await page.locator('.sheet.is-top .trackall').click(); await sleep(300);
+    if (await page.locator('.sheet.is-top .costgrid__one.is-short:not(.is-tracked)').count()) throw new Error('TRACK MISSING LEFT A SHORT MATERIAL UNTRACKED');
+    if (!(await page.locator('.sheet.is-top .trackall', { hasText: 'Stop Tracking' }).count())) throw new Error('TRACK MISSING DID NOT OFFER TO STOP');
+  } else {
+    await page.locator('.sheet.is-top .costgrid__one').first().click(); await sleep(300);
+  }
   if (!(await page.locator('.sheet.is-top .costgrid__one.is-tracked .trackmark').count())) throw new Error('A TAPPED MATERIAL WAS NOT TRACKED');
   await page.locator('.sheet.is-top .costgrid').scrollIntoViewIfNeeded(); await snap('blueprint-tracked');
   await close();

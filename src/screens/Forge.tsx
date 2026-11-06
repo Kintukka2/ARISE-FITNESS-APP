@@ -216,6 +216,7 @@ function Recipe({ defId }: { defId: string }) {
       )}
       <Section title="Required materials" right={<Shards n={cost.shards} />}>
         <CostGrid s={s} c={cost} />
+        <TrackMissing c={cost} />
       </Section>
       {fresh.length > 0 && (
         <div class="haul recipe__fresh">{fresh.slice(0, 1).map((id) => <Forged key={id} id={id} />)}</div>
@@ -229,6 +230,28 @@ function Recipe({ defId }: { defId: string }) {
         </Section>
       )}
     </div>
+  );
+}
+
+/**
+ * Track every material the recipe is short of in one tap, so the board marks every Gate that leaves
+ * one; once they all are, the same button stops tracking them. Nothing short, no button.
+ */
+function TrackMissing({ c }: { c: forge.Cost }) {
+  const s = useSave();
+  const short = forge.missing(s, c);
+  if (!short.length) return null;
+  const all = short.every((id) => forge.isTracked(s, id));
+  const go = () => {
+    const on = store.update((x) => forge.trackMissing(x, c));
+    sfx.tap();
+    buzz(on ? [10, 20, 14] : 8);
+    toast(`${on ? 'Tracking' : 'No longer tracking'}: ${short.map((id) => forge.materialById(id)?.name ?? id).join(', ')}`, on ? 'good' : 'xp');
+  };
+  return (
+    <Btn kind="ghost" size="sm" block class={`trackall ${all ? 'is-on' : ''}`} onClick={go}>
+      <Glyph name="forge" /> {all ? 'Stop Tracking' : `Track Missing · ${short.length}`}
+    </Btn>
   );
 }
 
