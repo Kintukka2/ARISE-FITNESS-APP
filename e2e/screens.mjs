@@ -171,6 +171,10 @@ try {
   if ((await page.locator('.sheet.is-top .heldrow').count()) !== held + 1) throw new Error('FORGING PUT NO PIECE IN THE BAG');
   if (!(await page.locator('.sheet.is-top .recipe__reveal .flip.is-open').count())) throw new Error('THE FORGED PIECE WAS NOT TURNED OVER');
   await page.locator('.sheet.is-top .recipe__reveal').scrollIntoViewIfNeeded(); await snap('blueprint-forged');
+  // A material tapped is tracked: its tile carries the anvil, and so will every Gate on the board that leaves it.
+  await page.locator('.sheet.is-top .costgrid__one').first().click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .costgrid__one.is-tracked .trackmark').count())) throw new Error('A TAPPED MATERIAL WAS NOT TRACKED');
+  await page.locator('.sheet.is-top .costgrid').scrollIntoViewIfNeeded(); await snap('blueprint-tracked');
   await close();
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click(); await sleep(400); await snap('forge-materials', true);
   await close();
@@ -238,6 +242,11 @@ try {
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
   // A Gate home to a set counts its pieces held, of all; it names no set.
   if (await page.locator('.sheet.is-top .gtag.is-set').count()) throw new Error('THE BOARD STILL NAMES SETS');
+  // The material tracked at the Forge marks the Gates that leave it with the anvil.
+  if (!(await page.locator('.sheet.is-top .gtag.is-tracked').count())) throw new Error('NO GATE ON THE BOARD MARKS THE TRACKED MATERIAL');
+  // A Gate cleared once wears a tick on its portal; its name keeps its colour, with no tick beside it.
+  if (!(await page.locator('.sheet.is-top .gaterow__portal .gaterow__done').count())) throw new Error('A CLEARED GATE HAS NO TICK ON ITS PORTAL');
+  if (await page.locator('.sheet.is-top .gaterow__name .ico').count()) throw new Error('A CLEARED GATE STILL TICKS ITS NAME');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('board-foot');
   await page.locator('.sheet.is-top .gband-tab[data-rank]:not(.is-empty)').last().click(); await sleep(400);
   if ((await page.locator('.sheet.is-top .gband').count()) !== 1) throw new Error('A GRADE TAB DID NOT FILTER THE BOARD');

@@ -289,6 +289,8 @@ export interface Save {
   materials: Record<string, number>;
   blueprints: string[];
   familiarity: Record<string, number>;
+  /** Materials the hunter has tagged to find: the board marks the Gates that leave them. */
+  tracked: string[];
 
   gates: {
     clears: number;

@@ -41,6 +41,7 @@ export function defaults(): Save {
     materials: {},
     blueprints: [],
     familiarity: {},
+    tracked: [],
     gates: {
       clears: 0, fails: 0, withdrawn: 0, cleared: [], sealed: { day: null, ids: [] },
       runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [], surveyed: [],

@@ -1,12 +1,18 @@
 /**
  * The Forge's pieces of screen: a material's art (an ingot in its rarity's colour, a hide, a bone, a
  * mana core, a trophy, the Ember), a material and its count, a bundle of them, and a recipe's
- * materials as held over needed, green when there is enough and red when there is not.
+ * materials as held over needed, green when there is enough and red when there is not. A material
+ * tapped there, or in the Forge's Materials, is tracked: it carries an anvil, and so does every Gate
+ * on the board that leaves it.
  */
 import * as forge from '@/core/forge';
 import type { Save } from '@/core/types';
 import { group } from '@/core/util';
+import { sfx } from '@/audio/audio';
+import * as store from '@/store';
+import { buzz } from './feedback';
 import { Glyph } from './icons';
+import { toast } from './overlays';
 
 const GLYPH: Record<string, string> = { alloy: 'ingot', part: 'hide', trophy: 'trophy', ember: 'ember' };
 const PART_GLYPH: Record<string, string> = { 'part-hide': 'hide', 'part-bone': 'bone', 'part-core': 'core' };
@@ -52,19 +58,38 @@ export function MatList({ b, gain }: { b: forge.Bundle; gain?: boolean }) {
 /** A bundle in words, for a toast or a System line: `Iron Scrap +3 · Monster Hide +1`. */
 export const bundleText = (b: forge.Bundle) => ordered(b).map(([id, n]) => `${forge.materialById(id)?.name ?? id} +${n}`).join(' · ');
 
-/** A cost's materials, a tile to each, held over needed; and its Mana Shards. */
+/** Tag a material to find, or untag it: the board marks the Gates that leave it. */
+export function track(id: string) {
+  const on = store.update((x) => forge.toggleTrack(x, id));
+  sfx.tap();
+  buzz(on ? [10, 20, 14] : 8);
+  toast(`${on ? 'Tracking' : 'No longer tracking'}: ${forge.materialById(id)?.name ?? id}`, on ? 'good' : 'xp');
+}
+
+/** The mark a tracked material carries, and every Gate that leaves it. */
+export function TrackMark({ class: cls }: { class?: string }) {
+  return <span class={`trackmark ${cls ?? ''}`} aria-hidden="true"><Glyph name="forge" /></span>;
+}
+
+/**
+ * A cost's materials, a tile to each, held over needed. A tile tapped tags its material to find, and
+ * carries the anvil while it is.
+ */
 export function CostGrid({ s, c }: { s: Save; c: forge.Cost }) {
   return (
     <div class="costgrid">
       {forge.lines(s, c).map((x) => {
         const m = forge.materialById(x.id);
         const ok = x.have >= x.need;
+        const on = forge.isTracked(s, x.id);
         return (
-          <span key={x.id} class={`sysbox costgrid__one ${ok ? 'is-ok' : 'is-short'}`} aria-label={`${m?.name}: ${x.have} of ${x.need}`}>
+          <button type="button" key={x.id} class={`sysbox costgrid__one ${ok ? 'is-ok' : 'is-short'} ${on ? 'is-tracked' : ''}`} aria-pressed={on}
+            aria-label={`${m?.name}: ${x.have} of ${x.need}${on ? ', tracked' : ''}. Tap to ${on ? 'stop tracking' : 'track'}.`} onClick={() => track(x.id)}>
+            {on && <TrackMark class="costgrid__track" />}
             <MatArt id={x.id} size={34} />
             <small class="costgrid__name">{m?.name}</small>
             <b class="num">{group(x.have)}<span>/{x.need}</span></b>
-          </span>
+          </button>
         );
       })}
     </div>

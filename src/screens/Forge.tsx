@@ -18,7 +18,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Empty, GearArt, RankPlate, Section, SetMark, Shards } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
-import { CostGrid, MatArt, bundleText } from '@/ui/forge';
+import { CostGrid, MatArt, TrackMark, bundleText, track } from '@/ui/forge';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { LootCell, useReveal } from '@/ui/loot';
 import { openSheet, sys, toast } from '@/ui/overlays';
@@ -309,14 +309,19 @@ function Materials() {
   const all = forge.allMaterials();
   const group1 = (k: string) => all.filter((m) => m.kind === k);
   const trophies = group1('trophy');
-  const rows = (list: typeof all, hideNone = false) => list.filter((m) => !hideNone || forge.held(s, m.id) > 0).map((m) => (
-    <div key={m.id} class={`sysbox matrow ${forge.held(s, m.id) ? '' : 'is-none'}`} data-rarity={m.rank}>
-      <MatArt id={m.id} size={38} />
-      <span class="matrow__text"><b>{m.name}</b><small class="muted">{m.desc}</small></span>
-      <b class="num matrow__n">{group(forge.held(s, m.id))}</b>
-    </div>
-  ));
-  const heldTrophies = trophies.filter((m) => forge.held(s, m.id) > 0);
+  // A row tapped tracks its material: the anvil on it, and on every Gate that leaves it.
+  const rows = (list: typeof all, hideNone = false) => list.filter((m) => !hideNone || forge.held(s, m.id) > 0 || forge.isTracked(s, m.id)).map((m) => {
+    const on = forge.isTracked(s, m.id);
+    return (
+      <button type="button" key={m.id} class={`sysbox matrow ${forge.held(s, m.id) ? '' : 'is-none'} ${on ? 'is-tracked' : ''}`} data-rarity={m.rank} aria-pressed={on}
+        aria-label={`${m.name}: ${forge.held(s, m.id)}${on ? ', tracked' : ''}. Tap to ${on ? 'stop tracking' : 'track'}.`} onClick={() => track(m.id)}>
+        <MatArt id={m.id} size={38} />
+        <span class="matrow__text"><b>{m.name}{on && <TrackMark class="matrow__track" />}</b><small class="muted">{m.desc}</small></span>
+        <b class="num matrow__n">{group(forge.held(s, m.id))}</b>
+      </button>
+    );
+  });
+  const heldTrophies = trophies.filter((m) => forge.held(s, m.id) > 0 || forge.isTracked(s, m.id));
   return (
     <div class="stack">
       <Section title="Alloys"><div class="stack stack--tight">{rows(group1('alloy'))}</div></Section>

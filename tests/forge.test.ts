@@ -245,6 +245,27 @@ describe('weapon familiarity', () => {
   });
 });
 
+describe('tracking a material', () => {
+  it('tags and untags it, and marks the Gates that leave it', () => {
+    const s = defaults();
+    const d = dungeonById('DNG-049')!;
+    expect(forge.trackedAt(s, d)).toEqual([]);
+    expect(forge.toggleTrack(s, ALLOYS.S.id)).toBe(true);
+    expect(forge.toggleTrack(s, forge.trophyOfSet('Demon Lord')!)).toBe(true);
+    expect(forge.trackedAt(s, d)).toEqual([ALLOYS.S.id, forge.trophyOfSet('Demon Lord')]);
+    // The grade above leaves it as its lower alloy; a Gate two grades down does not.
+    expect(forge.trackedAt(s, dungeonById('DNG-016')!)).toEqual([]);
+    expect(forge.sourcesOf(dungeonById('DNG-045')!)).not.toContain(ALLOYS.S.id);
+    // Its creatures' families say which parts it leaves; Ember only at an Ascension level.
+    expect(forge.sourcesOf(d)).toContain(PARTS.core.id);
+    expect(forge.sourcesOf(d)).not.toContain(forge.EMBER.id);
+    expect(forge.sourcesOf(d, 2)).toContain(forge.EMBER.id);
+    expect(forge.toggleTrack(s, ALLOYS.S.id)).toBe(false);
+    expect(s.tracked).toEqual([forge.trophyOfSet('Demon Lord')]);
+    expect(forge.toggleTrack(s, 'nothing')).toBe(false);
+  });
+});
+
 describe('Ryn’s blueprint', () => {
   it('pays a blueprint of the job’s grade, one not yet known', () => {
     const s = typicalHunter(27, 'C', 'ryn');
