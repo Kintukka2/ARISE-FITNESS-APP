@@ -218,7 +218,7 @@ everyone knows the Spire is there.
   gate of its own: three floors of choices from step 2's map, a rest, then a boss. A block costs the
   fatigue of one gate of its grade and pays like one, with no first-clear bounty. The rest is the only
   place to walk out, as in any gate.
-- **Climb On.** A block taken offers the next one on its results: **Climb On · Floors 86 to 90**, over
+- **Climb On.** A block taken offers the next one on its results: **Climb On · Floors 86-90**, over
   Leave The Gate. It leaves as Leave The Gate does (the face-down loot and a lingering Shadow ask
   first, and the run's payout is narrated), then walks into the next block as the brief's Enter The
   Gate does (`flow.enterGate`, with its fatigue warning). It shows only while the hunter is fit to

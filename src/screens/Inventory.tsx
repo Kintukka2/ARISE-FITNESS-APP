@@ -278,7 +278,7 @@ const FIGHT_HELP: Record<string, string> = {
   Magic: 'The power of a magic skill, set against the target’s Resistance. From INT, and a little PER.',
   Defence: 'Takes the force out of a physical hit: the more of it, the less each one does. From VIT, and a little STR.',
   Resistance: 'Takes the force out of a magic hit, and wards off debuffs. From VIT and INT.',
-  Accuracy: `How often your hits land: your Accuracy against the target’s Evasion, from ${HIT.min}% to ${HIT.max}%. From PER, and a little AGI.`,
+  Accuracy: `How often your hits land: your Accuracy against the target’s Evasion, ${HIT.min}-${HIT.max}%. From PER, and a little AGI.`,
   Evasion: 'How often a foe misses you: its Accuracy against your Evasion. From AGI, and a little PER.',
   'Critical hit': `The chance a hit does ×${CRIT.mult} damage. From AGI and PER, up to ${CRIT.base}%, and ${CRIT.max}% with gear and passives.`,
   Initiative: 'Who acts first in each round: the highest goes first. From AGI, and a little PER.',

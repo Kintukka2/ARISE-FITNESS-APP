@@ -189,10 +189,10 @@ function Recipe({ defId }: { defId: string }) {
           <span class="num">{Math.round(gear.score(worn))}</span>
         </button>
       )}
-      <Section title="Stats" right={<span class="num">Quality {Math.round(floor * 100)}% to 100%</span>}>
+      <Section title="Stats" right={<span class="num">Quality {Math.round(floor * 100)}-100%</span>}>
         <ul class="itemstats">
           {STATS.filter((k) => d.core[k]).map((k) => (
-            <li key={k}><Glyph name={STAT_ICON[k]} /><span>{k} +{fmt((d.core[k] ?? 0) * qLo)} to +{fmt((d.core[k] ?? 0) * gear.Q_HIGH)}</span></li>
+            <li key={k}><Glyph name={STAT_ICON[k]} /><span>{k} +{fmt((d.core[k] ?? 0) * qLo)}-{fmt((d.core[k] ?? 0) * gear.Q_HIGH)}</span></li>
           ))}
         </ul>
       </Section>
@@ -202,7 +202,7 @@ function Recipe({ defId }: { defId: string }) {
             {(d.rolls ?? []).map((r) => (
               <li key={r.stat}>
                 <span class="itemrolls__name">{r.stat === 'Defense' ? 'Defence' : r.stat}</span>
-                <small class="num">+{fmt(r.min + (r.max - r.min) * floor)} to +{r.max}{r.pct ? '%' : ''}</small>
+                <small class="num">+{fmt(r.min + (r.max - r.min) * floor)}-{r.max}{r.pct ? '%' : ''}</small>
               </li>
             ))}
           </ul>

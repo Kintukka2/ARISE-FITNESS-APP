@@ -325,12 +325,12 @@ try {
     if (await page.locator('.arena--results.is-cleared').count()) {
       // A floor taken offers the next ones, straight from the results.
       if (!(await climb.count())) throw new Error('A FLOOR TAKEN DID NOT OFFER THE NEXT FLOORS');
-      const [, to] = (await climb.innerText()).match(/floors (\d+) to \d+/i) ?? [];
+      const [, to] = (await climb.innerText()).match(/floors (\d+)-\d+/i) ?? [];
       if (!to) throw new Error('CLIMB ON DOES NOT NAME THE NEXT FLOORS');
       await climb.scrollIntoViewIfNeeded(); await snap('spire-climb-offer');
       await climb.click(); await sleep(600); await drain();
       await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
-      if (!new RegExp(`floors ${to} to`, 'i').test(await page.locator('.arena__head').innerText())) throw new Error('CLIMBING ON DID NOT OPEN THE NEXT FLOORS');
+      if (!new RegExp(`floors ${to}-`, 'i').test(await page.locator('.arena__head').innerText())) throw new Error('CLIMBING ON DID NOT OPEN THE NEXT FLOORS');
       await sleep(400); await snap('spire-climbed');
       await autoToResults(); await sleep(400); await revealLoot();
     }
