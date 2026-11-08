@@ -13,7 +13,7 @@ import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
-import { build, chamberOf, isFight, mapSeed, next, reach, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
+import { build, chamberOf, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
@@ -308,6 +308,52 @@ export function standing(d: Dungeon, run: OpenRaid): MapNode | null {
   const m = mapOf(d, run);
   if (m.tower) return null;
   return m.byId[run.pos ?? ''] ?? m.byId[m.start!];
+}
+
+/** What is remembered of a map through its fog, by its seed. */
+export const remembered = (s: Save, seed: string) => s.gates.seen?.[seed] ?? [];
+
+/** The rooms an open run can see through the fog: what it has cleared and stands next to, and what is remembered of the map. */
+export const seen = (s: Save, d: Dungeon, run: OpenRaid) => {
+  const m = mapOf(d, run);
+  return sight(m, explored(m, run), remembered(s, run.map ?? mapSeed(d, run.day)));
+};
+
+/**
+ * Remember rooms seen on a map, for as long as the map stands: today's maps, and the open run's.
+ * What is remembered of any other is forgotten. Mutates.
+ */
+function remember(s: Save, seed: string, ids: Iterable<string>, now = Date.now()) {
+  const keep = new Set([dayKey(now), s.gates.raid?.day, seed.split('|').pop()]);
+  const all: Record<string, string[]> = {};
+  for (const [k, v] of Object.entries(s.gates.seen ?? {})) if (keep.has(k.split('|').pop())) all[k] = v;
+  all[seed] = [...new Set([...(all[seed] ?? []), ...ids])];
+  s.gates.seen = all;
+}
+
+/** A Gate's map can be charted: a dungeon, with a room still in the fog. Inside it, the map the run walks; outside, today's. */
+export function surveyable(s: Save, d: Dungeon, now = Date.now()): boolean {
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const m = run ? mapOf(d, run) : build(d, mapSeed(d, dayKey(now)));
+  if (m.tower) return false;
+  const known = run ? seen(s, d, run) : sight(m, new Set(), remembered(s, mapSeed(d, dayKey(now))));
+  return m.nodes.some((x) => !known.has(x.id));
+}
+
+/**
+ * Use a Gate Survey on a Gate: every room of its map is charted, through the fog, for as long as the map
+ * stands, and the brief shows its map from then on. Inside the Gate, it charts the map the run walks.
+ * False if none is held, or nothing is left to chart. Mutates.
+ */
+export function survey(s: Save, d: Dungeon, now = Date.now()): boolean {
+  if (shop.held(s, 'survey') <= 0 || !surveyable(s, d, now)) return false;
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const seed = run ? run.map ?? mapSeed(d, run.day) : mapSeed(d, dayKey(now));
+  const m = run ? mapOf(d, run) : build(d, seed);
+  s.stock.survey = shop.held(s, 'survey') - 1;
+  remember(s, seed, m.nodes.map((x) => x.id), now);
+  if (!(s.gates.surveyed ?? []).includes(d.id)) s.gates.surveyed = [...(s.gates.surveyed ?? []), d.id];
+  return true;
 }
 
 /** The boss is down, and the run waits only to be claimed. */
@@ -738,6 +784,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   if (outcome === 'withdrawn' && !canWithdraw(d, run)) throw new Error('A run is only walked away from at the entrance, or a tower\'s rest.');
   const m = mapOf(d, run);
   const road = systemRoad(m);
+  // What the run saw through the fog is remembered, for another run on the same map.
+  if (!m.tower) remember(s, run.map ?? mapSeed(d, run.day), seen(s, d, run), now);
   // A share of the way: the rooms from the entrance to the boss, or a tower's floors.
   const depth = m.tower ? m.layers.length : road.length;
   const steps = walked(d, run);

@@ -1,6 +1,7 @@
 /** The Exchange: the System's shop. Blueprints, a shelf a day, and the potions, paid for in Mana Shards. */
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
+import { SURVEY } from '@/data/association';
 import * as shop from '@/core/shop';
 import { group, hhmmss, msUntilMidnight } from '@/core/util';
 import { checkAwards } from '@/app/flow';
@@ -102,6 +103,20 @@ function Exchange() {
     buzz([14, 30, 22]);
     toast(`Field Potion · Satchel ${store.get().satchel}/${shop.satchelMax(store.get())}`, 'xp');
   };
+  const buySurvey = async () => {
+    if (store.get().wallet.shards < SURVEY.price) return void short(SURVEY.price);
+    const want = await ask('buy:survey', system.offer([
+      'Would you like to purchase?',
+      system.tag(SURVEY.name, 'Item'),
+      'Every room of a Gate’s map, through the fog.',
+      `Price: ${group(SURVEY.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
+    if (!store.update(shop.buySurvey)) return void short(SURVEY.price);
+    sfx.success();
+    buzz([14, 30, 22]);
+    toast(`${SURVEY.name} · Held: ${shop.held(store.get(), 'survey')}`, 'xp');
+  };
   return (
     <div class="stack exchange">
       <div class="sysfields">
@@ -134,6 +149,15 @@ function Exchange() {
               gives={p.effect} note={p.desc} price={p.price} off={shop.potionIdle(s, p.id)}
               onBuy={() => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); }} />
           ))}
+        </div>
+      </Section>
+
+      <Section title="For the Gates" right="Always in stock">
+        <div class="shoplist">
+          <ShopRow icon={<span class="shopsurvey"><Glyph name="gates" /></span>} name={SURVEY.name}
+            gives="Charts every room of a Gate’s map"
+            note={`Used from a Gate’s brief, or inside it. Held: ${shop.held(s, 'survey')}`}
+            price={SURVEY.price} onBuy={() => void buySurvey()} />
         </div>
       </Section>
 

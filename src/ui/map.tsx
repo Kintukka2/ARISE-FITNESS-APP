@@ -1,7 +1,8 @@
 /**
  * A Gate's map. A dungeon is drawn as its plan: rooms on a grid, joined by corridors, the entrance at
- * the foot and the boss at the head. A tower is drawn floor by floor. Read-only in the brief; in the
- * arena, the rooms the hunter can enter glow, and a cleared room can be walked back to.
+ * the foot and the boss at the head, every other room in the fog until it is seen. A tower is drawn
+ * floor by floor. Read-only in the brief; in the arena, the rooms the hunter can enter glow, and a
+ * cleared room can be walked back to.
  */
 import { passages, unsealed, type GateMap, type MapNode } from '@/core/map';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
@@ -22,6 +23,8 @@ interface MapProps {
   pos?: string;
   rested?: string[];
   onWalk?: (id: string) => void;
+  /** A dungeon: the rooms seen through the fog. Unset, every room is seen. */
+  seen?: Set<string>;
   compact?: boolean;
 }
 
@@ -30,7 +33,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, compact }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, compact }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -46,9 +49,12 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const halls: [MapNode, MapNode][] = [];
   for (const a of m.nodes) for (const id of a.next) if (a.id < id) halls.push([a, m.byId[id]]);
   const secret = passages(m, done).map(([a, b]) => [m.byId[a], m.byId[b]] as const);
-  // What the plan shows of a room: a trap, a cache, a shrine or a rest passes for Unknown until the hunter has stood in it.
+  // What the plan shows of a room: a trap, a cache or a rest passes for an Event until the hunter has stood in it.
   const looksOf = (x: MapNode): NodeKind => (HIDDEN_IN_ROOMS.has(x.kind) && !entered.has(x.id) ? 'event' : x.kind);
-  const shown = [...new Set(m.nodes.map(looksOf))].filter((k) => k !== 'entrance');
+  // A room not yet seen is fog: where it lies and its corridors show, nothing of what is in it.
+  const fogged = (x: MapNode) => !!seen && !seen.has(x.id);
+  const shown = [...new Set(m.nodes.filter((x) => !fogged(x)).map(looksOf))].filter((k) => k !== 'entrance');
+  const fogs = m.nodes.some(fogged);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''}`}>
       <div class={`dmap ${compact ? 'dmap--compact' : ''}`} style={{ '--cols': m.cols, '--rows': m.rows } as Record<string, number>} role="group" aria-label="Map of the Gate">
@@ -66,6 +72,14 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           ))}
         </svg>
         {m.nodes.map((x) => {
+          const style = { gridColumn: x.x! + 1, gridRow: x.y! + 1 };
+          if (fogged(x)) {
+            return (
+              <span key={x.id} class="gnode droom is-fog" style={style} title="Unseen" aria-label="Unseen room">
+                <Glyph name="unknown" />{!compact && <small>Unseen</small>}
+              </span>
+            );
+          }
           const sealed = x.kind === 'vault' && !open;
           const looks = looksOf(x);
           const kind = NODE[looks];
@@ -86,7 +100,6 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
               {isDone && x.kind !== 'entrance' && <i class="droom__tick" aria-hidden="true"><Glyph name="check" /></i>}
             </>
           );
-          const style = { gridColumn: x.x! + 1, gridRow: x.y! + 1 };
           const cls = `gnode droom gnode--${looks} ${state}`;
           const where = x.n > 0 ? `, room ${x.n}` : '';
           if (next && onPick) {
@@ -108,6 +121,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
       {compact && (
         <ul class="dmap__key" aria-label="Map key">
           {shown.map((k) => <li key={k}><i class={`gnode--${k}`}><Glyph name={k === 'vault' ? 'lock' : NODE[k].glyph} /></i>{NODE[k].name}</li>)}
+          {fogs && <li><i class="is-fog"><Glyph name="unknown" /></i>Unseen</li>}
         </ul>
       )}
     </div>
@@ -142,7 +156,7 @@ function TowerView({ m, path = [], at = 0, options = [], road = [], onPick, comp
       {m.layers.map((row) => (
         <div class="gmap__row" style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }} key={row[0].id}>
           {row.map((n) => {
-            // A trap, a cache or a shrine passes for an Unknown step until the hunter is standing on it.
+            // A trap or a cache passes for an Event step until the hunter is standing on it.
             const looks = HIDDEN.has(n.kind) && !walked.has(n.id) ? 'event' : n.kind;
             const kind = NODE[looks];
             const next = options.includes(n.id);

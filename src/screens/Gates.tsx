@@ -11,7 +11,7 @@ import * as forge from '@/core/forge';
 import { ALLOYS } from '@/data/forge';
 import { MatArt, TrackMark } from '@/ui/forge';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
-import { build, mapSeed } from '@/core/map';
+import { build, mapSeed, sight } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
@@ -19,7 +19,6 @@ import { isTrial, trialLevel } from '@/core/trial';
 import * as association from '@/core/association';
 import { SURVEY } from '@/data/association';
 import { goalOf } from '@/ui/assoc';
-import { ask } from '@/ui/ask';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
@@ -46,7 +45,7 @@ import { Glyph, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
-import { enterGate } from '@/app/flow';
+import { enterGate, surveyFlow } from '@/app/flow';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -594,6 +593,13 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic, level]);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const map = useMemo(() => build(d, mapSeed(d, dayKey())), [d.id, dayKey()]);
+  // Today's map through its fog: what a run on it is seeing, or what is remembered of it.
+  const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, dayKey()) ? s.gates.raid : null;
+  const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, dayKey())));
+  // A Gate Survey charts every room of it, before the hunter goes in or after.
+  const surveyBtn = shop.held(s, 'survey') > 0 && raid.surveyable(s, d)
+    ? <Btn size="sm" block onClick={() => void surveyFlow(d)}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
+    : null;
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
   const pay = ascension.payShare(level);
@@ -725,7 +731,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       {mapKnown(s, d)
         ? (
           <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
-            <MapView m={map} road={proj.road} compact />
+            <MapView m={map} road={proj.road} seen={fog} compact />
+            {surveyBtn}
           </Section>
         )
         : (
@@ -734,18 +741,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
               <Glyph name="unknown" />
               <b>?</b>
             </div>
-            {/* A Gate Survey from the Association shows the map before the hunter has been in. */}
-            {shop.held(s, 'survey') > 0 && (
-              <Btn size="sm" block onClick={async () => {
-                const ok = await ask('use:survey', system.offer([
-                  'Would you like to use?',
-                  system.tag(SURVEY.name, 'Item'),
-                  `Map of ${system.tag(d.name)}`,
-                  `Held: ${shop.held(store.get(), 'survey')}`,
-                ], 'gear', 'Use', 'Cancel'));
-                if (ok && store.update((x) => association.survey(x, d.id))) { sfx.success(); toast(`${SURVEY.name} · ${d.name} mapped.`, 'good'); }
-              }}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
-            )}
+            {surveyBtn}
           </Section>
         )}
 

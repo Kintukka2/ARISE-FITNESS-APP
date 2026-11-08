@@ -6,6 +6,7 @@
  */
 import { EQUIPMENT } from '@/data/equipment';
 import { BLUEPRINTS } from '@/data/forge';
+import { SURVEY } from '@/data/association';
 import * as forge from './forge';
 import { gearDef, RARITY } from './gear';
 import type { Rank, Save, StockId } from './types';
@@ -126,6 +127,13 @@ export const satchelMax = (s: Save) => FIELD_POTION.max + (s.satchelPlus ?? 0);
 export function buyField(s: Save): boolean {
   if (s.satchel >= satchelMax(s) || !pay(s, FIELD_POTION.price)) return false;
   s.satchel += 1;
+  return true;
+}
+
+/** Buy a Gate Survey into stock. False if the shards are short. Mutates. */
+export function buySurvey(s: Save): boolean {
+  if (!pay(s, SURVEY.price)) return false;
+  stockUp(s, 'survey');
   return true;
 }
 

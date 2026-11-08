@@ -153,6 +153,8 @@
 .exchange > p.muted { font-size: 0.82rem; }
 .potion { display: grid; place-items: center; width: 44px; height: 44px; flex: none; }
 .potion .ico { width: 30px; height: 30px; }
+.shopsurvey { display: grid; place-items: center; width: 44px; height: 44px; flex: none; color: var(--ember); }
+.shopsurvey .ico { width: 30px; height: 30px; }
 .potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--elixir { color: var(--arcane); } .potion--field { color: var(--verdant); }
 
 /* ------------------------------------------------------------------ gates */
@@ -414,6 +416,10 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .dmap__you-tag { position: absolute; top: -8px; left: 50%; padding: 0 4px; border-radius: 2px; background: var(--ink); color: #05060c; font-size: 0.5rem; font-style: normal; font-weight: 700; letter-spacing: 0.14em; line-height: 1.5; text-transform: uppercase; transform: translateX(-50%); }
 @keyframes youPulse { 50% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 5px rgba(232, 244, 255, 0.18); } }
 @media (prefers-reduced-motion: reduce) { .dmap__you { transition: none; animation: none; } .dmap .gnode.droom.gnode--boss.is-next { animation: none; } }
+.dmap .gnode.droom.is-fog { overflow: hidden; border-style: dashed; border-color: rgba(160, 178, 205, 0.22); background: #0a0b10; color: rgba(160, 178, 205, 0.32); }
+.dmap .droom.is-fog::after { content: ''; position: absolute; inset: -40%; background: radial-gradient(45% 35% at 30% 40%, rgba(180, 196, 222, 0.12), transparent 70%), radial-gradient(40% 35% at 70% 62%, rgba(180, 196, 222, 0.09), transparent 70%); animation: fogDrift 14s ease-in-out infinite alternate; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .dmap .droom.is-fog::after { animation: none; } }
+.dmap__key .is-fog { color: rgba(160, 178, 205, 0.6); }
 .dmap__key { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .dmap__key li { display: inline-flex; align-items: center; gap: 4px; }
 .dmap__key i { display: inline-flex; }

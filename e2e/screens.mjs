@@ -299,6 +299,15 @@ try {
     await page.locator('.dmap button.gnode--entrance').click(); await sleep(700);
     if (!(await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count())) throw new Error('THE ENTRANCE DID NOT OFFER A WITHDRAWAL');
     await snap('arena-map-entrance');
+    // The fog: unseen rooms show nothing of what is in them, and a Gate Survey charts every one.
+    if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('THE MAP HAS NO FOG');
+    const survey = page.locator('.arena__map .btn', { hasText: /Use Gate Survey/ });
+    if (await survey.count()) {
+      await survey.click(); await sleep(400);
+      await page.locator('.syswin__foot .btn', { hasText: /^Use$/ }).click(); await sleep(800);
+      if (await page.locator('.dmap .droom.is-fog').count()) throw new Error('A GATE SURVEY LEFT ROOMS IN THE FOG');
+      await snap('arena-map-surveyed');
+    }
   }
   await autoToResults();
   await revealLoot();

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse } from '@/core/save';
 import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
-import { build, isFight, mapSeed, next, passages, reach, RESTS_MAX, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { build, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
+import * as shop from '@/core/shop';
 import * as forge from '@/core/forge';
 import { CACHE } from '@/data/forge';
 import type { Dungeon, OpenRaid, Rank, Save } from '@/core/types';
@@ -123,14 +124,15 @@ describe('the map', () => {
     expect(beforeBoss / (onRoad + offRoad)).toBeLessThan(0.15);
   });
 
-  it('the practice Gate holds no traps, events or gatekeepers, and a rest halfway along its road', () => {
+  it('the practice Gate holds no traps, events or gatekeepers, fights of one or two, and a rest before its boss', () => {
     for (const day of ['2026-02-02', '2026-03-03', '2026-04-04', '2026-05-05']) {
       const m = build(PRACTICE_GATE, mapSeed(PRACTICE_GATE, day));
       const kinds = m.nodes.map((x) => x.kind);
       for (const k of ['trap', 'event', 'elite', 'vault']) expect(kinds).not.toContain(k);
       const road = systemRoad(m);
-      expect(m.byId[road[1]].kind).toBe('rest');
-      expect(m.byId[road[road.length - 2]].kind).toBe('fight');
+      expect(m.byId[road[road.length - 2]].kind).toBe('rest');
+      expect(road.slice(0, -2).every((id) => m.byId[id].kind === 'fight')).toBe(true);
+      for (const x of m.nodes.filter((y) => y.kind === 'fight')) expect(x.foes!.length).toBeLessThanOrEqual(2);
     }
   });
 
@@ -192,6 +194,60 @@ function before(run: OpenRaid, m: GateMap, id: string) {
   run.at = run.path.length;
   run.pos = run.path[run.path.length - 1];
 }
+
+describe('the fog', () => {
+  it('hides every room but the entrance, the boss and the rooms next to one cleared', () => {
+    const s = hunter(30);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    const m = raid.mapOf(d, run);
+    const start = m.byId[m.start!];
+    expect([...raid.seen(s, d, run)].sort()).toEqual([m.start!, m.boss, ...start.next].sort());
+    const road = systemRoad(m);
+    raid.choose(s, d, run, road[0], now);
+    clearStep(s, d, run);
+    const seen = raid.seen(s, d, run);
+    for (const id of m.byId[road[0]].next) expect(seen.has(id)).toBe(true);
+    expect(m.nodes.some((x) => !seen.has(x.id))).toBe(true);
+  });
+
+  it('remembers what a run saw, for another run on the same map', () => {
+    const s = hunter(30);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    const m = raid.mapOf(d, run);
+    const road = systemRoad(m);
+    raid.choose(s, d, run, road[0], now);
+    clearStep(s, d, run);
+    raid.moveTo(d, run, m.start!);
+    const saw = raid.seen(s, d, run);
+    raid.finish(s, d, run, 'withdrawn', now);
+    const again = raid.begin(s, d, now + 60_000);
+    expect(again.at).toBe(0);
+    const seen = raid.seen(s, d, again);
+    for (const id of saw) expect(seen.has(id)).toBe(true);
+  });
+
+  it('a Gate Survey inside the Gate charts every room of the map it walks, once', () => {
+    const s = hunter(30);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    const m = raid.mapOf(d, run);
+    expect(raid.survey(s, d, now)).toBe(false);
+    shop.stockUp(s, 'survey', 2);
+    expect(raid.surveyable(s, d, now)).toBe(true);
+    expect(raid.survey(s, d, now)).toBe(true);
+    expect([...raid.seen(s, d, run)].sort()).toEqual(m.nodes.map((x) => x.id).sort());
+    expect(raid.surveyable(s, d, now)).toBe(false);
+    expect(shop.held(s, 'survey')).toBe(1);
+  });
+
+  it('a tower has none', () => {
+    const d = dungeonById('DNG-016')!;
+    const m = build(d, mapSeed(d, '2026-02-02'), 'layers');
+    expect(sight(m, new Set()).size).toBe(m.nodes.length);
+  });
+});
 
 describe('walking it', () => {
   it('enters only a room next to one cleared, and one at a time', () => {

@@ -77,7 +77,8 @@ function furnish(d: Dungeon, seed: string, nodes: MapNode[]) {
   for (const x of nodes) {
     const rr = rng(`arise|node|${seed}|${x.id}`);
     if (x.kind === 'fight') {
-      const count = 1 + Math.floor(rr() * 3);
+      // The practice Gate's fights are one or two creatures: a first dungeon is not lost.
+      const count = 1 + Math.floor(rr() * (isPractice(d) ? 2 : 3));
       x.foes = Array.from({ length: count }, () => d.mobs[Math.floor(rr() * d.mobs.length)]);
     } else if (x.kind === 'elite') x.foes = [d.elite!];
     else if (x.kind === 'boss') x.foes = [d.boss];
@@ -194,7 +195,7 @@ function distances(nodes: MapNode[], byId: Record<string, MapNode>, from: string
 function dungeon(d: Dungeon, seed: string): GateMap {
   const r: Rand = rng('arise|plan|' + seed);
   const practice = isPractice(d);
-  // The practice Gate teaches a rest found and kept: one waits halfway along its road.
+  // The practice Gate is a first dungeon, made easy: a rest waits in the room before the boss.
   const roadLength = choiceLayers(d) + (practice ? 1 : 0);
   const nodes: MapNode[] = [];
   const byId: Record<string, MapNode> = {};
@@ -278,7 +279,7 @@ function dungeon(d: Dungeon, seed: string): GateMap {
   // What waits in each room: the road is mostly fights, the side rooms hold the finds.
   let odd = 0;
   road.forEach((x, i) => {
-    if (practice && i === 1) x.kind = 'rest';
+    if (practice && i === roadLength - 1) x.kind = 'rest';
     if (i === 0 || practice || r() >= ROAD_ODD.chance || odd >= ROAD_ODD.most) return;
     x.kind = weighted(ROAD, r()).kind;
     odd++;
@@ -344,6 +345,18 @@ export const unsealed = (m: GateMap, cleared: Set<string>) => m.nodes.some((x) =
 export function passages(m: GateMap, cleared: Set<string>): [string, string][] {
   const out: [string, string][] = [];
   for (const x of m.nodes) for (const y of x.hidden ?? []) if (x.id < y && (cleared.has(x.id) || cleared.has(y))) out.push([x.id, y]);
+  return out;
+}
+
+/**
+ * What a dungeon's walker can see through the fog: the entrance and the boss's room, every room cleared
+ * and every room next to one, by corridor or an opened passage, and whatever is remembered of the map.
+ * Corridors are never fogged. A tower has no fog.
+ */
+export function sight(m: GateMap, cleared: Set<string>, remembered: Iterable<string> = []): Set<string> {
+  if (m.tower) return new Set(m.nodes.map((x) => x.id));
+  const out = new Set<string>([m.start!, m.boss, ...remembered, ...cleared]);
+  for (const id of cleared) for (const nb of [...(m.byId[id]?.next ?? []), ...(m.byId[id]?.hidden ?? [])]) out.add(nb);
   return out;
 }
 

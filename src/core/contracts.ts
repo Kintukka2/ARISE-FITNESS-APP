@@ -125,7 +125,7 @@ export function progress(c: Contract, grade: Rank, x: Deed): number {
 
 /** What one contract pays at a grade, and what a full day pays on top. */
 export const payOf = (grade: Rank) => ({ shards: shop.gateShards(grade, CONTRACT_PAY.shards), xp: Math.round(GATE_XP[grade] * CONTRACT_PAY.xp) });
-export const bonusOf = (grade: Rank) => ({ shards: shop.gateShards(grade, CONTRACT_BONUS.shards), xp: Math.round(GATE_XP[grade] * CONTRACT_BONUS.xp) });
+export const bonusOf = (grade: Rank) => ({ shards: shop.gateShards(grade, CONTRACT_BONUS.shards), xp: Math.round(GATE_XP[grade] * CONTRACT_BONUS.xp), survey: CONTRACT_BONUS.survey });
 
 /** A contract a run moved: as it stands after the run, and the count it stood at before. */
 export interface Moved extends Contract { from: number }
@@ -170,6 +170,7 @@ export function count(s: Save, x: Deed, day: string): ContractReport {
     const b = bonusOf(c.grade);
     out.shards += shop.earn(s, b.shards);
     out.xp += b.xp;
+    shop.stockUp(s, 'survey', b.survey);
     s.stats.contractDays++;
   }
   return out;

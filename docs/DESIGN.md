@@ -854,8 +854,8 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   Gatekeeper or the vault. Auto walks it (`raid.systemNext`, `raid.systemMove`), keeps a rest it finds
   for the boss and uses it before going in; the projection does the same, so the brief and Auto still
   agree, and calibration tunes to it.
-- **The Practice Gate** has a rest halfway along its road, to teach a rest found and kept, and a cache
-  and a shrine off it. It is never lost, as before.
+- **The Practice Gate** has a rest on its road, to teach a rest found and kept, and a cache and a shrine
+  off it. It is never lost, as before.
 - **The arena** draws the plan: corridors with walls and floors under the rooms, cleared rooms ticked,
   the rooms on offer glowing, the boss's room larger and red, a sealed vault locked, a used rest
   greyed, and a `You` marker that slides from room to room. Under it, Rest, Withdraw, or the hint. The
@@ -866,6 +866,22 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   the floors it began on (`run.layout` unset).
 - **Secret Quests:** Every Room (clear a Gate with every room in it cleared) and Cartographer (ten of
   them), counted in `stats.charted`. Knew When To Leave now asks only for a withdrawal.
+- **The fog of war** (`map.sight`, `raid.seen`), asked for next: every room but the entrance and the
+  boss's is in the fog until the hunter clears a room beside it, by corridor or an opened passage. The
+  corridors always show, so the plan's shape is known and what waits in it is not. A room seen stays
+  seen: what a run saw is remembered on its map (`s.gates.seen`, by map seed) for as long as the map
+  stands, so a hunter who withdraws and comes back the same day finds it as they left it. Older maps'
+  memories are dropped. The brief draws today's map in its fog, `Unseen` in its key. Auto, the
+  projection and calibration walk the System's road, which knows the plan, so the fog changes no odds.
+- **The Gate Survey charts the map** (`raid.survey`): every room of a Gate's map, from its brief before
+  going in or inside it, once there is a room in the fog. Ryn pays them a little more often (weight 3,
+  one or two), a full day of Daily Quests pays one (`CONTRACT_BONUS.survey`), and the Exchange sells them
+  for 60 shards under For the Gates.
+- **Events have their own mark.** With the fog the `?` belongs to a room not yet seen, so an event room
+  is `Event`, a diamond with an exclamation mark. A shrine shows for what it is; a trap, a cache and a
+  rest still pass for an Event until stepped in.
+- **The Practice Gate** puts its rest in the room before its boss, and its fights hold one or two
+  creatures: a first dungeon is made easy, and three hundred seeds of it are all cleared.
 - **Balance.** `npm run calibrate` was rerun: the tunings moved by 1% on average, a Gate at most by a
   quarter, as its maps changed shape. A Gate's odds now swing a little more from day to day, with how
   many of its road's rooms are fights and whether a rest lies on it. In the campaign the evening hunter

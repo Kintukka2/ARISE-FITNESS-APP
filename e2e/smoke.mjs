@@ -164,7 +164,9 @@ async function raidGate(row, name, auto = false) {
       continue;
     }
     if (name === 'practice' && kept && !restedBack && await visible('.dmap button.gnode--boss.is-next')) {
-      // Back to the rest kept for later, and use it, once.
+      // Walk away to the entrance, then back to the rest kept for later, and use it, once.
+      await page.locator('.dmap button.gnode--entrance').click(); await sleep(600);
+      if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST COULD BE USED FROM ANOTHER ROOM');
       await page.locator('.dmap button.droom.gnode--rest').click(); await sleep(600);
       const rest = page.locator('.arena__map .btn', { hasText: /^Rest$/ });
       if (!(await rest.count())) throw new Error('A REST FOUND AND KEPT COULD NOT BE USED ON THE WAY BACK');
@@ -176,9 +178,14 @@ async function raidGate(row, name, auto = false) {
       continue;
     }
     if (await visible('button.gnode.is-next')) {
-      if (!steps++) await snap(`${name}-map`);
-      // A trap, a cache, a shrine or a rest passes for an Unknown room until the hunter stands in it.
-      if (await page.locator(':is(.gnode--trap, .gnode--treasure, .gnode--shrine, .dmap .gnode--rest):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP, A CACHE, A SHRINE OR A REST SHOWED ITSELF BEFORE IT WAS STEPPED ON');
+      if (!steps++) {
+        await snap(`${name}-map`);
+        // The fog: rooms not yet seen show nothing of what is in them.
+        if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('THE MAP SHOWED EVERY ROOM BEFORE IT WAS SEEN');
+        if (await page.locator('.dmap .droom.is-fog:is(.gnode--fight, .gnode--event, .gnode--elite, .gnode--shrine)').count()) throw new Error('A ROOM IN THE FOG GAVE AWAY WHAT IS IN IT');
+      }
+      // A trap, a cache or a rest passes for an Event until the hunter stands in it.
+      if (await page.locator(':is(.gnode--trap, .gnode--treasure, .dmap .gnode--rest):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP, A CACHE OR A REST SHOWED ITSELF BEFORE IT WAS STEPPED ON');
       await page.locator('button.gnode.is-next').first().click();
       continue;
     }

@@ -20,7 +20,10 @@ import * as story from '@/core/story';
 import * as vitals from '@/core/vitals';
 import * as store from '@/store';
 import { fromEl, promotion, rankUp } from '@/ui/arrival';
-import { closeAllSheets, sys } from '@/ui/overlays';
+import { closeAllSheets, sys, toast } from '@/ui/overlays';
+import { ask } from '@/ui/ask';
+import * as shop from '@/core/shop';
+import { SURVEY } from '@/data/association';
 import * as system from '@/ui/system';
 import { bundleText } from '@/ui/forge';
 import { openStatus } from '@/screens/Inventory';
@@ -309,4 +312,21 @@ export async function catchUp() {
   } finally {
     catching = false;
   }
+}
+
+/**
+ * Use a Gate Survey on a Gate, from its brief or inside it: offered as the System offers a use, then every
+ * room of the map is charted through the fog. True if it was used.
+ */
+export async function surveyFlow(d: Dungeon): Promise<boolean> {
+  const ok = await ask('use:survey', system.offer([
+    'Would you like to use?',
+    system.tag(SURVEY.name, 'Item'),
+    `Map of ${system.tag(d.name)}`,
+    `Held: ${shop.held(store.get(), 'survey')}`,
+  ], 'gear', 'Use', 'Cancel'));
+  if (!ok || !store.update((x) => raid.survey(x, d))) return false;
+  sfx.success();
+  toast(`${SURVEY.name} · ${d.name} charted.`, 'good');
+  return true;
 }

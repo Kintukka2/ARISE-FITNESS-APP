@@ -128,8 +128,10 @@ describe('counting', () => {
     expect(a).toMatchObject({ shards: pay, xp, bonus: false });
     expect(contracts.count(s, deed(), day).done).toEqual([]);
     expect(contracts.count(s, deed({ offroad: true, fatigue: 14 }), day).done.map((c) => c.kind)).toEqual(['offroad']);
+    const surveys = s.stock?.survey ?? 0;
     const last = contracts.count(s, deed({ fatigue: 15 }), day);
     expect(last.bonus).toBe(true);
+    expect(s.stock.survey).toBe(surveys + CONTRACT_BONUS.survey);
     expect(last.shards).toBe(pay + CONTRACT_BONUS.shards * GATE_SHARDS.E);
     expect(last.xp).toBe(xp + Math.round(GATE_XP.E * CONTRACT_BONUS.xp));
     expect(contracts.count(s, deed({ fatigue: 99, offroad: true }), day)).toMatchObject({ shards: 0, xp: 0, bonus: false });

@@ -152,10 +152,3 @@ export function report(s: Save): AssocPaid | null {
   return { quest: q, xp, shards, field, next, blueprint, mats };
 }
 
-/** Use a Gate Survey on a Gate: its map shows in the brief from then on. False if none is held, or it shows already. Mutates. */
-export function survey(s: Save, gateId: string): boolean {
-  if (shop.held(s, 'survey') <= 0 || s.gates.surveyed?.includes(gateId)) return false;
-  s.stock.survey = shop.held(s, 'survey') - 1;
-  s.gates.surveyed = [...(s.gates.surveyed ?? []), gateId];
-  return true;
-}

@@ -25,7 +25,8 @@ import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
-import { enterGate, rewardChain } from '@/app/flow';
+import { enterGate, rewardChain, surveyFlow } from '@/app/flow';
+import { SURVEY } from '@/data/association';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import * as system from '@/ui/system';
@@ -438,7 +439,7 @@ export function Arena() {
             : <>
               {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
-                pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} />
+                pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
@@ -451,6 +452,9 @@ export function Arena() {
                   : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
                     : <small class="muted center">Tap a room that glows, or a cleared room to walk back to it.</small>}
+              {!m.tower && shop.held(s, 'survey') > 0 && raid.surveyable(s, d) && (
+                <Btn kind="ghost" size="sm" block onClick={() => void surveyFlow(d)}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
+              )}
             </>}
         </div>
       ) : (

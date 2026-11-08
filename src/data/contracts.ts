@@ -10,8 +10,8 @@ export const CONTRACTS_PER_DAY = 3;
 
 /** What one contract pays, as a share of a clear at the grade it was issued for. */
 export const CONTRACT_PAY = { shards: 1, xp: 0.1 } as const;
-/** What all of a day's contracts pay together, on top of their own. */
-export const CONTRACT_BONUS = { shards: 2, xp: 0.2 } as const;
+/** What all of a day's contracts pay together, on top of their own: and a Gate Survey. */
+export const CONTRACT_BONUS = { shards: 2, xp: 0.2, survey: 1 } as const;
 
 export type ContractKind = 'clear' | 'fell' | 'shadows' | 'tired' | 'gatekeeper' | 'offroad';
 

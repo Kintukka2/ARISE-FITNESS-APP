@@ -45,7 +45,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.
 - A Gate's map is rooms and corridors; the Pale Spire's blocks and the Trials are towers, climbed
   floor by floor (`GateMap.tower`). Walking back to a cleared room (`raid.moveTo`) and resting at a
-  rest found (`raid.restHere`, once each) are written to the run like any step.
+  rest found (`raid.restHere`, once each) are written to the run like any step. The fog of war
+  (`map.sight`, `raid.seen`, remembered in `s.gates.seen` by map seed) only hides rooms on the plan:
+  it never reaches the fight, the System's road or the projection.
 - The brief, Auto and calibration all walk the System's road (`map.systemRoad`, moved along by
   `raid.systemNext`, which keeps a rest it finds for the boss) and make the System's choices
   (`raid.systemChoice`). Change any of them, or how a map is drawn, and you must recalibrate.
