@@ -26,7 +26,6 @@ import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
 import { enterGate, rewardChain, surveyFlow } from '@/app/flow';
-import { SURVEY } from '@/data/association';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import * as system from '@/ui/system';
@@ -37,7 +36,7 @@ import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
 import { SysAlert } from '@/ui/frame';
 import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
-import { MapView } from '@/ui/map';
+import { MapView, SurveyMark } from '@/ui/map';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph, Shard } from '@/ui/icons';
 import { drinkFlow } from './Inventory';
@@ -448,7 +447,8 @@ export function Arena() {
             : <>
               {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
-                pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)} />
+                pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)}
+                corner={!m.tower && shop.held(s, 'survey') > 0 && raid.surveyable(s, d) ? <SurveyMark held={shop.held(s, 'survey')} onUse={() => void surveyFlow(d)} /> : null} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
@@ -461,9 +461,6 @@ export function Arena() {
                   : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
                     : <small class="muted center">Tap a room that glows, or a cleared room to walk back to it.</small>}
-              {!m.tower && shop.held(s, 'survey') > 0 && raid.surveyable(s, d) && (
-                <Btn kind="ghost" size="sm" block onClick={() => void surveyFlow(d)}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
-              )}
             </>}
         </div>
       ) : (

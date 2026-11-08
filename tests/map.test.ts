@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse } from '@/core/save';
 import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
-import { build, COLS, FLOORS, floorsOf, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { build, COLS, FLOORS, floorsOf, LABYRINTH, PLAN_MAX, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
 import * as shop from '@/core/shop';
 import * as forge from '@/core/forge';
 import { CACHE } from '@/data/forge';
@@ -91,8 +91,8 @@ describe('the map', () => {
         expect(rooms.filter((x) => x.kind === 'rest').length).toBeLessThanOrEqual(RESTS_MAX);
       });
       expect(m.boss).toBe(m.floors[m.floors.length - 1].end);
-      // The first room on the road is a fight; every room is numbered once, from the entrance out.
-      expect(m.byId[systemRoad(m)[0]].kind).toBe('fight');
+      // A fight waits beside the entrance; every room is numbered once, from the entrance out.
+      expect(m.byId[m.start!].next.some((id) => m.byId[id].kind === 'fight')).toBe(true);
       expect(m.nodes.map((x) => x.n).sort((p, q) => p - q)).toEqual(m.nodes.map((_, i) => i));
     }
   });
@@ -140,6 +140,24 @@ describe('the map', () => {
     }
   });
 
+  it('is a labyrinth: every floor holds at least its grade’s rooms, on a plan no bigger than reads cleanly', () => {
+    for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS.slice(0, 8)) {
+      const m = build(d, mapSeed(d, day));
+      const size = LABYRINTH[d.rank];
+      m.floors.forEach((f, k) => {
+        expect(m.nodes.filter((x) => (x.floor ?? 0) === k).length).toBeGreaterThanOrEqual(size.rooms);
+        expect(Math.max(f.cols, f.rows)).toBeLessThanOrEqual(PLAN_MAX.rows);
+        expect(Math.min(f.cols, f.rows)).toBeLessThanOrEqual(PLAN_MAX.cols);
+      });
+      // A run opened before the labyrinths keeps its smaller floors: an A- or S-Rank Gate's are less than half the size.
+      const old = build(d, mapSeed(d, day), 'floors');
+      expect(old.floors).toHaveLength(m.floors.length);
+      expect(old.nodes.length).toBeLessThanOrEqual(m.nodes.length);
+      if (d.rank === 'A' || d.rank === 'S') expect(old.nodes.length * 2).toBeLessThan(m.nodes.length);
+    }
+    expect(LABYRINTH.S.rooms).toBeGreaterThanOrEqual(2 * LABYRINTH.C.rooms - 6);
+  });
+
   it('starts anywhere: the entrance in any column, rooms on every side of it, the plan turned every way', () => {
     const columns = new Set<number>();
     const turns = new Set<string>();
@@ -161,13 +179,14 @@ describe('the map', () => {
   });
 
   it('rests are rare, and found anywhere, not only before the boss', () => {
-    let maps = 0, withRest = 0, onRoad = 0, offRoad = 0, beforeBoss = 0;
+    let maps = 0, withRest = 0, onRoad = 0, offRoad = 0, beforeBoss = 0, rooms = 0;
     for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS) {
       const m = build(d, mapSeed(d, day));
       const road = systemRoad(m);
       const rests = m.nodes.filter((x) => x.kind === 'rest');
-      maps++;
-      if (rests.length) withRest++;
+      rooms += m.nodes.length;
+      // How often a one-floor Gate holds one at all.
+      if (m.floors.length === 1) { maps++; if (rests.length) withRest++; }
       for (const x of rests) {
         if (road.includes(x.id)) onRoad++; else offRoad++;
         if (m.byId[m.boss].next.includes(x.id)) beforeBoss++;
@@ -175,6 +194,9 @@ describe('the map', () => {
     }
     expect(withRest / maps).toBeGreaterThan(0.2);
     expect(withRest / maps).toBeLessThan(0.65);
+    // A rest is one room in twenty or fewer, however big the Gate.
+    expect((onRoad + offRoad) / rooms).toBeGreaterThan(0.01);
+    expect((onRoad + offRoad) / rooms).toBeLessThan(0.05);
     expect(onRoad).toBeGreaterThan(0);
     expect(offRoad).toBeGreaterThan(onRoad);
     expect(beforeBoss / (onRoad + offRoad)).toBeLessThan(0.15);

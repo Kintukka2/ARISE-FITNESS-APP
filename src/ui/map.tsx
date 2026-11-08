@@ -7,8 +7,19 @@
  */
 import { across, passages, unsealed, type GateMap, type MapNode } from '@/core/map';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
+import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
 import { Glyph } from './icons';
+
+/** The Gate Survey, as a mark with the count held: a tap offers to use one. */
+export function SurveyMark({ held, onUse }: { held: number; onUse: () => void }) {
+  return (
+    <button type="button" class="surveymark" aria-label={`Use a Gate Survey, ${held} held`} title="Gate Survey" onClick={() => { sfx.tap(); onUse(); }}>
+      <Glyph name="survey" />
+      <b class="surveymark__n num">{held}</b>
+    </button>
+  );
+}
 
 interface MapProps {
   m: GateMap;
@@ -29,6 +40,8 @@ interface MapProps {
   /** A dungeon of floors: the floor to draw (the hunter's, unset), and choosing another, which shows the floors as tabs. */
   floor?: number;
   onFloor?: (k: number) => void;
+  /** Set at the plan's top right: the Gate Survey, while one can be used. */
+  corner?: ComponentChildren;
   compact?: boolean;
 }
 
@@ -37,7 +50,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, compact }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -67,13 +80,19 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const fogs = rooms.some(fogged);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''}`}>
-      {floors > 1 && (
-        <div class="dmap__floors" role={onFloor ? 'tablist' : undefined} aria-label="Floors">
-          {onFloor
-            ? Array.from({ length: floors }, (_, k) => (
-              <button type="button" key={k} role="tab" aria-selected={k === f} class={`dmap__floor ${k === f ? 'is-on' : ''}`} onClick={() => { sfx.tap(); onFloor(k); }}>Floor {k + 1}</button>
-            ))
-            : <span class="dmap__floor is-on">Floor <b class="num">{f + 1}/{floors}</b></span>}
+      {(floors > 1 || corner) && (
+        <div class="dmap__bar">
+          <span aria-hidden="true" />
+          {floors > 1 ? (
+            <div class="dmap__floors" role={onFloor ? 'tablist' : undefined} aria-label="Floors">
+              {onFloor
+                ? Array.from({ length: floors }, (_, k) => (
+                  <button type="button" key={k} role="tab" aria-selected={k === f} class={`dmap__floor ${k === f ? 'is-on' : ''}`} onClick={() => { sfx.tap(); onFloor(k); }}>Floor {k + 1}</button>
+                ))
+                : <span class="dmap__floor is-on">Floor <b class="num">{f + 1}/{floors}</b></span>}
+            </div>
+          ) : <span aria-hidden="true" />}
+          <span class="dmap__corner">{corner}</span>
         </div>
       )}
       <div class={`dmap ${compact ? 'dmap--compact' : ''}`} style={{ '--cols': cols, '--rows': rows } as Record<string, number>} role="group" aria-label={floors > 1 ? `Map of the Gate, floor ${f + 1} of ${floors}` : 'Map of the Gate'}>
