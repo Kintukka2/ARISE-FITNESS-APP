@@ -842,7 +842,8 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   is the rooms cleared over the road's length, capped as before.
 - **The Gatekeeper and its vault.** A Gate with a gatekeeper holds exactly one, at the end of a
   branch, and its vault, a dead end sealed somewhere far from it by corridor. The seal breaks when the
-  Gatekeeper falls (`map.unsealed`; the feed says `Somewhere in the Gate, a seal breaks.`). The vault
+  Gatekeeper falls (`map.unsealed`; the feed says `Somewhere in the Gate, a seal breaks.`). *Since the
+  floors, the vault is behind its Gatekeeper instead; see below.* The vault
   is the richest find on the map: 5-7 alloy of the Gate's own grade and two parts, or a piece found
   whole 20% of the time (`CACHE.vault`, `FORGED.vault`), and a blueprint of the Gate's grade 12% of the
   time unless the run is carried out (`BLUEPRINTS.vault`).
@@ -892,8 +893,22 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   the boss always show through the fog. A deeper Gate's road is longer, at least three rooms to a
   floor (`floorRoad`: a C-Rank Gate's road is 8 rooms, an S-Rank's 12, against 5 and 7 on one floor),
   and its fights share out what the one-floor road paid, in shards and in alloy (`paceOf`). The
-  Gatekeeper and its vault each keep to a floor of their own drawing, so the vault can be a floor away
-  from its seal. No floor holds more than two rests. A run opened before the floors keeps its one floor.
+  Gatekeeper keeps to a floor of its own drawing. No floor holds more than two rests. A run opened
+  before the floors keeps its one floor.
+- **A plan starts anywhere**, asked for next (`FloorOpts.vary`): the entrance (or a floor's stairs up)
+  stands in any column, with up to two rows of rooms beyond it, so it is as often inside the plan as on
+  its edge, and the whole plan is turned to run up (35%), down (25%), left or right (20% each; only a
+  plan no more than five rows deep turns sideways, so it stays five cells across at most). The shape is
+  drawn from its own seed, so what waits in the rooms is drawn as before.
+- **The vault is behind its Gatekeeper**, asked for with it: a dead end off the Gatekeeper's room,
+  reached through it and nowhere else, on the same floor. The Gatekeeper's room is the vault's door,
+  and the lock on the plan says so until it falls (`The seal on the door behind it breaks.`). It is
+  hidden in the fog with the rest until the Gatekeeper's room is cleared.
+- **Balance, again.** Recalibrated: the middle of every grade clears 73-82%. The campaign's start date
+  moves its result by several days on its own, so it was played from three starts, a week apart, before
+  and after: the evening hunter reaches S-Rank on days 67, 57 and 60 against 67, 58 and 60 before; the
+  three-session hunter on days 43, 35 and 44 against 33, 35 and 38, carried out a little more often
+  (34, 20 and 33 times against 29, 26 and 21). Worth watching; within the spread of one start's own.
 - **The plan's room numbers are gone,** and an Event room is an orchid signpost, a choice drawn as one.
 - **Balance.** `npm run calibrate` was rerun: the tunings moved by 1% on average, a Gate at most by a
   quarter, as its maps changed shape. With the floors it was rerun again, and the campaign with it: the

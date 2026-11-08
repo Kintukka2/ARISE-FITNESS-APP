@@ -14,7 +14,7 @@ export const HIDDEN_IN_ROOMS: ReadonlySet<NodeKind> = new Set<NodeKind>([...HIDD
 
 export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string }> = {
   fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the Gate. Pays shards, sometimes gear.' },
-  elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. In a Gate, it holds the seal on the vault.' },
+  elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. In a Gate, the vault is behind it.' },
   rest: { name: 'Rest', glyph: 'heart', desc: 'Heals the party once. In a Gate, it passes for an Event until you step in, and keeps until you come back to use it.' },
   treasure: { name: 'Cache', glyph: 'bag', desc: 'Materials one grade below the Gate, now and then a piece found whole. It passes for an Event until you step on it.' },
   shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate.' },
@@ -22,7 +22,7 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   event: { name: 'Event', glyph: 'event', desc: 'A choice, with its odds stated. A trap, a cache or a rest passes for one until you step in.' },
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
   entrance: { name: 'Entrance', glyph: 'gates', desc: 'The way in, and the way out. Withdraw from here.' },
-  vault: { name: 'Vault', glyph: 'lock', desc: 'Sealed until the Gatekeeper falls. A richer cache than any other.' },
+  vault: { name: 'Vault', glyph: 'lock', desc: 'Behind the Gatekeeper, reached only through its room, and sealed until it falls. A richer cache than any other.' },
   down: { name: 'Stairs Down', glyph: 'stairsDown', desc: 'To the next floor. The boss waits on the last.' },
   up: { name: 'Stairs Up', glyph: 'stairsUp', desc: 'Back to the floor above.' },
 };

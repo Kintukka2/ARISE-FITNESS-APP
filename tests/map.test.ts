@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse } from '@/core/save';
 import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
-import { build, FLOORS, floorsOf, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { build, COLS, FLOORS, floorsOf, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
 import * as shop from '@/core/shop';
 import * as forge from '@/core/forge';
 import { CACHE } from '@/data/forge';
@@ -53,7 +53,7 @@ function wayTo(m: GateMap, id: string): string[] {
 const DAYS = Array.from({ length: 40 }, (_, i) => new Date(Date.UTC(2026, 1, 1 + i * 3)).toISOString().slice(0, 10));
 
 describe('the map', () => {
-  it('is the same all day: floors of rooms on a grid, every one reachable from the entrance, each floor’s head alone at its top', () => {
+  it('is the same all day: floors of rooms on a grid, every one reachable from the entrance, each floor’s head alone at its end', () => {
     for (const d of [...ALL_DUNGEONS, PRACTICE_GATE].filter((g) => !g.floor && !g.trial)) for (const day of ['2026-02-02', '2026-07-19']) {
       const m = build(d, mapSeed(d, day));
       expect(build(d, mapSeed(d, day))).toEqual(m);
@@ -68,7 +68,9 @@ describe('the map', () => {
         for (const x of rooms) {
           cells.add(`${x.x},${x.y}`);
           expect(x.x).toBeGreaterThanOrEqual(0);
-          expect(x.x).toBeLessThan(m.cols);
+          expect(x.x).toBeLessThan(f.cols);
+          expect(x.y).toBeGreaterThanOrEqual(0);
+          expect(x.y).toBeLessThan(f.rows);
           for (const id of [...x.next, ...(x.hidden ?? [])]) {
             const y = m.byId[id];
             expect(y.next.includes(x.id) || (y.hidden ?? []).includes(x.id)).toBe(true);
@@ -82,9 +84,10 @@ describe('the map', () => {
         const head = m.byId[f.end];
         expect(head.kind).toBe(k === m.floors.length - 1 ? 'boss' : 'down');
         expect(m.byId[f.start].kind).toBe(k === 0 ? 'entrance' : 'up');
-        expect(head.y).toBe(0);
-        expect(rooms.filter((x) => x.y === 0)).toEqual([head]);
-        expect(m.byId[f.start].y).toBe(f.rows - 1);
+        // Nothing stands beside the head but the room its one corridor on the floor leads from.
+        const beside = rooms.filter((x) => x !== head && Math.abs(x.x! - head.x!) + Math.abs(x.y! - head.y!) === 1);
+        expect(beside.map((x) => x.id)).toEqual(head.next.filter((id) => (m.byId[id].floor ?? 0) === k));
+        expect(beside).toHaveLength(1);
         expect(rooms.filter((x) => x.kind === 'rest').length).toBeLessThanOrEqual(RESTS_MAX);
       });
       expect(m.boss).toBe(m.floors[m.floors.length - 1].end);
@@ -94,11 +97,15 @@ describe('the map', () => {
     }
   });
 
-  it('goes down a floor at C and B, two at A and three at S, and a one-floor Gate is drawn as it always was', () => {
+  it('goes down a floor at C and B, two at A and three at S, and a run opened on one floor keeps it', () => {
     for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) {
       const m = build(d, mapSeed(d, '2026-02-02'));
       expect(m.floors).toHaveLength(FLOORS[d.rank]);
-      if (FLOORS[d.rank] === 1) expect(m).toEqual(build(d, mapSeed(d, '2026-02-02'), 'rooms'));
+      // The one floor of rooms runs opened before the floors were drawn on: the entrance at its foot's middle.
+      const old = build(d, mapSeed(d, '2026-02-02'), 'rooms');
+      expect(old.floors).toHaveLength(1);
+      expect(old.byId[old.start!]).toMatchObject({ x: 2, y: old.rows - 1 });
+      expect(old.byId[old.boss].y).toBe(0);
       // The System's road takes every floor's stairs.
       const road = systemRoad(m).map((id) => m.byId[id]);
       expect(road.filter((x) => x.kind === 'down')).toHaveLength(FLOORS[d.rank] - 1);
@@ -107,22 +114,50 @@ describe('the map', () => {
     expect(FLOORS).toMatchObject({ E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 });
   });
 
-  it('a Gate with a Gatekeeper holds it at the end of a branch, and its vault, sealed, at the end of another', () => {
+  it('a Gate with a Gatekeeper holds it off the road, and its vault behind it, reached through it and nowhere else', () => {
     for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS.slice(0, 4)) {
       const m = build(d, mapSeed(d, day));
       const keepers = m.nodes.filter((x) => x.kind === 'elite');
       const vaults = m.nodes.filter((x) => x.kind === 'vault');
       expect(keepers).toHaveLength(d.elite ? 1 : 0);
       expect(vaults).toHaveLength(d.elite ? 1 : 0);
-      for (const x of [...keepers, ...vaults]) {
-        expect(x.next).toHaveLength(1);
-        expect(x.hidden).toBeUndefined();
-      }
-      if (d.elite) expect(keepers[0].next).not.toContain(vaults[0].id);
-      const seen = new Set([m.start!]);
-      expect(reach(m, seen).some((x) => x.kind === 'vault')).toBe(false);
-      expect(unsealed(m, new Set([m.start!, keepers[0]?.id ?? '']))).toBe(!!d.elite);
+      if (!d.elite) continue;
+      const [keeper] = keepers;
+      const [vault] = vaults;
+      // The vault's one door is the Gatekeeper's room; the Gatekeeper's room has that door and its own way in.
+      expect(vault.next).toEqual([keeper.id]);
+      expect(keeper.next).toHaveLength(2);
+      expect(keeper.next).toContain(vault.id);
+      expect(vault.floor).toBe(keeper.floor);
+      for (const x of [keeper, vault]) expect(x.hidden).toBeUndefined();
+      expect(systemRoad(m)).not.toContain(keeper.id);
+      // Everything but the Gatekeeper's room cleared, the vault still cannot be entered.
+      const all = new Set(m.nodes.filter((x) => x !== keeper && x !== vault).map((x) => x.id));
+      expect(reach(m, all).map((x) => x.id)).not.toContain(vault.id);
+      expect(reach(m, new Set([...all, keeper.id])).map((x) => x.id)).toContain(vault.id);
+      expect(unsealed(m, all)).toBe(false);
+      expect(unsealed(m, new Set([m.start!, keeper.id]))).toBe(true);
     }
+  });
+
+  it('starts anywhere: the entrance in any column, rooms on every side of it, the plan turned every way', () => {
+    const columns = new Set<number>();
+    const turns = new Set<string>();
+    let inside = 0;
+    for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS.slice(0, 10)) {
+      const m = build(d, mapSeed(d, day));
+      const start = m.byId[m.start!];
+      const boss = m.byId[m.floors[0].end];
+      columns.add(m.floors[0].cols === COLS && boss.y! < start.y! ? start.x! : -1);
+      turns.add(boss.y! < start.y! && boss.x === m.byId[boss.next[0]].x ? 'up' : boss.y! > start.y! && boss.x === m.byId[boss.next[0]].x ? 'down' : boss.x! < start.x! ? 'left' : 'right');
+      // A room beyond the entrance, away from the head: the entrance is not on the plan's edge.
+      const rooms = m.nodes.filter((x) => (x.floor ?? 0) === 0);
+      if (rooms.some((x) => Math.abs(x.x! - start.x!) + Math.abs(x.y! - start.y!) === 1 && x.next.includes(start.id) && x !== m.byId[systemRoad(m)[0]])) inside++;
+    }
+    columns.delete(-1);
+    expect(columns.size).toBeGreaterThanOrEqual(4);
+    expect([...turns].sort()).toEqual(['down', 'left', 'right', 'up']);
+    expect(inside).toBeGreaterThan(20);
   });
 
   it('rests are rare, and found anywhere, not only before the boss', () => {

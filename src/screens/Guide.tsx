@@ -72,7 +72,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'The map',
     lines: [
-      'A Gate is a dungeon: rooms joined by corridors, the entrance at the foot and the boss at the head.',
+      'A Gate is a dungeon: rooms joined by corridors, the entrance anywhere on its plan and the boss at the far end of it. A plan can run up, down, left or right.',
       `A deeper Gate has floors: ${Object.entries(FLOORS).map(([r, n]) => `${r}-Rank ${n}`).join(', ')}.`,
       'Each floor but the last ends in stairs down instead of the boss, and each below the first starts at stairs up. Take stairs you have used again in one tap.',
       'A deeper Gate’s road is longer, and its fights share out what a one-floor road pays.',

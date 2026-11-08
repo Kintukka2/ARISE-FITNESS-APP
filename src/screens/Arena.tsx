@@ -384,8 +384,9 @@ export function Arena() {
       ? [{ text: `▸ [${res.label}] cleared. Rounds: ${res.rounds}. Standing: ${left}. Condition: ${band}.`, tone: 'outcome' }]
       : [{ text: `▸ [${res.label}] not cleared. The party has been carried out.`, tone: 'loss' }]);
     if (res.won) buzz(20);
-    // A Gatekeeper down breaks the seal on its vault, wherever the vault is.
-    if (res.won && node.kind === 'elite' && raid.mapOf(d, r).nodes.some((x) => x.kind === 'vault')) say([{ text: '▸ Somewhere in the Gate, a seal breaks.', tone: 'outcome' }]);
+    // A Gatekeeper down breaks the seal on its vault: the door behind it, or, on an older plan, somewhere else.
+    const sealed = res.won && node.kind === 'elite' ? raid.mapOf(d, r).nodes.find((x) => x.kind === 'vault') : undefined;
+    if (sealed) say([{ text: node.next.includes(sealed.id) ? '▸ The seal on the door behind it breaks.' : '▸ Somewhere in the Gate, a seal breaks.', tone: 'outcome' }]);
     else { sfx.alarm(); flash('danger'); buzz([40, 60, 120]); }
     setWon(res.won);
     // A lost chamber, or the boss down: that is the run's to end. Anything else, back to the map.

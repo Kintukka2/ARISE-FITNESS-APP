@@ -46,6 +46,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const f = Math.min(floors - 1, floor ?? here?.floor ?? 0);
   const on = (x: MapNode) => (x.floor ?? 0) === f;
   const rows = m.floors[f]?.rows ?? m.rows;
+  const cols = m.floors[f]?.cols ?? m.cols;
   const way = [m.start!, ...road];
   const onRoad = (a: string, b: string) => {
     const i = way.indexOf(a);
@@ -75,8 +76,8 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             : <span class="dmap__floor is-on">Floor <b class="num">{f + 1}/{floors}</b></span>}
         </div>
       )}
-      <div class={`dmap ${compact ? 'dmap--compact' : ''}`} style={{ '--cols': m.cols, '--rows': rows } as Record<string, number>} role="group" aria-label={floors > 1 ? `Map of the Gate, floor ${f + 1} of ${floors}` : 'Map of the Gate'}>
-        <svg class="dmap__halls" viewBox={`0 0 ${m.cols * 10} ${rows * 10}`} preserveAspectRatio="none" aria-hidden="true">
+      <div class={`dmap ${compact ? 'dmap--compact' : ''}`} style={{ '--cols': cols, '--rows': rows } as Record<string, number>} role="group" aria-label={floors > 1 ? `Map of the Gate, floor ${f + 1} of ${floors}` : 'Map of the Gate'}>
+        <svg class="dmap__halls" viewBox={`0 0 ${cols * 10} ${rows * 10}`} preserveAspectRatio="none" aria-hidden="true">
           {/* A corridor is drawn twice: its walls, then its floor between them. */}
           {[...halls.map(([x, y]) => [x, y, done.has(x.id) && done.has(y.id) ? 'is-walked' : (done.has(x.id) || done.has(y.id)) && !compact ? 'is-near' : ''] as const),
             ...secret.map(([x, y]) => [x, y, 'is-hidden'] as const)].map(([x, y, lit]) => (
@@ -136,7 +137,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`}>{body}</span>;
         })}
         {here && on(here) && (
-          <span class="dmap__you" aria-label={`You are here: ${NODE[looksOf(here)].name}`} style={{ left: `${((here.x! + 0.5) / m.cols) * 100}%`, top: `${((here.y! + 0.5) / rows) * 100}%` }}>
+          <span class="dmap__you" aria-label={`You are here: ${NODE[looksOf(here)].name}`} style={{ left: `${((here.x! + 0.5) / cols) * 100}%`, top: `${((here.y! + 0.5) / rows) * 100}%` }}>
             <i class="dmap__you-tag">You</i>
           </span>
         )}

@@ -52,11 +52,11 @@ export interface GateMap {
   start: string | null;
   /** The node the boss holds. */
   boss: string;
-  /** A dungeon's plan, in cells: the first floor's rows. */
+  /** A dungeon's plan, in cells: the first floor's. */
   cols: number;
   rows: number;
-  /** A dungeon's floors, the entrance's first: where each starts and ends, and its rows. */
-  floors: { start: string; end: string; rows: number }[];
+  /** A dungeon's floors, the entrance's first: where each starts and ends, and its plan's size. */
+  floors: { start: string; end: string; rows: number; cols: number }[];
 }
 
 /**
@@ -206,14 +206,31 @@ function distances(nodes: MapNode[], byId: Record<string, MapNode>, from: string
 }
 
 /** One floor of a dungeon: where it sits among the floors, its road's length, and whether it holds the Gatekeeper or its vault. */
-interface FloorOpts { floor: number; floors: number; road: number; keeper: boolean; vault: boolean; prefix: string }
+interface FloorOpts {
+  floor: number; floors: number; road: number; keeper: boolean; vault: boolean; prefix: string;
+  /**
+   * Varied: the entrance stands in any column with rooms on every side of it, the plan is turned to
+   * run up, down, left or right, and the vault is behind its Gatekeeper. Unset, the one-floor plan of
+   * runs opened before the floors: the entrance at the foot's middle, the vault sealed elsewhere.
+   */
+  vary: boolean;
+}
+
+/** Which way a varied plan runs, from its foot to its head. Turned sideways only when it is no wider than the plan's columns. */
+const TURNS: { turn: 'up' | 'down' | 'left' | 'right'; w: number }[] = [{ turn: 'up', w: 35 }, { turn: 'down', w: 25 }, { turn: 'left', w: 20 }, { turn: 'right', w: 20 }];
+/** A varied plan has up to this many rows of rooms beyond its foot. */
+const BEYOND_FOOT = 2;
 
 /** One floor of a Gate: rooms on a grid, joined by corridors, from its foot (the entrance, or stairs up) to its head (the boss, or stairs down). */
 function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   const r: Rand = rng('arise|plan|' + seed);
+  // A varied plan's shape is drawn apart, so the rooms in it are drawn as they always were.
+  const rv: Rand = rng('arise|shape|' + seed);
   const practice = isPractice(d);
   // The practice Gate is a first dungeon, made easy: a rest waits in the room before the boss.
   const roadLength = o.road + (practice ? 1 : 0);
+  const footX = o.vary ? Math.floor(rv() * COLS) : 2;
+  const beyond = o.vary ? Math.floor(rv() * (BEYOND_FOOT + 1)) : 0;
   const nodes: MapNode[] = [];
   const byId: Record<string, MapNode> = {};
   const cells = new Map<string, MapNode>();
@@ -228,7 +245,7 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   const link = (a: MapNode, b: MapNode) => { a.next.push(b.id); b.next.push(a.id); };
 
   // The road climbs from the entrance: up, or along, never down, never across itself, never more than two along in a row.
-  const entrance = add(2, 0, o.floor === 0 ? 'entrance' : 'up');
+  const entrance = add(footX, 0, o.floor === 0 ? 'entrance' : 'up');
   const road: MapNode[] = [];
   let prev = entrance;
   let along = 0;
@@ -249,7 +266,7 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   // Side rooms branch off the road, one or two deep. None is ever beside the boss: its row is its own.
   const depth: Record<string, number> = { [entrance.id]: 0 };
   for (const x of road) depth[x.id] = 0;
-  const free = (x: number, y: number) => x >= 0 && x < COLS && y >= top && y <= 0 && !at(x, y);
+  const free = (x: number, y: number) => x >= 0 && x < COLS && y >= top && y <= beyond && !at(x, y);
   const sprouts = (from: (x: MapNode) => boolean) => {
     const out: { parent: MapNode; x: number; y: number }[] = [];
     for (const p of nodes) {
@@ -278,8 +295,27 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   // The Gatekeeper holds the end of a branch, the deeper the better; its vault is sealed somewhere else.
   let keeper: MapNode | null = null;
   let vault: MapNode | null = null;
-  if (o.keeper) keeper = branch((x) => sides.includes(x) && x.next.length === 1, 'elite') ?? branch(growing, 'elite');
-  if (o.vault && (keeper || !o.keeper)) {
+  if (o.vary) {
+    // The vault is behind its Gatekeeper: a room off the Gatekeeper's, reached through it and nowhere else.
+    const behind = (x: number, y: number) => DIRS.map(([dx, dy]) => [x + dx, y + dy] as const).filter(([bx, by]) => free(bx, by));
+    if (o.keeper) {
+      let spots = sprouts((x) => sides.includes(x) && x.next.length === 1).filter((c) => behind(c.x, c.y).length);
+      if (!spots.length) spots = sprouts(growing).filter((c) => behind(c.x, c.y).length);
+      if (spots.length) {
+        const c = spots[Math.floor(r() * spots.length)];
+        keeper = add(c.x, c.y, 'elite');
+        link(c.parent, keeper);
+        depth[keeper.id] = (depth[c.parent.id] ?? 0) + 1;
+        const back = behind(keeper.x!, keeper.y!);
+        if (o.vault && back.length) {
+          const [vx, vy] = back[Math.floor(r() * back.length)];
+          vault = add(vx, vy, 'vault');
+          link(keeper, vault);
+        }
+      }
+    }
+  } else if (o.keeper) keeper = branch((x) => sides.includes(x) && x.next.length === 1, 'elite') ?? branch(growing, 'elite');
+  if (!o.vary && o.vault && (keeper || !o.keeper)) {
     // On the Gatekeeper's own floor, as far from it as the floor allows; on another, anywhere.
     const fromKeeper = keeper ? distances(nodes, byId, keeper.id) : null;
     const options = sprouts((x) => x !== keeper && x !== boss);
@@ -336,34 +372,50 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   const dist = distances(nodes, byId, entrance.id);
   const order = nodes.slice().sort((a, b) => dist[a.id] - dist[b.id] || b.y! - a.y! || a.x! - b.x!);
   order.forEach((x, i) => { x.n = i; x.layer = dist[x.id]; });
+  const bottom = Math.max(...nodes.map((x) => x.y!));
   for (const x of nodes) x.y = x.y! - (top - 1);
+  let rows = bottom - (top - 1) + 1;
+  let cols = COLS;
+  // A varied plan is turned: its head at the top, the bottom, the left or the right.
+  if (o.vary) {
+    const turns = rows <= COLS ? TURNS : TURNS.filter((t) => t.turn === 'up' || t.turn === 'down');
+    const { turn } = weighted(turns, rv());
+    for (const x of nodes) {
+      const [px, py] = [x.x!, x.y!];
+      if (turn === 'down') x.y = rows - 1 - py;
+      else if (turn === 'left') { x.x = py; x.y = px; }
+      else if (turn === 'right') { x.x = rows - 1 - py; x.y = px; }
+    }
+    if (turn === 'left' || turn === 'right') [cols, rows] = [rows, COLS];
+  }
   furnish(d, seed, nodes);
-  return { nodes, byId, start: entrance, end: boss, rows: 2 - top };
+  return { nodes, byId, start: entrance, end: boss, rows, cols };
 }
 
 /** A Gate as a dungeon: its floors, each a plan of its own, joined by stairs. One floor is the Gate as it always was. */
-function dungeon(d: Dungeon, seed: string, floors: number): GateMap {
+function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean): GateMap {
   const road = floorRoad(d, floors);
   // A deeper Gate's Gatekeeper and vault each keep to a floor of their own drawing.
   const pr = rng('arise|plan|' + seed + '|keeper');
   const keeperOn = floors === 1 ? 0 : Math.floor(pr() * floors);
-  const vaultOn = floors === 1 ? 0 : Math.floor(pr() * floors);
+  // Behind its Gatekeeper, the vault keeps to the Gatekeeper's floor; sealed elsewhere, to one of its own.
+  const vaultOn = floors === 1 || vary ? keeperOn : Math.floor(pr() * floors);
   const nodes: MapNode[] = [];
   const byId: Record<string, MapNode> = {};
   const plans: GateMap['floors'] = [];
   let prev: MapNode | null = null;
   for (let k = 0; k < floors; k++) {
     const f = floorPlan(d, k === 0 ? seed : `${seed}|${k}`, {
-      floor: k, floors, road, keeper: !!d.elite && keeperOn === k, vault: !!d.elite && vaultOn === k, prefix: floors === 1 ? 'r' : `f${k}r`,
+      floor: k, floors, road, keeper: !!d.elite && keeperOn === k, vault: !!d.elite && vaultOn === k, prefix: floors === 1 ? 'r' : `f${k}r`, vary,
     });
     const base = nodes.length;
     for (const x of f.nodes) { x.n += base; nodes.push(x); byId[x.id] = x; }
     // The stairs down from the floor above lead to this floor's stairs up.
     if (prev) { prev.next.push(f.start.id); f.start.next.unshift(prev.id); }
-    plans.push({ start: f.start.id, end: f.end.id, rows: f.rows });
+    plans.push({ start: f.start.id, end: f.end.id, rows: f.rows, cols: f.cols });
     prev = f.end;
   }
-  return { tower: false, layers: [], nodes, byId, start: plans[0].start, boss: plans[floors - 1].end, cols: COLS, rows: plans[0].rows, floors: plans };
+  return { tower: false, layers: [], nodes, byId, start: plans[0].start, boss: plans[floors - 1].end, cols: plans[0].cols, rows: plans[0].rows, floors: plans };
 }
 
 /**
@@ -373,7 +425,7 @@ function dungeon(d: Dungeon, seed: string, floors: number): GateMap {
 export function build(d: Dungeon, seed: string, layout: Layout = 'floors'): GateMap {
   if (d.trial) return trialMap(d);
   if (d.floor || layout === 'layers') return layered(d, seed);
-  return dungeon(d, seed, layout === 'rooms' ? 1 : floorsOf(d));
+  return layout === 'rooms' ? dungeon(d, seed, 1, false) : dungeon(d, seed, floorsOf(d), true);
 }
 
 /** The stairs a stairway leads to, on the floor above or below. */
