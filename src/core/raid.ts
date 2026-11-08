@@ -1,9 +1,11 @@
 /**
- * A raid, step by step down the gate's map. The hunter picks each step and
- * fights their own turns; only a rest lets them withdraw. Every order and
- * every choice is written to the save before it plays out, and health after
- * every step, so closing the app can neither dodge a loss nor reroll a turn.
- * What the run finds is banked on it and paid out once, in `finish`.
+ * A raid, room by room through the Gate's map. The hunter enters any room next
+ * to one cleared, walks back through cleared rooms as they please, rests once at
+ * each rest they have found, and withdraws from the entrance. Up a tower, it is
+ * floor by floor, and only a rest lets them withdraw. Every order and every
+ * choice is written to the save before it plays out, and health after every
+ * step, so closing the app can neither dodge a loss nor reroll a turn. What the
+ * run finds is banked on it and paid out once, in `finish`.
  */
 import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
@@ -11,7 +13,7 @@ import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
-import { build, chamberOf, isFight, mapSeed, next, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
+import { build, chamberOf, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
@@ -204,7 +206,7 @@ export function chamberAt(d: Dungeon, x: MapNode, level = 0, walker: number | nu
     c = { ...c, label: w.name, foes: [w.id] };
   }
   if (!c.boss || !asc.bossGuarded(level) || !d.mobs.length) return c;
-  return { ...c, foes: [...c.foes, d.mobs[x.layer % d.mobs.length]] };
+  return { ...c, foes: [...c.foes, d.mobs[x.n % d.mobs.length]] };
 }
 
 export const snapshot = (party: Unit[]) => party.map((u) => ({ hp: Math.max(0, u.hp), status: { ...u.status } }));
@@ -286,14 +288,76 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), path: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'rooms', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
   };
   return s.gates.raid;
 }
 
-/** The map an open run is walking. */
-export const mapOf = (d: Dungeon, run: OpenRaid): GateMap => build(d, run.map ?? mapSeed(d, run.day));
+/** The map an open run is walking. A run opened before the dungeons walks the floors it began on. */
+export const mapOf = (d: Dungeon, run: OpenRaid): GateMap => build(d, run.map ?? mapSeed(d, run.day), run.layout ?? 'layers');
+
+/** Every step a run could take: a tower's floors, or a Gate's rooms, the entrance aside. */
+export const stepsOf = (m: GateMap) => (m.tower ? m.layers.length : m.nodes.length - 1);
+
+/** The rooms a run has cleared, the entrance among them; up a tower, the floors done. */
+export const explored = (m: GateMap, run: OpenRaid) => new Set([...(m.start ? [m.start] : []), ...(run.path ?? []).slice(0, run.at)]);
+
+/** The room the hunter stands in: the one last entered or walked back to. Null up a tower. */
+export function standing(d: Dungeon, run: OpenRaid): MapNode | null {
+  const m = mapOf(d, run);
+  if (m.tower) return null;
+  return m.byId[run.pos ?? ''] ?? m.byId[m.start!];
+}
+
+/** What is remembered of a map through its fog, by its seed. */
+export const remembered = (s: Save, seed: string) => s.gates.seen?.[seed] ?? [];
+
+/** The rooms an open run can see through the fog: what it has cleared and stands next to, and what is remembered of the map. */
+export const seen = (s: Save, d: Dungeon, run: OpenRaid) => {
+  const m = mapOf(d, run);
+  return sight(m, explored(m, run), remembered(s, run.map ?? mapSeed(d, run.day)));
+};
+
+/**
+ * Remember rooms seen on a map, for as long as the map stands: today's maps, and the open run's.
+ * What is remembered of any other is forgotten. Mutates.
+ */
+function remember(s: Save, seed: string, ids: Iterable<string>, now = Date.now()) {
+  const keep = new Set([dayKey(now), s.gates.raid?.day, seed.split('|').pop()]);
+  const all: Record<string, string[]> = {};
+  for (const [k, v] of Object.entries(s.gates.seen ?? {})) if (keep.has(k.split('|').pop())) all[k] = v;
+  all[seed] = [...new Set([...(all[seed] ?? []), ...ids])];
+  s.gates.seen = all;
+}
+
+/** A Gate's map can be charted: a dungeon, with a room still in the fog. Inside it, the map the run walks; outside, today's. */
+export function surveyable(s: Save, d: Dungeon, now = Date.now()): boolean {
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const m = run ? mapOf(d, run) : build(d, mapSeed(d, dayKey(now)));
+  if (m.tower) return false;
+  const known = run ? seen(s, d, run) : sight(m, new Set(), remembered(s, mapSeed(d, dayKey(now))));
+  return m.nodes.some((x) => !known.has(x.id));
+}
+
+/**
+ * Use a Gate Survey on a Gate: every room of its map is charted, through the fog, for as long as the map
+ * stands, and the brief shows its map from then on. Inside the Gate, it charts the map the run walks.
+ * False if none is held, or nothing is left to chart. Mutates.
+ */
+export function survey(s: Save, d: Dungeon, now = Date.now()): boolean {
+  if (shop.held(s, 'survey') <= 0 || !surveyable(s, d, now)) return false;
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const seed = run ? run.map ?? mapSeed(d, run.day) : mapSeed(d, dayKey(now));
+  const m = run ? mapOf(d, run) : build(d, seed);
+  s.stock.survey = shop.held(s, 'survey') - 1;
+  remember(s, seed, m.nodes.map((x) => x.id), now);
+  if (!(s.gates.surveyed ?? []).includes(d.id)) s.gates.surveyed = [...(s.gates.surveyed ?? []), d.id];
+  return true;
+}
+
+/** The boss is down, and the run waits only to be claimed. */
+export const bossDown = (d: Dungeon, run: OpenRaid) => !run.lost && explored(mapOf(d, run), run).has(mapOf(d, run).boss);
 
 /** The step chosen but not yet done: a fight underway, or a choice waiting to be made. */
 export function pending(d: Dungeon, run: OpenRaid): MapNode | null {
@@ -314,17 +378,86 @@ export function setTactic(s: Save, d: Dungeon | null, run: OpenRaid | null, t: T
   return true;
 }
 
-/** Where the hunter can step next. Nothing, while a step is still underway. */
+/** Where the hunter can step next: a room next to one cleared, or the floor above. Nothing, while a step is still underway. */
 export function options(d: Dungeon, run: OpenRaid): MapNode[] {
   if (pending(d, run) || run.lost) return [];
-  return next(mapOf(d, run), run.path ?? []);
+  const m = mapOf(d, run);
+  if (m.tower) return next(m, run.path ?? []);
+  return bossDown(d, run) ? [] : reach(m, explored(m, run));
 }
 
-/** The last step taken was a rest, and nothing else is underway: the only time a run can be walked away from. */
+/**
+ * Walk back to a room already cleared: free, and nothing waits on the way. False if it is not one,
+ * or the run is up a tower, or a step is underway. Mutates.
+ */
+export function moveTo(d: Dungeon, run: OpenRaid, id: string): boolean {
+  const m = mapOf(d, run);
+  if (m.tower || run.lost || pending(d, run) || !explored(m, run).has(id)) return false;
+  run.pos = id;
+  return true;
+}
+
+/** The hunter stands in a rest they have found and not yet used, and nothing is underway. */
+export function canRest(d: Dungeon, run: OpenRaid): boolean {
+  const x = standing(d, run);
+  if (!x || x.kind !== 'rest' || run.lost || pending(d, run)) return false;
+  return explored(mapOf(d, run), run).has(x.id) && !(run.rested ?? []).includes(x.id);
+}
+
+/** Rest where the hunter stands: once at each rest. False if they cannot. Mutates. */
+export function restHere(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): boolean {
+  if (!canRest(d, run)) return false;
+  const party = partyFor(s, d, run, now);
+  rest(party, asc.levelOf(run));
+  settleParty(s, d, run, party, now);
+  run.rested = [...(run.rested ?? []), run.pos!];
+  return true;
+}
+
+/**
+ * Nothing is underway and the run has cleared a room: in a Gate, while the hunter stands at the
+ * entrance; up a tower, when the last floor done was a rest. The only times a run can be walked away from.
+ */
 export function canWithdraw(d: Dungeon, run: OpenRaid): boolean {
   const path = run.path ?? [];
   if (run.at === 0 || run.lost || pending(d, run)) return false;
-  return mapOf(d, run).byId[path[run.at - 1]]?.kind === 'rest';
+  const m = mapOf(d, run);
+  if (!m.tower) return !bossDown(d, run) && standing(d, run)?.id === m.start;
+  return m.byId[path[run.at - 1]]?.kind === 'rest';
+}
+
+/** What the System does next on the map, as Auto does it and the brief assessed it. */
+export type Move = { enter: string } | { rest: string };
+
+/**
+ * The System's next move. Up a tower, its pick of the floor above. Through a Gate, the next room on
+ * its road; but before the boss, a rest found and not used, first. Null when there is none to make.
+ */
+export function systemNext(d: Dungeon, run: OpenRaid): Move | null {
+  const opts = options(d, run);
+  if (!opts.length) return null;
+  const m = mapOf(d, run);
+  if (m.tower) return { enter: systemPick(opts).id };
+  const done = explored(m, run);
+  const to = systemRoad(m).find((id) => !done.has(id));
+  const x = opts.find((o) => o.id === to) ?? systemPick(opts);
+  if (x.kind === 'boss') {
+    const spare = m.nodes.find((y) => y.kind === 'rest' && done.has(y.id) && !(run.rested ?? []).includes(y.id));
+    if (spare) return { rest: spare.id };
+  }
+  return { enter: x.id };
+}
+
+/** Make the System's move: enter its room, or walk to its rest and use it. False if there was none. Mutates. */
+export function systemMove(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): { move: Move; step: StepResult | null } | null {
+  const move = systemNext(d, run);
+  if (!move) return null;
+  if ('rest' in move) {
+    moveTo(d, run, move.rest);
+    restHere(s, d, run, now);
+    return { move, step: null };
+  }
+  return { move, step: choose(s, d, run, move.enter, now) };
 }
 
 /** Every step the run has finished, in order. */
@@ -344,14 +477,14 @@ const partOfGate = (d: Dungeon, roll: () => number) => {
  * the gate's grade or `shift` grades from it; otherwise alloy of that grade and a part. Banked on the
  * run, paid when it ends. Mutates the run.
  */
-function haulFind(d: Dungeon, run: OpenRaid, roll: () => number, shift: number): { item?: string; mats?: forge.Bundle } {
+function haulFind(d: Dungeon, run: OpenRaid, roll: () => number, shift: number, vault = false): { item?: string; mats?: forge.Bundle } {
   const rank = RANKS[clamp(rankIdx(d.rank) + shift, 0, 5)];
-  if (roll() < FORGED.cache) {
+  if (roll() < (vault ? FORGED.vault : FORGED.cache)) {
     const pool = ofRank(rank);
     const item = pool[Math.floor(roll() * pool.length)]?.id;
     if (item) { (run.haul ??= []).push(item); return { item }; }
   }
-  const mats = forge.addUp({ [forge.alloyId(rank)]: CACHE.alloy + Math.floor(roll() * 3) }, { [partOfGate(d, roll)]: 1 });
+  const mats = forge.addUp({ [forge.alloyId(rank)]: (vault ? CACHE.vault : CACHE.alloy) + Math.floor(roll() * 3) }, { [partOfGate(d, roll)]: 1 }, vault ? { [partOfGate(d, roll)]: 1 } : {});
   run.stash = forge.addUp(run.stash ?? {}, mats);
   return { mats };
 }
@@ -372,25 +505,31 @@ export interface StepResult {
 }
 
 /**
- * Take a step. A rest or a cache is done at once; a fight waits for the arena,
- * and a shrine, a trap or an event waits for `resolve`. Null if the step is
- * not one the hunter can take. Mutates.
+ * Take a step: enter a room, or climb a floor. A rest, a cache or a vault is
+ * done at once; a fight waits for the arena, and a shrine, a trap or an event
+ * waits for `resolve`. A rest up a tower heals at once; one in a Gate is found,
+ * and used when the hunter chooses (`restHere`). Null if the step is not one
+ * the hunter can take. Mutates.
  */
 export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Date.now()): StepResult | null {
   const x = options(d, run).find((o) => o.id === id);
   if (!x) return null;
+  const m = mapOf(d, run);
   run.path = [...(run.path ?? []), id];
+  if (!m.tower) run.pos = id;
   run.orders = [];
   // Orders given while the last step was underway reach the run here, before this one plays.
   run.tactic = s.gates.tactic;
   const out: StepResult = { node: x };
   if (x.kind === 'rest') {
-    const party = partyFor(s, d, run, now);
-    rest(party, asc.levelOf(run));
-    settleParty(s, d, run, party, now);
+    if (m.tower) {
+      const party = partyFor(s, d, run, now);
+      rest(party, asc.levelOf(run));
+      settleParty(s, d, run, party, now);
+    }
     run.at += 1;
-  } else if (x.kind === 'treasure') {
-    Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), -1));
+  } else if (x.kind === 'treasure' || x.kind === 'vault') {
+    Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), x.kind === 'vault' ? 0 : -1, x.kind === 'vault'));
     run.at += 1;
   }
   return out;
@@ -463,7 +602,7 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const orders = run.orders ?? [];
   // The satchel has already paid for the potions this chamber's orders drank.
   const potions = s.satchel + orders.filter((o) => o?.use === 'Potion').length;
-  const ch = openChamber(d, run.seed, x.layer, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run) });
+  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run) });
   return { party, ch, node: x };
 }
 
@@ -548,9 +687,11 @@ export interface RaidResult {
   /** How far the weapon carried in grew familiar. */
   familiarity: forge.FamiliarityMove | null;
   lingering: Lingering[];
-  /** Steps taken, of the steps from the gate to the boss. */
+  /** Steps taken, of the steps from the gate to the boss: rooms entered, or floors climbed. */
   steps: number;
   depth: number;
+  /** A Gate's rooms, the entrance aside. Null up a tower. */
+  rooms: number | null;
   /** The System contracts this run completed, and what they paid. */
   contracts: contracts.ContractReport;
   /** A Spire block: the floor it reached, and whether that is the week's best. */
@@ -583,7 +724,7 @@ export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?
  * other clears and from gatekeepers; and now and then a piece found whole. Blueprints are learned here.
  * Mutates.
  */
-function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number) {
+function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: boolean) {
   const g = rankIdx(d.rank);
   const rank = RANKS[g];
   const lower = RANKS[Math.max(0, g - 1)];
@@ -627,6 +768,7 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     if ((first && !firstPaid) || (!first && r() < BLUEPRINTS.clear)) leave(up());
   }
   for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
+  if (vault && r() < BLUEPRINTS.vault) leave(rank);
   // A piece found whole, rarely.
   const forged: string[] = [];
   if (cleared && r() < FORGED.clear) {
@@ -637,10 +779,15 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
   return { mats, blueprints, forged };
 }
 
-/** Close an open run: pay out, record, seal. A withdrawal is only ever from a rest. Mutates. */
+/** Close an open run: pay out, record, seal. A withdrawal is only ever from the entrance, or a tower's rest. Mutates. */
 export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now = Date.now()): RaidResult {
-  if (outcome === 'withdrawn' && !canWithdraw(d, run)) throw new Error('A run is only walked away from at a rest.');
-  const depth = mapOf(d, run).layers.length;
+  if (outcome === 'withdrawn' && !canWithdraw(d, run)) throw new Error('A run is only walked away from at the entrance, or a tower\'s rest.');
+  const m = mapOf(d, run);
+  const road = systemRoad(m);
+  // What the run saw through the fog is remembered, for another run on the same map.
+  if (!m.tower) remember(s, run.map ?? mapSeed(d, run.day), seen(s, d, run), now);
+  // A share of the way: the rooms from the entrance to the boss, or a tower's floors.
+  const depth = m.tower ? m.layers.length : road.length;
   const steps = walked(d, run);
   const r = rng('arise|spoils|' + run.seed);
   const practice = isPractice(d);
@@ -663,12 +810,11 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const fights = steps.filter((x) => x.kind === 'fight').length;
   const elites = steps.filter((x) => x.kind === 'elite').length;
   // The contracts count what the run did, and their experience lands with the gate's.
-  const road = systemRoad(mapOf(d, run));
   const deal = practice ? contracts.nothing() : contracts.count(s, {
     rank: d.rank, cleared: outcome === 'cleared', fatigue: run.fatigue ?? 0, felled: run.felled,
     shadowKills: run.squad.reduce((n, id) => n + (run.kills[id]?.kills ?? 0), 0),
     elites: elites - (run.lost && steps[steps.length - 1]?.kind === 'elite' ? 1 : 0),
-    offroad: (run.path ?? []).some((id, i) => id !== road[i]),
+    offroad: (run.path ?? []).some((id, i) => (m.tower ? id !== road[i] : !road.includes(id))),
   }, dayKey(now));
   const gateXp = GATE_XP[d.rank as Rank] ?? 0;
   const xpDue = (practice ? (outcome === 'cleared' ? practiceAward(s) : 0) : Math.round(gateXp * share * pay) + (firstClear ? Math.round(gateXp * pay) : 0)) + deal.xp;
@@ -676,7 +822,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
 
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
   const cleared = outcome === 'cleared';
-  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
+  const vault = steps.some((x) => x.kind === 'vault');
+  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
   let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
   let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};
   if (practice) {
@@ -719,6 +866,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       if (outcome === 'cleared') tally.cleared++;
     }
     if (outcome === 'cleared') s.gates.clears++;
+    if (outcome === 'cleared' && !m.tower && run.at >= m.nodes.length - 1) s.stats.charted = (s.stats.charted ?? 0) + 1;
     else if (outcome === 'withdrawn') s.gates.withdrawn++;
     else s.gates.fails++;
     if (outcome === 'cleared') {
@@ -775,7 +923,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.length = Math.min(s.log.length, 400);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
-    steps: run.at, depth, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
+    steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
   };
 }
@@ -823,7 +971,7 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   const m = build(d, mapSeed(d, day));
   const road = systemRoad(m).map((id) => m.byId[id]);
-  let cleared = 0;
+  let clears = 0;
   let heroDown = 0;
   let reached = 0;
   for (let i = 0; i < runs; i++) {
@@ -832,12 +980,20 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
     let party = buildParty(specs);
     party[0].hp = Math.max(1, Math.round(party[0].maxHp * frac));
     let won = true;
+    // A rest found in a Gate is kept for the boss, as the System keeps it.
+    let kept = false;
     for (const x of road) {
       if (isFight(x)) {
-        if (x.kind === 'boss') reached++;
-        won = runChamber(d, seed, x.layer, party, chamberAt(d, x, level, walker), s.gates.tactic, level).won;
+        if (x.kind === 'boss') {
+          reached++;
+          if (kept) { rest(party, level); kept = false; }
+        }
+        won = runChamber(d, seed, x.n, party, chamberAt(d, x, level, walker), s.gates.tactic, level).won;
         if (!won) break;
-      } else if (x.kind === 'rest') rest(party, level);
+      } else if (x.kind === 'rest') {
+        if (m.tower) rest(party, level);
+        else kept = true;
+      }
       else if (x.kind === 'shrine' && x.offer) {
         blessings = [...blessings, x.offer[systemChoice(x)]];
         party = rebless(party, specs, blessings);
@@ -846,10 +1002,10 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
         if (c) touch(party, rng(`proj|choice|${seed}|${x.id}`)() < oddsOf(c, specs[0], level) ? c.win : c.lose ?? c.win);
       }
     }
-    if (won) cleared++;
+    if (won) clears++;
     if (!won && party[0].hp <= 0) heroDown++;
   }
-  return { runs, cleared, rate: cleared / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id) };
+  return { runs, cleared: clears, rate: clears / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id) };
 }
 
 /** The System's assessment of a Gate, graded from its clear rate. It reports; it does not advise. */

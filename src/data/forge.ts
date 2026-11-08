@@ -115,6 +115,8 @@ export const BLUEPRINTS = {
   first: 1,
   clear: 0.1,
   elite: 0.03,
+  /** A Gatekeeper's vault, opened, leaves a blueprint of the Gate's grade this often when the run is not carried out. */
+  vault: 0.12,
   /** A set's home Gate leaves one of its blueprints not yet known this often on a clear, and surely on its first. */
   home: 0.3,
   /** A blueprint is one rarity up this often, below Legendary. */
@@ -127,11 +129,14 @@ export const BLUEPRINTS = {
   price: 12,
 } as const;
 
-/** A forged piece found whole: rare. A clear's chance, and a cache's. */
-export const FORGED = { clear: 0.04, cache: 0.1 } as const;
+/** A forged piece found whole: rare. A clear's chance, a cache's and a vault's. */
+export const FORGED = { clear: 0.04, cache: 0.1, vault: 0.2 } as const;
 
-/** A cache on the map: alloy of the grade below, `cache` to `cache + 2`. */
-export const CACHE = { alloy: 2 } as const;
+/**
+ * A cache on the map: alloy of the grade below, `alloy` to `alloy + 2`, and a part. A Gatekeeper's
+ * vault: alloy of the Gate's own grade, `vault` to `vault + 2`, and two parts.
+ */
+export const CACHE = { alloy: 2, vault: 5 } as const;
 
 /**
  * Weapon Familiarity: every creature the party fells while a weapon is carried in is a point toward

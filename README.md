@@ -41,7 +41,7 @@ Everything runs on the device. There is no server, no account and no network: th
 |---|---|
 | **The Practice Gate** | Valcorde walks every new licence through it once. Clearing it lands you on Level 5 with Ability Points to spend |
 | **Gates** | Ten stand open at a time, one of every grade and at least two at yours. Clear one and another of its grade opens in its place; the board redraws at midnight. The board lists them by grade, with what a clear pays, and marks each Gate's boss, its first-clear bounty, the Daily Quests, Ryn's job and the Chosen on it, how many of the set blueprints its clears leave you already know, and how many of its creatures already serve you as Shadows. You go in with hunters the Association sends and your Shadows. The brief simulates the System's road through today's map 24 times: the honest clear rate. It shows the map itself only once you have been inside that Gate; until then the map is unidentified, like its boss |
-| **The map** | A few layers of steps, a rest, then the boss. You pick each step: fights, gatekeepers, rests, and Unknown steps, which are one of fourteen events with stated odds (some read off a stat, some giving or draining mana or fatigue), traps, caches or shrines, each showing what it is only when you step on it. What you find is banked and paid when you walk out; carried out, you lose it. Only a rest lets you withdraw |
+| **The map** | A Gate is a dungeon: rooms joined by corridors, drawn on a plan, the entrance at the foot and the boss at the head. You enter any room next to one you have cleared, and walk back through cleared rooms whenever you like. Every room is in the fog until you clear a room beside it; corridors, the entrance and the boss's room always show, and a room seen stays seen on that map. Rooms hold fights, shrines and Events: one of fourteen events with stated odds (some read off a stat, some giving or draining mana or fatigue), or a trap, a cache or a rest passing for one until you step in. Rests are rare and can be anywhere; one you find keeps until you come back to use it, once. A Gatekeeper waits at the end of a branch with the seal on the Gate's vault, a richer cache sealed somewhere else on the plan, and some Gates hide a passage that opens once you clear a room beside it. A Gate Survey charts the whole map, from the brief or inside the Gate; Ryn pays them, a full day of Daily Quests pays one, and the Exchange sells them. What you find is banked and paid when you walk out; carried out, you lose it. You withdraw from the entrance |
 | **Fighting** | Turn by turn, in order of initiative. Every foe shows its next move and who it goes at. On your turn: aim at a foe, then one of the skills you took in, Strike, Guard or a field potion. Your Shadows follow the standing orders you set on the Shadows screen, and so do your own turns on Auto; the Association's hunters pick their own targets. Auto lets the System fight your turns. Every order is saved before it plays, so leaving mid-fight brings you back to the same turn |
 | **The Pale Spire** | The one Gate that never closed, a Weekly Quest on the Quests screen. It is climbed five floors at a time (three of choices, a rest, a boss), each block costing and paying like a Gate of its grade; a block taken offers Climb On, straight into the next five floors. Floor N is built for Level N up to Floor 100, and it keeps getting harder above that. Your best floor this week is kept; on Monday the week pays by the grade of your highest floor, the floors rearrange, and everyone climbs again |
 | **Ascension** | What comes after the climb: it opens at S-Rank, for a hunter the board no longer troubles, and is a ladder with no top. The first ten levels each make every foe stronger and add a rule of their own on top of the ones below, from thinner rests to bosses you must fight by hand; past them every level is stronger again. Each pays more. A level opens when you prove the one below it and win its Trial, the System's own: a run of named Chosen bosses with no rest between them, which no Association hunter walks into with you. Every level opened earns a mark, a lasting bonus you choose, lets your gear be upgraded a step past perfect, and sends its Trial's last Chosen out into the Gates, where it holds a Gate a day and leaves a masterwork the first time it falls. You choose the level before every Gate, on the Ascension tile, which walks you through itself the first time and shows what the next level asks |
@@ -56,7 +56,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **The Forge** | Gear is forged, not found. Gates leave materials: an alloy for each rarity, from Iron Scrap to Sovereign Steel; the hide, bone and mana cores their creatures leave by family; a trophy from the boss of each Gate a set calls home; and Ember from runs at Ascension. Blueprints are rare: every Gate's first clear leaves one, other clears and gatekeepers now and then, a set's home Gate its own, and each rank you claim pays three, always for the kind of piece you are weakest at. Ryn, the Pale Spire's week and the Exchange pay some too. A blueprint is yours for good: forge its design as often as you have the materials, and every piece rolls anew, so a poor roll goes back to the Forge for materials and you try again. A piece found whole is rare, and the Chosen's masterworks rarer. The weapon you carry grows familiar with every creature your party fells: five ranks, each adding attack and magic while you wear it and lifting every roll when you forge that design |
 | **The Exchange** | Four blueprints a day plus potions, paid for in Mana Shards. Field potions go in a satchel of three for your turn in a fight |
 | **Secret Quests** | 52 unpublished quests that pay stats, Ability Points or Shadow slots, in four tiers from Citation to Testament. Nothing says one exists until you have done it |
-| **Quests** | Ryn Valcorde's Association Quests at the top: one job at a time for the Association, to fell a number of one creature, clear a Gate or fell its boss, on a Gate he pins to your board. Report to him when it is done; he pays a little XP and, most of the time, a potion, a field potion, shards, alloy, now and then a blueprint, a Gate Survey that shows a Gate's map before you go in, or room in your satchel, and hands over the next, a little harder. Below him, a log, one row to every quest: the day's Daily Quests, your next rank and what it brings, the Pale Spire's week, the proof of your next Ascension level and its Trial, the Chosen walking today, and every Secret Quest you have done. Each row shows where its quest stands and opens its full window; once the day's three are done, theirs folds to one line that reads Complete. The Trial is entered from here. The tab counts the day's Daily Quests until you open it, the Trial while today's attempt is unused, and a rank waiting to be claimed. The board marks each Gate a Daily Quest names |
+| **Quests** | Ryn Valcorde's Association Quests at the top: one job at a time for the Association, to fell a number of one creature, clear a Gate or fell its boss, on a Gate he pins to your board. Report to him when it is done; he pays a little XP and, most of the time, a potion, a field potion, shards, alloy, now and then a blueprint, a Gate Survey that charts a Gate's whole map, or room in your satchel, and hands over the next, a little harder. Below him, a log, one row to every quest: the day's Daily Quests, your next rank and what it brings, the Pale Spire's week, the proof of your next Ascension level and its Trial, the Chosen walking today, and every Secret Quest you have done. Each row shows where its quest stands and opens its full window; once the day's three are done, theirs folds to one line that reads Complete. The Trial is entered from here. The tab counts the day's Daily Quests until you open it, the Trial while today's attempt is unused, and a rank waiting to be claimed. The board marks each Gate a Daily Quest names |
 | **Story** | 19 beats gated on level and deeds, ending at the Hollow Throne |
 
 ## Layout
@@ -68,8 +68,8 @@ src/
     save.ts       defaults and migrations
     progression   levels, ranks, Gate experience, stats, classes
     combat        units, abilities, statuses, and the fight: it pauses on the hunter's turn
-    raid          the run down the map, chambers fought turn by turn, orders, rewards, extraction, the projection
-    map           a Gate's map: drawing it, where you can step, the System's road
+    raid          the run through the map, rooms entered and walked back to, rests, chambers fought turn by turn, orders, rewards, extraction, the projection
+    map           a Gate's map: drawing its rooms or a tower's floors, where you can step, the System's road
     gates         the board and the hunters sent with you
     contracts     the Daily Quests, three a day: drawing them, counting a run against them, paying them
     quests        what the next rank brings, for the Quests screen
@@ -107,21 +107,21 @@ prints the result:
 
 ```
 grade  floor  middle  top   | middle vs one grade up
-  E     59%    67%    78%  |   6%
-  D     52%    70%    80%  |   6%
-  C     66%    83%    94%  |   3%
-  B     75%    86%    93%  |   4%
-  A     60%    75%    80%  |   3%
-  S     50%    83%    92%  |   —
+  E     68%    81%    88%  |   6%
+  D     56%    73%    84%  |   5%
+  C     61%    83%    94%  |   3%
+  B     64%    78%    84%  |   5%
+  A     60%    75%    87%  |   1%
+  S     36%    63%    88%  |   —
 
 The Spire: a hunter on the block holding the floor of their own level (floor / middle / top of each grade).
-  E   L3 47%      L6 78%      L9 89%
-  D   L10 100%    L15 99%     L19 100%
-  C   L20 93%     L27 52%     L34 74%
-  B   L35 79%     L42 86%     L49 83%
-  A   L50 100%    L60 95%     L69 74%
-  S   L70 98%     L85 90%     L100 91%
-  Level 100, above Floor 100:  F101 77%  F111 70%  F121 52%  F131 39%  F151 24%
+  E   L3 48%      L6 81%      L9 90%
+  D   L10 100%    L15 100%    L19 100%
+  C   L20 91%     L27 56%     L34 69%
+  B   L35 79%     L42 86%     L49 80%
+  A   L50 100%    L60 96%     L69 71%
+  S   L70 97%     L85 86%     L100 93%
+  Level 100, above Floor 100:  F101 76%  F111 75%  F121 53%  F131 44%  F151 28%
 
 Days to each rank (N Gates a day at your own grade, 75% cleared, first clears counted):
    3 Gates/day    D:2d  C:8d  B:19d  A:38d  S:73d  N:135d

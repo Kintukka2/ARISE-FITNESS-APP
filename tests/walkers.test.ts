@@ -28,7 +28,7 @@ function hunter(sent: number[] = [], felled: number[] = []) {
 const bossNode = (id: string) => {
   const d = dungeonById(id)!;
   const m = build(d, mapSeed(d, day));
-  return m.layers[m.layers.length - 1][0];
+  return m.byId[m.boss];
 };
 
 function enterAt(s: Save, id: string, level: number) {

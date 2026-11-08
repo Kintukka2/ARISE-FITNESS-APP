@@ -5,20 +5,24 @@
  */
 import type { Stat } from '@/core/types';
 
-export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'trap' | 'event' | 'boss';
+export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'trap' | 'event' | 'boss' | 'entrance' | 'vault';
 
-/** What the map shows as Unknown until the hunter steps on it. */
-export const HIDDEN: ReadonlySet<NodeKind> = new Set<NodeKind>(['trap', 'treasure', 'shrine']);
+/** What the map shows as an Event until the hunter steps on it. A shrine shows for what it is. */
+export const HIDDEN: ReadonlySet<NodeKind> = new Set<NodeKind>(['trap', 'treasure']);
+/** In a Gate's rooms, a rest is found too: it shows as an Event until the hunter steps into it. */
+export const HIDDEN_IN_ROOMS: ReadonlySet<NodeKind> = new Set<NodeKind>([...HIDDEN, 'rest']);
 
 export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string }> = {
   fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the Gate. Pays shards, sometimes gear.' },
-  elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. Guards gear.' },
-  rest: { name: 'Rest', glyph: 'heart', desc: 'Heals the party. The only place to withdraw.' },
-  treasure: { name: 'Cache', glyph: 'bag', desc: 'Gear, one grade below the Gate. It shows as Unknown until you step on it.' },
-  shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate. It shows as Unknown until you step on it.' },
-  trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It shows as Unknown until you step on it.' },
-  event: { name: 'Unknown', glyph: 'unknown', desc: 'A choice, a trap, a cache or a shrine. Some outcomes are rolled.' },
+  elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. In a Gate, it holds the seal on the vault.' },
+  rest: { name: 'Rest', glyph: 'heart', desc: 'Heals the party once. In a Gate, it passes for an Event until you step in, and keeps until you come back to use it.' },
+  treasure: { name: 'Cache', glyph: 'bag', desc: 'Materials one grade below the Gate, now and then a piece found whole. It passes for an Event until you step on it.' },
+  shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate.' },
+  trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It passes for an Event until you step on it.' },
+  event: { name: 'Event', glyph: 'event', desc: 'A choice, with its odds stated. A trap, a cache or a rest passes for one until you step in.' },
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
+  entrance: { name: 'Entrance', glyph: 'gates', desc: 'The way in, and the way out. Withdraw from here.' },
+  vault: { name: 'Vault', glyph: 'lock', desc: 'Sealed until the Gatekeeper falls. A richer cache than any other.' },
 };
 
 /** A rest restores this share of everyone's maximum HP, and lifts what ails them. */

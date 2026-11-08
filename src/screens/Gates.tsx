@@ -11,7 +11,7 @@ import * as forge from '@/core/forge';
 import { ALLOYS } from '@/data/forge';
 import { MatArt, TrackMark } from '@/ui/forge';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
-import { build, mapSeed } from '@/core/map';
+import { build, mapSeed, sight } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
@@ -19,7 +19,6 @@ import { isTrial, trialLevel } from '@/core/trial';
 import * as association from '@/core/association';
 import { SURVEY } from '@/data/association';
 import { goalOf } from '@/ui/assoc';
-import { ask } from '@/ui/ask';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
@@ -46,7 +45,7 @@ import { Glyph, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
-import { enterGate } from '@/app/flow';
+import { enterGate, surveyFlow } from '@/app/flow';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -285,7 +284,7 @@ function topTiles(s: Save): BTile[] {
   const run = s.gates.raid;
   const open = run && dungeonById(run.dungeonId);
   if (open && run) {
-    const steps = raid.mapOf(open, run).layers.length;
+    const steps = raid.stepsOf(raid.mapOf(open, run));
     out.push({
       key: 'run', kind: 'gates', name: open.name, wide: true, call: true, icon: <Glyph name="gates" />,
       count: `${run.at}/${steps}`, status: 'Go Back In',
@@ -594,6 +593,13 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic, level]);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const map = useMemo(() => build(d, mapSeed(d, dayKey())), [d.id, dayKey()]);
+  // Today's map through its fog: what a run on it is seeing, or what is remembered of it.
+  const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, dayKey()) ? s.gates.raid : null;
+  const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, dayKey())));
+  // A Gate Survey charts every room of it, before the hunter goes in or after.
+  const surveyBtn = shop.held(s, 'survey') > 0 && raid.surveyable(s, d)
+    ? <Btn size="sm" block onClick={() => void surveyFlow(d)}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
+    : null;
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
   const pay = ascension.payShare(level);
@@ -673,7 +679,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           ? <span class="sysbox brewards__one"><small class="label">This week</small><b>Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}</b><small>a new best, if you clear it</small></span>
           : <span class={`sysbox brewards__one ${first && !isPractice(d) ? 'is-bounty' : ''}`}><small class="label">First clear</small><b class="num">{first && !isPractice(d) ? `XP +${xp}` : '-- --'}</b><small>{first && !isPractice(d) ? <><Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'}</small></span>}
         <span class="sysbox brewards__one"><small class="label">Materials</small><b>{isPractice(d) ? ALLOYS.E.name : ALLOYS[d.rank as Rank].name}</b><small>{isPractice(d) ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small></span>
-        <span class="sysbox brewards__one"><small class="label">Depth</small><b>{map.layers.length} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'steps'}</b><small>{isTrial(d) ? 'no rest between them' : 'a rest, then the boss'}</small></span>
+        <span class="sysbox brewards__one"><small class="label">Depth</small><b>{raid.stepsOf(map)} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'rooms'}</b><small>{isTrial(d) ? 'no rest between them' : tower ? 'a rest, then the boss' : `${proj.road.length} to the boss`}</small></span>
       </div>
       {/* The materials tagged at the Forge that this Gate leaves. */}
       {!isPractice(d) && !isTrial(d) && forge.trackedAt(s, d, level).length > 0 && (
@@ -725,7 +731,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       {mapKnown(s, d)
         ? (
           <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
-            <MapView m={map} road={proj.road} compact />
+            <MapView m={map} road={proj.road} seen={fog} compact />
+            {surveyBtn}
           </Section>
         )
         : (
@@ -734,18 +741,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
               <Glyph name="unknown" />
               <b>?</b>
             </div>
-            {/* A Gate Survey from the Association shows the map before the hunter has been in. */}
-            {shop.held(s, 'survey') > 0 && (
-              <Btn size="sm" block onClick={async () => {
-                const ok = await ask('use:survey', system.offer([
-                  'Would you like to use?',
-                  system.tag(SURVEY.name, 'Item'),
-                  `Map of ${system.tag(d.name)}`,
-                  `Held: ${shop.held(store.get(), 'survey')}`,
-                ], 'gear', 'Use', 'Cancel'));
-                if (ok && store.update((x) => association.survey(x, d.id))) { sfx.success(); toast(`${SURVEY.name} · ${d.name} mapped.`, 'good'); }
-              }}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
-            )}
+            {surveyBtn}
           </Section>
         )}
 

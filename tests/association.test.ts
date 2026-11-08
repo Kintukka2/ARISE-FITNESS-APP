@@ -4,7 +4,8 @@ import { board, dungeonById, mapKnown, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
 import * as shop from '@/core/shop';
-import { ASSOC, ASSOC_LOOP } from '@/data/association';
+import { ASSOC, ASSOC_LOOP, SURVEY } from '@/data/association';
+import { CONTRACT_BONUS } from '@/data/contracts';
 import { DUNGEONS } from '@/data/dungeons';
 import { typicalHunter } from '../scripts/hunters';
 
@@ -140,14 +141,27 @@ describe('a job', () => {
     expect(s.wallet.shards).toBe(purse);
   });
 
-  it('a Gate Survey shows a Gate’s map before the hunter has been in', () => {
+  it('a Gate Survey charts a Gate’s whole map before the hunter has been in, and is kept when nothing is left to chart', () => {
     const s = hunter();
     const d = DUNGEONS.find((x) => x.rank === 'C' && !mapKnown(s, x))!;
-    expect(association.survey(s, d.id)).toBe(false);
-    shop.stockUp(s, 'survey', 1);
-    expect(association.survey(s, d.id)).toBe(true);
+    expect(raid.survey(s, d, now)).toBe(false);
+    shop.stockUp(s, 'survey', 2);
+    expect(raid.survey(s, d, now)).toBe(true);
     expect(mapKnown(s, d)).toBe(true);
-    expect(shop.held(s, 'survey')).toBe(0);
+    expect(shop.held(s, 'survey')).toBe(1);
+    expect(raid.survey(s, d, now)).toBe(false);
+    expect(shop.held(s, 'survey')).toBe(1);
+  });
+
+  it('the Exchange sells a Gate Survey, and a full day of Daily Quests pays one', () => {
+    const s = hunter();
+    s.wallet.shards = SURVEY.price - 1;
+    expect(shop.buySurvey(s)).toBe(false);
+    s.wallet.shards = SURVEY.price;
+    expect(shop.buySurvey(s)).toBe(true);
+    expect(shop.held(s, 'survey')).toBe(1);
+    expect(s.wallet.shards).toBe(0);
+    expect(CONTRACT_BONUS.survey).toBeGreaterThan(0);
   });
 });
 

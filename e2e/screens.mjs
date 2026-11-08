@@ -282,6 +282,33 @@ try {
   await snap('arena-skill-info');
   await page.locator('.act__info').first().click(); await sleep(150);
   if (await page.locator('.actinfo').count()) throw new Error('A SKILL’S DETAILS DID NOT CLOSE');
+  // Fight the first room out by hand, back to the plan: the room cleared, the hunter standing in it.
+  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  for (let i = 0; i < 80; i++) {
+    if (await page.locator('.arena__foot >> text=Carried Out').isVisible().catch(() => false)) break;
+    if (await page.locator('.dmap').isVisible().catch(() => false)) break;
+    if (await page.locator('.turnbar .act:not([disabled])').first().isVisible().catch(() => false)) await page.locator('.turnbar .act:not([disabled])').first().click();
+    else if (await page.locator('.nodepanel .btn').last().isVisible().catch(() => false)) await page.locator('.nodepanel .btn').last().click();
+    await sleep(250);
+  }
+  if (await page.locator('.dmap').isVisible().catch(() => false)) {
+    await sleep(500); await snap('arena-map-cleared');
+    if (!(await page.locator('.dmap .droom.is-done:not(.gnode--entrance)').count())) throw new Error('A CLEARED ROOM DID NOT SHOW AS CLEARED');
+    if (!(await page.locator('.dmap__you').count())) throw new Error('THE MAP DOES NOT SHOW WHERE THE HUNTER STANDS');
+    // Walk back to the entrance: the way out.
+    await page.locator('.dmap button.gnode--entrance').click(); await sleep(700);
+    if (!(await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count())) throw new Error('THE ENTRANCE DID NOT OFFER A WITHDRAWAL');
+    await snap('arena-map-entrance');
+    // The fog: unseen rooms show nothing of what is in them, and a Gate Survey charts every one.
+    if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('THE MAP HAS NO FOG');
+    const survey = page.locator('.arena__map .btn', { hasText: /Use Gate Survey/ });
+    if (await survey.count()) {
+      await survey.click(); await sleep(400);
+      await page.locator('.syswin__foot .btn', { hasText: /^Use$/ }).click(); await sleep(800);
+      if (await page.locator('.dmap .droom.is-fog').count()) throw new Error('A GATE SURVEY LEFT ROOMS IN THE FOG');
+      await snap('arena-map-surveyed');
+    }
+  }
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);

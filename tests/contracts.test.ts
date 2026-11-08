@@ -61,7 +61,7 @@ describe('the draw', () => {
             expect(c.where!.length).toBeGreaterThan(0);
             for (const id of c.where!) {
               const g = dungeonById(id)!;
-              expect(build(g, mapSeed(g, d)).layers.flat().some((x) => x.kind === 'elite')).toBe(true);
+              expect(build(g, mapSeed(g, d)).nodes.some((x) => x.kind === 'elite')).toBe(true);
             }
           }
         }
@@ -128,8 +128,10 @@ describe('counting', () => {
     expect(a).toMatchObject({ shards: pay, xp, bonus: false });
     expect(contracts.count(s, deed(), day).done).toEqual([]);
     expect(contracts.count(s, deed({ offroad: true, fatigue: 14 }), day).done.map((c) => c.kind)).toEqual(['offroad']);
+    const surveys = s.stock?.survey ?? 0;
     const last = contracts.count(s, deed({ fatigue: 15 }), day);
     expect(last.bonus).toBe(true);
+    expect(s.stock.survey).toBe(surveys + CONTRACT_BONUS.survey);
     expect(last.shards).toBe(pay + CONTRACT_BONUS.shards * GATE_SHARDS.E);
     expect(last.xp).toBe(xp + Math.round(GATE_XP.E * CONTRACT_BONUS.xp));
     expect(contracts.count(s, deed({ fatigue: 99, offroad: true }), day)).toMatchObject({ shards: 0, xp: 0, bonus: false });
@@ -177,7 +179,8 @@ describe('in a run', () => {
     const d = dungeonById('DNG-001')!;
     const m = build(d, mapSeed(d, day));
     const road = systemRoad(m);
-    const other = m.layers[1].find((x) => x.id !== road[1] && m.byId[road[0]].next.includes(x.id));
+    // A room off the road, next to its first room.
+    const other = m.byId[road[0]].next.map((id) => m.byId[id]).find((x) => !road.includes(x.id) && x.kind !== 'entrance' && x.kind !== 'vault');
     give(s, [{ kind: 'offroad' }]);
     raid.begin(s, d, now);
     walk(s, d, now);

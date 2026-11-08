@@ -28,11 +28,14 @@ export const ASSOC_PAY: { kind: 'potion' | 'field' | 'shards' | 'survey' | 'blue
   { kind: 'potion', id: 'fatigue', n: [1, 1], weight: 2 },
   { kind: 'field', n: [1, 2], weight: 2 },
   { kind: 'shards', n: [1, 2], weight: 3 },
-  { kind: 'survey', n: [1, 1], weight: 2 },
+  { kind: 'survey', n: [1, 2], weight: 3 },
   // The Forge: a blueprint of the job's grade, one not yet known, now and then; alloy of it more often.
   { kind: 'blueprint', n: [1, 1], weight: 1 },
   { kind: 'alloy', n: [6, 10], weight: 3 },
 ];
 
-/** The Gate Survey: an Association report on a Gate, which shows its map before the hunter has been in. */
-export const SURVEY = { name: 'Gate Survey', desc: 'An Association survey team’s report on a Gate: its map, before you go in.' } as const;
+/**
+ * The Gate Survey: an Association report on a Gate, which charts every room of its map for the day, fog and
+ * all, from its brief or inside it. Ryn pays them, a full day of Daily Quests pays one, and the Exchange sells them.
+ */
+export const SURVEY = { name: 'Gate Survey', desc: 'An Association survey team’s report on a Gate: every room on today’s map.', price: 60 } as const;

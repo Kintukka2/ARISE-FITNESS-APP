@@ -34,7 +34,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | System windows: Notification, Quest Info, Quest Rewards | The System | `src/ui/system.ts`, `src/app/flow.ts`, `data/narrative.ts` |
 | Cards: items, skills, classes, potions, stats | The System | `data/equipment.ts`, `data/classes.ts`, `data/abilities.ts`, `core/shop.ts`, `core/progression.ts` |
 | The brief's assessment | The System | `raid.verdict`, `GRADES` |
-| The brief itself: a Gate card, `GATE: {name}`, in the Gates' orange. Its banner: the Gate's portal, `C-Rank Gate` (`C-Rank floors` on the Spire, `Trial of Ascension`), `Association file:` and the file, and its chips (`Cleared` or `Never cleared`, its mark, `Ascension 3`; the Trial's `Rest: None`, `Withdrawal: Not possible`, `Allies: None`); the assessment's ring and lines; four cells, `Clear`, `First clear` (`This week`, `Opens`), `Materials` (the Gate's alloy, and `and a blueprint` before its first clear, `a blueprint, sometimes` after, or its trophy and its sets' blueprints at a set's home) and `Depth`; `Threat`, with `Shadows bound: 1/6`, the boss's card and a chip to each creature (`Gatekeeper` for the elite, `?` and `Unidentified` until the hunter has been inside); the map; `Your party` with `Power 426`, a card each; the satchel; and Enter The Gate docked at the foot | The System, with the Association's file in its banner | `openBrief` in `screens/Gates.tsx` |
+| The brief itself: a Gate card, `GATE: {name}`, in the Gates' orange. Its banner: the Gate's portal, `C-Rank Gate` (`C-Rank floors` on the Spire, `Trial of Ascension`), `Association file:` and the file, and its chips (`Cleared` or `Never cleared`, its mark, `Ascension 3`; the Trial's `Rest: None`, `Withdrawal: Not possible`, `Allies: None`); the assessment's ring and lines; four cells, `Clear`, `First clear` (`This week`, `Opens`), `Materials` (the Gate's alloy, and `and a blueprint` before its first clear, `a blueprint, sometimes` after, or its trophy and its sets' blueprints at a set's home) and `Depth` (`11 rooms` over `5 to the boss`; the Spire's `5 floors`, the Trial's `Chosen`); `Threat`, with `Shadows bound: 1/6`, the boss's card and a chip to each creature (`Gatekeeper` for the elite, `?` and `Unidentified` until the hunter has been inside); the map in its fog (what is remembered of it, every room once surveyed), the System's road dotted along it, a key to what it shows under it (`Unseen` for the fog), and **Use Gate Survey · Held: 1** while a room is in the fog; `Your party` with `Power 426`, a card each; the satchel; and Enter The Gate docked at the foot | The System, with the Association's file in its banner | `openBrief` in `screens/Gates.tsx` |
 | A Trial's brief: `TRIAL: Ascension {n}`, in advancement's gold | The System alone. The Trial is the System's, so it has no Association file and no Association hunter walks in: its terms are fields (`CHOSEN: 5, in a row`, `REST: None`, `WITHDRAWAL: Not possible`, `ALLIES: None`) | `openBrief` in `screens/Gates.tsx` |
 | Setting a mark: `Would you like to set this mark?`, the mark, what it adds, `Set: 1/4 → 2/4`, and in red that it cannot be moved | The System, as an Offer, in gold | `MarkList` in `screens/Gates.tsx` |
 | The Ascension walkthrough: the sheet explained a part at a time, the first time it opens and from its help button | The interface, as a tour headed `Tutorial` (`tour()` with `who: 'app'`) | `ascensionTour` in `screens/Gates.tsx` |
@@ -68,6 +68,8 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | What a run did to the deployed Shadows, on the results: an alert only to each that levelled up (`[Shadow Ghoul] has levelled up.` over `Lv.9 → Lv.11`) or that the run made ready for promotion, `XP +14` at its right and a meter along its foot. A Shadow that only took XP, or was already waiting, gets none | The System, as alerts | `ShadowAlerts` in `screens/Shadows.tsx` |
 | A Chosen felled, on the results: `You have defeated [The Pale Duelist].` over what it left and `[The Pale Duelist] will return to the Gates.`; a masterwork's alert opens its card. A level proved: `ACCESS GRANTED: ASCENSION 4` over its name, the upgrade limit and `Marks +1` | The System, as alerts: every report on the results is one, never a window | `screens/Arena.tsx` |
 | The run strip on the map: `You` and the health bar, then three cells, `Allies 2/2`, `Banked` and the shards, `Items found 0`; each blessing taken as a chip, its star mark, its name (`Blessing of Haste`) and what it gives | The interface, labels as the Status sheet's are; the chip in advancement's gold | `RunStrip` in `screens/Arena.tsx` |
+| The Gate's plan in the arena: each room a tile with its glyph, its name (`Fight`, `Event`, `Sealed` for the vault, `Used` for a rest used) and its number, or, in the fog, a faint `?` and `Unseen` with nothing else; a cleared room ticked; `You` over the room the hunter stands in; under the plan, **Rest** with `Party HP +30% · Debuffs cleared · Once` at a rest found and not used, **Withdraw** at the entrance, or the hint `Tap a room that glows, or a cleared room to walk back to it.`, and **Use Gate Survey · Held: 1** while a room is in the fog; the head's `Cleared 3/11`. A survey used: the toast `Gate Survey · Thornburrow Warren charted.` A withdrawal's results: `Withdrawn with 4 of 11 rooms cleared. The Gate is still open.` | The interface | `ui/map.tsx`, `screens/Arena.tsx` |
+| A rest found: `The air is still here. Nothing has come this way in a long time.`, `Rest: Party HP +30% · Debuffs cleared · Once`, **Later** and **Rest**. A vault opened: `The seal is broken. What the Gatekeeper kept is stacked inside.` In the feed, a passage opened: `A wall gives way. There is a passage behind it.`; a Gatekeeper down: `Somewhere in the Gate, a seal breaks.`; a rest used from the plan: `The party rests.` | The world: narration. The line of what a rest gives and the buttons are the interface's | `NodePanel` and the feed in `screens/Arena.tsx` |
 | A block of the Pale Spire taken, on its results: **Climb On · Floors 86-90** over **Leave The Gate**; the range is the next block's, as the Spire's head writes it | The interface | `Results` in `screens/Arena.tsx` |
 | Leaving with a Shadow still lingering: `A Shadow Lingers` | The interface, as the unrevealed loot's reminder is | `screens/Arena.tsx` |
 | A purchase or a use offered: `Would you like to purchase?` / `Would you like to drink?` / `Would you like to use?`, and under it **Do not ask again** | The System's Offer; the toggle is the interface's control, and Settings lists what it skips | `ui/ask.tsx`, `screens/Settings.tsx` |
@@ -674,7 +676,8 @@ Source: `Would you like to purchase?` / `[Knight Killer]`, the icon, a quantity,
 template: `Not enough Mana Shards. ({have}/{price})`. Prices and balances of 1,000 or more take
 their comma.
 
-Every purchase with Mana Shards asks first: blueprints, the Field Potion and potions. A blueprint
+Every purchase with Mana Shards asks first: blueprints, the Field Potion, potions and the Gate Survey
+(`Every room of a Gate's map, through the fog.` under its tag). A blueprint
 names itself `[Item: Blueprint: {name}]` and its rarity and kind; bought, `You have acquired`
 `[Item: Blueprint: {name}].`, with `Open Blueprint`. A potion is drunk as
 it is bought, so its button names both acts: **Buy and Drink**. A Google Play purchase (shard packs,
@@ -690,6 +693,10 @@ POTIONS                              Always in stock
 [icon]  {Name}
         {What it gives, green}
         {Card text}                         ◆ {price}
+FOR THE GATES                        Always in stock
+[icon]  Gate Survey
+        Charts every room of a Gate's map
+        Used from a Gate's brief, or inside it. Held: {n}   ◆ {price}
 BLUEPRINTS                             Left: {n}/{m}
 [icon]  {Name} ▲
         Blueprint · {Rarity} {Slot} · {Set}
@@ -990,13 +997,17 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Secret Quest | Secret Mission | Code keeps `missions` |
 | Weekly Quest | season, weekly contract | The Pale Spire's week, on the Quests screen. Code keeps `season` |
 | Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
-| Gate Survey | scout, survey report | The Association's report that shows a Gate's map before the hunter goes in. An item: `[Item: Gate Survey]` |
+| Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |
+| Event | Unknown, `?` (for a room) | A room holding a choice, or a trap, a cache or a rest passing for one. `?` is only the fog's |
+| Unseen | Unknown, fogged, hidden (on the plan) | A room in the fog, and the map key's word for it |
 | Reclassification | rank-up quest, job change | The quest for the next rank, as the rank windows say: "Reclassification approved." |
 | Inventory | Profile | The tab with Status, the equipment and everything held. Code keeps the route `inventory` |
 | Ability Points | attribute points, stat points | Code keeps `points` |
 | stats | attributes | STR, VIT, AGI, PER and INT, as the source says it: "All stats -50%" |
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
+| Room | step, node, cell (on a Gate's map) | A Gate's map is rooms joined by corridors, numbered from the entrance out. A fight's head keeps `Chamber 4`, the room's number. The Pale Spire and a Trial are climbed by floors, and their hint keeps "step" |
+| Vault | treasury, locked room | The Gatekeeper's sealed room. Sealed until the Gatekeeper falls; the System never says what opens it, the Guide does |
 | Shadow | shadow | Capitalised everywhere, as a game term, like Gate |
 | Awakening, awaken | limit break, star up, ascend | What Shadow Essence buys an Ascendant at its cap: a star, `★`, five in all. `[Igris] has awakened.` |
 | Forge, forge | craft, make, smith | Making a piece from its blueprint: the Forge button reads `Forge`, a piece made is "forged". Fusion is gone: there is no word for feeding one item into another |

@@ -32,7 +32,7 @@ const topRank = (s: Save) => s.shadows.army.reduce((n, x) => Math.max(n, x.rank 
 export const MISSIONS: Mission[] = [
   // Citation: 1 point
   { id: 'first_light', name: 'First Light', tier: 'minor', did: 'Clear the Practice Gate.', grant: { VIT: 1 }, check: (s) => s.gates.cleared.includes('DNG-000') },
-  { id: 'knew_when', name: 'Knew When To Leave', tier: 'minor', did: 'Withdraw from a Gate at a rest.', grant: { PER: 1 }, check: (s) => s.gates.withdrawn >= 1 },
+  { id: 'knew_when', name: 'Knew When To Leave', tier: 'minor', did: 'Withdraw from a Gate.', grant: { PER: 1 }, check: (s) => s.gates.withdrawn >= 1 },
   { id: 'first_reach', name: 'Above Your Station', tier: 'minor', did: 'Clear a Gate one grade above your own.', grant: { STR: 1 }, check: (s) => s.stats.reachClears >= 1 },
   { id: 'seven_straight', name: 'Seven Straight', tier: 'minor', did: 'Clear 7 Gates in a row without being carried out.', grant: { AGI: 1 }, check: (s) => s.gates.bestUnbroken >= 7 },
   { id: 'iron_debt', name: 'Iron Debt', tier: 'minor', did: 'Clear a Gate right after being carried out of one.', grant: { INT: 1 }, check: (s) => s.stats.comebacks >= 1 },
@@ -52,6 +52,7 @@ export const MISSIONS: Mission[] = [
   { id: 'bestiary', name: 'Bestiary', tier: 'minor', did: 'Fell creatures of 5 different families.', grant: { INT: 1 }, check: (s) => families(s) >= 5 },
   { id: 'full_set', name: 'Matched', tier: 'minor', did: 'Equip every piece of a set at once.', grant: { free: 1 }, check: (s) => [...setsIn(worn(s))].some(([id, n]) => n >= setPieces(id).length) },
   { id: 'spire_first', name: 'Up', tier: 'minor', did: 'Clear a block of the Pale Spire.', grant: { AGI: 1 }, check: (s) => s.spire.top >= BLOCK },
+  { id: 'every_room', name: 'Every Room', tier: 'minor', did: 'Clear a Gate with every room in it cleared.', grant: { PER: 1 }, check: (s) => (s.stats.charted ?? 0) >= 1 },
   { id: 'first_forge', name: 'Made, Not Found', tier: 'minor', did: 'Forge an item.', grant: { STR: 1 }, check: (s) => (s.stats.crafted ?? 0) >= 1 },
   {
     id: 'second_nature', name: 'Second Nature', tier: 'minor', did: `Reach Familiarity ${FAMILIARITY_MAX} with a weapon.`, grant: { free: 1 },
@@ -60,6 +61,7 @@ export const MISSIONS: Mission[] = [
 
   // Directive: 2 to 3 points
   { id: 'thirty_unbroken', name: 'Thirty Unbroken', tier: 'major', did: 'Clear 30 Gates in a row without being carried out.', grant: { STR: 1, VIT: 1 }, check: (s) => s.gates.bestUnbroken >= 30 },
+  { id: 'cartographer', name: 'Cartographer', tier: 'major', did: 'Clear 10 Gates with every room in each cleared.', grant: { PER: 2, AGI: 1 }, check: (s) => (s.stats.charted ?? 0) >= 10 },
   { id: 'master_smith', name: 'Master Smith', tier: 'major', did: 'Forge 50 items.', grant: { STR: 1, PER: 1 }, check: (s) => (s.stats.crafted ?? 0) >= 50 },
   { id: 'reaching', name: 'Reaching', tier: 'major', did: 'Clear 10 Gates one grade above your own.', grant: { INT: 1, PER: 1 }, check: (s) => s.stats.reachClears >= 10 },
   { id: 'well_rounded', name: 'No Weak Side', tier: 'major', did: `Raise all ${STATS.length} stats to 20 or more.`, grant: { INT: 2 }, check: (s) => STATS.every((k) => s.hunter.attrs[k] >= 20) },

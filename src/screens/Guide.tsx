@@ -1,7 +1,8 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
 import { BLUEPRINT_SHELF, FIELD_POTION, GATE_SHARDS, gateShards, POTIONS } from '@/core/shop';
 import * as forge from '@/core/forge';
-import { ALLOYS, BLUEPRINTS, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
+import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
+import { RESTS_MAX } from '@/core/map';
 import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -71,17 +72,28 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'The map',
     lines: [
-      'A Gate is a map: a few layers of steps, a rest, then the boss.',
+      'A Gate is a dungeon: rooms joined by corridors, the entrance at the foot and the boss at the head.',
       'The map is drawn from the Gate and the day.',
       'The brief shows a Gate’s map only once you have been inside it. Until then it is unidentified, like its boss.',
-      'Inside, you choose each step from the ones your last step leads to.',
-      ...(['fight', 'elite', 'rest', 'treasure', 'shrine', 'trap', 'event'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
-      `A rest restores ${REST_HEAL * 100}% of health to everyone standing.`,
+      'Every room is in the fog until you see it. Corridors, the entrance and the boss’s room always show.',
+      'You see every room next to one you have cleared. A room seen stays seen on that map, for as long as it stands.',
+      'You can enter any room next to one you have cleared.',
+      'You can walk back to any cleared room at any time, and walking costs nothing.',
+      ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'trap', 'event', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
+      `A vault holds ${CACHE.vault}-${CACHE.vault + 2} alloy of the Gate’s own grade and two parts, or a piece found whole ${FORGED.vault * 100}% of the time.`,
+      `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
+      `Rests are rare: no Gate holds more than ${RESTS_MAX}, and one passes for an Event until you find it.`,
+      `A rest restores ${REST_HEAL * 100}% of health to everyone standing, once. Use it when you find it, or walk back to it later.`,
+      'Some Gates hide a passage between two rooms. It opens once you clear a room at either end.',
+      `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it. The Exchange sells them for ${SURVEY.price}.`,
       `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
-      'What the run banks is paid when you walk out, at the end or from a rest. Carried out, you lose it.',
+      'What the run banks is paid when the boss falls or you withdraw. Carried out, you lose it.',
+      'You can withdraw only from the entrance, once you have cleared a room.',
       `Blessings last until you leave the Gate: ${BLESSINGS.map((b) => `${b.name} (${b.text})`).join(', ')}.`,
-      'The brief’s verdict follows the marked road and makes the System’s choices. Auto does the same.',
+      'The brief’s verdict follows the marked road, the fewest rooms to the boss, and makes the System’s choices. Auto does the same.',
+      'The System keeps a rest it finds for the boss.',
       'Take another road and the verdict no longer applies.',
+      'The Pale Spire and the Trials are climbed floor by floor instead, and only up.',
     ],
   },
   {
@@ -146,7 +158,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, a field potion, shards or a ${SURVEY.name}.`,
       `Jobs ${ASSOC.satchelAt.map((n) => n + 1).join(', ')} widen your satchel by one field potion each.`,
       'The line loops through the three kinds, and asks for more creatures and stronger Gates each time round.',
-      `A ${SURVEY.name} shows a Gate’s map in its brief before you have been in.`,
+      `A ${SURVEY.name} charts every room of a Gate’s map, before you go in or once you are inside.`,
       'A potion you hold is drunk before one is bought. The potion buttons show how many you hold.',
     ],
   },
@@ -157,7 +169,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'They are on the Quests screen. Each one says where it can be done.',
       'A Gate on the board that a Daily Quest names is marked Quest.',
       `Each pays ${CONTRACT_PAY.shards === 1 ? 'a clear’s' : `${CONTRACT_PAY.shards} clears’`} shards at that grade and ${CONTRACT_PAY.xp * 100}% of a clear’s XP.`,
-      `All ${CONTRACTS_PER_DAY} together pay ${CONTRACT_BONUS.shards} clears’ shards and ${CONTRACT_BONUS.xp * 100}% of a clear’s XP on top.`,
+      `All ${CONTRACTS_PER_DAY} together pay ${CONTRACT_BONUS.shards} clears’ shards, ${CONTRACT_BONUS.xp * 100}% of a clear’s XP and ${CONTRACT_BONUS.survey === 1 ? 'a' : CONTRACT_BONUS.survey} ${SURVEY.name} on top.`,
       'A run counts once it is settled, however it ends.',
       'Kills count even when you are carried out. A clear counts only when you clear.',
       'New Daily Quests arrive at midnight. One left undone costs nothing.',

@@ -5,6 +5,7 @@
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
+import { SURVEY } from '@/data/association';
 import { bonusOf, contractHint, contractText, payOf, type ContractReport, type Contracts, type Moved } from '@/core/contracts';
 import { CONTRACTS_PER_DAY } from '@/data/contracts';
 import { Bar } from './components';
@@ -98,7 +99,7 @@ export function ContractsWindow({ c, fresh = [], bare, children }: {
       ))}
       rewards={[
         <>Each quest: Mana Shards <b class="num grant">+{pay.shards}</b> · XP <b class="num grant">+{pay.xp}</b></>,
-        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · XP <b class="num grant">+{bonus.xp}</b></>}</>,
+        <>All {CONTRACTS_PER_DAY}: {c.bonus ? 'paid' : <>Mana Shards <b class="num grant">+{bonus.shards}</b> · XP <b class="num grant">+{bonus.xp}</b> · {SURVEY.name} <b class="num grant">+{bonus.survey}</b></>}</>,
       ]}>
       {children}
     </QuestWindow>
@@ -162,11 +163,12 @@ export function Ring({ p, done, mark = 'check' }: { p: number; done?: boolean; m
 }
 
 /** What a quest paid, name first, as every gain is. */
-export function Pay({ xp, shards }: { xp: number; shards: number }) {
+export function Pay({ xp, shards, survey }: { xp: number; shards: number; survey?: number }) {
   return (
     <span class="qline__pay">
       <span>XP <b class="grant num">+{xp}</b></span>
       <span class="qline__shards"><Shard size={12} /><b class="grant num">+{shards}</b></span>
+      {!!survey && <span>{SURVEY.name} <b class="grant num">+{survey}</b></span>}
     </span>
   );
 }
