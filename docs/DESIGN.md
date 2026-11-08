@@ -890,7 +890,7 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   the first time reaches the stairs up below at once; stairs taken once are taken again in one tap,
   from either side, so a hunter walks the whole Gate freely and still withdraws from the entrance. The
   plan shows the hunter's floor, `Floor 2/3` over it; the brief has a tab to each floor. The stairs and
-  the boss always show through the fog. A deeper Gate's road is longer, at least three rooms to a
+  the boss always showed through the fog (the stairs no longer do; see Labyrinths). A deeper Gate's road is longer, at least three rooms to a
   floor (`floorRoad`: a C-Rank Gate's road is 8 rooms, an S-Rank's 12, against 5 and 7 on one floor),
   and its fights share out what the one-floor road paid, in shards and in alloy (`paceOf`). The
   Gatekeeper keeps to a floor of its own drawing. No floor holds more than two rests. A run opened
@@ -950,6 +950,10 @@ the Gate Survey to be a mark with its count instead of a wide button. `core/map.
   map's own road (`paceOf`).
 - **The Gate Survey** is a mark, a folded map with the count held in an ember badge, at the plan's top
   right while a room is in the fog, in the arena and the brief; a tap offers it first.
+- **The stairs are in the fog** like any other room, asked for next: a floor's way down is found, not
+  seen from its foot. Only the corridors, the entrance and the boss's room always show (`map.sight`).
+- **A cleared room reads `Cleared`** under a check mark, in place of its own mark and name and the
+  tick it wore; a rest, the stairs and the entrance keep their marks, for coming back to.
 - **Balance.** Recalibrated: the middle of every grade clears 69-82%. The campaign, from three starts a
   week apart: the evening hunter reaches S-Rank on days 59, 57 and 59 (67, 57 and 60 before), the
   three-session hunter on days 33, 35 and 27 (43, 35 and 44).

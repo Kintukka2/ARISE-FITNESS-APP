@@ -121,21 +121,22 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const sealed = x.kind === 'vault' && !open;
           const looks = looksOf(x);
           const kind = NODE[looks];
-          const glyph = x.kind === 'vault' ? (sealed ? 'lock' : 'unlock') : kind.glyph;
-          const name = sealed ? 'Sealed' : kind.name;
           const isDone = done.has(x.id);
+          // A room cleared reads as cleared, not as what it held; the rooms the hunter comes back to keep their marks.
+          const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss'].includes(x.kind);
+          const glyph = plain ? 'check' : x.kind === 'vault' ? (sealed ? 'lock' : 'unlock') : kind.glyph;
+          const name = plain ? 'Cleared' : sealed ? 'Sealed' : kind.name;
           const next = options.includes(x.id);
           const spent = x.kind === 'rest' && rested.includes(x.id);
           const stairs = x.kind === 'up' || x.kind === 'down';
           const state = [
-            isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far',
+            isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far', plain ? 'is-cleared' : '',
             sealed ? 'is-sealed' : '', spent ? 'is-spent' : '', here?.id === x.id ? 'is-at' : '', road.includes(x.id) ? 'is-road' : '',
           ].filter(Boolean).join(' ');
           const body = (
             <>
               <Glyph name={glyph} />
               {!compact && <small>{spent ? 'Used' : name}</small>}
-              {isDone && !stairs && x.kind !== 'entrance' && <i class="droom__tick" aria-hidden="true"><Glyph name="check" /></i>}
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;
@@ -150,7 +151,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
               onClick={() => { sfx.tap(); onWalk(to.id); }}>{body}</button>;
           }
           if (isDone && onWalk && here?.id !== x.id) {
-            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${name}`} title={`Walk back to ${name}`}
+            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`} title={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`}
               onClick={() => { sfx.tap(); onWalk(x.id); }}>{body}</button>;
           }
           return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`}>{body}</span>;

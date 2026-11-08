@@ -513,7 +513,7 @@ export function passages(m: GateMap, cleared: Set<string>): [string, string][] {
  */
 export function sight(m: GateMap, cleared: Set<string>, remembered: Iterable<string> = []): Set<string> {
   if (m.tower) return new Set(m.nodes.map((x) => x.id));
-  const out = new Set<string>([m.start!, m.boss, ...m.nodes.filter((x) => x.kind === 'up' || x.kind === 'down').map((x) => x.id), ...remembered, ...cleared]);
+  const out = new Set<string>([m.start!, m.boss, ...remembered, ...cleared]);
   for (const id of cleared) for (const nb of [...(m.byId[id]?.next ?? []), ...(m.byId[id]?.hidden ?? [])]) out.add(nb);
   return out;
 }
