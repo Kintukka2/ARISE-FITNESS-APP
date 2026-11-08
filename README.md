@@ -32,6 +32,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | `npm run screens` | Screenshots every screen from a seeded veteran save into `e2e/out/screens/` |
 | `npm run balance` | Clear rates per Gate grade and days-to-rank, from the real engine |
 | `npm run calibrate` | Re-tunes every Gate's difficulty by simulation and rewrites `src/data/gatetune.ts` |
+| `npm run tunediff` | Every tuning in `src/data/gatetune.ts` that moved, old → new: the working tree against the last commit, or `-- <from> <to>` between two commits |
 | `npm run campaign` | Plays two hunters from Level 1 for 120 days through the real engine, reading the brief and climbing Ascension, and reports the climb, the economy, contracts and the Spire |
 | `npm run android` | Generates the Android project in `android/` (see [Android](#android)) |
 
@@ -102,7 +103,8 @@ hunters from the middle of its grade, down the System's road on twelve different
 sets a per-Gate multiplier so they clear about 75% of the time. Then it tunes the Pale Spire the same
 way: each Gate's creatures as a block of five floors, then every block up to Floor 100 for a hunter
 of the level of its middle floor. Run it after any change to combat, enemies, classes, the skill
-tree, gear, the party or the map. Its typical hunters spend their Skill Points as Auto Assign does. Its hunters are seeded, so two runs give the same answer. `npm run balance`
+tree, gear, the party or the map. Its typical hunters spend their Skill Points as Auto Assign does. Its hunters are seeded, so two runs give the same answer. It ends by listing every tuning
+it moved, old → new, harder or easier, and which stayed put. `npm run balance`
 prints the result:
 
 ```

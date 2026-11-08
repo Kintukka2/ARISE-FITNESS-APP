@@ -18,7 +18,8 @@
     "calibrate": "node scripts/run.mjs scripts/calibrate.ts",
     "campaign": "node scripts/run.mjs scripts/campaign.ts",
     "fixture": "node scripts/run.mjs scripts/fixture.ts",
-    "screens": "node e2e/screens.mjs"
+    "screens": "node e2e/screens.mjs",
+    "tunediff": "node scripts/run.mjs scripts/tunediff.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
