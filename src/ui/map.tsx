@@ -7,8 +7,19 @@
  */
 import { across, passages, unsealed, type GateMap, type MapNode } from '@/core/map';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
+import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
 import { Glyph } from './icons';
+
+/** The Gate Survey, as a mark with the count held: a tap offers to use one. */
+export function SurveyMark({ held, onUse }: { held: number; onUse: () => void }) {
+  return (
+    <button type="button" class="surveymark" aria-label={`Use a Gate Survey, ${held} held`} title="Gate Survey" onClick={() => { sfx.tap(); onUse(); }}>
+      <Glyph name="survey" />
+      <b class="surveymark__n num">{held}</b>
+    </button>
+  );
+}
 
 interface MapProps {
   m: GateMap;
@@ -29,6 +40,8 @@ interface MapProps {
   /** A dungeon of floors: the floor to draw (the hunter's, unset), and choosing another, which shows the floors as tabs. */
   floor?: number;
   onFloor?: (k: number) => void;
+  /** Set at the plan's top right: the Gate Survey, while one can be used. */
+  corner?: ComponentChildren;
   compact?: boolean;
 }
 
@@ -37,7 +50,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, compact }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -67,13 +80,19 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const fogs = rooms.some(fogged);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''}`}>
-      {floors > 1 && (
-        <div class="dmap__floors" role={onFloor ? 'tablist' : undefined} aria-label="Floors">
-          {onFloor
-            ? Array.from({ length: floors }, (_, k) => (
-              <button type="button" key={k} role="tab" aria-selected={k === f} class={`dmap__floor ${k === f ? 'is-on' : ''}`} onClick={() => { sfx.tap(); onFloor(k); }}>Floor {k + 1}</button>
-            ))
-            : <span class="dmap__floor is-on">Floor <b class="num">{f + 1}/{floors}</b></span>}
+      {(floors > 1 || corner) && (
+        <div class="dmap__bar">
+          <span aria-hidden="true" />
+          {floors > 1 ? (
+            <div class="dmap__floors" role={onFloor ? 'tablist' : undefined} aria-label="Floors">
+              {onFloor
+                ? Array.from({ length: floors }, (_, k) => (
+                  <button type="button" key={k} role="tab" aria-selected={k === f} class={`dmap__floor ${k === f ? 'is-on' : ''}`} onClick={() => { sfx.tap(); onFloor(k); }}>Floor {k + 1}</button>
+                ))
+                : <span class="dmap__floor is-on">Floor <b class="num">{f + 1}/{floors}</b></span>}
+            </div>
+          ) : <span aria-hidden="true" />}
+          <span class="dmap__corner">{corner}</span>
         </div>
       )}
       <div class={`dmap ${compact ? 'dmap--compact' : ''}`} style={{ '--cols': cols, '--rows': rows } as Record<string, number>} role="group" aria-label={floors > 1 ? `Map of the Gate, floor ${f + 1} of ${floors}` : 'Map of the Gate'}>
@@ -102,21 +121,22 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const sealed = x.kind === 'vault' && !open;
           const looks = looksOf(x);
           const kind = NODE[looks];
-          const glyph = x.kind === 'vault' ? (sealed ? 'lock' : 'unlock') : kind.glyph;
-          const name = sealed ? 'Sealed' : kind.name;
           const isDone = done.has(x.id);
+          // A room cleared reads as cleared, not as what it held; the rooms the hunter comes back to keep their marks.
+          const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss'].includes(x.kind);
+          const glyph = plain ? 'check' : x.kind === 'vault' ? (sealed ? 'lock' : 'unlock') : kind.glyph;
+          const name = plain ? 'Cleared' : sealed ? 'Sealed' : kind.name;
           const next = options.includes(x.id);
           const spent = x.kind === 'rest' && rested.includes(x.id);
           const stairs = x.kind === 'up' || x.kind === 'down';
           const state = [
-            isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far',
+            isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far', plain ? 'is-cleared' : '',
             sealed ? 'is-sealed' : '', spent ? 'is-spent' : '', here?.id === x.id ? 'is-at' : '', road.includes(x.id) ? 'is-road' : '',
           ].filter(Boolean).join(' ');
           const body = (
             <>
               <Glyph name={glyph} />
               {!compact && <small>{spent ? 'Used' : name}</small>}
-              {isDone && !stairs && x.kind !== 'entrance' && <i class="droom__tick" aria-hidden="true"><Glyph name="check" /></i>}
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;
@@ -131,7 +151,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
               onClick={() => { sfx.tap(); onWalk(to.id); }}>{body}</button>;
           }
           if (isDone && onWalk && here?.id !== x.id) {
-            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${name}`} title={`Walk back to ${name}`}
+            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`} title={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`}
               onClick={() => { sfx.tap(); onWalk(x.id); }}>{body}</button>;
           }
           return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`}>{body}</span>;

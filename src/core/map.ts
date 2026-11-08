@@ -60,10 +60,11 @@ export interface GateMap {
 }
 
 /**
- * How an open run's map is drawn. Runs opened before the dungeons climb the tower they began on
- * (`layers`); runs opened before the floors walk one floor of rooms (`rooms`).
+ * How an open run's map is drawn: a Gate's floors of labyrinth (`labyrinth`). Runs opened before the
+ * labyrinths walk the smaller floors they began on (`floors`), runs opened before the floors one floor
+ * of rooms (`rooms`), and runs opened before the dungeons the tower they began on (`layers`).
  */
-export type Layout = 'floors' | 'rooms' | 'layers';
+export type Layout = 'labyrinth' | 'floors' | 'rooms' | 'layers';
 
 /** How many floors a Gate goes down, by its grade. */
 export const FLOORS: Record<string, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 };
@@ -184,7 +185,9 @@ const ROAD: { kind: NodeKind; w: number }[] = [
 const SIDE: { kind: NodeKind; w: number }[] = [
   { kind: 'fight', w: 30 }, { kind: 'treasure', w: 22 }, { kind: 'event', w: 16 }, { kind: 'shrine', w: 13 }, { kind: 'trap', w: 11 }, { kind: 'rest', w: 8 },
 ];
-/** Rests are rare: never more than this many in one Gate. */
+/** A labyrinth's side rooms hold rests half as often: a floor of them would otherwise hold its fill. */
+const SIDE_LABYRINTH: { kind: NodeKind; w: number }[] = SIDE.map((x) => (x.kind === 'rest' ? { ...x, w: x.w / 2 } : x));
+/** Rests are rare: never more than this many on one floor. */
 export const RESTS_MAX = 2;
 /** A hidden passage is drawn in this share of Gates, between rooms at least `HIDDEN_PASSAGE.apart` corridors apart. */
 export const HIDDEN_PASSAGE = { chance: 0.5, apart: 3 } as const;
@@ -205,9 +208,34 @@ function distances(nodes: MapNode[], byId: Record<string, MapNode>, from: string
   return dist;
 }
 
+/**
+ * A labyrinth floor, by the Gate's grade: the rooms on its road, the fewest rooms it holds (its foot
+ * and head among them), its plan's columns, how deep its branches go, how many rooms run along in a row
+ * on its road, how often rooms side by side are joined again, and how many hidden passages it may hold.
+ */
+export interface FloorSize { road: number; rooms: number; cols: number; depth: number; along: number; loop: number; passages: number }
+export const LABYRINTH: Record<string, FloorSize> = {
+  E: { road: 4, rooms: 12, cols: 5, depth: 2, along: 3, loop: 0.25, passages: 1 },
+  D: { road: 4, rooms: 14, cols: 5, depth: 3, along: 3, loop: 0.25, passages: 1 },
+  C: { road: 4, rooms: 15, cols: 5, depth: 3, along: 3, loop: 0.2, passages: 1 },
+  B: { road: 5, rooms: 17, cols: 5, depth: 3, along: 3, loop: 0.2, passages: 1 },
+  A: { road: 5, rooms: 20, cols: 6, depth: 4, along: 4, loop: 0.18, passages: 2 },
+  S: { road: 6, rooms: 24, cols: 6, depth: 4, along: 4, loop: 0.15, passages: 2 },
+};
+/**
+ * A plan reads cleanly on a phone at six cells across and eight deep: a room's tile is then about 45
+ * pixels, its mark and its name still legible. A labyrinth floor is held to that, so it never shrinks
+ * below it nor scrolls.
+ */
+export const PLAN_MAX = { cols: 6, rows: 8 } as const;
+/** A labyrinth floor's size, or none: the practice Gate keeps its small first dungeon. */
+export const floorSizeOf = (d: Dungeon): FloorSize | null => (isPractice(d) ? null : LABYRINTH[d.rank] ?? null);
+
 /** One floor of a dungeon: where it sits among the floors, its road's length, and whether it holds the Gatekeeper or its vault. */
 interface FloorOpts {
   floor: number; floors: number; road: number; keeper: boolean; vault: boolean; prefix: string;
+  /** A labyrinth floor's size. Unset, the floor is drawn as the floors before the labyrinths were. */
+  size?: FloorSize | null;
   /**
    * Varied: the entrance stands in any column with rooms on every side of it, the plan is turned to
    * run up, down, left or right, and the vault is behind its Gatekeeper. Unset, the one-floor plan of
@@ -229,8 +257,10 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   const practice = isPractice(d);
   // The practice Gate is a first dungeon, made easy: a rest waits in the room before the boss.
   const roadLength = o.road + (practice ? 1 : 0);
-  const footX = o.vary ? Math.floor(rv() * COLS) : 2;
-  const beyond = o.vary ? Math.floor(rv() * (BEYOND_FOOT + 1)) : 0;
+  const L = o.size ?? null;
+  const cols0 = L ? L.cols : COLS;
+  const footX = o.vary ? Math.floor(rv() * cols0) : 2;
+  let beyond = o.vary ? Math.floor(rv() * (BEYOND_FOOT + 1)) : 0;
   const nodes: MapNode[] = [];
   const byId: Record<string, MapNode> = {};
   const cells = new Map<string, MapNode>();
@@ -245,14 +275,19 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   const link = (a: MapNode, b: MapNode) => { a.next.push(b.id); b.next.push(a.id); };
 
   // The road climbs from the entrance: up, or along, never down, never across itself, never more than two along in a row.
+  // A labyrinth's winds: it runs along more often and further, and never climbs past the rows a plan can hold.
   const entrance = add(footX, 0, o.floor === 0 ? 'entrance' : 'up');
   const road: MapNode[] = [];
   let prev = entrance;
   let along = 0;
+  let ups = 0;
   for (let i = 0; i < roadLength; i++) {
-    const ways: { dx: number; w: number }[] = [{ dx: 0, w: 2 }];
-    if (i > 0 && along < 2) for (const dx of [-1, 1]) if (!at(prev.x! + dx, prev.y!) && prev.x! + dx >= 0 && prev.x! + dx < COLS) ways.push({ dx, w: 1 });
+    const sideways: { dx: number; w: number }[] = [];
+    if (i > 0 && along < (L ? L.along : 2)) for (const dx of [-1, 1]) if (!at(prev.x! + dx, prev.y!) && prev.x! + dx >= 0 && prev.x! + dx < cols0) sideways.push({ dx, w: L ? 1.5 : 1 });
+    const capped = !!L && ups >= PLAN_MAX.rows - 3 && sideways.length > 0;
+    const ways: { dx: number; w: number }[] = [...(capped ? [] : [{ dx: 0, w: 2 }]), ...sideways];
     const { dx } = weighted(ways, r());
+    if (!dx) ups++;
     along = dx ? along + 1 : 0;
     const room = add(prev.x! + dx, prev.y! + (dx ? 0 : -1), 'fight');
     link(prev, room);
@@ -260,13 +295,15 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
     prev = room;
   }
   const top = Math.min(...road.map((x) => x.y!));
+  // A labyrinth's rows beyond its foot never take it past the rows a plan can hold.
+  if (L) beyond = Math.min(beyond, PLAN_MAX.rows - 2 + top);
   const boss = add(prev.x!, top - 1, o.floor === o.floors - 1 ? 'boss' : 'down');
   link(prev, boss);
 
   // Side rooms branch off the road, one or two deep. None is ever beside the boss: its row is its own.
   const depth: Record<string, number> = { [entrance.id]: 0 };
   for (const x of road) depth[x.id] = 0;
-  const free = (x: number, y: number) => x >= 0 && x < COLS && y >= top && y <= beyond && !at(x, y);
+  const free = (x: number, y: number) => x >= 0 && x < cols0 && y >= top && y <= beyond && !at(x, y);
   const sprouts = (from: (x: MapNode) => boolean) => {
     const out: { parent: MapNode; x: number; y: number }[] = [];
     for (const p of nodes) {
@@ -284,12 +321,29 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
     depth[room.id] = (depth[o.parent.id] ?? 0) + 1;
     return room;
   };
-  const growing = (x: MapNode) => (x.kind === 'fight' || x === entrance) && depth[x.id] !== undefined && depth[x.id] < 2;
-  const sideCount = practice ? 2 : Math.round(roadLength * 0.8) + (r() < 0.5 ? 1 : 0);
+  let deep = L ? L.depth : 2;
+  const growing = (x: MapNode) => (x.kind === 'fight' || x === entrance) && depth[x.id] !== undefined && depth[x.id] < deep;
   const sides: MapNode[] = [];
-  for (let i = 0; i < sideCount; i++) {
-    const room = branch(growing, 'fight');
-    if (room) sides.push(room);
+  // A labyrinth's plan grows to hold its rooms: rows beyond the foot, as many as the plan can take, then deeper branches.
+  const roomier = () => {
+    if (!L) return false;
+    if (2 - top + beyond < PLAN_MAX.rows) { beyond++; return true; }
+    if (deep < 8) { deep++; return true; }
+    return false;
+  };
+  if (L) {
+    const want = L.rooms - 2 - road.length - (o.keeper ? 1 : 0) - (o.vault ? 1 : 0);
+    while (sides.length < want) {
+      const room = branch(growing, 'fight');
+      if (room) sides.push(room);
+      else if (!roomier()) break;
+    }
+  } else {
+    const sideCount = practice ? 2 : Math.round(roadLength * 0.8) + (r() < 0.5 ? 1 : 0);
+    for (let i = 0; i < sideCount; i++) {
+      const room = branch(growing, 'fight');
+      if (room) sides.push(room);
+    }
   }
 
   // The Gatekeeper holds the end of a branch, the deeper the better; its vault is sealed somewhere else.
@@ -301,6 +355,7 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
     if (o.keeper) {
       let spots = sprouts((x) => sides.includes(x) && x.next.length === 1).filter((c) => behind(c.x, c.y).length);
       if (!spots.length) spots = sprouts(growing).filter((c) => behind(c.x, c.y).length);
+      while (!spots.length && roomier()) spots = sprouts((x) => sides.includes(x) || x === entrance).filter((c) => behind(c.x, c.y).length);
       if (spots.length) {
         const c = spots[Math.floor(r() * spots.length)];
         keeper = add(c.x, c.y, 'elite');
@@ -336,7 +391,7 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
     x.kind = weighted(ROAD, r()).kind;
     odd++;
   });
-  sides.forEach((x, i) => { x.kind = practice ? (i === 0 ? 'treasure' : 'shrine') : weighted(SIDE, r()).kind; });
+  sides.forEach((x, i) => { x.kind = practice ? (i === 0 ? 'treasure' : 'shrine') : weighted(L ? SIDE_LABYRINTH : SIDE, r()).kind; });
   let rests = 0;
   for (const x of [...road, ...sides]) if (x.kind === 'rest' && ++rests > RESTS_MAX) x.kind = 'event';
 
@@ -350,15 +405,16 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   }
   let roadDist = distances(nodes, byId, entrance.id)[boss.id];
   for (const [a, b] of pairs) {
-    if (r() >= LOOP) continue;
+    if (r() >= (L ? L.loop : LOOP)) continue;
     link(a, b);
     const now = distances(nodes, byId, entrance.id)[boss.id];
     if (now < roadDist) { a.next.pop(); b.next.pop(); } else roadDist = now;
   }
 
-  // A hidden passage: a wall between two rooms far apart by corridor.
-  if (!practice && r() < HIDDEN_PASSAGE.chance) {
-    const far = pairs.filter(([a, b]) => !a.next.includes(b.id) && distances(nodes, byId, a.id)[b.id] >= HIDDEN_PASSAGE.apart);
+  // A hidden passage: a wall between two rooms far apart by corridor. A labyrinth may hide more than one.
+  for (let k = 0; k < (L ? L.passages : 1); k++) {
+    if (practice || r() >= HIDDEN_PASSAGE.chance) continue;
+    const far = pairs.filter(([a, b]) => !a.hidden && !b.hidden && !a.next.includes(b.id) && distances(nodes, byId, a.id)[b.id] >= HIDDEN_PASSAGE.apart);
     if (far.length) {
       const [a, b] = far[Math.floor(r() * far.length)];
       a.hidden = [b.id];
@@ -375,10 +431,10 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   const bottom = Math.max(...nodes.map((x) => x.y!));
   for (const x of nodes) x.y = x.y! - (top - 1);
   let rows = bottom - (top - 1) + 1;
-  let cols = COLS;
+  let cols = cols0;
   // A varied plan is turned: its head at the top, the bottom, the left or the right.
   if (o.vary) {
-    const turns = rows <= COLS ? TURNS : TURNS.filter((t) => t.turn === 'up' || t.turn === 'down');
+    const turns = rows <= cols0 ? TURNS : TURNS.filter((t) => t.turn === 'up' || t.turn === 'down');
     const { turn } = weighted(turns, rv());
     for (const x of nodes) {
       const [px, py] = [x.x!, x.y!];
@@ -386,15 +442,15 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
       else if (turn === 'left') { x.x = py; x.y = px; }
       else if (turn === 'right') { x.x = rows - 1 - py; x.y = px; }
     }
-    if (turn === 'left' || turn === 'right') [cols, rows] = [rows, COLS];
+    if (turn === 'left' || turn === 'right') [cols, rows] = [rows, cols0];
   }
   furnish(d, seed, nodes);
   return { nodes, byId, start: entrance, end: boss, rows, cols };
 }
 
 /** A Gate as a dungeon: its floors, each a plan of its own, joined by stairs. One floor is the Gate as it always was. */
-function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean): GateMap {
-  const road = floorRoad(d, floors);
+function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: FloorSize | null = null): GateMap {
+  const road = size ? size.road : floorRoad(d, floors);
   // A deeper Gate's Gatekeeper and vault each keep to a floor of their own drawing.
   const pr = rng('arise|plan|' + seed + '|keeper');
   const keeperOn = floors === 1 ? 0 : Math.floor(pr() * floors);
@@ -406,7 +462,7 @@ function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean): GateM
   let prev: MapNode | null = null;
   for (let k = 0; k < floors; k++) {
     const f = floorPlan(d, k === 0 ? seed : `${seed}|${k}`, {
-      floor: k, floors, road, keeper: !!d.elite && keeperOn === k, vault: !!d.elite && vaultOn === k, prefix: floors === 1 ? 'r' : `f${k}r`, vary,
+      floor: k, floors, road, keeper: !!d.elite && keeperOn === k, vault: !!d.elite && vaultOn === k, prefix: floors === 1 ? 'r' : `f${k}r`, vary, size,
     });
     const base = nodes.length;
     for (const x of f.nodes) { x.n += base; nodes.push(x); byId[x.id] = x; }
@@ -422,10 +478,12 @@ function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean): GateM
  * Draw a Gate's map. A Trial and a block of the Spire are towers; any other Gate is a dungeon of its
  * grade's floors, unless an open run began on a tower or on one floor of rooms.
  */
-export function build(d: Dungeon, seed: string, layout: Layout = 'floors'): GateMap {
+export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth'): GateMap {
   if (d.trial) return trialMap(d);
   if (d.floor || layout === 'layers') return layered(d, seed);
-  return layout === 'rooms' ? dungeon(d, seed, 1, false) : dungeon(d, seed, floorsOf(d), true);
+  if (layout === 'rooms') return dungeon(d, seed, 1, false);
+  if (layout === 'floors') return dungeon(d, seed, floorsOf(d), true);
+  return dungeon(d, seed, floorsOf(d), true, floorSizeOf(d));
 }
 
 /** The stairs a stairway leads to, on the floor above or below. */
@@ -455,7 +513,7 @@ export function passages(m: GateMap, cleared: Set<string>): [string, string][] {
  */
 export function sight(m: GateMap, cleared: Set<string>, remembered: Iterable<string> = []): Set<string> {
   if (m.tower) return new Set(m.nodes.map((x) => x.id));
-  const out = new Set<string>([m.start!, m.boss, ...m.nodes.filter((x) => x.kind === 'up' || x.kind === 'down').map((x) => x.id), ...remembered, ...cleared]);
+  const out = new Set<string>([m.start!, m.boss, ...remembered, ...cleared]);
   for (const id of cleared) for (const nb of [...(m.byId[id]?.next ?? []), ...(m.byId[id]?.hidden ?? [])]) out.add(nb);
   return out;
 }

@@ -13,7 +13,7 @@ import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
-import { across, build, chamberOf, choiceLayers, floorRoad, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
+import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
@@ -288,7 +288,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'floors', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'labyrinth', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
   };
   return s.gates.raid;
@@ -303,7 +303,8 @@ export const mapOf = (d: Dungeon, run: OpenRaid): GateMap => build(d, run.map ??
  */
 export function paceOf(d: Dungeon, m: GateMap): number {
   if (m.tower || m.floors.length <= 1) return 1;
-  return Math.min(1, choiceLayers(d) / (floorRoad(d, m.floors.length) * m.floors.length));
+  const rooms = systemRoad(m).filter((id) => !['up', 'down', 'boss'].includes(m.byId[id].kind)).length;
+  return Math.min(1, choiceLayers(d) / Math.max(1, rooms));
 }
 
 /** Every step a run could take: a tower's floors, or a Gate's rooms, the entrance aside. */

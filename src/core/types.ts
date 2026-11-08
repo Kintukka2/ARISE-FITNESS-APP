@@ -166,8 +166,8 @@ export interface OpenRaid {
   /** The map's seed, and the steps chosen on it so far, the last of them perhaps still underway. */
   map: string;
   path: string[];
-  /** How the map is drawn: a Gate's floors of rooms. Runs opened before them walk one floor of rooms (`rooms`), or the tower they began on (none). */
-  layout?: 'floors' | 'rooms' | 'layers';
+  /** How the map is drawn: a Gate's labyrinth floors. Runs opened before them walk the smaller floors (`floors`), one floor of rooms (`rooms`), or the tower they began on (none). */
+  layout?: 'labyrinth' | 'floors' | 'rooms' | 'layers';
   /** The room the hunter stands in: the last entered, or walked back to. Unset, the entrance. */
   pos?: string;
   /** The rests the run has used: each heals once. */

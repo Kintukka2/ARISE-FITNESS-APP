@@ -49,8 +49,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   (`map.sight`, `raid.seen`, remembered in `s.gates.seen` by map seed) only hides rooms on the plan:
   it never reaches the fight, the System's road or the projection. A deeper Gate has floors (`FLOORS`),
   joined by stairs; its longer road's fights share out what a one-floor road paid (`raid.paceOf`), so
-  change the floors or their roads and rerun the campaign as well as calibration. A run opened on one
-  floor (`layout: 'rooms'`) keeps it.
+  change the floors or their roads and rerun the campaign as well as calibration. Each floor is a
+  labyrinth sized by grade (`LABYRINTH`, held to `PLAN_MAX`). A run keeps the layout it opened with
+  (`labyrinth`, the smaller `floors`, one floor of `rooms`): never change how an older layout draws.
 - The brief, Auto and calibration all walk the System's road (`map.systemRoad`, moved along by
   `raid.systemNext`, which keeps a rest it finds for the boss) and make the System's choices
   (`raid.systemChoice`). Change any of them, or how a map is drawn, and you must recalibrate.

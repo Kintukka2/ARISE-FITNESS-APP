@@ -890,7 +890,7 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   the first time reaches the stairs up below at once; stairs taken once are taken again in one tap,
   from either side, so a hunter walks the whole Gate freely and still withdraws from the entrance. The
   plan shows the hunter's floor, `Floor 2/3` over it; the brief has a tab to each floor. The stairs and
-  the boss always show through the fog. A deeper Gate's road is longer, at least three rooms to a
+  the boss always showed through the fog (the stairs no longer do; see Labyrinths). A deeper Gate's road is longer, at least three rooms to a
   floor (`floorRoad`: a C-Rank Gate's road is 8 rooms, an S-Rank's 12, against 5 and 7 on one floor),
   and its fights share out what the one-floor road paid, in shards and in alloy (`paceOf`). The
   Gatekeeper keeps to a floor of its own drawing. No floor holds more than two rests. A run opened
@@ -916,6 +916,47 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   many of its road's rooms are fights and whether a rest lies on it. In the campaign the evening hunter
   reaches S-Rank on day 67 and the three-session hunter on day 34 (65 and 40 before), clearing 95 and
   94% of their runs.
+
+## Labyrinths — built
+
+A player found the S-Rank floors far too small (some seven rooms) and asked for labyrinths, two or
+three times the size at A and S, to the most that fits cleanly, with a minimum for every grade; and for
+the Gate Survey to be a mark with its count instead of a wide button. `core/map.ts` (`LABYRINTH`,
+`PLAN_MAX`, `floorSizeOf`).
+
+- **What fits.** A plan reads cleanly on a phone at six cells across and eight deep: a room's tile is
+  then about 45 pixels, its mark and name still legible (`PLAN_MAX`; a name's size follows its cell,
+  by a container query). A floor of 24 rooms fills half of that, room enough for dead ends and loops.
+- **Each grade's floor** (`LABYRINTH`): its fewest rooms, the foot and head among them, its road, its
+  plan's columns and how deep its branches go.
+
+  | Grade | Floors | Rooms a floor | Road a floor | Columns | Branches |
+  |---|---|---|---|---|---|
+  | E | 1 | 12 | 4 | 5 | 2 |
+  | D | 1 | 14 | 4 | 5 | 3 |
+  | C | 2 | 15 | 4 | 5 | 3 |
+  | B | 2 | 17 | 5 | 5 | 3 |
+  | A | 3 | 20 | 5 | 6 | 4 |
+  | S | 4 | 24 | 6 | 6 | 4 |
+
+  An S-Rank Gate is 96 rooms, an A-Rank 60, against 32 and 24 before. The road winds: it runs along
+  more often and further, and never climbs past the rows a plan holds. The floor grows rows beyond its
+  foot, then deeper branches, until it holds its rooms; every floor drawn holds exactly its minimum.
+  Loops are rarer, a labyrinth's side rooms hold rests half as often, and A and S floors can hide two
+  passages. The practice Gate keeps its small first dungeon.
+- **A run opened before** keeps its map exactly (`layout: 'floors'`, `'rooms'`); new runs are
+  `labyrinth`. Every map of the older layouts was checked against a snapshot taken before the change.
+- **Pay** still shares a deeper road's fights out of what a one-floor road paid, now counted from the
+  map's own road (`paceOf`).
+- **The Gate Survey** is a mark, a folded map with the count held in an ember badge, at the plan's top
+  right while a room is in the fog, in the arena and the brief; a tap offers it first.
+- **The stairs are in the fog** like any other room, asked for next: a floor's way down is found, not
+  seen from its foot. Only the corridors, the entrance and the boss's room always show (`map.sight`).
+- **A cleared room reads `Cleared`** under a check mark, in place of its own mark and name and the
+  tick it wore; a rest, the stairs and the entrance keep their marks, for coming back to.
+- **Balance.** Recalibrated: the middle of every grade clears 69-82%. The campaign, from three starts a
+  week apart: the evening hunter reaches S-Rank on days 59, 57 and 59 (67, 57 and 60 before), the
+  three-session hunter on days 33, 35 and 27 (43, 35 and 44).
 
 ## Smaller changes from the same playtest
 

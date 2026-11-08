@@ -17,14 +17,13 @@ import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialLevel } from '@/core/trial';
 import * as association from '@/core/association';
-import { SURVEY } from '@/data/association';
 import { goalOf } from '@/ui/assoc';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
 import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import * as system from '@/ui/system';
-import { MapView } from '@/ui/map';
+import { MapView, SurveyMark } from '@/ui/map';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
@@ -600,7 +599,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, dayKey())));
   // A Gate Survey charts every room of it, before the hunter goes in or after.
   const surveyBtn = shop.held(s, 'survey') > 0 && raid.surveyable(s, d)
-    ? <Btn size="sm" block onClick={() => void surveyFlow(d)}>Use {SURVEY.name} · Held: {shop.held(s, 'survey')}</Btn>
+    ? <SurveyMark held={shop.held(s, 'survey')} onUse={() => void surveyFlow(d)} />
     : null;
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
@@ -733,17 +732,18 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       {mapKnown(s, d)
         ? (
           <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
-            <MapView m={map} road={proj.road} seen={fog} floor={mapFloor} onFloor={map.floors.length > 1 ? setMapFloor : undefined} compact />
-            {surveyBtn}
+            <MapView m={map} road={proj.road} seen={fog} floor={mapFloor} onFloor={map.floors.length > 1 ? setMapFloor : undefined} corner={surveyBtn} compact />
           </Section>
         )
         : (
           <Section title="Today’s map" right="Unidentified">
-            <div class="gmap-fog" role="img" aria-label="Map unidentified">
-              <Glyph name="unknown" />
-              <b>?</b>
+            <div class="gmap-fogwrap">
+              <div class="gmap-fog" role="img" aria-label="Map unidentified">
+                <Glyph name="unknown" />
+                <b>?</b>
+              </div>
+              {surveyBtn && <span class="gmap-fog__corner">{surveyBtn}</span>}
             </div>
-            {surveyBtn}
           </Section>
         )}
 

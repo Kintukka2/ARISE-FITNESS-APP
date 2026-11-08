@@ -297,10 +297,10 @@ describe('extraction', () => {
   it('a creature already in the army costs half the mana to reach for', () => {
     const d = dungeonById('DNG-015')!;
     let owned = 0;
-    for (let k = 0; k < 16; k++) {
+    for (let k = 0; k < 24; k++) {
       for (const own of [false, true]) {
         const s = defaults();
-        grantXP(s, totalXpFor(24));
+        grantXP(s, totalXpFor(34));
         reclassifyAll(s);
         autoAllocate(s);
         if (own) for (const e of ALL_ENEMIES) shadows.bind(s, e.id);
