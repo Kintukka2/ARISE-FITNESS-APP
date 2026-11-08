@@ -13,7 +13,7 @@ import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
 import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
-import { build, chamberOf, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
+import { across, build, chamberOf, choiceLayers, floorRoad, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
@@ -288,7 +288,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'rooms', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'floors', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
   };
   return s.gates.raid;
@@ -296,6 +296,15 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
 
 /** The map an open run is walking. A run opened before the dungeons walks the floors it began on. */
 export const mapOf = (d: Dungeon, run: OpenRaid): GateMap => build(d, run.map ?? mapSeed(d, run.day), run.layout ?? 'layers');
+
+/**
+ * What a fight on a Gate's road pays, against the one-floor road it replaces: a deeper Gate's road is
+ * longer, and its fights share out what the old road's paid. One floor, or a tower, pays in full.
+ */
+export function paceOf(d: Dungeon, m: GateMap): number {
+  if (m.tower || m.floors.length <= 1) return 1;
+  return Math.min(1, choiceLayers(d) / (floorRoad(d, m.floors.length) * m.floors.length));
+}
 
 /** Every step a run could take: a tower's floors, or a Gate's rooms, the entrance aside. */
 export const stepsOf = (m: GateMap) => (m.tower ? m.layers.length : m.nodes.length - 1);
@@ -528,6 +537,11 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
       settleParty(s, d, run, party, now);
     }
     run.at += 1;
+  } else if (x.kind === 'down') {
+    // Down the stairs: the floor below's stairs up are reached at once, and the hunter stands on them.
+    const below = across(m, x);
+    run.at += 1;
+    if (below) { run.path.push(below.id); run.at += 1; run.pos = below.id; }
   } else if (x.kind === 'treasure' || x.kind === 'vault') {
     Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), x.kind === 'vault' ? 0 : -1, x.kind === 'vault'));
     run.at += 1;
@@ -640,7 +654,7 @@ export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: Ch
   if (ch.boss) run.bossFaced = true;
   if (ch.won) {
     run.won += 1;
-    const share = x?.kind === 'fight' ? FIGHT_PURSE.fight : x?.kind === 'elite' ? FIGHT_PURSE.elite : 0;
+    const share = x?.kind === 'fight' ? FIGHT_PURSE.fight * paceOf(d, mapOf(d, run)) : x?.kind === 'elite' ? FIGHT_PURSE.elite : 0;
     if (share && !isPractice(d)) run.purse = (run.purse ?? 0) + shop.gateShards(d.rank, share);
   } else run.lost = true;
   for (const [id, k] of Object.entries(ch.kills)) {
@@ -724,13 +738,14 @@ export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?
  * other clears and from gatekeepers; and now and then a piece found whole. Blueprints are learned here.
  * Mutates.
  */
-function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: boolean) {
+function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: boolean, pace = 1) {
   const g = rankIdx(d.rank);
   const rank = RANKS[g];
   const lower = RANKS[Math.max(0, g - 1)];
   const parts: forge.Bundle[] = [];
   let alloy = 0, low = 0;
-  for (let i = 0; i < fights; i++) {
+  // A deeper Gate's road is longer: its fights leave the old road's alloy between them.
+  for (let i = 0; i < Math.round(fights * pace); i++) {
     alloy += DROPS.fight + (r() < DROPS.fightExtra ? 1 : 0);
     if (r() < DROPS.fightLower) low++;
   }
@@ -823,7 +838,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
   const cleared = outcome === 'cleared';
   const vault = steps.some((x) => x.kind === 'vault');
-  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
+  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m)) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
   let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
   let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};
   if (practice) {

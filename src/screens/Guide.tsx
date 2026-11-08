@@ -2,7 +2,7 @@
 import { BLUEPRINT_SHELF, FIELD_POTION, GATE_SHARDS, gateShards, POTIONS } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
-import { RESTS_MAX } from '@/core/map';
+import { FLOORS, RESTS_MAX } from '@/core/map';
 import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -72,17 +72,20 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'The map',
     lines: [
-      'A Gate is a dungeon: rooms joined by corridors, the entrance at the foot and the boss at the head.',
+      'A Gate is a dungeon: rooms joined by corridors, the entrance anywhere on its plan and the boss at the far end of it. A plan can run up, down, left or right.',
+      `A deeper Gate has floors: ${Object.entries(FLOORS).map(([r, n]) => `${r}-Rank ${n}`).join(', ')}.`,
+      'Each floor but the last ends in stairs down instead of the boss, and each below the first starts at stairs up. Take stairs you have used again in one tap.',
+      'A deeper Gate’s road is longer, and its fights share out what a one-floor road pays.',
       'The map is drawn from the Gate and the day.',
       'The brief shows a Gate’s map only once you have been inside it. Until then it is unidentified, like its boss.',
-      'Every room is in the fog until you see it. Corridors, the entrance and the boss’s room always show.',
+      'Every room is in the fog until you see it. Corridors, the entrance, the stairs and the boss’s room always show.',
       'You see every room next to one you have cleared. A room seen stays seen on that map, for as long as it stands.',
       'You can enter any room next to one you have cleared.',
       'You can walk back to any cleared room at any time, and walking costs nothing.',
       ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'trap', 'event', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
       `A vault holds ${CACHE.vault}-${CACHE.vault + 2} alloy of the Gate’s own grade and two parts, or a piece found whole ${FORGED.vault * 100}% of the time.`,
       `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
-      `Rests are rare: no Gate holds more than ${RESTS_MAX}, and one passes for an Event until you find it.`,
+      `Rests are rare: no floor holds more than ${RESTS_MAX}, and one passes for an Event until you find it.`,
       `A rest restores ${REST_HEAL * 100}% of health to everyone standing, once. Use it when you find it, or walk back to it later.`,
       'Some Gates hide a passage between two rooms. It opens once you clear a room at either end.',
       `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it. The Exchange sells them for ${SURVEY.price}.`,

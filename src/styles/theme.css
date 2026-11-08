@@ -45,6 +45,9 @@
   --blood-glow: rgba(255, 77, 109, 0.45);
   --sysred: #ff2f3e;
   --royal: #3d7bff;
+  /* An Event room on a Gate's plan: a choice with its odds stated. Only there. */
+  --event: #f07be6;
+  --event-glow: rgba(240, 123, 230, 0.42);
 
   --ink: #e8f4ff;
   --ink-2: #a9c4e2;

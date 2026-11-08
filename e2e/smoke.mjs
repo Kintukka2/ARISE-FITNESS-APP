@@ -64,8 +64,13 @@ async function tapCoachUntil(sel, max = 30) {
   for (let i = 0; i < max && !(await visible(sel)); i++) { await page.locator('.coachcard').first().click(); await sleep(140); }
   if (!(await visible(sel))) throw new Error(`NEVER ARRIVED: ${sel}`);
 }
-/** Use the nav bar as a player would: close whatever sheet is over it first (a level-up's Allocate opens Status). */
+/**
+ * Use the nav bar as a player would: answer any System window over it first (forging a first item
+ * completes a Secret Quest, whose window waits), then close whatever sheet is over it (a level-up's
+ * Allocate opens Status).
+ */
 async function nav(k) {
+  if (await visible('.sysgate')) await drain(20);
   for (let i = 0; i < 5 && (await visible('.sheet.is-top .iconbtn[aria-label="Close"]')); i++) {
     await page.locator('.sheet.is-top .iconbtn[aria-label="Close"]').first().click();
     await sleep(250);

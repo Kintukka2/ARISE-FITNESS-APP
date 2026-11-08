@@ -47,7 +47,10 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   floor by floor (`GateMap.tower`). Walking back to a cleared room (`raid.moveTo`) and resting at a
   rest found (`raid.restHere`, once each) are written to the run like any step. The fog of war
   (`map.sight`, `raid.seen`, remembered in `s.gates.seen` by map seed) only hides rooms on the plan:
-  it never reaches the fight, the System's road or the projection.
+  it never reaches the fight, the System's road or the projection. A deeper Gate has floors (`FLOORS`),
+  joined by stairs; its longer road's fights share out what a one-floor road paid (`raid.paceOf`), so
+  change the floors or their roads and rerun the campaign as well as calibration. A run opened on one
+  floor (`layout: 'rooms'`) keeps it.
 - The brief, Auto and calibration all walk the System's road (`map.systemRoad`, moved along by
   `raid.systemNext`, which keeps a rest it finds for the boss) and make the System's choices
   (`raid.systemChoice`). Change any of them, or how a map is drawn, and you must recalibrate.
