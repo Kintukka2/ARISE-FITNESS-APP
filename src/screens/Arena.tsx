@@ -261,6 +261,14 @@ export function Arena() {
       const res = store.update((x) => raid.choose(x, d!, x.gates.raid!, nodeId));
       if (!res) return;
       if (isFight(res.node)) return chamber();
+      // Down the stairs: the next floor's plan, at once.
+      if (res.node.kind === 'down') {
+        const r = store.get().gates.raid!;
+        const m1 = raid.mapOf(d!, r);
+        say([{ text: `▸ Floor ${(raid.standing(d!, r)?.floor ?? 0) + 1} of ${m1.floors.length}.`, tone: 'room' }]);
+        sfx.gate();
+        return toMap();
+      }
       open({ node: res.node, item: res.item, mats: res.mats });
     });
   }

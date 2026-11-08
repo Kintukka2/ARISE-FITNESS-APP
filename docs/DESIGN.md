@@ -882,8 +882,22 @@ back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
   rest still pass for an Event until stepped in.
 - **The Practice Gate** puts its rest in the room before its boss, and its fights hold one or two
   creatures: a first dungeon is made easy, and three hundred seeds of it are all cleared.
+- **Floors**, asked for next (`FLOORS`, `floorsOf`): E- and D-Rank Gates stay one floor, drawn exactly
+  as before; C and B go down two, A three, S four. Each floor is a plan of its own, drawn from the
+  Gate, the day and the floor. Every floor but the last ends in stairs down where the boss would be,
+  and every floor below the first starts at stairs up where the entrance would be. Taking stairs down
+  the first time reaches the stairs up below at once; stairs taken once are taken again in one tap,
+  from either side, so a hunter walks the whole Gate freely and still withdraws from the entrance. The
+  plan shows the hunter's floor, `Floor 2/3` over it; the brief has a tab to each floor. The stairs and
+  the boss always show through the fog. A deeper Gate's road is longer, at least three rooms to a
+  floor (`floorRoad`: a C-Rank Gate's road is 8 rooms, an S-Rank's 12, against 5 and 7 on one floor),
+  and its fights share out what the one-floor road paid, in shards and in alloy (`paceOf`). The
+  Gatekeeper and its vault each keep to a floor of their own drawing, so the vault can be a floor away
+  from its seal. No floor holds more than two rests. A run opened before the floors keeps its one floor.
+- **The plan's room numbers are gone,** and an Event room is an orchid signpost, a choice drawn as one.
 - **Balance.** `npm run calibrate` was rerun: the tunings moved by 1% on average, a Gate at most by a
-  quarter, as its maps changed shape. A Gate's odds now swing a little more from day to day, with how
+  quarter, as its maps changed shape. With the floors it was rerun again, and the campaign with it: the
+  evening hunter reaches S-Rank on day 67 and the three-session hunter on day 33, clearing 95 and 93%. A Gate's odds now swing a little more from day to day, with how
   many of its road's rooms are fights and whether a rest lies on it. In the campaign the evening hunter
   reaches S-Rank on day 67 and the three-session hunter on day 34 (65 and 40 before), clearing 95 and
   94% of their runs.

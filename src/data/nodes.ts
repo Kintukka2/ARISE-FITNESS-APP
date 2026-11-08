@@ -5,7 +5,7 @@
  */
 import type { Stat } from '@/core/types';
 
-export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'trap' | 'event' | 'boss' | 'entrance' | 'vault';
+export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'trap' | 'event' | 'boss' | 'entrance' | 'vault' | 'up' | 'down';
 
 /** What the map shows as an Event until the hunter steps on it. A shrine shows for what it is. */
 export const HIDDEN: ReadonlySet<NodeKind> = new Set<NodeKind>(['trap', 'treasure']);
@@ -23,6 +23,8 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
   entrance: { name: 'Entrance', glyph: 'gates', desc: 'The way in, and the way out. Withdraw from here.' },
   vault: { name: 'Vault', glyph: 'lock', desc: 'Sealed until the Gatekeeper falls. A richer cache than any other.' },
+  down: { name: 'Stairs Down', glyph: 'stairsDown', desc: 'To the next floor. The boss waits on the last.' },
+  up: { name: 'Stairs Up', glyph: 'stairsUp', desc: 'Back to the floor above.' },
 };
 
 /** A rest restores this share of everyone's maximum HP, and lifts what ails them. */
