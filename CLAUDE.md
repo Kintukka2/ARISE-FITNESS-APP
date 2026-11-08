@@ -43,8 +43,12 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - A gate's map is drawn from the gate and the day (`map.mapSeed`). Steps and choices are written to
   the open run (`raid.choose`, `raid.resolve`) before they play, and every roll a step makes is
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.
-- The brief, Auto and calibration all walk the System's road (`map.systemRoad`) and make the
-  System's choices (`raid.systemChoice`). Change either and you must recalibrate.
+- A Gate's map is rooms and corridors; the Pale Spire's blocks and the Trials are towers, climbed
+  floor by floor (`GateMap.tower`). Walking back to a cleared room (`raid.moveTo`) and resting at a
+  rest found (`raid.restHere`, once each) are written to the run like any step.
+- The brief, Auto and calibration all walk the System's road (`map.systemRoad`, moved along by
+  `raid.systemNext`, which keeps a rest it finds for the boss) and make the System's choices
+  (`raid.systemChoice`). Change any of them, or how a map is drawn, and you must recalibrate.
 - Gear is forged (`core/forge.ts`, `data/forge.ts`): Gates leave materials and now and then a
   blueprint, and a blueprint forges its design as often as the materials allow. There is no fusion.
   Weapon Familiarity reaches the fight only through `raid.heroSpec` (`forge.familiarityBonus`); the

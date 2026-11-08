@@ -89,7 +89,7 @@ describe('a run keeps the level it walked in with', () => {
     expect(asc.levelOf(s.gates.raid)).toBe(ASCENSION_RULED);
     // Never Alone: the boss has company.
     const m = build(d, mapSeed(d, day));
-    const boss = m.layers[m.layers.length - 1][0];
+    const boss = m.byId[m.boss];
     expect(raid.chamberAt(d, boss, ASCENSION_RULED).foes).toHaveLength(2);
     expect(raid.chamberAt(d, boss, 0).foes).toHaveLength(1);
   });

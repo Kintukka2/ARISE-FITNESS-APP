@@ -99,6 +99,9 @@ below.
 
 ### 2. Dungeon maps — built
 
+*Rebuilt as rooms and corridors: see [Gate maps, rebuilt](#gate-maps-rebuilt--built). What follows is
+the first map, which the Pale Spire's blocks still climb.*
+
 A gate is a short branching map: a few layers of choices, a rest, then the boss. It is drawn from
 the gate and the day (`core/map.ts`), so the brief shows it before you go in and everyone who
 enters that day walks the same one. Every node is reachable and leads on to the boss; the first
@@ -809,6 +812,65 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
   climb a little slower than when every Gate rained gear (the evening hunter reaches S-Rank on day
   65, the three-session hunter on day 40, against 59 and 31), and clear 93 and 94% of their runs. The
   heavy player runs short of shards at the top of Ascension, the light player of alloy at A-Rank.
+
+## Gate maps, rebuilt — built
+
+A player asked for the maps to be overhauled, after a cave map with chests, locked doors and a start
+and a boss, the Gothic and Witcher maps' numbered rooms and secret routes, and a grid dungeon of
+pressure plates and hidden doors: move in any direction, back into rooms already cleared, and no
+rest always waiting before the boss, but rests found anywhere, rarely, kept until the hunter comes
+back to use one, once. `core/map.ts`, `core/raid.ts`, `ui/map.tsx`.
+
+- **A Gate is a dungeon** (`dungeon` in `core/map.ts`): rooms on a plan five cells across, joined by
+  corridors, drawn from the Gate and the day as before. The entrance sits at the foot, the boss alone
+  at the head, in a row of its own. A road of rooms climbs between them, up or along, never down and
+  never across itself, as many rooms as the old map had layers of choices. Side rooms branch off it one
+  or two deep (about four in five of the road's count), and a second corridor joins rooms side by side
+  30% of the time, where it does not shorten the road. Rooms are numbered from the entrance out, as a
+  plan would be, and a fight's head says `Chamber 4`, the room's number. Every room can be reached.
+- **What waits in them:** the road is fights, with 30% of its rooms past the first something else,
+  never more than two; a side room is a fight, a cache, an event, a shrine, a trap or a rest
+  (`ROAD`, `SIDE`). A trap, a cache, a shrine and now a rest show as Unknown until the hunter steps in.
+- **Movement:** the hunter enters any room next to one cleared (`raid.options` is that frontier,
+  `map.reach`), and walks back to any cleared room for nothing (`raid.moveTo`, `run.pos`). A room
+  entered is the step underway, as before, written to the run before it plays.
+- **Rests** are rare: about a third of E-Rank Gates hold one and half of S-Rank's, never more than two
+  (`RESTS_MAX`), anywhere but the entrance and the boss, and one in seven or fewer beside the boss. A
+  rest found is not taken: its panel offers Later and Rest, and the plan offers Rest while the hunter
+  stands in it, once (`raid.restHere`, `run.rested`).
+- **Withdrawing** is from the entrance, once a room is cleared: the way in is the way out. The share
+  is the rooms cleared over the road's length, capped as before.
+- **The Gatekeeper and its vault.** A Gate with a gatekeeper holds exactly one, at the end of a
+  branch, and its vault, a dead end sealed somewhere far from it by corridor. The seal breaks when the
+  Gatekeeper falls (`map.unsealed`; the feed says `Somewhere in the Gate, a seal breaks.`). The vault
+  is the richest find on the map: 5-7 alloy of the Gate's own grade and two parts, or a piece found
+  whole 20% of the time (`CACHE.vault`, `FORGED.vault`), and a blueprint of the Gate's grade 12% of the
+  time unless the run is carried out (`BLUEPRINTS.vault`).
+- **A hidden passage** in about half the Gates: a wall between two rooms at least three corridors
+  apart, which opens once a room at either end is cleared (`map.passages`), so a cleared branch can
+  reach round to rooms the road would have made the hunter fight through.
+- **The System's road** is now the fewest rooms from the entrance to the boss, and where two ways are
+  as short, the rooms it prefers (`systemRoad`, breadth first from the boss). It never passes the
+  Gatekeeper or the vault. Auto walks it (`raid.systemNext`, `raid.systemMove`), keeps a rest it finds
+  for the boss and uses it before going in; the projection does the same, so the brief and Auto still
+  agree, and calibration tunes to it.
+- **The Practice Gate** has a rest halfway along its road, to teach a rest found and kept, and a cache
+  and a shrine off it. It is never lost, as before.
+- **The arena** draws the plan: corridors with walls and floors under the rooms, cleared rooms ticked,
+  the rooms on offer glowing, the boss's room larger and red, a sealed vault locked, a used rest
+  greyed, and a `You` marker that slides from room to room. Under it, Rest, Withdraw, or the hint. The
+  head counts `Cleared 3/11`. The brief draws the same plan, the System's road dotted along it, with a
+  key under it.
+- **Towers stay towers.** A block of the Pale Spire and a Trial are climbed floor by floor, as before
+  (`layered`, `trialMap`): the Spire keeps its rest before its boss. A run left open from before keeps
+  the floors it began on (`run.layout` unset).
+- **Secret Quests:** Every Room (clear a Gate with every room in it cleared) and Cartographer (ten of
+  them), counted in `stats.charted`. Knew When To Leave now asks only for a withdrawal.
+- **Balance.** `npm run calibrate` was rerun: the tunings moved by 1% on average, a Gate at most by a
+  quarter, as its maps changed shape. A Gate's odds now swing a little more from day to day, with how
+  many of its road's rooms are fights and whether a rest lies on it. In the campaign the evening hunter
+  reaches S-Rank on day 67 and the three-session hunter on day 34 (65 and 40 before), clearing 95 and
+  94% of their runs.
 
 ## Smaller changes from the same playtest
 

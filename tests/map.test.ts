@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse } from '@/core/save';
 import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
-import { build, mapSeed, next, systemRoad, type GateMap } from '@/core/map';
+import { build, isFight, mapSeed, next, passages, reach, RESTS_MAX, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
+import * as forge from '@/core/forge';
+import { CACHE } from '@/data/forge';
+import type { Dungeon, OpenRaid, Rank, Save } from '@/core/types';
 import * as raid from '@/core/raid';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { EVENTS, REST_HEAL, TRAP } from '@/data/nodes';
@@ -19,10 +22,10 @@ function hunter(level: number) {
   return s;
 }
 
-/** Every node the start can reach. */
+/** Every room the entrance can reach by corridor. */
 function reachable(m: GateMap) {
   const seen = new Set<string>();
-  const stack = m.layers[0].map((x) => x.id);
+  const stack = [m.start!];
   while (stack.length) {
     const id = stack.pop()!;
     if (seen.has(id)) continue;
@@ -32,78 +35,256 @@ function reachable(m: GateMap) {
   return seen;
 }
 
+/** The fewest corridors from the entrance to a room, and the rooms on that way, the room last. */
+function wayTo(m: GateMap, id: string): string[] {
+  const from: Record<string, string> = {};
+  const queue = [m.start!];
+  const seen = new Set(queue);
+  while (queue.length) {
+    const at = queue.shift()!;
+    for (const nb of m.byId[at].next) if (!seen.has(nb)) { seen.add(nb); from[nb] = at; queue.push(nb); }
+  }
+  const out = [id];
+  while (from[out[0]] && from[out[0]] !== m.start) out.unshift(from[out[0]]);
+  return out;
+}
+
+const DAYS = Array.from({ length: 40 }, (_, i) => new Date(Date.UTC(2026, 1, 1 + i * 3)).toISOString().slice(0, 10));
+
 describe('the map', () => {
-  it('is the same all day, and every node can be reached and leads to the boss', () => {
-    for (const d of [...ALL_DUNGEONS, PRACTICE_GATE]) for (const day of ['2026-02-02', '2026-07-19']) {
+  it('is the same all day: rooms on a grid, every one reachable from the entrance, the boss alone at the head', () => {
+    for (const d of [...ALL_DUNGEONS, PRACTICE_GATE].filter((g) => !g.floor && !g.trial)) for (const day of ['2026-02-02', '2026-07-19']) {
       const m = build(d, mapSeed(d, day));
       expect(build(d, mapSeed(d, day))).toEqual(m);
-      const ids = m.layers.flat().map((x) => x.id);
-      expect([...reachable(m)].sort()).toEqual(ids.sort());
-      for (const x of m.layers.flat()) if (x.kind !== 'boss') expect(x.next.length).toBeGreaterThan(0);
-      // The first layer is all fights, every choice layer holds one, then a rest, then the boss.
-      expect(m.layers[0].every((x) => x.kind === 'fight')).toBe(true);
-      const choices = m.layers.slice(0, -2);
-      for (const row of choices) expect(row.some((x) => x.kind === 'fight')).toBe(true);
-      expect(m.layers[m.layers.length - 2].map((x) => x.kind)).toEqual(['rest']);
-      expect(m.layers[m.layers.length - 1].map((x) => x.kind)).toEqual(['boss']);
-      if (!d.elite) expect(m.layers.flat().some((x) => x.kind === 'elite')).toBe(false);
+      expect(m.tower).toBe(false);
+      expect(m.byId[m.start!].kind).toBe('entrance');
+      expect([...reachable(m)].sort()).toEqual(m.nodes.map((x) => x.id).sort());
+      // Corridors run both ways, between rooms side by side, one room to a cell.
+      const cells = new Set<string>();
+      for (const x of m.nodes) {
+        cells.add(`${x.x},${x.y}`);
+        expect(x.x).toBeGreaterThanOrEqual(0);
+        expect(x.x).toBeLessThan(m.cols);
+        for (const id of [...x.next, ...(x.hidden ?? [])]) {
+          const y = m.byId[id];
+          expect(y.next.includes(x.id) || (y.hidden ?? []).includes(x.id)).toBe(true);
+          expect(Math.abs(x.x! - y.x!) + Math.abs(x.y! - y.y!)).toBe(1);
+        }
+      }
+      expect(cells.size).toBe(m.nodes.length);
+      const boss = m.byId[m.boss];
+      expect(m.nodes.filter((x) => x.kind === 'boss')).toEqual([boss]);
+      expect(boss.y).toBe(0);
+      expect(m.nodes.filter((x) => x.y === 0)).toEqual([boss]);
+      expect(boss.next).toHaveLength(1);
+      expect(m.byId[m.start!].y).toBe(m.rows - 1);
+      // The first room on the road is a fight; every room is numbered once, from the entrance out.
+      expect(m.byId[systemRoad(m)[0]].kind).toBe('fight');
+      expect(m.nodes.map((x) => x.n).sort((a, b) => a - b)).toEqual(m.nodes.map((_, i) => i));
+      expect(m.nodes.filter((x) => x.kind === 'rest').length).toBeLessThanOrEqual(RESTS_MAX);
     }
   });
 
-  it('the practice gate holds no traps, events or gatekeepers', () => {
+  it('a Gate with a Gatekeeper holds it at the end of a branch, and its vault, sealed, at the end of another', () => {
+    for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS.slice(0, 4)) {
+      const m = build(d, mapSeed(d, day));
+      const keepers = m.nodes.filter((x) => x.kind === 'elite');
+      const vaults = m.nodes.filter((x) => x.kind === 'vault');
+      expect(keepers).toHaveLength(d.elite ? 1 : 0);
+      expect(vaults).toHaveLength(d.elite ? 1 : 0);
+      for (const x of [...keepers, ...vaults]) {
+        expect(x.next).toHaveLength(1);
+        expect(x.hidden).toBeUndefined();
+      }
+      if (d.elite) expect(keepers[0].next).not.toContain(vaults[0].id);
+      const seen = new Set([m.start!]);
+      expect(reach(m, seen).some((x) => x.kind === 'vault')).toBe(false);
+      expect(unsealed(m, new Set([m.start!, keepers[0]?.id ?? '']))).toBe(!!d.elite);
+    }
+  });
+
+  it('rests are rare, and found anywhere, not only before the boss', () => {
+    let maps = 0, withRest = 0, onRoad = 0, offRoad = 0, beforeBoss = 0;
+    for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS) {
+      const m = build(d, mapSeed(d, day));
+      const road = systemRoad(m);
+      const rests = m.nodes.filter((x) => x.kind === 'rest');
+      maps++;
+      if (rests.length) withRest++;
+      for (const x of rests) {
+        if (road.includes(x.id)) onRoad++; else offRoad++;
+        if (m.byId[m.boss].next.includes(x.id)) beforeBoss++;
+      }
+    }
+    expect(withRest / maps).toBeGreaterThan(0.2);
+    expect(withRest / maps).toBeLessThan(0.65);
+    expect(onRoad).toBeGreaterThan(0);
+    expect(offRoad).toBeGreaterThan(onRoad);
+    expect(beforeBoss / (onRoad + offRoad)).toBeLessThan(0.15);
+  });
+
+  it('the practice Gate holds no traps, events or gatekeepers, and a rest halfway along its road', () => {
     for (const day of ['2026-02-02', '2026-03-03', '2026-04-04', '2026-05-05']) {
-      const kinds = build(PRACTICE_GATE, mapSeed(PRACTICE_GATE, day)).layers.flat().map((x) => x.kind);
-      for (const k of ['trap', 'event', 'elite']) expect(kinds).not.toContain(k);
+      const m = build(PRACTICE_GATE, mapSeed(PRACTICE_GATE, day));
+      const kinds = m.nodes.map((x) => x.kind);
+      for (const k of ['trap', 'event', 'elite', 'vault']) expect(kinds).not.toContain(k);
+      const road = systemRoad(m);
+      expect(m.byId[road[1]].kind).toBe('rest');
+      expect(m.byId[road[road.length - 2]].kind).toBe('fight');
     }
   });
 
-  it('the System’s road is a real road', () => {
+  it('the System’s road is the fewest rooms from the entrance to the boss, past no Gatekeeper and no vault', () => {
+    for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial).slice(0, 12)) for (const day of DAYS.slice(0, 6)) {
+      const m = build(d, mapSeed(d, day));
+      const road = systemRoad(m);
+      expect(road[road.length - 1]).toBe(m.boss);
+      expect(road).toHaveLength(wayTo(m, m.boss).length);
+      [m.start!, ...road].slice(0, -1).forEach((id, i) => expect(m.byId[id].next).toContain(road[i]));
+      for (const id of road) expect(['elite', 'vault', 'entrance']).not.toContain(m.byId[id].kind);
+    }
+  });
+
+  it('a tower is climbed floor by floor, and a run opened before the dungeons keeps its floors', () => {
     const d = dungeonById('DNG-016')!;
-    const m = build(d, mapSeed(d, '2026-02-02'));
+    const m = build(d, mapSeed(d, '2026-02-02'), 'layers');
+    expect(m.tower).toBe(true);
+    expect(m.layers[0].every((x) => x.kind === 'fight')).toBe(true);
+    for (const row of m.layers.slice(0, -2)) expect(row.some((x) => x.kind === 'fight')).toBe(true);
+    expect(m.layers[m.layers.length - 2].map((x) => x.kind)).toEqual(['rest']);
+    expect(m.layers[m.layers.length - 1].map((x) => x.kind)).toEqual(['boss']);
     const road = systemRoad(m);
     expect(road).toHaveLength(m.layers.length);
     road.forEach((id, i) => expect(next(m, road.slice(0, i)).map((x) => x.id)).toContain(id));
+    const s = hunter(20);
+    const run = raid.begin(s, d, now);
+    delete run.layout;
+    expect(raid.mapOf(d, run).tower).toBe(true);
+    expect(raid.options(d, run).map((x) => x.id)).toEqual(m.layers[0].map((x) => x.id));
   });
 });
 
+/** Clear the step the run is on, the System's way: a fight to its end, a choice the System's. */
+function clearStep(s: Save, d: Dungeon, run: OpenRaid) {
+  const x = raid.pending(d, run);
+  if (!x) return;
+  if (isFight(x)) {
+    const { party, ch } = raid.resume(s, d, run, now);
+    while (ch.turn) ch.play(raid.order(s, run, null));
+    raid.record(s, d, run, party, ch.result(), now);
+  } else raid.resolve(s, d, run, raid.systemChoice(x), now);
+}
+
+/** A Gate and a day whose map holds a room of this kind, and the map. */
+function gateWith(kind: string, where: (m: GateMap, x: MapNode) => boolean = () => true) {
+  for (const day of DAYS) for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) {
+    const m = build(d, mapSeed(d, day));
+    const x = m.nodes.find((y) => y.kind === kind && where(m, y));
+    if (x) return { d, day, m, x, at: Date.parse(`${day}T12:00:00`) };
+  }
+  throw new Error(`no Gate held a ${kind}`);
+}
+
+/** Stand an open run in front of a room: every room on the way to it cleared, as written. */
+function before(run: OpenRaid, m: GateMap, id: string) {
+  const way = wayTo(m, id);
+  run.path = way.slice(0, -1);
+  run.at = run.path.length;
+  run.pos = run.path[run.path.length - 1];
+}
+
 describe('walking it', () => {
-  it('only steps to a node the last one leads to, and one step at a time', () => {
+  it('enters only a room next to one cleared, and one at a time', () => {
     const s = hunter(12);
     const d = dungeonById('DNG-001')!;
     const run = raid.begin(s, d, now);
     const m = raid.mapOf(d, run);
-    expect(raid.choose(s, d, run, m.layers[1][0].id, now)).toBeNull();
-    expect(raid.choose(s, d, run, m.layers[0][0].id, now)).not.toBeNull();
-    // A fight is underway: nothing else can be taken until it is done.
+    const road = systemRoad(m);
+    expect(raid.options(d, run).map((x) => x.id)).toEqual(m.byId[m.start!].next.filter((id) => m.byId[id].kind !== 'vault'));
+    expect(raid.choose(s, d, run, road[1], now)).toBeNull();
+    expect(raid.choose(s, d, run, m.boss, now)).toBeNull();
+    expect(raid.choose(s, d, run, road[0], now)).not.toBeNull();
+    expect(raid.standing(d, run)!.id).toBe(road[0]);
+    // A fight is underway: nothing else can be taken, and nowhere walked to, until it is done.
     expect(raid.options(d, run)).toEqual([]);
-    expect(raid.choose(s, d, run, m.layers[0][1].id, now)).toBeNull();
+    expect(raid.moveTo(d, run, m.start!)).toBe(false);
+    expect(raid.choose(s, d, run, road[1], now)).toBeNull();
   });
 
-  it('a rest heals, and is the only place to withdraw from', () => {
+  it('walks back through cleared rooms, and only through them', () => {
     const s = hunter(30);
     const d = dungeonById('DNG-001')!;
     const run = raid.begin(s, d, now);
-    const road = systemRoad(raid.mapOf(d, run));
-    // Walk to the rest by hand, wounding the hunter on the way.
-    let step = 0;
-    while (raid.mapOf(d, run).byId[road[step]].kind !== 'rest') {
-      expect(raid.canWithdraw(d, run)).toBe(false);
-      raid.choose(s, d, run, road[step], now);
-      const x = raid.pending(d, run);
-      if (x?.kind === 'fight' || x?.kind === 'elite') {
-        const { party, ch } = raid.resume(s, d, run, now);
-        while (ch.turn) ch.play(raid.order(s, run, null));
-        raid.record(s, d, run, party, ch.result(), now);
-      } else if (x) raid.resolve(s, d, run, raid.systemChoice(x), now);
-      step++;
-    }
-    expect(() => raid.finish(structuredClone(s), d, structuredClone(run), 'withdrawn', now)).toThrow();
+    const m = raid.mapOf(d, run);
+    const road = systemRoad(m);
+    raid.choose(s, d, run, road[0], now);
+    clearStep(s, d, run);
+    raid.choose(s, d, run, road[1], now);
+    clearStep(s, d, run);
+    expect(raid.moveTo(d, run, road[3])).toBe(false);
+    expect(raid.moveTo(d, run, m.boss)).toBe(false);
+    expect(raid.moveTo(d, run, m.start!)).toBe(true);
+    expect(raid.standing(d, run)!.id).toBe(m.start);
+    expect(raid.moveTo(d, run, road[0])).toBe(true);
+    // Walking changes nothing else: the rooms on offer are the same from anywhere.
+    const offered = raid.options(d, run).map((x) => x.id);
+    raid.moveTo(d, run, road[1]);
+    expect(raid.options(d, run).map((x) => x.id)).toEqual(offered);
+    expect(offered).toContain(road[2]);
+  });
+
+  it('a rest is found, kept, and used once, whenever the hunter comes back to it', () => {
+    const s = hunter(30);
+    const { d, m, x, at } = gateWith('rest');
+    const run = raid.begin(s, d, at);
+    before(run, m, x.id);
     run.carried[0].hp = 10;
-    const max = raid.partyFor(s, d, run, now)[0].maxHp;
-    raid.choose(s, d, run, road[step], now);
+    const max = raid.partyFor(s, d, run, at)[0].maxHp;
+    raid.choose(s, d, run, x.id, at);
+    // Found, not taken.
+    expect(run.carried[0].hp).toBe(10);
+    expect(raid.canRest(d, run)).toBe(true);
+    raid.moveTo(d, run, m.start!);
+    expect(raid.canRest(d, run)).toBe(false);
+    expect(raid.restHere(s, d, run, at)).toBe(false);
+    raid.moveTo(d, run, x.id);
+    expect(raid.restHere(s, d, run, at)).toBe(true);
     expect(run.carried[0].hp).toBeCloseTo(Math.min(max, 10 + max * REST_HEAL), 5);
+    expect(raid.canRest(d, run)).toBe(false);
+    expect(raid.restHere(s, d, run, at)).toBe(false);
+  });
+
+  it('withdraws only from the entrance, once a room is cleared', () => {
+    const s = hunter(30);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    const m = raid.mapOf(d, run);
+    expect(raid.canWithdraw(d, run)).toBe(false);
+    raid.choose(s, d, run, systemRoad(m)[0], now);
+    expect(raid.canWithdraw(d, run)).toBe(false);
+    clearStep(s, d, run);
+    expect(raid.canWithdraw(d, run)).toBe(false);
+    expect(() => raid.finish(structuredClone(s), d, structuredClone(run), 'withdrawn', now)).toThrow();
+    raid.moveTo(d, run, m.start!);
     expect(raid.canWithdraw(d, run)).toBe(true);
-    expect(raid.finish(s, d, run, 'withdrawn', now).outcome).toBe('withdrawn');
+    const res = raid.finish(s, d, run, 'withdrawn', now);
+    expect(res.outcome).toBe('withdrawn');
+    expect(res.rooms).toBe(m.nodes.length - 1);
+    expect(res.steps).toBe(1);
+  });
+
+  it('the System rests before the boss at a rest it found, as the brief assessed it', () => {
+    const s = hunter(30);
+    const { d, m, x, at } = gateWith('rest', (mm, y) => systemRoad(mm).includes(y.id));
+    const run = raid.begin(s, d, at);
+    const road = systemRoad(m);
+    run.path = road.slice(0, -1);
+    run.at = run.path.length;
+    run.pos = run.path[run.at - 1];
+    expect(raid.systemNext(d, run)).toEqual({ rest: x.id });
+    raid.systemMove(s, d, run, at);
+    expect(run.rested).toEqual([x.id]);
+    expect(raid.systemNext(d, run)).toEqual({ enter: m.boss });
   });
 
   it('what the run finds is paid when it ends on its feet, and lost when it is carried out', () => {
@@ -124,33 +305,43 @@ describe('walking it', () => {
 
   it('a cache banks what it holds, materials or a piece found whole, paid out with the clear', () => {
     const s = hunter(30);
-    for (const d of ALL_DUNGEONS) {
-      const day = '2026-02-02';
-      const m = build(d, mapSeed(d, day));
-      const cache = m.layers.flat().find((x) => x.kind === 'treasure');
-      if (!cache) continue;
-      const run = raid.begin(structuredClone(s), d, now);
-      const x = structuredClone(s);
-      x.gates.raid = run;
-      // Find a road through the cache.
-      const back = (id: string): string[] => {
-        const layer = m.byId[id].layer;
-        if (layer === 0) return [id];
-        const parent = m.layers[layer - 1].find((p) => p.next.includes(id))!;
-        return [...back(parent.id), id];
-      };
-      const road = back(cache.id);
-      run.path = road.slice(0, -1);
-      run.at = run.path.length;
-      const res = raid.choose(x, d, run, cache.id, now)!;
-      if (res.item) expect(run.haul).toContain(res.item);
-      else {
-        expect(Object.keys(res.mats ?? {}).length).toBeGreaterThan(0);
-        expect(run.stash).toEqual(res.mats);
-      }
-      return;
+    const { d, m, x, at } = gateWith('treasure');
+    const run = raid.begin(s, d, at);
+    before(run, m, x.id);
+    const res = raid.choose(s, d, run, x.id, at)!;
+    if (res.item) expect(run.haul).toContain(res.item);
+    else {
+      expect(Object.keys(res.mats ?? {}).length).toBeGreaterThan(0);
+      expect(run.stash).toEqual(res.mats);
     }
-    throw new Error('no gate held a cache today');
+  });
+
+  it('the vault opens once the Gatekeeper is down, and holds the Gate’s own grade', () => {
+    const s = hunter(30);
+    const { d, m, x, at } = gateWith('vault');
+    const keeper = m.nodes.find((y) => y.kind === 'elite')!;
+    const run = raid.begin(s, d, at);
+    before(run, m, x.id);
+    if (run.path.includes(keeper.id)) run.path = run.path.filter((id) => id !== keeper.id);
+    run.at = run.path.length;
+    expect(raid.options(d, run).map((y) => y.id)).not.toContain(x.id);
+    expect(raid.choose(s, d, run, x.id, at)).toBeNull();
+    run.path = [...run.path, keeper.id];
+    run.at += 1;
+    expect(raid.options(d, run).map((y) => y.id)).toContain(x.id);
+    const res = raid.choose(s, d, run, x.id, at)!;
+    if (res.item) expect(run.haul).toContain(res.item);
+    else expect(res.mats![forge.alloyId(d.rank as Rank)]).toBeGreaterThanOrEqual(CACHE.vault);
+  });
+
+  it('a hidden passage opens once a room at either end is cleared', () => {
+    const { m, x } = gateWith('fight', (_, y) => !!y.hidden);
+    const other = x.hidden![0];
+    expect(passages(m, new Set([m.start!]))).toEqual([]);
+    const open = passages(m, new Set([m.start!, x.id]));
+    expect(open).toHaveLength(1);
+    expect(open[0]).toContain(other);
+    expect(reach(m, new Set([m.start!, x.id])).map((y) => y.id)).toContain(other);
   });
 });
 
@@ -161,17 +352,14 @@ describe('choices', () => {
     const odds = raid.oddsOf(c, raid.heroSpec(s, now));
     let won = 0;
     const n = 400;
+    const { d, x: trap, at } = gateWith('trap');
     for (let i = 0; i < n; i++) {
-      const d = dungeonById('DNG-016')!;
       const x = structuredClone(s);
-      const run = raid.begin(x, d, now + i * 1000);
-      const m = raid.mapOf(d, run);
-      const trap = m.layers.flat().find((y) => y.kind === 'trap');
-      if (!trap) throw new Error('no trap on today’s map');
+      const run = raid.begin(x, d, at + i * 1000);
       // Stand the run on the trap; each entry is a fresh seed, so a fresh roll.
       run.path = [trap.id];
       run.at = 0;
-      if (raid.resolve(x, d, run, 0, now)?.won) won++;
+      if (raid.resolve(x, d, run, 0, at)?.won) won++;
     }
     expect(Math.abs(won / n - odds)).toBeLessThan(0.08);
   });

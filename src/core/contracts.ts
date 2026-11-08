@@ -42,7 +42,7 @@ export function draw(day: string, grade: Rank, shadowsOut: number): Contract[] {
   const r = rng(`arise|contracts|${day}|${grade}|${shadowsOut}`);
   const open = opening(grade, day);
   const family = commonest(open);
-  const keepers = open.filter((d) => build(d, mapSeed(d, day)).layers.some((row) => row.some((x) => x.kind === 'elite')));
+  const keepers = open.filter((d) => build(d, mapSeed(d, day)).nodes.some((x) => x.kind === 'elite'));
   const can: Record<ContractKind, boolean> = {
     clear: true, fell: !!family, offroad: true, gatekeeper: keepers.length > 0,
     shadows: shadowsOut > 0 && SHADOW_KILLS_PER[grade] > 0, tired: true,

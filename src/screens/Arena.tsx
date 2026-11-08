@@ -14,7 +14,7 @@ import * as story from '@/core/story';
 import type { Dungeon, Order } from '@/core/types';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
 import * as spire from '@/core/spire';
-import { chamberOf, isFight, systemPick, type MapNode } from '@/core/map';
+import { chamberOf, isFight, passages, type MapNode } from '@/core/map';
 import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
 import { BLOCK } from '@/data/spire';
 import * as ascension from '@/core/ascension';
@@ -140,7 +140,7 @@ interface Room { label: string; boss: boolean; index: number }
 type Phase = 'map' | 'fight' | 'turn' | 'decide' | 'node' | 'results';
 
 /** A step being shown: a rest or a cache as it happened, or a choice waiting, then how it went. */
-interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; done?: raid.Resolution }
+interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; done?: raid.Resolution; rested?: boolean }
 
 export function Arena() {
   const s = useSave();
@@ -171,6 +171,8 @@ export function Arena() {
   /** One thing at a time: a tap racing Auto must never take a step or open a chamber twice. */
   const busy = useRef(false);
   const seq = useRef(0);
+  /** The hidden passages open when the map was last shown: one more is announced. Unset until then. */
+  const seen = useRef({ passages: -1 });
 
   useEffect(() => {
     if (!d) return;
@@ -199,7 +201,7 @@ export function Arena() {
     if (!r || !d) return;
     // A run closed after a lost chamber, or after the boss fell, is settled by what was recorded.
     if (r.lost) return end('defeated');
-    if (r.at >= raid.mapOf(d, r).layers.length) return end('cleared');
+    if (raid.bossDown(d, r)) return end('cleared');
     const x = raid.pending(d, r);
     if (x && isFight(x)) return chamber();
     if (x) return open({ node: x });
@@ -210,10 +212,40 @@ export function Arena() {
     setPanel(null);
     setPhase('map');
     music.set('raid');
+    // A hidden passage a room's clearing opened, said once, as the hunter comes back to the map.
+    const r0 = store.get().gates.raid;
+    if (r0) {
+      const m0 = raid.mapOf(d!, r0);
+      const open = passages(m0, raid.explored(m0, r0)).length;
+      if (open > seen.current.passages && seen.current.passages >= 0) say([{ text: '▸ A wall gives way. There is a passage behind it.', tone: 'outcome' }]);
+      seen.current.passages = open;
+    }
     if (autoRef.current) later(() => {
       const r = store.get().gates.raid;
-      const opts = r ? raid.options(d!, r) : [];
-      if (opts.length) void step(systemPick(opts).id);
+      const move = r ? raid.systemNext(d!, r) : null;
+      if (!move) return;
+      if ('rest' in move) {
+        void guarded(() => {
+          store.update((x) => raid.moveTo(d!, x.gates.raid!, move.rest));
+          later(() => void restNow(false));
+        });
+      } else void step(move.enter);
+    });
+  }
+
+  /** Walk back to a room already cleared. */
+  function walkTo(id: string) {
+    void guarded(() => { store.update((x) => raid.moveTo(d!, x.gates.raid!, id)); });
+  }
+
+  /** Rest where the hunter stands: once at each rest. From its panel, the panel says so; on the map, the feed does. */
+  function restNow(inPanel: boolean) {
+    return guarded(() => {
+      if (!store.update((x) => raid.restHere(x, d!, x.gates.raid!))) return;
+      sfx.success();
+      if (inPanel) return setPanel((p) => (p ? { ...p, rested: true } : p));
+      say([{ text: '▸ The party rests.', tone: 'outcome' }]);
+      if (autoRef.current) toMap();
     });
   }
 
@@ -310,7 +342,7 @@ export function Arena() {
     const { party, ch, node } = raid.resume(st, d, r);
     const c = chamberOf(d, node);
     if (c.boss) music.set('boss');
-    setRoom({ label: c.label, boss: c.boss, index: node.layer });
+    setRoom({ label: c.label, boss: c.boss, index: node.n });
     handRef.current = c.boss && ascension.bossByHand(ascension.levelOf(r));
     setWon(null);
     setPhase('fight');
@@ -343,6 +375,8 @@ export function Arena() {
       ? [{ text: `▸ [${res.label}] cleared. Rounds: ${res.rounds}. Standing: ${left}. Condition: ${band}.`, tone: 'outcome' }]
       : [{ text: `▸ [${res.label}] not cleared. The party has been carried out.`, tone: 'loss' }]);
     if (res.won) buzz(20);
+    // A Gatekeeper down breaks the seal on its vault, wherever the vault is.
+    if (res.won && node.kind === 'elite' && raid.mapOf(d, r).nodes.some((x) => x.kind === 'vault')) say([{ text: '▸ Somewhere in the Gate, a seal breaks.', tone: 'outcome' }]);
     else { sfx.alarm(); flash('danger'); buzz([40, 60, 120]); }
     setWon(res.won);
     // A lost chamber, or the boss down: that is the run's to end. Anything else, back to the map.
@@ -373,6 +407,7 @@ export function Arena() {
   const hero = party.find((u) => u.uid === 'hero');
   const aiming = phase === 'turn' && turn ? turn.foes : [];
   const depth = m?.layers.length ?? 0;
+  const rooms = m && !m.tower ? raid.stepsOf(m) : 0;
   const toggleAuto = () => {
     sfx.tap();
     const on = !auto;
@@ -385,6 +420,7 @@ export function Arena() {
     if (phase === 'node' && panel) open(panel);
   };
   const onMap = phase === 'map' || phase === 'node';
+  const restPct = Math.round(REST_HEAL * ascension.restShare(run ? ascension.levelOf(run) : 0) * 100);
   // The step underway, or about to be taken; a rest or cache already done still counts as where you stand.
   const here = !run ? 1 : Math.min(depth, raid.pending(d, run) || phase !== 'node' ? run.at + 1 : run.at);
   const head = phase === 'node' && panel ? NODE[panel.node.kind].name : onMap ? 'Choose your way' : room?.label ?? '…';
@@ -392,19 +428,29 @@ export function Arena() {
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
       <header class="arena__head">
         <div><span class="label">{d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}</span><b>{head}</b></div>
-        <span class="label num">{d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : `Step ${here} of ${depth}`}</span>
+        <span class="label num">{d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? `Cleared ${run?.at ?? 0}/${rooms}` : `Step ${here} of ${depth}`}</span>
       </header>
       {onMap && run && m ? (
         <div class="arena__map">
           <RunStrip s={s} d={d} />
           {phase === 'node' && panel
-            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} />
+            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={() => void restNow(true)} />
             : <>
               {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
-              <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)} />
-              {raid.canWithdraw(d, run)
-                ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
-                : <small class="muted center">Tap a step that glows.</small>}
+              <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
+                pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} />
+              {m.tower
+                ? raid.canWithdraw(d, run)
+                  ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
+                  : <small class="muted center">Tap a step that glows.</small>
+                : raid.canRest(d, run)
+                  ? <div class="stack stack--tight">
+                    <Btn kind="primary" block sound="tap" onClick={() => void restNow(false)}>Rest</Btn>
+                    <small class="muted center"><span class="grant">Party HP +{restPct}%</span> · Debuffs cleared · Once</small>
+                  </div>
+                  : raid.canWithdraw(d, run)
+                    ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
+                    : <small class="muted center">Tap a room that glows, or a cleared room to walk back to it.</small>}
             </>}
         </div>
       ) : (
@@ -500,8 +546,8 @@ function CacheFind({ defId }: { defId: string }) {
 }
 
 /** A step that is not a fight: what happened, or the choice it puts to you. */
-function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
-  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void;
+function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
+  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: () => void;
 }) {
   const s = useSave();
   const run = s.gates.raid;
@@ -511,11 +557,18 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
   const hero = run?.party[0];
   const waiting = !p.done && run && raid.pending(d, run)?.id === x.id;
   const item = p.item ? gear.gearDef(p.item) : null;
+  // A rest in a Gate's rooms is found, not taken: it keeps until the hunter uses it. Up a tower, it heals at once.
+  const rooms = !!run && !raid.mapOf(d, run).tower;
+  const healed = x.kind === 'rest' && (!rooms || p.rested);
+  const keep = x.kind === 'rest' && rooms && !p.rested && !!run && raid.canRest(d, run);
+  const pct = Math.round(REST_HEAL * ascension.restShare(run ? ascension.levelOf(run) : 0) * 100);
   return (
     <section class={`nodepanel nodepanel--${x.kind}`}>
       <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
-      {x.kind === 'rest' && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{REST_HEAL * 100}%</span> · Debuffs cleared</p></>}
-      {x.kind === 'treasure' && (item ? <CacheFind key={x.id} defId={p.item!} />
+      {healed && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{pct}%</span> · Debuffs cleared</p></>}
+      {keep && <><p>The air is still here. Nothing has come this way in a long time.</p><p class="muted">Rest: <span class="grant">Party HP +{pct}%</span> · Debuffs cleared · Once</p></>}
+      {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
+      {(x.kind === 'treasure' || x.kind === 'vault') && (item ? <CacheFind key={x.id} defId={p.item!} />
         : p.mats ? <><p>Something lies under the dust. You take what is worth carrying.</p><MatList b={p.mats} gain /></>
         : <p>The cache is empty.</p>)}
       {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one.</p>}
@@ -553,10 +606,15 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw }: {
         </div>
       )}
       {!waiting && (
-        x.kind === 'rest' && run && raid.canWithdraw(d, run)
+        x.kind === 'rest' && run && !rooms && raid.canWithdraw(d, run)
           ? <div class="row">
             <Btn kind="ghost" onClick={onWithdraw}>Withdraw</Btn>
             <Btn kind="primary" size="lg" class="grow" sound="gate" onClick={onGo}>Press On</Btn>
+          </div>
+          : keep
+          ? <div class="row">
+            <Btn kind="ghost" onClick={onGo}>Later</Btn>
+            <Btn kind="primary" size="lg" class="grow" sound="tap" onClick={onRest}>Rest</Btn>
           </div>
           : <Btn kind="primary" size="lg" block sound="tap" onClick={onGo}>Continue</Btn>
       )}
@@ -750,7 +808,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             : r.spire ? r.spire.best ? `Floor ${r.spire.floor} cleared: your best this week. The next ${BLOCK} floors are open.` : `Floor ${r.spire.floor} cleared. The week closed while you were inside, so it does not count this week.`
               : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
               : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
-            : r.outcome === 'withdrawn' ? d.floor ? `Withdrawn from the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.` : `Withdrawn at step ${r.steps} of ${r.depth}. The Gate is still open.`
+            : r.outcome === 'withdrawn' ? d.floor ? `Withdrawn from the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.` : r.rooms ? `Withdrawn with ${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Withdrawn at step ${r.steps} of ${r.depth}. The Gate is still open.`
               : trial ? 'You were carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
               : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
         </header>

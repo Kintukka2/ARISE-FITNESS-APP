@@ -60,7 +60,7 @@ export function defaults(): Save {
     story: [],
     seen: [],
     licence: { granted: false, at: null, tx: null },
-    stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0, contracts: 0, contractDays: 0, crafted: 0 },
+    stats: { xpTotal: 0, extractions: 0, extractionsWon: 0, killsByFamily: {}, reachClears: 0, comebacks: 0, contracts: 0, contractDays: 0, crafted: 0, charted: 0 },
     settings: { sound: true, music: true, haptics: true, fastText: false, reminders: { on: false }, skipAsk: [] },
   };
 }

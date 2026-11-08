@@ -282,6 +282,24 @@ try {
   await snap('arena-skill-info');
   await page.locator('.act__info').first().click(); await sleep(150);
   if (await page.locator('.actinfo').count()) throw new Error('A SKILL’S DETAILS DID NOT CLOSE');
+  // Fight the first room out by hand, back to the plan: the room cleared, the hunter standing in it.
+  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  for (let i = 0; i < 80; i++) {
+    if (await page.locator('.arena__foot >> text=Carried Out').isVisible().catch(() => false)) break;
+    if (await page.locator('.dmap').isVisible().catch(() => false)) break;
+    if (await page.locator('.turnbar .act:not([disabled])').first().isVisible().catch(() => false)) await page.locator('.turnbar .act:not([disabled])').first().click();
+    else if (await page.locator('.nodepanel .btn').last().isVisible().catch(() => false)) await page.locator('.nodepanel .btn').last().click();
+    await sleep(250);
+  }
+  if (await page.locator('.dmap').isVisible().catch(() => false)) {
+    await sleep(500); await snap('arena-map-cleared');
+    if (!(await page.locator('.dmap .droom.is-done:not(.gnode--entrance)').count())) throw new Error('A CLEARED ROOM DID NOT SHOW AS CLEARED');
+    if (!(await page.locator('.dmap__you').count())) throw new Error('THE MAP DOES NOT SHOW WHERE THE HUNTER STANDS');
+    // Walk back to the entrance: the way out.
+    await page.locator('.dmap button.gnode--entrance').click(); await sleep(700);
+    if (!(await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count())) throw new Error('THE ENTRANCE DID NOT OFFER A WITHDRAWAL');
+    await snap('arena-map-entrance');
+  }
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);

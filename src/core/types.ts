@@ -166,6 +166,12 @@ export interface OpenRaid {
   /** The map's seed, and the steps chosen on it so far, the last of them perhaps still underway. */
   map: string;
   path: string[];
+  /** How the map is drawn. Runs opened before the dungeons have none, and walk the floors they began on. */
+  layout?: 'rooms' | 'layers';
+  /** The room the hunter stands in: the last entered, or walked back to. Unset, the entrance. */
+  pos?: string;
+  /** The rests the run has used: each heals once. */
+  rested?: string[];
   /** Gear, materials and shards found on the way, paid out when the run ends unless the party is carried out. */
   haul: string[];
   stash?: Record<string, number>;
@@ -243,6 +249,8 @@ export interface Stats {
   contractDays: number;
   /** Pieces forged at the Forge. */
   crafted: number;
+  /** Gates cleared with every room in them cleared too. */
+  charted: number;
 }
 
 export interface Save {

@@ -54,7 +54,7 @@ describe('turn by turn', () => {
     const d = dungeonById('DNG-015')!;
     const run = enter(s, d.id);
     const x = raid.pending(d, run)!;
-    const auto = raid.runChamber(d, run.seed, x.layer, raid.partyFor(s, d, run, now), chamberOf(d, x));
+    const auto = raid.runChamber(d, run.seed, x.n, raid.partyFor(s, d, run, now), chamberOf(d, x));
     const manual = fightOut(s, () => null).result();
     expect(manual.log).toEqual(auto.log);
     expect(manual.won).toBe(auto.won);
@@ -201,8 +201,8 @@ describe('foe intents', () => {
       const d = dungeonById(id)!;
       const run = raid.begin(s, d, now);
       const m = raid.mapOf(d, run);
-      for (const x of m.layers.flat().filter(isFight)) {
-        const ch = raid.runChamber(d, run.seed, x.layer, raid.partyFor(s, d, run, now), chamberOf(d, x));
+      for (const x of m.nodes.filter(isFight)) {
+        const ch = raid.runChamber(d, run.seed, x.n, raid.partyFor(s, d, run, now), chamberOf(d, x));
         const intent: Record<string, { ab: string; at?: string }> = {};
         const fresh = new Set<string>();
         const down = new Set<string>();

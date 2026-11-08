@@ -97,6 +97,9 @@ async function raidGate(row, name, auto = false) {
   let resumed = false;
   let steps = 0;
   let panels = 0;
+  // The practice Gate's rest: found and kept for later, then walked back to and used before the boss.
+  let kept = false;
+  let restedBack = false;
   for (let i = 0; i < 600; i++) {
     await page.waitForSelector('.arena__foot .btn, .turnbar, .syswin, .arena--results, button.gnode.is-next, .nodepanel', { timeout: 20000 });
     if (await visible('.arena--results')) break;
@@ -147,13 +150,35 @@ async function raidGate(row, name, auto = false) {
       if (!panels++) await snap(`${name}-step`);
       if (await visible('.nodepanel .choice-row')) { await page.locator('.nodepanel .choice-row').first().click(); continue; }
       if (await visible('.nodepanel >> text=Press On')) { await page.locator('.nodepanel >> text=Press On').click(); continue; }
+      if (await visible('.nodepanel >> text=Later')) {
+        if (name === 'practice' && !kept) {
+          kept = true;
+          await snap('practice-rest-found');
+          await page.locator('.nodepanel >> text=Later').click();
+          continue;
+        }
+        await page.locator('.nodepanel .btn', { hasText: /^Rest$/ }).click();
+        continue;
+      }
       await page.locator('.nodepanel >> text=Continue').click();
+      continue;
+    }
+    if (name === 'practice' && kept && !restedBack && await visible('.dmap button.gnode--boss.is-next')) {
+      // Back to the rest kept for later, and use it, once.
+      await page.locator('.dmap button.droom.gnode--rest').click(); await sleep(600);
+      const rest = page.locator('.arena__map .btn', { hasText: /^Rest$/ });
+      if (!(await rest.count())) throw new Error('A REST FOUND AND KEPT COULD NOT BE USED ON THE WAY BACK');
+      await rest.click(); await sleep(500);
+      if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST COULD BE USED TWICE');
+      if (!(await page.locator('.dmap .droom.is-spent').count())) throw new Error('A USED REST DID NOT SHOW AS USED');
+      restedBack = true;
+      await snap('practice-rested');
       continue;
     }
     if (await visible('button.gnode.is-next')) {
       if (!steps++) await snap(`${name}-map`);
-      // A trap or a cache passes for an Unknown step until the hunter stands on it.
-      if (await page.locator(':is(.gnode--trap, .gnode--treasure, .gnode--shrine):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP, A CACHE OR A SHRINE SHOWED ITSELF BEFORE IT WAS STEPPED ON');
+      // A trap, a cache, a shrine or a rest passes for an Unknown room until the hunter stands in it.
+      if (await page.locator(':is(.gnode--trap, .gnode--treasure, .gnode--shrine, .dmap .gnode--rest):not(.is-here):not(.is-done)').count()) throw new Error('A TRAP, A CACHE, A SHRINE OR A REST SHOWED ITSELF BEFORE IT WAS STEPPED ON');
       await page.locator('button.gnode.is-next').first().click();
       continue;
     }
@@ -162,6 +187,7 @@ async function raidGate(row, name, auto = false) {
   if (!auto && !turns) throw new Error(`${name.toUpperCase()} NEVER GAVE A TURN`);
   if (!auto && !steps) throw new Error(`${name.toUpperCase()} NEVER SHOWED THE MAP`);
   if (name === 'practice' && !resumed) throw new Error('THE PRACTICE GATE ENDED BEFORE THE RELOAD CHECK');
+  if (name === 'practice' && !restedBack) throw new Error('THE PRACTICE GATE NEVER WALKED BACK TO ITS REST');
   await page.waitForSelector('.arena--results');
   if (name !== 'practice') {
     // The results show exactly the Daily Quests the run moved, and nothing when it moved none.
