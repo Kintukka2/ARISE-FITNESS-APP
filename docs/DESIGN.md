@@ -958,6 +958,28 @@ the Gate Survey to be a mark with its count instead of a wide button. `core/map.
   week apart: the evening hunter reaches S-Rank on days 59, 57 and 59 (67, 57 and 60 before), the
   three-session hunter on days 33, 35 and 27 (43, 35 and 44).
 
+## The bag — built
+
+The owner asked for the Gate Survey's mark to become a bag, opening a radial menu of the items a
+hunter can use in a Gate, with room to add more later.
+
+- **The bag** (`ItemsMark`, `ui/items.tsx`) sits at the map's top right, in the arena (dungeons and
+  towers alike) and on a dungeon's brief, with the count held of everything in it in an ember badge.
+  Its glyph is a satchel (`satchel`), not the Inventory tab's `bag`, since it does not open the Inventory.
+- **The wheel** opens over everything but the System's windows: six slots round a hub, a slot to each
+  kind of item, always the same slot (`bagFor` in `app/flow.ts`), the rest empty and dashed, for what
+  comes later. A slot shows its item's glyph and the count held. Tapped, it is picked, and the hub shows
+  the item's name, what it does and the count held, then **Use**, or why it cannot be used now (`None
+  held`, `HP full`, `Not now`, `Drunk inside a Gate`, `Nothing left to chart`). Picking, then Use, is
+  the asking, so the Gate Survey no longer opens the System's `Would you like to use?` first. Close, a
+  tap outside the wheel or Escape closes it.
+- **The Field Potion is drunk between steps** (`raid.drinkField`, `raid.fieldIdle`), from the satchel,
+  for the same share of the maximum as on the hunter's turn, never past it, and only while nothing is
+  underway and the run is still to be won. It is written to the run's party at once, like a rest.
+  Auto, the brief's assessment and calibration never drink one, so nothing they measure changed and no
+  recalibration was run.
+- **The Gate Survey** moves into the wheel. Used from it, it charts the map as before (`surveyNow`).
+
 ## Smaller changes from the same playtest
 
 - **Perfect means perfect.** A piece was marked Perfect when its quality alone was at its best, and

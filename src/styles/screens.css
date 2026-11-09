@@ -426,10 +426,39 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .dmap__corner { display: flex; justify-content: flex-end; }
 .dmap__floors { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 /* The Gate Survey: its mark, with the count held at its foot's corner. */
-.surveymark { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(24, 12, 4, 0.8); color: var(--ember); cursor: pointer; }
-.surveymark .ico { width: 22px; height: 22px; }
-.surveymark:active { background: rgba(255, 154, 60, 0.22); }
-.surveymark__n { position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ember); color: #1a0d03; font-size: 0.68rem; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px #05060c; }
+.bagmark { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(24, 12, 4, 0.8); color: var(--ember); cursor: pointer; }
+.bagmark .ico { width: 22px; height: 22px; }
+.bagmark:active { background: rgba(255, 154, 60, 0.22); }
+.bagmark__n { position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ember); color: #1a0d03; font-size: 0.68rem; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px #05060c; }
+/* The bag's wheel: a ring of slots round a hub, over everything but the System's windows. */
+.bagwheel { position: fixed; inset: 0; z-index: var(--z-wheel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 16px;
+  background: radial-gradient(60% 45% at 50% 48%, rgba(60, 26, 6, 0.55), rgba(3, 4, 9, 0.88) 72%); backdrop-filter: blur(2px); animation: fadein 160ms both; }
+.bagwheel__ring { position: relative; width: min(86vw, 340px); aspect-ratio: 1; animation: wheelIn 220ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.bagwheel__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bagwheel__slot { fill: rgba(22, 12, 5, 0.92); stroke: rgba(255, 154, 60, 0.42); stroke-width: 1.2; cursor: pointer; transition: fill 120ms, stroke 120ms; outline: none; }
+.bagwheel__slot:hover, .bagwheel__slot:focus-visible { fill: rgba(70, 34, 8, 0.95); stroke: rgba(255, 154, 60, 0.8); }
+.bagwheel__slot.is-off { fill: rgba(14, 10, 8, 0.9); stroke: rgba(255, 154, 60, 0.22); }
+.bagwheel__slot.is-picked { fill: rgba(255, 154, 60, 0.24); stroke: var(--ember); stroke-width: 2; filter: drop-shadow(0 0 8px var(--ember-glow)); }
+.bagwheel__slot.is-empty { fill: rgba(10, 8, 7, 0.7); stroke: rgba(255, 154, 60, 0.1); stroke-dasharray: 3 4; cursor: default; }
+.bagwheel__item { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; transform: translate(-50%, -50%); color: var(--ember); pointer-events: none; animation: wheelItem 260ms calc(60ms + var(--i, 0) * 40ms) both; }
+.bagwheel__item .ico { width: 30px; height: 30px; filter: drop-shadow(0 0 6px rgba(255, 154, 60, 0.35)); }
+.bagwheel__item b { color: var(--ink); font-size: 0.78rem; }
+.bagwheel__item.is-off { color: color-mix(in srgb, var(--ember) 40%, var(--ink-3)); }
+.bagwheel__item.is-off .ico { filter: none; opacity: 0.6; }
+.bagwheel__item.is-off b { color: var(--ink-3); }
+.bagwheel__item.is-picked { color: #ffd2a3; }
+.bagwheel__hub { position: absolute; left: 50%; top: 50%; width: 45%; aspect-ratio: 1; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px; border: 1px solid rgba(255, 154, 60, 0.5); border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, rgba(60, 28, 8, 0.96), rgba(10, 7, 6, 0.98) 70%); box-shadow: 0 0 24px rgba(255, 154, 60, 0.18), inset 0 0 18px rgba(0, 0, 0, 0.6); text-align: center; }
+.bagwheel__hub > .ico { width: 24px; height: 24px; color: var(--ember); }
+.bagwheel__name { font-size: 0.8rem; letter-spacing: 0.06em; line-height: 1.15; color: var(--ink); }
+.bagwheel__effect { color: var(--verdant); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
+.bagwheel__held { color: var(--ink-2); font-size: 0.68rem; }
+.bagwheel__off { color: var(--ink-3); font-size: 0.68rem; }
+.bagwheel__hub .btn { margin-top: 3px; min-width: 64%; }
+.bagwheel__close { min-width: 140px; }
+@keyframes wheelIn { from { opacity: 0; transform: scale(0.82) rotate(-14deg); } to { opacity: 1; transform: none; } }
+@keyframes wheelItem { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } to { opacity: 1; transform: translate(-50%, -50%); } }
+@media (prefers-reduced-motion: reduce) { .bagwheel, .bagwheel__ring, .bagwheel__item { animation: none; } }
 .gmap-fogwrap { position: relative; }
 .gmap-fog__corner { position: absolute; top: 10px; right: 10px; }
 .dmap__floor { padding: 4px 10px; border: 1px solid rgba(255, 154, 60, 0.3); background: rgba(12, 8, 5, 0.6); color: var(--ink-2); font: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }

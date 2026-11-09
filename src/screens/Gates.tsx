@@ -23,7 +23,8 @@ import * as walkers from '@/core/walkers';
 import * as marks from '@/core/marks';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import * as system from '@/ui/system';
-import { MapView, SurveyMark } from '@/ui/map';
+import { MapView } from '@/ui/map';
+import { ItemsMark } from '@/ui/items';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
@@ -44,7 +45,7 @@ import { Glyph, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
-import { enterGate, surveyFlow } from '@/app/flow';
+import { bagFor, enterGate } from '@/app/flow';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -597,10 +598,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   // Today's map through its fog: what a run on it is seeing, or what is remembered of it.
   const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, dayKey()) ? s.gates.raid : null;
   const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, dayKey())));
-  // A Gate Survey charts every room of it, before the hunter goes in or after.
-  const surveyBtn = shop.held(s, 'survey') > 0 && raid.surveyable(s, d)
-    ? <SurveyMark held={shop.held(s, 'survey')} onUse={() => void surveyFlow(d)} />
-    : null;
+  // The bag: a Gate Survey from it charts every room, before the hunter goes in or after. A tower has no plan to chart.
+  const surveyBtn = map.tower ? null : <ItemsMark items={bagFor(s, d)} />;
   const v = raid.verdict(proj.rate);
   const block = entryBlock(s, d);
   const pay = ascension.payShare(level);

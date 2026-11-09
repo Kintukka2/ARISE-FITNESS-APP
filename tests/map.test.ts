@@ -10,6 +10,7 @@ import * as raid from '@/core/raid';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { EVENTS, REST_HEAL, TRAP } from '@/data/nodes';
 import * as vitals from '@/core/vitals';
+import { FIELD_POTION_HEAL } from '@/core/combat';
 import { walk } from './walk';
 
 const now = Date.parse('2026-02-02T12:00:00');
@@ -386,6 +387,37 @@ describe('walking it', () => {
     expect(run.carried[0].hp).toBeCloseTo(Math.min(max, 10 + max * REST_HEAL), 5);
     expect(raid.canRest(d, run)).toBe(false);
     expect(raid.restHere(s, d, run, at)).toBe(false);
+  });
+
+  it('a field potion is drunk between steps, from the satchel, only when it would heal', () => {
+    const s = hunter(30);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    const m = raid.mapOf(d, run);
+    const max = raid.partyFor(s, d, run, now)[0].maxHp;
+    s.satchel = 0;
+    run.carried[0].hp = 10;
+    expect(raid.fieldIdle(s, d, run, now)).toBe('None held');
+    expect(raid.drinkField(s, d, run, now)).toBe(0);
+    s.satchel = 2;
+    expect(raid.canDrinkField(s, d, run, now)).toBe(true);
+    const got = raid.drinkField(s, d, run, now);
+    expect(got).toBe(Math.round(max * FIELD_POTION_HEAL));
+    expect(run.carried[0].hp).toBeCloseTo(10 + max * FIELD_POTION_HEAL, 5);
+    expect(s.satchel).toBe(1);
+    // Not while a step is underway: a fight's potions are its turns'.
+    raid.choose(s, d, run, systemRoad(m)[0], now);
+    expect(raid.fieldIdle(s, d, run, now)).toBe('Not now');
+    expect(raid.drinkField(s, d, run, now)).toBe(0);
+    clearStep(s, d, run);
+    // Never past the maximum: one that would heal nothing waits.
+    s.satchel = 2;
+    run.carried[0].hp = max - 1;
+    expect(raid.drinkField(s, d, run, now)).toBe(1);
+    expect(run.carried[0].hp).toBe(max);
+    expect(raid.fieldIdle(s, d, run, now)).toBe('HP full');
+    expect(raid.drinkField(s, d, run, now)).toBe(0);
+    expect(s.satchel).toBe(1);
   });
 
   it('withdraws only from the entrance, once a room is cleared', () => {

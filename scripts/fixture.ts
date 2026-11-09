@@ -94,6 +94,8 @@ s.assoc = { n: 5, quest: null, reported: 5 };
 association.issue(s);
 s.assoc.quest!.got = Math.floor(s.assoc.quest!.need / 2);
 s.stock = { hp: 2, survey: 1 };
+// Two field potions in the satchel, for the bag's wheel inside a Gate.
+s.satchel = 2;
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);

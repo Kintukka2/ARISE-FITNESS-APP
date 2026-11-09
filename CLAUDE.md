@@ -49,7 +49,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   seeded from the run and the node. What the run finds is banked on it and paid in `raid.finish`.
 - A Gate's map is rooms and corridors; the Pale Spire's blocks and the Trials are towers, climbed
   floor by floor (`GateMap.tower`). Walking back to a cleared room (`raid.moveTo`) and resting at a
-  rest found (`raid.restHere`, once each) are written to the run like any step. The fog of war
+  rest found (`raid.restHere`, once each) are written to the run like any step, and so is a field potion
+  drunk between steps from the bag (`raid.drinkField`). The bag's wheel (`ui/items.tsx`) gives each kind of
+  item its own slot, listed in `bagFor` (`app/flow.ts`); a new item goes there, with its engine call in `core/`. The fog of war
   (`map.sight`, `raid.seen`, remembered in `s.gates.seen` by map seed) only hides rooms on the plan:
   it never reaches the fight, the System's road or the projection. A deeper Gate has floors (`FLOORS`),
   joined by stairs; its longer road's fights share out what a one-floor road paid (`raid.paceOf`), so

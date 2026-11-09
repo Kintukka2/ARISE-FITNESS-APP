@@ -301,15 +301,34 @@ try {
     await snap('arena-map-entrance');
     // The fog: unseen rooms show nothing of what is in them, and a Gate Survey charts every one.
     if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('THE MAP HAS NO FOG');
-    const survey = page.locator('.arena__map .dmap__corner .surveymark');
-    if (!(await survey.count())) throw new Error('THE GATE SURVEY HAS NO MARK ON THE MAP');
-    if (!/\d/.test(await survey.innerText())) throw new Error('THE GATE SURVEY MARK SHOWS NO COUNT');
-    {
-      await survey.click(); await sleep(400);
-      await page.locator('.syswin__foot .btn', { hasText: /^Use$/ }).click(); await sleep(800);
-      if (await page.locator('.dmap .droom.is-fog').count()) throw new Error('A GATE SURVEY LEFT ROOMS IN THE FOG');
-      await snap('arena-map-surveyed');
+    // The bag at the plan's corner opens the wheel: a slot to each item, the hub what a tapped one does.
+    const bag = page.locator('.arena__map .dmap__corner .bagmark');
+    if (!(await bag.count())) throw new Error('THE MAP HAS NO BAG');
+    if (!/\d/.test(await bag.innerText())) throw new Error('THE BAG SHOWS NO COUNT');
+    const slot = (name) => page.locator(`.bagwheel__slot[aria-label^="${name}"]`);
+    const useBtn = page.locator('.bagwheel__hub .btn', { hasText: /^Use$/ });
+    await bag.click(); await sleep(500);
+    if (!(await page.locator('.bagwheel').isVisible())) throw new Error('THE BAG DID NOT OPEN ITS WHEEL');
+    if ((await page.locator('.bagwheel__slot').count()) !== 6) throw new Error('THE WHEEL DOES NOT HAVE SIX SLOTS');
+    await snap('arena-items');
+    // A field potion, drunk between rooms, if the fight left the hunter hurt.
+    await slot('Field Potion').click(); await sleep(300);
+    if (!(await page.locator('.bagwheel__hub .bagwheel__name', { hasText: 'Field Potion' }).count())) throw new Error('A TAPPED SLOT DID NOT SHOW ITS ITEM');
+    await snap('arena-items-field');
+    if (await useBtn.count()) {
+      await useBtn.click(); await sleep(600);
+      if (await page.locator('.bagwheel').count()) throw new Error('USE DID NOT CLOSE THE WHEEL');
+      if (!(await page.locator('.feed', { hasText: 'You drink a field potion.' }).count())) throw new Error('A FIELD POTION DRUNK ON THE MAP SAID NOTHING');
+      await snap('arena-map-drunk');
+      await bag.click(); await sleep(500);
     }
+    // Nothing is used on one tap: the Gate Survey's slot only shows it, and Use charts the map.
+    await slot('Gate Survey').click(); await sleep(300);
+    if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('TAPPING A SLOT USED ITS ITEM');
+    await snap('arena-items-survey');
+    await useBtn.click(); await sleep(800);
+    if (await page.locator('.dmap .droom.is-fog').count()) throw new Error('A GATE SURVEY LEFT ROOMS IN THE FOG');
+    await snap('arena-map-surveyed');
   }
   await autoToResults();
   await revealLoot();
@@ -336,6 +355,9 @@ try {
     await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
     await page.waitForSelector('.arena', { timeout: 10000 });
     await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
+    // Up a tower too, the bag sits at the map's corner: a field potion is drunk between floors.
+    if (!(await page.locator('.arena__map .dmap__corner .bagmark').count())) throw new Error('A TOWER HAS NO BAG');
+    await sleep(300); await snap('spire-map');
     await page.locator('button.gnode.is-next').first().click();
     // A floor the party clears before the hunter's turn comes back to the map with no turn to give.
     await sleep(1200);

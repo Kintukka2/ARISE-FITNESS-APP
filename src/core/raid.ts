@@ -12,7 +12,7 @@ import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
-import { battle, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
+import { battle, FIELD_POTION_HEAL, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
@@ -422,6 +422,33 @@ export function restHere(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): 
   settleParty(s, d, run, party, now);
   run.rested = [...(run.rested ?? []), run.pos!];
   return true;
+}
+
+/**
+ * A field potion can be drunk between steps, in a Gate or up a tower: one is in the satchel, the hunter
+ * is hurt, nothing is underway and the run is still to be won. In a fight it is the hunter's turn's.
+ */
+export const canDrinkField = (s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) => !fieldIdle(s, d, run, now);
+
+/** Why a field potion cannot be drunk between steps now, or null if it can. */
+export function fieldIdle(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): string | null {
+  if (s.satchel <= 0) return 'None held';
+  if (run.lost || pending(d, run) || bossDown(d, run)) return 'Not now';
+  const hero = partyFor(s, d, run, now)[0];
+  if (!hero?.alive()) return 'Not now';
+  return hero.hp < hero.maxHp ? null : 'HP full';
+}
+
+/** Drink a field potion between steps: the hunter's HP, up by its share of the maximum. Returns the HP it restored, 0 if it could not. Mutates. */
+export function drinkField(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): number {
+  if (!canDrinkField(s, d, run, now)) return 0;
+  const party = partyFor(s, d, run, now);
+  const hero = party[0];
+  const was = hero.hp;
+  hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * FIELD_POTION_HEAL);
+  s.satchel -= 1;
+  settleParty(s, d, run, party, now);
+  return Math.round(hero.hp - was);
 }
 
 /**
