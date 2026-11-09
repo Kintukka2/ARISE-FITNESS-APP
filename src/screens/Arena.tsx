@@ -704,7 +704,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
         </>}
         {/* After a failure the reach's terms are the warning, in red: what failed, what is left, what the next one costs. */}
         <p class={`extract__terms ${l.tries ? 'warn' : ''}`} key={`t${l.tries}`}>
-          {l.tries ? <>[Skill: Extraction] has failed.<br /></> : null}
+          {l.tries ? <>[Skill: Shadow Extraction] has failed.<br /></> : null}
           Attempts left: {left}<br />
           Extraction cost: {cost} MP
         </p>
@@ -749,7 +749,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
         <Btn block onClick={close}>Close</Btn>
       </>}
       {out?.res === 'lost' && <>
-        <p class="warn">[Skill: Extraction] has failed.<br />The mana has dispersed.</p>
+        <p class="warn">[Skill: Shadow Extraction] has failed.<br />The mana has dispersed.</p>
         <Btn block onClick={close}>Close</Btn>
       </>}
     </div>

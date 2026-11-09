@@ -314,7 +314,7 @@ a violet frame still reads `Bound Rank → Sworn Rank` in green.
 ### Brackets
 
 - A window that is one announcement brackets the whole line: `[Daily Quests have arrived.]`
-- A name inside a longer sentence brackets the name only: `[Skill: Extraction] has failed.`
+- A name inside a longer sentence brackets the name only: `[Skill: Shadow Extraction] has failed.`
 - When a sentence ends on a name, the name takes its own line:
 
   ```
@@ -599,8 +599,8 @@ The panel after a clear, in a violet frame.
 |---|---|---|
 | Offer | "The power from the **{foe}** you just defeated is lingering… It wants to continue to fight — under your command." / "Reaching for it costs **60 MP** (you have 140). It holds 34 times in 100, read off your Intelligence." | The rank and the name, then `The mana of [{foe}] lingers.` / `Attempts left: 3` / `Extraction cost: 60 MP`. The odds are not shown here; the Guide states them |
 | No mana | "You have nothing left to reach with. Mana comes back on its own — walk out of the next one with some." | `Not enough MP. (40/60)` |
-| Failed, reaches left | | The rank and the name, then `The mana of [{foe}] still lingers.` / `[Skill: Extraction] has failed.` / `Attempts left: 2` / `Extraction cost: 120 MP`, those three in red / `Hold To Extract Again`. No multiplier and no MP held: the cost is the number that matters, and MP held shows only when it falls short (`Not enough MP. (100/120)`). Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
-| Failed, the last reach | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Extraction] has failed.` / `The mana has dispersed.` (all red) |
+| Failed, reaches left | | The rank and the name, then `The mana of [{foe}] still lingers.` / `[Skill: Shadow Extraction] has failed.` / `Attempts left: 2` / `Extraction cost: 120 MP`, those three in red / `Hold To Extract Again`. No multiplier and no MP held: the cost is the number that matters, and MP held shows only when it falls short (`Not enough MP. (100/120)`). Its alert on the results: `The mana of [{foe}] still lingers. Attempts left: 2` |
+| Failed, the last reach | "The shape thinned, came apart, and went wherever the rest of them go. A higher INT makes them hold." | `[Skill: Shadow Extraction] has failed.` / `The mana has dispersed.` (all red) |
 | Bound | "SUCCESSFUL EXTRACTION — {shadow} answers to you now." | `Extraction successful.` / `[{shadow}] has joined your army.` |
 
 The odds, and that INT raises them, are rules, so they go in the Guide, and so does why the cost
@@ -1050,7 +1050,9 @@ These are decided:
 - **ARISE.** The app's name and the word the extraction button finishes on.
 - **Red Gate.** A Gate that runs 20 moves past its budget turns red, and its way out seals until the
   boss falls (DESIGN.md, "Decided after the research").
-- **Extraction.** The skill is written `Extraction`.
+- **Shadow Extraction.** The skill is named in full, as the source names it: `[Skill: Shadow
+  Extraction] has failed.` The act and its price keep the plain noun: `Extraction cost: 60 MP`,
+  `Extraction successful.`, and the Guide's "Extraction costs MP by grade".
 
 ## Rules that hold for every speaker
 
