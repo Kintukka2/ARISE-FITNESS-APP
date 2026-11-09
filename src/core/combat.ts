@@ -224,6 +224,56 @@ export type Ev =
 
 const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva), HIT.min, HIT.max);
 
+/**
+ * One hit's damage, rounded, before a ward: `swing` is where it falls in the swing, 0 to 1, and
+ * `crit` whether it is critical. The fight passes its rolls; the reckoning passes the ends of the range.
+ */
+function blow(u: Unit, t: Unit, a: Ability, swing: number, crit: boolean, guarded = !!t.status.Guarded): number {
+  const magic = a.type === 'magic';
+  const power = u.atk(magic);
+  let dmg = Math.max(1, ((power * a.mult * power) / (power + t.def(magic))) * (1 - SWING + swing * 2 * SWING));
+  if (crit) dmg *= u.has('deadeye') && t.status.Marked ? EDGE.deadeye : CRIT.mult;
+  if (u.has('execute') && t.hp < t.maxHp * EDGE.execute.below) dmg *= EDGE.execute.mult;
+  if (u.has('exploit') && Object.keys(t.status).some((k) => STATUS[k] && !STATUS[k].good)) dmg *= EDGE.exploit;
+  if (t.has('stalwart') && t.hp > t.maxHp * EDGE.stalwart.above) dmg *= EDGE.stalwart.mult;
+  if (guarded) dmg *= GUARD;
+  return Math.round(dmg);
+}
+
+/** What one hit would do as things stand: the odds it lands and crits, as percentages, and its damage. */
+export interface Reckoning {
+  chance: number;
+  crit: number;
+  /** Damage at the bottom and the top of the swing, and the most a critical hit does. */
+  lo: number;
+  hi: number;
+  critHi: number;
+  /** Whether a hit that lands fells the target: every time, on a high roll or a critical hit, or never. */
+  kill: 'sure' | 'maybe' | null;
+}
+
+/**
+ * Reckon one hit of `a` from `u` on `t`, from the engine's own numbers and never a roll, so it shows
+ * what can happen and not what will. `guarded` sets whether the target takes it guarding; unset, it
+ * does if it is now. A curse, a support or a taunt does no damage, and reckons to null.
+ */
+export function reckon(u: Unit, t: Unit, a: Ability, guarded = !!t.status.Guarded): Reckoning | null {
+  if (a.mult === 0 || a.profile === 'support' || a.profile === 'taunt') return null;
+  const magic = a.type === 'magic';
+  const chance = Math.round(hitChance(u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0), t.eva()));
+  // Ambush makes the first hit of the fight critical, whatever the roll.
+  const sure = u.has('ambush') && !u.spent.has('ambush');
+  const crit = sure ? 100 : Math.round(Math.min(100, u.d.crit));
+  const ward = (n: number) => (magic && t.has('arcane') && !t.spent.has('ward') ? Math.max(1, Math.round(n / 2)) : n);
+  const lo = ward(blow(u, t, a, 0, sure, guarded));
+  const hi = ward(blow(u, t, a, 1, sure, guarded));
+  const critHi = ward(blow(u, t, a, 1, true, guarded));
+  // A unit that stands at 1 HP once is not felled by the hit that would have felled it.
+  const stands = t.has('survival') && !t.spent.has('stand');
+  const kill = stands ? null : lo >= t.hp ? 'sure' : (crit > 0 ? critHi : hi) >= t.hp ? 'maybe' : null;
+  return { chance, crit, lo, hi, critHi, kill };
+}
+
 function statusLands(src: Unit, t: Unit, st: string) {
   if (t.imm.includes(st)) return 0;
   let c = BASE_STATUS + src.d.statusChance - Math.round(t.d.resist / 5) - t.d.statusSave;
@@ -398,20 +448,14 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       log.push({ t: 'miss', a: u.uid, v: t.uid, ab: a.name });
       continue;
     }
-    const power = u.atk(magic);
-    let dmg = Math.max(1, ((power * a.mult * power) / (power + t.def(magic))) * (1 - SWING + r() * 2 * SWING));
+    const swing = r();
     let crit = r() * 100 < u.d.crit;
     if (u.has('ambush') && !u.spent.has('ambush')) {
       u.spent.add('ambush');
       if (!crit) log.push({ t: 'passive', u: u.uid, p: u.named('ambush'), k: 'ambush' });
       crit = true;
     }
-    if (crit) dmg *= u.has('deadeye') && t.status.Marked ? EDGE.deadeye : CRIT.mult;
-    if (u.has('execute') && t.hp < t.maxHp * EDGE.execute.below) dmg *= EDGE.execute.mult;
-    if (u.has('exploit') && Object.keys(t.status).some((k) => STATUS[k] && !STATUS[k].good)) dmg *= EDGE.exploit;
-    if (t.has('stalwart') && t.hp > t.maxHp * EDGE.stalwart.above) dmg *= EDGE.stalwart.mult;
-    if (t.status.Guarded) dmg *= GUARD;
-    dmg = Math.round(dmg);
+    let dmg = blow(u, t, a, swing, crit);
     if (crit && u.has('flurry')) quick = true;
     if (magic && t.has('arcane') && !t.spent.has('ward')) {
       t.spent.add('ward');
@@ -515,12 +559,33 @@ function openSide(side: Unit[], log: Ev[]) {
 
 export interface FightResult { won: boolean; rounds: number; log: Ev[] }
 
+/** A foe's next action as the hunter's turn sees it: what it is, when it comes, and what it would do. */
+export interface Threat {
+  uid: string;
+  ab: string;
+  at?: string;
+  /** Its place among the foes' next actions, from 1. */
+  order: number;
+  /** It comes before the hunter's next turn: the rest of this round, or the next round ahead of the hunter. */
+  soon: boolean;
+  /** How many times the foe acts each round. Only the next is shown. */
+  times: number;
+  /** One hit on the unit aimed at, as things stand. Null for a move that does no damage, or no target. */
+  hit: Reckoning | null;
+  /** Aimed at the hunter: the same hit, taken guarding. */
+  guarded: Reckoning | null;
+}
+
 /** The hunter's turn, as `battle` hands it out: what they can use, and who is left to aim at. */
 export interface Turn {
   uid: string;
   skills: { ability: Ability; cd: number }[];
   foes: string[];
   potions: number;
+  /** Every foe's next action, in the order they come. */
+  threats: Threat[];
+  /** One hit of each action that does damage, by its name, on each foe left, by uid. */
+  aims: Record<string, Record<string, Reckoning>>;
 }
 
 export interface BattleOpts {
@@ -553,7 +618,8 @@ export function* battle(
     round++;
     log.push({ t: 'round', n: round });
     const order = [...party, ...foes].sort((a, b) => b.ini() - a.ini());
-    for (const u of order) {
+    for (let i = 0; i < order.length; i++) {
+      const u = order[i];
       if (!u.alive()) continue;
       const enemy = u.side === 'p' ? foes : party;
       const own = u.side === 'p' ? party : foes;
@@ -561,7 +627,7 @@ export function* battle(
       for (let k = 0; k < reps && any(enemy); k++) {
         // A stunned hunter has no turn to give, so nothing waits for one.
         const wait = u.uid === opts.hero && !u.status.Stunned;
-        const o = wait ? (yield turnOf(u, enemy, ctx.potions)) ?? null : null;
+        const o = wait ? (yield turnOf(u, enemy, own, ctx.potions, order.slice(i + 1), actions)) ?? null : null;
         act(u, enemy, own, r, log, onKill, o, ctx);
         // A foe settles its next action at once. If that action is next round, a cooldown tick comes first.
         if (u.side === 'e' && u.alive() && any(enemy)) foresee(u, enemy, r, log, k < reps - 1 ? 0 : 1);
@@ -575,9 +641,38 @@ export function* battle(
   return { won: any(party) && !any(foes), rounds: round, log };
 }
 
-function turnOf(u: Unit, foes: Unit[], potions: number): Turn {
+/**
+ * The turn handed to the hunter `u`. `after` is everyone still to act this round, `actions` how often
+ * each foe acts in a round. Reads the units and never a roll, so asking for it changes nothing.
+ */
+function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit[] = [], actions = 1): Turn {
   const skills = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a).map((a) => ({ ability: a, cd: u.cd[a.name] ?? 0 }));
-  return { uid: u.uid, skills, foes: foes.filter((f) => f.alive()).map((f) => f.uid), potions };
+  const live = foes.filter((f) => f.alive());
+  // The foes' next actions in the order they come: the rest of this round as it was drawn up, then the
+  // next round's, by initiative as it stands now. Those ahead of the hunter in it come before their next turn.
+  const now = after.filter((x) => x.side !== u.side && x.alive());
+  const next = [...own, ...live].filter((x) => x.alive()).sort((a, b) => b.ini() - a.ini());
+  const mine = next.indexOf(u);
+  const seq = [...now, ...next.filter((x) => x.side !== u.side && !now.includes(x))];
+  const threats = seq.filter((f) => f.intent).map((f, k): Threat => {
+    const { ab, at } = f.intent!;
+    const a = intended(f);
+    const t = at ? own.find((p) => p.uid === at && p.alive()) : undefined;
+    // The hunter's own Guard comes down as their turn starts, so a hit on them is reckoned unguarded, then guarded.
+    const hit = a && t ? reckon(f, t, a, t === u ? false : undefined) : null;
+    return {
+      uid: f.uid, ab, at, order: k + 1, soon: now.includes(f) || next.indexOf(f) < mine, times: actions, hit,
+      guarded: a && t === u ? reckon(f, t, a, true) : null,
+    };
+  });
+  const aims: Turn['aims'] = {};
+  for (const a of [STRIKE, ...skills.map((k) => k.ability)]) {
+    for (const f of live) {
+      const r = reckon(u, f, a);
+      if (r) (aims[a.name] ??= {})[f.uid] = r;
+    }
+  }
+  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, threats, aims };
 }
 
 /** Fight to the end with nobody waiting: the auto policy plays every side. */

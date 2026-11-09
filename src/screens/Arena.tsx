@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
-import type { Ev, Turn } from '@/core/combat';
+import type { Ev, Reckoning, Threat, Turn } from '@/core/combat';
 import { ability, POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
@@ -78,15 +78,23 @@ function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { n
  * The hunter's actions on their turn. A tap on an action uses it; its `?` opens what it does in full
  * above the bar, without using it, and a pointer resting on it does the same.
  */
-function Acts({ turn, canDrink, give }: { turn: Turn; canDrink: boolean; give: (use: string) => void }) {
+function Acts({ turn, canDrink, give, aim }: { turn: Turn; canDrink: boolean; give: (use: string) => void; aim: string | null }) {
   const s = useSave();
   const [pinned, setPinned] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
   const shown = over ?? pinned;
-  const acts: { use: string; label: string; sub: string; cls?: string; off?: boolean }[] = [
-    ...turn.skills.map((k) => ({ use: k.ability.name, label: k.ability.name, sub: k.cd > 0 ? `ready in ${k.cd}` : REACH_TEXT[k.ability.profile] ?? 'one target', off: k.cd > 0 })),
-    { use: 'Strike', label: 'Strike', sub: REACH_TEXT.single },
-    { use: 'Guard', label: 'Guard', sub: `Damage taken -${(1 - GUARD) * 100}%`, cls: 'act--guard' },
+  // One hit of an action on the foe aimed at, as the turn reckons it.
+  const on = (use: string): Reckoning | undefined => (aim ? turn.aims[use]?.[aim] : undefined);
+  const hitSub = (use: string, fallback: string) => { const r = on(use); return r ? `Damage ${r.lo}-${r.hi} · Hit ${r.chance}%` : fallback; };
+  // What comes at the hunter before their next turn, and what a Guard makes of it.
+  const coming = turn.threats.filter((x) => x.soon && x.at === turn.uid && x.hit && x.guarded);
+  const sum = (k: 'hit' | 'guarded', end: 'lo' | 'hi') => coming.reduce((n, x) => n + (x[k]?.[end] ?? 0), 0);
+  const inc = coming.length ? [sum('hit', 'lo'), sum('hit', 'hi'), sum('guarded', 'lo'), sum('guarded', 'hi')] : null;
+  const guardSub = inc ? `Incoming ${inc[0]}-${inc[1]} → ${inc[2]}-${inc[3]}` : `Damage taken -${(1 - GUARD) * 100}%`;
+  const acts: { use: string; label: string; sub: string; cls?: string; off?: boolean; kill?: Reckoning['kill']; hit?: Reckoning; inc?: number[] | null }[] = [
+    ...turn.skills.map((k) => ({ use: k.ability.name, label: k.ability.name, sub: k.cd > 0 ? `ready in ${k.cd}` : hitSub(k.ability.name, REACH_TEXT[k.ability.profile] ?? 'one target'), off: k.cd > 0, kill: k.cd > 0 ? null : on(k.ability.name)?.kill, hit: k.cd > 0 ? undefined : on(k.ability.name) })),
+    { use: 'Strike', label: 'Strike', sub: hitSub('Strike', REACH_TEXT.single), kill: on('Strike')?.kill, hit: on('Strike') },
+    { use: 'Guard', label: 'Guard', sub: guardSub, cls: 'act--guard', inc },
     { use: 'Potion', label: `Potion · ${turn.potions}`, sub: `HP +${POTION_HEAL * 100}%`, cls: 'act--potion', off: !canDrink },
   ];
   const info = shown ? actLines(s, shown, turn) : null;
@@ -102,10 +110,11 @@ function Acts({ turn, canDrink, give }: { turn: Turn; canDrink: boolean; give: (
         {acts.map((a) => (
           <div class={`actcell ${shown === a.use ? 'is-shown' : ''}`} key={a.use}>
             <button type="button" class={`act ${a.cls ?? ''}`} disabled={a.off}
+              aria-label={a.hit ? `${a.label}. Damage ${a.hit.lo} to ${a.hit.hi}, hit chance ${a.hit.chance}%${a.kill ? `, ${a.kill === 'sure' ? 'fells it' : 'may fell it'}` : ''}` : a.inc ? `${a.label}. Incoming ${a.inc[0]} to ${a.inc[1]}, guarded ${a.inc[2]} to ${a.inc[3]}` : undefined}
               onPointerEnter={(e) => { if (e.pointerType === 'mouse') setOver(a.use); }}
               onPointerLeave={(e) => { if (e.pointerType === 'mouse') setOver((x) => (x === a.use ? null : x)); }}
               onClick={() => { setPinned(null); setOver(null); give(a.use); }}>
-              <b>{a.label}</b><small>{a.sub}</small>
+              <b>{a.label}</b><small>{a.sub}</small>{a.kill && <i class={`act__kill ${a.kill === 'sure' ? 'is-sure' : ''}`}>{a.kill === 'sure' ? 'Fells it' : 'May fell it'}</i>}
             </button>
             <button type="button" class="act__info" aria-label={`What ${a.label} does`} aria-expanded={pinned === a.use}
               onClick={() => { sfx.tap(); setPinned((x) => (x === a.use ? null : a.use)); }}>?</button>
@@ -482,7 +491,7 @@ export function Arena() {
             </div>
             <div class="arena__side arena__side--foes">
               {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-                intent={u.hp > 0 ? u.intent : undefined} party={party} />)}
+                intent={u.hp > 0 ? u.intent : undefined} party={party} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} />)}
             </div>
           </div>
           <ol class="arena__feed" aria-live="polite">
@@ -494,7 +503,7 @@ export function Arena() {
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
             <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</small>
-            <Acts turn={turn} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} give={(use) => give({ use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
+            <Acts turn={turn} aim={aim} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} give={(use) => give({ use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
           </div>
         )}
         {phase !== 'decide' && (
@@ -643,20 +652,42 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
   );
 }
 
-/** A foe's next move, as its chip shows it: the ability, who it goes at, and how many more it reaches. */
-function Intent({ intent, party }: { intent: { ab: string; at?: string }; party: UnitView[] }) {
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+
+/**
+ * A foe's next move, as its chip shows it: the ability, who it goes at, and how many more it reaches.
+ * On the hunter's turn it also shows where the move comes in the foes' order, what one hit would do
+ * to its target as things stand, whether that fells it, and what else it inflicts.
+ */
+function Intent({ intent, party, threat }: { intent: { ab: string; at?: string }; party: UnitView[]; threat?: Threat }) {
   const a = ability(intent.ab);
   const live = party.filter((p) => p.hp > 0).length;
   const at = intent.at ? party.find((p) => p.uid === intent.at) : undefined;
   const more = a ? Math.min(reachOf(a.profile), live) - 1 : 0;
   const who = a?.profile === 'support' ? 'rallies its side' : a?.profile === 'all' ? 'everyone' : `${at ? (at.tag === 'hero' ? 'you' : at.name) : '?'}${more > 0 ? ` +${more}` : ''}`;
-  const tip = a ? `${a.type === 'magic' ? 'Magic' : 'Physical'} · ×${a.mult} · ${REACH_TEXT[a.profile] ?? 'one target'}${a.inflicts.length ? ` · ${a.inflicts.join(', ')}` : ''}` : intent.ab;
-  return <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''}`} title={tip}>⟶ {intent.ab} · {who}</div>;
+  const hit = threat?.hit;
+  const when = threat ? (threat.soon ? `Acts ${ordinal(threat.order)}` : `Acts ${ordinal(threat.order)}, after your next turn`) : '';
+  return (
+    <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''} ${hit?.kill ? 'is-lethal' : ''}`}>
+      <div class="intent__move">
+        {threat && <span class={`intent__order num ${threat.soon ? '' : 'is-later'}`} role="img" aria-label={when}>{threat.order}</span>}
+        <span class="intent__what">⟶ {intent.ab} · {who}</span>
+      </div>
+      {hit && <div class="intent__hit" role="img" aria-label={`Damage ${hit.lo} to ${hit.hi}, hit chance ${hit.chance}%`}>Damage {hit.lo}-{hit.hi} · Hit {hit.chance}%</div>}
+      {threat && (hit?.kill || threat.times > 1 || (a?.inflicts.length ?? 0) > 0) && (
+        <div class="intent__more">
+          {hit?.kill && <span class="intent__kill">{hit.kill === 'sure' ? 'Lethal' : 'May be lethal'}</span>}
+          {threat.times > 1 && <span class="intent__times">Acts {threat.times} times each round</span>}
+          {a?.inflicts.filter((st) => STATUS[st]).map((st) => <span key={st} class="tag">{st}</span>)}
+        </div>
+      )}
+    </div>
+  );
 }
 
-function UnitChip({ u, acting, aimed, onPick, intent, party, incoming }: {
+function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat }: {
   u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
-  intent?: { ab: string; at?: string }; party?: UnitView[]; incoming?: number;
+  intent?: { ab: string; at?: string }; party?: UnitView[]; incoming?: number; threat?: Threat;
 }) {
   const pct = (u.hp / Math.max(1, u.mx)) * 100;
   const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''}`;
@@ -665,7 +696,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, party, incoming }: {
       <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{incoming && u.hp > 0 ? <span class="unit__incoming" title={`${incoming} foe${incoming === 1 ? ' is' : 's are'} coming for ${u.tag === 'hero' ? 'you' : u.name} next`}>◀{incoming}</span> : null}{Math.max(0, u.hp)}</span></div>
       <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />
       {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''}`} title={STATUS_TEXT[st]}>{st}</span>)}</div>}
-      {intent && party && <Intent intent={intent} party={party} />}
+      {intent && party && <Intent intent={intent} party={party} threat={threat} />}
     </>
   );
   return onPick

@@ -22,6 +22,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   two commits). Give the user that report every time you recalibrate, and put its summary in the commit
   message and the PR: which tunings moved, by how much, harder or easier, and which stayed put. Never
   just say "recalibrated".
+- `npm run mapstats` — what the map generator draws, every Gate of each grade over a run of days: the
+  shape of the plans, what the road and the side rooms hold, and what a side fight costs. Run it after a
+  change to how a map is drawn or what waits in its rooms, and say what moved.
 - `npm run campaign` — plays two hunters from Level 1 for 120 days through the real engine. Run it
   after a change to what anything pays or costs. It reads the brief before every run, so it takes a few
   minutes.

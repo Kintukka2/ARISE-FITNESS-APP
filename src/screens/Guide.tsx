@@ -113,6 +113,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Every foe shows its next move and its target. It does exactly that, unless its target falls first or it is stunned.',
       'A taunt turns every foe’s next move on you, and the move shows the change before it is made.',
       'Your own card counts the foes coming for you.',
+      'On your turn each foe also shows where its move comes in their order, its damage and its chance to hit, as things stand. A dashed number comes after your next turn.',
+      'Your skills and Strike show their damage and chance to hit on the foe you aimed at, and Guard shows what is coming at you before your next turn, and the same guarded.',
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
       `Health Potion: restores ${POTION_HEAL * 100}% of your health. The satchel holds ${SATCHEL}, and the Association can add room.`,
       `Standing orders, set on the Shadows screen, steer your Shadows and your own turns on Auto: ${TACTICS.map((x) => x.name).join(', ')}.`,
