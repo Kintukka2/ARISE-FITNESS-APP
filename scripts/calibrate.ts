@@ -6,7 +6,7 @@
  *
  *   npm run calibrate
  */
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { ALL_DUNGEONS, HOLLOW_THRONE } from '@/core/gates';
 import { rankFor } from '@/core/progression';
 import { project } from '@/core/raid';
@@ -20,6 +20,10 @@ import { RANKS } from '@/core/types';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
 import type { Dungeon, Rank } from '@/core/types';
 import { keptUpHunter, LEVELS, typicalHunter } from './hunters';
+import { describeTune, parseTune, TUNE_FILE } from './tune';
+
+// What the tunings were before this run, so it can end by saying exactly what it changed.
+const before = parseTune(readFileSync(TUNE_FILE, 'utf8'));
 
 const TARGET = 0.75;
 const HUNTERS = 12;
@@ -149,7 +153,7 @@ for (let L = 0; L < ASCENSION_RULED; L++) {
 }
 
 const body = Object.entries(out).map(([k, v]) => `  '${k}': ${v},`).join('\n');
-writeFileSync('src/data/gatetune.ts',
+writeFileSync(TUNE_FILE,
   `// Per-gate difficulty multipliers on enemy health and attack, written by \`npm run calibrate\`.\n// Each is set so a hunter in the middle of the gate's grade clears it about three times in four.\nexport const GATE_TUNE: Record<string, number> = {\n${body}\n};\n`
   + `// The Spire, written by the same run. A block takes the shape of one gate a week: BLOCK_TUNE sets each gate's\n// creatures so a block of them at the middle of their grade is cleared about as often, and SPIRE_TUNE then\n// sets block b so a hunter of the level of its middle floor does.\n`
   + `export const BLOCK_TUNE: Record<string, number> = {\n${Object.entries(BLOCK_TUNE).map(([k, v]) => `  '${k}': ${v},`).join('\n')}\n};\n`
@@ -158,3 +162,5 @@ writeFileSync('src/data/gatetune.ts',
   + `export const ASCENSION_TUNE: number[] = [${ASCENSION_TUNE.join(', ')}];\n`
   + `// The Trial at each level from 0 up: tuned so a hunter who keeps up wins it about half the time.\n`
   + `export const TRIAL_TUNE: number[] = [${TRIAL_TUNE.join(', ')}];\n`);
+
+console.log('\n' + describeTune(before, parseTune(readFileSync(TUNE_FILE, 'utf8')), 'before', 'after'));
