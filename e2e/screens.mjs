@@ -311,17 +311,20 @@ try {
     if (!(await page.locator('.bagwheel').isVisible())) throw new Error('THE BAG DID NOT OPEN ITS WHEEL');
     if ((await page.locator('.bagwheel__slot').count()) !== 6) throw new Error('THE WHEEL DOES NOT HAVE SIX SLOTS');
     await snap('arena-items');
-    // A field potion, drunk between rooms, if the fight left the hunter hurt.
-    await slot('Field Potion').click(); await sleep(300);
-    if (!(await page.locator('.bagwheel__hub .bagwheel__name', { hasText: 'Field Potion' }).count())) throw new Error('A TAPPED SLOT DID NOT SHOW ITS ITEM');
-    await snap('arena-items-field');
+    // A Health Potion, drunk between rooms, if the fight left the hunter hurt.
+    await slot('Health Potion').click(); await sleep(300);
+    if (!(await page.locator('.bagwheel__hub .bagwheel__name', { hasText: 'Health Potion' }).count())) throw new Error('A TAPPED SLOT DID NOT SHOW ITS ITEM');
+    await snap('arena-items-health');
     if (await useBtn.count()) {
       await useBtn.click(); await sleep(600);
       if (await page.locator('.bagwheel').count()) throw new Error('USE DID NOT CLOSE THE WHEEL');
-      if (!(await page.locator('.feed', { hasText: 'You drink a field potion.' }).count())) throw new Error('A FIELD POTION DRUNK ON THE MAP SAID NOTHING');
+      if (!(await page.locator('.feed', { hasText: 'You drink a Health Potion.' }).count())) throw new Error('A HEALTH POTION DRUNK ON THE MAP SAID NOTHING');
       await snap('arena-map-drunk');
       await bag.click(); await sleep(500);
     }
+    // The Mana Potion has its own slot, beside the Health Potion's.
+    if (!(await slot('Mana Potion').count())) throw new Error('THE WHEEL HAS NO MANA POTION');
+    await slot('Mana Potion').click(); await sleep(300); await snap('arena-items-mana');
     // Nothing is used on one tap: the Gate Survey's slot only shows it, and Use charts the map.
     await slot('Gate Survey').click(); await sleep(300);
     if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('TAPPING A SLOT USED ITS ITEM');
@@ -355,7 +358,7 @@ try {
     await page.locator('text=Enter The Gate').click(); await sleep(600); await drain();
     await page.waitForSelector('.arena', { timeout: 10000 });
     await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
-    // Up a tower too, the bag sits at the map's corner: a field potion is drunk between floors.
+    // Up a tower too, the bag sits at the map's corner: a Health Potion is drunk between floors.
     if (!(await page.locator('.arena__map .dmap__corner .bagmark').count())) throw new Error('A TOWER HAS NO BAG');
     await sleep(300); await snap('spire-map');
     await page.locator('button.gnode.is-next').first().click();

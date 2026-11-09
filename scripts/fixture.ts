@@ -89,13 +89,12 @@ going.got = Math.floor(going.need / 2);
 // A few weeks on the Spire, and this week's climb under way. Last week's pay has been told.
 const lastWeek = seasonOf(addDays(today, -7));
 s.spire = { season: seasonOf(today), best: 25, top: 40, seasons: 3, last: { season: lastWeek, best: 40, tier: 'B-Rank', shards: 168, item: null } };
-// Ryn's sixth job in hand, half done; two Health Potions and a Gate Survey from the ones before.
+// Ryn's sixth job in hand, half done.
 s.assoc = { n: 5, quest: null, reported: 5 };
 association.issue(s);
 s.assoc.quest!.got = Math.floor(s.assoc.quest!.need / 2);
-s.stock = { hp: 2, survey: 1 };
-// Two field potions in the satchel, for the bag's wheel inside a Gate.
-s.satchel = 2;
+// Two Health Potions in the satchel, a Mana Potion and a Gate Survey, for the bag's wheel inside a Gate.
+s.stock = { hp: 2, mp: 1, survey: 1 };
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);

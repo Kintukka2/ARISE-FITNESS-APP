@@ -14,7 +14,7 @@ export const skips = (key: string) => store.get().settings.skipAsk?.includes(key
 /** What a key is, for the list in Settings. */
 export function askName(key: string): string {
   const [act, what] = key.split(':');
-  const name = POTIONS.find((p) => p.id === what)?.name ?? (what === 'field' ? 'Field Potion' : what === 'shelf' ? 'Gear on the shelf' : what === 'survey' ? 'Gate Survey' : what);
+  const name = POTIONS.find((p) => p.id === what)?.name ?? (what === 'shelf' ? 'Gear on the shelf' : what === 'survey' ? 'Gate Survey' : what);
   return `${act === 'drink' ? 'Drinking' : act === 'use' ? 'Using' : 'Buying'}: ${name}`;
 }
 

@@ -87,21 +87,22 @@ function Exchange() {
     if (v) openBlueprint(o.defId);
     void checkAwards();
   };
-  const buyField = async () => {
-    const f = shop.FIELD_POTION;
-    if (store.get().wallet.shards < f.price) return void short(f.price);
-    const want = await ask('buy:field', system.offer([
+  /** A Health or Mana Potion, bought to carry: a Health Potion into the satchel. */
+  const buyCarried = async (id: shop.PotionId) => {
+    const p = shop.POTIONS.find((x) => x.id === id)!;
+    if (store.get().wallet.shards < p.price) return void short(p.price);
+    const want = await ask(`buy:${id}`, system.offer([
       'Would you like to purchase?',
-      system.tag('Field Potion', 'Item'),
-      system.gain(`HP +${f.heal * 100}%`),
-      'Used on your turn in a Gate.',
-      `Price: ${group(f.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      system.tag(p.name, 'Item'),
+      system.gain(p.effect),
+      `Price: ${group(p.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
-    if (!store.update(shop.buyField)) return void short(f.price);
+    if (!store.update((x) => shop.buyCarried(x, id))) return void short(p.price);
     sfx.success();
     buzz([14, 30, 22]);
-    toast(`Field Potion · Satchel ${store.get().satchel}/${shop.satchelMax(store.get())}`, 'xp');
+    const x = store.get();
+    toast(id === 'hp' ? `${p.name} · Satchel ${shop.held(x, 'hp')}/${shop.satchelMax(x)}` : `${p.name} · Held: ${shop.held(x, id)}`, 'xp');
   };
   const buySurvey = async () => {
     if (store.get().wallet.shards < SURVEY.price) return void short(SURVEY.price);
@@ -140,15 +141,14 @@ function Exchange() {
 
       <Section title="Potions" right="Always in stock">
         <div class="shoplist">
-          <ShopRow icon={<span class="potion potion--field"><Glyph name="potion" /></span>} name="Field Potion"
-            gives={`HP +${shop.FIELD_POTION.heal * 100}%`}
-            note={`Carried into a Gate, used on your turn. Satchel: ${s.satchel}/${shop.satchelMax(s)}`}
-            price={shop.FIELD_POTION.price} off={s.satchel >= shop.satchelMax(s) ? 'Satchel full' : null} onBuy={buyField} />
-          {shop.POTIONS.map((p) => (
-            <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
+          {shop.POTIONS.map((p) => shop.CARRIED.includes(p.id)
+            // Carried: bought to drink later, in a fight, in a Gate or out of one.
+            ? <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
+              gives={p.effect} note={p.id === 'hp' ? `Carried in your satchel. Satchel: ${shop.held(s, 'hp')}/${shop.satchelMax(s)}` : `Carried. Held: ${shop.held(s, p.id)}`}
+              price={p.price} off={p.id === 'hp' && shop.satchelRoom(s) <= 0 ? 'Satchel full' : null} onBuy={() => void buyCarried(p.id)} />
+            : <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
               gives={p.effect} note={p.desc} price={p.price} off={shop.potionIdle(s, p.id)}
-              onBuy={() => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); }} />
-          ))}
+              onBuy={() => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); }} />)}
         </div>
       </Section>
 

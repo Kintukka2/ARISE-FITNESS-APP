@@ -54,9 +54,8 @@ export function rewardText(w: AssocReward | null): string | null {
   if (!w) return null;
   const times = w.n > 1 ? ` ×${w.n}` : '';
   if (w.kind === 'potion') return `${POTIONS.find((p) => p.id === w.id)?.name ?? 'Potion'}${times}`;
-  if (w.kind === 'field') return `Field Potion${times}`;
   if (w.kind === 'survey') return `${SURVEY.name}${times}`;
-  if (w.kind === 'satchel') return 'Satchel: room for one more Field Potion';
+  if (w.kind === 'satchel') return 'Satchel: room for one more Health Potion';
   if (w.kind === 'blueprint') return 'Blueprint';
   if (w.kind === 'alloy') return `Alloy${times}`;
   return `Mana Shards: ${w.n === 1 ? 'a clear’s worth' : `${w.n} clears’ worth`}`;
@@ -170,7 +169,7 @@ export async function reportAssoc() {
     : w ? ASSOC_PAID.paid[paid.quest.n % ASSOC_PAID.paid.length] : ASSOC_PAID.bare[paid.quest.n % ASSOC_PAID.bare.length];
   const got = [
     `XP +${paid.quest.xp}`,
-    ...(w?.kind === 'field' ? [paid.field ? `Field Potion ×${paid.field}` : null, paid.shards ? `Mana Shards +${paid.shards} (the satchel was full)` : null]
+    ...(w?.kind === 'potion' && paid.shards ? [paid.kept ? rewardText({ ...w, n: paid.kept }) : null, `Mana Shards +${paid.shards} (the satchel was full)`]
       : w?.kind === 'shards' ? [`Mana Shards +${paid.shards}`]
       : w?.kind === 'blueprint' || w?.kind === 'alloy' ? [paid.blueprint ? `Blueprint: ${gearDef(paid.blueprint)?.name}` : null, Object.keys(paid.mats).length ? bundleText(paid.mats) : null]
       : [rewardText(w)]),

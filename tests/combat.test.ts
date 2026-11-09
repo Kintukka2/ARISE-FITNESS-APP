@@ -3,7 +3,7 @@ import { defaults } from '@/core/save';
 import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
-import { battle, fight, FIELD_POTION_HEAL, GUARD, Unit } from '@/core/combat';
+import { battle, fight, POTION_HEAL, GUARD, Unit } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
 import { SKILL_SLOTS } from '@/data/tree';
@@ -146,20 +146,29 @@ describe('turn by turn', () => {
     held.forEach((dmg, i) => expect(Math.abs(dmg - open[i] * GUARD)).toBeLessThanOrEqual(1));
   });
 
-  it('a field potion is bought into the satchel, paid for when ordered, and heals', () => {
+  it('a Health Potion is bought into the satchel, paid for when ordered, and heals', () => {
     const s = hunter(20);
     s.wallet.shards = 1000;
-    for (let i = 0; i < shop.FIELD_POTION.max + 1; i++) shop.buyField(s);
-    expect(s.satchel).toBe(shop.FIELD_POTION.max);
-    expect(s.wallet.shards).toBe(1000 - shop.FIELD_POTION.max * shop.FIELD_POTION.price);
+    const price = shop.POTIONS.find((p) => p.id === 'hp')!.price;
+    for (let i = 0; i < shop.SATCHEL + 1; i++) shop.buyCarried(s, 'hp');
+    expect(shop.held(s, 'hp')).toBe(shop.SATCHEL);
+    expect(s.wallet.shards).toBe(1000 - shop.SATCHEL * price);
     s.vitals = { hp: 40, mp: 60, fatigue: 0, at: now, lockedUntil: null };
     atBoss(s, 'DNG-015');
     let drank = false;
     const ch = fightOut(s, () => (drank ? null : (drank = true, { use: 'Potion' })));
-    expect(s.satchel).toBe(shop.FIELD_POTION.max - 1);
+    expect(shop.held(s, 'hp')).toBe(shop.SATCHEL - 1);
     const heal = ch.log.find((e) => e.t === 'heal');
     expect(heal && 'amt' in heal && heal.amt).toBeGreaterThan(0);
-    expect(heal && 'amt' in heal && heal.amt).toBeLessThanOrEqual(Math.round(ch.roster[0].mx * FIELD_POTION_HEAL) + 1);
+    expect(heal && 'amt' in heal && heal.amt).toBeLessThanOrEqual(Math.round(ch.roster[0].mx * POTION_HEAL) + 1);
+  });
+
+  it('a Mana Potion is bought to carry, with no satchel to fill', () => {
+    const s = hunter(20);
+    s.wallet.shards = 1000;
+    for (let i = 0; i < shop.SATCHEL + 2; i++) expect(shop.buyCarried(s, 'mp')).toBe(true);
+    expect(shop.held(s, 'mp')).toBe(shop.SATCHEL + 2);
+    expect(shop.buyCarried(s, 'fatigue')).toBe(false);
   });
 
   it('a potion the satchel cannot pay for is recorded as the System’s choice', () => {
@@ -167,17 +176,17 @@ describe('turn by turn', () => {
     const run = raid.begin(s, dungeonById('DNG-015')!, now);
     expect(raid.order(s, run, { use: 'Potion' })).toBeNull();
     expect(run.orders).toEqual([null]);
-    expect(s.satchel).toBe(0);
+    expect(shop.held(s, 'hp')).toBe(0);
   });
 
   it('a resumed chamber still has the potions its satchel paid for', () => {
     const s = hunter(20);
-    s.satchel = 1;
+    shop.stockUp(s, 'hp');
     const d = dungeonById('DNG-015')!;
     enter(s, d.id);
     const { ch } = raid.resume(s, d, s.gates.raid!, now);
     ch.play(raid.order(s, s.gates.raid!, { use: 'Potion' }));
-    expect(s.satchel).toBe(0);
+    expect(shop.held(s, 'hp')).toBe(0);
     const back = raid.resume(s, d, s.gates.raid!, now).ch;
     expect(back.log.filter((e) => e.t === 'heal')).toHaveLength(1);
   });

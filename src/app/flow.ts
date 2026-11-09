@@ -32,7 +32,6 @@ import { isPractice } from '@/core/gates';
 import * as raid from '@/core/raid';
 import type { Dungeon, Save } from '@/core/types';
 import type { BagItem } from '@/ui/items';
-import { FIELD_POTION_HEAL } from '@/core/combat';
 import { buzz, flash } from '@/ui/feedback';
 import { drinkFlow } from '@/screens/Inventory';
 
@@ -326,20 +325,43 @@ export function surveyNow(d: Dungeon): boolean {
   return true;
 }
 
+/** Drink a potion held, from the bag, outside a fight: a Health Potion here heals the hunter's own health, a Mana Potion their mana. The wheel has asked already. */
+export function drinkHeld(id: 'hp' | 'mp'): boolean {
+  const p = shop.POTIONS.find((x) => x.id === id)!;
+  if (shop.held(store.get(), id) <= 0) return false;
+  const moved = store.update((x) => shop.drink(x, id));
+  if (moved == null) return false;
+  sfx.success();
+  toast(`${p.name} · ${id.toUpperCase()} +${moved}`, 'xp');
+  return true;
+}
+
 /**
- * What the bag holds for a Gate, a slot to each kind, the same slot every time: the Field Potion,
- * drunk between steps inside the Gate (`drink`, the arena's; on the brief there is none), and the
- * Gate Survey. Each says why it cannot be used, where it cannot.
+ * What the bag holds for a Gate, a slot to each kind, the same slot every time: the Health Potion
+ * (inside the Gate drunk between steps by `drink`, the arena's; on the brief, for the hunter's own
+ * health), the Mana Potion and the Gate Survey. Each says why it cannot be used, where it cannot.
  */
 export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
   const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const hp = shop.held(s, 'hp');
+  const mp = shop.held(s, 'mp');
   const charts = shop.held(s, 'survey');
+  const health = shop.POTIONS.find((x) => x.id === 'hp')!;
+  const mana = shop.POTIONS.find((x) => x.id === 'mp')!;
+  // Inside the Gate it is the run's health a Health Potion restores; on the brief, the hunter's own.
+  const hpOff = hp <= 0 ? 'None held'
+    : run ? (drink ? raid.drinkIdle(s, d, run) ?? undefined : 'Not now')
+    : shop.potionIdle(s, 'hp') ? 'HP full' : undefined;
   return [
     {
-      id: 'field', name: 'Field Potion', glyph: 'potion', count: s.satchel, held: `${s.satchel}/${shop.satchelMax(s)}`,
-      effect: `HP +${FIELD_POTION_HEAL * 100}%`,
-      off: !drink || !run ? 'Drunk inside a Gate' : raid.fieldIdle(s, d, run) ?? undefined,
-      use: () => drink?.(),
+      id: 'hp', name: health.name, glyph: 'potion', tone: 'potion--hp', count: hp, held: `${hp}/${shop.satchelMax(s)}`,
+      effect: health.effect, off: hpOff,
+      use: () => (run ? drink?.() : void drinkHeld('hp')),
+    },
+    {
+      id: 'mp', name: mana.name, glyph: 'potion', tone: 'potion--mp', count: mp, held: `${mp}`,
+      effect: mana.effect, off: mp <= 0 ? 'None held' : shop.potionIdle(s, 'mp') ? 'MP full' : undefined,
+      use: () => void drinkHeld('mp'),
     },
     {
       id: 'survey', name: SURVEY.name, glyph: 'survey', count: charts, held: `${charts}`,

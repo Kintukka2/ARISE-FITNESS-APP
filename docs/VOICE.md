@@ -69,7 +69,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | A Chosen felled, on the results: `You have defeated [The Pale Duelist].` over what it left and `[The Pale Duelist] will return to the Gates.`; a masterwork's alert opens its card. A level proved: `ACCESS GRANTED: ASCENSION 4` over its name, the upgrade limit and `Marks +1` | The System, as alerts: every report on the results is one, never a window | `screens/Arena.tsx` |
 | The run strip on the map: `You` and the health bar, then three cells, `Allies 2/2`, `Banked` and the shards, `Items found 0`; each blessing taken as a chip, its star mark, its name (`Blessing of Haste`) and what it gives | The interface, labels as the Status sheet's are; the chip in advancement's gold | `RunStrip` in `screens/Arena.tsx` |
 | The Gate's plan in the arena, a floor at a time: `Floor 2/3` over it in a deeper Gate; each room a tile with its glyph and its name (`Fight`, `Event`, `Stairs Down`, `Stairs Up`, `Sealed` for the vault, `Used` for a rest used), or, in the fog, a faint `?` and `Unseen` with nothing else; a cleared room `Cleared` under a check mark, in place of its own mark and name (a rest, the stairs and the entrance keep theirs, for coming back to); the stairs in the fog until seen, as any room; `You` over the room the hunter stands in; under the plan, **Rest** with `Party HP +30% · Debuffs cleared · Once` at a rest found and not used, **Withdraw** at the entrance, or the hint `Tap a room that glows, or a cleared room to walk back to it.`; at the plan's top right, the bag with the count held, up a tower too; the head's `Cleared 3/11`. Down the stairs, the feed: `Floor 2 of 3.` A survey used: the toast `Gate Survey · Thornburrow Warren charted.` A withdrawal's results: `Withdrawn with 4 of 11 rooms cleared. The Gate is still open.` | The interface | `ui/map.tsx`, `screens/Arena.tsx` |
-| The items' wheel, from the bag: six slots round a hub, a slot to each item, always the same one, the rest empty; a slot shows its item's glyph over the count held (`2/3` for the Field Potion's satchel, `1`); the hub, `Items` over `Tap an item.`, or the item tapped: its name, what it does (`HP +30%`, `Charts every room`), `Held: 2/3`, then **Use**, or why it cannot be used now (`None held`, `HP full`, `Not now`, `Drunk inside a Gate`, `Nothing left to chart`); **Close** under the wheel. Tapping an item only shows it: Use is the asking. A field potion drunk from it: the feed `▸ You drink a field potion. HP +389.` | The interface | `ui/items.tsx`, `bagFor` in `app/flow.ts` |
+| The items' wheel, from the bag: six slots round a hub, a slot to each item, always the same one, the rest empty; the Health Potion first, the Mana Potion beside it, then the Gate Survey, each potion's glyph tinted as the Exchange tints it; a slot shows its item's glyph over the count held (`2/3` for the Health Potion's satchel, `1`); the hub, `Items` over `Tap an item.`, or the item tapped: its name, what it does (`HP +25%`, `MP +25%`, `Charts every room`), `Held: 2/3`, then **Use**, or why it cannot be used now (`None held`, `HP full`, `MP full`, `Not now`, `Nothing left to chart`); **Close** under the wheel. Tapping an item only shows it: Use is the asking. A Health Potion drunk from it in a Gate: the feed `▸ You drink a Health Potion. HP +324.`; on the brief, or a Mana Potion anywhere, the toast `Health Potion · HP +120`, `Mana Potion · MP +40` | The interface | `ui/items.tsx`, `bagFor` in `app/flow.ts` |
 | A rest found: `The air is still here. Nothing has come this way in a long time.`, `Rest: Party HP +30% · Debuffs cleared · Once`, **Later** and **Rest**. A vault opened: `The seal is broken. What the Gatekeeper kept is stacked inside.` In the feed, a passage opened: `A wall gives way. There is a passage behind it.`; a Gatekeeper down: `The seal on the door behind it breaks.` (`Somewhere in the Gate, a seal breaks.` on a plan from before the vault moved behind it); a rest used from the plan: `The party rests.` | The world: narration. The line of what a rest gives and the buttons are the interface's | `NodePanel` and the feed in `screens/Arena.tsx` |
 | A block of the Pale Spire taken, on its results: **Climb On · Floors 86-90** over **Leave The Gate**; the range is the next block's, as the Spire's head writes it | The interface | `Results` in `screens/Arena.tsx` |
 | Leaving with a Shadow still lingering: `A Shadow Lingers` | The interface, as the unrevealed loot's reminder is | `screens/Arena.tsx` |
@@ -679,11 +679,13 @@ Source: `Would you like to purchase?` / `[Knight Killer]`, the icon, a quantity,
 template: `Not enough Mana Shards. ({have}/{price})`. Prices and balances of 1,000 or more take
 their comma.
 
-Every purchase with Mana Shards asks first: blueprints, the Field Potion, potions and the Gate Survey
+Every purchase with Mana Shards asks first: blueprints, potions and the Gate Survey
 (`Every room of a Gate's map, through the fog.` under its tag). A blueprint
 names itself `[Item: Blueprint: {name}]` and its rarity and kind; bought, `You have acquired`
-`[Item: Blueprint: {name}].`, with `Open Blueprint`. A potion is drunk as
-it is bought, so its button names both acts: **Buy and Drink**. A Google Play purchase (shard packs,
+`[Item: Blueprint: {name}].`, with `Open Blueprint`. A Health or Mana Potion bought at the Exchange
+is carried, and its button is **Buy**: `Health Potion · Satchel 3/3`, `Mana Potion · Held: 2`. Any other
+potion, or a Health or Mana Potion bought from the HP or MP bar with none held, is drunk as it is
+bought, so its button names both acts: **Buy and Drink**. A Google Play purchase (shard packs,
 the Licence) uses Google Play's own confirmation, not this window. After a purchase the System
 reports it: `You have acquired` / `[Item: {name}].` / its stats in green.
 
@@ -902,7 +904,7 @@ out of the way. The art, the System and Valcorde carry the mood.
    opened on the board." No atmosphere, no commentary.
 2. **An empty state states the fact and stops:** "No Shadows yet." "Nothing logged yet." How to
    fill it is the Guide's job.
-3. **Gains are written name first, like the System:** "Mana Shards +40", "Field Potion · Satchel
+3. **Gains are written name first, like the System:** "Mana Shards +40", "Health Potion · Satchel
    2/3", "Health Potion · HP +120".
 4. **A hint says what to do in one line:** "Tap a step that glows." A rule longer than a line goes
    in the Guide.
@@ -1000,6 +1002,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Secret Quest | Secret Mission | Code keeps `missions` |
 | Weekly Quest | season, weekly contract | The Pale Spire's week, on the Quests screen. Code keeps `season` |
 | Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
+| Health Potion | Field Potion, field potion | The one healing potion: carried in the satchel, drunk on the hunter's turn in a fight, between rooms from the bag, or out of a Gate. There is no Field Potion any more; Ryn may still call one a flask |
 | Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the map's corner and its wheel. Its label is `Items`; its glyph a satchel, not the Inventory's bag |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |
 | Event | Unknown, `?` (for a room) | A room holding a choice, or a trap, a cache or a rest passing for one. Its mark is a signpost, in orchid. `?` is only the fog's |

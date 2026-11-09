@@ -155,7 +155,7 @@
 .potion .ico { width: 30px; height: 30px; }
 .shopsurvey { display: grid; place-items: center; width: 44px; height: 44px; flex: none; color: var(--ember); }
 .shopsurvey .ico { width: 30px; height: 30px; }
-.potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--elixir { color: var(--arcane); } .potion--field { color: var(--verdant); }
+.potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--elixir { color: var(--arcane); }
 
 /* ------------------------------------------------------------------ gates */
 
@@ -449,7 +449,9 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .bagwheel__item.is-picked { color: #ffd2a3; }
 .bagwheel__hub { position: absolute; left: 50%; top: 50%; width: 45%; aspect-ratio: 1; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px; border: 1px solid rgba(255, 154, 60, 0.5); border-radius: 50%;
   background: radial-gradient(circle at 50% 35%, rgba(60, 28, 8, 0.96), rgba(10, 7, 6, 0.98) 70%); box-shadow: 0 0 24px rgba(255, 154, 60, 0.18), inset 0 0 18px rgba(0, 0, 0, 0.6); text-align: center; }
-.bagwheel__hub > .ico { width: 24px; height: 24px; color: var(--ember); }
+.bagwheel__hub { color: var(--ember); }
+.bagwheel__hub > .ico, .bagwheel__hub .bagwheel__glyph .ico { width: 24px; height: 24px; }
+.bagwheel__glyph { display: inline-flex; }
 .bagwheel__name { font-size: 0.8rem; letter-spacing: 0.06em; line-height: 1.15; color: var(--ink); }
 .bagwheel__effect { color: var(--verdant); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
 .bagwheel__held { color: var(--ink-2); font-size: 0.68rem; }

@@ -762,9 +762,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       </Section>
 
       <div class="bsatchel">
-        <span><strong>[Item: Field Potion]</strong> <span class="grant">HP +{shop.FIELD_POTION.heal * 100}%</span></span>
-        <span class="num">Satchel {s.satchel}/{shop.satchelMax(s)}</span>
-        {s.satchel < shop.satchelMax(s) && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
+        <span><strong>[Item: Health Potion]</strong> <span class="grant">HP +{shop.POTION_RESTORE * 100}%</span></span>
+        <span class="num">Satchel {shop.held(s, 'hp')}/{shop.satchelMax(s)}</span>
+        {shop.satchelRoom(s) > 0 && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
       </div>
 
       {/* The way in stays at the foot of the window, whatever is scrolled past. */}

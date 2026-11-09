@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Turn } from '@/core/combat';
-import { ability, FIELD_POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
+import { ability, POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
@@ -61,7 +61,7 @@ type Pace = keyof typeof PACE;
 function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { name: string; level: string | null; ready: string | null; lines: string[] } {
   if (use === 'Strike') return { name: 'Strike', level: null, ready: null, lines: [skillLine(STRIKE)] };
   if (use === 'Guard') return { name: 'Guard', level: null, ready: null, lines: [`Damage taken -${(1 - GUARD) * 100}% until your next turn.`] };
-  if (use === 'Potion') return { name: 'Field Potion', level: null, ready: null, lines: [`HP +${FIELD_POTION_HEAL * 100}% · Held: ${turn.potions}`] };
+  if (use === 'Potion') return { name: 'Health Potion', level: null, ready: null, lines: [`HP +${POTION_HEAL * 100}% · Held: ${turn.potions}`] };
   const k = turn.skills.find((x) => x.ability.name === use);
   if (!k) return { name: use, level: null, ready: null, lines: [] };
   const node = NODES.find((n) => n.kind === 'skill' && n.skill === use && skilltree.levelOf(s, n.id) > 0);
@@ -87,7 +87,7 @@ function Acts({ turn, canDrink, give }: { turn: Turn; canDrink: boolean; give: (
     ...turn.skills.map((k) => ({ use: k.ability.name, label: k.ability.name, sub: k.cd > 0 ? `ready in ${k.cd}` : REACH_TEXT[k.ability.profile] ?? 'one target', off: k.cd > 0 })),
     { use: 'Strike', label: 'Strike', sub: REACH_TEXT.single },
     { use: 'Guard', label: 'Guard', sub: `Damage taken -${(1 - GUARD) * 100}%`, cls: 'act--guard' },
-    { use: 'Potion', label: `Potion · ${turn.potions}`, sub: `HP +${FIELD_POTION_HEAL * 100}%`, cls: 'act--potion', off: !canDrink },
+    { use: 'Potion', label: `Potion · ${turn.potions}`, sub: `HP +${POTION_HEAL * 100}%`, cls: 'act--potion', off: !canDrink },
   ];
   const info = shown ? actLines(s, shown, turn) : null;
   return (
@@ -250,13 +250,13 @@ export function Arena() {
     });
   }
 
-  /** Drink a field potion between steps, from the bag: the feed says what it restored. */
+  /** Drink a Health Potion between steps, from the bag: the feed says what it restored. */
   function drinkNow() {
     void guarded(() => {
-      const hp = store.update((x) => raid.drinkField(x, d!, x.gates.raid!));
+      const hp = store.update((x) => raid.drinkPotion(x, d!, x.gates.raid!));
       if (!hp) return;
       sfx.success();
-      say([{ text: `▸ You drink a field potion. HP +${hp}.`, tone: 'outcome' }]);
+      say([{ text: `▸ You drink a Health Potion. HP +${hp}.`, tone: 'outcome' }]);
     });
   }
 
@@ -335,7 +335,7 @@ export function Arena() {
         lines: [
           'Tap a foe to aim at it, then act.',
           'Each foe shows its next move and its target.',
-          `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>field potion</em> restores ${FIELD_POTION_HEAL * 100}% of your health.`,
+          `A skill or a Strike goes at the foe you aimed at first. A <em>Guard</em> takes ${GUARD * 100}% of every hit until your next turn. A <em>Health Potion</em> restores ${POTION_HEAL * 100}% of your health.`,
           '<em>Auto</em> lets the System fight your turns and pick your way, as it does when it assesses a Gate.',
         ],
       });
