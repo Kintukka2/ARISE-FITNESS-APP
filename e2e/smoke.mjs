@@ -45,6 +45,18 @@ async function hold(sel, ms) {
 }
 
 /** Close whatever the System has put on screen: tours, windows, holds. */
+/** The arena's pace and Auto sit behind one button in its head: open its menu and choose. */
+async function setPace(which) {
+  await page.locator('.pacebtn').click();
+  await page.locator(`.pacemenu [data-pace="${which}"]`).click();
+}
+/** Take an action from the wheel: open it if it is shut, pick the slot, then Use. */
+async function act(use) {
+  if (await page.locator('.turnbar .actbtn').isVisible().catch(() => false)) await page.locator('.turnbar .actbtn').click();
+  const slot = page.locator(`.actwheel [data-act="${use}"]`);
+  if ((await slot.getAttribute('aria-pressed')) !== 'true') await slot.click();
+  await page.locator('.actwheel__use').click();
+}
 async function drain(max = 60) {
   let quiet = 0;
   for (let i = 0; i < max && quiet < 5; i++) {
@@ -96,8 +108,8 @@ async function raidGate(row, name, auto = false) {
   await page.locator('text=Enter The Gate').click();
   await drain();
   await page.waitForSelector('.arena');
-  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
-  if (auto) await page.locator('.seg__btn', { hasText: 'Auto' }).click();
+  await setPace('skip');
+  if (auto) await setPace('auto');
   let turns = 0;
   let resumed = false;
   let steps = 0;
@@ -140,7 +152,7 @@ async function raidGate(row, name, auto = false) {
         await drain();
         await page.locator('text=Go Back In').click();
         await page.waitForSelector('.arena');
-        await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+        await setPace('skip');
         await page.waitForSelector('.turnbar', { timeout: 20000 });
         await drain();
         const after = await hp();
@@ -148,7 +160,7 @@ async function raidGate(row, name, auto = false) {
         await snap('practice-resumed');
         resumed = true;
       }
-      await page.locator('.turnbar .act', { hasText: 'Strike' }).click();
+      await act('Strike');
       continue;
     }
     if (await visible('.nodepanel')) {

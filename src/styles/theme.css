@@ -45,6 +45,9 @@
   --blood-glow: rgba(255, 77, 109, 0.45);
   --sysred: #ff2f3e;
   --royal: #3d7bff;
+  /* Guard's blue on the action wheel: the defence, kept apart from the System's cyan and Ryn's blue. */
+  --guard: #5c97ff;
+  --guard-glow: rgba(92, 151, 255, 0.45);
   /* An Event room on a Gate's plan: a choice with its odds stated. Only there. */
   --event: #f07be6;
   --event-glow: rgba(240, 123, 230, 0.42);

@@ -14,6 +14,7 @@
  */
 import { BLESSINGS, EVENTS, type NodeKind } from '@/data/nodes';
 import { enemyById, isPractice } from './gates';
+import { powerOf } from './combat';
 import type { Dungeon } from './types';
 import { rng, weighted, type Rand } from './util';
 
@@ -568,3 +569,17 @@ export function chamberOf(d: Dungeon, x: MapNode): Chamber {
 }
 
 export const isFight = (x: MapNode) => x.kind === 'fight' || x.kind === 'elite' || x.kind === 'boss';
+
+/** A creature in a fight is marked strong when its power is this far above the mean of the Gate's fighting creatures. */
+export const STRONG = 1.1;
+
+/**
+ * Who waits in each fight on the map, as the plan marks it once the room is seen: a pip to each
+ * creature, and the strong ones marked, against the mean power of every creature the map's fights hold.
+ */
+export function threatOf(m: GateMap): (x: MapNode) => { n: number; strong: number } {
+  const power = (id: string) => { const e = enemyById(id); return e ? powerOf(e.base) : 0; };
+  const kinds = [...new Set(m.nodes.filter((x) => x.kind === 'fight').flatMap((x) => x.foes ?? []))];
+  const mean = kinds.length ? kinds.reduce((n, id) => n + power(id), 0) / kinds.length : 0;
+  return (x) => ({ n: x.foes?.length ?? 0, strong: (x.foes ?? []).filter((id) => power(id) >= mean * STRONG).length });
+}

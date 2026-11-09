@@ -5,7 +5,7 @@
  * floor by floor. Read-only in the brief; in the arena, the rooms the hunter can enter glow, and a
  * cleared room can be walked back to.
  */
-import { across, passages, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { across, passages, threatOf, unsealed, type GateMap, type MapNode } from '@/core/map';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
 import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
@@ -76,6 +76,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const fogged = (x: MapNode) => !!seen && !seen.has(x.id);
   const shown = [...new Set(rooms.filter((x) => !fogged(x)).map(looksOf))].filter((k) => k !== 'entrance' && k !== 'up');
   const fogs = rooms.some(fogged);
+  const threat = threatOf(m);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''}`}>
       {(floors > 1 || corner) && (
@@ -127,19 +128,27 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const next = options.includes(x.id);
           const spent = x.kind === 'rest' && rested.includes(x.id);
           const stairs = x.kind === 'up' || x.kind === 'down';
+          // A fight seen and not yet fought shows who waits in it: a pip to each creature, the strong ones red.
+          const t = looks === 'fight' && !isDone ? threat(x) : null;
+          const who = t && t.n ? `, ${t.n} ${t.n === 1 ? 'creature' : 'creatures'}${t.strong ? `, ${t.strong} strong` : ''}` : '';
           const state = [
             isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far', plain ? 'is-cleared' : '',
             sealed ? 'is-sealed' : '', spent ? 'is-spent' : '', here?.id === x.id ? 'is-at' : '', road.includes(x.id) ? 'is-road' : '',
           ].filter(Boolean).join(' ');
           const body = (
             <>
+              {t && t.n > 0 && (
+                <span class="droom__pips" aria-hidden="true">
+                  {Array.from({ length: t.n }, (_, i) => <i key={i} class={i < t.strong ? 'is-strong' : ''} />)}
+                </span>
+              )}
               <Glyph name={glyph} />
               {!compact && <small>{spent ? 'Used' : name}</small>}
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;
           if (next && onPick) {
-            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Enter ${name}: ${kind.desc}`} title={kind.desc}
+            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Enter ${name}${who}: ${kind.desc}`} title={kind.desc}
               onClick={() => { sfx.tap(); onPick(x.id); }}>{body}</button>;
           }
           // Stairs taken once are taken again in one tap, to the floor they lead to.
@@ -152,7 +161,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`} title={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`}
               onClick={() => { sfx.tap(); onWalk(x.id); }}>{body}</button>;
           }
-          return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`}>{body}</span>;
+          return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`} aria-label={`${name}${who}`}>{body}</span>;
         })}
         {here && on(here) && (
           <span class="dmap__you" aria-label={`You are here: ${NODE[looksOf(here)].name}`} style={{ left: `${((here.x! + 0.5) / cols) * 100}%`, top: `${((here.y! + 0.5) / rows) * 100}%` }}>

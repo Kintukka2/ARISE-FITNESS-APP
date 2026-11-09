@@ -228,34 +228,96 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .unit.is-pickable:hover { border-color: rgba(255, 77, 109, 0.7); }
 .unit.is-aimed { border-color: var(--blood); box-shadow: 0 0 0 1px var(--blood), 0 0 14px var(--blood-glow); }
 .unit.is-acting { box-shadow: 0 0 0 1px var(--mana), 0 0 16px var(--mana-glow); }
-.unit__intent { margin-top: 4px; font-size: 0.68rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.unit__intent.is-you { color: var(--blood); font-weight: 700; }
+/* A foe's next move. On the hunter's turn: its place in the foes' order, what one hit does, and what it fells. */
+.unit__intent { display: grid; gap: 2px; margin-top: 5px; font-size: 0.68rem; color: var(--ink-2); }
+.intent__move { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.intent__what { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unit__intent.is-you .intent__what { color: var(--blood); font-weight: 700; }
+.intent__order { flex: none; display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 3px; border: 1px solid rgba(255, 77, 109, 0.6); border-radius: 3px; background: rgba(255, 77, 109, 0.14); color: var(--ink); font-size: 0.6rem; font-weight: 700; line-height: 1; }
+.intent__order.is-later { border-style: dashed; opacity: 0.55; }
+.intent__hit { color: var(--ink); font-variant-numeric: tabular-nums; }
+.unit__intent.is-you .intent__hit { color: #ffc2cd; font-weight: 700; }
+.intent__more { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.intent__kill { padding: 0 5px; border-radius: 3px; background: var(--sysred); color: #fff; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.intent__times { color: var(--ink-3); font-size: 0.62rem; }
 .unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
 /* The orders for the next fight, under the map: Shadows' violet, as small as four choices can be. */
 .turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
-/* An action's details, over the foot of the feed, so nothing under the finger moves when they open. */
-.actinfo { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 4; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(10, 6, 4, 0.96); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55); animation: feedIn 160ms var(--ease) both; pointer-events: none; }
-.actinfo__head { display: flex; align-items: baseline; gap: 8px; }
-.actinfo__head b { font-size: 0.92rem; letter-spacing: 0.04em; }
-.actinfo__head small { color: var(--ink-2); font-size: 0.72rem; }
-.actinfo__ready { margin-left: auto; color: var(--ink-3) !important; }
-.actinfo__ready.is-ready { color: var(--verdant) !important; }
-.actinfo p { margin: 0; color: var(--ink-2); font-size: 0.78rem; line-height: 1.4; }
-.actcell { position: relative; display: flex; }
-.actcell > .act { flex: 1; padding-right: 30px; }
-.act__info { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 3px; background: rgba(0, 0, 0, 0.35); color: var(--ink-2); font: 700 0.66rem var(--font-ui, inherit); line-height: 1; }
-.actcell.is-shown .act__info { border-color: var(--ember); background: var(--ember); color: #1a0b02; }
-.actcell.is-shown > .act { border-color: var(--ember); }
 .turnbar__hint { color: var(--ink-2); font-size: 0.78rem; text-align: center; }
 .turnbar__hint b { color: var(--blood); }
-.turnbar__acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 8px; }
-.act { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 52px; padding: 8px 10px; border: 1px solid rgba(255, 154, 60, 0.55); border-radius: var(--r-sm); background: rgba(40, 18, 6, 0.6); color: var(--ink); text-align: left; transition: background 120ms, border-color 120ms; }
-.act:active { background: rgba(255, 154, 60, 0.22); }
-.act b { font-size: 0.9rem; letter-spacing: 0.04em; }
-.act small { font-size: 0.68rem; color: var(--ink-2); }
-.act--guard { border-color: var(--edge); background: rgba(6, 12, 26, 0.8); }
-.act--potion { border-color: rgba(72, 245, 168, 0.5); background: rgba(6, 36, 26, 0.55); }
-.act:disabled { opacity: 0.4; cursor: default; }
+/* The action wheel, behind one button at the foot of the fight. Shut, it is a round button ringed with a
+   tick to each slot the hunter's rank holds; open, a wheel of those slots, the hub what the picked one does. */
+.actbtn { position: relative; display: grid; place-items: center; width: 84px; height: 84px; margin: 2px auto 0; padding: 0; border: 0; border-radius: 50%; background: radial-gradient(circle, rgba(60, 26, 6, 0.95) 55%, rgba(20, 10, 4, 0.95)); color: var(--ink); cursor: pointer; }
+.actbtn__ring { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from calc(-180deg / var(--n)), var(--ember) 0 calc(360deg / var(--n) - 8deg), transparent 0 calc(360deg / var(--n))); -webkit-mask: radial-gradient(circle, transparent 36px, #000 37px); mask: radial-gradient(circle, transparent 36px, #000 37px); opacity: 0.8; }
+.actbtn__glyph .ico { width: 26px; height: 26px; color: var(--ember); filter: drop-shadow(0 0 6px var(--ember-glow)); }
+.actbtn b { position: absolute; bottom: 15px; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.actbtn:active { transform: scale(0.97); }
+.actwheel { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.actwheel__ring { position: relative; width: min(82vw, 300px, 44dvh); aspect-ratio: 1; animation: wheelIn 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.actwheel__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.actwheel__slot { fill: rgba(22, 12, 5, 0.92); stroke: rgba(255, 154, 60, 0.42); stroke-width: 1.2; cursor: pointer; transition: fill 120ms, stroke 120ms; outline: none; }
+.actwheel__slot:hover, .actwheel__slot:focus-visible { fill: rgba(70, 34, 8, 0.95); stroke: rgba(255, 154, 60, 0.8); }
+.actwheel__slot--guard { fill: rgba(6, 12, 32, 0.92); stroke: color-mix(in srgb, var(--guard) 45%, transparent); }
+.actwheel__slot--potion { fill: rgba(6, 30, 22, 0.9); stroke: rgba(72, 245, 168, 0.4); }
+.actwheel__slot--guard:hover, .actwheel__slot--guard:focus-visible { fill: rgba(14, 28, 66, 0.95); stroke: var(--guard); }
+.actwheel__slot--potion:hover, .actwheel__slot--potion:focus-visible { fill: rgba(8, 52, 36, 0.95); stroke: var(--verdant); }
+.actwheel__slot.is-off { fill: rgba(14, 10, 8, 0.9); stroke: rgba(255, 154, 60, 0.18); }
+.actwheel__slot.is-picked { fill: rgba(255, 154, 60, 0.24); stroke: var(--ember); stroke-width: 2; filter: drop-shadow(0 0 8px var(--ember-glow)); }
+.actwheel__slot--guard.is-picked { fill: rgba(92, 151, 255, 0.24); stroke: var(--guard); filter: drop-shadow(0 0 8px var(--guard-glow)); }
+.actwheel__slot--potion.is-picked { fill: rgba(72, 245, 168, 0.18); stroke: var(--verdant); filter: drop-shadow(0 0 8px var(--verdant-glow)); }
+.actwheel__slot.is-empty { fill: rgba(10, 8, 7, 0.7); stroke: rgba(255, 154, 60, 0.12); stroke-dasharray: 3 4; cursor: default; }
+/* A slot's glyph, its name, and under them, always in the same place, the finisher's mark. */
+.actwheel__item { position: absolute; display: grid; grid-template-rows: auto auto 6px; justify-items: center; gap: 2px; width: 70px; transform: translate(-50%, -50%); color: var(--ember); pointer-events: none; }
+.actwheel__item .ico { width: 22px; height: 22px; filter: drop-shadow(0 0 5px rgba(255, 154, 60, 0.35)); }
+.actwheel__item small { max-width: 100%; overflow: hidden; color: var(--ink); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.02em; text-overflow: ellipsis; white-space: nowrap; }
+.actwheel__item.is-off { color: var(--ink-3); }
+.actwheel__item.is-off .ico { filter: none; opacity: 0.55; }
+.actwheel__item.is-off small { color: var(--ink-3); }
+.actwheel__item.is-picked { color: #ffd2a3; }
+/* Guard wears the defence's blue, Potion healing's green, wherever the wheel draws them. */
+.actwheel__item--guard:not(.is-off) { color: var(--guard); }
+.actwheel__item--guard:not(.is-off) .ico, .actbtn--guard .actbtn__glyph .ico { filter: drop-shadow(0 0 5px var(--guard-glow)); }
+.actwheel__item--potion:not(.is-off) { color: var(--verdant); }
+.actwheel__item--potion:not(.is-off) .ico, .actbtn--potion .actbtn__glyph .ico { filter: drop-shadow(0 0 5px var(--verdant-glow)); }
+.actwheel__item--guard.is-picked:not(.is-off) { color: #b6d0ff; }
+.actwheel__item--potion.is-picked:not(.is-off) { color: #b4ffd9; }
+.actbtn--guard .actbtn__glyph .ico { color: var(--guard); }
+.actbtn--potion .actbtn__glyph .ico { color: var(--verdant); }
+.actwheel__hub.actwheel__hub--guard { border-color: color-mix(in srgb, var(--guard) 60%, transparent); }
+.actwheel__hub.actwheel__hub--potion { border-color: color-mix(in srgb, var(--verdant) 50%, transparent); }
+.actwheel__mark { width: 6px; height: 6px; border-radius: 50%; }
+.actwheel__mark.is-sure { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
+.actwheel__mark.is-maybe { border: 1.5px solid var(--verdant); }
+.actwheel__hub { position: absolute; left: 50%; top: 50%; width: 49%; aspect-ratio: 1; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 8px; border: 1px solid rgba(255, 154, 60, 0.5); border-radius: 50%; background: radial-gradient(circle, rgba(30, 14, 4, 0.98), rgba(10, 6, 3, 0.98)); text-align: center; }
+.actwheel__name { max-width: 100%; overflow: hidden; color: var(--ink); font-size: 0.78rem; letter-spacing: 0.04em; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.actwheel__ready { min-height: 0.8rem; color: var(--ink-3); font-size: 0.6rem; }
+.actwheel__num { color: var(--ink-2); font-size: 0.66rem; font-variant-numeric: tabular-nums; line-height: 1.25; }
+/* The finisher's line keeps its place in the hub whether or not the picked action fells the foe. */
+.actwheel__fell { margin-top: 2px; padding: 0 5px; border-radius: 3px; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.5; }
+.actwheel__fell.is-sure { background: var(--verdant); color: #04150d; }
+.actwheel__fell.is-maybe { background: rgba(72, 245, 168, 0.16); color: var(--verdant); }
+.actwheel__fell.is-none { visibility: hidden; }
+.actwheel__hub .actwheel__use { margin-top: 3px; min-width: 62%; }
+.actwheel__close { position: absolute; right: -4px; bottom: -4px; }
+.actwheel__lines { max-width: 420px; min-height: 2.2em; text-align: center; }
+.actwheel__lines p { margin: 0; color: var(--ink-3); font-size: 0.72rem; line-height: 1.35; }
+/* The pace and Auto, behind one button in the arena's head. */
+.pace { position: relative; flex: none; }
+.pacebtn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 999px; background: rgba(20, 10, 4, 0.7); color: var(--ink); cursor: pointer; }
+.pacebtn .ico { width: 16px; height: 16px; color: var(--ember); }
+.arena__head .pacebtn b { font-size: 0.82rem; letter-spacing: 0.02em; text-transform: none; }
+.pacebtn.is-auto { border-color: var(--mana); box-shadow: 0 0 10px var(--mana-glow); }
+.pacebtn__auto { padding: 0 5px; border-radius: 3px; background: color-mix(in srgb, var(--mana) 18%, transparent); color: var(--mana); font-size: 0.6rem; font-style: normal; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.pace__shade { position: fixed; inset: 0; z-index: 5; }
+.pacemenu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 6; display: flex; flex-direction: column; width: 230px; padding: 4px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: var(--r-sm); background: rgba(12, 7, 3, 0.98); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6); animation: feedIn 140ms var(--ease) both; }
+.pacemenu__opt { display: grid; gap: 1px; padding: 8px 10px; border: 0; border-radius: 4px; background: none; color: var(--ink); text-align: left; cursor: pointer; }
+.arena__head .pacemenu__opt b { font-size: 0.86rem; letter-spacing: 0.04em; text-transform: none; }
+.pacemenu__opt small { color: var(--ink-3); font-size: 0.68rem; line-height: 1.3; }
+.pacemenu__opt.is-on { background: rgba(255, 154, 60, 0.18); }
+.arena__head .pacemenu__opt.is-on b { color: var(--ember); }
+.pacemenu__opt--auto { margin-top: 4px; border-top: 1px solid rgba(255, 154, 60, 0.2); border-radius: 0 0 4px 4px; }
+.pacemenu__opt--auto.is-on { background: color-mix(in srgb, var(--mana) 14%, transparent); }
+.arena__head .pacemenu__opt--auto.is-on b { color: var(--mana); }
 .arena--results { overflow-y: auto; }
 .arena__results { max-width: 560px; width: 100%; margin: 0 auto; padding: calc(var(--safe-t) + 24px) 16px calc(var(--safe-b) + 24px); }
 .arena--results.is-cleared .report__head h2 { color: var(--verdant); text-shadow: 0 0 18px var(--verdant-glow); }
@@ -392,6 +454,13 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 .dmap__trail { stroke: var(--ember); stroke-width: 1.6; stroke-dasharray: 3 4; stroke-linecap: round; }
 .dmap .gnode.droom { position: relative; z-index: 1; place-self: center; width: 78%; height: 78%; gap: 0; padding: 0; border-color: rgba(255, 154, 60, 0.4); border-radius: 6px; background: #0c0905; }
 .dmap .droom .ico { width: 40%; max-width: 20px; height: auto; aspect-ratio: 1; }
+/* Who waits in a fight seen and not yet fought: a pip to each creature, in the Gates' orange; a strong one larger, in red. */
+.droom__pips { position: absolute; top: 3px; right: 3px; display: flex; align-items: center; gap: 2px; pointer-events: none; }
+.droom__pips i { width: 5px; height: 5px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 3px var(--ember-glow); }
+.droom__pips i.is-strong { width: 7px; height: 7px; background: var(--blood); box-shadow: 0 0 4px var(--blood-glow); }
+.dmap--compact .droom__pips { top: 2px; right: 2px; gap: 1px; }
+.dmap--compact .droom__pips i { width: 3px; height: 3px; }
+.dmap--compact .droom__pips i.is-strong { width: 4px; height: 4px; }
 .dmap .droom small { margin-top: 1px; font-size: clamp(0.4rem, calc(100cqw / var(--cols) * 0.115), 0.5rem); letter-spacing: 0.04em; white-space: nowrap; }
 .dmap .droom.is-cleared { color: var(--ember); }
 .dmap .gnode.droom.is-far { border-style: dashed; border-color: rgba(255, 154, 60, 0.3); }
@@ -678,6 +747,7 @@ button.dmap__floor { cursor: pointer; }
 .st-card.is-can { border-color: var(--gold); box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.5), 0 0 14px var(--gold-glow) inset; }
 .st-card__head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
 .st-card__icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--sys-hair); color: var(--mana); }
+.st-card__icon .ico { width: 22px; height: 22px; }
 .st-card.is-can .st-card__icon { border-color: var(--gold); color: var(--gold); }
 .st-card__title { display: flex; flex-direction: column; min-width: 0; }
 .st-card__title small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.6rem; letter-spacing: 0.14em; }

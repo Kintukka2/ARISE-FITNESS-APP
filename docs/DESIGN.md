@@ -1152,12 +1152,12 @@ didn't was judged to have no tension (docs/research/labyrinth-crawlers.md).
 
   | Grade | Rooms | System's road | Budget | Moves to enter every room | Rooms entered within the budget |
   |---|---|---|---|---|---|
-  | E | 12 | 4 | 14 | 19 | 80% |
-  | D | 14 | 4 | 17 | 22 | 82% |
-  | C | 29 | 9 | 35 | 53 | 74% |
-  | B | 33 | 11 | 40 | 61 | 74% |
-  | A | 58 | 17 | 70 | 112 | 72% |
-  | S | 93 | 27 | 112 | 185 | 70% |
+  | E | 12 | 5 | 14 | 19 | 80% |
+  | D | 14 | 5 | 17 | 22 | 82% |
+  | C | 29 | 10 | 35 | 53 | 74% |
+  | B | 33 | 12 | 40 | 61 | 74% |
+  | A | 58 | 18 | 70 | 112 | 72% |
+  | S | 93 | 28 | 112 | 185 | 70% |
 
   80% was the first number tried. It left a careful hunter 52% to 67% of a Gate, and 150% left 83% to
   94%. A whole Gate takes 160% to 200% of its rooms in moves, because every dead end is walked back out of.
@@ -1228,15 +1228,89 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 
 ### Order to build
 
-1. **Read the fight and the map:** each intent's damage range, in place of the `title` tooltip in
-   `screens/Arena.tsx` that a phone cannot show; threat and contents on seen rooms; an `npm run mapstats`
-   report of what the maps draw.
+1. **Read the fight and the map** (built, below): each intent's damage range, in place of the `title`
+   tooltip in `screens/Arena.tsx` that a phone cannot show; threat and contents on seen rooms; an
+   `npm run mapstats` report of what the maps draw.
 2. **The Gate clock, Stirring and Red Gates.**
 3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics.
 4. **Seals, Feats and condition drops.**
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
 6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
    with family and role bonuses; rule-changing gear; a daily seeded Gate.
+
+### Read the fight and the map — built
+
+The references were Slay the Spire's intents (an icon and the damage it will do, over the foe), Into
+the Breach's numbered attack order, Wildfrost's numbers kept in the same place on every card, and
+Etrian Odyssey's map, where what waits in a room is marked on its square.
+
+- **The reckoning** (`reckon` in `core/combat.ts`). One hit of an ability from one unit on another, as
+  things stand: its chance to land and to crit, its damage at the bottom and top of the swing and at
+  the most a critical hit does, and whether it fells the target every time, on a high roll, or never.
+  It reads the engine's own formula and never a roll: the fight and the reckoning share one function
+  for a hit's damage (`blow`), the fight passing its rolls and the reckoning the ends of the range. A
+  ward, Cull, Unravel, Unbroken, Deadeye, Ambush and a unit that stands once at 1 HP are all counted.
+- **The turn carries it** (`Turn.threats`, `Turn.aims`). Every foe's next action in the order they come
+  (the rest of this round as it was drawn up, then the next round by initiative as it stands), whether
+  it comes before the hunter's next turn, how often the foe acts each round, and one hit of it on its
+  target; aimed at the hunter, the same hit guarded too. And one hit of each of the hunter's actions
+  that does damage on every foe left. Asking for the turn changes nothing in the fight.
+- **The foe's card** shows, on the hunter's turn, its place in the order in a small square (dashed when
+  it comes after the hunter's next turn), `Damage 6-8 · Hit 72%`, `Lethal` or `May be lethal` in red,
+  `Acts 2 times each round` where it does, and a tag for each status it inflicts. The `title` tooltip is
+  gone: nothing in the fight needs a pointer to hover.
+- **The action wheel**, asked for after the first look, after the weapon and ping wheels of action
+  games: the actions sit behind one round button, ringed with a tick for each slot, so the foot of the
+  fight is the same at every rank. Open, the wheel holds a slot for each skill slot the rank holds
+  (`SKILL_SLOTS`: 2 to 5, an empty one dashed), then Health Potion, Guard and Strike, in the same places
+  every turn, so it grows from 5 slots to 8 as the ranks bring skill slots. A tap picks a slot and the
+  hub shows what it does on the foe aimed at (`Damage 386-522`, `Hit 95%`; Guard's `Incoming 7-9` and
+  `Guarded 3-4`); **Use**, or a second tap on the slot, uses it. The picked action's line and its
+  statuses' lines sit under the wheel, in place of each action's `?`. The wheel stays open or shut as
+  the hunter left it, from turn to turn.
+- **Each action wears its own glyph**, asked for after the wheel's first look: the 35 skills of the
+  tree each have one drawn for them (`SKILL_GLYPH` in `ui/icons.tsx`: Hammerblow a war hammer, Rend
+  three claw marks, Hex a ring round a star turned down, Execution the headsman's axe), so no two slots
+  on the wheel look alike. A skill wears the same glyph on the wheel, in the Skills screen's skill
+  slots and on its card; a node in the tree keeps its reach's mark, which says what it hits. Guard is
+  drawn in the defence's blue (`--guard`) and Health Potion in healing's green, on the slot, the glyph,
+  the hub's rim and the shut button while picked; every other action keeps the Gates' ember.
+- **Finishers** (`finishers` in `core/combat.ts`). Marking every action that fells the foe said nothing
+  once a Strike did, so the mark is earned: a skill is marked when it fells the foe aimed at more surely
+  than a Strike would (every time against on a high roll or a crit, or at all against not), as surely as
+  it does. A Strike is the baseline and never marked, and when a Strike fells the foe every time nothing
+  is, since no skill is needed for it. On the wheel the mark is a dot under the slot's name, always in
+  the same place; in the hub, `Fells it` or `May fell it` on a line kept for it whether or not it shows.
+- **The arena's head** no longer counts rooms cleared (`Cleared 3/11`). In its place sits the pace: one
+  button with the fast-forward glyph and `1×`, `2×` or `Skip`, and `Auto` beside them while it is on,
+  opening a menu of the three paces and Auto. A Pale Spire block or a tower keeps its floor count, in
+  the head's small line.
+- **The plan** marks a fight seen and not yet fought with a pip to each creature in it, at the tile's
+  top right in the Gates' orange; a creature 10% or more above the mean power of the map's fighting
+  creatures (`STRONG`, `threatOf` in `core/map.ts`) is a larger red pip. Caches, traps and rests still
+  pass for Events until stepped in: what they hold stays hidden on purpose.
+- **`npm run mapstats`** measures what the generator draws, every Gate of each grade over a run of days:
+  rooms, the road, dead ends, loops, hidden passages, how far rooms lie from the road, the moves to
+  enter every room and the share entered within 120% of the rooms; what the road and the side rooms
+  hold; and what a side fight costs a typical hunter. Over 20 days:
+
+  | Grade | Rooms | Road | Dead ends | Loops | Moves to enter every room | Side fights that cost nothing |
+  |---|---|---|---|---|---|---|
+  | E | 12 | 5 | 3 | 0.4 | 19 | 98% |
+  | D | 14 | 5 | 3 | 0.7 | 22 | 99% |
+  | C | 29 | 10 | 8 | 1.6 | 53 | 96% |
+  | B | 33 | 12 | 9 | 2.0 | 61 | 98% |
+  | A | 58 | 18 | 17 | 4.1 | 112 | 100% |
+  | S | 93 | 28 | 27 | 5.9 | 185 | 99% |
+
+  A side fight entered at full health costs a typical hunter of the grade nothing almost every time,
+  once the 25% every won fight heals is counted: the map's only cost today is time, which is why the
+  Gate clock comes next. The road is one move longer at every grade than the first table in this
+  section gave; that table is corrected.
+- **Balance.** The fight is unchanged: a fingerprint of 1,110 fights and 373 hunter's turns on every
+  Gate's road hashes the same before and after, and `npm run calibrate` moved no tuning. The new tests
+  hold every hit the hunter lands, and every foe's hit on the hunter, guarded or not, inside the range
+  the turn reckoned for it.
 
 ## What stays out
 

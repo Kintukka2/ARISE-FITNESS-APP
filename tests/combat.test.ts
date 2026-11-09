@@ -3,7 +3,7 @@ import { defaults } from '@/core/save';
 import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
-import { battle, fight, POTION_HEAL, GUARD, Unit } from '@/core/combat';
+import { battle, fight, finishers, POTION_HEAL, GUARD, Unit, type Turn } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
 import { SKILL_SLOTS } from '@/data/tree';
@@ -258,6 +258,96 @@ describe('foe intents', () => {
     const coming = log.filter((e) => e.t === 'intent' && e.at === 'hero').map((e) => e.u);
     const swing = log.find((e) => (e.t === 'hit' || e.t === 'miss') && e.a === 'a0');
     if (coming.length) expect(coming).toContain(swing?.v);
+  });
+});
+
+describe('the reckoning', () => {
+  it('every hit the hunter lands falls inside the range their turn reckoned for it', () => {
+    let checked = 0;
+    for (const [level, id] of [[12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
+      const s = hunter(level);
+      const d = dungeonById(id)!;
+      atBoss(s, d.id);
+      const { ch } = raid.resume(s, d, s.gates.raid!, now);
+      let k = 0;
+      while (ch.turn) {
+        const t = ch.turn;
+        // Each damaging action in turn, at each foe in turn.
+        const uses = Object.keys(t.aims);
+        const use = uses[k % uses.length];
+        const at = t.foes[k % t.foes.length];
+        const r = t.aims[use][at];
+        const from = ch.log.length;
+        ch.play(raid.order(s, s.gates.raid!, { use, at }));
+        const hit = ch.log.slice(from).find((e) => e.t === 'hit' && e.a === t.uid && e.v === at);
+        if (hit && hit.t === 'hit') {
+          expect(hit.dmg).toBeGreaterThanOrEqual(r.lo);
+          expect(hit.dmg).toBeLessThanOrEqual(hit.crit ? r.critHi : r.hi);
+          checked++;
+        }
+        k++;
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it('a foe’s hit on the hunter falls inside the range its threat showed, guarded or not', () => {
+    let checked = 0;
+    for (let n = 0; n < 40; n++) {
+      const hero = new Unit({ uid: 'hero', name: 'H', side: 'p', base: { ...base, AGI: 5 + (n % 7) }, tag: 'hero', hpMult: 40 });
+      const foe = new Unit({ uid: 'e0', name: 'F', side: 'e', base: { ...base, STR: 20 + n, AGI: 5 + ((n * 3) % 11) }, kit: ['Grave Strike', 'Crushing Maul'], hpMult: 30 });
+      const log: { t: string; a?: string; v?: string; dmg?: number; crit?: boolean }[] = [];
+      const g = battle([hero], [foe], rng(`reckon|${n}`), 1, () => {}, log as never[], { hero: 'hero' });
+      let step = g.next();
+      for (let turn = 0; turn < 8 && !step.done; turn++) {
+        const threat = step.value.threats.find((x) => x.uid === 'e0');
+        const guard = turn % 2 === 0;
+        const from = log.length;
+        step = g.next(guard ? { use: 'Guard' } : { use: 'Strike', at: 'e0' });
+        const hit = log.slice(from).find((e) => e.t === 'hit' && e.a === 'e0' && e.v === 'hero');
+        const r = guard ? threat?.guarded : threat?.hit;
+        if (hit && r) {
+          expect(hit.dmg).toBeGreaterThanOrEqual(r.lo);
+          expect(hit.dmg).toBeLessThanOrEqual(hit.crit ? r.critHi : r.hi);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(40);
+  });
+
+  it('marks as a finisher only a ready skill that fells a foe more surely than a Strike, and never the Strike', () => {
+    const hit = (kill: 'sure' | 'maybe' | null) => ({ chance: 90, crit: 10, lo: 1, hi: 2, critHi: 3, kill });
+    const turn = (strike: 'sure' | 'maybe' | null, skills: [string, 'sure' | 'maybe' | null, number][]): Turn => ({
+      uid: 'hero', foes: ['e0'], potions: 0, threats: [],
+      skills: skills.map(([name, , cd]) => ({ ability: { name, type: 'physical', profile: 'single', mult: 1.2, cd: 2, inflicts: [] }, cd })),
+      aims: { Strike: { e0: hit(strike) }, ...Object.fromEntries(skills.map(([name, kill]) => [name, { e0: hit(kill) }])) },
+    });
+    // A Strike that fells the foe every time leaves no skill worth marking.
+    expect(finishers(turn('sure', [['Hammerblow', 'sure', 0]]), 'e0')).toEqual({});
+    // A Strike that may fell it: only a skill that surely does is marked.
+    expect(finishers(turn('maybe', [['Hammerblow', 'sure', 0], ['Arc', 'maybe', 0]]), 'e0')).toEqual({ Hammerblow: 'sure' });
+    // A Strike that cannot: every skill that can is marked, as surely as it does; one cooling down is not.
+    expect(finishers(turn(null, [['Hammerblow', 'sure', 0], ['Arc', 'maybe', 0], ['Skullsplitter', 'sure', 2]]), 'e0')).toEqual({ Hammerblow: 'sure', Arc: 'maybe' });
+    expect(finishers(turn(null, [['Hammerblow', 'sure', 0]]), 'e0')).not.toHaveProperty('Strike');
+  });
+
+  it('numbers the foes’ next actions from 1, each foe once, and reckons nothing for a move without damage', () => {
+    const s = hunter(40);
+    const d = dungeonById('DNG-029')!;
+    atBoss(s, d.id);
+    const { ch } = raid.resume(s, d, s.gates.raid!, now);
+    let turns = 0;
+    while (ch.turn) {
+      const t = ch.turn;
+      expect(t.threats.map((x) => x.order)).toEqual(t.threats.map((_, i) => i + 1));
+      expect(new Set(t.threats.map((x) => x.uid)).size).toBe(t.threats.length);
+      for (const x of t.threats) if (x.hit === null) expect(x.guarded).toBeNull();
+      for (const x of t.threats) if (x.at !== t.uid) expect(x.guarded).toBeNull();
+      turns++;
+      ch.play(raid.order(s, s.gates.raid!, null));
+    }
+    expect(turns).toBeGreaterThan(2);
   });
 });
 
