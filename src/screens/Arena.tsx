@@ -39,7 +39,7 @@ import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
-import { Glyph, Shard, STAT_ICON } from '@/ui/icons';
+import { Glyph, Shard, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
 import { ringMid, ringSlot } from '@/ui/items';
 import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
@@ -93,8 +93,8 @@ interface WheelAct {
 /** A range as a screen reader hears it: the page writes `3-4`, the voice says "3 to 4". */
 const spoken = (lo: number, hi: number) => [lo, hi].join(' to ');
 
-/** The glyph a skill wears on the wheel: its Path's. */
-const skillGlyph = (name: string) => STAT_ICON[NODES.find((n) => n.kind === 'skill' && n.skill === name)?.path ?? ''] ?? 'bolt';
+/** The glyph a skill wears on the wheel: its own, or its Path's for one drawn without one. */
+const skillGlyph = (name: string) => SKILL_GLYPH[name] ?? STAT_ICON[NODES.find((n) => n.kind === 'skill' && n.skill === name)?.path ?? ''] ?? 'bolt';
 
 /**
  * The hunter's actions on their turn, as a wheel behind one button: a slot to each skill slot their rank
@@ -136,10 +136,12 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
   const chosen = acts.find((a) => a?.use === picked) ?? fixed[2];
   const info = actLines(s, chosen.use, turn);
   const use = (a: WheelAct) => { if (!a.off) { setPicked(a.use); give(a.use); } };
+  /** Guard is the defence's blue, Potion healing's green; the rest are the Gate's ember. */
+  const kind = (a: WheelAct) => (a.use === 'Guard' ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
   const tap = (a: WheelAct) => { if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); } };
   if (!open) {
     return (
-      <button type="button" class="actbtn" aria-expanded="false" aria-label={`Actions, ${n} slots. ${chosen.name} picked`} onClick={() => { sfx.tap(); setOpen(true); }}
+      <button type="button" class={`actbtn actbtn--${kind(chosen)}`} aria-expanded="false" aria-label={`Actions, ${n} slots. ${chosen.name} picked`} onClick={() => { sfx.tap(); setOpen(true); }}
         style={`--n:${n}`}>
         <span class="actbtn__ring" aria-hidden="true" />
         <span class="actbtn__glyph"><Glyph name={chosen.glyph} /></span>
@@ -154,18 +156,18 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
           {acts.map((a, i) => a
             ? <path key={a.use} d={ringSlot(i, n)} role="button" tabIndex={0} data-act={a.use} aria-pressed={a.use === chosen.use}
               aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'fells it' : 'may fell it'}` : ''}`}
-              class={`actwheel__slot actwheel__slot--${a.use === 'Guard' ? 'guard' : a.use === 'Potion' ? 'potion' : 'act'} ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
+              class={`actwheel__slot actwheel__slot--${kind(a)} ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
               onClick={() => tap(a)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(a); } }} />
             : <path key={`empty${i}`} d={ringSlot(i, n)} class="actwheel__slot is-empty" aria-hidden="true" />)}
         </svg>
         {acts.map((a, i) => a && (
-          <span key={a.use} class={`actwheel__item ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`} style={`left:${ringMid(i, n).left};top:${ringMid(i, n).top}`} aria-hidden="true">
+          <span key={a.use} class={`actwheel__item actwheel__item--${kind(a)} ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`} style={`left:${ringMid(i, n).left};top:${ringMid(i, n).top}`} aria-hidden="true">
             <Glyph name={a.glyph} />
             <small>{a.use === 'Potion' ? 'Potion' : a.name}</small>
             <i class={`actwheel__mark ${a.fell ? `is-${a.fell}` : ''}`} />
           </span>
         ))}
-        <div class="actwheel__hub">
+        <div class={`actwheel__hub actwheel__hub--${kind(chosen)}`}>
           <b class="actwheel__name">{chosen.name}</b>
           <small class="actwheel__ready">{chosen.off ?? info.level ?? info.ready ?? ''}</small>
           {chosen.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}

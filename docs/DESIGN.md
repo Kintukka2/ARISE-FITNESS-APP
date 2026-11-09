@@ -1268,6 +1268,13 @@ Etrian Odyssey's map, where what waits in a room is marked on its square.
   `Guarded 3-4`); **Use**, or a second tap on the slot, uses it. The picked action's line and its
   statuses' lines sit under the wheel, in place of each action's `?`. The wheel stays open or shut as
   the hunter left it, from turn to turn.
+- **Each action wears its own glyph**, asked for after the wheel's first look: the 35 skills of the
+  tree each have one drawn for them (`SKILL_GLYPH` in `ui/icons.tsx`: Hammerblow a war hammer, Rend
+  three claw marks, Hex a ring round a star turned down, Execution the headsman's axe), so no two slots
+  on the wheel look alike. A skill wears the same glyph on the wheel, in the Skills screen's skill
+  slots and on its card; a node in the tree keeps its reach's mark, which says what it hits. Guard is
+  drawn in the defence's blue (`--guard`) and Health Potion in healing's green, on the slot, the glyph,
+  the hub's rim and the shut button while picked; every other action keeps the Gates' ember.
 - **Finishers** (`finishers` in `core/combat.ts`). Marking every action that fells the foe said nothing
   once a Strike did, so the mark is earned: a skill is marked when it fells the foe aimed at more surely
   than a Strike would (every time against on a high roll or a crit, or at all against not), as surely as

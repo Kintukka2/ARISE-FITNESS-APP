@@ -24,7 +24,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn } from '@/ui/components';
 import { buzz, flash as glow } from '@/ui/feedback';
-import { Glyph, STAT_ICON } from '@/ui/icons';
+import { Glyph, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
 
@@ -110,6 +110,12 @@ function skillIcon(a: Ability): string {
   if (a.profile === 'single') return a.type === 'magic' ? 'orb' : 'blade';
   if (a.profile === 'spread') return 'volley';
   return PATH_D[a.profile] ? a.profile : 'blade';
+}
+
+/** A skill's own glyph, as the action wheel draws it: on its card and in the skill slots. In the tree, a node keeps its reach's mark. */
+function SkillMark({ n, level = 1 }: { n: TreeNode; level?: number }) {
+  const g = n.kind === 'skill' && n.skill ? SKILL_GLYPH[n.skill] : undefined;
+  return g ? <Glyph name={g} /> : <NodeIcon n={n} level={level} />;
 }
 
 /** A node's mark: a skill's by its reach, a passive's by its place, a stat's by what it raises. */
@@ -360,7 +366,7 @@ function NodeCard({ s, id, flash, onLearn, onEquip }: { s: Save; id: string | nu
   return (
     <section class={`st-card sysbox ${why === null ? 'is-can' : ''}`} aria-live="polite">
       <header class="st-card__head">
-        <span class="st-card__icon"><NodeIcon n={n} level={k} /></span>
+        <span class="st-card__icon"><SkillMark n={n} level={k} /></span>
         <span class="st-card__title"><small>{word.toUpperCase()} · {p.name} · {TIER_RANKS[n.tier]}-Rank</small><b>{n.name}</b></span>
         <span class="st-card__lv num">{n.max > 1 ? `Lv.${k}/${n.max}` : k ? 'Learned' : 'Lv.0/1'}</span>
       </header>
@@ -398,7 +404,7 @@ function Loadout({ s, swap, onSlot, onCancel }: { s: Save; swap: string | null; 
           return (
             <button type="button" key={i} class={`sysbox st-slot ${x ? 'is-on' : 'is-empty'}`} onClick={() => onSlot(i)} aria-label={x ? `Slot ${i + 1}: ${x.name}` : `Slot ${i + 1}: empty`}>
               <span class="st-slot__n num">{i + 1}</span>
-              {x ? <><span class="st-slot__icon"><NodeIcon n={x} level={tree.levelOf(s, x.id)} /></span><b>{x.name}</b><small class="num">Lv.{tree.levelOf(s, x.id)}</small></> : <small>-- --</small>}
+              {x ? <><span class="st-slot__icon"><SkillMark n={x} level={tree.levelOf(s, x.id)} /></span><b>{x.name}</b><small class="num">Lv.{tree.levelOf(s, x.id)}</small></> : <small>-- --</small>}
             </button>
           );
         })}

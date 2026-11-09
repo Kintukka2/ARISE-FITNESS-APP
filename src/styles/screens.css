@@ -257,10 +257,14 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .actwheel__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .actwheel__slot { fill: rgba(22, 12, 5, 0.92); stroke: rgba(255, 154, 60, 0.42); stroke-width: 1.2; cursor: pointer; transition: fill 120ms, stroke 120ms; outline: none; }
 .actwheel__slot:hover, .actwheel__slot:focus-visible { fill: rgba(70, 34, 8, 0.95); stroke: rgba(255, 154, 60, 0.8); }
-.actwheel__slot--guard { fill: rgba(6, 12, 26, 0.92); stroke: rgba(120, 200, 255, 0.35); }
+.actwheel__slot--guard { fill: rgba(6, 12, 32, 0.92); stroke: color-mix(in srgb, var(--guard) 45%, transparent); }
 .actwheel__slot--potion { fill: rgba(6, 30, 22, 0.9); stroke: rgba(72, 245, 168, 0.4); }
+.actwheel__slot--guard:hover, .actwheel__slot--guard:focus-visible { fill: rgba(14, 28, 66, 0.95); stroke: var(--guard); }
+.actwheel__slot--potion:hover, .actwheel__slot--potion:focus-visible { fill: rgba(8, 52, 36, 0.95); stroke: var(--verdant); }
 .actwheel__slot.is-off { fill: rgba(14, 10, 8, 0.9); stroke: rgba(255, 154, 60, 0.18); }
 .actwheel__slot.is-picked { fill: rgba(255, 154, 60, 0.24); stroke: var(--ember); stroke-width: 2; filter: drop-shadow(0 0 8px var(--ember-glow)); }
+.actwheel__slot--guard.is-picked { fill: rgba(92, 151, 255, 0.24); stroke: var(--guard); filter: drop-shadow(0 0 8px var(--guard-glow)); }
+.actwheel__slot--potion.is-picked { fill: rgba(72, 245, 168, 0.18); stroke: var(--verdant); filter: drop-shadow(0 0 8px var(--verdant-glow)); }
 .actwheel__slot.is-empty { fill: rgba(10, 8, 7, 0.7); stroke: rgba(255, 154, 60, 0.12); stroke-dasharray: 3 4; cursor: default; }
 /* A slot's glyph, its name, and under them, always in the same place, the finisher's mark. */
 .actwheel__item { position: absolute; display: grid; grid-template-rows: auto auto 6px; justify-items: center; gap: 2px; width: 70px; transform: translate(-50%, -50%); color: var(--ember); pointer-events: none; }
@@ -270,6 +274,17 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .actwheel__item.is-off .ico { filter: none; opacity: 0.55; }
 .actwheel__item.is-off small { color: var(--ink-3); }
 .actwheel__item.is-picked { color: #ffd2a3; }
+/* Guard wears the defence's blue, Potion healing's green, wherever the wheel draws them. */
+.actwheel__item--guard:not(.is-off) { color: var(--guard); }
+.actwheel__item--guard:not(.is-off) .ico, .actbtn--guard .actbtn__glyph .ico { filter: drop-shadow(0 0 5px var(--guard-glow)); }
+.actwheel__item--potion:not(.is-off) { color: var(--verdant); }
+.actwheel__item--potion:not(.is-off) .ico, .actbtn--potion .actbtn__glyph .ico { filter: drop-shadow(0 0 5px var(--verdant-glow)); }
+.actwheel__item--guard.is-picked:not(.is-off) { color: #b6d0ff; }
+.actwheel__item--potion.is-picked:not(.is-off) { color: #b4ffd9; }
+.actbtn--guard .actbtn__glyph .ico { color: var(--guard); }
+.actbtn--potion .actbtn__glyph .ico { color: var(--verdant); }
+.actwheel__hub.actwheel__hub--guard { border-color: color-mix(in srgb, var(--guard) 60%, transparent); }
+.actwheel__hub.actwheel__hub--potion { border-color: color-mix(in srgb, var(--verdant) 50%, transparent); }
 .actwheel__mark { width: 6px; height: 6px; border-radius: 50%; }
 .actwheel__mark.is-sure { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
 .actwheel__mark.is-maybe { border: 1.5px solid var(--verdant); }
@@ -732,6 +747,7 @@ button.dmap__floor { cursor: pointer; }
 .st-card.is-can { border-color: var(--gold); box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.5), 0 0 14px var(--gold-glow) inset; }
 .st-card__head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
 .st-card__icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--sys-hair); color: var(--mana); }
+.st-card__icon .ico { width: 22px; height: 22px; }
 .st-card.is-can .st-card__icon { border-color: var(--gold); color: var(--gold); }
 .st-card__title { display: flex; flex-direction: column; min-width: 0; }
 .st-card__title small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.6rem; letter-spacing: 0.14em; }

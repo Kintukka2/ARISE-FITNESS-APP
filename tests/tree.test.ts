@@ -8,6 +8,7 @@ import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
 import { EDGE, isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TREE_PASSIVES } from '@/data/tree';
 import { STATS } from '@/core/types';
 import { rng } from '@/core/util';
+import { glyphPath, SKILL_GLYPH } from '@/ui/icons';
 
 const now = Date.parse('2026-02-04T12:00:00');
 
@@ -348,5 +349,21 @@ describe('the skills that do no damage', () => {
     const utility = kit.filter((n) => isUtility(ability(n)!));
     const damage = NODES.filter((n) => n.kind === 'skill' && tree.levelOf(s, n.id) > 0 && !isUtility(ability(n.skill!)!)).length;
     if (damage >= tree.slots(s)) expect(utility).toHaveLength(0);
+  });
+});
+
+describe('skill glyphs', () => {
+  it('every skill a hunter can carry wears a glyph of its own, drawn', () => {
+    const names = [...new Set([...NODES.filter((n) => n.kind === 'skill').map((n) => n.skill!), ...CLASS_SKILLS.map((a) => a.name)])];
+    for (const name of names) {
+      expect(SKILL_GLYPH[name], name).toBeTruthy();
+      const d = glyphPath(SKILL_GLYPH[name]);
+      expect(d, name).toMatch(/^M[\d.]/);
+      expect(d, name).not.toMatch(/M\s*z|NaN|undefined/i);
+    }
+    const glyphs = names.map((n) => SKILL_GLYPH[n]);
+    expect(new Set(glyphs).size).toBe(glyphs.length);
+    // Strike, Guard and Health Potion keep theirs.
+    for (const g of ['Weapon', 'shield', 'potion']) expect(glyphs).not.toContain(g);
   });
 });

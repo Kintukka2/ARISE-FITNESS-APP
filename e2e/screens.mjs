@@ -300,6 +300,13 @@ try {
     if (!(await page.locator('.turnbar').isVisible())) throw new Error('PICKING A SKILL USED IT');
     await snap('arena-skill-info');
   }
+  // Guard picked: its slot, its glyph and the hub's rim in the defence's blue; and every skill wears a glyph of its own.
+  await page.locator('.actwheel__slot[data-act="Guard"]').click(); await sleep(250);
+  if (!(await page.locator('.actwheel__hub--guard').count())) throw new Error('GUARD PICKED DID NOT TINT THE HUB');
+  const glyphs = await page.locator('.actwheel__item--act .ico path:last-child').evaluateAll((ps) => ps.map((p) => p.getAttribute('d')));
+  if (new Set(glyphs).size !== glyphs.length) throw new Error('TWO ACTIONS ON THE WHEEL SHARE A GLYPH');
+  await snap('arena-wheel-guard');
+  await page.locator('.actwheel__slot[data-act="Strike"]').click(); await sleep(150);
   // The pace and Auto sit behind one button in the head.
   await page.locator('.pacebtn').click(); await sleep(200);
   if (!(await page.locator('.pacemenu').isVisible())) throw new Error('THE PACE MENU DID NOT OPEN');
