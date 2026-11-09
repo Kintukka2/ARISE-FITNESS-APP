@@ -22,6 +22,7 @@ import { isTrial } from '@/core/trial';
 import { OVERCHARGE } from '@/data/ascension';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
+import { CLOCK, type ClockState } from '@/core/clock';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
@@ -324,17 +325,45 @@ export function Arena() {
       const move = r ? raid.systemNext(d!, r) : null;
       if (!move) return;
       if ('rest' in move) {
-        void guarded(() => {
+        void guarded(async () => {
+          const was = clockNow();
           store.update((x) => raid.moveTo(d!, x.gates.raid!, move.rest));
+          await tellClock(was);
           later(() => void restNow(false));
         });
       } else void step(move.enter);
     });
   }
 
-  /** Walk back to a room already cleared. */
+  /** Walk back to a room already cleared: on the Gate clock, each corridor walked is a move. */
   function walkTo(id: string) {
-    void guarded(() => { store.update((x) => raid.moveTo(d!, x.gates.raid!, id)); });
+    void guarded(async () => {
+      const was = clockNow();
+      store.update((x) => raid.moveTo(d!, x.gates.raid!, id));
+      await tellClock(was);
+    });
+  }
+
+  const clockNow = () => { const r = store.get().gates.raid; return r ? raid.clockOf(r) : null; };
+
+  /**
+   * What the last move did to the Gate clock: the first move past the budget and the Gate turning red each
+   * have their window; every other move past the budget, a line in the feed.
+   */
+  async function tellClock(was: ClockState | null) {
+    const r = store.get().gates.raid;
+    const c = r ? raid.clockOf(r) : null;
+    if (!r || !c || !was || c.moves === was.moves || !c.over) return;
+    const more = `+${Math.round((raid.mightOf(d!, r) - 1) * 100)}%`;
+    if (c.red && !was.red) {
+      flash('danger');
+      buzz([60, 40, 160]);
+      sfx.alarm();
+      await sys(system.notify(['[The Gate has turned red.]', system.red('The way out has been sealed.'), `Creatures not yet fought: ${system.red(more)}`], 'gates'));
+    } else if (!was.over) {
+      sfx.gate();
+      await sys(system.notify(['[The Gate is stirring.]', `Creatures not yet fought: ${system.red(more)}`], 'gates'));
+    } else say([{ text: c.red ? `▸ The red deepens. Creatures not yet fought ${more}.` : `▸ The Gate stirs. Creatures not yet fought ${more}.`, tone: 'outcome' }]);
   }
 
   /** Rest where the hunter stands: once at each rest. From its panel, the panel says so; on the map, the feed does. */
@@ -366,8 +395,10 @@ export function Arena() {
   /** Take a step on the map. */
   function step(nodeId: string) {
     return guarded(async () => {
+      const was = clockNow();
       const res = store.update((x) => raid.choose(x, d!, x.gates.raid!, nodeId));
       if (!res) return;
+      await tellClock(was);
       if (isFight(res.node)) return chamber();
       // Down the stairs: the next floor's plan, at once.
       if (res.node.kind === 'down') {
@@ -538,12 +569,13 @@ export function Arena() {
     if (phase === 'node' && panel) open(panel);
   };
   const onMap = phase === 'map' || phase === 'node';
+  const clock = run ? raid.clockOf(run) : null;
   const restPct = Math.round(REST_HEAL * ascension.restShare(run ? ascension.levelOf(run) : 0) * 100);
   // The step underway, or about to be taken; a rest or cache already done still counts as where you stand.
   const here = !run ? 1 : Math.min(depth, raid.pending(d, run) || phase !== 'node' ? run.at + 1 : run.at);
   const head = phase === 'node' && panel ? NODE[panel.node.kind].name : onMap ? 'Choose your way' : room?.label ?? '…';
   return (
-    <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
+    <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''} ${clock?.red ? 'is-redgate' : ''}`} role="dialog" aria-label={`${d.name}${clock?.red ? ', a Red Gate' : ''}, in progress`}>
       <header class="arena__head">
         <div><span class="label">{d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}{d.floor ? ` · Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? '' : ` · Step ${here} of ${depth}`}</span><b>{head}</b></div>
         {phase !== 'decide' && <PaceMenu pace={pace} setPace={setPace} auto={auto} toggleAuto={toggleAuto} />}
@@ -557,7 +589,8 @@ export function Arena() {
               {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
                 pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)}
-                corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} />
+                corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} costs={costsOf(d, run)}
+                stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
@@ -569,7 +602,9 @@ export function Arena() {
                   </div>
                   : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
-                    : <small class="muted center">Tap a room that glows, or a cleared room to walk back to it.</small>}
+                    : raid.sealed(d, run) && raid.standing(d, run)?.id === m.start
+                      ? <small class="warn center">The way out is sealed until the boss falls.</small>
+                      : <small class="muted center">{clock ? 'Tap a room that glows, or a cleared room to walk back to it. Each corridor is a move.' : 'Tap a room that glows, or a cleared room to walk back to it.'}</small>}
             </>}
         </div>
       ) : (
@@ -616,6 +651,7 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
   return (
     <div class="runstrip">
       <div class="runstrip__hp"><span class="label">You</span><HpBar cur={Math.round(Math.max(0, hero.hp))} max={hero.maxHp} tone="hp" /></div>
+      {raid.clockOf(run) && <GateClock c={raid.clockOf(run)!} more={Math.round((raid.mightOf(d, run) - 1) * 100)} />}
       <div class="runstrip__cells">
         <span><small>Allies</small><b class="num">{up}/{party.length - 1}</b></span>
         <span><small>Banked</small><b class="num"><Shards n={run.purse ?? 0} /></b></span>
@@ -635,6 +671,37 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/** The moves to every room the hunter can enter or walk back to, on the Gate clock: none for where they stand. */
+function costsOf(d: Dungeon, run: NonNullable<ReturnType<typeof useSave>['gates']['raid']>): Record<string, number> | undefined {
+  if (!run.clock || raid.pending(d, run)) return undefined;
+  return Object.fromEntries(Object.entries(raid.movesFrom(d, run)).filter(([, n]) => n > 0));
+}
+
+/**
+ * The Gate clock, under the hunter's HP: the moves spent against the budget, then the stirring's 20 moves
+ * toward red, with the Gate's mark at the end of the bar, and once it has turned, the Red Gate, sealed.
+ */
+function GateClock({ c, more }: { c: ClockState; more: number }) {
+  const stir = c.over > 0;
+  const n = stir ? CLOCK.red : c.budget;
+  const done = c.red ? CLOCK.red : stir ? c.over : c.moves;
+  const label = c.red ? 'Red Gate' : stir ? 'Stirring' : 'Moves';
+  const value = stir ? `+${more}%` : `${c.moves}/${c.budget}`;
+  const sub = c.red ? 'Sealed' : stir ? `Red in ${c.toRed}` : `${c.left} left`;
+  return (
+    <div class={`gclock ${c.red ? 'is-red' : stir ? 'is-stir' : ''}`} role="meter" aria-valuemin={0} aria-valuemax={n} aria-valuenow={done}
+      aria-label={c.red ? `Red Gate. Creatures not yet fought +${more}%. The way out is sealed.` : stir ? `Stirring. Creatures not yet fought +${more}%. Red Gate in ${c.toRed} moves.` : `Moves: ${c.moves} of ${c.budget}`}>
+      <span class="label">{label}</span>
+      <span class="gclock__bar" style={`--n:${n <= 40 ? n : Math.ceil(n / 5)}`}>
+        <i class="gclock__fill" style={`width:${(done / n) * 100}%`} />
+        <span class="gclock__gate" aria-hidden="true"><Glyph name="gates" /></span>
+      </span>
+      <b class="gclock__v num">{value}</b>
+      <small class="gclock__sub num">{sub}</small>
     </div>
   );
 }

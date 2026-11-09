@@ -15,9 +15,13 @@ import { rankFor } from './progression';
 import { gearDef } from './gear';
 import { xpAt } from './shadows';
 import { POTIONS, SATCHEL } from './shop';
+import { PRACTICE_GATE } from '@/data/special';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 9;
+/** The most entries the log keeps (`raid.finish` trims it). */
+export const LOG_MAX = 400;
+
+export const SAVE_VERSION = 10;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -190,6 +194,16 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
     const q = isObj(s.assoc) && isObj(s.assoc.quest) ? s.assoc.quest : null;
     if (q && isObj(q.reward) && q.reward.kind === 'field') q.reward = { kind: 'potion', id: 'hp', n: num(q.reward.n) || 1 };
     if (isObj(s.settings) && Array.isArray(s.settings.skipAsk)) s.settings.skipAsk = s.settings.skipAsk.filter((k: unknown) => k !== 'buy:field');
+    return s;
+  },  // v10: from the labyrinths until the Gate clock, a Gate cleared without every room in it counted as a
+  // Gate the hunter was carried out of too. Where the log still holds every run, the count is taken
+  // again from it: the runs that ended defeated, the Practice Gate's aside, as they always were.
+  9: (s) => {
+    const gates: Obj | null = isObj(s.gates) ? s.gates : null;
+    const log = Array.isArray(s.log) ? s.log : null;
+    if (!gates || !log || log.length >= LOG_MAX) return s;
+    const lost = log.filter((e: unknown) => isObj(e) && e.kind === 'gate' && typeof e.name === 'string' && e.name.endsWith(': defeated') && !e.name.startsWith(`${PRACTICE_GATE.name}:`)).length;
+    if (typeof gates.fails === 'number') gates.fails = Math.min(gates.fails, lost);
     return s;
   },
 };

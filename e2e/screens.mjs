@@ -361,6 +361,43 @@ try {
     await useBtn.click(); await sleep(800);
     if (await page.locator('.dmap .droom.is-fog').count()) throw new Error('A GATE SURVEY LEFT ROOMS IN THE FOG');
     await snap('arena-map-surveyed');
+    // The Gate clock: the meter under the hunter's HP, and on each room it can go to, its moves.
+    if (!(await page.locator('.runstrip .gclock').count())) throw new Error('THE RUN HAS NO CLOCK');
+    if (!(await page.locator('.dmap .droom__cost').count())) throw new Error('NO ROOM SHOWS WHAT IT COSTS IN MOVES');
+    if ((await page.locator('.runstrip .gclock__v').innerText()).trim().split('/')[0] !== '2') throw new Error('A ROOM ENTERED AND A WALK BACK DID NOT COST 2 MOVES');
+    await page.locator('.runstrip').screenshot({ path: `${OUT}/arena-clock.png` });
+    /** Set the open run's clock (moves past its budget, or as they were), and go back in. Returns the moves it had. */
+    const clockTo = async (to) => {
+      const was = await page.evaluate((to) => {
+        const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); const r = x.gates.raid; const was = r.moves;
+        r.moves = to.moves ?? r.clock + to.over; localStorage.setItem(k, JSON.stringify(x)); return was;
+      }, to);
+      await page.reload();
+      await page.waitForSelector('text=Go Back In', { timeout: 10000 }); await drain();
+      await page.locator('text=Go Back In').click();
+      await page.waitForSelector('.dmap', { timeout: 20000 }); await sleep(600);
+      return was;
+    };
+    const walkOnce = () => page.locator('.dmap button.droom.is-done:not(.gnode--entrance)').first().click();
+    // The budget spent, one move more: the Gate stirs.
+    const moves = await clockTo({ over: 0 });
+    await walkOnce(); await page.waitForSelector('.syswin__foot .btn', { timeout: 8000 }); await sleep(300);
+    if (!(await page.locator('.syswin', { hasText: 'The Gate is stirring.' }).count())) throw new Error('THE FIRST MOVE PAST THE BUDGET SAID NOTHING');
+    await snap('arena-stir-window'); await drain();
+    await clockTo({ over: 9 });
+    if (!(await page.locator('.dmapwrap.is-stir').count())) throw new Error('A STIRRING GATE\'S PLAN DOES NOT STIR');
+    await snap('arena-map-stirring');
+    // One move short of red, one more: the Gate turns red, and the way out seals.
+    await clockTo({ over: 19 });
+    await page.locator('.dmap button.gnode--entrance').click(); await page.waitForSelector('.syswin__foot .btn', { timeout: 8000 }); await sleep(300);
+    if (!(await page.locator('.syswin', { hasText: 'The Gate has turned red.' }).count())) throw new Error('THE GATE TURNED RED AND SAID NOTHING');
+    await snap('arena-red-window'); await drain(); await sleep(400);
+    if (!(await page.locator('.arena.is-redgate .dmapwrap.is-red').count())) throw new Error('A RED GATE\'S PLAN IS NOT RED');
+    if (await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count()) throw new Error('A RED GATE OFFERED A WITHDRAWAL');
+    if (!(await page.locator('.arena__map', { hasText: 'The way out is sealed' }).count())) throw new Error('A SEALED WAY OUT SAID NOTHING');
+    await snap('arena-map-red');
+    // Back to the clock as it was, for the System to finish the road.
+    await clockTo({ moves });
   }
   await autoToResults();
   await revealLoot();

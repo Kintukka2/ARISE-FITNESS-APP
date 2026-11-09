@@ -14,6 +14,9 @@
  *   reach         the most corridors any room lies from the road
  *   see all       moves to enter every room, walking always to the nearest not yet entered
  *   at 120%       the share of rooms entered that way within a budget of 120% of the rooms
+ *   budget        the Gate clock's budget of moves (`clock.budgetOf`)
+ *   System        the moves the System's way takes, its walk back to a rest before the boss counted
+ *                 (`clock.systemMoves`); it must fit the budget, or Auto and the brief would stir
  * Contents:
  *   road odd      road rooms that are not fights (the entrance, stairs and boss aside)
  *   rests         rests on the road and off it, per map
@@ -28,6 +31,7 @@ import { ALL_DUNGEONS, isPractice } from '@/core/gates';
 import { build, mapSeed, systemRoad, threatOf, type GateMap, type MapNode } from '@/core/map';
 import { chamberAt, partySpecs, runChamber } from '@/core/raid';
 import { Unit } from '@/core/combat';
+import { budgetOf, systemMoves } from '@/core/clock';
 import type { Rank } from '@/core/types';
 import { LEVELS, typicalHunter } from './hunters';
 
@@ -85,7 +89,7 @@ function walk(g: ReturnType<typeof graphOf>, start: string, budget = Infinity) {
 }
 
 interface Row {
-  rooms: number; road: number; deadEnds: number; loops: number; passages: number; reach: number; seeAll: number; within: number;
+  rooms: number; road: number; deadEnds: number; loops: number; passages: number; reach: number; seeAll: number; within: number; budget: number; system: number;
   roadOdd: number; restsOn: number; restsOff: number; foesOn: number[]; foesOff: number[]; strong: number; fights: number;
 }
 
@@ -110,6 +114,8 @@ function measure(m: GateMap): Row {
     reach: Math.max(...places.map((id) => fromRoad.get(id) ?? 0)),
     seeAll: walk(g, start).spent,
     within: walk(g, start, Math.round(1.2 * places.length)).seen / places.length,
+    budget: budgetOf(m),
+    system: systemMoves(m),
     roadOdd: roadIds.map((id) => m.byId[id]).filter((x) => !['fight', 'boss', 'down', 'up', 'entrance'].includes(x.kind)).length,
     restsOn: m.nodes.filter((x) => x.kind === 'rest' && onRoad(x)).length,
     restsOff: m.nodes.filter((x) => x.kind === 'rest' && !onRoad(x)).length,
@@ -125,14 +131,14 @@ const span = (xs: number[], dp = 0) => `${avg(xs).toFixed(dp)} (${Math.min(...xs
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
 console.log(`Map statistics: every Gate of each grade over ${DAYS} days' maps, the labyrinth layout.\n`);
-console.log('grade  maps  rooms         road          dead ends     loops          passages       reach       see all          at 120%');
+console.log('grade  maps  rooms         road          dead ends     loops          passages       reach       see all          at 120%  budget        System        System over');
 const all: Record<string, Row[]> = {};
 for (const r of ['E', 'D', 'C', 'B', 'A', 'S'] as Rank[]) {
   const rows: Row[] = [];
   for (const d of ALL_DUNGEONS.filter((x) => x.rank === r && !isPractice(x))) for (const day of days) rows.push(measure(build(d, mapSeed(d, day))));
   all[r] = rows;
   const col = (k: keyof Row, w: number, dp = 0) => span(rows.map((x) => x[k] as number), dp).padEnd(w);
-  console.log(`  ${r}    ${String(rows.length).padEnd(5)} ${col('rooms', 14)}${col('road', 14)}${col('deadEnds', 14)}${col('loops', 15, 1)}${col('passages', 15, 1)}${col('reach', 12)}${col('seeAll', 17)}${pct(avg(rows.map((x) => x.within)))}`);
+  console.log(`  ${r}    ${String(rows.length).padEnd(5)} ${col('rooms', 14)}${col('road', 14)}${col('deadEnds', 14)}${col('loops', 15, 1)}${col('passages', 15, 1)}${col('reach', 12)}${col('seeAll', 17)}${pct(avg(rows.map((x) => x.within))).padEnd(9)}${col('budget', 14)}${col('system', 14)}${rows.filter((x) => x.system > x.budget).length}`);
 }
 
 console.log('\ngrade  road odd    rests on road  rests off road  foes on road  foes off road  fights with a strong creature');

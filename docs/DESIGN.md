@@ -1169,17 +1169,22 @@ didn't was judged to have no tension (docs/research/labyrinth-crawlers.md).
   out, which loses the haul and locks the hunter out for twelve hours, as now.
 - **The name** is the anime's own: a Red Gate. Its trapped-inside rule comes with it.
 - **Honest odds.** The System's road fits inside the budget on every map measured, even at 80%, so
-  Auto, the brief and calibration never stir and the clock alone moves no tuning. When it is built,
-  check that `raid.systemNext`'s walk back to a kept rest before the boss stays inside the budget too.
-- **To settle when it is built:**
-  - What "three grades above" means for a hunter at A-Rank and higher, where S is the last grade.
-    The proposal is S-grade creatures with a step of Ascension's strength for each grade past S.
-  - The stirring share, and how the plan shows the moves left.
+  Auto, the brief and calibration never stir and the clock alone moves no tuning. `raid.systemNext`'s
+  walk back to a kept rest before the boss stays inside it too (built, below).
+- **Settled when it was built** (see "The Gate clock — built"):
+  - "Three grades above" is a strength step, not a list of grades: each grade is 1.5 times the one
+    below (a typical hunter's party grows 1.49 times a grade, E to S), so a Red Gate raises its
+    creatures 1.5 to the power of the grades between the Gate and three above the hunter's rank. Past
+    S the step goes on, and Sovereign stands a grade past S. Ascension's step was the first proposal;
+    it is the gap between two Ascension levels of one grade, far less than a grade, and would have made
+    a Red Gate gentler the stronger the hunter.
+  - Stirring is 1% for each move over: every fight on the System's road 10% stronger cost a typical
+    hunter 8 to 22 points of the clear rate, so 20 moves over (+20%) is a real cost and red the jump.
+    The plan shows the moves left on a meter under the hunter's HP, and every room's moves on its tile.
   - The Gate Survey costs no moves: it is read, not walked.
-  - Every Room and Cartographer count a floor with every room in it cleared, since a whole Gate rarely
-    fits the budget.
+  - Every Room and Cartographer count a floor with every room in it cleared.
   - The 25% healed after every won fight (`ROOM_RECOVERY`) stays; the clock is the cost of moving.
-    Measure how often a side fight ends as a net heal before changing it.
+  - The Practice Gate has no clock, as the towers have none: it teaches the fight and the plan.
 - **Balance.** No Gate tuning moves for the clock. Rerun the campaign, since a hunter who explores now
   sees less of each Gate.
 
@@ -1231,7 +1236,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 1. **Read the fight and the map** (built, below): each intent's damage range, in place of the `title`
    tooltip in `screens/Arena.tsx` that a phone cannot show; threat and contents on seen rooms; an
    `npm run mapstats` report of what the maps draw.
-2. **The Gate clock, Stirring and Red Gates.**
+2. **The Gate clock, Stirring and Red Gates** (built, below).
 3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics.
 4. **Seals, Feats and condition drops.**
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
@@ -1311,6 +1316,59 @@ Etrian Odyssey's map, where what waits in a room is marked on its square.
   Gate's road hashes the same before and after, and `npm run calibrate` moved no tuning. The new tests
   hold every hit the hunter lands, and every foe's hit on the hunter, guarded or not, inside the range
   the turn reckoned for it.
+
+### The Gate clock — built
+
+The references were FTL's beacon map, where the rebel fleet's front takes the sector in red hazard
+stripes and every beacon it reaches is marked; Invisible Inc's alarm, a ring of ticks round its level;
+Loop Hero's boss meter, a bar with the boss's mark at its end; Risk of Rain 2's difficulty bar, which
+names each stage as the run passes into it; Darkest Dungeon's torch, whose tip states exactly what the
+dark adds; Etrian Odyssey's danger orb, blue to red as a fight nears; Persona's Reaper, which reddens the
+screen's edges; and the anime's Red Gate, a crimson portal.
+
+- **The clock** (`core/clock.ts`). A Gate's map is counted in places, a floor's stairs down and up as
+  one, and its budget is 120% of them (`budgetOf`), written to the run as it walks in (`run.clock`), so a
+  later change to the share never reaches a run already open. Entering a room costs the walk to it
+  through cleared rooms and the step in (`walkMoves`); so does walking back (`raid.moveTo`); both are
+  written to the run (`run.moves`) before the room plays. A run without `run.clock` (a tower, the
+  Practice Gate, or one opened before the clock) has none.
+- **Stirring.** Past the budget every creature in a room entered is 1% stronger for each move over, HP
+  and hit alike (`mightOf`, passed to the chamber as `might`). A fight resumed from its orders meets the
+  same creatures: nothing moves while a step is underway.
+- **Red Gate.** At 20 moves over, the creatures fight 1.5 times stronger for each grade from the Gate's
+  to three above the rank the hunter walked in with (`run.held`), on top of the stirring; the way out
+  seals until the boss falls (`raid.sealed`, `canWithdraw`). A C-Rank hunter in a C-Rank Gate meets
+  them 4.05 times as strong. With every fight on the System's road 3.15 times as strong, a typical
+  hunter cleared 6% of E-Rank Gates and none of any grade above; at 4.72 times, none at all.
+- **The System's way** (`systemMoves`): its road and its walk back to a kept rest before the boss.
+  `tests/clock.test.ts` drives a run the System's way through every Gate and holds its moves to exactly
+  that count, and that count to the budget on every Gate over six days' maps; `npm run mapstats` reports
+  it over 20 days:
+
+  | Grade | Budget | The System's moves (most) |
+  |---|---|---|
+  | E | 14 | 5 (9) |
+  | D | 17 | 5 (11) |
+  | C | 35 | 12 (24) |
+  | B | 40 | 15 (32) |
+  | A | 70 | 24 (48) |
+  | S | 112 | 41 (76) |
+
+- **On screen.** Under the hunter's HP, the meter: `Moves 2/14`, a tick to each move and the Gate's mark
+  at the bar's end; past the budget it becomes the 20 moves to red, `Stirring +6%`, `Red in 14`; turned,
+  `Red Gate`, full and pulsing, `Sealed`. Every room the hunter can enter or walk to shows its moves at
+  its tile's foot, after a footprints glyph. The plan's rim reddens as it stirs; a Red Gate's plan is red
+  and striped, its entrance sealed under a lock, and the arena's edges are red. The first move over and
+  the move that turns it each open a System window, `[The Gate is stirring.]` and `[The Gate has turned
+  red.]`, each stating the creatures' share; every other move over is a line in the feed. The brief's
+  Depth cell gives the budget, `14 moves`, and the Guide every rule with its number.
+- **Every Room and Cartographer** count floors: each floor of a cleared Gate with every room on it
+  cleared. The settlement also stops counting a Gate cleared without every room as one the hunter was
+  carried out of, a slip from the labyrinths that grew the count of Gates carried out, wrongly opened
+  Valcorde's first-defeat call and shut Not Once for good; save version 10 takes the count again from the
+  log wherever the log still holds every run.
+- **Balance.** The fight is unchanged at `might` 1, and Auto, the brief and calibration never leave the
+  budget: `npm run calibrate` moved no tuning.
 
 ## What stays out
 

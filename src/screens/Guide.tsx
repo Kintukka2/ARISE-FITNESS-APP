@@ -3,6 +3,7 @@ import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL } from '@/co
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, LABYRINTH, RESTS_MAX } from '@/core/map';
+import { CLOCK } from '@/core/clock';
 import { POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -83,7 +84,13 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A room you have cleared reads Cleared. A rest, the stairs and the entrance keep their marks, for coming back to.',
       'You see every room next to one you have cleared. A room seen stays seen on that map, for as long as it stands.',
       'You can enter any room next to one you have cleared.',
-      'You can walk back to any cleared room at any time, and walking costs nothing.',
+      'You can walk back to any cleared room at any time.',
+      `Every Gate has a budget of moves: ${Math.round(CLOCK.budget * 100)}% of its rooms, a floor’s stairs down and up counted as one. The brief shows it, and so does the meter under your health inside.`,
+      'Entering a room is a move, and so is every corridor walked back through cleared rooms, the shortest way. Each room you can go to shows its moves.',
+      `Past the budget the Gate stirs: every creature you have not yet fought, and the boss, is ${Math.round(CLOCK.stir * 100)}% stronger for each move over.`,
+      `${CLOCK.red} moves past the budget, the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
+      'The System’s road always fits inside the budget, so the brief’s verdict and Auto never stir.',
+      'The Practice Gate, the Pale Spire and the Trials have no clock.',
       ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'trap', 'event', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
       `A vault holds ${CACHE.vault}-${CACHE.vault + 2} alloy of the Gate’s own grade and two parts, or a piece found whole ${FORGED.vault * 100}% of the time.`,
       `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
@@ -91,11 +98,11 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `A rest restores ${REST_HEAL * 100}% of health to everyone standing, once. Use it when you find it, or walk back to it later.`,
       'Some Gates hide a passage between two rooms. It opens once you clear a room at either end.',
       'The bag at the map’s corner holds your items, one slot to each. Tap an item to see what it does, then Use.',
-      `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it. The Exchange sells them for ${SURVEY.price}.`,
+      `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it, and costs no moves. The Exchange sells them for ${SURVEY.price}.`,
       `A Health Potion can be drunk from the bag between rooms, for ${POTION_HEAL * 100}% of your health, as well as on your turn in a fight. A Mana Potion can be drunk from it too.`,
       `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
       'What the run banks is paid when the boss falls or you withdraw. Carried out, you lose it.',
-      'You can withdraw only from the entrance, once you have cleared a room.',
+      'You can withdraw only from the entrance, once you have cleared a room, and never from a Red Gate before its boss falls.',
       `Blessings last until you leave the Gate: ${BLESSINGS.map((b) => `${b.name} (${b.text})`).join(', ')}.`,
       'The brief’s verdict follows the marked road, the fewest rooms to the boss, and makes the System’s choices. Auto does the same.',
       'The System keeps a rest it finds for the boss.',
