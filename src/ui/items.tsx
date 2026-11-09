@@ -14,6 +14,8 @@ export interface BagItem {
   id: string;
   name: string;
   glyph: string;
+  /** A class that tints its glyph, as the Exchange tints a potion's. */
+  tone?: string;
   /** How many are held, as the slot shows it: `2/3`, `1`. */
   held: string;
   count: number;
@@ -92,13 +94,13 @@ function ItemWheel({ items, close }: { items: BagItem[]; close: () => void }) {
         </svg>
         {items.slice(0, ITEM_SLOTS).map((x, i) => (
           <span key={x.id} class={`bagwheel__item ${pick === i ? 'is-picked' : ''} ${x.off ? 'is-off' : ''}`} style={`left:${slotMid(i).left};top:${slotMid(i).top};--i:${i}`} aria-hidden="true">
-            <Glyph name={x.glyph} />
+            <span class={`bagwheel__glyph ${x.tone ?? ''}`}><Glyph name={x.glyph} /></span>
             <b class="num">{x.held}</b>
           </span>
         ))}
         <div class="bagwheel__hub">
           {chosen ? <>
-            <Glyph name={chosen.glyph} />
+            <span class={`bagwheel__glyph ${chosen.tone ?? ''}`}><Glyph name={chosen.glyph} /></span>
             <b class="bagwheel__name">{chosen.name}</b>
             <span class="bagwheel__effect">{chosen.effect}</span>
             <span class="bagwheel__held">Held: <span class="num">{chosen.held}</span></span>

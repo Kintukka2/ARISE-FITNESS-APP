@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse, STORAGE_KEY } from '@/core/save';
+import { POTIONS, SATCHEL } from '@/core/shop';
 
 describe('save', () => {
   it('round-trips and fills in missing fields', () => {
@@ -46,6 +47,25 @@ describe('save', () => {
     held.hunter.level = 32;
     held.hunter.rank = 'D';
     expect(parse(JSON.stringify(held))?.hunter.rank).toBe('D');
+  });
+
+  it('folds the field potions an older save carried into its Health Potions, as many as the satchel holds', () => {
+    const old = defaults() as unknown as Record<string, unknown> & { wallet: { shards: number; earned: number } };
+    old.v = 8;
+    old.satchel = 3;
+    old.satchelPlus = 1;
+    old.stock = { hp: 2, mp: 1 };
+    old.wallet.shards = 100;
+    old.assoc = { n: 4, reported: 4, quest: { n: 4, kind: 'clear', grade: 'C', gate: 'DNG-020', need: 1, got: 0, xp: 100, reward: { kind: 'field', n: 2 } } };
+    (old.settings as { skipAsk: string[] }).skipAsk = ['buy:field', 'drink:hp'];
+    const s = parse(JSON.stringify(old))!;
+    // The satchel holds four: two held and two of the three carried; the third is paid back.
+    expect(s.stock.hp).toBe(SATCHEL + 1);
+    expect(s.stock.mp).toBe(1);
+    expect(s.wallet.shards).toBe(100 + POTIONS.find((p) => p.id === 'hp')!.price);
+    expect('satchel' in s).toBe(false);
+    expect(s.assoc.quest?.reward).toEqual({ kind: 'potion', id: 'hp', n: 2 });
+    expect(s.settings.skipAsk).toEqual(['drink:hp']);
   });
 
   it('rejects things that are not saves', () => {

@@ -20,7 +20,7 @@ import { rng } from './util';
 
 export type AssocReward =
   | { kind: 'potion'; id: 'hp' | 'mp' | 'fatigue'; n: number }
-  | { kind: 'field' | 'shards' | 'survey' | 'satchel' | 'blueprint' | 'alloy'; n: number };
+  | { kind: 'shards' | 'survey' | 'satchel' | 'blueprint' | 'alloy'; n: number };
 
 export interface AssocQuest {
   /** Its place in the line, from 0. */
@@ -115,13 +115,14 @@ export function count(s: Save, d: Dungeon, run: OpenRaid, outcome: 'cleared' | '
 }
 
 export interface AssocPaid {
-  quest: AssocQuest; xp: XpResult | null; shards: number; field: number; next: AssocQuest | null;
+  /** `kept`: the potions it paid that the hunter carries; Health Potions past the satchel's room are paid in `shards`. */
+  quest: AssocQuest; xp: XpResult | null; shards: number; kept: number; next: AssocQuest | null;
   /** The blueprint it paid, if it paid one; or the alloy it paid, for a blueprint when every design of its grade was known, or as alloy. */
   blueprint: string | null; mats: Record<string, number>;
 }
 
 /**
- * Report a finished job: its experience, and what else it pays, then the next job. A field potion
+ * Report a finished job: its experience, and what else it pays, then the next job. A Health Potion
  * the satchel has no room for is paid in shards at its price. Returns what was paid, or null if the
  * job is not done. Mutates.
  */
@@ -130,25 +131,20 @@ export function report(s: Save): AssocPaid | null {
   if (!q || !done(q)) return null;
   const xp = q.xp ? grantXP(s, q.xp) : null;
   let shards = 0;
-  let field = 0;
+  let kept = 0;
   const w = q.reward;
   let blueprint: string | null = null;
   let mats: Record<string, number> = {};
   if (w?.kind === 'blueprint') ({ blueprint, mats } = forge.leaveBlueprint(s, q.grade, rng(`arise|assoc-blueprint|${q.n}|${q.grade}`)));
   else if (w?.kind === 'alloy') { mats = { [forge.alloyId(q.grade)]: w.n }; forge.give(s, mats); }
-  if (w?.kind === 'potion') shop.stockUp(s, w.id, w.n);
+  if (w?.kind === 'potion') ({ kept, shards } = shop.givePotions(s, w.id, w.n));
   else if (w?.kind === 'survey') shop.stockUp(s, 'survey', w.n);
   else if (w?.kind === 'satchel') s.satchelPlus = (s.satchelPlus ?? 0) + w.n;
   else if (w?.kind === 'shards') shards = shop.earn(s, shop.gateShards(q.grade, w.n));
-  else if (w?.kind === 'field') {
-    field = Math.min(w.n, Math.max(0, shop.satchelMax(s) - s.satchel));
-    s.satchel += field;
-    if (w.n > field) shards = shop.earn(s, (w.n - field) * shop.FIELD_POTION.price);
-  }
   s.assoc!.reported += 1;
   s.assoc!.n += 1;
   s.assoc!.quest = null;
   const next = issue(s);
-  return { quest: q, xp, shards, field, next, blueprint, mats };
+  return { quest: q, xp, shards, kept, next, blueprint, mats };
 }
 

@@ -362,13 +362,11 @@ export interface Save {
    * `seen` is whether the Quests screen has shown them yet; a new day's arrive unseen.
    */
   contracts: { day: string | null; grade: Rank; list: Contract[]; bonus: boolean; seen?: boolean };
-  /** Field potions carried into Gates, drunk on the hunter's turn. */
-  satchel: number;
-  /** Room in the satchel past the Exchange's, given by the Association. */
+  /** Room in the satchel past the Exchange's, given by the Association: the satchel carries Health Potions (`stock.hp`). */
   satchelPlus: number;
   /** Ryn Valcorde's Association Quests: the place in the line, the job in hand, and how many reported. */
   assoc: { n: number; quest: import('./association').AssocQuest | null; reported: number };
-  /** What the hunter holds to use later, by kind: potions, and Gate Surveys. Each is used before one is bought. */
+  /** What the hunter holds to use later, by kind: potions (Health Potions as many as the satchel carries), and Gate Surveys. Each is used before one is bought. */
   stock: Partial<Record<StockId, number>>;
 
   log: LogEntry[];

@@ -49,7 +49,7 @@ export function lines(b: Beat, name: (uid: string) => string): { text: string; t
     else if (e.t === 'cast') out.push({ text: e.k === 'taunt' ? `✦ ${name(e.a)}: ${e.ab}. Foes turned: ${e.n ?? 0}.` : `✦ ${name(e.a)}: ${e.ab}.`, tone: side(e.a) });
     else if (e.t === 'stun') out.push({ text: `✴ ${name(e.a)}: [Stunned]. Turn lost.`, tone: 'muted' });
     else if (e.t === 'guard') out.push({ text: `◈ ${name(e.a)}: Guard.`, tone: side(e.a) });
-    else if (e.t === 'heal') out.push({ text: e.ab ? `✚ ${name(e.a)} HP +${e.amt}` : `✚ ${name(e.a)}: Field Potion. HP +${e.amt}`, tone: side(e.a) });
+    else if (e.t === 'heal') out.push({ text: e.ab ? `✚ ${name(e.a)} HP +${e.amt}` : `✚ ${name(e.a)}: Health Potion. HP +${e.amt}`, tone: side(e.a) });
     else if (e.t === 'status') out.push({ text: `✴ ${name(e.v)}: [Effect: ${e.s}] has activated.`, tone: 'status' });
     else if (e.t === 'down') out.push({ text: `✖ ${name(e.v)} has fallen.`, tone: e.v.startsWith('e') ? 'kill' : 'loss' });
     else if (e.t === 'tick') out.push({ text: `● ${name(e.v)} HP -${e.dmg} (${e.s})`, tone: 'status' });

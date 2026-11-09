@@ -1,9 +1,9 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
-import { BLUEPRINT_SHELF, FIELD_POTION, GATE_SHARDS, gateShards, POTIONS } from '@/core/shop';
+import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, LABYRINTH, RESTS_MAX } from '@/core/map';
-import { FIELD_POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
+import { POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
@@ -92,7 +92,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Some Gates hide a passage between two rooms. It opens once you clear a room at either end.',
       'The bag at the map’s corner holds your items, one slot to each. Tap an item to see what it does, then Use.',
       `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it. The Exchange sells them for ${SURVEY.price}.`,
-      `A field potion can be drunk from the bag between rooms, for ${FIELD_POTION_HEAL * 100}% of your health, as well as on your turn in a fight.`,
+      `A Health Potion can be drunk from the bag between rooms, for ${POTION_HEAL * 100}% of your health, as well as on your turn in a fight. A Mana Potion can be drunk from it too.`,
       `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
       'What the run banks is paid when the boss falls or you withdraw. Carried out, you lose it.',
       'You can withdraw only from the entrance, once you have cleared a room.',
@@ -114,7 +114,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A taunt turns every foe’s next move on you, and the move shows the change before it is made.',
       'Your own card counts the foes coming for you.',
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
-      `Field potion: restores ${FIELD_POTION_HEAL * 100}% of your health. The satchel holds ${FIELD_POTION.max}, and the Association can add room.`,
+      `Health Potion: restores ${POTION_HEAL * 100}% of your health. The satchel holds ${SATCHEL}, and the Association can add room.`,
       `Standing orders, set on the Shadows screen, steer your Shadows and your own turns on Auto: ${TACTICS.map((x) => x.name).join(', ')}.`,
       'Orders set while a step is underway hold from the next step.',
       'The Association’s hunters are not yours to order. They pick their own targets.',
@@ -162,8 +162,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A Chosen standing in the boss’s place is that boss, for his job. Clear the Gate past it and the job is done.',
       'When it is done, report to him from his card on the Quests screen. He pays, then hands over the next.',
       `Every job pays ${Math.round(ASSOC.xp * 100)}% of a clear’s XP at its grade.`,
-      `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, a field potion, shards or a ${SURVEY.name}.`,
-      `Jobs ${ASSOC.satchelAt.map((n) => n + 1).join(', ')} widen your satchel by one field potion each.`,
+      `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, shards or a ${SURVEY.name}.`,
+      `Jobs ${ASSOC.satchelAt.map((n) => n + 1).join(', ')} widen your satchel by one Health Potion each.`,
       'The line loops through the three kinds, and asks for more creatures and stronger Gates each time round.',
       `A ${SURVEY.name} charts every room of a Gate’s map, before you go in or once you are inside.`,
       'A potion you hold is drunk before one is bought. The potion buttons show how many you hold.',
@@ -291,7 +291,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Select in the Inventory picks items to recycle together. Worn and starred items cannot be picked.',
       'A rarity tapped in Select picks all of it, and tapped again unpicks it.',
       `The Exchange redraws ${BLUEPRINT_SHELF} blueprints at midnight, mostly at your grade.`,
-      `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}. The Field Potion costs ${FIELD_POTION.price}.`,
+      `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}.`,
+      'Health and Mana Potions are bought to carry. Health Potions go in your satchel, for a fight or between rooms.',
+      'The other potions are drunk when bought.',
     ],
   },
   {

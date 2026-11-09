@@ -108,8 +108,8 @@ export { STRIKE };
 /** What a guarding unit takes of every hit. */
 export const GUARD = 0.5;
 STATUS_TEXT.Guarded = `Damage taken -${(1 - GUARD) * 100}% until its next turn`;
-/** A field potion restores this share of the drinker's maximum HP. */
-export const FIELD_POTION_HEAL = 0.3;
+/** A Health Potion restores this share of the drinker's maximum HP, in a fight or out of one. */
+export const POTION_HEAL = 0.25;
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS, ...TREE_SKILLS].map((a) => [a.name, a]));
 const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES];
 const passiveMap = new Map<string, string>(ALL_PASSIVES.map((p) => [p.name, p.style]));
@@ -218,7 +218,7 @@ export type Ev =
   | { t: 'down'; v: string }
   | { t: 'guard'; a: string }
   | { t: 'intent'; u: string; ab: string; at?: string }
-  /** `ab`: the support that healed; unset is a Field Potion. */
+  /** `ab`: the support that healed; unset is a Health Potion. */
   | { t: 'heal'; a: string; amt: number; hp: number; ab?: string }
   | { t: 'passive'; u: string; p: string; k: string; hp?: number; amt?: number };
 
@@ -337,7 +337,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   if (o?.use === 'Potion' && ctx.potions > 0) {
     ctx.potions -= 1;
     const was = u.hp;
-    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * FIELD_POTION_HEAL);
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * POTION_HEAL);
     log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp) });
     return;
   }
@@ -528,7 +528,7 @@ export interface BattleOpts {
   hero?: string;
   /** Standing orders for that unit's allies. */
   tactic?: Tactic;
-  /** Field potions the waiting unit carries. */
+  /** Health Potions the waiting unit carries. */
   potions?: number;
 }
 

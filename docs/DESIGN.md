@@ -66,8 +66,9 @@ hunter's turns to the System and presses on between chambers, for grinding.
   `fight()` drives it with nobody waiting. `choose()` and `targets()` are the **auto policy**: what
   Auto does, and what everyone does without orders.
 - **Hunter actions:** a skill from the class kit, Strike, *Guard* (half damage until your next
-  turn), or a field potion (30% of maximum HP). Field potions are bought at the Exchange into a
-  satchel of three; the other potions are still drunk on purchase.
+  turn), or a Health Potion (25% of maximum HP). Health and Mana Potions are bought at the Exchange
+  to carry, Health Potions into a satchel of three; the other potions are still drunk on purchase.
+  (Until the merge below, the fight's potion was a separate Field Potion.)
 - **Standing orders**, set on the Shadows screen's Orders tile (*Army: Orders*): *As They See Fit*,
   *Finish The Weakest*, *Protect The Hunter*, *Spread The Pain*. Each is a target rule for the
   hunter's Shadows, and for the hunter's own turns when Auto plays them. They used to be set in the
@@ -701,10 +702,10 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
   until the hunter reports it (`association.report`). He pays, then hands over the next. A job is
   written to the save when it is handed over, so nothing redraws it.
 - **The pay.** Every job pays a quarter of a clear's experience at its grade. About 30% pay nothing
-  more. The rest pay a Health, Mana or Fatigue Potion (held, and drunk before one is bought), a field
-  potion (shards at its price if the satchel is full), a clear's worth of shards or two, or a Gate
-  Survey, which shows a Gate's map in its brief before the hunter has been in. Jobs 6, 16 and 31
-  widen the satchel by one field potion each.
+  more. The rest pay a Health, Mana or Fatigue Potion (held, and drunk before one is bought; Health
+  Potions the satchel has no room for are paid in shards at their price), a clear's worth of shards
+  or two, or a Gate Survey, which shows a Gate's map in its brief before the hunter has been in. Jobs
+  6, 16 and 31 widen the satchel by one Health Potion each.
 - **Balance.** Calibration's hunters take no jobs, so `gatetune.ts` stands. The campaign's hunters
   take every job and report it at once.
 
@@ -973,12 +974,39 @@ hunter can use in a Gate, with room to add more later.
   held`, `HP full`, `Not now`, `Drunk inside a Gate`, `Nothing left to chart`). Picking, then Use, is
   the asking, so the Gate Survey no longer opens the System's `Would you like to use?` first. Close, a
   tap outside the wheel or Escape closes it.
-- **The Field Potion is drunk between steps** (`raid.drinkField`, `raid.fieldIdle`), from the satchel,
+- **The Field Potion is drunk between steps** (`raid.drinkField`, `raid.fieldIdle`; now the Health Potion's, below), from the satchel,
   for the same share of the maximum as on the hunter's turn, never past it, and only while nothing is
   underway and the run is still to be won. It is written to the run's party at once, like a rest.
   Auto, the brief's assessment and calibration never drink one, so nothing they measure changed and no
   recalibration was run.
 - **The Gate Survey** moves into the wheel. Used from it, it charts the map as before (`surveyNow`).
+
+## One Health Potion — built
+
+The owner found the Field Potion and the Health Potion redundant, and asked for one potion, in the
+bag's wheel, with the Mana Potion beside it.
+
+- **The Field Potion is gone; the Health Potion is the one healing potion.** It keeps the Health
+  Potion's numbers: HP +25% (`POTION_HEAL` in `core/combat.ts`, which `shop.POTION_RESTORE` reads) for
+  30 shards. In a fight that is 5 points less than the Field Potion's 30%, for 10 shards less than its
+  40. It is drunk on the hunter's turn in a fight, between rooms from the bag (`raid.drinkPotion`,
+  `raid.drinkIdle`), or out of a Gate from the HP bar, held first, bought if none is.
+- **The satchel carries Health Potions** (`stock.hp`): three (`shop.SATCHEL`), and one more for each
+  of Ryn's satchel jobs. A purchase or a reward past its room is refused at the Exchange, and paid in
+  shards at the potion's price by Ryn (`shop.givePotions`). `s.satchel` is gone.
+- **Health and Mana Potions are carried** (`shop.CARRIED`): the Exchange sells them to carry (`shop.buyCarried`),
+  with **Buy**; the Fatigue Potion and the Elixir are still drunk on purchase. Mana Potions have no
+  satchel and no limit, since a fight never drinks one.
+- **The wheel** holds the Health Potion first, the Mana Potion beside it, then the Gate Survey. On a
+  Gate's brief, a Health Potion from it restores the hunter's own health, as the HP bar's does.
+- **Ryn's field potion reward** is a Health Potion reward in its place in his pay table, so every
+  other reward still rolls exactly as it did.
+- **Old saves** (`SAVE_VERSION` 9): what the satchel held joins the Health Potions held, as many as
+  the satchel carries, and the rest are paid back at 30 shards each. A job that was to pay field potions
+  pays Health Potions, and a "Do not ask again" for buying field potions is forgotten.
+- **Balance.** Auto, the brief's assessment and calibration never drink a potion, so nothing they
+  measure changed: no recalibration ran, and no tuning moved. The campaign was rerun for the new
+  prices and Ryn's reward (below).
 
 ## Smaller changes from the same playtest
 

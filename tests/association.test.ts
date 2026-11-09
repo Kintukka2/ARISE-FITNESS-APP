@@ -113,22 +113,23 @@ describe('a job', () => {
     expect(association.current(s)).toBe(paid.next);
   });
 
-  it('pays a field potion the satchel has no room for in shards, and widens the satchel at a milestone', () => {
+  it('pays a Health Potion the satchel has no room for in shards, and widens the satchel at a milestone', () => {
     const s = hunter();
     s.assoc = { n: 0, quest: null, reported: 0 };
-    s.satchel = shop.satchelMax(s);
+    shop.stockUp(s, 'hp', shop.satchelMax(s) - 1);
     const q = association.issue(s)!;
     q.got = q.need;
-    q.reward = { kind: 'field', n: 2 };
+    q.reward = { kind: 'potion', id: 'hp', n: 2 };
     const purse = s.wallet.shards;
     const paid = association.report(s)!;
-    expect(paid.field).toBe(0);
-    expect(s.wallet.shards - purse).toBe(2 * shop.FIELD_POTION.price);
+    expect(paid.kept).toBe(1);
+    expect(shop.held(s, 'hp')).toBe(shop.satchelMax(s));
+    expect(s.wallet.shards - purse).toBe(shop.POTIONS.find((p) => p.id === 'hp')!.price);
     const next = association.current(s)!;
     next.got = next.need;
     next.reward = { kind: 'satchel', n: 1 };
     association.report(s);
-    expect(shop.satchelMax(s)).toBe(shop.FIELD_POTION.max + 1);
+    expect(shop.satchelMax(s)).toBe(shop.SATCHEL + 1);
   });
 
   it('a held potion is drunk before one is bought', () => {

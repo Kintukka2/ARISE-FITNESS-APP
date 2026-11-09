@@ -17,16 +17,17 @@ export const ASSOC = {
   xp: 0.25,
   /** The share of jobs that pay nothing else. */
   bare: 0.3,
-  /** The jobs, by their place in the line, that pay a wider satchel instead: one more field potion each. */
+  /** The jobs, by their place in the line, that pay a wider satchel instead: one more Health Potion each. */
   satchelAt: [5, 15, 30],
 } as const;
 
 /** What else a job can pay, and how often, by weight. */
-export const ASSOC_PAY: { kind: 'potion' | 'field' | 'shards' | 'survey' | 'blueprint' | 'alloy'; id?: 'hp' | 'mp' | 'fatigue'; n: [number, number]; weight: number }[] = [
+export const ASSOC_PAY: { kind: 'potion' | 'shards' | 'survey' | 'blueprint' | 'alloy'; id?: 'hp' | 'mp' | 'fatigue'; n: [number, number]; weight: number }[] = [
   { kind: 'potion', id: 'hp', n: [1, 2], weight: 3 },
   { kind: 'potion', id: 'mp', n: [1, 2], weight: 3 },
   { kind: 'potion', id: 'fatigue', n: [1, 1], weight: 2 },
-  { kind: 'field', n: [1, 2], weight: 2 },
+  // What paid field potions before they were Health Potions, kept in its place so every other roll lands where it did.
+  { kind: 'potion', id: 'hp', n: [1, 2], weight: 2 },
   { kind: 'shards', n: [1, 2], weight: 3 },
   { kind: 'survey', n: [1, 2], weight: 3 },
   // The Forge: a blueprint of the job's grade, one not yet known, now and then; alloy of it more often.

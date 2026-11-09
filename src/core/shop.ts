@@ -1,8 +1,9 @@
 /**
  * Mana Shards and the Exchange. A shelf of blueprints a day, redrawn at midnight
  * with the Gate board, most at the hunter's grade and some well above it at a
- * premium. Potions are always in stock: most are drunk on purchase, and
- * field potions go in the satchel for the hunter's turn in a fight.
+ * premium. Potions are always in stock. Health and Mana Potions are carried, Health
+ * Potions in the satchel, to drink anywhere: in a fight, in a Gate, or out of one.
+ * The others are drunk on purchase.
  */
 import { EQUIPMENT } from '@/data/equipment';
 import { BLUEPRINTS } from '@/data/forge';
@@ -13,7 +14,7 @@ import type { Rank, Save, StockId } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
 import * as vitals from './vitals';
-import { FIELD_POTION_HEAL } from './combat';
+import { POTION_HEAL } from './combat';
 import { licensedRank } from './licence';
 
 export const STOCK = BLUEPRINTS.shelf;
@@ -106,8 +107,8 @@ export function buy(s: Save, index: number, day = dayKey()): boolean {
 
 export type PotionId = 'hp' | 'mp' | 'fatigue' | 'elixir';
 
-/** What the Health and Mana Potions restore, as a share of the maximum, and what the Fatigue Potion takes off. */
-export const POTION_RESTORE = 0.25;
+/** What the Health and Mana Potions restore, as a share of the maximum (the Health Potion's in a fight too), and what the Fatigue Potion takes off. */
+export const POTION_RESTORE = POTION_HEAL;
 export const POTION_EASE = 20;
 
 export const POTIONS: { id: PotionId; name: string; price: number; effect: string; desc: string }[] = [
@@ -117,17 +118,33 @@ export const POTIONS: { id: PotionId; name: string; price: number; effect: strin
   { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Gate lockout lifted', desc: 'Accepted by the Hunter Association as proof of recovery.' },
 ];
 
-/** Field potions are carried, not drunk: into a Gate, for the hunter's own turn. */
-export const FIELD_POTION = { price: 40, max: 3, heal: FIELD_POTION_HEAL } as const;
+/** The potions carried rather than drunk on purchase: into a Gate, for its fights and between its rooms. */
+export const CARRIED: PotionId[] = ['hp', 'mp'];
+/** How many Health Potions the satchel holds before the Association adds room. */
+export const SATCHEL = 3;
 
-/** How many field potions the satchel holds: the Exchange's, and what the Association has added. */
-export const satchelMax = (s: Save) => FIELD_POTION.max + (s.satchelPlus ?? 0);
+/** How many Health Potions the satchel holds: the Exchange's, and what the Association has added. */
+export const satchelMax = (s: Save) => SATCHEL + (s.satchelPlus ?? 0);
+/** Room left in the satchel. */
+export const satchelRoom = (s: Save) => Math.max(0, satchelMax(s) - held(s, 'hp'));
 
-/** Put a field potion in the satchel. False if it is full or the shards are short. */
-export function buyField(s: Save): boolean {
-  if (s.satchel >= satchelMax(s) || !pay(s, FIELD_POTION.price)) return false;
-  s.satchel += 1;
+/** Buy a Health or Mana Potion to carry. False if the satchel has no room for a Health Potion, or the shards are short. Mutates. */
+export function buyCarried(s: Save, id: PotionId): boolean {
+  const p = POTIONS.find((x) => x.id === id);
+  if (!p || !CARRIED.includes(id) || (id === 'hp' && satchelRoom(s) <= 0) || !pay(s, p.price)) return false;
+  stockUp(s, id);
   return true;
+}
+
+/**
+ * Hand the hunter potions to carry: as many Health Potions as the satchel has room for, the rest paid
+ * in shards at their price; every other potion kept. Returns how many were kept and the shards paid. Mutates.
+ */
+export function givePotions(s: Save, id: PotionId, n: number): { kept: number; shards: number } {
+  const kept = id === 'hp' ? Math.min(n, satchelRoom(s)) : n;
+  stockUp(s, id, kept);
+  const price = POTIONS.find((x) => x.id === id)?.price ?? 0;
+  return { kept, shards: n > kept ? earn(s, (n - kept) * price) : 0 };
 }
 
 /** Buy a Gate Survey into stock. False if the shards are short. Mutates. */

@@ -14,9 +14,10 @@ import { NODES } from '@/data/tree';
 import { rankFor } from './progression';
 import { gearDef } from './gear';
 import { xpAt } from './shadows';
+import { POTIONS, SATCHEL } from './shop';
 import type { Save } from './types';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 export const STORAGE_KEY = 'arise-rpg:save';
 export const BACKUP_KEY = 'arise-rpg:backup';
 
@@ -52,7 +53,6 @@ export function defaults(): Save {
     contracts: { day: null, grade: 'E', list: [], bonus: false, seen: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
     ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0, marks: {}, sent: [], felled: [] },
-    satchel: 0,
     satchelPlus: 0,
     stock: {},
     assoc: { n: 0, quest: null, reported: 0 },
@@ -166,6 +166,30 @@ const MIGRATIONS: Record<number, (s: Obj) => Obj> = {
       if (id && gearDef(id) && !gearDef(id)!.issued) known.add(id);
     }
     s.blueprints = [...known];
+    return s;
+  },
+  // v9: the Field Potion is the Health Potion. What the satchel held joins the Health Potions held, as
+  // many as the satchel carries; any past that are paid back in shards at the Health Potion's price.
+  // A job of Ryn's that was to pay field potions pays Health Potions, and an old "Do not ask again"
+  // for buying field potions is forgotten.
+  8: (s) => {
+    const stock: Obj = isObj(s.stock) ? s.stock : {};
+    const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
+    const room = SATCHEL + num(s.satchelPlus);
+    const all = num(stock.hp) + num(s.satchel);
+    const kept = Math.min(all, room);
+    stock.hp = kept;
+    s.stock = stock;
+    const over = all - kept;
+    if (over > 0 && isObj(s.wallet)) {
+      const paid = over * (POTIONS.find((p) => p.id === 'hp')?.price ?? 0);
+      s.wallet.shards = num(s.wallet.shards) + paid;
+      s.wallet.earned = num(s.wallet.earned) + paid;
+    }
+    delete s.satchel;
+    const q = isObj(s.assoc) && isObj(s.assoc.quest) ? s.assoc.quest : null;
+    if (q && isObj(q.reward) && q.reward.kind === 'field') q.reward = { kind: 'potion', id: 'hp', n: num(q.reward.n) || 1 };
+    if (isObj(s.settings) && Array.isArray(s.settings.skipAsk)) s.settings.skipAsk = s.settings.skipAsk.filter((k: unknown) => k !== 'buy:field');
     return s;
   },
 };

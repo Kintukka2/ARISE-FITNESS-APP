@@ -12,7 +12,7 @@ import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
-import { battle, FIELD_POTION_HEAL, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
+import { battle, POTION_HEAL, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
@@ -141,7 +141,7 @@ export interface ChamberOpts {
   /** The hunter fights their own turns. Otherwise the auto policy fights them, and nothing waits. */
   manual?: boolean;
   tactic?: Tactic;
-  /** Field potions the hunter has to drink in this chamber. */
+  /** Health Potions the hunter has to drink in this chamber. */
   potions?: number;
   /** Orders already given in this chamber, replayed silently to bring it back to where it was. */
   orders?: (Order | null)[];
@@ -425,28 +425,28 @@ export function restHere(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): 
 }
 
 /**
- * A field potion can be drunk between steps, in a Gate or up a tower: one is in the satchel, the hunter
+ * A Health Potion can be drunk between steps, in a Gate or up a tower: one is in the satchel, the hunter
  * is hurt, nothing is underway and the run is still to be won. In a fight it is the hunter's turn's.
  */
-export const canDrinkField = (s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) => !fieldIdle(s, d, run, now);
+export const canDrinkHere = (s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) => !drinkIdle(s, d, run, now);
 
-/** Why a field potion cannot be drunk between steps now, or null if it can. */
-export function fieldIdle(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): string | null {
-  if (s.satchel <= 0) return 'None held';
+/** Why a Health Potion cannot be drunk between steps now, or null if it can. */
+export function drinkIdle(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): string | null {
+  if (shop.held(s, 'hp') <= 0) return 'None held';
   if (run.lost || pending(d, run) || bossDown(d, run)) return 'Not now';
   const hero = partyFor(s, d, run, now)[0];
   if (!hero?.alive()) return 'Not now';
   return hero.hp < hero.maxHp ? null : 'HP full';
 }
 
-/** Drink a field potion between steps: the hunter's HP, up by its share of the maximum. Returns the HP it restored, 0 if it could not. Mutates. */
-export function drinkField(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): number {
-  if (!canDrinkField(s, d, run, now)) return 0;
+/** Drink a Health Potion between steps: the hunter's HP, up by its share of the maximum. Returns the HP it restored, 0 if it could not. Mutates. */
+export function drinkPotion(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): number {
+  if (!canDrinkHere(s, d, run, now)) return 0;
   const party = partyFor(s, d, run, now);
   const hero = party[0];
   const was = hero.hp;
-  hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * FIELD_POTION_HEAL);
-  s.satchel -= 1;
+  hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * POTION_HEAL);
+  s.stock.hp = shop.held(s, 'hp') - 1;
   settleParty(s, d, run, party, now);
   return Math.round(hero.hp - was);
 }
@@ -643,20 +643,20 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const party = partyFor(s, d, run, now);
   const orders = run.orders ?? [];
   // The satchel has already paid for the potions this chamber's orders drank.
-  const potions = s.satchel + orders.filter((o) => o?.use === 'Potion').length;
+  const potions = shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length;
   const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run) });
   return { party, ch, node: x };
 }
 
 /**
- * Write the hunter's order to the save, before it plays out. A potion is paid
- * for here, out of the satchel; one the satchel cannot pay for becomes the
+ * Write the hunter's order to the save, before it plays out. A Health Potion is
+ * paid for here, out of the satchel; one the satchel cannot pay for becomes the
  * System's choice. Returns the order as it will be played. Mutates.
  */
 export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
   let given = o;
   if (given?.use === 'Potion') {
-    if (s.satchel > 0) s.satchel -= 1;
+    if (shop.held(s, 'hp') > 0) s.stock.hp = shop.held(s, 'hp') - 1;
     else given = null;
   }
   run.orders = [...(run.orders ?? []), given];
