@@ -48,8 +48,9 @@ is ours: our gates, foes, gear, skills and numbers. docs/VOICE.md has the templa
   - **Why Arise stays:** "Solo Leveling" is Netmarble's brand, not "Arise". The Play Store already
     lists many Solo-Leveling-inspired apps named "Arise: …", and the title collects the searches for
     both "arise" and "dungeon rpg".
-  - **The one borrowed specific:** "Arise" is the exception to "borrow the tone, never the
-    specifics". Nothing else from the source comes with it.
+  - **The borrowed specifics:** "Arise" is an exception to "borrow the tone, never the
+    specifics". The other is "Red Gate" (see "Decided after the research"). Nothing else from the
+    source comes with them.
   - **Kept out of the listing:** "Solo", "Leveling" and "Monarch" stay out of the title, the
     descriptions and the keywords.
   - **What did not change:** the save key and the app id stay as they were.
@@ -1131,6 +1132,116 @@ bag's wheel, with the Mana Potion beside it.
   rises out of the way.
 - **The run strip** on the map is three cells (Allies, Banked, Items found) and a blessing is a
   System chip with its mark, its name and what it gives.
+
+## Decided after the research
+
+`docs/research` holds eight reports on the best dungeon crawlers and what ARISE can take from them
+(November 2026). Their open questions were put to the owner, and this is what was decided. Nothing
+here is built yet; each part below is its own pull request, ending with `npm run calibrate` and
+`npm run balance` wherever it touches combat or the map.
+
+### The Gate clock and Red Gates
+
+Walking back through cleared rooms is free and instant (`raid.moveTo`), so once a room is cleared
+the plan is a menu. Every crawler the research studied makes moving cost something, and the one that
+didn't was judged to have no tension (docs/research/labyrinth-crawlers.md).
+
+- **The budget.** Every Gate has a budget of moves: 120% of its rooms, a floor's stairs down and stairs
+  up counted as one room. Entering a room is a move. So is every corridor walked back through cleared
+  rooms, counted along the shortest way, and the walk out to the entrance. Towers (the Pale Spire's
+  blocks and the Trials) have no clock.
+- **What 120% buys.** Measured on every Gate of each grade over 20 days' maps, with a walk that always
+  takes the nearest room not yet entered, as a careful hunter would:
+
+  | Grade | Rooms | System's road | Budget | Moves to enter every room | Rooms entered within the budget |
+  |---|---|---|---|---|---|
+  | E | 12 | 4 | 14 | 19 | 80% |
+  | D | 14 | 4 | 17 | 22 | 82% |
+  | C | 29 | 9 | 35 | 53 | 74% |
+  | B | 33 | 11 | 40 | 61 | 74% |
+  | A | 58 | 17 | 70 | 112 | 72% |
+  | S | 93 | 27 | 112 | 185 | 70% |
+
+  80% was the first number tried. It left a careful hunter 52% to 67% of a Gate, and 150% left 83% to
+  94%. A whole Gate takes 160% to 200% of its rooms in moves, because every dead end is walked back out of.
+- **Stirring.** Past the budget, each move makes every room not yet fought, and the boss, a stated
+  share stronger. The plan shows the Gate stirring and by how much.
+- **Red Gate.** At 20 moves past the budget, at every grade, the Gate turns red. The plan goes red;
+  every creature not yet fought, and the boss, fights as if three grades above the hunter's held rank;
+  and the way out seals until the boss falls. The only ways out are the boss's death or being carried
+  out, which loses the haul and locks the hunter out for twelve hours, as now.
+- **The name.** "Red Gate" is borrowed from the source on purpose, as a nod to the anime. With
+  "Arise" it is the only specific borrowed (VOICE.md, "Exceptions decided"). Its trapped-inside rule
+  comes with it; no names, places or story from that arc do.
+- **Honest odds.** The System's road fits inside the budget on every map measured, even at 80%, so
+  Auto, the brief and calibration never stir and the clock alone moves no tuning. When it is built,
+  check that `raid.systemNext`'s walk back to a kept rest before the boss stays inside the budget too.
+- **To settle when it is built:**
+  - What "three grades above" means for a hunter at A-Rank and higher, where S is the last grade.
+    The proposal is S-grade creatures with a step of Ascension's strength for each grade past S.
+  - The stirring share, and how the plan shows the moves left.
+  - The Gate Survey costs no moves: it is read, not walked.
+  - Every Room and Cartographer count a floor with every room in it cleared, since a whole Gate rarely
+    fits the budget.
+  - The 25% healed after every won fight (`ROOM_RECOVERY`) stays; the clock is the cost of moving.
+    Measure how often a side fight ends as a net heal before changing it.
+- **Balance.** No Gate tuning moves for the clock. Rerun the campaign, since a hunter who explores now
+  sees less of each Gate.
+
+### Ranks: not now
+
+Front and rear ranks are the largest gain in combat depth the research found, and they touch every
+target rule, every creature's kit, Auto and calibration. Build first what gives a turn more answers
+without positions: Cover (a fourth basic action that turns one ally's incoming intents on the hunter),
+throwables in the bag's empty slots, wind-ups a foe announces and the party can break, and creature
+mechanics shown through intents. Revisit ranks after playing those.
+
+### Seals
+
+Opt-in risk for the middle of the climb, where an invested hunter clears 97% long before Ascension
+opens. Five of the eight reports reached it from different games (Hades' Pact, Path of Exile's map
+modifiers, DCSS's conduct gods, Slay the Spire's burning elites).
+
+- Each Gate offers up to three Seals, drawn from its map seed. Each pairs a rule with a kind of
+  reward, for example creatures +25% HP for +40% alloy, or no rest for a part a fight.
+- Toggling a Seal on the brief moves its clear rate and its pay together, so the wager is honest.
+- Seals reuse Ascension's rule hooks, and the run keeps them as it keeps `run.ascension`.
+- Gates stay calibrated without Seals. The campaign takes Seals while the brief reads 75% or better.
+- Not a free menu of every rule: drawn Seals give each day's board its own offers, and leave the
+  brief few combinations to simulate.
+
+### New power sinks cost Ember
+
+Android sells shard packs. New sinks that buy power (tempering at perfect, bought drop odds, anything
+past perfect) cost Ember or Gate materials, which only play earns. Shards stay for potions, Gate Surveys
+and convenience, and the packs stay as they are.
+
+### Auto clears; hands earn extras
+
+Auto's clear rate stays where it is. What is added pays only hand play:
+
+- **Feats:** three stated objectives on each Gate, and the brief says how often its 24 runs met each.
+- **Condition drops:** a stated way to fell each family and boss (while Stunned, within three
+  rounds) that pays extra materials.
+- **Challenges graded against a par.**
+
+Auto never aims for them, so no tuning moves, and the campaign, which plays Auto, earns none.
+
+### No second meter
+
+No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run its pressure.
+
+### Order to build
+
+1. **Read the fight and the map:** each intent's damage range, in place of the `title` tooltip in
+   `screens/Arena.tsx` that a phone cannot show; threat and contents on seen rooms; an `npm run mapstats`
+   report of what the maps draw.
+2. **The Gate clock, Stirring and Red Gates.**
+3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics.
+4. **Seals, Feats and condition drops.**
+5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
+6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
+   with family and role bonuses; rule-changing gear; a daily seeded Gate.
 
 ## What stays out
 
