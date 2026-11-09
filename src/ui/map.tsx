@@ -11,16 +11,6 @@ import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
 import { Glyph } from './icons';
 
-/** The Gate Survey, as a mark with the count held: a tap offers to use one. */
-export function SurveyMark({ held, onUse }: { held: number; onUse: () => void }) {
-  return (
-    <button type="button" class="surveymark" aria-label={`Use a Gate Survey, ${held} held`} title="Gate Survey" onClick={() => { sfx.tap(); onUse(); }}>
-      <Glyph name="survey" />
-      <b class="surveymark__n num">{held}</b>
-    </button>
-  );
-}
-
 interface MapProps {
   m: GateMap;
   /** Steps chosen, and how many of them are done. */
@@ -46,7 +36,15 @@ interface MapProps {
 }
 
 export function MapView(p: MapProps) {
-  return p.m.tower ? <TowerView {...p} /> : <RoomsView {...p} />;
+  if (!p.m.tower) return <RoomsView {...p} />;
+  if (!p.corner) return <TowerView {...p} />;
+  // A tower's corner sits over it, as a dungeon's does.
+  return (
+    <div class={`dmapwrap ${p.compact ? 'is-compact' : ''}`}>
+      <div class="dmap__bar"><span aria-hidden="true" /><span aria-hidden="true" /><span class="dmap__corner">{p.corner}</span></div>
+      <TowerView {...p} />
+    </div>
+  );
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */

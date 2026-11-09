@@ -21,7 +21,6 @@ import * as vitals from '@/core/vitals';
 import * as store from '@/store';
 import { fromEl, promotion, rankUp } from '@/ui/arrival';
 import { closeAllSheets, sys, toast } from '@/ui/overlays';
-import { ask } from '@/ui/ask';
 import * as shop from '@/core/shop';
 import { SURVEY } from '@/data/association';
 import * as system from '@/ui/system';
@@ -31,7 +30,9 @@ import { arena, go, type Route } from './router';
 import * as ascension from '@/core/ascension';
 import { isPractice } from '@/core/gates';
 import * as raid from '@/core/raid';
-import type { Dungeon } from '@/core/types';
+import type { Dungeon, Save } from '@/core/types';
+import type { BagItem } from '@/ui/items';
+import { FIELD_POTION_HEAL } from '@/core/combat';
 import { buzz, flash } from '@/ui/feedback';
 import { drinkFlow } from '@/screens/Inventory';
 
@@ -315,18 +316,36 @@ export async function catchUp() {
 }
 
 /**
- * Use a Gate Survey on a Gate, from its brief or inside it: offered as the System offers a use, then every
- * room of the map is charted through the fog. True if it was used.
+ * Use a Gate Survey on a Gate, from the bag on its brief or inside it: every room of the map is charted
+ * through the fog. The bag's wheel has asked already (an item chosen, then Use). True if it was used.
  */
-export async function surveyFlow(d: Dungeon): Promise<boolean> {
-  const ok = await ask('use:survey', system.offer([
-    'Would you like to use?',
-    system.tag(SURVEY.name, 'Item'),
-    `Map of ${system.tag(d.name)}`,
-    `Held: ${shop.held(store.get(), 'survey')}`,
-  ], 'gear', 'Use', 'Cancel'));
-  if (!ok || !store.update((x) => raid.survey(x, d))) return false;
+export function surveyNow(d: Dungeon): boolean {
+  if (!store.update((x) => raid.survey(x, d))) return false;
   sfx.success();
   toast(`${SURVEY.name} · ${d.name} charted.`, 'good');
   return true;
+}
+
+/**
+ * What the bag holds for a Gate, a slot to each kind, the same slot every time: the Field Potion,
+ * drunk between steps inside the Gate (`drink`, the arena's; on the brief there is none), and the
+ * Gate Survey. Each says why it cannot be used, where it cannot.
+ */
+export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const charts = shop.held(s, 'survey');
+  return [
+    {
+      id: 'field', name: 'Field Potion', glyph: 'potion', count: s.satchel, held: `${s.satchel}/${shop.satchelMax(s)}`,
+      effect: `HP +${FIELD_POTION_HEAL * 100}%`,
+      off: !drink || !run ? 'Drunk inside a Gate' : raid.fieldIdle(s, d, run) ?? undefined,
+      use: () => drink?.(),
+    },
+    {
+      id: 'survey', name: SURVEY.name, glyph: 'survey', count: charts, held: `${charts}`,
+      effect: 'Charts every room',
+      off: charts <= 0 ? 'None held' : raid.surveyable(s, d) ? undefined : 'Nothing left to chart',
+      use: () => void surveyNow(d),
+    },
+  ];
 }
