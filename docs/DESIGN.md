@@ -1005,8 +1005,11 @@ bag's wheel, with the Mana Potion beside it.
   the satchel carries, and the rest are paid back at 30 shards each. A job that was to pay field potions
   pays Health Potions, and a "Do not ask again" for buying field potions is forgotten.
 - **Balance.** Auto, the brief's assessment and calibration never drink a potion, so nothing they
-  measure changed: no recalibration ran, and no tuning moved. The campaign was rerun for the new
-  prices and Ryn's reward (below).
+  measure changed: no recalibration ran, and no tuning moved. The campaign, rerun for the new price
+  and Ryn's reward against main from the same start: the evening hunter reaches S-Rank on day 64 (65
+  before) and N on day 112 (114), the three-session hunter S-Rank on day 29 (33) and N on day 58 (63).
+  The campaign drinks no potions either; the change comes from shards, as Health Potions past the
+  satchel are paid out, which moves what the hunters buy and upgrade.
 
 ## Smaller changes from the same playtest
 
