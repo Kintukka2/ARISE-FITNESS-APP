@@ -1015,7 +1015,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Player | | The System's name for the hunter. No one else uses it |
 | Gate | gate | Capitalised everywhere, as a game term |
 | Room | step, node, cell (on a Gate's map) | A Gate's map is rooms joined by corridors. The plan shows no numbers; a fight's head keeps `Chamber 4`, counted from the entrance out. The Pale Spire and a Trial are climbed by floors, and their hint keeps "step" |
-| Red Gate | red gate, Crimson Gate, turned Gate | A Gate that ran 20 moves past its budget: it turns red, and its way out seals until the boss falls. Capitalised as Gate is. Borrowed from the source on purpose; see "Exceptions decided" |
+| Red Gate | red gate, Crimson Gate, turned Gate | A Gate that ran 20 moves past its budget: it turns red, and its way out seals until the boss falls. Capitalised as Gate is. The anime's own term; see "Names from the source" |
 | Vault | treasury, locked room | The Gatekeeper's sealed room. Sealed until the Gatekeeper falls; the System never says what opens it, the Guide does |
 | Shadow | shadow | Capitalised everywhere, as a game term, like Gate |
 | Awakening, awaken | limit break, star up, ascend | What Shadow Essence buys an Ascendant at its cap: a star, `★`, five in all. `[Igris] has awakened.` |
@@ -1042,18 +1042,15 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 British spelling throughout: Licence, defence, levelled. The source's lines are reused in British
 spelling.
 
-## Exceptions decided
+## Names from the source
 
-DESIGN.md keeps the source's named things out of the game. These are the exceptions, each decided
-on purpose:
+Only character names stay out of the game (DESIGN.md, "What it is"). The anime's terms may be used.
+These are decided:
 
-- **ARISE stays.** It is the app's name and the word the extraction button finishes on. It is one of
-  the two specifics borrowed from the source; see DESIGN.md.
-- **Shadow Extraction does not come with it.** The skill is written `Extraction`.
-- **Red Gate comes in.** A Gate that runs 20 moves past its budget turns red, and its way out seals
-  until the boss falls. The name is the source's, kept as a nod to the anime: the second borrowed
-  specific (DESIGN.md, "Decided after the research"). No names, places or story from that arc come
-  with it.
+- **ARISE.** The app's name and the word the extraction button finishes on.
+- **Red Gate.** A Gate that runs 20 moves past its budget turns red, and its way out seals until the
+  boss falls (DESIGN.md, "Decided after the research").
+- **Extraction.** The skill is written `Extraction`.
 
 ## Rules that hold for every speaker
 

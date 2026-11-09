@@ -10,11 +10,11 @@ A Solo-Leveling-inspired dungeon diver. You are an E-Rank who should never have 
 System has picked you anyway. The game is the climb: deeper Gates, sharper choices, a growing
 Shadow army, and a fixed world that slowly takes you seriously.
 
-The world, characters, ranks and bestiary are original and stay that way. Borrow the tone, never
-the specifics: no named characters, places, monarchs, items, skills, quests or story beats from the
-source material.
+The characters are original: nobody in the game carries a character's name from the source
+material. That is the one rule about borrowing. The anime's terms, its kinds of Gate and its
+mechanics may be used wherever they serve the game, as "Arise" and "Red Gate" are.
 
-The System is the exception. It speaks the way the source's System speaks, with the anime as the
+The System speaks the way the source's System speaks, with the anime as the
 main reference, and its windows may reuse the source's message templates and stock lines word for
 word: the window types (Notification, Quest Info, Quest Rewards, Status, Skills, Inventory),
 one-line bracketed notices such as "[You have levelled up!]" and "[The Dungeon Boss has been
@@ -48,9 +48,6 @@ is ours: our gates, foes, gear, skills and numbers. docs/VOICE.md has the templa
   - **Why Arise stays:** "Solo Leveling" is Netmarble's brand, not "Arise". The Play Store already
     lists many Solo-Leveling-inspired apps named "Arise: …", and the title collects the searches for
     both "arise" and "dungeon rpg".
-  - **The borrowed specifics:** "Arise" is an exception to "borrow the tone, never the
-    specifics". The other is "Red Gate" (see "Decided after the research"). Nothing else from the
-    source comes with them.
   - **Kept out of the listing:** "Solo", "Leveling" and "Monarch" stay out of the title, the
     descriptions and the keywords.
   - **What did not change:** the save key and the app id stay as they were.
@@ -1170,9 +1167,7 @@ didn't was judged to have no tension (docs/research/labyrinth-crawlers.md).
   every creature not yet fought, and the boss, fights as if three grades above the hunter's held rank;
   and the way out seals until the boss falls. The only ways out are the boss's death or being carried
   out, which loses the haul and locks the hunter out for twelve hours, as now.
-- **The name.** "Red Gate" is borrowed from the source on purpose, as a nod to the anime. With
-  "Arise" it is the only specific borrowed (VOICE.md, "Exceptions decided"). Its trapped-inside rule
-  comes with it; no names, places or story from that arc do.
+- **The name** is the anime's own: a Red Gate. Its trapped-inside rule comes with it.
 - **Honest odds.** The System's road fits inside the budget on every map measured, even at 80%, so
   Auto, the brief and calibration never stir and the clock alone moves no tuning. When it is built,
   check that `raid.systemNext`'s walk back to a kept rest before the boss stays inside the budget too.
