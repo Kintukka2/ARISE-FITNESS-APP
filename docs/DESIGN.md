@@ -1368,7 +1368,10 @@ screen's edges; and the anime's Red Gate, a crimson portal.
   Valcorde's first-defeat call and shut Not Once for good; save version 10 takes the count again from the
   log wherever the log still holds every run.
 - **Balance.** The fight is unchanged at `might` 1, and Auto, the brief and calibration never leave the
-  budget: `npm run calibrate` moved no tuning.
+  budget: `npm run calibrate` moved no tuning, and `npm run balance` prints the same report as before
+  the clock. `npm run campaign` plays Auto, which never stirs, but it does not repeat itself on the same
+  code (two runs of the same commit part ways by its first hunter's 20th run, from ids drawn off the
+  wall clock), so its totals cannot isolate a change until that is fixed.
 
 ## What stays out
 
