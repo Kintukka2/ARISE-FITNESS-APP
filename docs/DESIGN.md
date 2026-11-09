@@ -1259,9 +1259,25 @@ Etrian Odyssey's map, where what waits in a room is marked on its square.
   it comes after the hunter's next turn), `Damage 6-8 · Hit 72%`, `Lethal` or `May be lethal` in red,
   `Acts 2 times each round` where it does, and a tag for each status it inflicts. The `title` tooltip is
   gone: nothing in the fight needs a pointer to hover.
-- **The turn bar** shows each skill and Strike as `Damage 386-522 · Hit 95%` on the foe aimed at, with
-  `Fells it` or `May fell it` in green under it, and Guard as `Incoming 7-9 → 3-4`: what comes at
-  the hunter before their next turn, and the same guarded.
+- **The action wheel**, asked for after the first look, after the weapon and ping wheels of action
+  games: the actions sit behind one round button, ringed with a tick for each slot, so the foot of the
+  fight is the same at every rank. Open, the wheel holds a slot for each skill slot the rank holds
+  (`SKILL_SLOTS`: 2 to 5, an empty one dashed), then Health Potion, Guard and Strike, in the same places
+  every turn, so it grows from 5 slots to 8 as the ranks bring skill slots. A tap picks a slot and the
+  hub shows what it does on the foe aimed at (`Damage 386-522`, `Hit 95%`; Guard's `Incoming 7-9` and
+  `Guarded 3-4`); **Use**, or a second tap on the slot, uses it. The picked action's line and its
+  statuses' lines sit under the wheel, in place of each action's `?`. The wheel stays open or shut as
+  the hunter left it, from turn to turn.
+- **Finishers** (`finishers` in `core/combat.ts`). Marking every action that fells the foe said nothing
+  once a Strike did, so the mark is earned: a skill is marked when it fells the foe aimed at more surely
+  than a Strike would (every time against on a high roll or a crit, or at all against not), as surely as
+  it does. A Strike is the baseline and never marked, and when a Strike fells the foe every time nothing
+  is, since no skill is needed for it. On the wheel the mark is a dot under the slot's name, always in
+  the same place; in the hub, `Fells it` or `May fell it` on a line kept for it whether or not it shows.
+- **The arena's head** no longer counts rooms cleared (`Cleared 3/11`). In its place sits the pace: one
+  button with the fast-forward glyph and `1×`, `2×` or `Skip`, and `Auto` beside them while it is on,
+  opening a menu of the three paces and Auto. A Pale Spire block or a tower keeps its floor count, in
+  the head's small line.
 - **The plan** marks a fight seen and not yet fought with a pip to each creature in it, at the tile's
   top right in the Gates' orange; a creature 10% or more above the mean power of the map's fighting
   creatures (`STRONG`, `threatOf` in `core/map.ts`) is a larger red pip. Caches, traps and rests still

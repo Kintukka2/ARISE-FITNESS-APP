@@ -3,7 +3,7 @@ import { defaults } from '@/core/save';
 import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
-import { battle, fight, POTION_HEAL, GUARD, Unit } from '@/core/combat';
+import { battle, fight, finishers, POTION_HEAL, GUARD, Unit, type Turn } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
 import { SKILL_SLOTS } from '@/data/tree';
@@ -314,6 +314,22 @@ describe('the reckoning', () => {
       }
     }
     expect(checked).toBeGreaterThan(40);
+  });
+
+  it('marks as a finisher only a ready skill that fells a foe more surely than a Strike, and never the Strike', () => {
+    const hit = (kill: 'sure' | 'maybe' | null) => ({ chance: 90, crit: 10, lo: 1, hi: 2, critHi: 3, kill });
+    const turn = (strike: 'sure' | 'maybe' | null, skills: [string, 'sure' | 'maybe' | null, number][]): Turn => ({
+      uid: 'hero', foes: ['e0'], potions: 0, threats: [],
+      skills: skills.map(([name, , cd]) => ({ ability: { name, type: 'physical', profile: 'single', mult: 1.2, cd: 2, inflicts: [] }, cd })),
+      aims: { Strike: { e0: hit(strike) }, ...Object.fromEntries(skills.map(([name, kill]) => [name, { e0: hit(kill) }])) },
+    });
+    // A Strike that fells the foe every time leaves no skill worth marking.
+    expect(finishers(turn('sure', [['Hammerblow', 'sure', 0]]), 'e0')).toEqual({});
+    // A Strike that may fell it: only a skill that surely does is marked.
+    expect(finishers(turn('maybe', [['Hammerblow', 'sure', 0], ['Arc', 'maybe', 0]]), 'e0')).toEqual({ Hammerblow: 'sure' });
+    // A Strike that cannot: every skill that can is marked, as surely as it does; one cooling down is not.
+    expect(finishers(turn(null, [['Hammerblow', 'sure', 0], ['Arc', 'maybe', 0], ['Skullsplitter', 'sure', 2]]), 'e0')).toEqual({ Hammerblow: 'sure', Arc: 'maybe' });
+    expect(finishers(turn(null, [['Hammerblow', 'sure', 0]]), 'e0')).not.toHaveProperty('Strike');
   });
 
   it('numbers the foes’ next actions from 1, each foe once, and reckons nothing for a move without damage', () => {

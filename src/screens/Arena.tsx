@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Reckoning, Threat, Turn } from '@/core/combat';
-import { ability, POTION_HEAL, GUARD, REACH_TEXT, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
+import { ability, finishers, POTION_HEAL, GUARD, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
@@ -39,7 +39,8 @@ import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
-import { Glyph, Shard } from '@/ui/icons';
+import { Glyph, Shard, STAT_ICON } from '@/ui/icons';
+import { ringMid, ringSlot } from '@/ui/items';
 import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
 import { openBlueprint } from './Forge';
@@ -74,54 +75,137 @@ function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { n
   };
 }
 
+/** One slot of the action wheel: what it is, what it does on the foe aimed at, and whether it can be used. */
+interface WheelAct {
+  use: string;
+  name: string;
+  glyph: string;
+  /** Why it cannot be used now. Unset, it can. */
+  off?: string;
+  hit?: Reckoning;
+  /** It fells the foe aimed at more surely than a Strike would: a finisher. */
+  fell?: 'sure' | 'maybe';
+  /** The hub's numbers, as shown and as read aloud. */
+  shown: string[];
+  said: string;
+}
+
+/** A range as a screen reader hears it: the page writes `3-4`, the voice says "3 to 4". */
+const spoken = (lo: number, hi: number) => [lo, hi].join(' to ');
+
+/** The glyph a skill wears on the wheel: its Path's. */
+const skillGlyph = (name: string) => STAT_ICON[NODES.find((n) => n.kind === 'skill' && n.skill === name)?.path ?? ''] ?? 'bolt';
+
 /**
- * The hunter's actions on their turn. A tap on an action uses it; its `?` opens what it does in full
- * above the bar, without using it, and a pointer resting on it does the same.
+ * The hunter's actions on their turn, as a wheel behind one button: a slot to each skill slot their rank
+ * holds, then Health Potion, Guard and Strike, in the same places every turn, so the wheel grows a slot
+ * with each rank that brings one. A tap picks a slot and the hub shows what it does on the foe aimed at;
+ * Use, or a second tap on the slot, uses it. Nothing is used on the first tap.
  */
-function Acts({ turn, canDrink, give, aim }: { turn: Turn; canDrink: boolean; give: (use: string) => void; aim: string | null }) {
+function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen }: {
+  turn: Turn; aim: string | null; canDrink: boolean; slots: number; give: (use: string) => void;
+  picked: string; setPicked: (use: string) => void; open: boolean; setOpen: (v: boolean) => void;
+}) {
   const s = useSave();
-  const [pinned, setPinned] = useState<string | null>(null);
-  const [over, setOver] = useState<string | null>(null);
-  const shown = over ?? pinned;
-  // One hit of an action on the foe aimed at, as the turn reckons it.
+  const fin = aim ? finishers(turn, aim) : {};
   const on = (use: string): Reckoning | undefined => (aim ? turn.aims[use]?.[aim] : undefined);
-  const hitSub = (use: string, fallback: string) => { const r = on(use); return r ? `Damage ${r.lo}-${r.hi} · Hit ${r.chance}%` : fallback; };
+  const dmg = (use: string, fell?: 'sure' | 'maybe'): Pick<WheelAct, 'shown' | 'said' | 'hit' | 'fell'> => {
+    const r = on(use);
+    if (!r) return { shown: ['No damage'], said: 'No damage' };
+    return { hit: r, fell, shown: [`Damage ${r.lo}-${r.hi}`, `Hit ${r.chance}%`], said: `Damage ${spoken(r.lo, r.hi)}, hit chance ${r.chance}%` };
+  };
   // What comes at the hunter before their next turn, and what a Guard makes of it.
   const coming = turn.threats.filter((x) => x.soon && x.at === turn.uid && x.hit && x.guarded);
   const sum = (k: 'hit' | 'guarded', end: 'lo' | 'hi') => coming.reduce((n, x) => n + (x[k]?.[end] ?? 0), 0);
-  const inc = coming.length ? [sum('hit', 'lo'), sum('hit', 'hi'), sum('guarded', 'lo'), sum('guarded', 'hi')] : null;
-  const guardSub = inc ? `Incoming ${inc[0]}-${inc[1]} → ${inc[2]}-${inc[3]}` : `Damage taken -${(1 - GUARD) * 100}%`;
-  const acts: { use: string; label: string; sub: string; cls?: string; off?: boolean; kill?: Reckoning['kill']; hit?: Reckoning; inc?: number[] | null }[] = [
-    ...turn.skills.map((k) => ({ use: k.ability.name, label: k.ability.name, sub: k.cd > 0 ? `ready in ${k.cd}` : hitSub(k.ability.name, REACH_TEXT[k.ability.profile] ?? 'one target'), off: k.cd > 0, kill: k.cd > 0 ? null : on(k.ability.name)?.kill, hit: k.cd > 0 ? undefined : on(k.ability.name) })),
-    { use: 'Strike', label: 'Strike', sub: hitSub('Strike', REACH_TEXT.single), kill: on('Strike')?.kill, hit: on('Strike') },
-    { use: 'Guard', label: 'Guard', sub: guardSub, cls: 'act--guard', inc },
-    { use: 'Potion', label: `Potion · ${turn.potions}`, sub: `HP +${POTION_HEAL * 100}%`, cls: 'act--potion', off: !canDrink },
+  const inc = [sum('hit', 'lo'), sum('hit', 'hi'), sum('guarded', 'lo'), sum('guarded', 'hi')];
+  const skills: (WheelAct | null)[] = Array.from({ length: Math.max(slots, turn.skills.length) }, (_, i) => {
+    const k = turn.skills[i];
+    if (!k) return null;
+    const name = k.ability.name;
+    return { use: name, name, glyph: skillGlyph(name), off: k.cd > 0 ? `Ready in ${k.cd}` : undefined, ...dmg(name, k.cd > 0 ? undefined : fin[name]) };
+  });
+  const fixed: WheelAct[] = [
+    { use: 'Potion', name: 'Health Potion', glyph: 'potion', off: !turn.potions ? 'None held' : !canDrink ? 'HP full' : undefined, shown: [`HP +${POTION_HEAL * 100}%`, `Held: ${turn.potions}`], said: `HP +${POTION_HEAL * 100}%, ${turn.potions} held` },
+    { use: 'Guard', name: 'Guard', glyph: 'shield',
+      shown: coming.length ? [`Incoming ${inc[0]}-${inc[1]}`, `Guarded ${inc[2]}-${inc[3]}`] : [`Damage taken -${(1 - GUARD) * 100}%`],
+      said: coming.length ? `Incoming ${spoken(inc[0], inc[1])}, guarded ${spoken(inc[2], inc[3])}` : `Damage taken -${(1 - GUARD) * 100}%` },
+    { use: 'Strike', name: 'Strike', glyph: 'Weapon', ...dmg('Strike') },
   ];
-  const info = shown ? actLines(s, shown, turn) : null;
+  const acts = [...skills, ...fixed];
+  const n = acts.length;
+  const chosen = acts.find((a) => a?.use === picked) ?? fixed[2];
+  const info = actLines(s, chosen.use, turn);
+  const use = (a: WheelAct) => { if (!a.off) { setPicked(a.use); give(a.use); } };
+  const tap = (a: WheelAct) => { if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); } };
+  if (!open) {
+    return (
+      <button type="button" class="actbtn" aria-expanded="false" aria-label={`Actions, ${n} slots. ${chosen.name} picked`} onClick={() => { sfx.tap(); setOpen(true); }}
+        style={`--n:${n}`}>
+        <span class="actbtn__ring" aria-hidden="true" />
+        <span class="actbtn__glyph"><Glyph name={chosen.glyph} /></span>
+        <b>Actions</b>
+      </button>
+    );
+  }
   return (
-    <>
-      {info && (
-        <div class="actinfo" role="status" key={shown}>
-          <header class="actinfo__head"><b>{info.name}</b>{info.level && <small class="num">{info.level}</small>}{info.ready && <small class={`actinfo__ready ${info.ready === 'Ready' ? 'is-ready' : ''}`}>{info.ready}</small>}</header>
-          {info.lines.map((l) => <p key={l}>{l}</p>)}
-        </div>
-      )}
-      <div class="turnbar__acts">
-        {acts.map((a) => (
-          <div class={`actcell ${shown === a.use ? 'is-shown' : ''}`} key={a.use}>
-            <button type="button" class={`act ${a.cls ?? ''}`} disabled={a.off}
-              aria-label={a.hit ? `${a.label}. Damage ${a.hit.lo} to ${a.hit.hi}, hit chance ${a.hit.chance}%${a.kill ? `, ${a.kill === 'sure' ? 'fells it' : 'may fell it'}` : ''}` : a.inc ? `${a.label}. Incoming ${a.inc[0]} to ${a.inc[1]}, guarded ${a.inc[2]} to ${a.inc[3]}` : undefined}
-              onPointerEnter={(e) => { if (e.pointerType === 'mouse') setOver(a.use); }}
-              onPointerLeave={(e) => { if (e.pointerType === 'mouse') setOver((x) => (x === a.use ? null : x)); }}
-              onClick={() => { setPinned(null); setOver(null); give(a.use); }}>
-              <b>{a.label}</b><small>{a.sub}</small>{a.kill && <i class={`act__kill ${a.kill === 'sure' ? 'is-sure' : ''}`}>{a.kill === 'sure' ? 'Fells it' : 'May fell it'}</i>}
-            </button>
-            <button type="button" class="act__info" aria-label={`What ${a.label} does`} aria-expanded={pinned === a.use}
-              onClick={() => { sfx.tap(); setPinned((x) => (x === a.use ? null : a.use)); }}>?</button>
-          </div>
+    <div class="actwheel" role="group" aria-label="Actions">
+      <div class="actwheel__ring">
+        <svg viewBox="0 0 300 300" class="actwheel__svg">
+          {acts.map((a, i) => a
+            ? <path key={a.use} d={ringSlot(i, n)} role="button" tabIndex={0} data-act={a.use} aria-pressed={a.use === chosen.use}
+              aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'fells it' : 'may fell it'}` : ''}`}
+              class={`actwheel__slot actwheel__slot--${a.use === 'Guard' ? 'guard' : a.use === 'Potion' ? 'potion' : 'act'} ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
+              onClick={() => tap(a)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(a); } }} />
+            : <path key={`empty${i}`} d={ringSlot(i, n)} class="actwheel__slot is-empty" aria-hidden="true" />)}
+        </svg>
+        {acts.map((a, i) => a && (
+          <span key={a.use} class={`actwheel__item ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`} style={`left:${ringMid(i, n).left};top:${ringMid(i, n).top}`} aria-hidden="true">
+            <Glyph name={a.glyph} />
+            <small>{a.use === 'Potion' ? 'Potion' : a.name}</small>
+            <i class={`actwheel__mark ${a.fell ? `is-${a.fell}` : ''}`} />
+          </span>
         ))}
+        <div class="actwheel__hub">
+          <b class="actwheel__name">{chosen.name}</b>
+          <small class="actwheel__ready">{chosen.off ?? info.level ?? info.ready ?? ''}</small>
+          {chosen.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
+          <span class={`actwheel__fell ${chosen.fell ? `is-${chosen.fell}` : 'is-none'}`}>{chosen.fell === 'maybe' ? 'May fell it' : 'Fells it'}</span>
+          <Btn kind="primary" size="sm" class="actwheel__use" disabled={!!chosen.off} onClick={() => use(chosen)}>Use</Btn>
+        </div>
+        <button type="button" class="actwheel__close iconbtn" aria-label="Close the actions" onClick={() => { sfx.tap(); setOpen(false); }}><Glyph name="close" /></button>
       </div>
-    </>
+      <div class="actwheel__lines">{info.lines.map((l) => <p key={l}>{l}</p>)}</div>
+    </div>
+  );
+}
+
+/** The arena's pace and Auto, behind one button in its head: the button shows the pace, and Auto when it is on. */
+function PaceMenu({ pace, setPace, auto, toggleAuto }: { pace: Pace; setPace: (p: Pace) => void; auto: boolean; toggleAuto: () => void }) {
+  const [open, setOpen] = useState(false);
+  const label = pace === 'skip' ? 'Skip' : `${pace}×`;
+  const paces: { p: Pace; name: string; desc: string }[] = [
+    { p: 1, name: '1×', desc: 'Every blow at its own pace' },
+    { p: 2, name: '2×', desc: 'Twice as fast' },
+    { p: 'skip', name: 'Skip', desc: 'Straight to your next turn. The log keeps every line' },
+  ];
+  return (
+    <div class="pace">
+      <button type="button" class={`pacebtn ${auto ? 'is-auto' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label={`Pace: ${label}${auto ? ', Auto on' : ''}`}
+        onClick={() => { sfx.tap(); setOpen((x) => !x); }}>
+        <Glyph name="ffwd" /><b class="num">{label}</b>{auto && <i class="pacebtn__auto">Auto</i>}
+      </button>
+      {open && <>
+        <div class="pace__shade" onClick={() => setOpen(false)} />
+        <div class="pacemenu" role="menu" aria-label="Pace">
+          {paces.map((x) => (
+            <button type="button" key={String(x.p)} role="menuitemradio" aria-checked={pace === x.p} data-pace={String(x.p)} class={`pacemenu__opt ${pace === x.p ? 'is-on' : ''}`}
+              onClick={() => { sfx.tap(); setPace(x.p); setOpen(false); }}><b class="num">{x.name}</b><small>{x.desc}</small></button>
+          ))}
+          <button type="button" role="menuitemcheckbox" aria-checked={auto} data-pace="auto" class={`pacemenu__opt pacemenu__opt--auto ${auto ? 'is-on' : ''}`}
+            onClick={() => { toggleAuto(); setOpen(false); }}><b>Auto</b><small>The System fights your turns and picks your way</small></button>
+        </div>
+      </>}
+    </div>
   );
 }
 
@@ -166,6 +250,9 @@ export function Arena() {
   const [auto, setAuto] = useState(false);
   const [turn, setTurn] = useState<Turn | null>(null);
   const [aim, setAim] = useState<string | null>(null);
+  /** The action wheel: open or shut, as the hunter left it, and the action last picked on it. */
+  const [wheel, setWheel] = useState(false);
+  const [picked, setPicked] = useState('Strike');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
   const paceRef = useRef<Pace>(1);
@@ -456,8 +543,8 @@ export function Arena() {
   return (
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''}`} role="dialog" aria-label={`${d.name}, in progress`}>
       <header class="arena__head">
-        <div><span class="label">{d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}</span><b>{head}</b></div>
-        <span class="label num">{d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? `Cleared ${run?.at ?? 0}/${rooms}` : `Step ${here} of ${depth}`}</span>
+        <div><span class="label">{d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}{d.floor ? ` · Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? '' : ` · Step ${here} of ${depth}`}</span><b>{head}</b></div>
+        {phase !== 'decide' && <PaceMenu pace={pace} setPace={setPace} auto={auto} toggleAuto={toggleAuto} />}
       </header>
       {onMap && run && m ? (
         <div class="arena__map">
@@ -503,16 +590,8 @@ export function Arena() {
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
             <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</small>
-            <Acts turn={turn} aim={aim} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} give={(use) => give({ use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
-          </div>
-        )}
-        {phase !== 'decide' && (
-          <div class="seg" role="radiogroup" aria-label="Playback speed">
-            {(['1', '2', 'skip'] as const).map((p) => {
-              const key = (p === 'skip' ? 'skip' : Number(p)) as Pace;
-              return <button type="button" role="radio" aria-checked={pace === key} key={p} class={`seg__btn ${pace === key ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setPace(key); }}>{p === 'skip' ? 'Skip' : `${p}×`}</button>;
-            })}
-            <button type="button" role="switch" aria-checked={auto} class={`seg__btn ${auto ? 'is-on' : ''}`} onClick={toggleAuto} title="The System fights your turns and picks your way">Auto</button>
+            <ActWheel turn={turn} aim={aim} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} slots={skilltree.slots(s)} picked={picked} setPicked={setPicked} open={wheel} setOpen={setWheel}
+              give={(use) => give({ use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
           </div>
         )}
         {phase === 'decide' && room && (

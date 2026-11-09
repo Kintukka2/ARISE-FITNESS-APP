@@ -28,6 +28,9 @@ const P: Record<string, string> = {
   trash: 'M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7z',
   star: 'm12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z',
   timer: 'M9 1h6v2H9zm3 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6l5 3 1-1.6-4-2.4V8z',
+  // The arena's pace, and Guard on the action wheel.
+  ffwd: 'M3 6v12l8.5-6zm9 0v12l8.5-6z',
+  shield: 'M12 2 4 5v6.2c0 4.9 3.4 9.3 8 10.8 4.6-1.5 8-5.9 8-10.8V5zm0 2.2 5.8 2.2v4.8c0 3.7-2.4 7.1-5.8 8.5z',
   chevron: 'M9.4 5 8 6.4l5.6 5.6L8 17.6 9.4 19l7-7z',
   back: 'M14.6 5 16 6.4 10.4 12l5.6 5.6-1.4 1.4-7-7z',
   up: 'm12 7-7 7 1.4 1.4L12 9.8l5.6 5.6L19 14z',

@@ -42,6 +42,18 @@ async function revealLoot() {
   await page.waitForFunction(() => !document.querySelector('.flip.is-charging, .flip.is-down'), null, { timeout: 8000 });
 }
 const snap = (name, full = false) => page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
+/** The arena's pace and Auto sit behind one button in its head: open its menu and choose. */
+async function setPace(which) {
+  await page.locator('.pacebtn').click();
+  await page.locator(`.pacemenu [data-pace="${which}"]`).click();
+}
+/** Take an action from the wheel: open it if it is shut, pick the slot, then Use. */
+async function act(use) {
+  if (await page.locator('.turnbar .actbtn').isVisible().catch(() => false)) await page.locator('.turnbar .actbtn').click();
+  const slot = page.locator(`.actwheel [data-act="${use}"]`);
+  if ((await slot.getAttribute('aria-pressed')) !== 'true') await slot.click();
+  await page.locator('.actwheel__use').click();
+}
 async function drain() {
   for (let i = 0, quiet = 0; i < 40 && quiet < 4; i++) {
     await sleep(150);
@@ -64,8 +76,8 @@ const nav = async (k) => {
 
 /** Hand the rest of a run to the System and wait for its results. */
 async function autoToResults() {
-  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
-  await page.locator('.seg__btn', { hasText: 'Auto' }).click();
+  await setPace('skip');
+  await setPace('auto');
   for (let i = 0; i < 200; i++) {
     await page.waitForSelector('.arena__foot .btn, .arena--results, .syswin, .arena__map, .arena__field', { timeout: 30000 });
     if (await page.locator('.arena--results').isVisible().catch(() => false)) break;
@@ -276,18 +288,28 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
-  // An action's ? shows what it does, in full, without using it.
-  await page.locator('.act__info').first().click(); await sleep(250);
-  if (!(await page.locator('.actinfo').isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
-  await snap('arena-skill-info');
-  await page.locator('.act__info').first().click(); await sleep(150);
-  if (await page.locator('.actinfo').count()) throw new Error('A SKILL’S DETAILS DID NOT CLOSE');
+  // The actions are a wheel behind one button: a slot to each skill slot the rank holds, then Potion, Guard and Strike.
+  await page.locator('.turnbar .actbtn').click(); await sleep(300);
+  if (!(await page.locator('.actwheel').isVisible())) throw new Error('THE ACTION WHEEL DID NOT OPEN');
+  await snap('arena-wheel');
+  // A skill picked shows what it does on the foe aimed at, in full, without using it.
+  const skill = page.locator('.actwheel__slot--act:not([data-act="Strike"])').first();
+  if (await skill.count()) {
+    await skill.click(); await sleep(250);
+    if (!(await page.locator('.actwheel__lines p').first().isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
+    if (!(await page.locator('.turnbar').isVisible())) throw new Error('PICKING A SKILL USED IT');
+    await snap('arena-skill-info');
+  }
+  // The pace and Auto sit behind one button in the head.
+  await page.locator('.pacebtn').click(); await sleep(200);
+  if (!(await page.locator('.pacemenu').isVisible())) throw new Error('THE PACE MENU DID NOT OPEN');
+  await snap('arena-pace');
   // Fight the first room out by hand, back to the plan: the room cleared, the hunter standing in it.
-  await page.locator('.seg__btn', { hasText: 'Skip' }).click();
+  await page.locator('.pacemenu [data-pace="skip"]').click();
   for (let i = 0; i < 80; i++) {
     if (await page.locator('.arena__foot >> text=Carried Out').isVisible().catch(() => false)) break;
     if (await page.locator('.dmap').isVisible().catch(() => false)) break;
-    if (await page.locator('.turnbar .act:not([disabled])').first().isVisible().catch(() => false)) await page.locator('.turnbar .act:not([disabled])').first().click();
+    if (await page.locator('.turnbar').isVisible().catch(() => false)) await act('Strike');
     else if (await page.locator('.nodepanel .btn').last().isVisible().catch(() => false)) await page.locator('.nodepanel .btn').last().click();
     await sleep(250);
   }

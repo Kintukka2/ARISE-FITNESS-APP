@@ -675,6 +675,24 @@ function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit
   return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, threats, aims };
 }
 
+const KILL_RANK = { sure: 2, maybe: 1 } as const;
+
+/**
+ * The skills worth marking as finishers on `foe`: those that fell it more surely than a Strike would,
+ * with how surely. A Strike is the baseline and is never marked, so when a Strike alone fells the foe
+ * every time, nothing is: no skill is needed for it. A skill still cooling down is not offered.
+ */
+export function finishers(t: Turn, foe: string): Record<string, 'sure' | 'maybe'> {
+  const rank = (r?: Reckoning) => (r?.kill ? KILL_RANK[r.kill] : 0);
+  const base = rank(t.aims[STRIKE.name]?.[foe]);
+  const out: Record<string, 'sure' | 'maybe'> = {};
+  for (const k of t.skills) {
+    const r = t.aims[k.ability.name]?.[foe];
+    if (k.cd === 0 && r?.kill && rank(r) > base) out[k.ability.name] = r.kill;
+  }
+  return out;
+}
+
 /** Fight to the end with nobody waiting: the auto policy plays every side. */
 export function fight(party: Unit[], foes: Unit[], r: Rand, actions: number, onKill: (killer: Unit | null, victim: Unit) => void = () => {}, tactic: Tactic = 'default'): FightResult {
   const g = battle(party, foes, r, actions, onKill, [], { tactic });
