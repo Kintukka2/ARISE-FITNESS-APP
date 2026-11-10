@@ -41,5 +41,10 @@ The reports were written independently. Proposals that several of them reached f
 - **A cost to moving** (three): a room-counted clock, or creatures that move when the hunter does.
 - **Consumables that do something** (three): throwables in the bag's empty slots.
 
+## Visual references
+
+The screenshots each step of the roadmap was built from are in [references/](references/), a folder
+to each step, with where every image came from and what ARISE took from them.
+
 A synthesis of all eight, with a phased roadmap and the open questions, was published as a private
 page alongside this commit: https://claude.ai/artifact/JHPVQuvC8AY6g9Mhnk5oQH

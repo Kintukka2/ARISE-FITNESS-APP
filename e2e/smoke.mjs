@@ -50,12 +50,15 @@ async function setPace(which) {
   await page.locator('.pacebtn').click();
   await page.locator(`.pacemenu [data-pace="${which}"]`).click();
 }
-/** Take an action from the wheel: open it if it is shut, pick the slot, then Use. */
+/** Take an action from the wheel: open it if it is shut, pick the slot, then tap it again to use it. */
 async function act(use) {
   if (await page.locator('.turnbar .actbtn').isVisible().catch(() => false)) await page.locator('.turnbar .actbtn').click();
   const slot = page.locator(`.actwheel [data-act="${use}"]`);
-  if ((await slot.getAttribute('aria-pressed')) !== 'true') await slot.click();
-  await page.locator('.actwheel__use').click();
+  if ((await slot.getAttribute('aria-pressed')) !== 'true') {
+    await slot.click(); await sleep(120);
+    if (!(await page.locator('.turnbar').isVisible().catch(() => false))) throw new Error('A FIRST TAP ON A SLOT USED IT');
+  }
+  await slot.click();
 }
 async function drain(max = 60) {
   let quiet = 0;

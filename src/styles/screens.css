@@ -208,7 +208,8 @@
   56% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .arena__red { animation: none; } }
-.arena__field { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; max-width: 640px; width: 100%; margin: 0 auto; }
+/* The cards give way, scrolling, before the foot does: the wheel, its throws and its lines always fit. */
+.arena__field { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 10px; padding: 12px; max-width: 640px; width: 100%; margin: 0 auto; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .arena__side { display: flex; flex-direction: column; gap: 6px; }
 .unit { padding: 7px 9px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(6, 12, 26, 0.8); transition: opacity 300ms, border-color 300ms; }
 .unit--hero { border-color: var(--mana); box-shadow: 0 0 12px rgba(79, 214, 255, 0.15); }
@@ -222,7 +223,7 @@
 .unit__status { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
 .tag { padding: 0 5px; border-radius: 3px; background: rgba(255, 77, 109, 0.16); color: var(--blood); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; }
 .tag.is-good { background: rgba(72, 245, 168, 0.16); color: var(--verdant); }
-.arena__feed { flex: 1; overflow: hidden; padding: 6px 16px; display: flex; flex-direction: column; gap: 4px; max-width: 640px; width: 100%; margin: 0 auto; }
+.arena__feed { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 6px 16px; display: flex; flex-direction: column; gap: 4px; max-width: 640px; width: 100%; margin: 0 auto; }
 .feed { font-size: 0.88rem; color: var(--ink-2); animation: feedIn 240ms var(--ease) both; }
 .feed:nth-child(n + 4) { opacity: 0.6; }
 @keyframes feedIn { from { opacity: 0; transform: translateY(-6px); } }
@@ -231,38 +232,63 @@
 .feed--round { color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; }
 .feed--room { color: var(--ember); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .feed--outcome { color: var(--verdant); font-weight: 700; }
-.arena__foot { padding: 12px 16px calc(var(--safe-b) + 14px); border-top: 1px solid rgba(255, 154, 60, 0.25); display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
+.arena__foot { flex: none; padding: 12px 16px calc(var(--safe-b) + 14px); border-top: 1px solid rgba(255, 154, 60, 0.25); display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
 .arena__foot .row { width: 100%; }
-button.unit { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.unit.is-pickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* A wind-up or a channel turns the foe's HP bar into its break: blue, a section to each hit it can still take. */
+.unit__break { display: flex; gap: 3px; height: 6px; margin-top: 4px; }
+.unit__break i { flex: 1; border-radius: 2px; background: rgba(127, 168, 255, 0.14); box-shadow: inset 0 0 0 1px rgba(127, 168, 255, 0.35); }
+.unit__break i.is-on { background: linear-gradient(#9cbcff, #3d63c9); box-shadow: 0 0 6px rgba(127, 168, 255, 0.6); }
+/* The foes coming for a card, by their places in the order: the number on each one's card. */
+/* A tab on the card's top corner, as Lethal is on a foe's panel: the foes coming for it, by their places in the order. */
+.unit { position: relative; }
+.unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 0 5px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
+.unit__incoming b { color: var(--ink); font-size: 0.62rem; }
+.arena__side { gap: 10px; }
+/* A word on a card that tells what it is when tapped. */
+button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }
+button.is-told:not(.tag) { background: none; }
+button.tag.is-told { padding: 0 5px; }
+button.trick.is-told, button.intent__what.is-told { text-decoration: underline dotted rgba(255, 255, 255, 0.28); text-underline-offset: 3px; }
+.tipshade { position: fixed; inset: 0; z-index: 60; }
+.tip { position: fixed; display: grid; gap: 3px; padding: 8px 10px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 6px; background: rgba(14, 9, 5, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); animation: feedIn 140ms var(--ease) both; }
+.tip__title { color: var(--ink); font-size: 0.8rem; }
+.tip p { margin: 0; color: var(--ink-2); font-size: 0.74rem; line-height: 1.35; }
 .unit.is-pickable:hover { border-color: rgba(255, 77, 109, 0.7); }
 .unit.is-aimed { border-color: var(--blood); box-shadow: 0 0 0 1px var(--blood), 0 0 14px var(--blood-glow); }
 .unit.is-acting { box-shadow: 0 0 0 1px var(--mana), 0 0 16px var(--mana-glow); }
 /* A foe's next move. On the hunter's turn: its place in the foes' order, what one hit does, and what it fells. */
-.unit__intent { display: grid; gap: 2px; margin-top: 5px; font-size: 0.68rem; color: var(--ink-2); }
-.intent__move { display: flex; align-items: center; gap: 5px; min-width: 0; }
-.intent__what { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A foe's intent: a panel of fixed rows, the move, one hit of it, the break, and a quiet foot. */
+.unit__intent { position: relative; display: grid; gap: 3px; margin-top: 6px; padding: 5px 6px; border: 1px solid rgba(255, 154, 60, 0.16); border-radius: 4px; background: rgba(255, 255, 255, 0.025); font-size: 0.68rem; color: var(--ink-2); }
+.unit__intent.is-you { border-color: rgba(255, 77, 109, 0.38); }
+.intent__move { display: flex; align-items: flex-start; gap: 5px; min-width: 0; }
+.intent__what { min-width: 0; overflow: hidden; color: inherit; font-size: inherit; font-weight: inherit; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.3; padding-top: 1px; }
 .unit__intent.is-you .intent__what { color: var(--blood); font-weight: 700; }
 .intent__order { flex: none; display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 3px; border: 1px solid rgba(255, 77, 109, 0.6); border-radius: 3px; background: rgba(255, 77, 109, 0.14); color: var(--ink); font-size: 0.6rem; font-weight: 700; line-height: 1; }
 .intent__order.is-later { border-style: dashed; opacity: 0.55; }
-.intent__hit { color: var(--ink); font-variant-numeric: tabular-nums; }
+.intent__hit { display: flex; flex-wrap: wrap; gap: 0 8px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.intent__hit > span { white-space: nowrap; }
+.intent__mult { color: #ffd2a3; font-weight: 700; }
 .unit__intent.is-you .intent__hit { color: #ffc2cd; font-weight: 700; }
-.intent__more { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
-.intent__kill { padding: 0 5px; border-radius: 3px; background: var(--sysred); color: #fff; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
-.intent__times { color: var(--ink-3); font-size: 0.62rem; }
-.unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
+/* Lethal sits on the panel's corner, out of its rows, and reddens its rim. */
+.unit__intent.is-lethal { margin-top: 12px; border-color: var(--sysred); box-shadow: inset 0 0 12px rgba(255, 40, 70, 0.16); }
+.unit__intent.is-lethal.is-maybe { border-style: dashed; box-shadow: none; }
+.intent__kill { position: absolute; top: -8px; right: 6px; padding: 0 5px; border-radius: 3px; background: var(--sysred); color: #fff; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.06em; line-height: 15px; text-transform: uppercase; }
+.unit__intent.is-maybe .intent__kill { background: #3a0d16; color: #ffb3c0; box-shadow: inset 0 0 0 1px var(--sysred); }
 /* The orders for the next fight, under the map: Shadows' violet, as small as four choices can be. */
 .turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
 .turnbar__hint { color: var(--ink-2); font-size: 0.78rem; text-align: center; }
 .turnbar__hint b { color: var(--blood); }
+.turnbar__hint b.is-cover { color: var(--guard); }
 /* The action wheel, behind one button at the foot of the fight. Shut, it is a round button ringed with a
    tick to each slot the hunter's rank holds; open, a wheel of those slots, the hub what the picked one does. */
-.actbtn { position: relative; display: grid; place-items: center; width: 84px; height: 84px; margin: 2px auto 0; padding: 0; border: 0; border-radius: 50%; background: radial-gradient(circle, rgba(60, 26, 6, 0.95) 55%, rgba(20, 10, 4, 0.95)); color: var(--ink); cursor: pointer; }
+.actbtn { position: relative; display: grid; place-items: center; width: 84px; height: 84px; margin: 2px auto 0; padding: 0; border: 0; border-radius: 50%; touch-action: none; user-select: none; -webkit-user-select: none; background: radial-gradient(circle, rgba(60, 26, 6, 0.95) 55%, rgba(20, 10, 4, 0.95)); color: var(--ink); cursor: pointer; }
 .actbtn__ring { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from calc(-180deg / var(--n)), var(--ember) 0 calc(360deg / var(--n) - 8deg), transparent 0 calc(360deg / var(--n))); -webkit-mask: radial-gradient(circle, transparent 36px, #000 37px); mask: radial-gradient(circle, transparent 36px, #000 37px); opacity: 0.8; }
 .actbtn__glyph .ico { width: 26px; height: 26px; color: var(--ember); filter: drop-shadow(0 0 6px var(--ember-glow)); }
 .actbtn b { position: absolute; bottom: 15px; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
 .actbtn:active { transform: scale(0.97); }
 .actwheel { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-.actwheel__ring { position: relative; width: min(82vw, 300px, 44dvh); aspect-ratio: 1; animation: wheelIn 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.actwheel__ring { position: relative; width: min(82vw, 300px, 44dvh); aspect-ratio: 1; animation: wheelIn 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .actwheel__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .actwheel__slot { fill: rgba(22, 12, 5, 0.92); stroke: rgba(255, 154, 60, 0.42); stroke-width: 1.2; cursor: pointer; transition: fill 120ms, stroke 120ms; outline: none; }
 .actwheel__slot:hover, .actwheel__slot:focus-visible { fill: rgba(70, 34, 8, 0.95); stroke: rgba(255, 154, 60, 0.8); }
@@ -278,6 +304,9 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 /* A slot's glyph, its name, and under them, always in the same place, the finisher's mark. */
 .actwheel__item { position: absolute; display: grid; grid-template-rows: auto auto 6px; justify-items: center; gap: 2px; width: 70px; transform: translate(-50%, -50%); color: var(--ember); pointer-events: none; }
 .actwheel__item .ico { width: 22px; height: 22px; filter: drop-shadow(0 0 5px rgba(255, 154, 60, 0.35)); }
+.actwheel__glyph { position: relative; display: grid; place-items: center; }
+.actwheel__count { position: absolute; top: -7px; left: calc(100% - 3px); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--ink); color: #120a04; font-size: 0.62rem; font-weight: 800; line-height: 16px; text-align: center; box-shadow: 0 0 0 2px rgba(22, 12, 5, 0.95); }
+.actwheel__item.is-off .actwheel__count { background: var(--ink-3); }
 .actwheel__item small { max-width: 100%; overflow: hidden; color: var(--ink); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.02em; text-overflow: ellipsis; white-space: nowrap; }
 .actwheel__item.is-off { color: var(--ink-3); }
 .actwheel__item.is-off .ico { filter: none; opacity: 0.55; }
@@ -305,11 +334,30 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .actwheel__fell { margin-top: 2px; padding: 0 5px; border-radius: 3px; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.5; }
 .actwheel__fell.is-sure { background: var(--verdant); color: #04150d; }
 .actwheel__fell.is-maybe { background: rgba(72, 245, 168, 0.16); color: var(--verdant); }
-.actwheel__fell.is-none { visibility: hidden; }
-.actwheel__hub .actwheel__use { margin-top: 3px; min-width: 62%; }
+.actwheel__foot { margin-top: 4px; color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.actwheel__foot.is-off { color: var(--blood); }
+.actwheel__ring.is-dragging .actwheel__foot:not(.is-off) { color: var(--ember); }
 .actwheel__close { position: absolute; right: -4px; bottom: -4px; }
-.actwheel__lines { max-width: 420px; min-height: 2.2em; text-align: center; }
-.actwheel__lines p { margin: 0; color: var(--ink-3); font-size: 0.72rem; line-height: 1.35; }
+/* Throw: a chip to each kind held, under the wheel; the one picked lit. */
+/* A creature's habits, under its name: small and quiet until they matter. */
+.unit__tricks { display: flex; flex-wrap: wrap; gap: 0 4px; margin-top: 4px; }
+.trick { color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
+/* The dot after a habit, so a line that breaks ends on one rather than starting with it. */
+.unit__tricks { position: relative; }
+.trick:not(:last-child)::after { content: '·'; display: inline-block; margin-left: 4px; color: rgba(255, 255, 255, 0.25); text-decoration: none; }
+.trick--windup, .trick--channel { color: #a9c2ff; }
+/* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
+   with the hits left, a diamond to each, the ones taken hollow. */
+.unit__intent.is-wind:not(.is-lethal) { border-color: rgba(127, 168, 255, 0.5); }
+.unit__intent.is-wind .intent__what { color: #ffd2a3; }
+.unit__intent.is-broken .intent__what { color: var(--ink-3); text-decoration: line-through; }
+.unit__intent.is-shield .intent__what, .unit__intent.is-rally .intent__what, .unit__intent.is-mark .intent__what, .unit__intent.is-drink .intent__what { color: #ffd2a3; }
+/* Cover: the ally covered wears the defence's blue, and an ally that can be covered is outlined in it while Cover is picked. */
+/* A foe's own boon (Enraged, Shielded) is a threat: the Gates' ember, never the party's green. */
+.unit__status .tag.is-foegood { border-color: rgba(255, 154, 60, 0.55); background: rgba(255, 154, 60, 0.14); color: #ffd2a3; }
+.unit__status .tag.is-cover { border-color: color-mix(in srgb, var(--guard) 60%, transparent); background: color-mix(in srgb, var(--guard) 16%, transparent); color: #b6d0ff; }
+.arena .unit.is-coverpick { border-color: color-mix(in srgb, var(--guard) 55%, transparent); cursor: pointer; }
+.arena .unit.is-coverpick.is-aimed { border-color: var(--guard); box-shadow: 0 0 0 1px var(--guard), 0 0 14px var(--guard-glow); }
 /* The pace and Auto, behind one button in the arena's head. */
 .pace { position: relative; flex: none; }
 .pacebtn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 999px; background: rgba(20, 10, 4, 0.7); color: var(--ink); cursor: pointer; }
@@ -1342,6 +1390,15 @@ button.dmap__floor { cursor: pointer; }
 .sysframe .brief .bparty li.is-shadow { border-color: color-mix(in srgb, var(--arcane) 50%, transparent); background: color-mix(in srgb, var(--arcane) 8%, rgba(3, 8, 20, 0.45)); }
 .bsatchel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border: 1px dashed var(--sys-hair); font-size: 0.74rem; }
 .bsatchel > .num { margin-left: auto; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bthrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border: 1px dashed var(--sys-hair); }
+.bthrow__kit { display: flex; flex-wrap: wrap; gap: 6px; }
+.bthrow__one { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid rgba(255, 154, 60, 0.3); border-radius: 999px; background: rgba(22, 12, 5, 0.85); color: var(--ink-2); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.bthrow__one .ico { width: 14px; height: 14px; color: var(--ember); }
+.bthrow__one b { color: var(--ink-3); font-weight: 600; }
+.bthrow__one.is-on { border-color: var(--ember); background: rgba(255, 154, 60, 0.2); color: var(--ink); box-shadow: 0 0 8px var(--ember-glow); }
+.bthrow__one.is-on b { color: var(--ink); }
+.bthrow__one:disabled { cursor: default; }
+.bthrow__one:disabled:not(.is-on) { opacity: 0.4; }
 /* The way in: docked to the foot of the window, the sheet fading behind it. */
 .bdock { position: sticky; bottom: -1px; z-index: 2; margin: 0 -2px -2px; padding: 22px 2px 4px; background: linear-gradient(180deg, transparent, rgba(4, 3, 2, 0.96) 45%); }
 .bdock .btn--primary:not([disabled]) { border-color: var(--ember); color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--ember) 42%, rgba(10, 6, 2, 0.8)), color-mix(in srgb, var(--ember) 18%, rgba(10, 6, 2, 0.9))); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ember) 50%, transparent), 0 0 20px var(--ember-glow); text-shadow: 0 0 8px var(--ember-glow); }

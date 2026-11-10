@@ -1237,7 +1237,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    tooltip in `screens/Arena.tsx` that a phone cannot show; threat and contents on seen rooms; an
    `npm run mapstats` report of what the maps draw.
 2. **The Gate clock, Stirring and Red Gates** (built, below).
-3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics.
+3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics (built, below).
 4. **Seals, Feats and condition drops.**
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
 6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
@@ -1247,7 +1247,8 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 
 The references were Slay the Spire's intents (an icon and the damage it will do, over the foe), Into
 the Breach's numbered attack order, Wildfrost's numbers kept in the same place on every card, and
-Etrian Odyssey's map, where what waits in a room is marked on its square.
+Etrian Odyssey's map, where what waits in a room is marked on its square. Their screenshots, with
+where each came from, are in [research/references/step-1-read-the-fight](research/references/step-1-read-the-fight/).
 
 - **The reckoning** (`reckon` in `core/combat.ts`). One hit of an ability from one unit on another, as
   things stand: its chance to land and to crit, its damage at the bottom and top of the swing and at
@@ -1324,7 +1325,8 @@ stripes and every beacon it reaches is marked; Invisible Inc's alarm, a ring of 
 Loop Hero's boss meter, a bar with the boss's mark at its end; Risk of Rain 2's difficulty bar, which
 names each stage as the run passes into it; Darkest Dungeon's torch, whose tip states exactly what the
 dark adds; Etrian Odyssey's danger orb, blue to red as a fight nears; Persona's Reaper, which reddens the
-screen's edges; and the anime's Red Gate, a crimson portal.
+screen's edges; and the anime's Red Gate, a crimson portal. Their screenshots are in
+[research/references/step-2-gate-clock](research/references/step-2-gate-clock/).
 
 - **The clock** (`core/clock.ts`). A Gate's map is counted in places, a floor's stairs down and up as
   one, and its budget is 120% of them (`budgetOf`), written to the run as it walks in (`run.clock`), so a
@@ -1377,6 +1379,103 @@ screen's edges; and the anime's Red Gate, a crimson portal.
   the clock. `npm run campaign` plays Auto, which never stirs, but it does not repeat itself on the same
   code (two runs of the same commit part ways by its first hunter's 20th run, from ids drawn off the
   wall clock), so its totals cannot isolate a change until that is fixed.
+
+### More answers per turn — built
+
+The references were Darkest Dungeon's guard, a shield over the guarded hero's HP bar and "Guarded by",
+for Cover; Slay the Spire's potion belt and its Throw and Discard, for throwables; Octopath Traveler's
+shield, a badge with the hits it can still take and BREAK when it runs out, Honkai: Star Rail's
+toughness bar and the charged attack its break interrupts, and Slay the Spire's Mode Shift, for wind-ups;
+and Slay the Spire's intent icons, which tell an attack from a buff, a defend, a debuff or a sleep at a
+glance, for what creatures do besides hit. Their screenshots are in
+[research/references/step-3-answers-per-turn](research/references/step-3-answers-per-turn/).
+
+Decided with the owner: a wind-up breaks on hits, not damage (Octopath's pips, not a damage number), and
+creatures' behaviours come from their role and their family, scaled by grade: "an E-Rank undead
+guardian doesn't rise again, but it does shield an ally; a higher rank gets both".
+
+- **Cover** (`COVER` in `core/combat.ts`). A fourth basic action: the hunter guards, and every foe
+  action aimed at the ally chosen turns on the hunter, shown first as an `intent` event, as a taunt is;
+  so does any action settled on that ally until the hunter's next turn (`Unit.coveredBy`). On the
+  wheel beside Guard, in the defence's blue; picked, every ally standing can be tapped to choose whom,
+  the one with most coming at them first. A threat aimed at an ally now carries what the hunter would
+  take of it covering (`Threat.guarded`).
+- **Throwables** (`THROWABLES`, `shop.THROW_KIT`). A Flash Vial stuns one foe, a Binding Cord roots one,
+  an Ember Flask burns up to three, each with no roll unless the foe is immune. The bag holds 2 of each
+  (`THROW_MAX`); the Exchange sells them at 45, 30 and 40. A throw is an order (`Throw:flash`) paid for
+  out of the bag when it is written, as the Health Potion is, and replayed on resume. They fill the bag's
+  three empty slots, where they show and cannot be used, and one Throw slot on the action wheel. Caches
+  and Ryn do not hand them out yet.
+- **Creature behaviours** (`data/tricks.ts`). A role's at every grade: Guardians shield an ally
+  (half damage until the guardian acts again), Leaders rally the pack (attack +15-30% by grade for 2
+  rounds), Casters channel (a spell a turn ahead, ×1.4), Brutes enrage below half HP (+20-35%),
+  Assassins mark a target and strike it ×1.6, Archers pick off the one with least HP, Fliers are Veiled
+  after they act, Status Specialists always land what they inflict, a turn longer. A family's from
+  C-Rank: Undead and Aberrations stand once at 1 HP and rise with 30%, Beasts and Chimeras frenzy on the
+  wounded, Orcs, Giantkin and Goblinoids grow bloodlust with each hit, Insectoids, Plants and Slimes
+  regrow 4-7% a round, Constructs and Dragonkin halve the first hit each round, Demons and Elementals
+  strike back 20%, Humanoids and Aquatics drink once below 40%. Actions are intents; habits are tags under
+  the foe's name.
+- **Wind-ups and channels.** A boss's or Gatekeeper's heaviest move, half the times it chooses it, is
+  announced two of its actions ahead at ×1.8; a Caster channels a third of the time, a turn ahead at
+  ×1.4. Every hit landed on it takes a pip; the last breaks it, Stunned and its defences down 40% for
+  two rounds, and the move is lost. A stun of any kind cancels it too. The auto policy goes for a
+  creature winding up or channelling, whatever the orders; the pips are set, grade by grade, so that it
+  breaks about half the wind-ups and two channels in five, measured on the System's road with typical
+  hunters (wind-ups 6, 5, 3, 3, 3, 3 pips from E to S, because from C-Rank a creature acts twice a
+  round and the window is half as long; channels 3, 2, 1, 1, 2, 2).
+- **On screen.** A behaviour's intent reads as what it does (`✦ Shields Bone Scrapper`, `✦ Rallies the
+  pack`, `✦ Marks you`); a wind-up as `Ravager Claws in 2 · you` with `· ×1.8` on its damage, and under
+  it the break, a blue shield with the hits left and a diamond to each pip. Broken, the move is struck
+  through. The fight log says each: `✦ Grave Warden: Shield → Ghoul.`, `◇ Ghoul Ravager: Ravager Claws. 1
+  to go.`, `✴ Ghoul Ravager: [Broken]. Its move is lost.`
+- **Balance.** Auto never covers or throws, so neither moves a tuning. The behaviours and the auto
+  policy's rule for wind-ups do, and `npm run calibrate` moved them all. Gates, on average by grade: E
+  +12.4% harder, D -0.3%, C -10.9% easier, B -10.1%, A -11.5%, S -20.4%: at E, where the auto policy
+  breaks most wind-ups and there are no family behaviours yet, creatures came out weaker, and from C, where
+  undying, regrowth and hardened arrive, stronger. The Spire's blocks followed (E +12.7%, D +1.1%, C
+  -10.7%, B -7.4%, A -8.8%, S -8.9%), its floors moved within -8.3% and +4.5% (19 of 20), every Ascension
+  level is 8.1% to 12.9% harder, and every Trial 9.5% to 15.7% easier. `npm run balance`: the middle of
+  each grade clears where it did (72% to 82%); the floor of S rose from 57% to 74% and the top of E fell
+  from 88% to 83%; days to each rank did not move. `npm run mapstats`: side fights still cost a typical
+  hunter nothing 95% to 100% of the time below S, and 85% at S.
+
+- **Asked for after the first look.**
+  - *The wheel.* An item's slot wears the count held in a badge, and the hub says everything about the
+    slot shown: a throw reads `Burn up to 3 foes` over `Burning: HP -7% each rd`, the one place `each
+    round` is shortened (VOICE.md). Use, the chips under the wheel and the lines under it are gone.
+    Two ways to use a slot, and still nothing on a first tap: press the shut button, drag onto a slot (the
+    hub shows it, `Let go to use`) and let go on it; or tap a slot and tap it again (`Tap again to use`).
+    Let go anywhere but a slot and nothing is used.
+  - *A throwable is readied before the Gate*, not chosen in the fight: on the brief, a chip to each kind
+    held, or `Ready` from the bag (`gates.ready`, `shop.ready`). A run keeps the one it walked in with
+    (`run.throw`, `shop.readied`: the one readied while one is held, or else the first kind held); its
+    fights throw only that kind, and an order for another is the System's choice. A run opened before
+    throws any kind held, as it did.
+  - *The foe's card*, in fixed rows: name and HP, the bar, its habits on one quiet line
+    (`ENRAGES · BLOODLUST · WINDS UP`), its own statuses as the card's only tags (a boon such as Enraged in
+    the Gates' ember, not the party's green), then the intent in a panel: the order and the move over two
+    lines at most, `Damage 186-252  Hit 95%  ×1.8`, the break, and a quiet foot, `Inflicts Bleeding` over
+    `Acts 2 times each round`. `Lethal` sits on the panel's corner and reddens its rim.
+  - Auto never throws, so readying moves no tuning, and nothing else here touches the fight.
+- **Asked for after the second look.**
+  - *The break is the bar.* A creature winding up or channelling shows no pips and no `2 hits break it`:
+    its HP bar turns blue, a section to each hit it can still take, the taken ones hollow, and is its HP
+    bar again once the move lands or breaks. Its HP stays in numbers at the card's top.
+  - *A foe's numbers are earned.* `Damage 186-252 · Hit 95%` and `×1.8` show only with **Foresight**, a
+    new passive on Sight's first tier, outside its sixteen (`FORESIGHT`, `skilltree.foresees`); without
+    it, Guard says `Aimed at you: 2` and Cover `Aimed at them: 2`, and nothing says how hard. `Lethal`
+    stays for everyone. Foresight changes what a fight shows and never the fight: it is no passive of the
+    fight's build, and Auto Assign never takes it, so the balance tools' hunters are who they were and
+    no tuning moves.
+  - *The move by name.* `Winding up Warcaller Cleave`, `Channelling Frost Lance`, `Grave Strike`: no
+    arrow, no `in 2`, and never whom it goes at. The party's side says that: a card a foe is coming for
+    wears a tab at its corner, `◀` and that foe's place in the order, the number on the foe's card.
+  - *A tap tells.* `Inflicts Bleeding` and `Acts 2 times each round` left the panel. A habit, a status or a
+    move with something to tell is underlined in dots, and a tap on it opens a tip by it and aims at
+    nothing: the habit's line, the status's, or the move's (the break, what it inflicts, how often the
+    foes act). The card is no longer a button inside which nothing else could be tapped.
+
 
 ## What stays out
 

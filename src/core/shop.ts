@@ -14,7 +14,7 @@ import type { Rank, Save, StockId } from './types';
 import { RANKS } from './types';
 import { dayIndex, dayKey, rng } from './util';
 import * as vitals from './vitals';
-import { POTION_HEAL } from './combat';
+import { POTION_HEAL, type ThrowId } from './combat';
 import { licensedRank } from './licence';
 
 export const STOCK = BLUEPRINTS.shelf;
@@ -145,6 +145,44 @@ export function givePotions(s: Save, id: PotionId, n: number): { kept: number; s
   stockUp(s, id, kept);
   const price = POTIONS.find((x) => x.id === id)?.price ?? 0;
   return { kept, shards: n > kept ? earn(s, (n - kept) * price) : 0 };
+}
+
+// ------------------------------------------------------------------ what the hunter throws
+
+/** How many of each kind the bag holds. */
+export const THROW_MAX = 2;
+/** The Exchange's throwables: what each costs, and what it is. Names and statuses are the fight's (`THROWABLES`). */
+export const THROW_KIT: { id: ThrowId; price: number; desc: string }[] = [
+  { id: 'flash', price: 45, desc: 'A sealed vial of Gate light. Thrown, it bursts in a foe\'s eyes.' },
+  { id: 'cord', price: 30, desc: 'Weighted cord, woven with mana thread. It wraps a foe\'s legs.' },
+  { id: 'ember', price: 40, desc: 'A flask of Gate-fire oil. It bursts across several foes.' },
+];
+/** Room left in the bag for a throwable. */
+export const throwRoom = (s: Save, id: ThrowId) => Math.max(0, THROW_MAX - held(s, id));
+
+/**
+ * The throwable a Gate walked into now takes: the one readied, while one is held, or else the first kind held.
+ * A fight throws only that kind, so the action wheel is the same from the first chamber to the last.
+ */
+export function readied(s: Save): ThrowId | null {
+  const r = s.gates.ready;
+  if (r && held(s, r) > 0) return r;
+  return THROW_KIT.find((t) => held(s, t.id) > 0)?.id ?? null;
+}
+
+/** Ready a throwable for the Gates to come. False if none of it is held. Mutates. */
+export function ready(s: Save, id: ThrowId): boolean {
+  if (held(s, id) <= 0) return false;
+  s.gates.ready = id;
+  return true;
+}
+
+/** Buy a throwable to carry. False if the bag holds as many as it can, or the shards are short. Mutates. */
+export function buyThrow(s: Save, id: ThrowId): boolean {
+  const t = THROW_KIT.find((x) => x.id === id);
+  if (!t || throwRoom(s, id) <= 0 || !pay(s, t.price)) return false;
+  stockUp(s, id);
+  return true;
 }
 
 /** Buy a Gate Survey into stock. False if the shards are short. Mutates. */

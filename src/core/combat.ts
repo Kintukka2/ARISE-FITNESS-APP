@@ -13,6 +13,7 @@
  */
 import { ABILITIES, CLASS_PASSIVES, CLASS_SKILLS, PASSIVES } from '@/data/abilities';
 import { EDGE, TREE_PASSIVES, TREE_SKILLS } from '@/data/tree';
+import { at as byGrade, TRICK, TRICKS, type TrickId } from '@/data/tricks';
 import type { Ability, Attrs, Order, Tactic } from './types';
 import { clamp, type Rand } from './util';
 
@@ -77,6 +78,12 @@ export const STATUS: Record<string, { turns: number; dot?: number; pdef?: number
   Veiled: { turns: 2, good: true, eva: 1.5 },
   // Two, so it outlives the end of the round it was raised in; the unit's next turn takes it down.
   Guarded: { turns: 2, good: true },
+  // A creature's own: a pack rallied, a creature enraged (each by its grade's share), a wind-up broken.
+  Emboldened: { turns: TRICK.rally.turns, good: true },
+  Enraged: { turns: 99, good: true },
+  Broken: { turns: TRICK.windup.broken.turns, pdef: TRICK.windup.broken.def, mdef: TRICK.windup.broken.def },
+  // Held while the guardian stands by it: its next action takes it down.
+  Shielded: { turns: 99, good: true },
 };
 
 const pctOf = (x: number) => Math.round(Math.abs(1 - x) * 100);
@@ -108,8 +115,28 @@ export { STRIKE };
 /** What a guarding unit takes of every hit. */
 export const GUARD = 0.5;
 STATUS_TEXT.Guarded = `Damage taken -${(1 - GUARD) * 100}% until its next turn`;
+STATUS_TEXT.Shielded = `Damage taken -${Math.round((1 - TRICK.shield.taken) * 100)}% while its guardian stands by it`;
+STATUS_TEXT.Emboldened = `Attack +${Math.round(TRICK.rally.atk[0] * 100)}-${Math.round(TRICK.rally.atk[5] * 100)}% by grade`;
+STATUS_TEXT.Enraged = `Attack +${Math.round(TRICK.enrage.atk[0] * 100)}-${Math.round(TRICK.enrage.atk[5] * 100)}% by grade`;
 /** A Health Potion restores this share of the drinker's maximum HP, in a fight or out of one. */
 export const POTION_HEAL = 0.25;
+
+/**
+ * What the hunter can throw on their turn, from the bag: each lands its status on the foes it reaches,
+ * the foe aimed at first, with no roll, unless the foe is immune to it. `reach` as an ability's.
+ */
+export const THROWABLES = [
+  { id: 'flash', name: 'Flash Vial', status: 'Stunned', reach: 1 },
+  { id: 'cord', name: 'Binding Cord', status: 'Rooted', reach: 1 },
+  { id: 'ember', name: 'Ember Flask', status: 'Burning', reach: 3 },
+] as const;
+export type ThrowId = (typeof THROWABLES)[number]['id'];
+export const throwable = (id: string) => THROWABLES.find((x) => x.id === id);
+/** A throw as an order names it: `Throw:flash`. */
+export const throwOrder = (id: ThrowId) => `Throw:${id}`;
+export const thrownBy = (use: string) => (use.startsWith('Throw:') ? throwable(use.slice(6)) : undefined);
+/** Cover, the hunter's fourth action: what is aimed at the ally covered comes at the hunter, guarding. */
+export const COVER = 'Cover';
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS, ...TREE_SKILLS].map((a) => [a.name, a]));
 const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES];
 const passiveMap = new Map<string, string>(ALL_PASSIVES.map((p) => [p.name, p.style]));
@@ -139,6 +166,23 @@ export interface UnitSpec {
   atkMult?: number;
   tag?: 'hero' | 'ally' | 'shadow' | 'foe';
   ref?: string;
+  /** A creature's behaviours (`data/tricks.ts`), and the grade its numbers are read at. */
+  tricks?: TrickId[];
+  grade?: string;
+}
+
+/** A foe's next action as shown: an ability and the unit it goes at first, or one of its behaviours. */
+export interface Intent {
+  ab: string;
+  at?: string;
+  /** A behaviour taken instead of an attack: a shield on an ally, a rally, a mark, a drink. */
+  kind?: 'shield' | 'rally' | 'mark' | 'drink';
+  /** How much harder than the ability's own it lands: a wind-up's, a channel's, a marked target's strike. */
+  mult?: number;
+  /** A wind-up or a channel: the actions until it lands (1, the next), and its break pips left of `max`. */
+  wind?: number;
+  pips?: number;
+  max?: number;
 }
 
 export class Unit {
@@ -155,11 +199,26 @@ export class Unit {
   /** Everyone who landed a hit on this unit: each helped fell it. */
   hurtBy = new Set<Unit>();
   /** A foe's next action, settled in advance and shown: an ability, and the unit it goes at first. */
-  intent?: { ab: string; at?: string };
+  intent?: Intent;
+  /** A creature's behaviours, and the grade it has them at. */
+  tricks: Set<TrickId>;
+  grade: string;
+  /** A wind-up or a channel underway: what lands, on whom, when, how much harder, and the pips left. */
+  wind?: { ab: string; at?: string; left: number; pips: number; max: number; mult: number };
+  /** An assassin's marked target, struck with its next action. */
+  quarry?: Unit;
+  /** The guardian shielding this creature until the guardian's next action. */
+  shieldOf?: Unit;
+  /** A rally's share and an enrage's on its attack, the hits its bloodlust has counted, and what it has spent. */
+  bold = 0; rage = 0; lust = 0; hardUsed = false; rising = false; drank = false;
+  /** The ally covering this unit until that ally's next turn: what is aimed at this unit goes at them. */
+  coveredBy?: Unit;
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
     this.tag = sp.tag; this.ref = sp.ref;
+    this.tricks = new Set(sp.tricks ?? []);
+    this.grade = sp.grade ?? 'E';
     this.kit = sp.kit ?? [];
     this.own = new Map((sp.own ?? []).map((a) => [a.name, a]));
     this.names = sp.passives ?? [];
@@ -192,7 +251,12 @@ export class Unit {
     for (const k of Object.keys(this.status)) m *= STATUS[k]?.[key] ?? 1;
     return m;
   }
-  atk(magic: boolean) { return ((magic ? this.d.mpow : this.d.patk + this.esc * 4)) * this.mod('atk') * this.atkMult * (1 + this.mom * EDGE.momentum.step); }
+  atk(magic: boolean) {
+    const own = (this.status.Emboldened ? 1 + this.bold : 1) * (this.status.Enraged ? 1 + this.rage : 1) * (1 + this.lust * TRICK.bloodlust.step);
+    return ((magic ? this.d.mpow : this.d.patk + this.esc * 4)) * this.mod('atk') * this.atkMult * (1 + this.mom * EDGE.momentum.step) * own;
+  }
+  /** It has this behaviour. */
+  does(t: TrickId) { return this.tricks.has(t); }
   def(magic: boolean) {
     const pack = this.has('pack') ? Math.min(2, this.kin.filter((k) => k !== this && k.alive() && k.has('pack')).length) * 5 : 0;
     return magic ? (this.d.resist + pack) * this.mod('mdef') : (this.d.defense + pack) * this.mod('pdef');
@@ -217,7 +281,19 @@ export type Ev =
   | { t: 'expire'; v: string; s: string }
   | { t: 'down'; v: string }
   | { t: 'guard'; a: string }
-  | { t: 'intent'; u: string; ab: string; at?: string }
+  /** Cover: `a` covers `v`; `n` counts the foes it turned. */
+  | { t: 'cover'; a: string; v: string; n: number }
+  /** A throw from the bag: what, and on whom. What it inflicts follows as `status` events. */
+  | { t: 'throw'; a: string; item: string; v: string[] }
+  /** A creature's behaviour taken instead of an attack: `v` the ally shielded or the target marked. */
+  | { t: 'trick'; a: string; k: 'shield' | 'rally' | 'mark' | 'drink'; v?: string }
+  /** A wind-up or a channel gathering: `left` actions until it lands. */
+  | { t: 'charge'; a: string; ab: string; left: number }
+  /** A hit took a pip off a wind-up or a channel: `left` remain. */
+  | { t: 'pip'; v: string; left: number }
+  /** A wind-up or a channel broken: the creature is Stunned and its defences down. */
+  | { t: 'break'; v: string }
+  | ({ t: 'intent'; u: string } & Intent)
   /** `ab`: the support that healed; unset is a Health Potion. */
   | { t: 'heal'; a: string; amt: number; hp: number; ab?: string }
   | { t: 'passive'; u: string; p: string; k: string; hp?: number; amt?: number };
@@ -236,6 +312,10 @@ function blow(u: Unit, t: Unit, a: Ability, swing: number, crit: boolean, guarde
   if (u.has('execute') && t.hp < t.maxHp * EDGE.execute.below) dmg *= EDGE.execute.mult;
   if (u.has('exploit') && Object.keys(t.status).some((k) => STATUS[k] && !STATUS[k].good)) dmg *= EDGE.exploit;
   if (t.has('stalwart') && t.hp > t.maxHp * EDGE.stalwart.above) dmg *= EDGE.stalwart.mult;
+  // A creature's own: frenzy on the wounded, the first hit a hardened one takes each round, a shield an ally holds.
+  if (u.does('frenzy') && t.hp < t.maxHp * TRICK.frenzy.below) dmg *= 1 + TRICK.frenzy.dmg;
+  if (t.does('hardened') && !t.hardUsed) dmg *= TRICK.hardened.taken;
+  if (t.shieldOf?.alive()) dmg *= TRICK.shield.taken;
   if (guarded) dmg *= GUARD;
   return Math.round(dmg);
 }
@@ -275,6 +355,7 @@ export function reckon(u: Unit, t: Unit, a: Ability, guarded = !!t.status.Guarde
 }
 
 function statusLands(src: Unit, t: Unit, st: string) {
+  if (src.does('virulent') && !t.imm.includes(st)) return 100;
   if (t.imm.includes(st)) return 0;
   let c = BASE_STATUS + src.d.statusChance - Math.round(t.d.resist / 5) - t.d.statusSave;
   if (t.res.includes(st)) c -= 15;
@@ -303,21 +384,68 @@ function targets(a: Ability, foes: Unit[], r: Rand, first?: Unit): Unit[] {
   return out;
 }
 
-/** Settle a foe's next action and show it. Mutates. */
+/** A unit's heaviest ready ability, for a wind-up: its own most powerful hit. */
+function heaviest(u: Unit): Ability | null {
+  const all = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a && a.mult > 0 && a.profile !== 'support' && a.profile !== 'taunt');
+  return all.length ? all.reduce((a, b) => (b.mult > a.mult ? b : a)) : null;
+}
+
+/** Where an action settled on `t` goes: at whoever covers it, while the cover stands. */
+const through = (t?: Unit) => (t?.coveredBy?.alive() ? t.coveredBy : t);
+
+/**
+ * Settle a foe's next action and show it. A wind-up or a channel underway carries on; otherwise a
+ * creature may take one of its behaviours (a drink, a shield, a rally, a mark), strike its marked
+ * target, or attack, winding up or channelling the attack if it can. Mutates.
+ */
 function foresee(u: Unit, enemy: Unit[], r: Rand, log: Ev[], ahead: number) {
-  const a = choose(u, r, ahead);
+  const show = (i: Intent) => { u.intent = i; log.push({ t: 'intent', u: u.uid, ...i }); };
   const live = enemy.filter((x) => x.alive());
+  if (u.wind) {
+    const t = through(live.find((x) => x.uid === u.wind!.at));
+    if (u.wind.at && !t) u.wind.at = live[Math.floor(r() * live.length)]?.uid;
+    else if (t) u.wind.at = t.uid;
+    return show({ ab: u.wind.ab, at: u.wind.at, mult: u.wind.mult, wind: u.wind.left, pips: u.wind.pips, max: u.wind.max });
+  }
+  if (u.does('secondwind') && !u.drank && u.hp < u.maxHp * TRICK.secondwind.below) return show({ ab: TRICKS.secondwind.name, kind: 'drink' });
+  const kin = u.kin.filter((k) => k !== u && k.alive());
+  if (u.does('shield') && kin.length && r() < TRICK.shield.chance) {
+    const ward = kin.reduce((a, b) => (b.hp / b.maxHp < a.hp / a.maxHp ? b : a));
+    return show({ ab: 'Shield', kind: 'shield', at: ward.uid });
+  }
+  if (u.does('rally') && !u.kin.some((k) => k.alive() && k.status.Emboldened) && r() < TRICK.rally.chance) return show({ ab: 'Rally', kind: 'rally' });
+  if (u.does('mark') && live.length) {
+    const q = u.quarry?.alive() ? through(u.quarry) : undefined;
+    const hit = heaviest(u) ?? STRIKE;
+    if (q) return show({ ab: hit.name, at: q.uid, mult: TRICK.mark.mult });
+    if (r() < TRICK.mark.chance) return show({ ab: 'Mark', kind: 'mark', at: through(live[Math.floor(r() * live.length)])!.uid });
+  }
+  const a = choose(u, r, ahead);
   const aimed = a.profile !== 'support' && a.profile !== 'all' && live.length > 0;
-  u.intent = { ab: a.name, at: aimed ? live[Math.floor(r() * live.length)].uid : undefined };
-  log.push({ t: 'intent', u: u.uid, ab: u.intent.ab, at: u.intent.at });
+  // Picking off goes for the one with the least HP; everyone else draws a target.
+  let t = !aimed ? undefined : u.does('pickoff') ? live.reduce((x, y) => (y.hp < x.hp ? y : x)) : live[Math.floor(r() * live.length)];
+  t = through(t);
+  const heavy = heaviest(u);
+  if (u.does('windup') && heavy && a.name === heavy.name && r() < TRICK.windup.chance) {
+    const max = byGrade(TRICK.windup.pips, u.grade);
+    u.wind = { ab: a.name, at: t?.uid, left: TRICK.windup.ahead, pips: max, max, mult: TRICK.windup.mult };
+    return show({ ab: a.name, at: t?.uid, mult: u.wind.mult, wind: u.wind.left, pips: max, max });
+  }
+  if (u.does('channel') && a.mult > 0 && r() < TRICK.channel.chance) {
+    const max = byGrade(TRICK.channel.pips, u.grade);
+    u.wind = { ab: a.name, at: t?.uid, left: 1, pips: max, max, mult: TRICK.channel.mult };
+    return show({ ab: a.name, at: t?.uid, mult: u.wind.mult, wind: 1, pips: max, max });
+  }
+  show({ ab: a.name, at: t?.uid });
 }
 
 /** The ability a foe settled on, if it can still use it. */
 function intended(u: Unit): Ability | null {
-  if (!u.intent) return null;
-  if (u.intent.ab === STRIKE.name) return STRIKE;
-  const a = u.ab(u.intent.ab);
-  return a && !u.cd[a.name] ? a : null;
+  if (!u.intent || u.intent.kind) return null;
+  const a = u.intent.ab === STRIKE.name ? STRIKE : u.ab(u.intent.ab);
+  // A wind-up or a channel waits on no cooldown: it was settled ready.
+  if (!a || (u.cd[a.name] && !u.intent.wind)) return null;
+  return u.intent.mult ? { ...a, mult: a.mult * u.intent.mult } : a;
 }
 
 /** The hunter's order, if it names something they can use right now. */
@@ -342,9 +470,13 @@ const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
  * the projection). The Association's hunters pick their own targets. Undefined leaves it to chance.
  */
 function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Unit | undefined {
-  if (u.side !== 'p' || u.tag === 'ally' || tactic === 'default') return undefined;
+  if (u.side !== 'p' || u.tag === 'ally') return undefined;
   const live = foes.filter((f) => f.alive());
   if (!live.length) return undefined;
+  // Whatever the orders, a foe winding up or channelling comes first: the one nearest to breaking.
+  const winding = live.filter((f) => f.wind);
+  if (winding.length) return winding.reduce((x, y) => (y.wind!.pips < x.wind!.pips ? y : x));
+  if (tactic === 'default') return undefined;
   if (tactic === 'finish') return live.reduce((x, y) => (y.hp < x.hp ? y : x));
   if (tactic === 'protect') {
     // Whatever is about to hit the hunter, then whatever last did, then whatever hits hardest.
@@ -359,13 +491,67 @@ function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Un
 }
 
 /** What a turn can do beyond its unit: the party's standing orders, its hunter, and potions left. */
-interface Ctx { tactic: Tactic; hero?: Unit; potions: number }
+interface Ctx { tactic: Tactic; hero?: Unit; potions: number; throws: Partial<Record<ThrowId, number>> }
 
 function survive(t: Unit, log: Ev[]) {
+  if (t.hp <= 0 && t.does('undying') && !t.spent.has('undying')) {
+    // Undying: it stands at 1 HP, and rises at the round's end.
+    t.spent.add('undying');
+    t.hp = 1;
+    t.rising = true;
+    log.push({ t: 'passive', u: t.uid, p: TRICKS.undying.name, k: 'stand', hp: 1 });
+    return;
+  }
   if (t.hp > 0 || !t.has('survival') || t.spent.has('stand')) return;
   t.spent.add('stand');
   t.hp = 1;
   log.push({ t: 'passive', u: t.uid, p: t.named('survival'), k: 'stand', hp: 1 });
+}
+
+/** A creature that enrages, wounded past its mark, enrages. Mutates. */
+function enrage(t: Unit, log: Ev[]) {
+  if (!t.does('enrage') || t.status.Enraged || !t.alive() || t.hp >= t.maxHp * TRICK.enrage.below) return;
+  t.rage = byGrade(TRICK.enrage.atk, t.grade);
+  t.status.Enraged = STATUS.Enraged.turns;
+  log.push({ t: 'status', v: t.uid, s: 'Enraged' });
+}
+
+/** A hit landed on a creature winding up or channelling takes a pip off; the last breaks it. Mutates. */
+function chip(t: Unit, log: Ev[]) {
+  if (!t.wind || !t.alive()) return;
+  t.wind.pips -= 1;
+  log.push({ t: 'pip', v: t.uid, left: t.wind.pips });
+  if (t.wind.pips > 0) return;
+  t.wind = undefined;
+  t.status.Stunned = STATUS.Stunned.turns;
+  t.status.Broken = STATUS.Broken.turns;
+  log.push({ t: 'break', v: t.uid });
+  log.push({ t: 'status', v: t.uid, s: 'Stunned' });
+  log.push({ t: 'status', v: t.uid, s: 'Broken' });
+}
+
+/** A creature's behaviour, as it showed it. Mutates. */
+function trick(u: Unit, foes: Unit[], friends: Unit[], log: Ev[]) {
+  const i = u.intent!;
+  if (i.kind === 'drink') {
+    u.drank = true;
+    const was = u.hp;
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * TRICK.secondwind.heal);
+    log.push({ t: 'trick', a: u.uid, k: 'drink' });
+    log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp), ab: TRICKS.secondwind.name });
+  } else if (i.kind === 'shield') {
+    const ward = friends.find((f) => f.uid === i.at && f.alive());
+    if (ward) { ward.shieldOf = u; ward.status.Shielded = STATUS.Shielded.turns; }
+    log.push({ t: 'trick', a: u.uid, k: 'shield', v: ward?.uid });
+  } else if (i.kind === 'rally') {
+    for (const f of friends) if (f.alive()) { f.status.Emboldened = STATUS.Emboldened.turns; f.bold = byGrade(TRICK.rally.atk, u.grade); }
+    log.push({ t: 'trick', a: u.uid, k: 'rally' });
+  } else if (i.kind === 'mark') {
+    const t = foes.find((f) => f.uid === i.at && f.alive());
+    if (t) { u.quarry = t; t.status.Marked = STATUS.Marked.turns; }
+    log.push({ t: 'trick', a: u.uid, k: 'mark', v: t?.uid });
+    if (t) log.push({ t: 'status', v: t.uid, s: 'Marked' });
+  }
 }
 
 function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill: (killer: Unit, victim: Unit) => void, o: Order | null, ctx: Ctx) {
@@ -373,15 +559,63 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     delete u.status.Guarded;
     log.push({ t: 'expire', v: u.uid, s: 'Guarded' });
   }
+  // A cover holds until the one covering acts again, and so does a guardian's shield.
+  for (const f of friends) {
+    if (f.coveredBy === u) f.coveredBy = undefined;
+    if (f.shieldOf === u) { f.shieldOf = undefined; if (f.status.Shielded) { delete f.status.Shielded; log.push({ t: 'expire', v: f.uid, s: 'Shielded' }); } }
+  }
   if (u.status.Stunned) {
-    // A stun costs the next action, whenever in the round it landed.
+    // A stun costs the next action, whenever in the round it landed, and whatever it was gathering.
     delete u.status.Stunned;
+    u.wind = undefined;
     log.push({ t: 'stun', a: u.uid });
+    return;
+  }
+  if (u.side === 'e' && u.intent?.kind) {
+    trick(u, foes, friends, log);
+    if (u.does('aloft')) { u.status.Veiled = TRICK.aloft.turns; log.push({ t: 'status', v: u.uid, s: 'Veiled' }); }
+    return;
+  }
+  // A wind-up gathering: the action is spent on it, and it is one action nearer.
+  if (u.side === 'e' && u.wind && u.wind.left > 1) {
+    u.wind.left -= 1;
+    log.push({ t: 'charge', a: u.uid, ab: u.wind.ab, left: u.wind.left });
     return;
   }
   if (o?.use === 'Guard') {
     u.status.Guarded = STATUS.Guarded.turns;
     log.push({ t: 'guard', a: u.uid });
+    return;
+  }
+  const ward = o?.use === COVER ? friends.find((f) => f.uid === o.at && f !== u && f.alive()) : undefined;
+  if (o?.use === COVER && ward) {
+    // Every foe's next action aimed at the ally turns on the one covering, shown before it comes, and so
+    // does every action settled on the ally until the cover's next turn. The one covering guards.
+    u.status.Guarded = STATUS.Guarded.turns;
+    ward.coveredBy = u;
+    let n = 0;
+    for (const f of foes) {
+      if (!f.alive() || f.intent?.at !== ward.uid) continue;
+      f.intent = { ...f.intent, at: u.uid };
+      if (f.wind) f.wind.at = u.uid;
+      if (f.quarry === ward) f.quarry = u;
+      log.push({ t: 'intent', u: f.uid, ...f.intent });
+      n++;
+    }
+    log.push({ t: 'cover', a: u.uid, v: ward.uid, n });
+    return;
+  }
+  const thrown = o ? thrownBy(o.use) : undefined;
+  if (thrown && (ctx.throws[thrown.id] ?? 0) > 0) {
+    ctx.throws[thrown.id] = (ctx.throws[thrown.id] ?? 0) - 1;
+    const first = foes.find((f) => f.uid === o!.at && f.alive());
+    const hit = targets({ ...STRIKE, profile: thrown.reach > 1 ? 'volley' : 'single' }, foes, r, first);
+    log.push({ t: 'throw', a: u.uid, item: thrown.id, v: hit.map((t) => t.uid) });
+    for (const t of hit) {
+      if (t.imm.includes(thrown.status)) continue;
+      t.status[thrown.status] = STATUS[thrown.status].turns;
+      log.push({ t: 'status', v: t.uid, s: thrown.status });
+    }
     return;
   }
   if (o?.use === 'Potion' && ctx.potions > 0) {
@@ -414,9 +648,12 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     u.status.Guarded = STATUS.Guarded.turns;
     let n = 0;
     for (const f of foes) {
-      if (!f.alive() || !f.intent?.at || f.intent.at === u.uid) continue;
-      f.intent = { ab: f.intent.ab, at: u.uid };
-      log.push({ t: 'intent', u: f.uid, ab: f.intent.ab, at: u.uid });
+      // Only what is aimed at the taunter's side turns: a shield on a creature's ally stays where it is.
+      if (!f.alive() || !f.intent?.at || f.intent.at === u.uid || !friends.some((x) => x.uid === f.intent!.at)) continue;
+      f.intent = { ...f.intent, at: u.uid };
+      if (f.wind) f.wind.at = u.uid;
+      if (f.quarry) f.quarry = u;
+      log.push({ t: 'intent', u: f.uid, ...f.intent });
       n++;
     }
     log.push({ t: 'cast', a: u.uid, ab: a.name, k: 'taunt', n });
@@ -456,6 +693,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       crit = true;
     }
     let dmg = blow(u, t, a, swing, crit);
+    if (t.does('hardened')) t.hardUsed = true;
     if (crit && u.has('flurry')) quick = true;
     if (magic && t.has('arcane') && !t.spent.has('ward')) {
       t.spent.add('ward');
@@ -469,14 +707,17 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     t.hitBy = u;
     t.hurtBy.add(u);
     survive(t, log);
+    enrage(t, log);
+    chip(t, log);
+    if (u.does('bloodlust') && u.lust < TRICK.bloodlust.max) u.lust += 1;
     if (u.has('escalation') && u.esc < 2) u.esc += 1;
     if (u.has('vamp')) drawn += took * EDGE.vamp;
     log.push({ t: 'hit', a: u.uid, v: t.uid, ab: a.name, dmg, crit, hp: Math.max(0, Math.round(t.hp)) });
     // Spikes: the one who landed it takes a share back, and can fall to it.
-    if (t.has('thorns') && was) {
-      const back = Math.max(1, Math.round(dmg * EDGE.thorns));
+    if ((t.has('thorns') || t.does('backlash')) && was) {
+      const back = Math.max(1, Math.round(dmg * (t.has('thorns') ? EDGE.thorns : TRICK.backlash.back)));
       u.hp -= back;
-      log.push({ t: 'tick', v: u.uid, s: t.named('thorns'), dmg: back, hp: Math.max(0, Math.round(u.hp)) });
+      log.push({ t: 'tick', v: u.uid, s: t.has('thorns') ? t.named('thorns') : TRICKS.backlash.name, dmg: back, hp: Math.max(0, Math.round(u.hp)) });
       survive(u, log);
       if (!u.alive()) { log.push({ t: 'down', v: u.uid }); onKill(t, u); }
     }
@@ -493,9 +734,15 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
         log.push({ t: 'passive', u: t.uid, p: t.named('brace'), k: 'brace' });
         continue;
       }
-      t.status[st] = STATUS[st].turns + (u.has('affliction') && !STATUS[st].skip && !STATUS[st].good ? EDGE.affliction : 0);
+      t.status[st] = STATUS[st].turns + (u.has('affliction') && !STATUS[st].skip && !STATUS[st].good ? EDGE.affliction : 0) + (u.does('virulent') && !STATUS[st].skip ? TRICK.virulent.turns : 0);
       log.push({ t: 'status', v: t.uid, s: st });
     }
+  }
+  // What a wind-up, a channel or a marked strike gathered is spent with the action.
+  if (u.side === 'e') {
+    if (u.wind) u.wind = undefined;
+    if (u.intent?.mult && u.quarry) u.quarry = undefined;
+    if (u.does('aloft') && u.alive()) { u.status.Veiled = TRICK.aloft.turns; log.push({ t: 'status', v: u.uid, s: 'Veiled' }); }
   }
   // Bloodthirst: what the action drew comes back at once, as one heal.
   const heal = Math.min(Math.round(drawn), Math.round(u.maxHp - u.hp));
@@ -517,6 +764,15 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
 
 function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Unit) => void) {
   if (u.esc) u.esc -= 1;
+  u.hardUsed = false;
+  // Undying rises; regrowth heals.
+  const heal = (share: number, ab: string) => {
+    const was = u.hp;
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * share);
+    if (u.hp > was) log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp), ab });
+  };
+  if (u.rising && u.alive()) { u.rising = false; heal(TRICK.undying.heal, TRICKS.undying.name); }
+  if (u.does('regrowth') && u.alive()) heal(byGrade(TRICK.regrowth.heal, u.grade), TRICKS.regrowth.name);
   for (const st of Object.keys(u.status)) {
     if (STATUS[st]?.skip) continue;
     const dot = STATUS[st]?.dot;
@@ -525,6 +781,7 @@ function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Un
       u.hp -= d;
       log.push({ t: 'tick', v: u.uid, s: st, dmg: d, hp: Math.max(0, Math.round(u.hp)) });
       survive(u, log);
+      enrage(u, log);
       if (!u.alive()) { log.push({ t: 'down', v: u.uid }); onKill(null, u); }
     }
     u.status[st] -= 1;
@@ -572,8 +829,14 @@ export interface Threat {
   times: number;
   /** One hit on the unit aimed at, as things stand. Null for a move that does no damage, or no target. */
   hit: Reckoning | null;
-  /** Aimed at the hunter: the same hit, taken guarding. */
+  /** Aimed at the hunter: the same hit, taken guarding. Aimed at an ally: the same hit on the hunter, guarding, if they covered it. */
   guarded: Reckoning | null;
+  /** A behaviour instead of an attack, as the intent shows it. */
+  kind?: Intent['kind'];
+  /** A wind-up or a channel: actions until it lands, and its break pips left of `max`. */
+  wind?: number;
+  pips?: number;
+  max?: number;
 }
 
 /** The hunter's turn, as `battle` hands it out: what they can use, and who is left to aim at. */
@@ -582,6 +845,10 @@ export interface Turn {
   skills: { ability: Ability; cd: number }[];
   foes: string[];
   potions: number;
+  /** What the hunter can throw, by kind. */
+  throws: Partial<Record<ThrowId, number>>;
+  /** The allies the hunter can cover. */
+  allies: string[];
   /** Every foe's next action, in the order they come. */
   threats: Threat[];
   /** One hit of each action that does damage, by its name, on each foe left, by uid. */
@@ -595,6 +862,8 @@ export interface BattleOpts {
   tactic?: Tactic;
   /** Health Potions the waiting unit carries. */
   potions?: number;
+  /** What the waiting unit can throw, by kind. */
+  throws?: Partial<Record<ThrowId, number>>;
 }
 
 /**
@@ -610,7 +879,7 @@ export function* battle(
 ): Generator<Turn, FightResult, Order | null | undefined> {
   openSide(party, log);
   openSide(foes, log);
-  const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0 };
+  const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0, throws: { ...(opts.throws ?? {}) } };
   for (const u of foes) if (u.alive()) foresee(u, party, r, log, 0);
   let round = 0;
   const any = (xs: Unit[]) => xs.some((x) => x.alive());
@@ -627,7 +896,7 @@ export function* battle(
       for (let k = 0; k < reps && any(enemy); k++) {
         // A stunned hunter has no turn to give, so nothing waits for one.
         const wait = u.uid === opts.hero && !u.status.Stunned;
-        const o = wait ? (yield turnOf(u, enemy, own, ctx.potions, order.slice(i + 1), actions)) ?? null : null;
+        const o = wait ? (yield turnOf(u, enemy, own, ctx.potions, order.slice(i + 1), actions, ctx.throws)) ?? null : null;
         act(u, enemy, own, r, log, onKill, o, ctx);
         // A foe settles its next action at once. If that action is next round, a cooldown tick comes first.
         if (u.side === 'e' && u.alive() && any(enemy)) foresee(u, enemy, r, log, k < reps - 1 ? 0 : 1);
@@ -645,7 +914,7 @@ export function* battle(
  * The turn handed to the hunter `u`. `after` is everyone still to act this round, `actions` how often
  * each foe acts in a round. Reads the units and never a roll, so asking for it changes nothing.
  */
-function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit[] = [], actions = 1): Turn {
+function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit[] = [], actions = 1, throws: Partial<Record<ThrowId, number>> = {}): Turn {
   const skills = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a).map((a) => ({ ability: a, cd: u.cd[a.name] ?? 0 }));
   const live = foes.filter((f) => f.alive());
   // The foes' next actions in the order they come: the rest of this round as it was drawn up, then the
@@ -655,14 +924,17 @@ function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit
   const mine = next.indexOf(u);
   const seq = [...now, ...next.filter((x) => x.side !== u.side && !now.includes(x))];
   const threats = seq.filter((f) => f.intent).map((f, k): Threat => {
-    const { ab, at } = f.intent!;
+    const { ab, at, kind, wind, pips, max } = f.intent!;
     const a = intended(f);
     const t = at ? own.find((p) => p.uid === at && p.alive()) : undefined;
     // The hunter's own Guard comes down as their turn starts, so a hit on them is reckoned unguarded, then guarded.
     const hit = a && t ? reckon(f, t, a, t === u ? false : undefined) : null;
     return {
-      uid: f.uid, ab, at, order: k + 1, soon: now.includes(f) || next.indexOf(f) < mine, times: actions, hit,
-      guarded: a && t === u ? reckon(f, t, a, true) : null,
+      uid: f.uid, ab, at, kind, wind, pips: wind ? f.wind?.pips ?? pips : undefined, max, order: k + 1,
+      // A wind-up still gathering lands after its next action, never before the hunter's next turn.
+      soon: (now.includes(f) || next.indexOf(f) < mine) && !(wind && wind > 1), times: actions, hit,
+      // On an ally, what the hunter would take of it covering them.
+      guarded: a && t ? reckon(f, u, a, true) : null,
     };
   });
   const aims: Turn['aims'] = {};
@@ -672,7 +944,8 @@ function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit
       if (r) (aims[a.name] ??= {})[f.uid] = r;
     }
   }
-  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, threats, aims };
+  const allies = own.filter((x) => x !== u && x.alive()).map((x) => x.uid);
+  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, throws: { ...throws }, allies, threats, aims };
 }
 
 const KILL_RANK = { sure: 2, maybe: 1 } as const;

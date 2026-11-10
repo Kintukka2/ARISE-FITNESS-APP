@@ -74,6 +74,7 @@ export const TREE_PASSIVES: Passive[] = [
   { name: 'Unbroken', style: 'stalwart', text: `Damage taken -${pct(1 - EDGE.stalwart.mult)}% while your HP is above ${pct(EDGE.stalwart.above)}%.` },
   { name: 'Lingering Curse', style: 'affliction', text: `Debuffs you inflict last ${EDGE.affliction} turn longer. Stunned excepted.` },
   { name: 'Unravel', style: 'exploit', text: `Damage +${pct(EDGE.exploit - 1)}% against a foe carrying a debuff.` },
+  { name: 'Foresight', style: 'foresight', text: 'See the damage and the chance to hit of every foe\'s next move, on its card and on Guard and Cover.' },
 ];
 
 export interface PathDef { key: Stat; name: string; desc: string }
@@ -199,6 +200,14 @@ function nodesOf(p: PathSpec): TreeNode[] {
   ];
 }
 
-export const NODES: TreeNode[] = SPECS.flatMap(nodesOf);
+/**
+ * Sight's Foresight, outside the sixteen: a passive at D, between Precise Shot and Focus, that shows a foe's
+ * damage and chance to hit. It changes what a fight shows and never the fight, so it plays no part in a
+ * fight's build, and Auto Assign never takes it (`skilltree.autoLearn`): the System spends for the fight.
+ */
+export const FORESIGHT = 'PER:foresight';
+const FORESIGHT_NODE: TreeNode = { id: FORESIGHT, path: 'PER', tier: 0, col: 1, kind: 'passive', name: 'Foresight', max: 1, passive: 'Foresight' };
+
+export const NODES: TreeNode[] = [...SPECS.flatMap(nodesOf), FORESIGHT_NODE];
 const byId = new Map(NODES.map((n) => [n.id, n]));
 export const nodeById = (id: string) => byId.get(id);

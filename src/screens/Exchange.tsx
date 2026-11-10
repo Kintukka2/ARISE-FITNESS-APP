@@ -3,6 +3,7 @@ import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
 import { SURVEY } from '@/data/association';
 import * as shop from '@/core/shop';
+import { throwable, type ThrowId } from '@/core/combat';
 import { group, hhmmss, msUntilMidnight } from '@/core/util';
 import { checkAwards } from '@/app/flow';
 import { buy as buyShards, PRODUCTS, storeReady } from '@/platform/native';
@@ -13,7 +14,7 @@ import type { ComponentChildren } from 'preact';
 import { Btn, GearArt, Section, Shards, useNow } from '@/ui/components';
 import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
-import { Glyph } from '@/ui/icons';
+import { Glyph, THROW_GLYPH } from '@/ui/icons';
 import { ask } from '@/ui/ask';
 import { openSheet, sys, toast } from '@/ui/overlays';
 import { drinkFlow } from './Inventory';
@@ -104,6 +105,23 @@ function Exchange() {
     const x = store.get();
     toast(id === 'hp' ? `${p.name} · Satchel ${shop.held(x, 'hp')}/${shop.satchelMax(x)}` : `${p.name} · Held: ${shop.held(x, id)}`, 'xp');
   };
+  /** Something to throw in a fight, bought to carry in the bag. */
+  const buyThrow = async (id: ThrowId) => {
+    const k = throwable(id)!;
+    const t = shop.THROW_KIT.find((x) => x.id === id)!;
+    if (store.get().wallet.shards < t.price) return void short(t.price);
+    const want = await ask(`buy:${id}`, system.offer([
+      'Would you like to purchase?',
+      system.tag(k.name, 'Item'),
+      `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`,
+      `Price: ${group(t.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
+    if (!store.update((x) => shop.buyThrow(x, id))) return void short(t.price);
+    sfx.success();
+    buzz([14, 30, 22]);
+    toast(`${k.name} · Bag ${shop.held(store.get(), id)}/${shop.THROW_MAX}`, 'xp');
+  };
   const buySurvey = async () => {
     if (store.get().wallet.shards < SURVEY.price) return void short(SURVEY.price);
     const want = await ask('buy:survey', system.offer([
@@ -158,6 +176,15 @@ function Exchange() {
             gives="Charts every room of a Gate’s map"
             note={`Used from a Gate’s brief, or inside it. Held: ${shop.held(s, 'survey')}`}
             price={SURVEY.price} onBuy={() => void buySurvey()} />
+          {shop.THROW_KIT.map((t) => {
+            const k = throwable(t.id)!;
+            return (
+              <ShopRow key={t.id} icon={<span class="shopsurvey"><Glyph name={THROW_GLYPH[t.id]} /></span>} name={k.name}
+                gives={`${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`}
+                note={`Thrown in a fight. Bag: ${shop.held(s, t.id)}/${shop.THROW_MAX}`}
+                price={t.price} off={shop.throwRoom(s, t.id) <= 0 ? 'Bag full' : null} onBuy={() => void buyThrow(t.id)} />
+            );
+          })}
         </div>
       </Section>
 

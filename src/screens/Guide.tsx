@@ -1,17 +1,21 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
-import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL } from '@/core/shop';
+import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, LABYRINTH, RESTS_MAX } from '@/core/map';
 import { CLOCK } from '@/core/clock';
-import { POTION_HEAL, GUARD, TACTICS } from '@/core/combat';
+import { POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES } from '@/core/combat';
+import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
-import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS } from '@/data/tree';
+import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_PASSIVES } from '@/data/tree';
+
+/** Sight's Foresight, quoted from the tree. */
+const FORESIGHT_P = TREE_PASSIVES.find((p) => p.style === 'foresight')!;
 import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
 import { LOADOUTS, SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
@@ -117,15 +121,28 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'On your turn, tap a foe to aim at it, then act.',
       'A skill or a Strike goes at the foe you aimed at first. It can still miss.',
       'A skill that reaches several foes finds the rest itself.',
-      'Every foe shows its next move and its target. It does exactly that, unless its target falls first or it is stunned.',
+      'Every foe shows its next move, and whoever it goes at wears ◀ on their card. It does exactly that, unless its target falls first or it is stunned.',
       'A taunt turns every foe’s next move on you, and the move shows the change before it is made.',
-      'Your own card counts the foes coming for you.',
-      'On your turn each foe also shows where its move comes in their order, its damage and its chance to hit, as things stand. A dashed number comes after your next turn.',
-      'Your actions sit on a wheel behind one button: a slot for each skill slot your rank holds, then Health Potion, Guard and Strike. Tap one to see what it does on the foe you aimed at, then Use it, or tap it again.',
+      'A card with foes coming for it wears a tab at its corner: ◀ and the place of each one in the foes’ order.',
+      'On your turn each foe shows where its move comes in their order, and Lethal when it would fell its target. A dashed number comes after your next turn.',
+      `${FORESIGHT_P.name}, a passive on Sight’s first tier, lets you ${FORESIGHT_P.text.charAt(0).toLowerCase()}${FORESIGHT_P.text.slice(1)} Auto Assign never takes it.`,
+      'Your actions sit on a wheel behind one button: a slot for each skill slot your rank holds, then Throw, Health Potion, Guard, Cover and Strike. Press the button and drag onto a slot to see what it does on the foe you aimed at, then let go on it to use it, or tap a slot to see it and tap it again.',
       'A green mark on a skill means it fells the foe you aimed at more surely than a Strike would. A Strike is never marked, and when a Strike fells the foe every time, nothing is.',
-      'Guard shows what is coming at you before your next turn, and the same guarded.',
+      'Guard shows how many foes are aimed at you before your next turn, and with Foresight what they would do, and the same guarded.',
       'The pace button in the head sets how fast the fight plays, and holds Auto.',
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
+      'Cover: you guard, and everything aimed at the ally you cover comes at you instead, shown on each foe first, until your next turn.',
+      'Pick Cover, then tap the ally. The hub shows how many are aimed at them, and with Foresight what of it would land on you.',
+      ...THROWABLES.map((k) => `${k.name}: ${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes, the one you aimed at first` : 'the foe you aimed at'}, with no roll, unless the foe is immune. ${STATUS_TEXT[k.status]}.`),
+      `The bag holds ${THROW_MAX} of each throwable, and the Exchange sells them. Ready one on a Gate’s brief, or from the bag, and the wheel throws that one in every fight inside.`,
+      'Auto never covers or throws, and the brief’s verdict assumes nothing thrown.',
+      'Every creature does something besides hit, and shows it first: an action as its next move, a habit named under its bar. Tap a habit, a status or a move on a card to read it.',
+      `A creature has its role’s behaviour at every grade, and from ${FAMILY_FROM}-Rank its family’s too.`,
+      ...Object.entries(ROLE_TRICK).map(([role, k]) => `${role} (${TRICKS[k].name}): ${TRICKS[k].text}`),
+      ...[...new Set(Object.values(FAMILY_TRICK))].map((k) => `${Object.entries(FAMILY_TRICK).filter(([, t]) => t === k).map(([f]) => f).join(', ')} (${TRICKS[k].name}): ${TRICKS[k].text}`),
+      `Bosses and Gatekeepers (${TRICKS.windup.name}): ${TRICKS.windup.text}`,
+      'A creature winding up or channelling turns its health bar blue, a section to each hit it can still take. Every hit landed on it takes one, a skill that reaches several foes one on each, and a stun cancels it too.',
+      'Your Shadows go for a creature winding up or channelling, whatever their orders, and so does Auto.',
       `Health Potion: restores ${POTION_HEAL * 100}% of your health. The satchel holds ${SATCHEL}, and the Association can add room.`,
       `Standing orders, set on the Shadows screen, steer your Shadows and your own turns on Auto: ${TACTICS.map((x) => x.name).join(', ')}.`,
       'Orders set while a step is underway hold from the next step.',

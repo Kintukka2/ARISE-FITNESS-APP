@@ -12,7 +12,8 @@ import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
-import { battle, POTION_HEAL, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
+import { tricksOf, type TrickId } from '@/data/tricks';
+import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
@@ -91,7 +92,7 @@ export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[]
 /** The share of a gate's fatigue a run costs: more at Heavy Legs, less for every Mark of the Long Stride. */
 export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) * marks.fatigueShare(s);
 
-export interface RosterRow { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[] }
+export interface RosterRow { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[] }
 
 export interface ChamberResult {
   index: number;
@@ -114,7 +115,9 @@ function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1): 
   const t = tuneOf(d) * asc.ascensionTune(level) * (c.elite ? asc.eliteShare(level) : 1) * might;
   const units = c.foes.map((id, j) => {
     const e = enemyById(id)!;
-    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id });
+    // Its behaviours: its role's, its family's from C-Rank, and a wind-up for the chamber's boss or Gatekeeper.
+    const head = j === 0 && (c.boss || c.elite || !!c.champion);
+    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id, tricks: tricksOf(e, head), grade: String(e.rank) });
   });
   const seen: Record<string, number> = {};
   for (const u of units) seen[u.name] = (seen[u.name] ?? 0) + 1;
@@ -145,6 +148,8 @@ export interface ChamberOpts {
   tactic?: Tactic;
   /** Health Potions the hunter has to drink in this chamber. */
   potions?: number;
+  /** What the hunter has to throw in this chamber, by kind. */
+  throws?: Partial<Record<ThrowId, number>>;
   /** Orders already given in this chamber, replayed silently to bring it back to where it was. */
   orders?: (Order | null)[];
   /** The Ascension level the run was entered at. */
@@ -156,7 +161,7 @@ export interface ChamberOpts {
 /** Open one chamber, `index` steps into the gate. Mutates the party's units (health, statuses) as it is fought. */
 export function openChamber(d: Dungeon, seed: string, index: number, party: Unit[], c: Chamber, opts: ChamberOpts = {}): ChamberFight {
   const foes = foeUnits(c, d, index, opts.ascension ?? 0, opts.might ?? 1);
-  const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status) }));
+  const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined }));
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];
   const log: Ev[] = [];
@@ -171,7 +176,7 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
       t.kills++;
       if (c.boss && victim === foes[0]) t.bosses++;
     }
-  }, log, { hero: opts.manual ? party[0]?.uid : undefined, tactic: opts.tactic, potions: opts.potions });
+  }, log, { hero: opts.manual ? party[0]?.uid : undefined, tactic: opts.tactic, potions: opts.potions, throws: opts.throws });
   let step: IteratorResult<Turn, FightResult> = g.next();
   for (const o of opts.orders ?? []) if (!step.done) step = g.next(o);
   let done: ChamberResult | null = null;
@@ -289,6 +294,8 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
   const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth'));
+  // The throwable readied is the one its fights throw, whatever is readied while it is open.
+  const toss = shop.readied(s);
   s.gates.raid = {
     dungeonId: d.id, seed: `${d.id}|${now}`, day, at: 0,
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
@@ -297,6 +304,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     map: mapSeed(d, day), layout: 'labyrinth', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
+    ...(toss ? { throw: toss } : {}),
   };
   return s.gates.raid;
 }
@@ -693,21 +701,29 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   if (!x || !isFight(x)) throw new Error('No fight is underway.');
   const party = partyFor(s, d, run, now);
   const orders = run.orders ?? [];
-  // The satchel has already paid for the potions this chamber's orders drank.
+  // The satchel has already paid for the potions this chamber's orders drank, and the bag for what they threw.
   const potions = shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length;
-  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
+  const throws = Object.fromEntries(THROWABLES.filter((t) => !run.throw || t.id === run.throw).map((t) => [t.id, shop.held(s, t.id) + orders.filter((o) => o?.use === throwOrder(t.id)).length]));
+  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, throws, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
   return { party, ch, node: x };
 }
 
 /**
  * Write the hunter's order to the save, before it plays out. A Health Potion is
- * paid for here, out of the satchel; one the satchel cannot pay for becomes the
- * System's choice. Returns the order as it will be played. Mutates.
+ * paid for here, out of the satchel, and a throw out of the bag; one they cannot pay for
+ * becomes the System's choice. Returns the order as it will be played. Mutates.
  */
 export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
   let given = o;
   if (given?.use === 'Potion') {
     if (shop.held(s, 'hp') > 0) s.stock.hp = shop.held(s, 'hp') - 1;
+    else given = null;
+  }
+  // A throw is paid for out of the bag the same way; one the bag cannot pay for, or of a kind the run did
+  // not ready, becomes the System's choice.
+  const thrown = given ? thrownBy(given.use) : undefined;
+  if (thrown) {
+    if (shop.held(s, thrown.id) > 0 && (!run.throw || run.throw === thrown.id)) s.stock[thrown.id] = shop.held(s, thrown.id) - 1;
     else given = null;
   }
   run.orders = [...(run.orders ?? []), given];

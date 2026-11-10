@@ -96,7 +96,7 @@ s.assoc = { n: 5, quest: null, reported: 5 };
 association.issue(s);
 s.assoc.quest!.got = Math.floor(s.assoc.quest!.need / 2);
 // Two Health Potions in the satchel, a Mana Potion and a Gate Survey, for the bag's wheel inside a Gate.
-s.stock = { hp: 2, mp: 1, survey: 1 };
+s.stock = { hp: 2, mp: 1, survey: 1, flash: 2, cord: 1, ember: 2 };
 s.stats.contracts = 41;
 s.stats.contractDays = 9;
 s.story = BEATS.filter((b) => { try { return b.when(s); } catch { return false; } }).map((b) => b.id);

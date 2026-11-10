@@ -23,6 +23,8 @@ export interface BagItem {
   effect: string;
   /** Why it cannot be used here and now. Unset, it can. */
   off?: string;
+  /** What its button says: `Use`, or `Ready` for a throwable. */
+  act?: string;
   use: () => void;
 }
 
@@ -42,6 +44,20 @@ export function ringSlot(i: number, n: number): string {
   const a1 = a0 + step - GAP * 2;
   const at = (a: number, r: number) => `${(C + r * Math.cos(a)).toFixed(2)} ${(C + r * Math.sin(a)).toFixed(2)}`;
   return `M${at(a0, R_OUT)}A${R_OUT} ${R_OUT} 0 0 1 ${at(a1, R_OUT)}L${at(a1, R_IN)}A${R_IN} ${R_IN} 0 0 0 ${at(a0, R_IN)}Z`;
+}
+
+/**
+ * The slot of a wheel of `n` under a point, given in the wheel's own units (0 to 300 across and down):
+ * -1 over the hub, or beyond the ring by more than `slack`. A finger dragged a little past the rim still
+ * counts for the slot it left.
+ */
+export function ringIndex(x: number, y: number, n: number, slack = 40): number {
+  const dx = x - C;
+  const dy = y - C;
+  const r = Math.hypot(dx, dy);
+  if (r < R_IN || r > R_OUT + slack) return -1;
+  const step = (Math.PI * 2) / n;
+  return (((Math.round((Math.atan2(dy, dx) + Math.PI / 2) / step)) % n) + n) % n;
 }
 
 /** Where a slot's contents sit in a wheel of `n`, as a share of the wheel across and down. */
@@ -106,7 +122,7 @@ function ItemWheel({ items, close }: { items: BagItem[]; close: () => void }) {
             <span class="bagwheel__held">Held: <span class="num">{chosen.held}</span></span>
             {chosen.off
               ? <small class="bagwheel__off">{chosen.off}</small>
-              : <Btn kind="primary" size="sm" onClick={() => { close(); chosen.use(); }}>Use</Btn>}
+              : <Btn kind="primary" size="sm" onClick={() => { close(); chosen.use(); }}>{chosen.act ?? 'Use'}</Btn>}
           </> : <>
             <Glyph name="satchel" />
             <b class="bagwheel__name">Items</b>

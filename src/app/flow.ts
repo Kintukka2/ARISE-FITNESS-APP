@@ -22,6 +22,8 @@ import * as store from '@/store';
 import { fromEl, promotion, rankUp } from '@/ui/arrival';
 import { closeAllSheets, sys, toast } from '@/ui/overlays';
 import * as shop from '@/core/shop';
+import { THROWABLES, type ThrowId } from '@/core/combat';
+import { THROW_GLYPH } from '@/ui/icons';
 import { SURVEY } from '@/data/association';
 import * as system from '@/ui/system';
 import { bundleText } from '@/ui/forge';
@@ -336,6 +338,13 @@ export function drinkHeld(id: 'hp' | 'mp'): boolean {
   return true;
 }
 
+/** Ready a throwable for the Gates to come: the one the action wheel throws inside. */
+export function readyThrow(id: ThrowId) {
+  if (!store.update((x) => shop.ready(x, id))) return;
+  sfx.blip();
+  toast(`${THROWABLES.find((k) => k.id === id)!.name} · Readied`, 'good');
+}
+
 /**
  * What the bag holds for a Gate, a slot to each kind, the same slot every time: the Health Potion
  * (inside the Gate drunk between steps by `drink`, the arena's; on the brief, for the hunter's own
@@ -369,5 +378,17 @@ export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
       off: charts <= 0 ? 'None held' : raid.surveyable(s, d) ? undefined : 'Nothing left to chart',
       use: () => void surveyNow(d),
     },
+    // What the hunter throws is thrown in a fight, from the action wheel, and only the one readied as the
+    // Gate was walked into: the bag readies it beforehand, and inside, says which one the run carries.
+    ...THROWABLES.map((k): BagItem => {
+      const n = shop.held(s, k.id);
+      const readied = run ? (run.throw ?? k.id) === k.id : shop.readied(s) === k.id;
+      return {
+        id: k.id, name: k.name, glyph: THROW_GLYPH[k.id], count: n, held: `${n}/${shop.THROW_MAX}`,
+        effect: `${k.status} · ${k.reach > 1 ? `Up to ${k.reach} foes` : 'One foe'}`,
+        off: n <= 0 ? 'None held' : run ? (readied ? 'In a fight' : 'Not readied') : readied ? 'Readied' : undefined,
+        act: 'Ready', use: () => readyThrow(k.id),
+      };
+    }),
   ];
 }
