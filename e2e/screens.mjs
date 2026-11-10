@@ -281,7 +281,18 @@ try {
   await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800);
   // The head: the portal inside the ring, a tick to each of the System's runs.
   if ((await page.locator('.sheet.is-top .bhero .aring__tick').count()) !== 24) throw new Error('THE RING DOES NOT TICK THE SYSTEM’S 24 RUNS');
+  // The objectives open on the boss, always; the rewards are a list; the head holds the hunter's condition, a + to each.
+  if (!(await page.locator('.sheet.is-top .bline.is-main', { hasText: 'Fell the boss' }).count())) throw new Error('THE OBJECTIVES DO NOT OPEN ON THE BOSS');
+  if (!(await page.locator('.sheet.is-top .bline', { hasText: 'Gate clear:' }).count())) throw new Error('THE REWARDS DO NOT LIST THE CLEAR');
+  if ((await page.locator('.sheet.is-top .bhero .bvital__drink').count()) !== 3) throw new Error('THE HEAD DOES NOT HOLD HP, MP AND FATIGUE');
+  if (await page.locator('.sheet.is-top .bhero', { hasText: 'Runs cleared' }).count()) throw new Error('THE HEAD STILL COUNTS THE RUNS');
   await snap('brief');
+  // The +: a Health Potion held is drunk at once, and the HP climbs.
+  const hpBefore = await page.locator('.sheet.is-top .bvital.is-hp b, .sheet.is-top .bvital.is-low b').first().textContent();
+  await page.locator('.sheet.is-top .bvital__drink').first().click(); await sleep(700); await drain();
+  const hpAfter = await page.locator('.sheet.is-top .bvital.is-hp b, .sheet.is-top .bvital.is-low b').first().textContent();
+  if (hpBefore === hpAfter) throw new Error('THE + BY HP DRANK NOTHING');
+  await snap('brief-drink');
   // The kit is docked by the way in, and opens its own window: the throwable readied there, a chip to each kind held.
   await page.locator('.sheet.is-top .bkit').click(); await sleep(500);
   const ember = page.locator('.sheet.is-top .bthrow__one', { hasText: 'Ember Flask' });
@@ -300,13 +311,13 @@ try {
   if (!(await page.locator('.sheet.is-top .sgauge__ember', { hasText: '+' }).count())) throw new Error('THE GAUGE SHOWS NO EMBER');
   await snap('brief-seals');
   await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(700);
-  if (!(await page.locator('.sheet.is-top .bpay__one.is-ember').count())) throw new Error('A SEAL TAKEN ADDS NO EMBER TO THE PAY');
+  if (!(await page.locator('.sheet.is-top .bline.is-ember', { hasText: 'Seal bonus' }).count())) throw new Error('A SEAL TAKEN ADDS NO SEAL BONUS TO THE REWARDS');
   await snap('brief-sealed');
   // Given back, so the run below walks in unsealed.
   await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(500);
   await page.locator('.sheet.is-top .sealcard').first().click(); await sleep(900);
   await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(500);
-  if (await page.locator('.sheet.is-top .bpay__one.is-ember').count()) throw new Error('A SEAL GIVEN BACK STILL PAYS');
+  if (await page.locator('.sheet.is-top .bline.is-ember').count()) throw new Error('A SEAL GIVEN BACK STILL PAYS');
   // The tabs: the Feats state the System's odds; the map; the party.
   const tab = (name) => page.locator('.sheet.is-top .btabs__one', { hasText: name });
   await tab('Feats').click(); await sleep(500);

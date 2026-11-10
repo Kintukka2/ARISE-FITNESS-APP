@@ -38,7 +38,7 @@ import * as store from '@/store';
 import { createStore, useSave } from '@/store';
 import { Btn, Card, RankPlate, Shards, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
-import { Glyph, THROW_GLYPH } from '@/ui/icons';
+import { Glyph, Shard, THROW_GLYPH } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate, readyThrow } from '@/app/flow';
@@ -49,6 +49,13 @@ import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { CONDITION } from '@/data/drops';
 import { conditionLine, dropGlyph } from '@/ui/conditions';
 import { openExchange } from './Exchange';
+import { drinkFlow } from './Inventory';
+
+/**
+ * The Seal button's line while none is taken: what Sealing does, the interface's, at the owner's call
+ * (VOICE.md, the brief). The rules themselves are the Guide's.
+ */
+const SEAL_LINE = 'Sealing a Gate will make it harder to clear, but you will receive additional rewards.';
 
 /** What marks a Gate on the board today: the Practice Gate, one of the Chosen holding it, Ryn's job, or a Daily Quest naming it. */
 export function markOf(s: Save, d: Dungeon, quest: boolean, day: string): 'Training' | 'Chosen' | 'Association' | 'Quest' | undefined {
@@ -199,11 +206,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const block = entryBlock(s, d);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const hpNow = vitals.read(s);
-  const pay = ascension.payShare(level);
   const steps = raid.stepsOf(map);
-  const depth = trial ? `${steps} Chosen · no rest between them`
-    : tower ? `${steps} floors · a rest, then the boss`
-    : `${steps} rooms · ${map.floors.length > 1 ? `${map.floors.length} floors · ` : ''}${proj.road.length} to the boss${map.tower || practice ? '' : ` · ${budgetOf(map)} moves`}`;
   const cleared = s.gates.cleared.includes(d.id);
   const mark = markOf(s, d, contracts.named(s, day).has(d.id), day);
 
@@ -236,10 +239,12 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 
   return (
     <div class={`stack brief ${trial ? 'is-trial' : ''}`} style={`--rc: ${trial ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
-      {/* The head: the Gate's portal inside the assessment's ring, its grade, the verdict and the road's length. */}
-      <header class={`bhero ${pending ? 'is-pending' : ''} ${taken.length ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess"
-        aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${taken.length && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
-        <span class="bhero__ring">
+      {/*
+        The head: the Gate's portal inside the assessment's ring, its grade, the verdict, the Association's file
+        and its chips; at its foot the hunter's condition, each with its potion one tap away.
+      */}
+      <header class={`bhero ${pending ? 'is-pending' : ''} ${taken.length ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
+        <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${taken.length && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
           <Ring p={proj} plain={plain} r={44} />
           <span class="bhero__portal ga-portal" aria-hidden="true">
             <i class="ga-portal__swirl" /><i class="ga-portal__core" />
@@ -250,47 +255,45 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <span class="bhero__body">
           <span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}</span>
           <b class="bhero__assess">{v.text}</b>
-          {/* The ring's ticks, counted; under Seals that move it, the rate without them and with them. */}
-          <small class="bhero__rate">{taken.length && plainRate !== rate
-            ? <>Clear rate: <span class="bhero__was num">{plainRate}%</span> → <b class="num">{rate}%</b></>
-            : <>Runs cleared: <b class="num">{proj.cleared}/{proj.runs}</b></>}</small>
-          <small class="bhero__depth"><Glyph name={trial ? 'crown' : tower ? 'spire' : 'steps'} />{depth}</small>
-          {hpNow.hp < hpNow.hpMax * 0.9 && <small class="bhero__hp">HP: <span class="num">{hpNow.hp}/{hpNow.hpMax}</span></small>}
+          {/* Under Seals that move it, the rate without them and with them; the ring's pill holds it otherwise. */}
+          {taken.length > 0 && plainRate !== rate && <small class="bhero__rate">Clear rate: <span class="bhero__was num">{plainRate}%</span> → <b class="num">{rate}%</b></small>}
+          <File d={d} />
+          <span class="bhero__tags">
+            {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-bounty'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
+            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
+            {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
+            {trial && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
+          </span>
         </span>
+        {level > 0 && (
+          <p class="basc"><Glyph name="crown" /><span>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''}</span></p>
+        )}
+        <Vitals />
       </header>
 
-      {/* The file and the chips under the head: the Association's on a Gate, the System's own terms on a Trial. */}
-      <File d={d} />
-      <span class="bhero__tags">
-        {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-bounty'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
-        {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
-        {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
-        {trial && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
-      </span>
-      {level > 0 && (
-        <p class="basc"><Glyph name="crown" /><span>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''} · <span class="grant">Pay +{Math.round((pay - 1) * 100)}%</span></span></p>
-      )}
-
-      <PayStrip d={d} level={level} taken={taken} />
+      <Objectives d={d} level={level} taken={taken} />
+      <Rewards d={d} level={level} taken={taken} />
 
       {/* The Seals: one button, its wax lit for each taken, opening their window. */}
       {offer.length > 0 && <SealButton d={d} offer={offer} taken={taken} fixed={fixed} />}
 
-      {/* What the Gate holds, a tab to each, its count under its name. */}
-      <div class="btabs" role="tablist" aria-label="Brief" style={`--n: ${tabs.length}; --at: ${at}`}>
-        {tabs.map((t) => (
-          <button type="button" key={t.id} role="tab" id={`btab-${t.id}`} aria-selected={t.id === tab} aria-controls="btab-panel"
-            class={`btabs__one ${t.id === tab ? 'is-on' : ''}`} onClick={() => pick(t.id)}>
-            <b>{t.name}</b><small>{t.read}</small>
-          </button>
-        ))}
-      </div>
-      <div class="btab-panel" id="btab-panel" role="tabpanel" aria-labelledby={`btab-${tab}`} key={tab} style={`--dir: ${dir}`}>
-        {tab === 'threat' && <ThreatPanel d={d} level={level} />}
-        {tab === 'feats' && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
-        {tab === 'map' && <MapPanel d={d} road={proj.road} />}
-        {tab === 'party' && <PartyPanel d={d} level={level} taken={taken} />}
-      </div>
+      {/* What the Gate holds, in one box: a tab to each, its count under its name, and the one shown under them. */}
+      <section class="bbox btabbox">
+        <div class="btabs" role="tablist" aria-label="Brief" style={`--n: ${tabs.length}; --at: ${at}`}>
+          {tabs.map((t) => (
+            <button type="button" key={t.id} role="tab" id={`btab-${t.id}`} aria-selected={t.id === tab} aria-controls="btab-panel"
+              class={`btabs__one ${t.id === tab ? 'is-on' : ''}`} onClick={() => pick(t.id)}>
+              <b>{t.name}</b><small>{t.read}</small>
+            </button>
+          ))}
+        </div>
+        <div class="btab-panel" id="btab-panel" role="tabpanel" aria-labelledby={`btab-${tab}`} key={tab} style={`--dir: ${dir}`}>
+          {tab === 'threat' && <ThreatPanel d={d} level={level} />}
+          {tab === 'feats' && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
+          {tab === 'map' && <MapPanel d={d} road={proj.road} />}
+          {tab === 'party' && <PartyPanel d={d} level={level} taken={taken} />}
+        </div>
+      </section>
 
       {/* The way in stays at the foot of the window, the kit beside it, whatever is scrolled past. */}
       <div class="bdock">
@@ -313,6 +316,44 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   );
 }
 
+/**
+ * The hunter's condition at the head's foot: HP, MP and Fatigue, a thin bar and the figure each, and a +
+ * that drinks the potion for it at once, held or bought (a purchase asked first, as the Exchange asks).
+ */
+function Vitals() {
+  const s = useSave();
+  const v = vitals.read(s);
+  const one = (id: shop.PotionId, name: string, cur: number, max: number, tone: string, text: ComponentChildren) => {
+    const p = shop.POTIONS.find((x) => x.id === id)!;
+    const idle = shop.potionIdle(s, id);
+    const have = shop.held(s, id);
+    return (
+      <span class={`bvital is-${tone}`} style={`--fill: ${Math.max(0, Math.min(1, cur / Math.max(1, max)))}`}>
+        <span class="bvital__top">
+          <small class="label">{name}</small>
+          <b class="num">{text}</b>
+        </span>
+        <span class="bvital__bar" aria-hidden="true"><i /></span>
+        <button type="button" class={`bvital__drink ${have ? 'is-held' : ''}`} disabled={!!idle}
+          aria-label={idle ? `${p.name}: ${idle}` : have ? `Drink a ${p.name}, ${have} held` : `Buy and drink a ${p.name}, ${p.price} shards`}
+          title={idle ? `${p.name} · ${idle}` : have ? `${p.name} · Held: ${have}` : `${p.name} · ${p.price}`}
+          onClick={() => void drinkFlow(id, true)}>
+          <Glyph name="plus" />
+          {!idle && <small class="num">{have || <><Shard size={9} />{p.price}</>}</small>}
+        </button>
+      </span>
+    );
+  };
+  const ftone = v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold';
+  return (
+    <div class="bvitals" aria-label="Condition">
+      {one('hp', 'HP', v.hp, v.hpMax, v.hp < v.hpMax * 0.5 ? 'low' : 'hp', <>{v.hp}<small>/{v.hpMax}</small></>)}
+      {one('mp', 'MP', v.mp, v.mpMax, 'mp', <>{v.mp}<small>/{v.mpMax}</small></>)}
+      {one('fatigue', 'Fatigue', v.fatigue, vitals.FATIGUE_MAX, ftone, <>{v.fatigue}</>)}
+    </div>
+  );
+}
+
 /** The creatures a brief counts: the kinds that walk in the Gate, and its boss once it is known. */
 function threatCount(s: Save, d: Dungeon) {
   return new Set([...d.mobs, ...(d.elite ? [d.elite] : []), ...(bossKnown(s, d) ? [d.boss] : [])]).size;
@@ -331,22 +372,81 @@ function partyPower(s: Save, d: Dungeon, level: number, taken: readonly SealId[]
   return powerOf(hero.base) + party.reduce((n, a) => n + powerOf(a.base), 0) + squad.reduce((n, x) => n + shadows.power(x), 0);
 }
 
-/** The Association's file, two lines until tapped. The Trial is the System's own: it states its terms. */
+/** The Association's file, in the head, three lines until tapped. The Trial is the System's own: it states its terms. */
 function File({ d }: { d: Dungeon }) {
   const [full, setFull] = useState(false);
   if (isTrial(d)) return <p class="bfile is-full">{d.trial} of the Chosen, in a row.</p>;
   return (
-    <button type="button" class={`bfile ${full ? 'is-full' : ''}`} aria-expanded={full} onClick={() => { sfx.tap(); setFull(!full); }}>
-      <span class="label">Association file:</span> {d.theme}
+    <button type="button" class={`bfile ${full ? 'is-full' : ''}`} aria-expanded={full} aria-label={`Association file: ${d.theme}`}
+      onClick={() => { sfx.tap(); setFull(!full); }}>
+      {d.theme}
     </button>
   );
 }
 
+/** One line of a brief's list: its mark, what it says, and at its side its count or its figure. */
+function Line({ cls, mark, children, side }: { cls?: string; mark?: ComponentChildren; children: ComponentChildren; side?: ComponentChildren }) {
+  return (
+    <li class={`bline ${cls ?? ''}`}>
+      <span class="bline__mark" aria-hidden="true">{mark ?? <i />}</span>
+      <span class="bline__text">{children}</span>
+      {side != null && <span class="bline__side">{side}</span>}
+    </li>
+  );
+}
+
 /**
- * What a clear pays, a tile to each, in one row: the clear, the bounty while it has never been cleared (the
- * Spire's week, the Trial's level), the Gate's materials, and the Ember the Seals taken add.
+ * What the run is for, a line each: the boss first, always (one of the Chosen in its place, the Trial's Chosen
+ * in a row); then whatever else a clear here moves, Ryn's job, the Daily Quests it can count toward, the
+ * Ascension proof, and Wardens Wake's Gatekeeper.
  */
-function PayStrip({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
+function Objectives({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
+  const s = useSave();
+  const day = dayKey();
+  const known = bossKnown(s, d);
+  const boss = enemyById(d.boss)!;
+  const walker = walkers.walking(s, day);
+  const met = walker?.gateId === d.id && level >= walker.level ? walkers.walkerOf(walker.level, d.rank as Rank) : null;
+  const practice = isPractice(d);
+  const map = build(d, mapSeed(d, day));
+  // Ryn's job, where this Gate does it.
+  const job = association.current(s);
+  const assoc = job && !association.done(job) && ((job.kind !== 'hunt' && job.gate === d.id) || (job.kind === 'hunt' && d.mobs.includes(job.target ?? ''))) ? job : null;
+  // The Daily Quests a run here can count toward.
+  const q = contracts.today(s, day);
+  const fatigue = vitals.read(s).fatigue;
+  const daily = !contracts.contractsOpen(s) || practice || isTrial(d) ? [] : q.list.filter((k) => !k.done && (
+    k.kind === 'clear' ? rankIdx(d.rank) >= rankIdx(q.grade)
+      : k.kind === 'fell' || k.kind === 'gatekeeper' ? (k.where ?? []).includes(d.id)
+        : k.kind === 'offroad' ? !map.tower
+          : k.kind === 'tired' ? fatigue >= (k.at ?? 0)
+            : k.kind === 'shadows' ? shadows.squad(s).length > 0 : false));
+  // The Ascension proof, where a clear here counts toward it.
+  const a = s.ascension;
+  const proof = ascension.proving(s) && !isTrial(d) && !d.floor && level === a.unlocked && d.rank === licensedRank(s)
+    && !a.proof.gates.includes(d.id) && a.proof.gates.length < ascension.proofNeeds(s);
+  return (
+    <section class="bbox" aria-label="Objectives">
+      <span class="label bbox__head">Objectives</span>
+      <ul class="blist">
+        <Line cls="is-main" mark={<Glyph name={isTrial(d) ? 'crown' : 'skull'} />}
+          side={isTrial(d) ? <span class="num">{d.trial}</span> : met ? <span class="warn">{met.name}</span> : known ? <span class="warn">{boss.name}</span> : '?'}>
+          {isTrial(d) ? 'Fell the Chosen, one after another' : met ? 'Fell the Chosen in the boss’s place' : 'Fell the boss'}
+        </Line>
+        {assoc && <Line cls="is-assoc" side={<span class="num">{assoc.got}/{assoc.need}</span>}>Association Quest: {goalOf(assoc)}</Line>}
+        {daily.map((k, i) => <Line key={i} cls="is-quest" side={<span class="num">{k.got}/{k.need}</span>}>Daily Quest: {contracts.contractText(k, q.grade)}</Line>)}
+        {proof && <Line cls="is-proof" side={<span class="num">{a.proof.gates.length}/{ascension.proofNeeds(s)}</span>}>To open Ascension {a.unlocked + 1}: clear it at Ascension {a.unlocked}</Line>}
+        {taken.includes('wardens') && <Line cls="is-seal" mark={<SealArt size={14} class="is-on" />} side={<span class="grant">Ember +{sealEmber('wardens', d.rank)}</span>}>Wardens Wake: fell the Gatekeeper</Line>}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * What a clear pays, a line each: the clear, the bounty while it has never been cleared (the Spire's week, the
+ * Trial's level), the Seals' Ember once one is taken, and every material the Gate can leave.
+ */
+function Rewards({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
   const s = useSave();
   const trial = isTrial(d);
   const practice = isPractice(d);
@@ -355,50 +455,35 @@ function PayStrip({ d, level, taken }: { d: Dungeon; level: number; taken: SealI
   const sh = Math.round(shop.GATE_SHARDS[d.rank as Rank] * pay);
   const xp = practice ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
   const first = !tower && !trial && !practice && !s.gates.cleared.includes(d.id);
-  const alloy = practice ? ALLOYS.E : ALLOYS[d.rank as Rank];
   const sets = raid.homeSets(d);
-  const tracked = practice || trial ? [] : forge.trackedAt(s, d, level);
+  const tracked = new Set(practice ? [] : s.tracked ?? []);
+  const mats = practice ? [ALLOYS.E.id] : forge.sourcesOf(d, level);
   const ember = emberOf(taken, d);
+  const extra = practice ? 'a ring' : sets.length ? `${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'a blueprint' : 'a blueprint, sometimes';
   return (
-    <div class={`bpay ${1 + Number(first) + Number(trial || tower) + 1 + Number(taken.length > 0) >= 4 ? 'is-crowded' : ''}`} aria-label="Pay">
-      <span class="sysbox bpay__one">
-        <small class="label">Clear</small>
-        <b class="num">XP +{xp}</b>
-        <small>{practice ? `enough for Level ${PRACTICE_LEVEL}` : <Shards n={sh} />}</small>
-      </span>
-      {first && (
-        <span class="sysbox bpay__one is-bounty">
-          <small class="label">Bounty</small>
-          <b class="num">XP +{xp}</b>
-          <small><Shards n={sh * 2} /> once</small>
-        </span>
-      )}
-      {trial && <span class="sysbox bpay__one"><small class="label">Opens</small><b>Ascension {s.ascension.unlocked + 1}</b><small>if you win it</small></span>}
-      {tower && <span class="sysbox bpay__one"><small class="label">This week</small><b>Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}</b><small>a new best, if you clear it</small></span>}
-      <span class={`sysbox bpay__one is-mat ${tracked.length ? 'is-tracked' : ''}`}
-        aria-label={tracked.length ? `Tracked materials here: ${tracked.map((id) => forge.materialById(id)?.name).join(', ')}` : undefined}>
-        <small class="label">Materials</small>
-        <b class="bpay__mat"><MatArt id={alloy.id} size={20} />{alloy.name}</b>
-        <small>{practice ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small>
-        {tracked.length > 0 && (
-          <span class="bpay__tracked">
-            <TrackMark class="bpay__trackmark" />
-            {tracked.map((id) => <MatArt key={id} id={id} size={16} />)}
-          </span>
-        )}
-      </span>
-      {taken.length > 0 && (
-        <span class="sysbox bpay__one is-ember" key="ember">
-          <small class="label">Seals</small>
-          <b class="bpay__mat num"><MatArt id={EMBER.id} size={20} />+{ember}</b>
-          <small>{EMBER.name}</small>
-        </span>
-      )}
-    </div>
+    <section class="bbox" aria-label="Rewards">
+      <span class="label bbox__head">Rewards{level > 0 && <small class="grant"> · Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
+      <ul class="blist">
+        <Line><b>Gate clear:</b> XP <span class="num">+{xp}</span>{practice ? `, enough for Level ${PRACTICE_LEVEL}` : <>, <Shards n={sh} /></>}</Line>
+        {first && <Line cls="is-bounty"><b>Bounty:</b> XP <span class="num">+{xp}</span>, <Shards n={sh * 2} /> <span class="muted">(one-time reward)</span></Line>}
+        {trial && <Line cls="is-gold"><b>Victory:</b> Ascension {s.ascension.unlocked + 1} opens</Line>}
+        {tower && <Line><b>This week:</b> Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}, a new best</Line>}
+        {taken.length > 0 && <Line cls="is-ember" key="ember"><b>Seal bonus:</b> <span class="bline__ember"><MatArt id={EMBER.id} size={16} /><span class="num">{ember}</span></span></Line>}
+        <Line cls="is-mats">
+          <b>Materials:</b>{' '}
+          {mats.map((id, i) => (
+            <span key={id} class={`bline__mat ${tracked.has(id) ? 'is-tracked' : ''}`}>
+              {forge.materialById(id)?.name}{i < mats.length - 1 ? ', ' : ''}
+            </span>
+          ))}, {extra}
+          {[...tracked].some((id) => mats.includes(id)) && <TrackMark class="bline__track" />}
+        </Line>
+      </ul>
+    </section>
   );
 }
 
-/** The Seals' button: their wax, lit for each taken, what they are, and the Ember they add to a clear. */
+/** The Seals' button: their wax, lit for each taken, what Sealing does, or what they are and the Ember they add to a clear. */
 function SealButton({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean }) {
   const ember = emberOf(taken, d);
   return (
@@ -409,7 +494,7 @@ function SealButton({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; t
       </span>
       <span class="bsealbtn__body">
         <b>{taken.length ? `Sealed: ${taken.map((id) => SEALS[id].name).join(', ')}` : 'Seal The Gate'}</b>
-        <small>{taken.length ? <>{fixed ? 'Fixed for this run' : 'Clear'}: <span class="grant">Ember +{ember}</span></> : <>Offered: <span class="num">{offer.length}</span> · Pay: Ember</>}</small>
+        <small>{taken.length ? <>{fixed ? 'Fixed for this run' : 'Clear'}: <span class="grant">Ember +{ember}</span></> : SEAL_LINE}</small>
       </span>
       <Glyph name="chevron" class="bsealbtn__go" />
     </button>
@@ -431,12 +516,8 @@ function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
   const seen = mapKnown(s, d);
   const counted = [...inside, ...(known ? [boss] : [])];
   const bound = counted.filter((e) => shadows.isBound(s, e.id)).length;
-  // The job Ryn gave for this Gate, if one is in hand: the interface saying what it is.
-  const job = association.current(s);
-  const assoc = job && !association.done(job) && ((job.kind !== 'hunt' && job.gate === d.id) || (job.kind === 'hunt' && d.mobs.includes(job.target ?? ''))) ? job : null;
   return (
     <>
-      {assoc && <p class="hint assochint">Association Quest: {goalOf(assoc)} <span class="num">{assoc.got}/{assoc.need}</span></p>}
       <Card class="bosscard" tour="boss">
         {known || met ? <FamilyGlyph family={(met ?? boss).family} size={40} /> : <Glyph name="unknown" />}
         <div class="grow">
@@ -528,9 +609,15 @@ function MapPanel({ d, road }: { d: Dungeon; road: string[] }) {
   const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, day)));
   // The bag: a Gate Survey from it charts every room, before the hunter goes in or after. A tower has no plan to chart.
   const bag = map.tower ? null : <ItemsMark items={bagFor(s, d)} />;
+  // The road's length: its rooms, its floors, the System's way to the boss and the Gate's budget of moves.
+  const steps = raid.stepsOf(map);
+  const depth = isTrial(d) ? `${steps} Chosen · no rest between them`
+    : spire.isSpire(d) ? `${steps} floors · a rest, then the boss`
+    : `${steps} rooms · ${map.floors.length > 1 ? `${map.floors.length} floors · ` : ''}${road.length} to the boss${map.tower || isPractice(d) ? '' : ` · ${budgetOf(map)} moves`}`;
   return (
     <>
       <div class="section__head"><span class="label">Today’s map</span><span class="section__right">{mapKnown(s, d) ? <>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></> : 'Unidentified'}</span></div>
+      <small class="bmap__depth"><Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />{depth}</small>
       {mapKnown(s, d)
         ? <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} corner={bag} compact />
         : (

@@ -164,6 +164,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'You can enter up to one grade above your own.',
       'A cleared Gate is replaced by another of its grade. The board redraws at midnight.',
       'The brief runs the Gate 24 times with your party and grades how often it cleared. Its ring holds a tick for each run, lit for each clear.',
+      'The + beside HP, MP and Fatigue on a brief drinks that potion at once: one held, or one bought if none is held.',
+      'A brief’s objectives open on its boss, then list what a clear there also counts toward: Ryn’s job, the Daily Quests, the Ascension proof.',
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear pays double, once.`,
       'A clear leaves materials for the Forge, and now and then a blueprint.',

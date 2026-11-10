@@ -368,7 +368,8 @@ export function VitalsBlock() {
   );
 }
 
-export async function drinkFlow(id: shop.PotionId) {
+/** Drink a potion, held or bought, asked first. `quick`, the brief's +, drinks one held at once; a purchase is still asked. */
+export async function drinkFlow(id: shop.PotionId, quick = false) {
   const s = store.get();
   const p = shop.POTIONS.find((x) => x.id === id)!;
   const idle = shop.potionIdle(s, id);
@@ -384,7 +385,7 @@ export async function drinkFlow(id: shop.PotionId) {
     return;
   }
   const buy = have
-    ? await ask(`drink:${id}`, system.offer([
+    ? quick || await ask(`drink:${id}`, system.offer([
       'Would you like to drink?',
       system.tag(p.name, 'Item'),
       system.gain(p.effect),

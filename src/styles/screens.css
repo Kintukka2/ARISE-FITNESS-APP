@@ -1354,7 +1354,7 @@ button.dmap__floor { cursor: pointer; }
 .bhero, .sgauge { --vc: var(--verdant); --vg: var(--verdant-glow); }
 .bhero[data-tone='even'], .sgauge[data-tone='even'] { --vc: var(--gold); --vg: var(--gold-glow); }
 .bhero[data-tone='over'], .sgauge[data-tone='over'] { --vc: var(--blood); --vg: var(--blood-glow); }
-.bhero { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 14px; overflow: hidden; padding: 12px 12px 14px 8px;
+.bhero { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 12px 14px; overflow: hidden; padding: 12px 12px 10px 8px;
   border: 1px solid color-mix(in srgb, var(--rc) 50%, var(--sys-hair));
   background: radial-gradient(80% 120% at 0% 50%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 62%), radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, var(--vc) 10%, transparent), transparent 70%), rgba(6, 4, 2, 0.6);
   animation: bheroIn 520ms var(--ease) both; }
@@ -1380,7 +1380,10 @@ button.dmap__floor { cursor: pointer; }
 .bhero__was { text-decoration: line-through; opacity: 0.6; }
 .bhero__body > small.bhero__depth { display: block; }
 .bhero__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
-.bhero__hp { color: var(--blood) !important; }
+.bhero > .basc, .bhero > .bvitals { position: relative; grid-column: 1 / -1; }
+.bhero .bfile { margin: 1px 0 0; padding: 0; font-size: 0.72rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); -webkit-line-clamp: 3; }
+.bhero .bhero__tags { margin-top: 3px; }
+.bhero .basc { margin: 0 0 0 4px; }
 /* While the System replays the Gate under the Seals just set, what it reads waits, breathing. */
 .bhero.is-pending .bhero__pct, .bhero.is-pending .bhero__assess, .sgauge.is-pending .sgauge__ring b, .sgauge.is-pending .sgauge__verdict { animation: projWait 700ms ease-in-out infinite alternate; }
 .bhero.is-sealed { border-color: color-mix(in srgb, var(--sysred) 55%, var(--sys-hair)); box-shadow: inset 0 0 22px rgba(255, 47, 62, 0.12); }
@@ -1389,37 +1392,13 @@ button.dmap__floor { cursor: pointer; }
 @keyframes tickIn { from { opacity: 0; } 50% { opacity: 1; stroke: #fff; } }
 @keyframes projWait { to { opacity: 0.45; } }
 
-.bfile { display: -webkit-box; overflow: hidden; width: 100%; margin: -2px 0 0; padding: 0 2px; border: 0; background: none; color: var(--sys-ink); font: inherit; font-size: 0.76rem; line-height: 1.45; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 2; cursor: pointer; }
+.bfile { display: -webkit-box; overflow: hidden; width: 100%; border: 0; background: none; font: inherit; text-align: left; -webkit-box-orient: vertical; cursor: pointer; }
 .bfile.is-full { display: block; }
-.bfile .label { margin-right: 2px; font-size: 0.54rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bhero__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: -2px; }
+.bhero__tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .bhero__tags:empty { display: none; }
 .basc { display: flex; gap: 6px; margin: 0; padding: 6px 8px; border-left: 2px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent); font-size: 0.7rem; line-height: 1.4; color: var(--sys-ink); }
 .basc .ico { flex: none; width: 13px; height: 13px; margin-top: 1px; color: var(--gold); }
 
-/* What a clear pays: one row of tiles, the materials a little wider; the Seals' Ember joins it, in the Forge's ember, once one is taken. */
-.bpay { display: flex; gap: 6px; }
-.bpay__one { position: relative; display: flex; flex: 1 1 0; flex-direction: column; gap: 2px; min-width: 0; padding: 7px 8px 8px; animation: payIn 380ms var(--ease) both; }
-.bpay__one:nth-child(2) { animation-delay: 50ms; } .bpay__one:nth-child(3) { animation-delay: 100ms; } .bpay__one:nth-child(4) { animation-delay: 150ms; }
-.bpay__one.is-mat { flex-grow: 1.35; }
-.bpay.is-crowded .bpay__one { padding: 7px 6px 8px; }
-.bpay.is-crowded .bpay__one > b { font-size: 0.78rem; }
-.bpay__one > b.num { white-space: nowrap; }
-.bpay__one > .label { font-size: 0.5rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bpay__one > b { font-size: 0.86rem; font-weight: 700; line-height: 1.2; color: #fff; overflow-wrap: anywhere; text-shadow: var(--sys-glow); }
-.bpay__one > small { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 0.62rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bpay__mat { display: flex; align-items: center; gap: 5px; overflow-wrap: normal !important; }
-.bpay__mat .matart { flex: none; }
-.bpay__one.is-bounty { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); background: linear-gradient(180deg, rgba(72, 245, 168, 0.1), transparent 70%); }
-.bpay__one.is-bounty > b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
-.bpay__one.is-tracked { border-color: color-mix(in srgb, var(--forge) 60%, transparent); box-shadow: 0 0 10px var(--forge-glow); }
-.bpay__tracked { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 2px; }
-.bpay__trackmark { width: 13px; height: 13px; }
-.bpay__one.is-ember { border-color: color-mix(in srgb, var(--ember) 70%, transparent); background: radial-gradient(90% 90% at 50% 0%, rgba(255, 140, 50, 0.2), transparent 70%), rgba(14, 6, 2, 0.7); box-shadow: 0 0 12px var(--ember-glow); animation: emberIn 520ms var(--ease) both; }
-.bpay__one.is-ember > b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
-.bpay__one.is-ember > small { color: var(--ember); }
-@keyframes payIn { from { opacity: 0; transform: translateY(5px); } }
-@keyframes emberIn { from { opacity: 0; transform: scale(0.7); filter: brightness(2.4); } 60% { filter: brightness(1.4); } }
 
 /* A Seal in wax: grey and dull while open, red and lit once pressed. */
 .sealart { flex: none; overflow: visible; color: #3a3f4a; transition: color 260ms, filter 260ms; }
@@ -1445,6 +1424,57 @@ button.dmap__floor { cursor: pointer; }
 .bsealbtn.is-on::after { display: none; }
 @keyframes waxIn { from { opacity: 0; transform: scale(1.6) rotate(-16deg); } 70% { transform: scale(0.94) rotate(3deg); opacity: 1; } }
 
+/* The head's foot: HP, MP and Fatigue, a thin bar and the figure each, and the + that drinks for it. */
+.bvitals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.bvital { --vt: var(--verdant); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 4px 5px; min-width: 0; }
+.bvital.is-low { --vt: var(--blood); } .bvital.is-mp { --vt: var(--mana); } .bvital.is-gold { --vt: var(--gold); } .bvital.is-ember { --vt: var(--ember); } .bvital.is-blood { --vt: var(--blood); }
+.bvital__top { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bvital__top .label { font-size: 0.48rem; line-height: 1.2; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bvital__top b { overflow: hidden; font-size: 0.72rem; font-weight: 700; line-height: 1.2; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
+.bvital__top b small { font-size: 0.6rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.bvital__bar { position: relative; grid-column: 1; height: 4px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.bvital__bar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--fill) * 100%); background: var(--vt); box-shadow: 0 0 6px var(--vt); transition: width 600ms var(--ease); }
+.bvital__drink { position: relative; display: grid; grid-column: 2; grid-row: 1 / 3; place-items: center; width: 28px; height: 28px; border: 1px solid color-mix(in srgb, var(--vt) 60%, transparent); background: color-mix(in srgb, var(--vt) 12%, rgba(4, 6, 10, 0.8)); color: var(--vt); font: inherit; cursor: pointer; transition: transform 120ms, opacity 200ms; }
+.bvital__drink .ico { width: 15px; height: 15px; }
+.bvital__drink small { position: absolute; right: -5px; bottom: -6px; display: inline-flex; align-items: center; gap: 1px; padding: 0 3px; border-radius: 7px; background: rgba(0, 0, 0, 0.9); font-size: 0.52rem; line-height: 1.4; color: #fff; }
+.bvital__drink:active:not(:disabled) { transform: scale(0.92); }
+.bvital__drink:disabled { cursor: default; opacity: 0.3; }
+
+/* A section of the brief: a box with its name on its rim; the lists in it a line each. */
+.bbox { position: relative; display: grid; gap: 6px; padding: 14px 12px 10px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.55); }
+.bbox__head { position: absolute; top: -7px; left: 9px; padding: 0 5px; background: rgb(8, 7, 6); font-size: 0.56rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bbox__head small { font-size: inherit; letter-spacing: inherit; }
+.blist { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.bline { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: baseline; gap: 8px; font-size: 0.76rem; line-height: 1.45; color: var(--sys-ink); }
+.bline__mark { display: grid; place-items: center; align-self: center; }
+.bline__mark > i { width: 5px; height: 5px; background: color-mix(in srgb, var(--rc) 80%, #fff); box-shadow: 0 0 5px var(--rc); transform: rotate(45deg); }
+.bline__mark .ico { width: 13px; height: 13px; color: var(--blood); }
+.bline__text b { font-weight: 700; color: #fff; }
+.bline__text .shards { vertical-align: -2px; }
+.bline__side { font-size: 0.72rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.bline.is-main .bline__text { font-weight: 700; color: #fff; }
+.bline.is-assoc .bline__text { color: var(--coach); }
+.bline.is-assoc .bline__mark > i { background: var(--coach); box-shadow: 0 0 5px var(--coach); }
+.bline.is-quest .bline__mark > i { background: var(--sys-ink); box-shadow: 0 0 5px var(--sys-ink); }
+.bline.is-proof .bline__mark > i, .bline.is-gold .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
+.bline.is-bounty .bline__mark > i { background: var(--verdant); box-shadow: 0 0 5px var(--verdant-glow); }
+.bline.is-bounty b { color: var(--verdant); }
+.bline.is-ember { animation: lineIn 460ms var(--ease) both; }
+.bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
+.bline__ember { display: inline-flex; align-items: center; gap: 4px; vertical-align: -3px; font-weight: 700; color: var(--verdant); }
+.bline__mat.is-tracked { color: var(--forge); text-shadow: 0 0 6px var(--forge-glow); }
+.bline__track { display: inline-block; width: 13px; height: 13px; margin-left: 5px; vertical-align: -2px; }
+@keyframes lineIn { from { opacity: 0; transform: translateX(-8px); filter: brightness(2); } }
+
+/* The tabs and what they show, one box: the tabs its head, the one shown opening into the panel under it. */
+.btabbox { gap: 0; padding: 0; }
+.btabbox .btabs { margin: 0; border: 0; border-bottom: 1px solid var(--sys-hair); background: rgba(255, 255, 255, 0.02); }
+.btabbox .btabs__one.is-on { background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 16%, transparent), rgba(4, 6, 10, 0.55)); }
+.btabbox .btab-panel { padding: 12px 10px 10px; }
+.btabbox .bosscard, .btabbox .bthreat__one, .btabbox .bfeat, .btabbox .bparty li { background: rgba(255, 255, 255, 0.025); }
+.bmap__depth { display: block; margin: -4px 0 2px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.bmap__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
+
 /* The tabs: a name over a count each, a bar sliding under the one shown. */
 .btabs { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 2px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.6); }
 .btabs::after { content: ''; position: absolute; bottom: -1px; left: calc(100% / var(--n) * var(--at)); width: calc(100% / var(--n)); height: 2px; background: var(--rc); box-shadow: 0 0 10px var(--rc); transition: left 320ms var(--ease); }
@@ -1459,10 +1489,11 @@ button.dmap__floor { cursor: pointer; }
 .btabs__stars i { font-style: normal; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
 .btabs__stars i.is-on { color: var(--gold); text-shadow: 0 0 6px var(--gold-glow); }
 .btab-panel { display: flex; flex-direction: column; gap: 8px; min-height: 180px; animation: tabIn 300ms var(--ease) both; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(5px); } }
 @keyframes tabIn { from { opacity: 0; transform: translateX(calc(var(--dir) * 22px)); } }
 .bthreat__sum { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
 .bthreat__sum .ico { width: 14px; height: 14px; color: #c9a7ff; }
-.bthreat__one { animation: payIn 320ms calc(var(--i) * 40ms) var(--ease) both; }
+.bthreat__one { animation: rowIn 320ms calc(var(--i) * 40ms) var(--ease) both; }
 /* The threat: the boss's card, then a chip to each creature and the gatekeeper; violet where it already serves. */
 .brief .bosscard { position: relative; }
 .bthreat__bound { margin-left: auto; color: #c9a7ff; filter: drop-shadow(0 0 6px var(--arcane-glow)); }
@@ -1494,7 +1525,7 @@ button.dmap__floor { cursor: pointer; }
 .sysframe .brief .bparty li.is-shadow { border-color: color-mix(in srgb, var(--arcane) 50%, transparent); background: color-mix(in srgb, var(--arcane) 8%, rgba(3, 8, 20, 0.45)); }
 /* The Feats: a row each, its star gold once met, the System's odds as a thin bar under its objective. */
 .bfeats { display: grid; gap: 6px; }
-.bfeat { display: flex; align-items: center; gap: 10px; padding: 9px 10px; animation: payIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
+.bfeat { display: flex; align-items: center; gap: 10px; padding: 9px 10px; animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
 .bfeat__star { flex: none; width: 22px; height: 22px; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
 .bfeat.is-done { border-color: color-mix(in srgb, var(--gold) 50%, var(--sys-hair)); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
 .bfeat.is-done .bfeat__star { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
@@ -1529,7 +1560,7 @@ button.dmap__floor { cursor: pointer; }
 @keyframes barIn { from { transform: scaleX(0.2); filter: brightness(2); } }
 
 .sealcards { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.sealcards > li { animation: payIn 340ms calc(var(--i) * 70ms) var(--ease) both; }
+.sealcards > li { animation: rowIn 340ms calc(var(--i) * 70ms) var(--ease) both; }
 .sealcard { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; overflow: hidden; padding: 10px 12px 10px 8px; background: rgba(4, 6, 10, 0.7); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; transition: border-color 220ms, background 220ms, box-shadow 220ms; }
 .sealcard:active:not(:disabled) { transform: scale(0.985); }
 .sealcard__slot { position: relative; display: grid; place-items: center; width: 52px; height: 52px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 28%, transparent); border-radius: 50%; }

@@ -1571,18 +1571,26 @@ challenge (the boss, its missions and Start side by side), all in
 [research/references/step-4-seals-feats-drops](research/references/step-4-seals-feats-drops/).
 
 - **The head** is the Gate's portal inside the assessment's ring: an arc in the verdict's colour and a tick
-  for each of the System's 24 runs, lit for each it cleared, so the clear rate and the count it comes from
-  are one picture. The verdict stands beside it in large type, with the road's length and the hunter's HP
-  while hurt. Under Seals that move it, the rate without them stays on the ring as a faint arc behind.
-- **What it pays** is one row of tiles: the clear, the bounty while the Gate has never been cleared, the
-  materials (the tracked ones marked in the Forge's ember), and the Seals' Ember once one is taken.
-- **The Seals** are one button with their wax on it, grey while open, red once pressed, opening their own
-  window (`SealSheet`): the gauge (the ring, the verdict, `Clear rate: 96% → 46%` and the Ember, a bar
-  filled by each Seal's share), and a card to each Seal that stamps its wax down when taken. The brief and
-  the window share the Seals set on a Gate (kept by Gate and day while the app stays open) and the
-  projections made for them, so a tap replays the 24 runs once, after the stamp, the last reading standing
-  meanwhile.
-- **The rest** is four tabs, each with a count under its name: `Threat`, `Feats`, `Map` and `Party`.
+  for each of the System's 24 runs, lit for each it cleared, the rate in a pill at its foot, so the clear
+  rate and the count it comes from are one picture. Beside it stand the grade, the verdict in large type,
+  the Association's file and the Gate's chips; under Seals that move it, the rate without them stays on the
+  ring as a faint arc and reads `Clear rate: 96% → 46%`. At its foot is the hunter's condition, HP, MP and
+  Fatigue, each with a + that drinks its potion at once (`drinkFlow` with `quick`: one held is drunk
+  without asking; one bought is asked first, as the Exchange asks), and the ring replays as HP or Fatigue
+  moves.
+- **Objectives** open on the boss, always, then list what a clear there also counts toward: Ryn's job, the
+  Daily Quests it can move (`contracts.today`, read against the Gate: its grade, the families and the
+  Gatekeepers it holds, the fatigue walked in with), the Ascension proof, and Wardens Wake's Gatekeeper.
+- **Rewards** are one list: the clear, the bounty while the Gate has never been cleared, the Seals' Ember
+  once one is taken, and every material the Gate can leave (`forge.sourcesOf`), the tracked ones marked.
+- **The Seals** are one button with their wax on it, grey while open, red once pressed, and a line saying
+  what Sealing does (the owner's call). It opens their own window (`SealSheet`): the gauge (the ring, the
+  verdict, `Clear rate: 96% → 46%` and the Ember, a bar filled by each Seal's share), and a card to each
+  Seal that stamps its wax down when taken. The brief and the window share the Seals set on a Gate (kept by
+  Gate and day while the app stays open) and the projections made for them, so a tap replays the 24 runs
+  once, after the stamp, the last reading standing meanwhile.
+- **The rest** is one box of four tabs, each with a count under its name: `Threat`, `Feats`, `Map` (with
+  the road's length and its moves) and `Party`, the tab shown opening into the panel under it.
 - **The kit** is docked beside Enter The Gate, the Health Potions and the throwable readied with their
   counts, and opens a window of its own (`KitSheet`): the satchel and the Exchange, and a row to each
   throwable to ready.
