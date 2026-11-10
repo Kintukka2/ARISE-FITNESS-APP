@@ -160,6 +160,23 @@ export const THROW_KIT: { id: ThrowId; price: number; desc: string }[] = [
 /** Room left in the bag for a throwable. */
 export const throwRoom = (s: Save, id: ThrowId) => Math.max(0, THROW_MAX - held(s, id));
 
+/**
+ * The throwable a Gate walked into now takes: the one readied, while one is held, or else the first kind held.
+ * A fight throws only that kind, so the action wheel is the same from the first chamber to the last.
+ */
+export function readied(s: Save): ThrowId | null {
+  const r = s.gates.ready;
+  if (r && held(s, r) > 0) return r;
+  return THROW_KIT.find((t) => held(s, t.id) > 0)?.id ?? null;
+}
+
+/** Ready a throwable for the Gates to come. False if none of it is held. Mutates. */
+export function ready(s: Save, id: ThrowId): boolean {
+  if (held(s, id) <= 0) return false;
+  s.gates.ready = id;
+  return true;
+}
+
 /** Buy a throwable to carry. False if the bag holds as many as it can, or the shards are short. Mutates. */
 export function buyThrow(s: Save, id: ThrowId): boolean {
   const t = THROW_KIT.find((x) => x.id === id);

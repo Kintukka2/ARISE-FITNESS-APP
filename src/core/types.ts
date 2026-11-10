@@ -197,6 +197,11 @@ export interface OpenRaid {
   moves?: number;
   /** The hunter's rank as they walked in: what a Red Gate raises its creatures above. Sovereign is a grade past S. */
   held?: Rank | 'N';
+  /**
+   * The throwable readied as the run walked in (`shop.readied`): the one kind its fights can throw. Unset,
+   * nothing was held, or the run was opened before throwables were readied, and any kind held can be thrown.
+   */
+  throw?: ThrowKind;
 }
 
 /** What a week on the Spire paid when it closed. */
@@ -242,7 +247,9 @@ export interface Settings {
 }
 
 /** What can be held in stock: the four potions, the Association's Gate Survey, and what the hunter throws. */
-export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'flash' | 'cord' | 'ember';
+/** What the hunter throws, by kind (`combat.THROWABLES`). */
+export type ThrowKind = 'flash' | 'cord' | 'ember';
+export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | ThrowKind;
 
 export interface Stats {
   xpTotal: number;
@@ -335,6 +342,8 @@ export interface Save {
     bestUnbroken: number;
     /** Standing orders for the allies and Shadows who go in with you. */
     tactic: Tactic;
+    /** The throwable readied for the Gates to come, on the brief or from the bag (`shop.ready`). */
+    ready?: ThrowKind;
   };
 
   shadows: {

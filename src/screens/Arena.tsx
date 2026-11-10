@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core/combat';
 import { TRICKS, type TrickId } from '@/data/tricks';
-import { ability, COVER, finishers, POTION_HEAL, GUARD, reachOf, STATUS, STATUS_TEXT, STRIKE, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
+import { ability, COVER, finishers, POTION_HEAL, GUARD, reachOf, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import { TRICK } from '@/data/tricks';
@@ -43,7 +43,7 @@ import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
 import { Glyph, Shard, SKILL_GLYPH, STAT_ICON, THROW_GLYPH } from '@/ui/icons';
-import { ringMid, ringSlot } from '@/ui/items';
+import { ringIndex, ringMid, ringSlot } from '@/ui/items';
 import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
 import { openBlueprint } from './Forge';
@@ -53,7 +53,6 @@ import { LootCell, useReveal, type Loot } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
-import { skillLine } from './Skills';
 
 interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[] }
 
@@ -64,23 +63,13 @@ const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
 
 
-/** What an action does, in full, for its details: its line, and a line for each status it inflicts. */
-function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { name: string; level: string | null; ready: string | null; lines: string[] } {
-  if (use === 'Strike') return { name: 'Strike', level: null, ready: null, lines: [skillLine(STRIKE)] };
-  if (use === 'Guard') return { name: 'Guard', level: null, ready: null, lines: [`Damage taken -${(1 - GUARD) * 100}% until your next turn.`] };
-  if (use === 'Potion') return { name: 'Health Potion', level: null, ready: null, lines: [`HP +${POTION_HEAL * 100}% · Held: ${turn.potions}`] };
-  if (use === COVER) return { name: COVER, level: null, ready: null, lines: ['What is aimed at the ally you cover comes at you, guarded, until your next turn.', 'Tap an ally to choose whom.'] };
-  if (use === 'Throw') return { name: 'Throw', level: null, ready: null, lines: [] };
+/** A skill's level and readiness, for the hub: `Lv.2` or `Lv.MAX`, and `Ready` or `Ready in 2`. */
+function skillState(s: ReturnType<typeof store.get>, use: string, turn: Turn): { level: string | null; ready: string | null } {
   const k = turn.skills.find((x) => x.ability.name === use);
-  if (!k) return { name: use, level: null, ready: null, lines: [] };
+  if (!k) return { level: null, ready: null };
   const node = NODES.find((n) => n.kind === 'skill' && n.skill === use && skilltree.levelOf(s, n.id) > 0);
   const lv = node ? skilltree.levelOf(s, node.id) : 0;
-  return {
-    name: use,
-    level: node ? (lv >= node.max ? 'Lv.MAX' : `Lv.${lv}`) : null,
-    ready: k.cd > 0 ? `Ready in ${k.cd}` : 'Ready',
-    lines: [skillLine(k.ability), ...k.ability.inflicts.filter((st) => STATUS_TEXT[st]).map((st) => `${st}: ${STATUS_TEXT[st]}`)],
-  };
+  return { level: node ? (lv >= node.max ? 'Lv.MAX' : `Lv.${lv}`) : null, ready: k.cd > 0 ? `Ready in ${k.cd}` : 'Ready' };
 }
 
 /** One slot of the action wheel: what it is, what it does on the foe aimed at, and whether it can be used. */
@@ -93,7 +82,9 @@ interface WheelAct {
   hit?: Reckoning;
   /** It fells the foe aimed at more surely than a Strike would: a finisher. */
   fell?: 'sure' | 'maybe';
-  /** The hub's numbers, as shown and as read aloud. */
+  /** How many are held, for an item: a badge on its slot. */
+  count?: number;
+  /** The hub's lines, as shown and as read aloud. */
   shown: string[];
   said: string;
 }
@@ -104,21 +95,42 @@ const spoken = (lo: number, hi: number) => [lo, hi].join(' to ');
 /** The glyph a skill wears on the wheel: its own, or its Path's for one drawn without one. */
 const skillGlyph = (name: string) => SKILL_GLYPH[name] ?? STAT_ICON[NODES.find((n) => n.kind === 'skill' && n.skill === name)?.path ?? ''] ?? 'bolt';
 
+/** What a throwable does, as a verb: `Burn up to 3 foes`. */
+const THROW_VERB: Record<ThrowId, string> = { flash: 'Stun', cord: 'Root', ember: 'Burn' };
+/**
+ * A status's line in the hub, where the room is a circle's: "each round" is written `each rd`, the one
+ * place it is (VOICE.md). Read aloud in full.
+ */
+const hubStatus = (st: string) => `${st}: ${(STATUS_TEXT[st] ?? '').replace(/ each round/g, ' each rd')}`;
+
+/** How far a finger travels before a press on the wheel becomes a drag. */
+const DRAG = 10;
+
 /**
  * The hunter's actions on their turn, as a wheel behind one button: a slot to each skill slot their rank
- * holds, then Health Potion, Guard and Strike, in the same places every turn, so the wheel grows a slot
- * with each rank that brings one. A tap picks a slot and the hub shows what it does on the foe aimed at;
- * Use, or a second tap on the slot, uses it. Nothing is used on the first tap.
+ * holds, then the throwable readied, Health Potion, Guard, Cover and Strike, in the same places every
+ * turn. An item's slot wears the count held. Two ways to use one, and nothing is used on a first tap:
+ * - press the button (or anywhere on the open wheel), drag onto a slot and the hub shows it, and let go
+ *   on it to use it; let go anywhere else and nothing is used;
+ * - tap a slot and the hub shows it, and tap it again to use it.
  */
-function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen, ward, names, toss, setToss }: {
+function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen, ward, names, toss }: {
   turn: Turn; aim: string | null; canDrink: boolean; slots: number; give: (use: string) => void;
   picked: string; setPicked: (use: string) => void; open: boolean; setOpen: (v: boolean) => void;
   /** The ally Cover would cover, and every unit's name, for the hub. */
   ward: string | null; names: Record<string, string>;
-  /** The throwable Throw would throw. */
-  toss: ThrowId | null; setToss: (id: ThrowId) => void;
+  /** The throwable the run readied: the one Throw throws. */
+  toss: ThrowId | null;
 }) {
   const s = useSave();
+  const ring = useRef<HTMLDivElement>(null);
+  /** A press underway: where it began, whether it has become a drag, and the slot it began on. */
+  const press = useRef<{ x: number; y: number; id: number; moved: boolean; from: string | null } | null>(null);
+  /** A tap's click that follows a drag let go on a slot is not a second tap. */
+  const quiet = useRef(0);
+  /** The slot under the finger while it drags, or null between slots; unset when nothing drags. */
+  const [over, setOver] = useState<string | null | undefined>(undefined);
+  const overRef = useRef<string | null | undefined>(undefined);
   const fin = aim ? finishers(turn, aim) : {};
   const on = (use: string): Reckoning | undefined => (aim ? turn.aims[use]?.[aim] : undefined);
   const dmg = (use: string, fell?: 'sure' | 'maybe'): Pick<WheelAct, 'shown' | 'said' | 'hit' | 'fell'> => {
@@ -134,7 +146,14 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
     const k = turn.skills[i];
     if (!k) return null;
     const name = k.ability.name;
-    return { use: name, name, glyph: skillGlyph(name), off: k.cd > 0 ? `Ready in ${k.cd}` : undefined, ...dmg(name, k.cd > 0 ? undefined : fin[name]) };
+    const d = dmg(name, k.cd > 0 ? undefined : fin[name]);
+    // What it inflicts, named: the status's own line is the Guide's and the Skills screen's.
+    const inflicts = k.ability.inflicts.filter((st) => STATUS_TEXT[st]);
+    return {
+      use: name, name, glyph: skillGlyph(name), off: k.cd > 0 ? `Ready in ${k.cd}` : undefined, ...d,
+      shown: inflicts.length ? [...d.shown, `Inflicts ${inflicts.join(', ')}`] : d.shown,
+      said: inflicts.length ? `${d.said}. Inflicts ${inflicts.join(', ')}` : d.said,
+    };
   });
   // Cover: what is aimed at the ally before the hunter's next turn, and what of it the hunter would take, guarding.
   const onWard = turn.threats.filter((x) => x.soon && ward && x.at === ward && x.hit && x.guarded);
@@ -146,16 +165,19 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
       ? { use: COVER, name: COVER, glyph: 'cover', shown: [`On ${who} ${wsum('hit', 'lo')}-${wsum('hit', 'hi')}`, `On you ${wsum('guarded', 'lo')}-${wsum('guarded', 'hi')}`],
         said: `${who}: incoming ${spoken(wsum('hit', 'lo'), wsum('hit', 'hi'))}. On you, guarded, ${spoken(wsum('guarded', 'lo'), wsum('guarded', 'hi'))}` }
       : { use: COVER, name: COVER, glyph: 'cover', shown: [`${who}`, 'Nothing aimed at them'], said: `${who}, nothing aimed at them` };
-  // Throw: the kind picked, or the first held.
-  const kit = THROWABLES.filter((k) => (turn.throws[k.id] ?? 0) > 0);
-  const tk = kit.find((k) => k.id === toss) ?? kit[0];
+  // Throw: the kind the run readied, and how many of it are left.
+  const tk = THROWABLES.find((k) => k.id === toss);
+  const left = tk ? turn.throws[tk.id] ?? 0 : 0;
+  const reach = tk ? (tk.reach > 1 ? `up to ${tk.reach} foes` : 'one foe') : '';
   const thrown: WheelAct = tk
-    ? { use: 'Throw', name: tk.name, glyph: THROW_GLYPH[tk.id], shown: [tk.status, `${tk.reach > 1 ? `Up to ${tk.reach} foes` : 'One foe'} · Held: ${turn.throws[tk.id]}`],
-      said: `${tk.status} on ${tk.reach > 1 ? `up to ${tk.reach} foes` : 'one foe'}, ${turn.throws[tk.id]} held` }
-    : { use: 'Throw', name: 'Throw', glyph: 'flash', off: 'None held', shown: ['Nothing to throw'], said: 'Nothing to throw' };
+    ? { use: 'Throw', name: tk.name, glyph: THROW_GLYPH[tk.id], count: left, off: left > 0 ? undefined : 'None left',
+      shown: [`${THROW_VERB[tk.id]} ${reach}`, hubStatus(tk.status)],
+      said: `${tk.status} on ${reach}. ${tk.status}: ${STATUS_TEXT[tk.status]}. ${left} held` }
+    : { use: 'Throw', name: 'Throw', glyph: 'flash', off: 'None readied', shown: ['Nothing to throw'], said: 'Nothing to throw' };
   const fixed: WheelAct[] = [
     thrown,
-    { use: 'Potion', name: 'Health Potion', glyph: 'potion', off: !turn.potions ? 'None held' : !canDrink ? 'HP full' : undefined, shown: [`HP +${POTION_HEAL * 100}%`, `Held: ${turn.potions}`], said: `HP +${POTION_HEAL * 100}%, ${turn.potions} held` },
+    { use: 'Potion', name: 'Health Potion', glyph: 'potion', count: turn.potions, off: !turn.potions ? 'None held' : !canDrink ? 'HP full' : undefined,
+      shown: [`HP +${POTION_HEAL * 100}%`], said: `HP +${POTION_HEAL * 100}%, ${turn.potions} held` },
     { use: 'Guard', name: 'Guard', glyph: 'shield',
       shown: coming.length ? [`Incoming ${inc[0]}-${inc[1]}`, `Guarded ${inc[2]}-${inc[3]}`] : [`Damage taken -${(1 - GUARD) * 100}%`],
       said: coming.length ? `Incoming ${spoken(inc[0], inc[1])}, guarded ${spoken(inc[2], inc[3])}` : `Damage taken -${(1 - GUARD) * 100}%` },
@@ -165,62 +187,101 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
   const acts = [...skills, ...fixed];
   const n = acts.length;
   const chosen = acts.find((a) => a?.use === picked) ?? fixed[fixed.length - 1];
-  const info = actLines(s, chosen.use, turn);
+  // While a finger drags, the hub shows the slot under it; between slots, the one picked.
+  const dragged = over ? acts.find((a) => a?.use === over) ?? null : null;
+  const shown = dragged ?? chosen;
+  const st = skillState(s, shown.use, turn);
   const use = (a: WheelAct) => { if (!a.off) { setPicked(a.use); give(a.use); } };
   /** Guard and Cover are the defence's blue, Potion healing's green; the rest are the Gate's ember. */
   const kind = (a: WheelAct) => (a.use === 'Guard' || a.use === COVER ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
-  const tap = (a: WheelAct) => { if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); } };
+  const tap = (a: WheelAct) => {
+    if (performance.now() < quiet.current) return;
+    if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); }
+  };
+
+  /** The slot under a point on the screen, by where it falls on the ring. */
+  const slotAt = (x: number, y: number): WheelAct | null => {
+    const el = ring.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const i = ringIndex(((x - r.left) / r.width) * 300, ((y - r.top) / r.height) * 300, n);
+    return i >= 0 ? acts[i] ?? null : null;
+  };
+  const hover = (v: string | null | undefined) => { overRef.current = v; setOver(v); };
+  // The press, followed to its end on the window: the button it began on is gone once the wheel opens.
+  const track = (e: PointerEvent, from: string | null) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    press.current = { x: e.clientX, y: e.clientY, id: e.pointerId, moved: false, from };
+    const move = (m: PointerEvent) => {
+      const p = press.current;
+      if (!p || m.pointerId !== p.id) return;
+      if (!p.moved && Math.hypot(m.clientX - p.x, m.clientY - p.y) < DRAG) return;
+      p.moved = true;
+      const a = slotAt(m.clientX, m.clientY);
+      const v = a?.use ?? null;
+      if (v !== overRef.current) { if (a) sfx.blip(); hover(v); }
+    };
+    const done = (u: PointerEvent) => {
+      const p = press.current;
+      if (!p || u.pointerId !== p.id) return;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
+      press.current = null;
+      hover(undefined);
+      // A tap is the click's to settle; a drag is settled here, on the slot it is let go on.
+      if (!p.moved || u.type === 'pointercancel') return;
+      quiet.current = performance.now() + 400;
+      const a = slotAt(u.clientX, u.clientY);
+      if (a && a.use === p.from) tap(a);
+      else if (a && !a.off) use(a);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
+  };
+
   if (!open) {
     return (
-      <button type="button" class={`actbtn actbtn--${kind(chosen)}`} aria-expanded="false" aria-label={`Actions, ${n} slots. ${chosen.name} picked`} onClick={() => { sfx.tap(); setOpen(true); }}
-        style={`--n:${n}`}>
+      <button type="button" class={`actbtn actbtn--${kind(chosen)}`} aria-expanded="false" aria-label={`Actions, ${n} slots. ${chosen.name} picked`}
+        onPointerDown={(e) => { sfx.tap(); setOpen(true); track(e as unknown as PointerEvent, null); }}
+        onClick={() => setOpen(true)} style={`--n:${n}`}>
         <span class="actbtn__ring" aria-hidden="true" />
         <span class="actbtn__glyph"><Glyph name={chosen.glyph} /></span>
         <b>Actions</b>
       </button>
     );
   }
+  const foot = over !== undefined ? (dragged ? dragged.off ?? 'Let go to use' : '') : chosen.off ?? 'Tap again to use';
   return (
     <div class="actwheel" role="group" aria-label="Actions">
-      <div class="actwheel__ring">
+      <div class={`actwheel__ring ${over !== undefined ? 'is-dragging' : ''}`} ref={ring}
+        onPointerDown={(e) => track(e as unknown as PointerEvent, slotAt(e.clientX, e.clientY)?.use ?? null)}>
         <svg viewBox="0 0 300 300" class="actwheel__svg">
           {acts.map((a, i) => a
             ? <path key={a.use} d={ringSlot(i, n)} role="button" tabIndex={0} data-act={a.use} aria-pressed={a.use === chosen.use}
               aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'fells it' : 'may fell it'}` : ''}`}
-              class={`actwheel__slot actwheel__slot--${kind(a)} ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
+              class={`actwheel__slot actwheel__slot--${kind(a)} ${a.use === shown.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
               onClick={() => tap(a)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(a); } }} />
             : <path key={`empty${i}`} d={ringSlot(i, n)} class="actwheel__slot is-empty" aria-hidden="true" />)}
         </svg>
         {acts.map((a, i) => a && (
-          <span key={a.use} class={`actwheel__item actwheel__item--${kind(a)} ${a.use === chosen.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`} style={`left:${ringMid(i, n).left};top:${ringMid(i, n).top}`} aria-hidden="true">
-            <Glyph name={a.glyph} />
+          <span key={a.use} class={`actwheel__item actwheel__item--${kind(a)} ${a.use === shown.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`} style={`left:${ringMid(i, n).left};top:${ringMid(i, n).top}`} aria-hidden="true">
+            <span class="actwheel__glyph"><Glyph name={a.glyph} />{a.count !== undefined && <b class="actwheel__count num">{a.count}</b>}</span>
             <small>{a.use === 'Potion' ? 'Potion' : a.name}</small>
             <i class={`actwheel__mark ${a.fell ? `is-${a.fell}` : ''}`} />
           </span>
         ))}
-        <div class={`actwheel__hub actwheel__hub--${kind(chosen)}`}>
-          <b class="actwheel__name">{chosen.name}</b>
-          <small class="actwheel__ready">{chosen.off ?? info.level ?? info.ready ?? ''}</small>
-          {chosen.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
-          <span class={`actwheel__fell ${chosen.fell ? `is-${chosen.fell}` : 'is-none'}`}>{chosen.fell === 'maybe' ? 'May fell it' : 'Fells it'}</span>
-          <Btn kind="primary" size="sm" class="actwheel__use" disabled={!!chosen.off} onClick={() => use(chosen)}>Use</Btn>
+        <div class={`actwheel__hub actwheel__hub--${kind(shown)}`} aria-live="polite">
+          <b class="actwheel__name">{shown.name}</b>
+          {/* A skill not ready says so at the hub's foot, in red: its level alone here. */}
+          {(st.level || st.ready) && <small class="actwheel__ready">{[st.level, shown.off ? null : st.ready].filter(Boolean).join(' · ')}</small>}
+          {shown.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
+          {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May fell it' : 'Fells it'}</span>}
+          <small class={`actwheel__foot ${(over !== undefined ? dragged?.off : chosen.off) ? 'is-off' : ''}`}>{foot}</small>
         </div>
-        <button type="button" class="actwheel__close iconbtn" aria-label="Close the actions" onClick={() => { sfx.tap(); setOpen(false); }}><Glyph name="close" /></button>
-      </div>
-      {chosen.use === 'Throw' && kit.length > 0 && (
-        <div class="actwheel__kit" role="radiogroup" aria-label="What to throw">
-          {kit.map((k) => (
-            <button type="button" key={k.id} role="radio" aria-checked={k.id === tk?.id} class={`actwheel__kitbtn ${k.id === tk?.id ? 'is-on' : ''}`}
-              onClick={() => { sfx.blip(); setToss(k.id); }}>
-              <Glyph name={THROW_GLYPH[k.id]} /><span>{k.name}</span><b class="num">×{turn.throws[k.id]}</b>
-            </button>
-          ))}
-        </div>
-      )}
-      <div class="actwheel__lines">
-        {chosen.use === 'Throw' && tk
-          ? <><p>{`${tk.name}: ${tk.status} on ${tk.reach > 1 ? `up to ${tk.reach} foes, the one aimed at first` : 'the foe aimed at'}, unless it is immune.`}</p><p>{`${tk.status}: ${STATUS_TEXT[tk.status]}`}</p></>
-          : info.lines.map((l) => <p key={l}>{l}</p>)}
+        <button type="button" class="actwheel__close iconbtn" aria-label="Close the actions" onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => { sfx.tap(); setOpen(false); }}><Glyph name="close" /></button>
       </div>
     </div>
   );
@@ -312,9 +373,8 @@ export function Arena() {
   /** The action wheel: open or shut, as the hunter left it, and the action last picked on it. */
   const [wheel, setWheel] = useState(false);
   const [picked, setPicked] = useState('Strike');
-  /** The ally the hunter would cover, and the throwable they would throw. */
+  /** The ally the hunter would cover. */
   const [ward, setWard] = useState<string | null>(null);
-  const [toss, setToss] = useState<ThrowId | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
   const paceRef = useRef<Pace>(1);
@@ -629,6 +689,8 @@ export function Arena() {
   const foes = units.filter((u) => u.side === 'e');
   const hero = party.find((u) => u.uid === 'hero');
   const aiming = phase === 'turn' && turn ? turn.foes : [];
+  // The throwable the run readied as it walked in; a run opened before that throws the first kind it holds.
+  const toss: ThrowId | null = run?.throw ?? THROWABLES.find((k) => (turn?.throws[k.id] ?? 0) > 0)?.id ?? null;
   const depth = m?.layers.length ?? 0;
   const rooms = m && !m.tower ? raid.stepsOf(m) : 0;
   const toggleAuto = () => {
@@ -709,10 +771,10 @@ export function Arena() {
               ? <>Your turn. Covering <b class="is-cover">{party.find((f) => f.uid === ward)?.name ?? 'nobody'}</b>; tap an ally to change.</>
               : <>Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</>}</small>
             <ActWheel turn={turn} aim={aim} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} slots={skilltree.slots(s)} picked={picked} setPicked={setPicked} open={wheel} setOpen={setWheel}
-              ward={ward} names={Object.fromEntries(units.map((u) => [u.uid, u.name]))} toss={toss} setToss={setToss}
+              ward={ward} names={Object.fromEntries(units.map((u) => [u.uid, u.name]))} toss={toss}
               give={(use) => give(
                 use === COVER ? { use, at: ward ?? undefined }
-                  : use === 'Throw' ? { use: throwOrder(THROWABLES.find((k) => k.id === toss && (turn.throws[k.id] ?? 0) > 0)?.id ?? THROWABLES.find((k) => (turn.throws[k.id] ?? 0) > 0)!.id), at: aim ?? undefined }
+                  : use === 'Throw' && toss ? { use: throwOrder(toss), at: aim ?? undefined }
                     : { use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
           </div>
         )}
@@ -931,9 +993,10 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 /**
- * A foe's next move, as its chip shows it: the ability, who it goes at, and how many more it reaches.
- * On the hunter's turn it also shows where the move comes in the foes' order, what one hit would do
- * to its target as things stand, whether that fells it, and what else it inflicts.
+ * A foe's next move, as its card shows it, in a panel of fixed rows: the move and whom it goes at (after
+ * its place in the foes' order, on the hunter's turn), then one hit of it on its target as things stand,
+ * the break of a wind-up, and last, quietly, what it inflicts and how often the foe acts. A hit that fells
+ * its target marks the panel's corner `Lethal`.
  */
 function Intent({ intent, party, threat, self }: { intent: IntentView; party: UnitView[]; threat?: Threat; self?: UnitView[] }) {
   const a = ability(intent.ab);
@@ -952,13 +1015,20 @@ function Intent({ intent, party, threat, self }: { intent: IntentView; party: Un
   const hit = intent.broken ? null : threat?.hit;
   const when = threat ? (threat.soon ? `Acts ${ordinal(threat.order)}` : `Acts ${ordinal(threat.order)}, after your next turn`) : '';
   const left = intent.pips ?? 0;
+  const inflicts = !intent.kind && threat ? (a?.inflicts ?? []).filter((st) => STATUS[st]) : [];
+  const foot = [inflicts.length ? `Inflicts ${inflicts.join(', ')}` : '', threat && threat.times > 1 ? `Acts ${threat.times} times each round` : ''].filter(Boolean);
   return (
-    <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''} ${hit?.kill ? 'is-lethal' : ''} ${intent.wind ? 'is-wind' : ''} ${intent.broken ? 'is-broken' : ''} ${intent.kind ? `is-${intent.kind}` : ''}`}>
+    <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''} ${hit?.kill ? `is-lethal is-${hit.kill}` : ''} ${intent.wind ? 'is-wind' : ''} ${intent.broken ? 'is-broken' : ''} ${intent.kind ? `is-${intent.kind}` : ''}`}>
+      {hit?.kill && <span class="intent__kill">{hit.kill === 'sure' ? 'Lethal' : 'May be lethal'}</span>}
       <div class="intent__move">
         {threat && <span class={`intent__order num ${threat.soon ? '' : 'is-later'}`} role="img" aria-label={when}>{threat.order}</span>}
         <span class="intent__what">{intent.kind ? '✦' : '⟶'} {what}</span>
       </div>
-      {hit && <div class="intent__hit" role="img" aria-label={`Damage ${hit.lo} to ${hit.hi}, hit chance ${hit.chance}%`}>Damage {hit.lo}-{hit.hi} · Hit {hit.chance}%{intent.mult ? ` · ×${intent.mult}` : ''}</div>}
+      {hit && (
+        <div class="intent__hit" role="img" aria-label={`Damage ${hit.lo} to ${hit.hi}, hit chance ${hit.chance}%${intent.mult ? `, times ${intent.mult}` : ''}`}>
+          <span>Damage {hit.lo}-{hit.hi}</span><span>Hit {hit.chance}%</span>{intent.mult ? <span class="intent__mult">×{intent.mult}</span> : null}
+        </div>
+      )}
       {intent.wind && !intent.broken && intent.max && (
         // The break: a pip to each hit it can take before it breaks, the ones taken hollow.
         <div class="intent__break" role="img" aria-label={`Break: ${left} ${left === 1 ? 'hit' : 'hits'} left of ${intent.max}`}>
@@ -967,13 +1037,7 @@ function Intent({ intent, party, threat, self }: { intent: IntentView; party: Un
           <small>{left === 1 ? '1 hit breaks it' : `${left} hits break it`}</small>
         </div>
       )}
-      {threat && (hit?.kill || threat.times > 1 || (a?.inflicts.length ?? 0) > 0) && !intent.kind && (
-        <div class="intent__more">
-          {hit?.kill && <span class="intent__kill">{hit.kill === 'sure' ? 'Lethal' : 'May be lethal'}</span>}
-          {threat.times > 1 && <span class="intent__times">Acts {threat.times} times each round</span>}
-          {a?.inflicts.filter((st) => STATUS[st]).map((st) => <span key={st} class="tag">{st}</span>)}
-        </div>
-      )}
+      {foot.length > 0 && <div class="intent__foot">{foot.map((f) => <span key={f}>{f}</span>)}</div>}
     </div>
   );
 }
@@ -993,9 +1057,11 @@ function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat, p
       <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{incoming && u.hp > 0 ? <span class="unit__incoming" title={`${incoming} foe${incoming === 1 ? ' is' : 's are'} coming for ${u.tag === 'hero' ? 'you' : u.name} next`}>◀{incoming}</span> : null}{Math.max(0, u.hp)}</span></div>
       <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />
       {u.tricks && u.tricks.length > 0 && (
-        <div class="unit__tricks">{u.tricks.map((k) => <span key={k} class={`trick trick--${k}`} title={TRICKS[k].text}>{TRICKS[k].name}</span>)}</div>
+        <div class="unit__tricks" aria-label={`Habits: ${u.tricks.map((k) => TRICKS[k].name).join(', ')}`}>
+          {u.tricks.map((k) => <span key={k} class={`trick trick--${k}`} title={TRICKS[k].text}>{TRICKS[k].name}</span>)}
+        </div>
       )}
-      {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''} ${st === 'Covered' ? 'is-cover' : ''}`} title={STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it goes at you' : undefined)}>{st}</span>)}</div>}
+      {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`} title={STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it goes at you' : undefined)}>{st}</span>)}</div>}
       {intent && party && <Intent intent={intent} party={party} threat={threat} self={self} />}
     </>
   );

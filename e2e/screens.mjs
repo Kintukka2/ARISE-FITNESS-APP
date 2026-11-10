@@ -47,12 +47,17 @@ async function setPace(which) {
   await page.locator('.pacebtn').click();
   await page.locator(`.pacemenu [data-pace="${which}"]`).click();
 }
-/** Take an action from the wheel: open it if it is shut, pick the slot, then Use. */
+/** Take an action from the wheel: open it if it is shut, pick the slot, then tap it again to use it. */
 async function act(use) {
   if (await page.locator('.turnbar .actbtn').isVisible().catch(() => false)) await page.locator('.turnbar .actbtn').click();
   const slot = page.locator(`.actwheel [data-act="${use}"]`);
-  if ((await slot.getAttribute('aria-pressed')) !== 'true') await slot.click();
-  await page.locator('.actwheel__use').click();
+  if ((await slot.getAttribute('aria-pressed')) !== 'true') { await slot.click(); await sleep(120); }
+  await slot.click();
+}
+/** The middle of an element on the page. */
+async function mid(loc) {
+  const b = await loc.boundingBox();
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }
 async function drain() {
   for (let i = 0, quiet = 0; i < 40 && quiet < 4; i++) {
@@ -273,7 +278,15 @@ try {
   if (await page.locator('.sheet.is-top .gband-tab.is-marked').count()) { await page.locator('.sheet.is-top .gband-tab.is-marked').click(); await sleep(400); await snap('board-marked'); }
   await page.locator('.sheet.is-top .gband-tab', { hasText: 'All' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
-  await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800); await snap('brief', true);
+  await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800);
+  // The throwable to carry in is readied on the brief: a chip to each kind held, the one readied lit.
+  const ember = page.locator('.sheet.is-top .bthrow__one', { hasText: 'Ember Flask' });
+  if (!(await ember.count())) throw new Error('THE BRIEF HAS NO THROWABLE TO READY');
+  await ember.scrollIntoViewIfNeeded(); await ember.click(); await sleep(300);
+  if ((await ember.getAttribute('aria-checked')) !== 'true') throw new Error('A THROWABLE TAPPED ON THE BRIEF WAS NOT READIED');
+  await snap('brief-throw');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
+  await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
   // The Association's hunters are not the hunter's to order: the brief holds no standing orders.
   if (await page.locator('.sheet.is-top .chips--orders').count()) throw new Error('THE BRIEF STILL GIVES STANDING ORDERS');
@@ -296,7 +309,8 @@ try {
   const skill = page.locator('.actwheel__slot--act:not([data-act="Strike"])').first();
   if (await skill.count()) {
     await skill.click(); await sleep(250);
-    if (!(await page.locator('.actwheel__lines p').first().isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
+    if (!(await page.locator('.actwheel__hub .actwheel__num').first().isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
+    if (await page.locator('.actwheel__use, .actwheel__lines, .actwheel__kit').count()) throw new Error('THE WHEEL STILL HAS ITS USE BUTTON, ITS LINES OR ITS CHIPS');
     if (!(await page.locator('.turnbar').isVisible())) throw new Error('PICKING A SKILL USED IT');
     await snap('arena-skill-info');
   }
@@ -313,12 +327,32 @@ try {
   if (!(await allies.count())) throw new Error('NO ALLY CAN BE COVERED');
   await allies.last().click(); await sleep(250);
   await snap('arena-wheel-cover');
-  // Throw: picked, a chip to each kind held under the wheel, and the hub shows what it does.
+  // Throw: the kind readied on the brief, its count on its slot, and the hub what it does and what its status does.
   await page.locator('.actwheel__slot[data-act="Throw"]').click(); await sleep(250);
-  if ((await page.locator('.actwheel__kitbtn').count()) < 2) throw new Error('THE THROW SHOWS NOT EVERY KIND HELD');
-  await page.locator('.actwheel__kitbtn').last().click(); await sleep(200);
+  if (!(await page.locator('.actwheel__hub .actwheel__name', { hasText: 'Ember Flask' }).count())) throw new Error('THE WHEEL DOES NOT THROW THE ONE READIED');
+  if (!(await page.locator('.actwheel__item', { hasText: 'Ember Flask' }).locator('.actwheel__count').count())) throw new Error('THE THROW SLOT DOES NOT SHOW HOW MANY ARE HELD');
+  if (!(await page.locator('.actwheel__hub', { hasText: 'Burning: HP' }).count())) throw new Error('THE HUB DOES NOT SAY WHAT THE THROW INFLICTS');
   await snap('arena-wheel-throw');
   await page.locator('.actwheel__slot[data-act="Strike"]').click(); await sleep(150);
+  // Press the shut button, drag onto Guard, and the hub shows it before anything is used; let go on it, and it is used.
+  await page.locator('.actwheel__close').click(); await sleep(250);
+  const btn = await mid(page.locator('.turnbar .actbtn'));
+  await page.mouse.move(btn.x, btn.y); await page.mouse.down(); await sleep(350);
+  if (!(await page.locator('.actwheel').isVisible())) throw new Error('A PRESS ON THE ACTIONS DID NOT OPEN THE WHEEL');
+  const guard = await mid(page.locator('.actwheel__item', { hasText: 'Guard' }));
+  await page.mouse.move(guard.x, guard.y, { steps: 8 }); await sleep(200);
+  if (!(await page.locator('.actwheel__ring.is-dragging .actwheel__hub .actwheel__name', { hasText: 'Guard' }).count())) throw new Error('DRAGGING ONTO GUARD DID NOT SHOW IT IN THE HUB');
+  if (!(await page.locator('.turnbar').isVisible())) throw new Error('DRAGGING ONTO A SLOT USED IT BEFORE IT WAS LET GO');
+  await snap('arena-wheel-drag');
+  await page.mouse.up(); await sleep(300);
+  if (await page.locator('.turnbar .actwheel').isVisible().catch(() => false)) throw new Error('LETTING GO ON GUARD DID NOT USE IT');
+  // The foes act, then the next turn: whatever windows open on the way are tapped through.
+  for (let i = 0; i < 60 && !(await page.locator('.turnbar').isVisible().catch(() => false)); i++) {
+    if (await page.locator('.arena__foot >> text=Claim The Gate').isVisible().catch(() => false)) break;
+    await drain(); await sleep(400);
+  }
+  await sleep(300);
+  await snap('arena-foes');
   // The pace and Auto sit behind one button in the head.
   await page.locator('.pacebtn').click(); await sleep(200);
   if (!(await page.locator('.pacemenu').isVisible())) throw new Error('THE PACE MENU DID NOT OPEN');

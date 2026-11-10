@@ -1404,8 +1404,8 @@ guardian doesn't rise again, but it does shield an ally; a higher rank gets both
   an Ember Flask burns up to three, each with no roll unless the foe is immune. The bag holds 2 of each
   (`THROW_MAX`); the Exchange sells them at 45, 30 and 40. A throw is an order (`Throw:flash`) paid for
   out of the bag when it is written, as the Health Potion is, and replayed on resume. They fill the bag's
-  three empty slots, where they show and cannot be used, and one Throw slot on the action wheel, with a
-  chip to each kind held under it. Caches and Ryn do not hand them out yet.
+  three empty slots, where they show and cannot be used, and one Throw slot on the action wheel. Caches
+  and Ryn do not hand them out yet.
 - **Creature behaviours** (`data/tricks.ts`). A role's at every grade: Guardians shield an ally
   (half damage until the guardian acts again), Leaders rally the pack (attack +15-30% by grade for 2
   rounds), Casters channel (a spell a turn ahead, ×1.4), Brutes enrage below half HP (+20-35%),
@@ -1439,6 +1439,25 @@ guardian doesn't rise again, but it does shield an ally; a higher rank gets both
   each grade clears where it did (72% to 82%); the floor of S rose from 57% to 74% and the top of E fell
   from 88% to 83%; days to each rank did not move. `npm run mapstats`: side fights still cost a typical
   hunter nothing 95% to 100% of the time below S, and 85% at S.
+
+- **Asked for after the first look.**
+  - *The wheel.* An item's slot wears the count held in a badge, and the hub says everything about the
+    slot shown: a throw reads `Burn up to 3 foes` over `Burning: HP -7% each rd`, the one place `each
+    round` is shortened (VOICE.md). Use, the chips under the wheel and the lines under it are gone.
+    Two ways to use a slot, and still nothing on a first tap: press the shut button, drag onto a slot (the
+    hub shows it, `Let go to use`) and let go on it; or tap a slot and tap it again (`Tap again to use`).
+    Let go anywhere but a slot and nothing is used.
+  - *A throwable is readied before the Gate*, not chosen in the fight: on the brief, a chip to each kind
+    held, or `Ready` from the bag (`gates.ready`, `shop.ready`). A run keeps the one it walked in with
+    (`run.throw`, `shop.readied`: the one readied while one is held, or else the first kind held); its
+    fights throw only that kind, and an order for another is the System's choice. A run opened before
+    throws any kind held, as it did.
+  - *The foe's card*, in fixed rows: name and HP, the bar, its habits on one quiet line
+    (`ENRAGES · BLOODLUST · WINDS UP`), its own statuses as the card's only tags (a boon such as Enraged in
+    the Gates' ember, not the party's green), then the intent in a panel: the order and the move over two
+    lines at most, `Damage 186-252  Hit 95%  ×1.8`, the break, and a quiet foot, `Inflicts Bleeding` over
+    `Acts 2 times each round`. `Lethal` sits on the panel's corner and reddens its rim.
+  - Auto never throws, so readying moves no tuning, and nothing else here touches the fight.
 
 ## What stays out
 

@@ -131,6 +131,33 @@ describe('throwables', () => {
     expect(JSON.stringify(again.log)).toBe(shown);
   });
 
+  it('the one readied before the Gate is the one its fights throw, from the first chamber to the last', () => {
+    const s = hunter(20);
+    const d = dungeonById('DNG-016')!;
+    shop.stockUp(s, 'flash', 2);
+    shop.stockUp(s, 'ember', 1);
+    // Nothing readied: the first kind held. A kind not held cannot be readied; one held can.
+    expect(shop.readied(s)).toBe('flash');
+    expect(shop.ready(s, 'cord')).toBe(false);
+    expect(shop.ready(s, 'ember')).toBe(true);
+    expect(shop.readied(s)).toBe('ember');
+    toBoss(d, raid.begin(s, d, now));
+    const run = s.gates.raid!;
+    expect(run.throw).toBe('ember');
+    // Readying another once inside changes nothing for the run.
+    shop.ready(s, 'flash');
+    const { ch } = raid.resume(s, d, run, now);
+    expect(ch.turn!.throws).toEqual({ ember: 1 });
+    shop.ready(s, 'ember');
+    // A kind the run did not ready is the System's choice, and the bag keeps it.
+    expect(raid.order(s, run, { use: throwOrder('flash'), at: ch.turn!.foes[0] })).toBeNull();
+    expect(shop.held(s, 'flash')).toBe(2);
+    expect(raid.order(s, run, { use: throwOrder('ember'), at: ch.turn!.foes[0] })?.use).toBe(throwOrder('ember'));
+    expect(shop.held(s, 'ember')).toBe(0);
+    // Once the readied kind runs out, another held is readied in its place for the next Gate.
+    expect(shop.readied(s)).toBe('flash');
+  });
+
   it('the bag holds a stated number of each, and the Exchange sells them while there is room', () => {
     const s: Save = defaults();
     s.wallet.shards = 10_000;

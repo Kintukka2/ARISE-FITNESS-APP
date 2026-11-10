@@ -1,7 +1,7 @@
 /** The Gates: the board, the brief, and the way in. */
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { powerOf } from '@/core/combat';
+import { powerOf, THROWABLES } from '@/core/combat';
 import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import * as gear from '@/core/gear';
@@ -42,11 +42,11 @@ import { Btn, Card, Chip, RankPlate, Section, Shards, useNow, Voice } from '@/ui
 import { BentoGrid, type Tile as BTile } from '@/ui/bento';
 import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
-import { Glyph, Sigil } from '@/ui/icons';
+import { Glyph, Sigil, THROW_GLYPH } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
-import { bagFor, enterGate } from '@/app/flow';
+import { bagFor, enterGate, readyThrow } from '@/app/flow';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -767,6 +767,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <span class="num">Satchel {shop.held(s, 'hp')}/{shop.satchelMax(s)}</span>
         {shop.satchelRoom(s) > 0 && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
       </div>
+      <Readied d={d} />
 
       {/* The way in stays at the foot of the window, whatever is scrolled past. */}
       <div class="bdock">
@@ -778,6 +779,33 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
               : <Btn kind={isTrial(d) ? 'gold' : 'primary'} size="lg" block onClick={enter} sound="none" tour="enter">{isTrial(d) ? 'Enter The Trial' : 'Enter The Gate'}</Btn>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The throwable readied for the Gate: the one the action wheel throws inside, a chip to each kind with the
+ * count held. Tapping one readies it. A run open on the Gate keeps the one it walked in with.
+ */
+function Readied({ d }: { d: Dungeon }) {
+  const s = useSave();
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  const now = run ? run.throw ?? null : shop.readied(s);
+  if (!now && THROWABLES.every((k) => shop.held(s, k.id) <= 0)) return null;
+  return (
+    <div class="bthrow">
+      <span class="label">Throw</span>
+      <span class="bthrow__kit" role="radiogroup" aria-label="Throwable readied">
+        {THROWABLES.map((k) => {
+          const n = shop.held(s, k.id);
+          return (
+            <button type="button" key={k.id} role="radio" aria-checked={k.id === now} aria-label={`${k.name}, ${n} held`}
+              class={`bthrow__one ${k.id === now ? 'is-on' : ''}`} disabled={!!run || n <= 0} onClick={() => readyThrow(k.id)}>
+              <Glyph name={THROW_GLYPH[k.id]} /><span>{k.name}</span><b class="num">{n}</b>
+            </button>
+          );
+        })}
+      </span>
     </div>
   );
 }

@@ -98,7 +98,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   family's from C-Rank, a wind-up for a boss or Gatekeeper). The auto policy goes for a creature
   winding up or channelling, whatever the orders. Change a behaviour, its numbers or that rule and you
   must recalibrate. Auto never covers or throws: throwables, like potions, are the hunter's own, so the
-  brief assumes none.
+  brief assumes none. A run keeps the throwable readied as it walked in (`run.throw`, from
+  `shop.readied`), and its fights throw only that kind: readying another reaches the next Gate.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

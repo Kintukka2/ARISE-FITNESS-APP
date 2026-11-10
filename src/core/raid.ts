@@ -294,6 +294,8 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
   const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth'));
+  // The throwable readied is the one its fights throw, whatever is readied while it is open.
+  const toss = shop.readied(s);
   s.gates.raid = {
     dungeonId: d.id, seed: `${d.id}|${now}`, day, at: 0,
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
@@ -302,6 +304,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     map: mapSeed(d, day), layout: 'labyrinth', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
+    ...(toss ? { throw: toss } : {}),
   };
   return s.gates.raid;
 }
@@ -700,7 +703,7 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const orders = run.orders ?? [];
   // The satchel has already paid for the potions this chamber's orders drank, and the bag for what they threw.
   const potions = shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length;
-  const throws = Object.fromEntries(THROWABLES.map((t) => [t.id, shop.held(s, t.id) + orders.filter((o) => o?.use === throwOrder(t.id)).length]));
+  const throws = Object.fromEntries(THROWABLES.filter((t) => !run.throw || t.id === run.throw).map((t) => [t.id, shop.held(s, t.id) + orders.filter((o) => o?.use === throwOrder(t.id)).length]));
   const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, throws, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
   return { party, ch, node: x };
 }
@@ -716,10 +719,11 @@ export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
     if (shop.held(s, 'hp') > 0) s.stock.hp = shop.held(s, 'hp') - 1;
     else given = null;
   }
-  // A throw is paid for out of the bag the same way; one the bag cannot pay for becomes the System's choice.
+  // A throw is paid for out of the bag the same way; one the bag cannot pay for, or of a kind the run did
+  // not ready, becomes the System's choice.
   const thrown = given ? thrownBy(given.use) : undefined;
   if (thrown) {
-    if (shop.held(s, thrown.id) > 0) s.stock[thrown.id] = shop.held(s, thrown.id) - 1;
+    if (shop.held(s, thrown.id) > 0 && (!run.throw || run.throw === thrown.id)) s.stock[thrown.id] = shop.held(s, thrown.id) - 1;
     else given = null;
   }
   run.orders = [...(run.orders ?? []), given];
