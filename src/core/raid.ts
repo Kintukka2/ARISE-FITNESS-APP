@@ -313,8 +313,9 @@ export const systemChoice = (x: MapNode) => (x.kind === 'shrine' ? 0 : Math.max(
 /** Enter a gate: build the party as it walks in, charge fatigue, open the run. Mutates. */
 export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly SealId[] = []): OpenRaid {
   const day = dayKey(now);
-  // Only Seals the Gate offers today are taken.
-  const taken = seals.filter((id) => sealing.offered(s, d, day).includes(id));
+  // Only Seals the Gate offers today are taken; with none asked for, the offer need not be drawn.
+  const offer = seals.length ? sealing.offered(s, d, day) : [];
+  const taken = seals.filter((id) => offer.includes(id));
   const fatigue = vitals.read(s, now).fatigue;
   // The practice gate is played as it is, and a Trial at the level it proves, whatever the hunter has chosen.
   const level = asc.entryLevel(s, d, isPractice(d));
@@ -1156,7 +1157,8 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
   const day = dayKey(now);
   // The run would be entered at the level chosen (a Trial, at its own): the projection plays every rule it brings, and every Seal taken.
   const level = asc.entryLevel(s, d, isPractice(d));
-  const taken = seals.filter((id) => sealing.offered(s, d, day).includes(id));
+  const offer = seals.length ? sealing.offered(s, d, day) : [];
+  const taken = seals.filter((id) => offer.includes(id));
   const walker = walkers.meets(s, d, day, level);
   const specs = partySpecs(s, d, day, undefined, now, level, taken);
   // How often the System met each of the Gate's Feats, on the clears it made.
