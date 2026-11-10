@@ -62,6 +62,12 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   change the floors or their roads and rerun the campaign as well as calibration. Each floor is a
   labyrinth sized by grade (`LABYRINTH`, held to `PLAN_MAX`). A run keeps the layout it opened with
   (`labyrinth`, the smaller `floors`, one floor of `rooms`): never change how an older layout draws.
+- A Gate has a clock (`core/clock.ts`): a budget of moves set as the run walks in (`run.clock`), the moves
+  a walk costs written to the run in `raid.choose` and `raid.moveTo` before the room plays (`run.moves`),
+  and past the budget every creature not yet fought made stronger through the chamber's `might`. The
+  System's way must fit inside the budget on every Gate, or Auto and the brief would stir:
+  `tests/clock.test.ts` holds it, and `npm run mapstats` reports it. Never let the clock reach a fight
+  except through `might`, and never change how an open run's budget was counted.
 - The brief, Auto and calibration all walk the System's road (`map.systemRoad`, moved along by
   `raid.systemNext`, which keeps a rest it finds for the boss) and make the System's choices
   (`raid.systemChoice`). Change any of them, or how a map is drawn, and you must recalibrate.

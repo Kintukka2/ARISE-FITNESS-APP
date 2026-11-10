@@ -429,6 +429,23 @@ export const sfx = {
       noise(0.3, 0.1, 0.05, 5200);
     }
   },
+  /** The Gate turning red: a boom that falls away under a long rumble. */
+  redGate: () => {
+    if (!on()) return;
+    tone(98, 0, 2.6, 'sawtooth', 0.26, 31);
+    tone(46, 0, 3, 'sine', 0.34, 24);
+    tone(139, 0.05, 1.8, 'square', 0.07, 52);
+    noise(0, 2.6, 0.16, 320);
+  },
+  /** A count climbing: a tick that rises with it, `p` from 0 to 1. */
+  countTick: (p: number) => on() && tone(260 + p * 900, 0, 0.03, 'square', 0.05 + p * 0.04),
+  /** A count landing on its number, hard. */
+  slam: () => {
+    if (!on()) return;
+    tone(70, 0, 0.5, 'sine', 0.42, 30);
+    tone(180, 0, 0.18, 'sawtooth', 0.2, 60);
+    noise(0, 0.35, 0.22, 900);
+  },
   shadowLost: () => {
     if (!on()) return;
     tone(150, 0, 0.9, 'sine', 0.16, 44);
@@ -458,14 +475,20 @@ export const sfx = {
 
 // ------------------------------------------------------------------ the score
 
-type Mood = 'calm' | 'gates' | 'raid' | 'boss' | 'shadow';
-interface MoodDef { root: number; bpm: number; chords: number[][]; pad: number; arp: number; bass: number; pulse: number; drone: number; arpEvery: number; filter: number; wave: OscillatorType }
+type Mood = 'calm' | 'gates' | 'raid' | 'boss' | 'shadow' | 'redgate';
+interface MoodDef {
+  root: number; bpm: number; chords: number[][]; pad: number; arp: number; bass: number; pulse: number; drone: number; arpEvery: number; filter: number; wave: OscillatorType;
+  /** A heartbeat under the bar, lub and dub on its first and third beats, at this level. */
+  heart?: number;
+}
 
 const MOODS: Record<Mood, MoodDef> = {
   calm: { root: 220, bpm: 68, chords: [[0, 3, 7, 10], [0, 3, 7, 14], [-4, 3, 8, 12], [-2, 3, 7, 10]], pad: 0.115, arp: 0.055, bass: 0.075, pulse: 0, drone: 0, arpEvery: 2, filter: 1500, wave: 'triangle' },
   shadow: { root: 174.61, bpm: 60, chords: [[0, 3, 7, 10], [-2, 1, 5, 10], [-4, 0, 3, 8], [-5, -2, 2, 7]], pad: 0.12, arp: 0.04, bass: 0.09, pulse: 0, drone: 0.04, arpEvery: 2, filter: 1000, wave: 'triangle' },
   gates: { root: 164.81, bpm: 80, chords: [[0, 1, 7, 12], [0, 1, 8, 12], [-2, 1, 5, 10], [0, 1, 7, 13]], pad: 0.125, arp: 0.045, bass: 0.1, pulse: 0.055, drone: 0.03, arpEvery: 2, filter: 1100, wave: 'sawtooth' },
   raid: { root: 146.83, bpm: 124, chords: [[0, 3, 7, 12], [0, 3, 9, 12], [-3, 4, 7, 12], [0, 3, 7, 10]], pad: 0.075, arp: 0.055, bass: 0.135, pulse: 0.085, drone: 0, arpEvery: 1, filter: 1700, wave: 'sawtooth' },
+  // A Red Gate: low and slow, a minor second and a tritone in every chord, a drone under it and a heartbeat.
+  redgate: { root: 73.42, bpm: 54, chords: [[0, 1, 6, 12], [0, 3, 6, 11], [-1, 2, 6, 11], [0, 1, 6, 13]], pad: 0.15, arp: 0.03, bass: 0.17, pulse: 0, drone: 0.1, arpEvery: 4, filter: 640, wave: 'sawtooth', heart: 0.2 },
   boss: { root: 196, bpm: 132, chords: [[0, 3, 7, 12], [-1, 3, 6, 11], [0, 3, 8, 12], [-2, 2, 7, 10]], pad: 0.085, arp: 0.06, bass: 0.145, pulse: 0.095, drone: 0.055, arpEvery: 1, filter: 2000, wave: 'sawtooth' },
 };
 
@@ -529,6 +552,7 @@ function playBeat(m: MoodDef, n: number, at: number) {
     if (m.drone) pluck(semi(m.root, -12), at, spb * 4, m.drone, 'sawtooth');
   }
   if (m.bass && (inBar === 0 || inBar === 2)) pluck(semi(m.root, chord[0] - 12), at, spb * 0.9, m.bass);
+  if (m.heart && (inBar === 0 || inBar === 2)) { thud(at, m.heart); thud(at + spb * 0.26, m.heart * 0.7); }
   if (m.pulse) {
     thud(at, m.pulse);
     noise(0, 0.06, m.pulse * 0.42, 2600, 'highpass', bus!, at + spb * 0.5);

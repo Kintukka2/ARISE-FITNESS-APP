@@ -521,6 +521,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sysframe--gold { --win: var(--gold); --win-glow: var(--gold-glow); }
 .sysframe--gates { --win: var(--ember); --win-glow: var(--ember-glow); }
 .sysframe--shadow { --win: var(--arcane); --win-glow: var(--arcane-glow); }
+/* The one System window in red: a Gate turning red. */
+.sysframe--redgate { --win: var(--sysred); --win-glow: rgba(255, 47, 62, 0.6); }
 
 /* A System alert: a strip of the frame, lit down its left edge, sliding in once with a light crossing it. */
 .sysalert {

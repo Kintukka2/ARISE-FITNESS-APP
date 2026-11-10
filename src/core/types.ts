@@ -188,6 +188,15 @@ export interface OpenRaid {
   ascension?: number;
   /** The level of the Chosen met in the boss's place, if one held the gate and the run was entered high enough. */
   chosen?: number | null;
+  /**
+   * The Gate's budget of moves, fixed as the run walked in (`clock.budgetOf`). Unset, the run has no clock:
+   * a tower, the Practice Gate, or a run opened before the clock.
+   */
+  clock?: number;
+  /** Moves walked so far: rooms entered and corridors walked back through (`clock.walkMoves`). */
+  moves?: number;
+  /** The hunter's rank as they walked in: what a Red Gate raises its creatures above. Sovereign is a grade past S. */
+  held?: Rank | 'N';
 }
 
 /** What a week on the Spire paid when it closed. */

@@ -76,7 +76,9 @@ s.shadows.essence = 9;
 s.shadows.fresh = [s.shadows.army[2].id];
 s.wallet = { shards: 2480, earned: 6200, spent: 3720, bought: 0, receipts: [] };
 s.gates.clears = 61; s.gates.fails = 3; s.gates.withdrawn = 4;
-s.gates.cleared = ['DNG-000', 'DNG-001', 'DNG-002', 'DNG-004', 'DNG-007', 'DNG-009', 'DNG-011', 'DNG-013', 'DNG-015'];
+// Every E-Rank Gate cleared: the board always stands one Gate of each grade, so whatever the day draws, a
+// cleared Gate is on it for the screens to see its tick.
+s.gates.cleared = ['DNG-000', 'DNG-001', 'DNG-002', 'DNG-003', 'DNG-004', 'DNG-005', 'DNG-006', 'DNG-007', 'DNG-009', 'DNG-011', 'DNG-013', 'DNG-015'];
 s.gates.bosses = [...s.gates.cleared, 'DNG-019'];
 s.gates.last = 'cleared'; s.gates.unbroken = 11; s.gates.bestUnbroken = 19;
 s.gates.sealed = { day: today, ids: ['DNG-015'] };

@@ -26,6 +26,7 @@ import * as system from '@/ui/system';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import * as raid from '@/core/raid';
+import { budgetOf } from '@/core/clock';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as story from '@/core/story';
@@ -679,7 +680,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           ? <span class="sysbox brewards__one"><small class="label">This week</small><b>Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}</b><small>a new best, if you clear it</small></span>
           : <span class={`sysbox brewards__one ${first && !isPractice(d) ? 'is-bounty' : ''}`}><small class="label">First clear</small><b class="num">{first && !isPractice(d) ? `XP +${xp}` : '-- --'}</b><small>{first && !isPractice(d) ? <><Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'}</small></span>}
         <span class="sysbox brewards__one"><small class="label">Materials</small><b>{isPractice(d) ? ALLOYS.E.name : ALLOYS[d.rank as Rank].name}</b><small>{isPractice(d) ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small></span>
-        <span class="sysbox brewards__one"><small class="label">Depth</small><b>{raid.stepsOf(map)} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'rooms'}</b><small>{isTrial(d) ? 'no rest between them' : tower ? 'a rest, then the boss' : map.floors.length > 1 ? `${map.floors.length} floors · ${proj.road.length} to the boss` : `${proj.road.length} to the boss`}</small></span>
+        <span class="sysbox brewards__one"><small class="label">Depth</small><b>{raid.stepsOf(map)} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'rooms'}</b><small>{isTrial(d) ? 'no rest between them' : tower ? 'a rest, then the boss' : map.floors.length > 1 ? `${map.floors.length} floors · ${proj.road.length} to the boss` : `${proj.road.length} to the boss`}</small>{!tower && !isPractice(d) && <small class="brewards__moves"><Glyph name="steps" />{budgetOf(map)} moves</small>}</span>
       </div>
       {/* The materials tagged at the Forge that this Gate leaves. */}
       {!isPractice(d) && !isTrial(d) && forge.trackedAt(s, d, level).length > 0 && (

@@ -28,6 +28,8 @@ import * as shadows from './shadows';
 import * as spire from './spire';
 import { isTrial } from './trial';
 import * as association from './association';
+import * as clock from './clock';
+import { LOG_MAX } from './save';
 import type { AssocMove } from './association';
 import * as shop from './shop';
 import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
@@ -107,9 +109,9 @@ export interface ChamberResult {
 /** Per-gate difficulty, from calibration, or a Spire block's own. Exported so the calibrator can drive it. */
 export const tuneOf = (d: Dungeon) => d.scale ?? GATE_TUNE[d.id] ?? 1;
 
-function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0): Unit[] {
+function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1): Unit[] {
   const k = (EXPECTED_PARTY[d.rank] ?? 4) / 3;
-  const t = tuneOf(d) * asc.ascensionTune(level) * (c.elite ? asc.eliteShare(level) : 1);
+  const t = tuneOf(d) * asc.ascensionTune(level) * (c.elite ? asc.eliteShare(level) : 1) * might;
   const units = c.foes.map((id, j) => {
     const e = enemyById(id)!;
     return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id });
@@ -147,11 +149,13 @@ export interface ChamberOpts {
   orders?: (Order | null)[];
   /** The Ascension level the run was entered at. */
   ascension?: number;
+  /** How much stronger the Gate clock has made its creatures: stirring, or a Red Gate (`clock.mightOf`). */
+  might?: number;
 }
 
 /** Open one chamber, `index` steps into the gate. Mutates the party's units (health, statuses) as it is fought. */
 export function openChamber(d: Dungeon, seed: string, index: number, party: Unit[], c: Chamber, opts: ChamberOpts = {}): ChamberFight {
-  const foes = foeUnits(c, d, index, opts.ascension ?? 0);
+  const foes = foeUnits(c, d, index, opts.ascension ?? 0, opts.might ?? 1);
   const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status) }));
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];
@@ -283,6 +287,8 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   const hero = party[0];
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
+  // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
+  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth'));
   s.gates.raid = {
     dungeonId: d.id, seed: `${d.id}|${now}`, day, at: 0,
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
@@ -290,6 +296,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     party: specs, tactic: s.gates.tactic, orders: [],
     map: mapSeed(d, day), layout: 'labyrinth', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     chosen: walkers.meets(s, d, day, level),
+    ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
   };
   return s.gates.raid;
 }
@@ -319,6 +326,44 @@ export function standing(d: Dungeon, run: OpenRaid): MapNode | null {
   if (m.tower) return null;
   return m.byId[run.pos ?? ''] ?? m.byId[m.start!];
 }
+
+/** Where an open run stands on its Gate's clock. Null for a run without one. */
+export const clockOf = (run: OpenRaid): clock.ClockState | null => (run.clock ? clock.clockAt(run.clock, run.moves ?? 0) : null);
+
+/**
+ * The moves it takes to enter a room on offer, or to walk back to one cleared, from where the hunter
+ * stands. Null for a run without a clock, or a room that cannot be reached.
+ */
+export function movesTo(d: Dungeon, run: OpenRaid, id: string): number | null {
+  if (!run.clock) return null;
+  const m = mapOf(d, run);
+  const n = clock.walkMoves(m, explored(m, run), standing(d, run)?.id ?? m.start!, id);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** The moves to every room the hunter can enter or walk back to from where they stand, by id. Empty without a clock. */
+export function movesFrom(d: Dungeon, run: OpenRaid): Record<string, number> {
+  if (!run.clock) return {};
+  const m = mapOf(d, run);
+  const done = explored(m, run);
+  const dist = clock.walksFrom(m, done, standing(d, run)?.id ?? m.start!);
+  const rep = clock.placeOf(m);
+  const out: Record<string, number> = {};
+  for (const id of [...options(d, run).map((x) => x.id), ...done]) {
+    const n = dist.get(rep(id));
+    if (n !== undefined) out[id] = n;
+  }
+  return out;
+}
+
+/** How strong a creature not yet fought in this run is against its Gate as tuned: 1 off the clock. */
+export const mightOf = (d: Dungeon, run: OpenRaid) => {
+  const c = clockOf(run);
+  return c ? clock.mightOf(c, d.rank, run.held ?? d.rank) : 1;
+};
+
+/** The Gate has turned red and its boss still stands: the way out is sealed. */
+export const sealed = (d: Dungeon, run: OpenRaid) => !!clockOf(run)?.red && !bossDown(d, run);
 
 /** What is remembered of a map through its fog, by its seed. */
 export const remembered = (s: Save, seed: string) => s.gates.seen?.[seed] ?? [];
@@ -397,12 +442,15 @@ export function options(d: Dungeon, run: OpenRaid): MapNode[] {
 }
 
 /**
- * Walk back to a room already cleared: free, and nothing waits on the way. False if it is not one,
+ * Walk back to a room already cleared: nothing waits on the way, and on the Gate's clock each corridor
+ * walked is a move. False if it is not one,
  * or the run is up a tower, or a step is underway. Mutates.
  */
 export function moveTo(d: Dungeon, run: OpenRaid, id: string): boolean {
   const m = mapOf(d, run);
   if (m.tower || run.lost || pending(d, run) || !explored(m, run).has(id)) return false;
+  // On the clock, every corridor walked is a move.
+  if (run.clock) run.moves = (run.moves ?? 0) + (movesTo(d, run, id) ?? 0);
   run.pos = id;
   return true;
 }
@@ -453,13 +501,14 @@ export function drinkPotion(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()
 
 /**
  * Nothing is underway and the run has cleared a room: in a Gate, while the hunter stands at the
- * entrance; up a tower, when the last floor done was a rest. The only times a run can be walked away from.
+ * entrance and the Gate has not turned red; up a tower, when the last floor done was a rest. The only
+ * times a run can be walked away from.
  */
 export function canWithdraw(d: Dungeon, run: OpenRaid): boolean {
   const path = run.path ?? [];
   if (run.at === 0 || run.lost || pending(d, run)) return false;
   const m = mapOf(d, run);
-  if (!m.tower) return !bossDown(d, run) && standing(d, run)?.id === m.start;
+  if (!m.tower) return !bossDown(d, run) && !sealed(d, run) && standing(d, run)?.id === m.start;
   return m.byId[path[run.at - 1]]?.kind === 'rest';
 }
 
@@ -552,6 +601,8 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
   const x = options(d, run).find((o) => o.id === id);
   if (!x) return null;
   const m = mapOf(d, run);
+  // On the clock, the walk to the room and the step into it are moves, written before the room plays.
+  if (run.clock) run.moves = (run.moves ?? 0) + (movesTo(d, run, id) ?? 1);
   run.path = [...(run.path ?? []), id];
   if (!m.tower) run.pos = id;
   run.orders = [];
@@ -644,7 +695,7 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const orders = run.orders ?? [];
   // The satchel has already paid for the potions this chamber's orders drank.
   const potions = shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length;
-  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run) });
+  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
   return { party, ch, node: x };
 }
 
@@ -694,6 +745,12 @@ export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: Ch
 }
 
 export type Outcome = 'cleared' | 'withdrawn' | 'defeated';
+
+/** The floors of a Gate with every room on them cleared. */
+export function chartedFloors(m: GateMap, cleared: Set<string>): number {
+  if (m.tower) return 0;
+  return m.floors.filter((_, f) => m.nodes.filter((x) => (x.floor ?? 0) === f).every((x) => cleared.has(x.id))).length;
+}
 
 /**
  * A creature lingering after a clear. `cost` is the first reach's MP; `tries` counts the reaches that
@@ -909,9 +966,10 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       if (outcome === 'cleared') tally.cleared++;
     }
     if (outcome === 'cleared') s.gates.clears++;
-    if (outcome === 'cleared' && !m.tower && run.at >= m.nodes.length - 1) s.stats.charted = (s.stats.charted ?? 0) + 1;
     else if (outcome === 'withdrawn') s.gates.withdrawn++;
     else s.gates.fails++;
+    // Every floor of a cleared Gate with every room on it cleared is charted.
+    if (outcome === 'cleared' && !m.tower) s.stats.charted = (s.stats.charted ?? 0) + chartedFloors(m, explored(m, run));
     if (outcome === 'cleared') {
       if (s.gates.last === 'defeated') s.stats.comebacks++;
       if (reach) s.stats.reachClears++;
@@ -963,7 +1021,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const v = vitals.read(s, now);
   s.gates.raid = null;
   s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}: ${outcome}`, xp: xp?.gained ?? 0 });
-  s.log.length = Math.min(s.log.length, 400);
+  s.log.length = Math.min(s.log.length, LOG_MAX);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
