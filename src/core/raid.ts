@@ -12,6 +12,7 @@ import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
+import { tricksOf, type TrickId } from '@/data/tricks';
 import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
@@ -91,7 +92,7 @@ export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[]
 /** The share of a gate's fatigue a run costs: more at Heavy Legs, less for every Mark of the Long Stride. */
 export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) * marks.fatigueShare(s);
 
-export interface RosterRow { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[] }
+export interface RosterRow { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[] }
 
 export interface ChamberResult {
   index: number;
@@ -114,7 +115,9 @@ function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1): 
   const t = tuneOf(d) * asc.ascensionTune(level) * (c.elite ? asc.eliteShare(level) : 1) * might;
   const units = c.foes.map((id, j) => {
     const e = enemyById(id)!;
-    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id });
+    // Its behaviours: its role's, its family's from C-Rank, and a wind-up for the chamber's boss or Gatekeeper.
+    const head = j === 0 && (c.boss || c.elite || !!c.champion);
+    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id, tricks: tricksOf(e, head), grade: String(e.rank) });
   });
   const seen: Record<string, number> = {};
   for (const u of units) seen[u.name] = (seen[u.name] ?? 0) + 1;
@@ -158,7 +161,7 @@ export interface ChamberOpts {
 /** Open one chamber, `index` steps into the gate. Mutates the party's units (health, statuses) as it is fought. */
 export function openChamber(d: Dungeon, seed: string, index: number, party: Unit[], c: Chamber, opts: ChamberOpts = {}): ChamberFight {
   const foes = foeUnits(c, d, index, opts.ascension ?? 0, opts.might ?? 1);
-  const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status) }));
+  const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined }));
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];
   const log: Ev[] = [];

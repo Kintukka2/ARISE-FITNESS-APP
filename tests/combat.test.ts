@@ -3,6 +3,7 @@ import { defaults } from '@/core/save';
 import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
+import * as vitals from '@/core/vitals';
 import { battle, fight, finishers, POTION_HEAL, GUARD, Unit, type Turn } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
@@ -10,6 +11,10 @@ import { SKILL_SLOTS } from '@/data/tree';
 import type { Order, Save } from '@/core/types';
 import { rng } from '@/core/util';
 import { chamberOf } from '@/core/map';
+import { TRICKS } from '@/data/tricks';
+
+/** A behaviour as its intent names it. */
+const BEHAVIOUR = { shield: 'Shield', rally: 'Rally', mark: 'Mark', drink: TRICKS.secondwind.name } as const;
 import { isFight, toBoss, walk } from './walk';
 
 const now = Date.parse('2026-02-02T12:00:00');
@@ -153,7 +158,8 @@ describe('turn by turn', () => {
     for (let i = 0; i < shop.SATCHEL + 1; i++) shop.buyCarried(s, 'hp');
     expect(shop.held(s, 'hp')).toBe(shop.SATCHEL);
     expect(s.wallet.shards).toBe(1000 - shop.SATCHEL * price);
-    s.vitals = { hp: 40, mp: 60, fatigue: 0, at: now, lockedUntil: null };
+    // Hurt, but not so badly that a boss which picks off the weakest fells the hunter before their first turn.
+    s.vitals = { hp: Math.round(vitals.maxima(s).hp / 2), mp: 60, fatigue: 0, at: now, lockedUntil: null };
     atBoss(s, 'DNG-015');
     let drank = false;
     const ch = fightOut(s, () => (drank ? null : (drank = true, { use: 'Potion' })));
@@ -205,7 +211,9 @@ describe('turn by turn', () => {
 describe('foe intents', () => {
   it('every foe does exactly what it showed, unless its target fell first or it was stunned', () => {
     let checked = 0;
-    for (const [level, id] of [[12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
+    let tricks = 0;
+    let charges = 0;
+    for (const [level, id] of [[8, 'DNG-004'], [12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
       const s = hunter(level);
       const d = dungeonById(id)!;
       const run = raid.begin(s, d, now);
@@ -218,11 +226,19 @@ describe('foe intents', () => {
         for (const e of ch.log) {
           if (e.t === 'intent') { intent[e.u] = { ab: e.ab, at: e.at }; fresh.add(e.u); continue; }
           if (e.t === 'down') { down.add(e.v); continue; }
-          if (e.t !== 'hit' && e.t !== 'miss' && e.t !== 'support' && e.t !== 'stun') continue;
+          if (e.t !== 'hit' && e.t !== 'miss' && e.t !== 'support' && e.t !== 'stun' && e.t !== 'trick' && e.t !== 'charge') continue;
           if (!e.a.startsWith('e') || !fresh.has(e.a)) continue;
           // The first event of a foe's action: it is the action it settled on.
           fresh.delete(e.a);
           if (e.t === 'stun') continue;
+          // A behaviour is the one it showed, on whom it showed; a wind-up gathering is the move it showed.
+          if (e.t === 'trick') {
+            expect(intent[e.a].ab).toBe(BEHAVIOUR[e.k]);
+            if (e.v && intent[e.a].at && !down.has(intent[e.a].at!)) expect(e.v).toBe(intent[e.a].at);
+            tricks++;
+            continue;
+          }
+          if (e.t === 'charge') { expect(e.ab).toBe(intent[e.a].ab); charges++; continue; }
           expect(e.ab).toBe(intent[e.a].ab);
           const at = intent[e.a].at;
           if (at && !down.has(at) && e.t !== 'support') expect(e.v).toBe(at);
@@ -231,6 +247,8 @@ describe('foe intents', () => {
       }
     }
     expect(checked).toBeGreaterThan(50);
+    expect(tricks).toBeGreaterThan(5);
+    expect(charges).toBeGreaterThan(0);
   });
 
   it('every foe still standing has shown its next action when the hunter’s turn comes', () => {
@@ -264,7 +282,7 @@ describe('foe intents', () => {
 describe('the reckoning', () => {
   it('every hit the hunter lands falls inside the range their turn reckoned for it', () => {
     let checked = 0;
-    for (const [level, id] of [[12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
+    for (const [level, id] of [[8, 'DNG-004'], [12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
       const s = hunter(level);
       const d = dungeonById(id)!;
       atBoss(s, d.id);

@@ -6,10 +6,12 @@
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
-import type { Ev, Reckoning, Threat, Turn } from '@/core/combat';
+import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core/combat';
+import { TRICKS, type TrickId } from '@/data/tricks';
 import { ability, COVER, finishers, POTION_HEAL, GUARD, reachOf, STATUS, STATUS_TEXT, STRIKE, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
+import { TRICK } from '@/data/tricks';
 import * as story from '@/core/story';
 import type { Dungeon, Order } from '@/core/types';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
@@ -53,7 +55,10 @@ import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 import { skillLine } from './Skills';
 
-interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: { ab: string; at?: string } }
+interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[] }
+
+/** A foe's next action as its card shows it: the engine's intent, and whether a break has cancelled it. */
+type IntentView = CombatIntent & { broken?: boolean };
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
@@ -265,7 +270,9 @@ function apply(local: UnitView[], b: Beat) {
       if (t && !t.status.includes('Guarded')) t.status.push('Guarded');
       if (w && !w.status.includes('Covered')) w.status.push('Covered');
     }
-    else if (e.t === 'intent') { const t = u(e.u); if (t) t.intent = { ab: e.ab, at: e.at }; }
+    else if (e.t === 'intent') { const t = u(e.u); if (t) { const { t: _t, u: _u, ...i } = e; t.intent = i; } }
+    else if (e.t === 'pip') { const t = u(e.v); if (t?.intent) t.intent = { ...t.intent, pips: e.left }; }
+    else if (e.t === 'break') { const t = u(e.v); if (t?.intent) t.intent = { ...t.intent, broken: true }; }
     else if (e.t === 'expire') {
       const t = u(e.v);
       if (t) t.status = t.status.filter((x) => x !== e.s);
@@ -687,7 +694,7 @@ export function Arena() {
             </div>
             <div class="arena__side arena__side--foes">
               {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-                intent={u.hp > 0 ? u.intent : undefined} party={party} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} />)}
+                intent={u.hp > 0 ? u.intent : undefined} party={party} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} />)}
             </div>
           </div>
           <ol class="arena__feed" aria-live="polite">
@@ -928,22 +935,39 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
  * On the hunter's turn it also shows where the move comes in the foes' order, what one hit would do
  * to its target as things stand, whether that fells it, and what else it inflicts.
  */
-function Intent({ intent, party, threat }: { intent: { ab: string; at?: string }; party: UnitView[]; threat?: Threat }) {
+function Intent({ intent, party, threat, self }: { intent: IntentView; party: UnitView[]; threat?: Threat; self?: UnitView[] }) {
   const a = ability(intent.ab);
   const live = party.filter((p) => p.hp > 0).length;
   const at = intent.at ? party.find((p) => p.uid === intent.at) : undefined;
+  const ally = intent.at ? self?.find((p) => p.uid === intent.at) : undefined;
   const more = a ? Math.min(reachOf(a.profile), live) - 1 : 0;
-  const who = a?.profile === 'support' ? 'rallies its side' : a?.profile === 'all' ? 'everyone' : `${at ? (at.tag === 'hero' ? 'you' : at.name) : '?'}${more > 0 ? ` +${more}` : ''}`;
-  const hit = threat?.hit;
+  const name = (x?: UnitView) => (x ? (x.tag === 'hero' ? 'you' : x.name) : '?');
+  // A behaviour reads as what it does; a move as the move and whom it goes at.
+  const what = intent.broken ? `${intent.ab} · Broken`
+    : intent.kind === 'shield' ? `Shields ${ally?.name ?? 'an ally'}`
+      : intent.kind === 'rally' ? 'Rallies the pack'
+        : intent.kind === 'mark' ? `Marks ${name(at)}`
+          : intent.kind === 'drink' ? `${intent.ab} · HP +${Math.round(TRICK.secondwind.heal * 100)}%`
+            : `${intent.ab}${intent.wind && intent.wind > 1 ? ` in ${intent.wind}` : ''} · ${a?.profile === 'support' ? 'rallies its side' : a?.profile === 'all' ? 'everyone' : `${name(at)}${more > 0 ? ` +${more}` : ''}`}`;
+  const hit = intent.broken ? null : threat?.hit;
   const when = threat ? (threat.soon ? `Acts ${ordinal(threat.order)}` : `Acts ${ordinal(threat.order)}, after your next turn`) : '';
+  const left = intent.pips ?? 0;
   return (
-    <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''} ${hit?.kill ? 'is-lethal' : ''}`}>
+    <div class={`unit__intent ${at?.tag === 'hero' ? 'is-you' : ''} ${hit?.kill ? 'is-lethal' : ''} ${intent.wind ? 'is-wind' : ''} ${intent.broken ? 'is-broken' : ''} ${intent.kind ? `is-${intent.kind}` : ''}`}>
       <div class="intent__move">
         {threat && <span class={`intent__order num ${threat.soon ? '' : 'is-later'}`} role="img" aria-label={when}>{threat.order}</span>}
-        <span class="intent__what">⟶ {intent.ab} · {who}</span>
+        <span class="intent__what">{intent.kind ? '✦' : '⟶'} {what}</span>
       </div>
-      {hit && <div class="intent__hit" role="img" aria-label={`Damage ${hit.lo} to ${hit.hi}, hit chance ${hit.chance}%`}>Damage {hit.lo}-{hit.hi} · Hit {hit.chance}%</div>}
-      {threat && (hit?.kill || threat.times > 1 || (a?.inflicts.length ?? 0) > 0) && (
+      {hit && <div class="intent__hit" role="img" aria-label={`Damage ${hit.lo} to ${hit.hi}, hit chance ${hit.chance}%`}>Damage {hit.lo}-{hit.hi} · Hit {hit.chance}%{intent.mult ? ` · ×${intent.mult}` : ''}</div>}
+      {intent.wind && !intent.broken && intent.max && (
+        // The break: a pip to each hit it can take before it breaks, the ones taken hollow.
+        <div class="intent__break" role="img" aria-label={`Break: ${left} ${left === 1 ? 'hit' : 'hits'} left of ${intent.max}`}>
+          <span class="intent__shield num">{left}</span>
+          <span class="intent__pips" aria-hidden="true">{Array.from({ length: intent.max }, (_, i) => <i key={i} class={i < left ? 'is-on' : ''} />)}</span>
+          <small>{left === 1 ? '1 hit breaks it' : `${left} hits break it`}</small>
+        </div>
+      )}
+      {threat && (hit?.kill || threat.times > 1 || (a?.inflicts.length ?? 0) > 0) && !intent.kind && (
         <div class="intent__more">
           {hit?.kill && <span class="intent__kill">{hit.kill === 'sure' ? 'Lethal' : 'May be lethal'}</span>}
           {threat.times > 1 && <span class="intent__times">Acts {threat.times} times each round</span>}
@@ -954,11 +978,13 @@ function Intent({ intent, party, threat }: { intent: { ab: string; at?: string }
   );
 }
 
-function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat, pick = 'aim' }: {
+function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat, pick = 'aim', self }: {
   u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
-  intent?: { ab: string; at?: string }; party?: UnitView[]; incoming?: number; threat?: Threat;
+  intent?: IntentView; party?: UnitView[]; incoming?: number; threat?: Threat;
   /** What a tap on it chooses: the foe to aim at, or the ally to cover. */
   pick?: 'aim' | 'cover';
+  /** The foe's own side, for an intent that names one of them. */
+  self?: UnitView[];
 }) {
   const pct = (u.hp / Math.max(1, u.mx)) * 100;
   const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''}`;
@@ -966,8 +992,11 @@ function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat, p
     <>
       <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{incoming && u.hp > 0 ? <span class="unit__incoming" title={`${incoming} foe${incoming === 1 ? ' is' : 's are'} coming for ${u.tag === 'hero' ? 'you' : u.name} next`}>◀{incoming}</span> : null}{Math.max(0, u.hp)}</span></div>
       <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />
+      {u.tricks && u.tricks.length > 0 && (
+        <div class="unit__tricks">{u.tricks.map((k) => <span key={k} class={`trick trick--${k}`} title={TRICKS[k].text}>{TRICKS[k].name}</span>)}</div>
+      )}
       {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''} ${st === 'Covered' ? 'is-cover' : ''}`} title={STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it goes at you' : undefined)}>{st}</span>)}</div>}
-      {intent && party && <Intent intent={intent} party={party} threat={threat} />}
+      {intent && party && <Intent intent={intent} party={party} threat={threat} self={self} />}
     </>
   );
   return onPick

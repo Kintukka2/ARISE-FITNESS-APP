@@ -208,7 +208,8 @@
   56% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .arena__red { animation: none; } }
-.arena__field { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; max-width: 640px; width: 100%; margin: 0 auto; }
+/* The cards give way, scrolling, before the foot does: the wheel, its throws and its lines always fit. */
+.arena__field { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 10px; padding: 12px; max-width: 640px; width: 100%; margin: 0 auto; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .arena__side { display: flex; flex-direction: column; gap: 6px; }
 .unit { padding: 7px 9px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(6, 12, 26, 0.8); transition: opacity 300ms, border-color 300ms; }
 .unit--hero { border-color: var(--mana); box-shadow: 0 0 12px rgba(79, 214, 255, 0.15); }
@@ -222,7 +223,7 @@
 .unit__status { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
 .tag { padding: 0 5px; border-radius: 3px; background: rgba(255, 77, 109, 0.16); color: var(--blood); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; }
 .tag.is-good { background: rgba(72, 245, 168, 0.16); color: var(--verdant); }
-.arena__feed { flex: 1; overflow: hidden; padding: 6px 16px; display: flex; flex-direction: column; gap: 4px; max-width: 640px; width: 100%; margin: 0 auto; }
+.arena__feed { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 6px 16px; display: flex; flex-direction: column; gap: 4px; max-width: 640px; width: 100%; margin: 0 auto; }
 .feed { font-size: 0.88rem; color: var(--ink-2); animation: feedIn 240ms var(--ease) both; }
 .feed:nth-child(n + 4) { opacity: 0.6; }
 @keyframes feedIn { from { opacity: 0; transform: translateY(-6px); } }
@@ -231,7 +232,7 @@
 .feed--round { color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; }
 .feed--room { color: var(--ember); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .feed--outcome { color: var(--verdant); font-weight: 700; }
-.arena__foot { padding: 12px 16px calc(var(--safe-b) + 14px); border-top: 1px solid rgba(255, 154, 60, 0.25); display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
+.arena__foot { flex: none; padding: 12px 16px calc(var(--safe-b) + 14px); border-top: 1px solid rgba(255, 154, 60, 0.25); display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
 .arena__foot .row { width: 100%; }
 button.unit { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .unit.is-pickable:hover { border-color: rgba(255, 77, 109, 0.7); }
@@ -310,6 +311,22 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .actwheel__hub .actwheel__use { margin-top: 3px; min-width: 62%; }
 .actwheel__close { position: absolute; right: -4px; bottom: -4px; }
 /* Throw: a chip to each kind held, under the wheel; the one picked lit. */
+/* A creature's habits, under its name: small and quiet until they matter. */
+.unit__tricks { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.trick { padding: 0 5px; border: 1px solid rgba(255, 154, 60, 0.28); border-radius: 3px; color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.5; }
+.trick--windup, .trick--channel { border-color: rgba(120, 170, 255, 0.45); color: #a9c2ff; }
+/* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
+   with the hits left, a diamond to each, the ones taken hollow. */
+.unit__intent.is-wind { border-color: rgba(255, 154, 60, 0.6); }
+.unit__intent.is-wind .intent__what { color: #ffd2a3; }
+.intent__break { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.intent__shield { display: grid; place-items: center; width: 18px; height: 20px; clip-path: polygon(50% 0, 100% 18%, 100% 60%, 50% 100%, 0 60%, 0 18%); background: linear-gradient(#7fa8ff, #3d63c9); color: #fff; font-size: 0.66rem; font-weight: 800; }
+.intent__pips { display: flex; gap: 3px; }
+.intent__pips i { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid #7fa8ff; }
+.intent__pips i.is-on { background: #7fa8ff; box-shadow: 0 0 4px rgba(127, 168, 255, 0.7); }
+.intent__break small { color: #a9c2ff; font-size: 0.6rem; }
+.unit__intent.is-broken .intent__what { color: var(--ink-3); text-decoration: line-through; }
+.unit__intent.is-shield .intent__what, .unit__intent.is-rally .intent__what, .unit__intent.is-mark .intent__what, .unit__intent.is-drink .intent__what { color: #ffd2a3; }
 .actwheel__kit { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 420px; }
 .actwheel__kitbtn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid rgba(255, 154, 60, 0.35); border-radius: 999px; background: rgba(22, 12, 5, 0.9); color: var(--ink-2); font-size: 0.72rem; font-weight: 700; cursor: pointer; }
 .actwheel__kitbtn .ico { width: 14px; height: 14px; color: var(--ember); }

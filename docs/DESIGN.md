@@ -1237,7 +1237,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    tooltip in `screens/Arena.tsx` that a phone cannot show; threat and contents on seen rooms; an
    `npm run mapstats` report of what the maps draw.
 2. **The Gate clock, Stirring and Red Gates** (built, below).
-3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics.
+3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics (built, below).
 4. **Seals, Feats and condition drops.**
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
 6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
@@ -1377,6 +1377,65 @@ screen's edges; and the anime's Red Gate, a crimson portal.
   the clock. `npm run campaign` plays Auto, which never stirs, but it does not repeat itself on the same
   code (two runs of the same commit part ways by its first hunter's 20th run, from ids drawn off the
   wall clock), so its totals cannot isolate a change until that is fixed.
+
+### More answers per turn — built
+
+The references were Darkest Dungeon's guard, a shield over the guarded hero's HP bar and "Guarded by",
+for Cover; Slay the Spire's potion belt and its Throw and Discard, for throwables; Octopath Traveler's
+shield, a badge with the hits it can still take and BREAK when it runs out, Honkai: Star Rail's
+toughness bar and the charged attack its break interrupts, and Slay the Spire's Mode Shift, for wind-ups;
+and Slay the Spire's intent icons, which tell an attack from a buff, a defend, a debuff or a sleep at a
+glance, for what creatures do besides hit.
+
+Decided with the owner: a wind-up breaks on hits, not damage (Octopath's pips, not a damage number), and
+creatures' behaviours come from their role and their family, scaled by grade: "an E-Rank undead
+guardian doesn't rise again, but it does shield an ally; a higher rank gets both".
+
+- **Cover** (`COVER` in `core/combat.ts`). A fourth basic action: the hunter guards, and every foe
+  action aimed at the ally chosen turns on the hunter, shown first as an `intent` event, as a taunt is;
+  so does any action settled on that ally until the hunter's next turn (`Unit.coveredBy`). On the
+  wheel beside Guard, in the defence's blue; picked, every ally standing can be tapped to choose whom,
+  the one with most coming at them first. A threat aimed at an ally now carries what the hunter would
+  take of it covering (`Threat.guarded`).
+- **Throwables** (`THROWABLES`, `shop.THROW_KIT`). A Flash Vial stuns one foe, a Binding Cord roots one,
+  an Ember Flask burns up to three, each with no roll unless the foe is immune. The bag holds 2 of each
+  (`THROW_MAX`); the Exchange sells them at 45, 30 and 40. A throw is an order (`Throw:flash`) paid for
+  out of the bag when it is written, as the Health Potion is, and replayed on resume. They fill the bag's
+  three empty slots, where they show and cannot be used, and one Throw slot on the action wheel, with a
+  chip to each kind held under it. Caches and Ryn do not hand them out yet.
+- **Creature behaviours** (`data/tricks.ts`). A role's at every grade: Guardians shield an ally
+  (half damage until the guardian acts again), Leaders rally the pack (attack +15-30% by grade for 2
+  rounds), Casters channel (a spell a turn ahead, ×1.4), Brutes enrage below half HP (+20-35%),
+  Assassins mark a target and strike it ×1.6, Archers pick off the one with least HP, Fliers are Veiled
+  after they act, Status Specialists always land what they inflict, a turn longer. A family's from
+  C-Rank: Undead and Aberrations stand once at 1 HP and rise with 30%, Beasts and Chimeras frenzy on the
+  wounded, Orcs, Giantkin and Goblinoids grow bloodlust with each hit, Insectoids, Plants and Slimes
+  regrow 4-7% a round, Constructs and Dragonkin halve the first hit each round, Demons and Elementals
+  strike back 20%, Humanoids and Aquatics drink once below 40%. Actions are intents; habits are tags under
+  the foe's name.
+- **Wind-ups and channels.** A boss's or Gatekeeper's heaviest move, half the times it chooses it, is
+  announced two of its actions ahead at ×1.8; a Caster channels a third of the time, a turn ahead at
+  ×1.4. Every hit landed on it takes a pip; the last breaks it, Stunned and its defences down 40% for
+  two rounds, and the move is lost. A stun of any kind cancels it too. The auto policy goes for a
+  creature winding up or channelling, whatever the orders; the pips are set, grade by grade, so that it
+  breaks about half the wind-ups and two channels in five, measured on the System's road with typical
+  hunters (wind-ups 6, 5, 3, 3, 3, 3 pips from E to S, because from C-Rank a creature acts twice a
+  round and the window is half as long; channels 3, 2, 1, 1, 2, 2).
+- **On screen.** A behaviour's intent reads as what it does (`✦ Shields Bone Scrapper`, `✦ Rallies the
+  pack`, `✦ Marks you`); a wind-up as `Ravager Claws in 2 · you` with `· ×1.8` on its damage, and under
+  it the break, a blue shield with the hits left and a diamond to each pip. Broken, the move is struck
+  through. The fight log says each: `✦ Grave Warden: Shield → Ghoul.`, `◇ Ghoul Ravager: Ravager Claws. 1
+  to go.`, `✴ Ghoul Ravager: [Broken]. Its move is lost.`
+- **Balance.** Auto never covers or throws, so neither moves a tuning. The behaviours and the auto
+  policy's rule for wind-ups do, and `npm run calibrate` moved them all. Gates, on average by grade: E
+  +12.4% harder, D -0.3%, C -10.9% easier, B -10.1%, A -11.5%, S -20.4%: at E, where the auto policy
+  breaks most wind-ups and there are no family behaviours yet, creatures came out weaker, and from C, where
+  undying, regrowth and hardened arrive, stronger. The Spire's blocks followed (E +12.7%, D +1.1%, C
+  -10.7%, B -7.4%, A -8.8%, S -8.9%), its floors moved within -8.3% and +4.5% (19 of 20), every Ascension
+  level is 8.1% to 12.9% harder, and every Trial 9.5% to 15.7% easier. `npm run balance`: the middle of
+  each grade clears where it did (72% to 82%); the floor of S rose from 57% to 74% and the top of E fell
+  from 88% to 83%; days to each rank did not move. `npm run mapstats`: side fights still cost a typical
+  hunter nothing 95% to 100% of the time below S, and 85% at S.
 
 ## What stays out
 
