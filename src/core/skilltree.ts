@@ -13,7 +13,7 @@
  */
 import { CLASS_SKILLS } from '@/data/abilities';
 import { classById } from '@/data/classes';
-import { isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_SKILLS, type TreeNode } from '@/data/tree';
+import { FORESIGHT, isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_SKILLS, type TreeNode } from '@/data/tree';
 import { gateRank, leadStat, RANK_LADDER, rankOf } from './progression';
 import * as shop from './shop';
 import type { Ability, Attrs, Save, Stat } from './types';
@@ -53,6 +53,9 @@ export function blocked(s: Save, n: TreeNode): Block | null {
   return null;
 }
 export const canLearn = (s: Save, n: TreeNode) => blocked(s, n) === null;
+
+/** Whether the hunter has Foresight: every foe's damage and chance to hit shown on its card, and on Guard and Cover. */
+export const foresees = (s: Save) => levelOf(s, FORESIGHT) > 0;
 
 /** Whether a point can go anywhere: what the Skills tile and the Inventory tab call the hunter for. */
 export const canSpend = (s: Save) => points(s) > 0 && NODES.some((n) => canLearn(s, n));
@@ -174,7 +177,8 @@ export function buildOf(s: Save): Build {
   for (const n of NODES) {
     const k = levelOf(s, n.id);
     if (!k) continue;
-    if (n.kind === 'passive' && n.passive) passives.push(n.passive);
+    // Foresight changes what a fight shows, not the fight: it is no passive of the fight's.
+    if (n.kind === 'passive' && n.passive && n.id !== FORESIGHT) passives.push(n.passive);
     for (const [a, v] of Object.entries(n.attrs ?? {})) attrs[a as Stat] = (attrs[a as Stat] ?? 0) + v * k;
     for (const [b, v] of Object.entries(n.bonus ?? {})) bonus[b] = Math.round(((bonus[b] ?? 0) + v * k) * 1000) / 1000;
   }
@@ -222,7 +226,8 @@ export function autoLearn(s: Save): number {
   let n = 0;
   for (const path of pathOrder(s)) {
     for (let guard = 0; guard < 200; guard++) {
-      const best = NODES.filter((x) => x.path === path && canLearn(s, x)).sort((a, b) => worth(s, b) - worth(s, a))[0];
+      // Foresight is the hunter's own choice: it buys nothing in a fight, and the System spends for the fight.
+      const best = NODES.filter((x) => x.path === path && x.id !== FORESIGHT && canLearn(s, x)).sort((a, b) => worth(s, b) - worth(s, a))[0];
       if (!best) break;
       learn(s, best.id);
       n++;

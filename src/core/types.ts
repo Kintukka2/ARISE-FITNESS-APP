@@ -69,7 +69,9 @@ export type PassiveStyle =
   | 'identity' | 'tempo' | 'brace' | 'escalation' | 'targeting' | 'survival'
   | 'leadership' | 'arcane' | 'pack' | 'hazard' | 'bulwark' | 'bladework' | 'keen'
   // The skill tree's own: only a hunter has them (`data/tree.ts`).
-  | 'vamp' | 'momentum' | 'ambush' | 'flurry' | 'execute' | 'deadeye' | 'thorns' | 'stalwart' | 'affliction' | 'exploit';
+  | 'vamp' | 'momentum' | 'ambush' | 'flurry' | 'execute' | 'deadeye' | 'thorns' | 'stalwart' | 'affliction' | 'exploit'
+  // Sight's Foresight: it changes what a fight shows, never the fight (`skilltree.foresees`).
+  | 'foresight';
 
 export interface Passive { name: string; style: PassiveStyle | string; text: string }
 

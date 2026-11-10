@@ -100,6 +100,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   must recalibrate. Auto never covers or throws: throwables, like potions, are the hunter's own, so the
   brief assumes none. A run keeps the throwable readied as it walked in (`run.throw`, from
   `shop.readied`), and its fights throw only that kind: readying another reaches the next Gate.
+- Sight's Foresight (`FORESIGHT` in `data/tree.ts`) only shows a foe's numbers (`skilltree.foresees`).
+  It is never a passive of the fight's build and Auto Assign never takes it, so it moves no tuning;
+  keep it so, or recalibrate.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

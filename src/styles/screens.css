@@ -234,7 +234,26 @@
 .feed--outcome { color: var(--verdant); font-weight: 700; }
 .arena__foot { flex: none; padding: 12px 16px calc(var(--safe-b) + 14px); border-top: 1px solid rgba(255, 154, 60, 0.25); display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
 .arena__foot .row { width: 100%; }
-button.unit { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.unit.is-pickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* A wind-up or a channel turns the foe's HP bar into its break: blue, a section to each hit it can still take. */
+.unit__break { display: flex; gap: 3px; height: 6px; margin-top: 4px; }
+.unit__break i { flex: 1; border-radius: 2px; background: rgba(127, 168, 255, 0.14); box-shadow: inset 0 0 0 1px rgba(127, 168, 255, 0.35); }
+.unit__break i.is-on { background: linear-gradient(#9cbcff, #3d63c9); box-shadow: 0 0 6px rgba(127, 168, 255, 0.6); }
+/* The foes coming for a card, by their places in the order: the number on each one's card. */
+/* A tab on the card's top corner, as Lethal is on a foe's panel: the foes coming for it, by their places in the order. */
+.unit { position: relative; }
+.unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 2px; padding: 0 4px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
+.unit__incoming .intent__order { min-width: 13px; height: 13px; border-color: rgba(255, 77, 109, 0.7); font-style: normal; font-size: 0.56rem; }
+.arena__side { gap: 10px; }
+/* A word on a card that tells what it is when tapped. */
+button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }
+button.is-told:not(.tag) { background: none; }
+button.tag.is-told { padding: 0 5px; }
+button.trick.is-told, button.intent__what.is-told { text-decoration: underline dotted rgba(255, 255, 255, 0.28); text-underline-offset: 3px; }
+.tipshade { position: fixed; inset: 0; z-index: 60; }
+.tip { position: fixed; display: grid; gap: 3px; padding: 8px 10px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 6px; background: rgba(14, 9, 5, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); animation: feedIn 140ms var(--ease) both; }
+.tip__title { color: var(--ink); font-size: 0.8rem; }
+.tip p { margin: 0; color: var(--ink-2); font-size: 0.74rem; line-height: 1.35; }
 .unit.is-pickable:hover { border-color: rgba(255, 77, 109, 0.7); }
 .unit.is-aimed { border-color: var(--blood); box-shadow: 0 0 0 1px var(--blood), 0 0 14px var(--blood-glow); }
 .unit.is-acting { box-shadow: 0 0 0 1px var(--mana), 0 0 16px var(--mana-glow); }
@@ -243,21 +262,19 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .unit__intent { position: relative; display: grid; gap: 3px; margin-top: 6px; padding: 5px 6px; border: 1px solid rgba(255, 154, 60, 0.16); border-radius: 4px; background: rgba(255, 255, 255, 0.025); font-size: 0.68rem; color: var(--ink-2); }
 .unit__intent.is-you { border-color: rgba(255, 77, 109, 0.38); }
 .intent__move { display: flex; align-items: flex-start; gap: 5px; min-width: 0; }
-.intent__what { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.3; padding-top: 1px; }
+.intent__what { min-width: 0; overflow: hidden; color: inherit; font-size: inherit; font-weight: inherit; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.3; padding-top: 1px; }
 .unit__intent.is-you .intent__what { color: var(--blood); font-weight: 700; }
 .intent__order { flex: none; display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 3px; border: 1px solid rgba(255, 77, 109, 0.6); border-radius: 3px; background: rgba(255, 77, 109, 0.14); color: var(--ink); font-size: 0.6rem; font-weight: 700; line-height: 1; }
 .intent__order.is-later { border-style: dashed; opacity: 0.55; }
 .intent__hit { display: flex; flex-wrap: wrap; gap: 0 8px; color: var(--ink); font-variant-numeric: tabular-nums; }
 .intent__hit > span { white-space: nowrap; }
 .intent__mult { color: #ffd2a3; font-weight: 700; }
-.intent__foot { display: grid; color: var(--ink-3); font-size: 0.6rem; line-height: 1.35; }
 .unit__intent.is-you .intent__hit { color: #ffc2cd; font-weight: 700; }
 /* Lethal sits on the panel's corner, out of its rows, and reddens its rim. */
 .unit__intent.is-lethal { margin-top: 12px; border-color: var(--sysred); box-shadow: inset 0 0 12px rgba(255, 40, 70, 0.16); }
 .unit__intent.is-lethal.is-maybe { border-style: dashed; box-shadow: none; }
 .intent__kill { position: absolute; top: -8px; right: 6px; padding: 0 5px; border-radius: 3px; background: var(--sysred); color: #fff; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.06em; line-height: 15px; text-transform: uppercase; }
 .unit__intent.is-maybe .intent__kill { background: #3a0d16; color: #ffb3c0; box-shadow: inset 0 0 0 1px var(--sysred); }
-.unit__incoming { margin-right: 6px; color: var(--blood); font-weight: 700; font-size: 0.72rem; }
 /* The orders for the next fight, under the map: Shadows' violet, as small as four choices can be. */
 .turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
 .turnbar__hint { color: var(--ink-2); font-size: 0.78rem; text-align: center; }
@@ -323,20 +340,16 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .actwheel__close { position: absolute; right: -4px; bottom: -4px; }
 /* Throw: a chip to each kind held, under the wheel; the one picked lit. */
 /* A creature's habits, under its name: small and quiet until they matter. */
-.unit__tricks { display: flex; flex-wrap: wrap; gap: 0 5px; margin-top: 4px; }
-.trick { color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
-.trick + .trick::before { content: '·'; margin-right: 5px; color: rgba(255, 255, 255, 0.25); }
+.unit__tricks { display: flex; flex-wrap: wrap; gap: 0 4px; margin-top: 4px; }
+.trick { color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
+/* The dot after a habit, so a line that breaks ends on one rather than starting with it. */
+.unit__tricks { position: relative; }
+.trick:not(:last-child)::after { content: '·'; display: inline-block; margin-left: 4px; color: rgba(255, 255, 255, 0.25); text-decoration: none; }
 .trick--windup, .trick--channel { color: #a9c2ff; }
 /* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
    with the hits left, a diamond to each, the ones taken hollow. */
 .unit__intent.is-wind:not(.is-lethal) { border-color: rgba(127, 168, 255, 0.5); }
 .unit__intent.is-wind .intent__what { color: #ffd2a3; }
-.intent__break { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-.intent__shield { display: grid; place-items: center; width: 18px; height: 20px; clip-path: polygon(50% 0, 100% 18%, 100% 60%, 50% 100%, 0 60%, 0 18%); background: linear-gradient(#7fa8ff, #3d63c9); color: #fff; font-size: 0.66rem; font-weight: 800; }
-.intent__pips { display: flex; gap: 3px; }
-.intent__pips i { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid #7fa8ff; }
-.intent__pips i.is-on { background: #7fa8ff; box-shadow: 0 0 4px rgba(127, 168, 255, 0.7); }
-.intent__break small { color: #a9c2ff; font-size: 0.6rem; }
 .unit__intent.is-broken .intent__what { color: var(--ink-3); text-decoration: line-through; }
 .unit__intent.is-shield .intent__what, .unit__intent.is-rally .intent__what, .unit__intent.is-mark .intent__what, .unit__intent.is-drink .intent__what { color: #ffd2a3; }
 /* Cover: the ally covered wears the defence's blue, and an ally that can be covered is outlined in it while Cover is picked. */

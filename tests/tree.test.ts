@@ -5,7 +5,7 @@ import * as raid from '@/core/raid';
 import { defaults, migrate, merge, SAVE_VERSION } from '@/core/save';
 import * as tree from '@/core/skilltree';
 import { CLASS_PASSIVES, CLASS_SKILLS } from '@/data/abilities';
-import { EDGE, isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TREE_PASSIVES } from '@/data/tree';
+import { EDGE, FORESIGHT, isUtility, NODES, nodeById, PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TREE_PASSIVES } from '@/data/tree';
 import { STATS } from '@/core/types';
 import { rng } from '@/core/util';
 import { glyphPath, SKILL_GLYPH } from '@/ui/icons';
@@ -26,11 +26,11 @@ function hunter(level: number) {
 const learnAll = (s: ReturnType<typeof hunter>, ids: string[]) => ids.forEach((id) => expect(tree.learn(s, id), id).not.toBeNull());
 
 describe('the tree', () => {
-  it('has five Paths of sixteen nodes, every one of them sound', () => {
+  it('has five Paths of sixteen nodes, and Sight Foresight besides, every one of them sound', () => {
     expect(PATHS.map((p) => p.key).sort()).toEqual([...STATS].sort());
     for (const p of PATHS) {
       const nodes = NODES.filter((n) => n.path === p.key);
-      expect(nodes).toHaveLength(16);
+      expect(nodes).toHaveLength(p.key === 'PER' ? 17 : 16);
       // Every class skill of the line is in its Path, and every class passive, and one skill that does no damage.
       const skills = CLASS_SKILLS.filter((x) => x.line === p.key).map((x) => x.name);
       const own = nodes.filter((n) => n.kind === 'skill').map((n) => n.skill!);
@@ -60,6 +60,18 @@ describe('the tree', () => {
     const own = TREE_PASSIVES.map((p) => p.style);
     expect(new Set(own).size).toBe(own.length);
     for (const st of own) expect([...CLASS_PASSIVES].some((p) => p.style === st)).toBe(false);
+  });
+
+  it('Foresight changes what a fight shows and nothing in it: no part of the build, and Auto Assign leaves it', () => {
+    const s = hunter(30);
+    const plain = JSON.stringify(raid.heroSpec(s, now));
+    expect(tree.learn(s, FORESIGHT)).not.toBeNull();
+    expect(tree.foresees(s)).toBe(true);
+    expect(JSON.stringify(raid.heroSpec(s, now))).toBe(plain);
+    // Auto Assign spends every other point it can, and never one on Foresight.
+    const auto = hunter(30);
+    tree.autoLearn(auto);
+    expect(tree.foresees(auto)).toBe(false);
   });
 
   it('can never be filled: not even a Sovereign at Level 100 has the points for every node', () => {

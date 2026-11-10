@@ -1458,6 +1458,24 @@ guardian doesn't rise again, but it does shield an ally; a higher rank gets both
     lines at most, `Damage 186-252  Hit 95%  ×1.8`, the break, and a quiet foot, `Inflicts Bleeding` over
     `Acts 2 times each round`. `Lethal` sits on the panel's corner and reddens its rim.
   - Auto never throws, so readying moves no tuning, and nothing else here touches the fight.
+- **Asked for after the second look.**
+  - *The break is the bar.* A creature winding up or channelling shows no pips and no `2 hits break it`:
+    its HP bar turns blue, a section to each hit it can still take, the taken ones hollow, and is its HP
+    bar again once the move lands or breaks. Its HP stays in numbers at the card's top.
+  - *A foe's numbers are earned.* `Damage 186-252 · Hit 95%` and `×1.8` show only with **Foresight**, a
+    new passive on Sight's first tier, outside its sixteen (`FORESIGHT`, `skilltree.foresees`); without
+    it, Guard says `Aimed at you: 2` and Cover `Aimed at them: 2`, and nothing says how hard. `Lethal`
+    stays for everyone. Foresight changes what a fight shows and never the fight: it is no passive of the
+    fight's build, and Auto Assign never takes it, so the balance tools' hunters are who they were and
+    no tuning moves.
+  - *The move by name.* `Winding up Warcaller Cleave`, `Channelling Frost Lance`, `Grave Strike`: no
+    arrow, no `in 2`, and never whom it goes at. The party's side says that: a card a foe is coming for
+    wears a tab at its corner, `◀` and that foe's place in the order, the number on the foe's card.
+  - *A tap tells.* `Inflicts Bleeding` and `Acts 2 times each round` left the panel. A habit, a status or a
+    move with something to tell is underlined in dots, and a tap on it opens a tip by it and aims at
+    nothing: the habit's line, the status's, or the move's (the break, what it inflicts, how often the
+    foes act). The card is no longer a button inside which nothing else could be tapped.
+
 
 ## What stays out
 

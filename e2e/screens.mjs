@@ -301,6 +301,17 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
+  // Without Foresight a foe's card names its move and never its damage or its chance to hit, nor whom it goes at.
+  if (await page.locator('.arena__side--foes .intent__hit').count()) throw new Error('A FOE SHOWS ITS DAMAGE WITHOUT FORESIGHT');
+  if (await page.locator('.arena__side--foes .intent__foot, .arena__side--foes .intent__break').count()) throw new Error('A FOE CARD STILL CARRIES ITS FOOT OR ITS PIPS');
+  // A habit tapped tells what it does, and aims at nothing.
+  const habit = page.locator('.arena__side--foes button.trick').first();
+  if (!(await habit.count())) throw new Error('A FOE HAS NO HABIT TO TAP');
+  await habit.click(); await sleep(300);
+  if (!(await page.locator('.tip').isVisible())) throw new Error('A HABIT TAPPED TOLD NOTHING');
+  await snap('arena-tip');
+  await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(200);
+  if (await page.locator('.tip').count()) throw new Error('THE TIP DID NOT CLOSE');
   // The actions are a wheel behind one button: a slot to each skill slot the rank holds, then Potion, Guard and Strike.
   await page.locator('.turnbar .actbtn').click(); await sleep(300);
   if (!(await page.locator('.actwheel').isVisible())) throw new Error('THE ACTION WHEEL DID NOT OPEN');
