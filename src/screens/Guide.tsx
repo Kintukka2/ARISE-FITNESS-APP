@@ -24,7 +24,7 @@ import { rulesAt } from '@/core/ascension';
 import { RANKS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
 import { GRADES } from '@/core/raid';
-import { SEAL_IDS, SEALS, SEALS_FROM, SEALS_PER_GATE } from '@/data/seals';
+import { SEAL_IDS, sealEmber, SEALS, SEALS_FROM, SEALS_PER_GATE } from '@/data/seals';
 import { FEAT_IDS, FEAT_PAY, FEATS, FEATS_PER_GATE } from '@/data/feats';
 import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION } from '@/data/drops';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
@@ -137,7 +137,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Cover: you guard, and everything aimed at the ally you cover comes at you instead, shown on each foe first, until your next turn.',
       'Pick Cover, then tap the ally. The hub shows how many are aimed at them, and with Foresight what of it would land on you.',
       ...THROWABLES.map((k) => `${k.name}: ${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes, the one you aimed at first` : 'the foe you aimed at'}, with no roll, unless the foe is immune. ${STATUS_TEXT[k.status]}.`),
-      `The bag holds ${THROW_MAX} of each throwable, and the Exchange sells them. Ready one on a Gate’s brief, or from the bag, and the wheel throws that one in every fight inside.`,
+      `The bag holds ${THROW_MAX} of each throwable, and the Exchange sells them. Ready one in the kit by a Gate brief’s Enter button, or from the bag, and the wheel throws that one in every fight inside.`,
       'Auto never covers or throws, and the brief’s verdict assumes nothing thrown.',
       'Every creature does something besides hit, and shows it first: an action as its next move, a habit named under its bar. Tap a habit, a status or a move on a card to read it.',
       `A creature has its role’s behaviour at every grade, and from ${FAMILY_FROM}-Rank its family’s too.`,
@@ -163,7 +163,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `${OPEN_PER_DAY} Gates stand open at a time: one of every grade, at least two at yours.`,
       'You can enter up to one grade above your own.',
       'A cleared Gate is replaced by another of its grade. The board redraws at midnight.',
-      'The brief runs the Gate 24 times with your party and grades how often it cleared.',
+      'The brief runs the Gate 24 times with your party and grades how often it cleared. Its ring holds a tick for each run, lit for each clear.',
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear pays double, once.`,
       'A clear leaves materials for the Forge, and now and then a blueprint.',
@@ -174,12 +174,12 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Seals, Feats and condition drops',
     lines: [
       `From ${SEALS_FROM}-Rank, a Gate on the board offers up to ${SEALS_PER_GATE} Seals, drawn from its map each day. A Seal is a rule you take on for stated pay.`,
-      'Tap a Seal on the brief to take it: the assessment plays it at once. The run keeps the Seals it walked in with.',
-      'Seals pay in materials, never in Mana Shards. Carried out, a run pays nothing, Seals included.',
-      ...SEAL_IDS.map((id) => `${SEALS[id].name}: ${SEALS[id].rule}. ${SEALS[id].pay}.`),
+      'Seal The Gate, on the brief, opens its Seals: tap one to press it in, and the assessment plays it at once. The run keeps the Seals it walked in with.',
+      'Seals pay Ascendant Ember on a clear, more at a higher grade, and never Mana Shards. Carried out, a run pays nothing, Seals included.',
+      ...SEAL_IDS.map((id) => `${SEALS[id].name}: ${SEALS[id].rule}. A clear pays Ascendant Ember +${sealEmber(id, 'E')}-${sealEmber(id, 'S')} by grade${SEALS[id].note ? `, ${SEALS[id].note}` : ''}.`),
       'Lightless and Wardens Wake leave the assessment where it was: the System rests only before the boss and never meets a Gatekeeper.',
       `Every Gate holds ${FEATS_PER_GATE} Feats, the same every day. Each pays once, the first time a clear meets it on that Gate: Blueprint +${FEAT_PAY.blueprints}.`,
-      'The brief says how often the System met each Feat in its runs. A Feat met wears a gold star there and on the board.',
+      'The brief’s Feats tab says how often the System met each Feat in its runs. A Feat met wears a gold star there and on the board.',
       ...FEAT_IDS.map((id) => `${FEATS[id].name}: ${FEATS[id].text}.`),
       `Every family of creature has a stated way to fall, and every boss ${CONDITION[BOSS_CONDITION].text}. Felled that way, a creature leaves its family’s part +${DROP.part}, and a boss Blueprint +${DROP.bossBlueprints}.`,
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: ${CONDITION[c].text}.`),

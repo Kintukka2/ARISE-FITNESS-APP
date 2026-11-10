@@ -10,8 +10,8 @@ import type { Dungeon, Save } from '@/core/types';
 import { dayKey } from '@/core/util';
 import { CONDITION, FAMILY_CONDITION } from '@/data/drops';
 import { FEAT, FEATS_PER_GATE } from '@/data/feats';
-import { SEAL, SEALS_PER_GATE, type SealId } from '@/data/seals';
-import { ALLOYS } from '@/data/forge';
+import { SEAL, sealEmber, SEALS_PER_GATE, type SealId } from '@/data/seals';
+import { ALLOYS, EMBER } from '@/data/forge';
 import { typicalHunter } from '../scripts/hunters';
 import { walk } from './walk';
 
@@ -92,7 +92,7 @@ describe('Seals', () => {
     expect(shop.held(s, 'hp')).toBe(2);
   });
 
-  it('pays in materials only: more alloy for Swollen, every part for Short-Handed, a blueprint for Dry', () => {
+  it('pays in Ascendant Ember on a clear, by the Gate’s grade, never in shards; Wardens Wake only if the Gatekeeper fell', () => {
     const d = board.find((x) => x.rank === 'C' && x.elite)!;
     const paid = (seals: SealId[]) => {
       const s = typicalHunter(30, 'C', 'pay');
@@ -105,11 +105,13 @@ describe('Seals', () => {
       return { res, shards: s.wallet.shards - shards };
     };
     const plain = paid([]);
-    const sealed = paid(['swollen', 'shorthanded', 'dry']);
-    expect(sealed.res.mats[ALLOYS.C.id]).toBeGreaterThan(plain.res.mats[ALLOYS.C.id]);
-    expect(sealed.res.blueprints.length).toBeGreaterThan(plain.res.blueprints.length);
-    for (const k of ['part-hide', 'part-bone', 'part-core']) expect(sealed.res.mats[k] ?? 0).toBeGreaterThanOrEqual((plain.res.mats[k] ?? 0) + SEAL.shorthanded.parts);
-    // Never Mana Shards.
+    const sealed = paid(['swollen', 'shorthanded', 'dry', 'wardens']);
+    const ember = (r: typeof plain.res) => r.mats[EMBER.id] ?? 0;
+    // The System's walk never meets the Gatekeeper, so Wardens Wake pays nothing here.
+    expect(ember(sealed.res) - ember(plain.res)).toBe(sealEmber('swollen', 'C') + sealEmber('shorthanded', 'C') + sealEmber('dry', 'C'));
+    expect(sealEmber('alone', 'S')).toBeGreaterThan(sealEmber('alone', 'D'));
+    // Nothing else moves, and never Mana Shards.
+    expect(sealed.res.mats[ALLOYS.C.id]).toBe(plain.res.mats[ALLOYS.C.id]);
     expect(sealed.shards).toBe(plain.shards);
   });
 

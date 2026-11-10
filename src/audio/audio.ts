@@ -194,6 +194,13 @@ export const sfx = {
     tone(300 + p * 420, 0, 0.07, 'triangle', 0.075, 340 + p * 480);
     noise(0, 0.05, 0.035, 900 + p * 1400);
   },
+  /** A Seal pressed into the Gate: a dull thud, the wax giving under it. */
+  stamp: () => {
+    if (!on()) return;
+    tone(150, 0, 0.16, 'triangle', 0.26, 70);
+    noise(0.01, 0.09, 0.09, 520);
+    tone(420, 0.06, 0.08, 'sine', 0.06, 300);
+  },
   sealed: () => {
     if (!on()) return;
     tone(140, 0, 0.26, 'sawtooth', 0.2, 60);

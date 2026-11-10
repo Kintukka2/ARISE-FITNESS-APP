@@ -33,7 +33,7 @@ import * as clock from './clock';
 import * as sealing from './seals';
 import type { SealId } from '@/data/seals';
 import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION, type ConditionId } from '@/data/drops';
-import { SEAL } from '@/data/seals';
+import { sealEmber } from '@/data/seals';
 import { FEAT_PAY, type FeatId } from '@/data/feats';
 import * as feats from './feats';
 import { LOG_MAX } from './save';
@@ -911,18 +911,15 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     const fam = enemyById(id)?.family;
     if (fam && r() < DROPS.part) parts.push({ [forge.partId(FAMILY_PART[fam] ?? 'hide')]: 1 });
   }
-  // Seals pay in materials: Swollen more alloy, Lightless a part a fight won, Short-Handed every part on the clear.
-  const on = (id: SealId) => extra.seals.includes(id);
-  if (on('swollen')) alloy = Math.round(alloy * (1 + SEAL.swollen.alloy));
-  if (on('lightless')) for (let i = 0; i < run.won; i++) parts.push({ [partOfGate(d, r)]: SEAL.lightless.part });
-  if (on('shorthanded') && cleared) for (const k of ['hide', 'bone', 'core'] as const) parts.push({ [forge.partId(k)]: SEAL.shorthanded.parts });
+  // Seals pay in Ember on a clear, by the Gate's grade; Wardens Wake only if the Gatekeeper it woke fell.
+  const sealed = cleared ? extra.seals.filter((id) => id !== 'wardens' || !!run.tally?.keeper).reduce((n, id) => n + sealEmber(id, d.rank), 0) : 0;
   // A creature felled the way its condition asks leaves its family's part twice over; a boss, a blueprint below.
   for (const x of extra.drops) if (!x.boss) parts.push({ [forge.partId(FAMILY_PART[enemyById(x.ref)?.family ?? ''] ?? 'hide')]: DROP.part });
   const trophy = cleared ? forge.trophyAt(d) : null;
   const mats = forge.addUp(
     { [forge.alloyId(rank)]: alloy + (g === 0 ? low : 0) }, g > 0 ? { [forge.alloyId(lower)]: low } : {}, ...parts,
     trophy ? { [trophy]: 1 } : {}, cleared && level > 0 ? { [forge.EMBER.id]: Math.ceil(DROPS.ember * level) } : {},
-    cleared && on('heavier') ? { [forge.EMBER.id]: SEAL.heavier.ember } : {},
+    sealed ? { [forge.EMBER.id]: sealed } : {},
   );
   // Blueprints: a set's from its home Gate, then the Gate's own.
   const blueprints: string[] = [];
@@ -943,12 +940,7 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     if ((first && !firstPaid) || (!first && r() < BLUEPRINTS.clear)) leave(up());
   }
   for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
-  // Wardens Wake: the vault, opened, always leaves one.
-  if (vault && (on('wardens') || r() < BLUEPRINTS.vault)) leave(rank);
-  if (cleared) {
-    for (let i = 0; i < (on('dry') ? SEAL.dry.blueprints : 0); i++) leave(rank);
-    if (on('alone')) leave(RANKS[Math.min(5, g + SEAL.alone.up)]);
-  }
+  if (vault && r() < BLUEPRINTS.vault) leave(rank);
   // A boss felled the way its condition asks, and each Feat met for the first time, leave a blueprint.
   for (const x of extra.drops) if (x.boss) leave(rank);
   for (let i = 0; i < extra.feats * FEAT_PAY.blueprints; i++) leave(rank);

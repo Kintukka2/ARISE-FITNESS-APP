@@ -797,8 +797,8 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
 - **Tracking a material** (`s.tracked`, `forge.toggleTrack`). A material tapped in a recipe's tiles or
   the Forge's Materials is tagged with the Forge's anvil, and so is every Gate on the board that
   leaves it (`forge.sourcesOf`: its grade's alloy and the grade below's, the parts its creatures'
-  families leave, its trophy, and Ember where it is walked into at Ascension); the brief lists the
-  tracked materials it leaves. The part every clear leaves is not counted: a part is where its
+  families leave, its trophy, and Ember where it is walked into at Ascension); the brief's Materials
+  tile carries the anvil and the art of each tracked material it leaves. The part every clear leaves is not counted: a part is where its
   families are. Tapped again, the tag goes. A blueprint's Track Missing tracks everything its recipe is
   short of in one tap (`forge.trackMissing`), and the same button then stops tracking them.
 - **Secret Quests:** Made, Not Found (forge an item), Second Nature (a weapon at Familiarity 5) and
@@ -1487,26 +1487,28 @@ Abyss stars and Rogue Legacy 2's Scars, graded against a par; and Etrian Odyssey
 condition to each creature, and Monster Hunter's reward screen, which says how each extra was earned.
 Their screenshots are in [research/references/step-4-seals-feats-drops](research/references/step-4-seals-feats-drops/).
 
-Decided with the owner: Seals pay in materials only, never Mana Shards; Feats and condition drops count
+Decided with the owner: Seals pay in Ascendant Ember only, never Mana Shards (they paid in alloys, parts
+and blueprints at first; the owner moved them to Ember); Feats and condition drops count
 however they are met, by the hunter's hand or the System's; a Feat pays once, the first time it is met on
 its Gate, and more for it; and a creature's condition drop is a small mark on its card, read with a tap.
 
 - **Seals** (`data/seals.ts`, `core/seals.ts`). From D-Rank, each Gate on the board offers up to three a
   day, drawn from its day's map (`seals.offered`): only those that would change something there (a
   Gatekeeper to wake, a rest to darken, Ascension open for Heavier Air) and that the run's Ascension level
-  does not already play. Each is one of Ascension's rules taken on its own, with stated pay:
+  does not already play. Each is one of Ascension's rules taken on its own. On a clear each pays Ascendant
+  Ember, its weight times its Gate's grade's share (`SEAL_GRADE`: 1 at E and D, 2 at C and B, 3 at A and S):
 
-  | Seal | Rule | Pay |
-  |---|---|---|
-  | Swollen | Creatures: HP +25% | Alloy +40% |
-  | Lightless | Rests heal nothing | Each fight won: part +1 |
-  | Short-Handed | The Association sends 1 hunter fewer | Clear: every part +2 |
-  | Wardens Wake | The Gatekeeper: strength +25% | Its vault: a blueprint, always |
-  | Dry | No Health Potion, and nothing healed after a fight | Clear: blueprint +1 |
-  | Never Alone | The boss stands with one of its creatures | Clear: a blueprint of the grade above |
-  | Heavier Air | Creatures fight as if Ascension +1 | Clear: Ascendant Ember +2 |
+  | Seal | Rule | Weight | Ember, E to S |
+  |---|---|---|---|
+  | Swollen | Creatures: HP +25% | 2 | 2 to 6 |
+  | Lightless | Rests heal nothing | 1 | 1 to 3 |
+  | Short-Handed | The Association sends 1 hunter fewer | 2 | 2 to 6 |
+  | Wardens Wake | The Gatekeeper: strength +25% | 2 | 2 to 6, only if it falls |
+  | Dry | No Health Potion, and nothing healed after a fight | 2 | 2 to 6 |
+  | Never Alone | The boss stands with one of its creatures | 3 | 3 to 9 |
+  | Heavier Air | Creatures fight as if Ascension +1 | 3 | 3 to 9 |
 
-  Tapped on the brief, a Seal is taken, and the brief's 24 runs play it at once (`raid.project` takes the
+  Pressed in the Seals' window, a Seal is taken, and the brief's 24 runs play it (`raid.project` takes the
   Seals), so the assessment and the pay move together. The run keeps the Seals it walked in with
   (`run.seals`), and every rule they play reads that list, as every Ascension rule reads `run.ascension`.
   Carried out, a run pays nothing, Seals included. Lightless and Wardens Wake leave the assessment where it
@@ -1537,24 +1539,53 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
 - **Balance.** No fight changes for any of it: calibration plays no Seals, and Feats and condition drops
   are read off fights already fought, so no tuning moves and `npm run calibrate` was not rerun. The
   campaign takes every Seal a Gate offers while the brief, read at 24 runs, says 75% or better. Over 120
-  days, against the same campaign on `main`:
+  days, against the same campaign on `main`, with the Seals' first pay in materials and their pay now in
+  Ember:
 
-  | | One evening a day, `main` | This | Three sessions a day, `main` | This |
-  |---|---|---|---|---|
-  | Days to A, S, N | 30, 56, 108 | 36, 63, 112 | 18, 33, 61 | 29, 45, 74 |
-  | Carried out | 4 | 8 | 29 | 44 |
-  | Runs under Seals | | 109 | | 147 |
-  | Blueprints from Gates | 81 | 243 | 97 | 241 |
-  | Feats met first, condition drops (bosses) | | 55, 1115 (57) | | 58, 1798 (82) |
-  | Monster Hide left on day 120 | 519 | 1941 | 943 | 2816 |
-  | Gear score on day 112 | 1566 | 1566 | 1860 | 1790 |
+  | | Days to A, S, N | Carried out | Runs under Seals | Blueprints from Gates | Ember from Seals | Ember left on day 120 | Gear score on day 112 |
+  |---|---|---|---|---|---|---|---|
+  | One evening a day, `main` | 30, 56, 108 | 4 | | 81 | | | 1566 |
+  | Seals paying materials | 36, 63, 112 | 8 | 109 | 243 | | | 1566 |
+  | Seals paying Ember | 37, 63, 112 | 12 | 113 | 170 | 1506 | 1667 | 1566 |
+  | Three sessions a day, `main` | 18, 33, 61 | 29 | | 97 | | | 1860 |
+  | Seals paying materials | 29, 45, 74 | 44 | 147 | 241 | | | 1790 |
+  | Seals paying Ember | 23, 39, 68 | 36 | 153 | 199 | 1952 | 2185 | 1847 |
 
-  Seals as priced cost a hunter who takes them on a 75% reading days to every rank: a run carried out
-  locks the hunter out for 12 hours, and a sealed one is carried out about one time in seven. What they
-  pay is materials, which already piled up on `main` and now pile higher; the gear score does not move.
-  Shards stay the constraint (spent to the last on upgrades either way). The two campaigns of one commit
-  differ by a few days a rank, since the campaign does not repeat itself, but not by this much. Open:
-  whether Seals should pay in something scarcer, or the campaign take them only on a surer reading.
+  Feats met for the first time and condition drops (bosses felled while Broken) on the Ember run: 53 and
+  1055 (46) one evening a day, 69 and 2123 (60) three sessions a day. Taken on a 75% reading, Seals cost
+  days to every rank: a run carried out locks the hunter out for 12 hours, and a sealed one is carried out
+  about one time in seven. Paid in Ember, they no longer pile up alloys and parts, and Dry and Never Alone
+  no longer hand out blueprints, so the blueprints from Gates fall back toward `main`'s, the extra being
+  the Feats' and the bosses'. A sealed clear pays about 13 Ember, where a clear at Ascension 8 leaves 4,
+  and Ember is not what holds a step past perfect back: the upgrade limit and shards do. Both hunters end the 120 days with more Ember than the Seals paid them, and the gear score
+  does not move. The two campaigns of one commit differ by a few days a rank, since the campaign does not
+  repeat itself. Open: what else Ember buys (DESIGN, "New power sinks cost Ember"), or Seals paying less of
+  it, before the Ember they pay means anything.
+
+### The brief, redrawn — built
+
+The brief was every part of a Gate stacked top to bottom. The references were Minecraft Dungeons'
+mission panel (the level, the power, what drops, and one button), Hades' Pact of Punishment (a window of
+its own for the conditions, a gauge that fills as they are taken) and Solo Leveling: Arise's boss
+challenge (the boss, its missions and Start side by side), all in
+[research/references/step-4-seals-feats-drops](research/references/step-4-seals-feats-drops/).
+
+- **The head** is the Gate's portal inside the assessment's ring: an arc in the verdict's colour and a tick
+  for each of the System's 24 runs, lit for each it cleared, so the clear rate and the count it comes from
+  are one picture. The verdict stands beside it in large type, with the road's length and the hunter's HP
+  while hurt. Under Seals that move it, the rate without them stays on the ring as a faint arc behind.
+- **What it pays** is one row of tiles: the clear, the bounty while the Gate has never been cleared, the
+  materials (the tracked ones marked in the Forge's ember), and the Seals' Ember once one is taken.
+- **The Seals** are one button with their wax on it, grey while open, red once pressed, opening their own
+  window (`SealSheet`): the gauge (the ring, the verdict, `Clear rate: 96% → 46%` and the Ember, a bar
+  filled by each Seal's share), and a card to each Seal that stamps its wax down when taken. The brief and
+  the window share the Seals set on a Gate (kept by Gate and day while the app stays open) and the
+  projections made for them, so a tap replays the 24 runs once, after the stamp, the last reading standing
+  meanwhile.
+- **The rest** is four tabs, each with a count under its name: `Threat`, `Feats`, `Map` and `Party`.
+- **The kit** is docked beside Enter The Gate, the Health Potions and the throwable readied with their
+  counts, and opens a window of its own (`KitSheet`): the satchel and the Exchange, and a row to each
+  throwable to ready.
 
 ## What stays out
 

@@ -1342,40 +1342,127 @@ button.dmap__floor { cursor: pointer; }
 .sysframe .gnode { border-color: var(--sys-hair); border-radius: 0; }
 .sysframe .empty { border-color: var(--sys-hair); border-radius: 0; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .sysframe .linkish { color: var(--sys-ink); }
-/* THE BRIEF: a mission's planning sheet. The banner, the assessment, what it pays, the threat, the map, the party, and the way in docked at the foot. */
-.brief { gap: 12px; }
-.bhead { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 12px 10px 8px; border-color: color-mix(in srgb, var(--rc) 55%, var(--sys-hair)); background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--rc) 22%, transparent), transparent 60%), rgba(6, 4, 2, 0.55); }
-.bhead__portal.ga-portal { width: 64px; height: 64px; }
-.bhead__portal .ga-portal__core { inset: 11px; }
-.bhead__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.bhead__body > .label { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
-.bhead__file { margin: 0; font-size: 0.8rem; line-height: 1.45; color: var(--sys-ink); }
-.bhead__file .label { margin-right: 2px; font-size: 0.56rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bhead__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+/*
+ * THE BRIEF: a mission's planning sheet. Its head, the Gate's portal inside the assessment's ring; one row of
+ * what it pays; the Seals behind one button; what it holds behind four tabs; the kit and the way in docked.
+ */
+.brief { gap: 10px; }
 .gtag.is-done { --tc: var(--verdant); }
 .gtag.is-ascension { --tc: var(--gold); }
-/* The assessment: its ring, in the verdict's colour, and the lines that bear on it. */
-.bassess { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 12px; }
-.bassess__ring { position: relative; display: grid; place-items: center; width: 64px; height: 64px; }
-.bassess__ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); filter: drop-shadow(0 0 4px currentColor); }
-.bassess__ring circle { fill: none; stroke-width: 4; }
-.bassess__track { stroke: rgba(255, 255, 255, 0.1); }
-.bassess__arc { stroke: currentColor; stroke-linecap: round; animation: saFill 1000ms var(--ease) both; }
-.bassess__ring b { position: relative; font-size: 1.05rem; font-weight: 800; text-shadow: 0 0 8px currentColor; }
-.bassess__ring b small { font-size: 0.6rem; }
-.bassess__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bassess__body b { font-size: 0.95rem; }
-.bassess__body small { font-size: 0.72rem; line-height: 1.35; }
-/* What it pays: four small cells, two to a row. */
-.brewards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.brewards__one { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; }
-.brewards__one > .label { font-size: 0.54rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.brewards__one > b { font-size: 0.95rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
-.brewards__moves { display: inline-flex; align-items: center; gap: 4px; }
-.brewards__moves .ico { width: 11px; height: 11px; opacity: 0.8; }
-.brewards__one > small { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.brewards__one.is-bounty { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); }
-.brewards__one.is-bounty > b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+
+/* The head. The verdict's colour runs through the ring, its ticks and the verdict itself. */
+.bhero, .sgauge { --vc: var(--verdant); --vg: var(--verdant-glow); }
+.bhero[data-tone='even'], .sgauge[data-tone='even'] { --vc: var(--gold); --vg: var(--gold-glow); }
+.bhero[data-tone='over'], .sgauge[data-tone='over'] { --vc: var(--blood); --vg: var(--blood-glow); }
+.bhero { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 14px; overflow: hidden; padding: 12px 12px 14px 8px;
+  border: 1px solid color-mix(in srgb, var(--rc) 50%, var(--sys-hair));
+  background: radial-gradient(80% 120% at 0% 50%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 62%), radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, var(--vc) 10%, transparent), transparent 70%), rgba(6, 4, 2, 0.6);
+  animation: bheroIn 520ms var(--ease) both; }
+/* A line of light sweeps the head once as the brief opens: the System reading the Gate. */
+.bhero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--vc) 16%, transparent) 50%, transparent 70%); transform: translateX(-110%); animation: bheroScan 1300ms 180ms var(--ease) both; pointer-events: none; }
+.bhero__ring { position: relative; display: grid; place-items: center; width: 112px; height: 112px; }
+.aring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--vc); filter: drop-shadow(0 0 5px var(--vg)); }
+.aring circle { fill: none; }
+.aring__track { stroke: rgba(255, 255, 255, 0.08); stroke-width: 4; }
+.aring__arc { stroke: currentColor; stroke-width: 4; stroke-linecap: round; transition: stroke-dasharray 700ms var(--ease), stroke 400ms; animation: saFill 1100ms var(--ease) both; }
+.aring__ghost { stroke: rgba(255, 255, 255, 0.3); stroke-width: 4; stroke-linecap: round; transition: stroke-dasharray 700ms var(--ease); }
+.aring__tick { stroke: rgba(255, 255, 255, 0.13); stroke-width: 2; stroke-linecap: round; transition: stroke 260ms calc(var(--i) * 18ms), opacity 260ms; }
+.aring__tick.is-on { stroke: currentColor; animation: tickIn 420ms calc(240ms + var(--i) * 26ms) var(--ease) both; }
+.bhero__portal.ga-portal { width: 72px; height: 72px; }
+.bhero__portal .ga-portal__core { inset: 12px; }
+.bhero__pct { position: absolute; bottom: -2px; left: 50%; z-index: 1; padding: 1px 9px; border: 1px solid var(--vc); border-radius: 999px; background: rgba(4, 5, 6, 0.94); color: var(--vc); font-size: 0.86rem; font-weight: 800; line-height: 1.35; text-shadow: 0 0 8px var(--vg); transform: translateX(-50%); transition: color 300ms, border-color 300ms; }
+.bhero__pct small { font-size: 0.6rem; }
+.bhero__body { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bhero__grade { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
+.bhero__assess { font-size: 1.55rem; font-weight: 800; line-height: 1.1; letter-spacing: 0.01em; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
+.bhero__body > small { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.bhero__body > small b { color: #fff; }
+.bhero__was { text-decoration: line-through; opacity: 0.6; }
+.bhero__body > small.bhero__depth { display: block; }
+.bhero__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
+.bhero__hp { color: var(--blood) !important; }
+/* While the System replays the Gate under the Seals just set, what it reads waits, breathing. */
+.bhero.is-pending .bhero__pct, .bhero.is-pending .bhero__assess, .sgauge.is-pending .sgauge__ring b, .sgauge.is-pending .sgauge__verdict { animation: projWait 700ms ease-in-out infinite alternate; }
+.bhero.is-sealed { border-color: color-mix(in srgb, var(--sysred) 55%, var(--sys-hair)); box-shadow: inset 0 0 22px rgba(255, 47, 62, 0.12); }
+@keyframes bheroIn { from { opacity: 0; transform: translateY(6px) scale(0.985); } }
+@keyframes bheroScan { to { transform: translateX(110%); } }
+@keyframes tickIn { from { opacity: 0; } 50% { opacity: 1; stroke: #fff; } }
+@keyframes projWait { to { opacity: 0.45; } }
+
+.bfile { display: -webkit-box; overflow: hidden; width: 100%; margin: -2px 0 0; padding: 0 2px; border: 0; background: none; color: var(--sys-ink); font: inherit; font-size: 0.76rem; line-height: 1.45; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 2; cursor: pointer; }
+.bfile.is-full { display: block; }
+.bfile .label { margin-right: 2px; font-size: 0.54rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bhero__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: -2px; }
+.bhero__tags:empty { display: none; }
+.basc { display: flex; gap: 6px; margin: 0; padding: 6px 8px; border-left: 2px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent); font-size: 0.7rem; line-height: 1.4; color: var(--sys-ink); }
+.basc .ico { flex: none; width: 13px; height: 13px; margin-top: 1px; color: var(--gold); }
+
+/* What a clear pays: one row of tiles, the materials a little wider; the Seals' Ember joins it, in the Forge's ember, once one is taken. */
+.bpay { display: flex; gap: 6px; }
+.bpay__one { position: relative; display: flex; flex: 1 1 0; flex-direction: column; gap: 2px; min-width: 0; padding: 7px 8px 8px; animation: payIn 380ms var(--ease) both; }
+.bpay__one:nth-child(2) { animation-delay: 50ms; } .bpay__one:nth-child(3) { animation-delay: 100ms; } .bpay__one:nth-child(4) { animation-delay: 150ms; }
+.bpay__one.is-mat { flex-grow: 1.35; }
+.bpay.is-crowded .bpay__one { padding: 7px 6px 8px; }
+.bpay.is-crowded .bpay__one > b { font-size: 0.78rem; }
+.bpay__one > b.num { white-space: nowrap; }
+.bpay__one > .label { font-size: 0.5rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bpay__one > b { font-size: 0.86rem; font-weight: 700; line-height: 1.2; color: #fff; overflow-wrap: anywhere; text-shadow: var(--sys-glow); }
+.bpay__one > small { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 0.62rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bpay__mat { display: flex; align-items: center; gap: 5px; overflow-wrap: normal !important; }
+.bpay__mat .matart { flex: none; }
+.bpay__one.is-bounty { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); background: linear-gradient(180deg, rgba(72, 245, 168, 0.1), transparent 70%); }
+.bpay__one.is-bounty > b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.bpay__one.is-tracked { border-color: color-mix(in srgb, var(--forge) 60%, transparent); box-shadow: 0 0 10px var(--forge-glow); }
+.bpay__tracked { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 2px; }
+.bpay__trackmark { width: 13px; height: 13px; }
+.bpay__one.is-ember { border-color: color-mix(in srgb, var(--ember) 70%, transparent); background: radial-gradient(90% 90% at 50% 0%, rgba(255, 140, 50, 0.2), transparent 70%), rgba(14, 6, 2, 0.7); box-shadow: 0 0 12px var(--ember-glow); animation: emberIn 520ms var(--ease) both; }
+.bpay__one.is-ember > b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.bpay__one.is-ember > small { color: var(--ember); }
+@keyframes payIn { from { opacity: 0; transform: translateY(5px); } }
+@keyframes emberIn { from { opacity: 0; transform: scale(0.7); filter: brightness(2.4); } 60% { filter: brightness(1.4); } }
+
+/* A Seal in wax: grey and dull while open, red and lit once pressed. */
+.sealart { flex: none; overflow: visible; color: #3a3f4a; transition: color 260ms, filter 260ms; }
+.sealart__wax { fill: currentColor; stroke: rgba(255, 255, 255, 0.12); stroke-width: 0.5; }
+.sealart__rim { fill: none; stroke: rgba(0, 0, 0, 0.38); stroke-width: 1.1; }
+.sealart__key { fill: rgba(0, 0, 0, 0.42); }
+.sealart.is-on { color: #c2121f; filter: drop-shadow(0 0 6px rgba(255, 47, 62, 0.55)); }
+.sealart.is-on .sealart__wax { stroke: rgba(255, 160, 160, 0.45); }
+
+/* The Seals' button: their wax, overlapping, and what they are. */
+.bsealbtn { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; overflow: hidden; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--sysred) 45%, var(--sys-hair)); background: linear-gradient(90deg, rgba(60, 6, 14, 0.45), rgba(4, 6, 10, 0.6) 70%); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; transition: border-color 200ms, box-shadow 200ms; }
+.bsealbtn:active { transform: scale(0.99); }
+.bsealbtn__wax { display: flex; flex: none; padding-left: 2px; }
+.bsealbtn__wax .sealart { margin-left: -10px; }
+.bsealbtn__wax .sealart:first-child { margin-left: 0; }
+.bsealbtn__wax .sealart.is-on { animation: waxIn 420ms calc(var(--i) * 70ms) var(--ease) both; }
+.bsealbtn__body { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.bsealbtn__body b { display: -webkit-box; overflow: hidden; font-size: 0.84rem; font-weight: 700; line-height: 1.3; color: #fff; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bsealbtn__body small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bsealbtn__go { flex: none; width: 16px; height: 16px; color: var(--sysred); }
+.bsealbtn.is-on { border-style: solid; border-color: var(--sysred); background: linear-gradient(90deg, rgba(90, 8, 18, 0.6), rgba(30, 4, 8, 0.6)); box-shadow: inset 0 0 18px rgba(255, 47, 62, 0.2), 0 0 12px rgba(255, 47, 62, 0.18); }
+.bsealbtn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(255, 80, 90, 0.14) 50%, transparent 65%); transform: translateX(-110%); animation: bheroScan 3.4s 1.2s ease-in-out infinite; pointer-events: none; }
+.bsealbtn.is-on::after { display: none; }
+@keyframes waxIn { from { opacity: 0; transform: scale(1.6) rotate(-16deg); } 70% { transform: scale(0.94) rotate(3deg); opacity: 1; } }
+
+/* The tabs: a name over a count each, a bar sliding under the one shown. */
+.btabs { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 2px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.6); }
+.btabs::after { content: ''; position: absolute; bottom: -1px; left: calc(100% / var(--n) * var(--at)); width: calc(100% / var(--n)); height: 2px; background: var(--rc); box-shadow: 0 0 10px var(--rc); transition: left 320ms var(--ease); }
+.btabs__one { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; min-height: 48px; padding: 6px 2px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font: inherit; cursor: pointer; transition: color 200ms, background 200ms; }
+.btabs__one + .btabs__one { border-left: 1px solid var(--sys-hair); }
+.btabs__one b { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.btabs__one small { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; font-weight: 700; }
+.btabs__one small .ico { width: 11px; height: 11px; }
+.btabs__one.is-on { color: #fff; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--rc) 16%, transparent)); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
+.btabs__one.is-on small { color: var(--rc); }
+.btabs__stars { display: inline-flex; gap: 1px; letter-spacing: 0; }
+.btabs__stars i { font-style: normal; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.btabs__stars i.is-on { color: var(--gold); text-shadow: 0 0 6px var(--gold-glow); }
+.btab-panel { display: flex; flex-direction: column; gap: 8px; min-height: 180px; animation: tabIn 300ms var(--ease) both; }
+@keyframes tabIn { from { opacity: 0; transform: translateX(calc(var(--dir) * 22px)); } }
+.bthreat__sum { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.bthreat__sum .ico { width: 14px; height: 14px; color: #c9a7ff; }
+.bthreat__one { animation: payIn 320ms calc(var(--i) * 40ms) var(--ease) both; }
 /* The threat: the boss's card, then a chip to each creature and the gatekeeper; violet where it already serves. */
 .brief .bosscard { position: relative; }
 .bthreat__bound { margin-left: auto; color: #c9a7ff; filter: drop-shadow(0 0 6px var(--arcane-glow)); }
@@ -1391,29 +1478,7 @@ button.dmap__floor { cursor: pointer; }
 .bthreat__name small.bthreat__drop, .bosscard small.bthreat__drop { display: inline-flex; align-items: center; gap: 4px; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
 .bthreat__drop .ico { width: 11px; height: 11px; flex: none; }
 /* Seals: a row to each, the rule in red and the pay in green; taken, the row is red-rimmed and locked. */
-.bseals, .bfeats { display: grid; gap: 6px; padding: 10px; }
-.bseals__count { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.bseal { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 1px solid var(--sys-hair); border-radius: 4px; background: rgba(4, 14, 24, 0.6); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; }
-.bseal__box { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border: 1px solid color-mix(in srgb, var(--sys-ink) 45%, transparent); border-radius: 3px; }
-.bseal__box .ico { width: 13px; height: 13px; color: #fff; }
-.bseal__body { display: grid; gap: 1px; min-width: 0; }
-.bseal__body b { font-size: 0.78rem; }
-.bseal__rule { color: var(--blood); font-size: 0.68rem; }
-.bseal__pay { color: var(--verdant); font-size: 0.68rem; }
-.bseal.is-on { border-color: var(--sysred); background: rgba(60, 8, 18, 0.55); box-shadow: inset 0 0 12px rgba(255, 40, 70, 0.18); }
-.bseal.is-on .bseal__box { border-color: var(--sysred); background: var(--sysred); }
-.bseal:disabled { cursor: default; }
-.bseal:disabled:not(.is-on) { opacity: 0.45; }
 /* Feats: a star to each, gold once met, the System's odds and the pay at the side. */
-.bfeat { display: flex; align-items: center; gap: 10px; padding: 6px 2px; border-top: 1px solid var(--sys-hair); }
-.bfeat:first-of-type { border-top: 0; }
-.bfeat__star { flex: none; width: 18px; height: 18px; color: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
-.bfeat.is-done .bfeat__star { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
-.bfeat__body { display: grid; gap: 1px; min-width: 0; flex: 1; }
-.bfeat__body b { font-size: 0.76rem; }
-.bfeat__body small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bfeat__side { display: grid; justify-items: end; gap: 1px; flex: none; font-size: 0.62rem; }
-.bfeat__side small { font-size: 0.62rem; }
 .bthreat__one.is-elite { border-color: color-mix(in srgb, var(--gold) 45%, var(--sys-hair)); }
 .bthreat__one.is-elite .bthreat__name small { color: var(--gold); }
 .bthreat__one.is-bound { border-color: color-mix(in srgb, var(--arcane) 55%, transparent); background: color-mix(in srgb, var(--arcane) 8%, transparent); }
@@ -1427,20 +1492,110 @@ button.dmap__floor { cursor: pointer; }
 .bparty__who small { font-size: 0.6rem !important; }
 .sysframe .brief .bparty li.is-you { border-color: color-mix(in srgb, var(--mana) 55%, transparent); }
 .sysframe .brief .bparty li.is-shadow { border-color: color-mix(in srgb, var(--arcane) 50%, transparent); background: color-mix(in srgb, var(--arcane) 8%, rgba(3, 8, 20, 0.45)); }
-.bsatchel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border: 1px dashed var(--sys-hair); font-size: 0.74rem; }
-.bsatchel > .num { margin-left: auto; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bthrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border: 1px dashed var(--sys-hair); }
-.bthrow__kit { display: flex; flex-wrap: wrap; gap: 6px; }
-.bthrow__one { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid rgba(255, 154, 60, 0.3); border-radius: 999px; background: rgba(22, 12, 5, 0.85); color: var(--ink-2); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
-.bthrow__one .ico { width: 14px; height: 14px; color: var(--ember); }
-.bthrow__one b { color: var(--ink-3); font-weight: 600; }
-.bthrow__one.is-on { border-color: var(--ember); background: rgba(255, 154, 60, 0.2); color: var(--ink); box-shadow: 0 0 8px var(--ember-glow); }
-.bthrow__one.is-on b { color: var(--ink); }
+/* The Feats: a row each, its star gold once met, the System's odds as a thin bar under its objective. */
+.bfeats { display: grid; gap: 6px; }
+.bfeat { display: flex; align-items: center; gap: 10px; padding: 9px 10px; animation: payIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
+.bfeat__star { flex: none; width: 22px; height: 22px; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.bfeat.is-done { border-color: color-mix(in srgb, var(--gold) 50%, var(--sys-hair)); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
+.bfeat.is-done .bfeat__star { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
+.bfeat__body { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.bfeat__body b { font-size: 0.8rem; }
+.bfeat__body small { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bfeat__odds { position: relative; height: 3px; margin-top: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.bfeat__odds i { position: absolute; inset: 0 auto 0 0; width: calc(var(--odds) * 100%); background: var(--sys-ink); box-shadow: 0 0 6px var(--sys-ink); animation: oddsIn 800ms calc(200ms + var(--i) * 80ms) var(--ease) both; }
+.bfeat.is-done .bfeat__odds i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+.bfeat__side { display: grid; flex: none; justify-items: end; gap: 2px; }
+.bfeat__side small { font-size: 0.64rem; }
+@keyframes oddsIn { from { width: 0; } }
+
+/* THE SEALS' WINDOW: the gauge as it stands, and a card to each Seal, pressed in wax when taken. */
+.sealsheet { gap: 10px; }
+.sgauge { position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; grid-template-areas: 'ring body ember' 'bar bar bar'; align-items: center; gap: 8px 12px; padding: 12px; border-color: color-mix(in srgb, var(--vc) 45%, var(--sys-hair)); background: radial-gradient(70% 100% at 0% 0%, color-mix(in srgb, var(--vc) 12%, transparent), transparent 70%), rgba(6, 4, 2, 0.6); transition: border-color 300ms; }
+.sgauge__ring { position: relative; display: grid; grid-area: ring; place-items: center; width: 76px; height: 76px; }
+.sgauge__ring b { position: relative; font-size: 1rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 8px var(--vg); }
+.sgauge__ring b small { font-size: 0.6rem; }
+.sgauge__body { display: flex; grid-area: body; flex-direction: column; gap: 2px; min-width: 0; }
+.sgauge__verdict { font-size: 1.2rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 12px var(--vg); transition: color 300ms; }
+.sgauge__body > small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.sgauge__body > small b { color: #fff; }
+.sgauge__ember { display: flex; grid-area: ember; flex-direction: column; align-items: center; gap: 1px; }
+.sgauge__ember b { font-size: 1.15rem; font-weight: 800; color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); animation: emberCount 420ms var(--ease); }
+.sgauge__ember small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ember); }
+.sgauge__bar { display: flex; grid-area: bar; align-items: center; gap: 3px; }
+.sgauge__bar i { height: 8px; border: 1px solid rgba(255, 154, 60, 0.35); background: rgba(255, 154, 60, 0.08); transform-origin: left; transition: background 300ms, box-shadow 300ms, border-color 300ms; }
+.sgauge__bar i.is-on { border-color: var(--ember); background: linear-gradient(90deg, #ff6a2a, #ffb347); box-shadow: 0 0 10px var(--ember-glow); animation: barIn 420ms var(--ease) both; }
+.sgauge__bar small { flex: none; margin-left: 6px; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+@keyframes emberCount { from { transform: scale(1.5); filter: brightness(2); } }
+@keyframes barIn { from { transform: scaleX(0.2); filter: brightness(2); } }
+
+.sealcards { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sealcards > li { animation: payIn 340ms calc(var(--i) * 70ms) var(--ease) both; }
+.sealcard { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; overflow: hidden; padding: 10px 12px 10px 8px; background: rgba(4, 6, 10, 0.7); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; transition: border-color 220ms, background 220ms, box-shadow 220ms; }
+.sealcard:active:not(:disabled) { transform: scale(0.985); }
+.sealcard__slot { position: relative; display: grid; place-items: center; width: 52px; height: 52px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 28%, transparent); border-radius: 50%; }
+.sealcard__body { display: grid; gap: 2px; min-width: 0; }
+.sealcard__body b { font-size: 0.9rem; font-weight: 700; color: #fff; }
+.sealcard__rule { font-size: 0.72rem; color: var(--blood); }
+.sealcard__pay { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.7rem; color: var(--verdant); }
+.sealcard__state { display: inline-flex; align-items: center; gap: 4px; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.sealcard__state .ico { width: 11px; height: 11px; }
+.sealcard.is-on { border-color: var(--sysred); background: radial-gradient(60% 120% at 0% 50%, rgba(255, 47, 62, 0.22), transparent 70%), rgba(40, 4, 10, 0.7); box-shadow: inset 0 0 16px rgba(255, 40, 70, 0.18), 0 0 10px rgba(255, 47, 62, 0.15); }
+.sealcard.is-on .sealcard__slot { border-color: transparent; }
+.sealcard.is-on .sealcard__state { color: var(--sysred); }
+.sealcard.is-stamped .sealart { animation: stamp 520ms var(--ease) both; }
+.sealcard.is-stamped { animation: stampShake 360ms 180ms ease-out; }
+.sealcard.is-lifted .sealart { animation: lift 360ms var(--ease) both; }
+.sealcard__ripple { position: absolute; inset: 4px; border: 2px solid var(--sysred); border-radius: 50%; opacity: 0; animation: ripple 620ms 200ms ease-out; pointer-events: none; }
+.sealcard:disabled { cursor: default; }
+.sealcard:disabled:not(.is-on) { opacity: 0.45; }
+@keyframes stamp { 0% { opacity: 0; transform: scale(2.1) rotate(-24deg); } 45% { opacity: 1; transform: scale(0.86) rotate(4deg); } 70% { transform: scale(1.06) rotate(-1deg); } }
+@keyframes stampShake { 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 75% { transform: translateX(-1px); } }
+@keyframes lift { from { transform: scale(1.12) translateY(-3px); filter: brightness(1.6); } }
+@keyframes ripple { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.7); } }
+
+/* THE KIT: the satchel's Health Potions, then the throwables, the one readied lit. */
+.kitsheet { gap: 10px; }
+.kitsheet__satchel { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 10px 12px; }
+.kitsheet__held { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 3px; }
+.kitsheet__held b { font-size: 1rem; color: #fff; }
+.kitsheet__held small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.kitsheet__go { flex-basis: 100%; }
+.kitsheet__satchel .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.kitsheet__satchel strong { font-size: 0.82rem; }
+.kitsheet__satchel small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.kitsheet__art { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, var(--verdant) 45%, transparent); background: rgba(72, 245, 168, 0.08); color: var(--verdant); }
+.kitsheet__art .ico { width: 22px; height: 22px; }
+.kitsheet__pips { display: flex; gap: 4px; }
+.kitsheet__pips i { width: 14px; height: 5px; border: 1px solid color-mix(in srgb, var(--verdant) 45%, transparent); }
+.kitsheet__pips i.is-on { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
+.bthrow { display: grid; gap: 8px; }
+.bthrow__kit { display: grid; gap: 6px; }
+.bthrow__one { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; background: rgba(22, 12, 5, 0.7); color: var(--ink-2); font: inherit; text-align: left; cursor: pointer; transition: border-color 200ms, background 200ms, box-shadow 200ms; }
+.bthrow__one .ico { width: 20px; height: 20px; color: var(--ember); }
+.bthrow__name { display: flex; flex-direction: column; min-width: 0; }
+.bthrow__name b { font-size: 0.84rem; color: #fff; }
+.bthrow__name small { font-size: 0.64rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.bthrow__n { font-size: 1rem; color: var(--ink-2); }
+.bthrow__one.is-on { border-color: var(--ember); background: radial-gradient(60% 120% at 0% 50%, rgba(255, 154, 60, 0.24), transparent 70%), rgba(22, 12, 5, 0.85); box-shadow: 0 0 12px var(--ember-glow); }
+.bthrow__one.is-on .bthrow__name small { color: var(--ember); }
 .bthrow__one:disabled { cursor: default; }
 .bthrow__one:disabled:not(.is-on) { opacity: 0.4; }
-/* The way in: docked to the foot of the window, the sheet fading behind it. */
+
+/* The dock: the kit, then the way in, at the foot whatever is scrolled past. */
 .bdock { position: sticky; bottom: -1px; z-index: 2; margin: 0 -2px -2px; padding: 22px 2px 4px; background: linear-gradient(180deg, transparent, rgba(4, 3, 2, 0.96) 45%); }
+.bdock__row { display: flex; align-items: stretch; gap: 8px; }
 .bdock .btn--primary:not([disabled]) { border-color: var(--ember); color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--ember) 42%, rgba(10, 6, 2, 0.8)), color-mix(in srgb, var(--ember) 18%, rgba(10, 6, 2, 0.9))); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ember) 50%, transparent), 0 0 20px var(--ember-glow); text-shadow: 0 0 8px var(--ember-glow); }
+.bdock__go { min-width: 0; }
+.bkit { display: flex; flex: none; align-items: center; gap: 2px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--ember) 45%, var(--sys-hair)); background: rgba(10, 6, 2, 0.9); color: var(--sys-ink); font: inherit; cursor: pointer; }
+.bkit:active { transform: scale(0.97); }
+.bkit__one { position: relative; display: grid; place-items: center; width: 34px; height: 40px; }
+.bkit__one .ico { width: 20px; height: 20px; }
+.bkit__one.is-hp .ico { color: var(--verdant); }
+.bkit__one.is-throw .ico { color: var(--ember); }
+.bkit__one b { position: absolute; right: 0; bottom: 2px; min-width: 15px; padding: 0 3px; border-radius: 8px; background: rgba(0, 0, 0, 0.85); font-size: 0.62rem; line-height: 1.35; color: #fff; }
+.bkit__one.is-none { opacity: 0.4; }
+.bkit__one + .bkit__one { border-left: 1px solid var(--sys-hair); }
+/* The way in: docked to the foot of the window, the sheet fading behind it. */
 .sysframe .ascension__rules { gap: 6px; padding-left: 0; list-style: none; color: var(--sys-ink); }
 .sysframe .ascension__rules li { padding: 7px 10px; font-size: 0.82rem; }
 .sysframe .ascension__proof { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
@@ -2149,8 +2304,6 @@ button.matrow { width: 100%; color: inherit; font: inherit; text-align: left; cu
 .matrow.is-tracked { border-color: var(--forge); box-shadow: 0 0 10px var(--forge-glow); opacity: 1; }
 .matrow__text b { display: inline-flex; align-items: center; gap: 6px; }
 .matrow__track { width: 16px; height: 16px; }
-.btracked { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-color: color-mix(in srgb, var(--forge) 60%, transparent); box-shadow: 0 0 10px var(--forge-glow); }
-.btracked__list { display: flex; flex-wrap: wrap; gap: 6px; }
 .trackall { margin-top: 8px; border-color: color-mix(in srgb, var(--forge) 55%, transparent); color: var(--forge); }
 .trackall .ico { width: 14px; height: 14px; }
 .trackall.is-on { background: rgba(30, 14, 2, 0.6); box-shadow: 0 0 10px var(--forge-glow); }

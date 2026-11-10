@@ -279,22 +279,45 @@ try {
   await page.locator('.sheet.is-top .gband-tab', { hasText: 'All' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
   await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800);
-  // The throwable to carry in is readied on the brief: a chip to each kind held, the one readied lit.
+  // The head: the portal inside the ring, a tick to each of the System's runs.
+  if ((await page.locator('.sheet.is-top .bhero .aring__tick').count()) !== 24) throw new Error('THE RING DOES NOT TICK THE SYSTEM’S 24 RUNS');
+  await snap('brief');
+  // The kit is docked by the way in, and opens its own window: the throwable readied there, a chip to each kind held.
+  await page.locator('.sheet.is-top .bkit').click(); await sleep(500);
   const ember = page.locator('.sheet.is-top .bthrow__one', { hasText: 'Ember Flask' });
-  if (!(await ember.count())) throw new Error('THE BRIEF HAS NO THROWABLE TO READY');
-  await ember.scrollIntoViewIfNeeded(); await ember.click(); await sleep(300);
-  if ((await ember.getAttribute('aria-checked')) !== 'true') throw new Error('A THROWABLE TAPPED ON THE BRIEF WAS NOT READIED');
-  await snap('brief-throw');
-  // Seals: taking one moves the assessment; the Feats state the System's odds.
-  const seal = page.locator('.sheet.is-top .bseal').first();
-  if (!(await seal.count())) throw new Error('THE BRIEF OFFERS NO SEALS');
-  if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
-  await seal.scrollIntoViewIfNeeded(); await seal.click(); await sleep(900);
+  if (!(await ember.count())) throw new Error('THE KIT HAS NO THROWABLE TO READY');
+  await ember.click(); await sleep(300);
+  if ((await ember.getAttribute('aria-checked')) !== 'true') throw new Error('A THROWABLE TAPPED IN THE KIT WAS NOT READIED');
+  await snap('brief-kit');
+  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(400);
+  // Seals: one button on the brief, opening their window; a Seal pressed moves the gauge and adds its Ember.
+  if (!(await page.locator('.sheet.is-top .bsealbtn').count())) throw new Error('THE BRIEF OFFERS NO SEALS');
+  await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(600);
+  const seal = page.locator('.sheet.is-top .sealcard').first();
+  if (!(await seal.count())) throw new Error('THE SEALS’ WINDOW HOLDS NO SEAL');
+  await seal.click(); await sleep(1200);
   if ((await seal.getAttribute('aria-checked')) !== 'true') throw new Error('A SEAL TAPPED WAS NOT TAKEN');
+  if (!(await page.locator('.sheet.is-top .sgauge__ember', { hasText: '+' }).count())) throw new Error('THE GAUGE SHOWS NO EMBER');
   await snap('brief-seals');
-  await seal.click(); await sleep(600);
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
-  await snap('brief', true);
+  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(700);
+  if (!(await page.locator('.sheet.is-top .bpay__one.is-ember').count())) throw new Error('A SEAL TAKEN ADDS NO EMBER TO THE PAY');
+  await snap('brief-sealed');
+  // Given back, so the run below walks in unsealed.
+  await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(500);
+  await page.locator('.sheet.is-top .sealcard').first().click(); await sleep(900);
+  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(500);
+  if (await page.locator('.sheet.is-top .bpay__one.is-ember').count()) throw new Error('A SEAL GIVEN BACK STILL PAYS');
+  // The tabs: the Feats state the System's odds; the map; the party.
+  const tab = (name) => page.locator('.sheet.is-top .btabs__one', { hasText: name });
+  await tab('Feats').click(); await sleep(500);
+  if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
+  await snap('brief-feats');
+  await tab('Map').click(); await sleep(600); await snap('brief-map');
+  await tab('Party').click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .bparty li.is-you').count())) throw new Error('THE PARTY TAB HOLDS NO PARTY');
+  await snap('brief-party');
+  await tab('Threat').click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .bosscard').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
   // The Association's hunters are not the hunter's to order: the brief holds no standing orders.
   if (await page.locator('.sheet.is-top .chips--orders').count()) throw new Error('THE BRIEF STILL GIVES STANDING ORDERS');
@@ -729,8 +752,11 @@ try {
   await page.locator('.sheet.is-top .btn', { hasText: 'Face The Trial' }).click(); await sleep(800);
   await snap('trial-brief', true);
   if (await page.locator('.sheet.is-top', { hasText: 'Association file' }).count()) throw new Error('THE TRIAL CARRIES AN ASSOCIATION FILE');
+  if (await page.locator('.sheet.is-top .btabs__one', { hasText: 'Feats' }).count()) throw new Error('THE TRIAL HOLDS FEATS');
+  await page.locator('.sheet.is-top .btabs__one', { hasText: 'Party' }).click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .partylist li.is-you').count())) throw new Error('THE TRIAL’S PARTY TAB HOLDS NO ONE');
   if (await page.locator('.sheet.is-top .partylist li:not(.is-you):not(.is-shadow)').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('trial-brief-party');
+  await snap('trial-brief-party');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));
   console.log(`screens green · ${OUT}/`);
