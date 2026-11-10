@@ -49,7 +49,7 @@ export function SysHead({ title, icon, tools }: { title: string; icon?: Componen
 }
 
 /** The frame kinds a System surface may take. Gear is the System's own, so it takes cyan. */
-export type FrameKind = Extract<Kind, 'system' | 'gold' | 'gates' | 'shadow' | 'gear'>;
+export type FrameKind = Extract<Kind, 'system' | 'gold' | 'gates' | 'shadow' | 'gear' | 'redgate'>;
 
 /** A System surface set into a screen or a sheet: the Status sheet, Quest Info, an item card. */
 export function SysFrame({ title, icon, tools, kind = 'system', class: cls, tour, label, children }: {

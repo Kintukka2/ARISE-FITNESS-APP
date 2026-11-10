@@ -359,13 +359,12 @@ export function Arena() {
     const more = `+${Math.round((raid.mightOf(d!, r) - 1) * 100)}%`;
     if (c.red && !was.red) {
       flash('danger');
-      buzz([60, 40, 160]);
       sfx.redGate();
       music.set('redgate');
       // The creatures' share counts up under the window's lines, and the window shakes when it lands.
       const to = Math.round((raid.mightOf(d!, r) - 1) * 100);
       await sys({
-        ...system.notify(['[The Gate has turned red.]', system.red('The way out has been sealed.')], 'gates'),
+        ...system.notify(['[The Gate has turned red.]', system.red('The way out has been sealed.')], 'redgate'),
         body: () => <RedCount to={to} />,
       });
     } else if (!was.over) {

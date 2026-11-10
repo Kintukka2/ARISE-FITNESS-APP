@@ -1363,7 +1363,7 @@ screen's edges; and the anime's Red Gate, a crimson portal.
   the move that turns it each open a System window, `[The Gate is stirring.]` and `[The Gate has turned
   red.]`, each stating the creatures' share; every other move over is a line in the feed. Asked for after
   the first look: the Red Gate's share counts up, slowly to 100 and then all at once, and the window
-  shakes as it lands; the arena's head reads `Red Gate` in red, glowing, in place of the Gate's name; and a
+  shakes as it lands, framed in red rather than the Gates' orange; the arena's head reads `Red Gate` in red, glowing, in place of the Gate's name; and a
   Red Gate has its own score (`redgate` in `audio.ts`: D2, 54 beats a minute, a minor second and a
   tritone in every chord, a drone and a heartbeat), with a boom as it turns. The brief's
   Depth cell gives the budget, `14 moves`, and the Guide every rule with its number.

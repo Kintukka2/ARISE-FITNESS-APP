@@ -44,7 +44,7 @@ function useBack(fn: () => boolean | void, active = true) {
 
 // ------------------------------------------------------------------ System windows
 
-export type Kind = 'system' | 'coach' | 'danger' | 'gold' | 'gates' | 'shadow' | 'gear' | 'app';
+export type Kind = 'system' | 'coach' | 'danger' | 'gold' | 'gates' | 'shadow' | 'gear' | 'redgate' | 'app';
 
 export interface Action { label: string; value: unknown; primary?: boolean; danger?: boolean }
 
@@ -112,7 +112,7 @@ export function whenIdle(): Promise<void> {
 }
 
 const BUZZ: Partial<Record<Kind, number[]>> = {
-  danger: [40, 60, 120], gold: [20, 40, 20, 40, 60], gear: [14, 30, 22, 30, 70], gates: [26, 40, 20, 40, 90], shadow: [60, 90, 30, 60, 140],
+  danger: [40, 60, 120], gold: [20, 40, 20, 40, 60], gear: [14, 30, 22, 30, 70], gates: [26, 40, 20, 40, 90], shadow: [60, 90, 30, 60, 140], redgate: [60, 40, 160],
 };
 
 const strip = (html: string) => html.replace(/<br\s*\/?>/g, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');

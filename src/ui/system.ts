@@ -14,7 +14,7 @@ export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status',
 export type Header = (typeof HEADERS)[number];
 
 /** The window kinds the System speaks in. The others belong to Valcorde, the app and the `???` voice. */
-export const SYSTEM_KINDS: Kind[] = ['system', 'gold', 'gates', 'shadow', 'gear'];
+export const SYSTEM_KINDS: Kind[] = ['system', 'gold', 'gates', 'shadow', 'gear', 'redgate'];
 
 // ------------------------------------------------------------------ marks
 
