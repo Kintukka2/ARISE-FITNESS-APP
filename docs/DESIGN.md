@@ -1536,7 +1536,25 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
   report the Seals and the conditions met.
 - **Balance.** No fight changes for any of it: calibration plays no Seals, and Feats and condition drops
   are read off fights already fought, so no tuning moves and `npm run calibrate` was not rerun. The
-  campaign takes every Seal a Gate offers while the brief still reads 75% or better.
+  campaign takes every Seal a Gate offers while the brief, read at 24 runs, says 75% or better. Over 120
+  days, against the same campaign on `main`:
+
+  | | One evening a day, `main` | This | Three sessions a day, `main` | This |
+  |---|---|---|---|---|
+  | Days to A, S, N | 30, 56, 108 | 36, 63, 112 | 18, 33, 61 | 29, 45, 74 |
+  | Carried out | 4 | 8 | 29 | 44 |
+  | Runs under Seals | | 109 | | 147 |
+  | Blueprints from Gates | 81 | 243 | 97 | 241 |
+  | Feats met first, condition drops (bosses) | | 55, 1115 (57) | | 58, 1798 (82) |
+  | Monster Hide left on day 120 | 519 | 1941 | 943 | 2816 |
+  | Gear score on day 112 | 1566 | 1566 | 1860 | 1790 |
+
+  Seals as priced cost a hunter who takes them on a 75% reading days to every rank: a run carried out
+  locks the hunter out for 12 hours, and a sealed one is carried out about one time in seven. What they
+  pay is materials, which already piled up on `main` and now pile higher; the gear score does not move.
+  Shards stay the constraint (spent to the last on upgrades either way). The two campaigns of one commit
+  differ by a few days a rank, since the campaign does not repeat itself, but not by this much. Open:
+  whether Seals should pay in something scarcer, or the campaign take them only on a surer reading.
 
 ## What stays out
 
