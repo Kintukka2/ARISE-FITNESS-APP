@@ -1238,7 +1238,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    `npm run mapstats` report of what the maps draw.
 2. **The Gate clock, Stirring and Red Gates** (built, below).
 3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics (built, below).
-4. **Seals, Feats and condition drops.**
+4. **Seals, Feats and condition drops** (built, below).
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
 6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
    with family and role bonuses; rule-changing gear; a daily seeded Gate.
@@ -1476,6 +1476,67 @@ guardian doesn't rise again, but it does shield an ally; a higher rank gets both
     nothing: the habit's line, the status's, or the move's (the break, what it inflicts, how often the
     foes act). The card is no longer a button inside which nothing else could be tapped.
 
+
+### Seals, Feats and condition drops — built
+
+The references were Hades' Pact of Punishment and Hades II's Oath of the Unseen, a rule to each row with
+what it costs and a total that moves; Path of Exile's map modifiers and Diablo IV's Infernal Compass,
+the pay set beside the danger; Minecraft Dungeons' difficulty slider; Into the Breach's bonus objectives
+and Solo Leveling: Arise's Reward Missions, three to a fight, each with its reward; Genshin's Spiral
+Abyss stars and Rogue Legacy 2's Scars, graded against a par; and Etrian Odyssey's conditional drops, one
+condition to each creature, and Monster Hunter's reward screen, which says how each extra was earned.
+Their screenshots are in [research/references/step-4-seals-feats-drops](research/references/step-4-seals-feats-drops/).
+
+Decided with the owner: Seals pay in materials only, never Mana Shards; Feats and condition drops count
+however they are met, by the hunter's hand or the System's; a Feat pays once, the first time it is met on
+its Gate, and more for it; and a creature's condition drop is a small mark on its card, read with a tap.
+
+- **Seals** (`data/seals.ts`, `core/seals.ts`). From D-Rank, each Gate on the board offers up to three a
+  day, drawn from its day's map (`seals.offered`): only those that would change something there (a
+  Gatekeeper to wake, a rest to darken, Ascension open for Heavier Air) and that the run's Ascension level
+  does not already play. Each is one of Ascension's rules taken on its own, with stated pay:
+
+  | Seal | Rule | Pay |
+  |---|---|---|
+  | Swollen | Creatures: HP +25% | Alloy +40% |
+  | Lightless | Rests heal nothing | Each fight won: part +1 |
+  | Short-Handed | The Association sends 1 hunter fewer | Clear: every part +2 |
+  | Wardens Wake | The Gatekeeper: strength +25% | Its vault: a blueprint, always |
+  | Dry | No Health Potion, and nothing healed after a fight | Clear: blueprint +1 |
+  | Never Alone | The boss stands with one of its creatures | Clear: a blueprint of the grade above |
+  | Heavier Air | Creatures fight as if Ascension +1 | Clear: Ascendant Ember +2 |
+
+  Tapped on the brief, a Seal is taken, and the brief's 24 runs play it at once (`raid.project` takes the
+  Seals), so the assessment and the pay move together. The run keeps the Seals it walked in with
+  (`run.seals`), and every rule they play reads that list, as every Ascension rule reads `run.ascension`.
+  Carried out, a run pays nothing, Seals included. Lightless and Wardens Wake leave the assessment where it
+  was: the System rests only before the boss and never meets a Gatekeeper. Dry was first only "no Health
+  Potion", which costs the System nothing, since Auto never drinks: the first campaign took it for a free
+  blueprint on most clears. It now also heals nothing after a fight won, which the assessment shows.
+- **Feats** (`data/feats.ts`, `core/feats.ts`). Every Gate holds three, drawn from the Gate itself, the same
+  every day: Unbroken (no one in the party falls), Swift End (the boss falls within 5 rounds), Breaker (the
+  boss's wind-up broken), Wardenbane (the Gatekeeper felled, where there is one), Thorough (every room on
+  the plan cleared) and Steady Hand (the hunter's HP above 50% in every fight). Each fight is folded into
+  the run's tally as it is recorded (`feats.count`), and a clear is judged on it (`feats.judge`). A Feat
+  pays once, the first time a clear meets it on its Gate (`s.gates.feats`): Blueprint +1. The brief says
+  how often the System met each in its 24 runs (`System 18/24`); its road never meets Thorough or
+  Wardenbane. A Feat met wears a gold star on the brief and on the board's row.
+- **Condition drops** (`data/drops.ts`). Every family has a stated way to fall, kindred families sharing
+  one (Undead and Aberrations while Burning, Beasts and Chimeras while Rooted, Orcs, Giantkin and
+  Goblinoids while Stunned, Insectoids, Plants and Slimes within 3 rounds, Constructs, Dragonkin,
+  Humanoids and Aquatics with the hunter's own blow, Demons and Elementals with a Shadow's blow), and
+  every boss falls while Broken, to the hunter's own blow. "While Broken" alone was the first rule; Auto,
+  which goes for a creature winding up, met it on 44% of the boss fights it won (61% of the first
+  campaign's clears), so a boss's blueprint was nearly a given. With the hunter's own blow it is 18%. It is read as the creature falls (`openChamber`'s kill), written to the
+  log (`drop`) and banked on the run (`run.drops`): its family's part +2, a boss Blueprint +1, paid in
+  `raid.finish`. The brief shows each creature's condition under its chip and the boss's under its card;
+  in a fight the foe's card wears its part's glyph at the end of its habits, gold while the condition
+  holds, and a tap tells it.
+- **The results** list the Gate's Feats, met or not, and `First time: Blueprint +1` for each paid, and
+  report the Seals and the conditions met.
+- **Balance.** No fight changes for any of it: calibration plays no Seals, and Feats and condition drops
+  are read off fights already fought, so no tuning moves and `npm run calibrate` was not rerun. The
+  campaign takes every Seal a Gate offers while the brief still reads 75% or better.
 
 ## What stays out
 

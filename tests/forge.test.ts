@@ -7,7 +7,7 @@ import * as raid from '@/core/raid';
 import { defaults, parse } from '@/core/save';
 import * as shop from '@/core/shop';
 import { claim } from '@/core/quests';
-import type { Rank, Save } from '@/core/types';
+import type { Rank } from '@/core/types';
 import { RANKS } from '@/core/types';
 import { rng } from '@/core/util';
 import { ALLOYS, BLUEPRINTS, FAMILIARITY, FAMILIARITY_MAX, PARTS, RECIPE, SALVAGE } from '@/data/forge';
@@ -182,22 +182,17 @@ describe('blueprints', () => {
 });
 
 describe('what a run leaves', () => {
-  function clear(s: Save, id: string) {
-    const d = dungeonById(id)!;
-    const run = raid.begin(s, d, now);
-    const { won } = walk(s, d, now);
-    expect(won).toBe(true);
-    return raid.finish(s, d, run, 'cleared', now);
-  }
-
   it('a clear leaves alloys of the Gate’s grade and the one below, parts, and on a first clear a blueprint', () => {
     const s = typicalHunter(27, 'C', 'spoils');
     const d = dungeonById('DNG-016')!;
     expect(d.rank).toBe('C');
-    const res = clear(s, d.id);
+    const run = raid.begin(s, d, now);
+    expect(walk(s, d, now).won).toBe(true);
+    const res = raid.finish(s, d, run, 'cleared', now);
     expect(res.mats[ALLOYS.C.id]).toBeGreaterThan(0);
     expect((res.mats[PARTS.hide.id] ?? 0) + (res.mats[PARTS.bone.id] ?? 0) + (res.mats[PARTS.core.id] ?? 0)).toBeGreaterThan(0);
-    expect(res.blueprints).toHaveLength(1);
+    // The first clear's, and one for each Feat met for the first time and for the boss felled the way its condition asks.
+    expect(res.blueprints).toHaveLength(1 + res.feats.fresh.length + (run.drops ?? []).filter((x) => x.boss).length);
     expect(forge.knows(s, res.blueprints[0])).toBe(true);
     for (const [k, n] of Object.entries(res.mats)) expect(forge.held(s, k)).toBe(n);
   });

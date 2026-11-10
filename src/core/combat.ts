@@ -280,6 +280,8 @@ export type Ev =
   | { t: 'tick'; v: string; s: string; dmg: number; hp: number }
   | { t: 'expire'; v: string; s: string }
   | { t: 'down'; v: string }
+  /** A creature felled the way its condition asks: it leaves more (`data/drops.ts`). */
+  | { t: 'drop'; v: string }
   | { t: 'guard'; a: string }
   /** Cover: `a` covers `v`; `n` counts the foes it turned. */
   | { t: 'cover'; a: string; v: string; n: number }

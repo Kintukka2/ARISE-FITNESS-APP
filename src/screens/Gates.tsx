@@ -47,6 +47,12 @@ import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
 import { bagFor, enterGate, readyThrow } from '@/app/flow';
+import * as sealing from '@/core/seals';
+import * as feats from '@/core/feats';
+import { SEALS, type SealId } from '@/data/seals';
+import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
+import { CONDITION } from '@/data/drops';
+import { conditionLine, dropGlyph } from '@/ui/conditions';
 import { openExchange } from './Exchange';
 
 function coachLine(s = store.get()) {
@@ -221,6 +227,15 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
                 <Glyph name="shadows" /><span class="num">{bound}/{inside.length}</span>
               </span>
             )}
+            {/* Its Feats: a star to each, gold once met here. */}
+            {!practice && (() => {
+              const met = feats.featsOf(d).filter((id) => feats.metOn(s, d).includes(id)).length;
+              return (
+                <span class={`gtag is-feats ${met === FEATS_PER_GATE ? 'is-full' : ''}`} aria-label={`Feats met: ${met} of ${FEATS_PER_GATE}`}>
+                  {Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < met ? 'is-on' : ''} aria-hidden="true">★</i>)}
+                </span>
+              );
+            })()}
             {pieces.length > 0 && (
               <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
                 <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>
@@ -587,11 +602,15 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const boss = enemyById(d.boss)!;
   // A Trial is fought at the level it proves, whatever is chosen: the party, the pay and the rules shown are that level's.
   const level = ascension.entryLevel(s, d, isPractice(d));
-  const party = raid.alliesAt(d, dayKey(), licensedRank(s), level);
+  // The Seals the Gate offers today, and those taken: a run open on the Gate keeps its own.
+  const offer = sealing.offered(s, d);
+  const [want, setWant] = useState<SealId[]>([]);
+  const taken = s.gates.raid?.dungeonId === d.id ? sealing.of(s.gates.raid) : want.filter((id) => offer.includes(id));
+  const party = raid.alliesAt(d, dayKey(), licensedRank(s), level, taken);
   const squad = isPractice(d) ? [] : shadows.squad(s);
   const hero = raid.heroSpec(s);
-  // The verdict is the engine answering for itself: the gate, run headlessly.
-  const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic, level]);
+  // The verdict is the engine answering for itself: the gate, run headlessly, under the Seals taken.
+  const proj = useMemo(() => raid.project(s, d, 24, undefined, taken), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic, level, taken.join()]);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const map = useMemo(() => build(d, mapSeed(d, dayKey())), [d.id, dayKey()]);
   // A deeper Gate's map is shown a floor at a time.
@@ -614,7 +633,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
   const hpNow = vitals.read(s);
 
-  const enter = () => enterGate(d);
+  const enter = () => enterGate(d, taken);
 
   const abandon = async () => {
     const run = store.get().gates.raid;
@@ -682,6 +701,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         <span class="sysbox brewards__one"><small class="label">Materials</small><b>{isPractice(d) ? ALLOYS.E.name : ALLOYS[d.rank as Rank].name}</b><small>{isPractice(d) ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small></span>
         <span class="sysbox brewards__one"><small class="label">Depth</small><b>{raid.stepsOf(map)} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'rooms'}</b><small>{isTrial(d) ? 'no rest between them' : tower ? 'a rest, then the boss' : map.floors.length > 1 ? `${map.floors.length} floors · ${proj.road.length} to the boss` : `${proj.road.length} to the boss`}</small>{!tower && !isPractice(d) && <small class="brewards__moves"><Glyph name="steps" />{budgetOf(map)} moves</small>}</span>
       </div>
+      {offer.length > 0 && <SealList offer={offer} taken={taken} fixed={s.gates.raid?.dungeonId === d.id} toggle={(id) => setWant((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id]))} />}
+      {!isPractice(d) && !tower && !isTrial(d) && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
       {/* The materials tagged at the Forge that this Gate leaves. */}
       {!isPractice(d) && !isTrial(d) && forge.trackedAt(s, d, level).length > 0 && (
         <div class="sysbox btracked" aria-label="Tracked materials here">
@@ -701,6 +722,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
             <b>{met ? met.name : known ? boss.name : '?'}</b>
             <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
+            {known && !met && <small class="bthreat__drop"><Glyph name={dropGlyph(boss.id, true)} />{conditionLine(boss.id, true)}</small>}
           </div>
           {known && !met && shadows.isBound(s, boss.id) && <span class="bthreat__bound" title="Serves as a Shadow"><Glyph name="shadows" /></span>}
         </Card>
@@ -713,6 +735,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
                 <span class="bthreat__name">
                   <b>{seen ? e.name : '?'}</b>
                   <small>{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small>
+                  {seen && raid.conditionOf(e.id, false) && <small class="bthreat__drop"><Glyph name={dropGlyph(e.id, false)} />{CONDITION[raid.conditionOf(e.id, false)!].text}</small>}
                 </span>
                 {seen && shadows.isBound(s, e.id) && <Glyph name="shadows" class="bthreat__mark" />}
               </span>
@@ -807,6 +830,61 @@ function Readied({ d }: { d: Dungeon }) {
         })}
       </span>
     </div>
+  );
+}
+
+/**
+ * The Seals a Gate offers today, a row to each: its name, its rule in red, its pay in green. Tapping one
+ * takes it or gives it back, and the assessment above plays it. A run open on the Gate keeps its own.
+ */
+function SealList({ offer, taken, fixed, toggle }: { offer: SealId[]; taken: SealId[]; fixed: boolean; toggle: (id: SealId) => void }) {
+  return (
+    <section class="sysbox bseals" aria-label="Seals">
+      <div class="row between"><span class="label">Seals</span><small class="bseals__count num">{taken.length}/{offer.length}</small></div>
+      {offer.map((id) => {
+        const on = taken.includes(id);
+        const x = SEALS[id];
+        return (
+          <button type="button" key={id} role="switch" aria-checked={on} disabled={fixed} class={`bseal ${on ? 'is-on' : ''}`}
+            onClick={() => { sfx.blip(); toggle(id); }}>
+            <span class="bseal__box" aria-hidden="true">{on && <Glyph name="lock" />}</span>
+            <span class="bseal__body">
+              <b>{x.name}</b>
+              <small class="bseal__rule">{x.rule}</small>
+              <small class="bseal__pay">{x.pay}</small>
+            </span>
+          </button>
+        );
+      })}
+    </section>
+  );
+}
+
+/**
+ * A Gate's three Feats, a star to each: gold once met here. Each says what it asks, how often the System
+ * met it in its runs on today's map, and, until it is met, what it pays the first time.
+ */
+function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Partial<Record<FeatId, number>>; runs: number }) {
+  return (
+    <section class="sysbox bfeats" aria-label="Feats">
+      <div class="row between"><span class="label">Feats</span><small class="num">{feats.featsOf(d).filter((id) => met.includes(id)).length}/{FEATS_PER_GATE}</small></div>
+      {feats.featsOf(d).map((id) => {
+        const done = met.includes(id);
+        return (
+          <div key={id} class={`bfeat ${done ? 'is-done' : ''}`}>
+            <Glyph name="star" class="bfeat__star" />
+            <span class="bfeat__body">
+              <b>{FEATS[id].name}</b>
+              <small>{FEATS[id].text}</small>
+            </span>
+            <span class="bfeat__side">
+              <small class="num" aria-label={`The System met it in ${odds[id] ?? 0} of ${runs} runs`}>System {odds[id] ?? 0}/{runs}</small>
+              <small class={done ? 'muted' : 'grant'}>{done ? 'Met' : `Blueprint +${FEAT_PAY.blueprints}`}</small>
+            </span>
+          </div>
+        );
+      })}
+    </section>
   );
 }
 

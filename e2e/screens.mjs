@@ -285,6 +285,14 @@ try {
   await ember.scrollIntoViewIfNeeded(); await ember.click(); await sleep(300);
   if ((await ember.getAttribute('aria-checked')) !== 'true') throw new Error('A THROWABLE TAPPED ON THE BRIEF WAS NOT READIED');
   await snap('brief-throw');
+  // Seals: taking one moves the assessment; the Feats state the System's odds.
+  const seal = page.locator('.sheet.is-top .bseal').first();
+  if (!(await seal.count())) throw new Error('THE BRIEF OFFERS NO SEALS');
+  if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
+  await seal.scrollIntoViewIfNeeded(); await seal.click(); await sleep(900);
+  if ((await seal.getAttribute('aria-checked')) !== 'true') throw new Error('A SEAL TAPPED WAS NOT TAKEN');
+  await snap('brief-seals');
+  await seal.click(); await sleep(600);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
   await snap('brief', true);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');

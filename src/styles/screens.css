@@ -246,6 +246,12 @@
 .unit__incoming b { color: var(--ink); font-size: 0.62rem; }
 .arena__side { gap: 10px; }
 /* A word on a card that tells what it is when tapped. */
+/* A foe's condition drop: its part's glyph at the end of its habits, gold while the condition holds. */
+.dropmark { display: inline-grid; place-items: center; margin-left: auto; color: var(--ink-3); }
+.dropmark .ico { width: 13px; height: 13px; }
+.dropmark.is-ready { color: var(--gold); filter: drop-shadow(0 0 5px var(--gold-glow)); animation: dropReady 1.4s ease-in-out infinite; }
+@keyframes dropReady { 50% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .dropmark.is-ready { animation: none; } }
 button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }
 button.is-told:not(.tag) { background: none; }
 button.tag.is-told { padding: 0 5px; }
@@ -340,7 +346,8 @@ button.trick.is-told, button.intent__what.is-told { text-decoration: underline d
 .actwheel__close { position: absolute; right: -4px; bottom: -4px; }
 /* Throw: a chip to each kind held, under the wheel; the one picked lit. */
 /* A creature's habits, under its name: small and quiet until they matter. */
-.unit__tricks { display: flex; flex-wrap: wrap; gap: 0 4px; margin-top: 4px; }
+.unit__tricks { display: flex; align-items: center; gap: 0 6px; margin-top: 4px; }
+.unit__habits { display: flex; flex-wrap: wrap; gap: 0 4px; min-width: 0; }
 .trick { color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
 /* The dot after a habit, so a line that breaks ends on one rather than starting with it. */
 .unit__tricks { position: relative; }
@@ -1300,6 +1307,11 @@ button.dmap__floor { cursor: pointer; }
 .gtag .shards { gap: 2px; font-size: 0.6rem; }
 .gtag .shards .ico, .gtag .shards svg { width: 9px; height: 9px; }
 .gtag.is-shadows { --tc: #c9a7ff; letter-spacing: 0.02em; }
+/* A Gate's Feats on the board: a star to each, gold once met. */
+.gtag.is-feats { --tc: color-mix(in srgb, var(--sys-ink) 70%, transparent); gap: 1px; letter-spacing: 0; }
+.gtag.is-feats i { font-style: normal; font-size: 0.62rem; line-height: 1; opacity: 0.35; }
+.gtag.is-feats i.is-on { color: var(--gold); opacity: 1; text-shadow: 0 0 6px var(--gold-glow, rgba(255, 207, 92, 0.5)); }
+.gtag.is-feats.is-full { --tc: var(--gold); }
 .gtag.is-shadows .ico { width: 11px; height: 11px; }
 .gtag.is-shadows.is-full { border-color: var(--arcane); box-shadow: 0 0 8px var(--arcane-glow); color: #e2d2ff; }
 .gaterow__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
@@ -1375,6 +1387,33 @@ button.dmap__floor { cursor: pointer; }
 .bthreat__name { display: flex; flex-direction: column; min-width: 0; }
 .bthreat__name b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.74rem; font-weight: 600; color: var(--sys-ink); }
 .bthreat__name small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+/* A creature's condition drop on the brief: its part's glyph, and the way to fell it. */
+.bthreat__name small.bthreat__drop, .bosscard small.bthreat__drop { display: inline-flex; align-items: center; gap: 4px; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
+.bthreat__drop .ico { width: 11px; height: 11px; flex: none; }
+/* Seals: a row to each, the rule in red and the pay in green; taken, the row is red-rimmed and locked. */
+.bseals, .bfeats { display: grid; gap: 6px; padding: 10px; }
+.bseals__count { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.bseal { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 1px solid var(--sys-hair); border-radius: 4px; background: rgba(4, 14, 24, 0.6); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; }
+.bseal__box { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border: 1px solid color-mix(in srgb, var(--sys-ink) 45%, transparent); border-radius: 3px; }
+.bseal__box .ico { width: 13px; height: 13px; color: #fff; }
+.bseal__body { display: grid; gap: 1px; min-width: 0; }
+.bseal__body b { font-size: 0.78rem; }
+.bseal__rule { color: var(--blood); font-size: 0.68rem; }
+.bseal__pay { color: var(--verdant); font-size: 0.68rem; }
+.bseal.is-on { border-color: var(--sysred); background: rgba(60, 8, 18, 0.55); box-shadow: inset 0 0 12px rgba(255, 40, 70, 0.18); }
+.bseal.is-on .bseal__box { border-color: var(--sysred); background: var(--sysred); }
+.bseal:disabled { cursor: default; }
+.bseal:disabled:not(.is-on) { opacity: 0.45; }
+/* Feats: a star to each, gold once met, the System's odds and the pay at the side. */
+.bfeat { display: flex; align-items: center; gap: 10px; padding: 6px 2px; border-top: 1px solid var(--sys-hair); }
+.bfeat:first-of-type { border-top: 0; }
+.bfeat__star { flex: none; width: 18px; height: 18px; color: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
+.bfeat.is-done .bfeat__star { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
+.bfeat__body { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.bfeat__body b { font-size: 0.76rem; }
+.bfeat__body small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bfeat__side { display: grid; justify-items: end; gap: 1px; flex: none; font-size: 0.62rem; }
+.bfeat__side small { font-size: 0.62rem; }
 .bthreat__one.is-elite { border-color: color-mix(in srgb, var(--gold) 45%, var(--sys-hair)); }
 .bthreat__one.is-elite .bthreat__name small { color: var(--gold); }
 .bthreat__one.is-bound { border-color: color-mix(in srgb, var(--arcane) 55%, transparent); background: color-mix(in srgb, var(--arcane) 8%, transparent); }
