@@ -1247,7 +1247,8 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 
 The references were Slay the Spire's intents (an icon and the damage it will do, over the foe), Into
 the Breach's numbered attack order, Wildfrost's numbers kept in the same place on every card, and
-Etrian Odyssey's map, where what waits in a room is marked on its square.
+Etrian Odyssey's map, where what waits in a room is marked on its square. Their screenshots, with
+where each came from, are in [research/references/step-1-read-the-fight](research/references/step-1-read-the-fight/).
 
 - **The reckoning** (`reckon` in `core/combat.ts`). One hit of an ability from one unit on another, as
   things stand: its chance to land and to crit, its damage at the bottom and top of the swing and at
@@ -1324,7 +1325,8 @@ stripes and every beacon it reaches is marked; Invisible Inc's alarm, a ring of 
 Loop Hero's boss meter, a bar with the boss's mark at its end; Risk of Rain 2's difficulty bar, which
 names each stage as the run passes into it; Darkest Dungeon's torch, whose tip states exactly what the
 dark adds; Etrian Odyssey's danger orb, blue to red as a fight nears; Persona's Reaper, which reddens the
-screen's edges; and the anime's Red Gate, a crimson portal.
+screen's edges; and the anime's Red Gate, a crimson portal. Their screenshots are in
+[research/references/step-2-gate-clock](research/references/step-2-gate-clock/).
 
 - **The clock** (`core/clock.ts`). A Gate's map is counted in places, a floor's stairs down and up as
   one, and its budget is 120% of them (`budgetOf`), written to the run as it walks in (`run.clock`), so a
@@ -1385,7 +1387,8 @@ for Cover; Slay the Spire's potion belt and its Throw and Discard, for throwable
 shield, a badge with the hits it can still take and BREAK when it runs out, Honkai: Star Rail's
 toughness bar and the charged attack its break interrupts, and Slay the Spire's Mode Shift, for wind-ups;
 and Slay the Spire's intent icons, which tell an attack from a buff, a defend, a debuff or a sleep at a
-glance, for what creatures do besides hit.
+glance, for what creatures do besides hit. Their screenshots are in
+[research/references/step-3-answers-per-turn](research/references/step-3-answers-per-turn/).
 
 Decided with the owner: a wind-up breaks on hits, not damage (Octopath's pips, not a damage number), and
 creatures' behaviours come from their role and their family, scaled by grade: "an E-Rank undead
