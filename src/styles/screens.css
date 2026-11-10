@@ -242,8 +242,8 @@
 /* The foes coming for a card, by their places in the order: the number on each one's card. */
 /* A tab on the card's top corner, as Lethal is on a foe's panel: the foes coming for it, by their places in the order. */
 .unit { position: relative; }
-.unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 2px; padding: 0 4px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
-.unit__incoming .intent__order { min-width: 13px; height: 13px; border-color: rgba(255, 77, 109, 0.7); font-style: normal; font-size: 0.56rem; }
+.unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 0 5px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
+.unit__incoming b { color: var(--ink); font-size: 0.62rem; }
 .arena__side { gap: 10px; }
 /* A word on a card that tells what it is when tapped. */
 button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }

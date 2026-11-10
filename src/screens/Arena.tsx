@@ -1112,7 +1112,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
         <span class="num unit__hp">
           {count > 0 && u.hp > 0 && (
             <span class="unit__incoming" role="img" aria-label={coming.length ? `Coming for ${who} next: the foes ${coming.join(' and ')} in the order` : `${count} ${count === 1 ? 'foe is' : 'foes are'} coming for ${who} next`}>
-              ◀{coming.length ? coming.map((n) => <i key={n} class="intent__order num">{n}</i>) : count}
+              ◀{coming.length ? coming.map((n) => <b key={n} class="num">{n}</b>) : <b class="num">{count}</b>}
             </span>
           )}
           {Math.max(0, u.hp)}
