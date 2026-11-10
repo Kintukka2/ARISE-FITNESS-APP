@@ -276,7 +276,7 @@ export function Arena() {
 
   useEffect(() => {
     if (!d) return;
-    music.set('raid');
+    music.set(moodNow());
     const off = pushBack(() => true);
     if (run) void guarded(dispatch);
     return () => { off(); music.set('gates'); };
@@ -311,7 +311,7 @@ export function Arena() {
   function toMap() {
     setPanel(null);
     setPhase('map');
-    music.set('raid');
+    music.set(moodNow());
     // A hidden passage a room's clearing opened, said once, as the hunter comes back to the map.
     const r0 = store.get().gates.raid;
     if (r0) {
@@ -345,6 +345,8 @@ export function Arena() {
   }
 
   const clockNow = () => { const r = store.get().gates.raid; return r ? raid.clockOf(r) : null; };
+  /** The score inside: a Red Gate's own once it has turned, the raid's until then. */
+  const moodNow = () => (clockNow()?.red ? 'redgate' : 'raid');
 
   /**
    * What the last move did to the Gate clock: the first move past the budget and the Gate turning red each
@@ -358,8 +360,14 @@ export function Arena() {
     if (c.red && !was.red) {
       flash('danger');
       buzz([60, 40, 160]);
-      sfx.alarm();
-      await sys(system.notify(['[The Gate has turned red.]', system.red('The way out has been sealed.'), `Creatures not yet fought: ${system.red(more)}`], 'gates'));
+      sfx.redGate();
+      music.set('redgate');
+      // The creatures' share counts up under the window's lines, and the window shakes when it lands.
+      const to = Math.round((raid.mightOf(d!, r) - 1) * 100);
+      await sys({
+        ...system.notify(['[The Gate has turned red.]', system.red('The way out has been sealed.')], 'gates'),
+        body: () => <RedCount to={to} />,
+      });
     } else if (!was.over) {
       sfx.gate();
       await sys(system.notify(['[The Gate is stirring.]', `Creatures not yet fought: ${system.red(more)}`], 'gates'));
@@ -489,7 +497,9 @@ export function Arena() {
     if (!r || !d) return;
     const { party, ch, node } = raid.resume(st, d, r);
     const c = chamberOf(d, node);
-    if (c.boss) music.set('boss');
+    // A Red Gate keeps its own score, the boss's chamber too.
+    if (raid.clockOf(r)?.red) music.set('redgate');
+    else if (c.boss) music.set('boss');
     setRoom({ label: c.label, boss: c.boss, index: node.n });
     handRef.current = c.boss && ascension.bossByHand(ascension.levelOf(r));
     setWon(null);
@@ -577,7 +587,7 @@ export function Arena() {
   return (
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''} ${clock?.red ? 'is-redgate' : ''}`} role="dialog" aria-label={`${d.name}${clock?.red ? ', a Red Gate' : ''}, in progress`}>
       <header class="arena__head">
-        <div><span class="label">{d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}{d.floor ? ` · Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? '' : ` · Step ${here} of ${depth}`}</span><b>{head}</b></div>
+        <div><span class="label">{clock?.red ? <span class="arena__red">Red Gate</span> : d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}{d.floor ? ` · Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? '' : ` · Step ${here} of ${depth}`}</span><b>{head}</b></div>
         {phase !== 'decide' && <PaceMenu pace={pace} setPace={setPace} auto={auto} toggleAuto={toggleAuto} />}
       </header>
       {onMap && run && m ? (
@@ -682,8 +692,50 @@ function costsOf(d: Dungeon, run: NonNullable<ReturnType<typeof useSave>['gates'
 }
 
 /**
+ * A Red Gate's share, counted up under its window's lines: slowly to 100, then all at once to the rest,
+ * and the window shakes as it lands. A screen reader hears the share whole.
+ */
+function RedCount({ to }: { to: number }) {
+  const [n, setN] = useState(0);
+  const [done, setDone] = useState(false);
+  const el = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const slow = Math.min(100, to);
+    const t0 = performance.now();
+    const A = 1700, B = to > slow ? 420 : 0;
+    let raf = 0;
+    let ticked = 0;
+    const step = (t: number) => {
+      const e = t - t0;
+      // The first stretch climbs steadily, the last races, faster and faster.
+      const v = e < A ? slow * (e / A) : slow + (to - slow) * Math.min(1, ((e - A) / Math.max(1, B)) ** 2);
+      setN(Math.round(v));
+      if (t - ticked > (e < A ? 70 : 28)) { ticked = t; sfx.countTick(Math.min(1, v / Math.max(1, to))); }
+      if (e < A + B) { raf = requestAnimationFrame(step); return; }
+      setN(to);
+      setDone(true);
+      sfx.slam();
+      buzz([90, 30, 140]);
+      flash('danger');
+      const win = el.current?.closest('.syswin');
+      win?.classList.remove('is-shake');
+      void (win as HTMLElement | null)?.offsetWidth;
+      win?.classList.add('is-shake');
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return (
+    <p ref={el} class={`syswin__line redcount ${done ? 'is-done' : ''}`} aria-label={`Creatures not yet fought: +${to}%`}>
+      <span aria-hidden="true">Creatures not yet fought: <span class="warn num">+{n}%</span></span>
+    </p>
+  );
+}
+
+/**
  * The Gate clock, under the hunter's HP: the moves spent against the budget, then the stirring's 20 moves
- * toward red, with the Gate's mark at the end of the bar, and once it has turned, the Red Gate, sealed.
+ * toward red (the bar alone shows how far), with the Gate's mark at the end of the bar, and once it has
+ * turned, the Red Gate, sealed.
  */
 function GateClock({ c, more }: { c: ClockState; more: number }) {
   const stir = c.over > 0;
@@ -691,7 +743,8 @@ function GateClock({ c, more }: { c: ClockState; more: number }) {
   const done = c.red ? CLOCK.red : stir ? c.over : c.moves;
   const label = c.red ? 'Red Gate' : stir ? 'Stirring' : 'Moves';
   const value = stir ? `+${more}%` : `${c.moves}/${c.budget}`;
-  const sub = c.red ? 'Sealed' : stir ? `Red in ${c.toRed}` : `${c.left} left`;
+  // Stirring, the bar itself shows how far red is.
+  const sub = c.red ? 'Sealed' : stir ? null : `${c.left} left`;
   return (
     <div class={`gclock ${c.red ? 'is-red' : stir ? 'is-stir' : ''}`} role="meter" aria-valuemin={0} aria-valuemax={n} aria-valuenow={done}
       aria-label={c.red ? `Red Gate. Creatures not yet fought +${more}%. The way out is sealed.` : stir ? `Stirring. Creatures not yet fought +${more}%. Red Gate in ${c.toRed} moves.` : `Moves: ${c.moves} of ${c.budget}`}>
@@ -700,8 +753,8 @@ function GateClock({ c, more }: { c: ClockState; more: number }) {
         <i class="gclock__fill" style={`width:${(done / n) * 100}%`} />
         <span class="gclock__gate" aria-hidden="true"><Glyph name="gates" /></span>
       </span>
-      <b class="gclock__v num">{value}</b>
-      <small class="gclock__sub num">{sub}</small>
+      <b class={`gclock__v num ${sub ? '' : 'is-solo'}`}>{value}</b>
+      {sub && <small class="gclock__sub num">{sub}</small>}
     </div>
   );
 }

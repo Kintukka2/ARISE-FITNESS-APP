@@ -389,9 +389,14 @@ try {
     await snap('arena-map-stirring');
     // One move short of red, one more: the Gate turns red, and the way out seals.
     await clockTo({ over: 19 });
-    await page.locator('.dmap button.gnode--entrance').click(); await page.waitForSelector('.syswin__foot .btn', { timeout: 8000 }); await sleep(300);
+    await page.locator('.dmap button.gnode--entrance').click(); await page.waitForSelector('.syswin__foot .btn', { timeout: 8000 }); await sleep(900);
     if (!(await page.locator('.syswin', { hasText: 'The Gate has turned red.' }).count())) throw new Error('THE GATE TURNED RED AND SAID NOTHING');
-    await snap('arena-red-window'); await drain(); await sleep(400);
+    // Its share counts up, slowly and then all at once, and the window shakes as it lands.
+    await snap('arena-red-counting');
+    await page.waitForSelector('.redcount.is-done', { timeout: 6000 });
+    if (!(await page.locator('.syswin.is-shake').count())) throw new Error('THE RED GATE\'S WINDOW DID NOT SHAKE');
+    await sleep(700); await snap('arena-red-window'); await drain(); await sleep(400);
+    if (!(await page.locator('.arena__head .arena__red', { hasText: 'Red Gate' }).count())) throw new Error('A RED GATE KEPT ITS NAME IN THE HEAD');
     if (!(await page.locator('.arena.is-redgate .dmapwrap.is-red').count())) throw new Error('A RED GATE\'S PLAN IS NOT RED');
     if (await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count()) throw new Error('A RED GATE OFFERED A WITHDRAWAL');
     if (!(await page.locator('.arena__map', { hasText: 'The way out is sealed' }).count())) throw new Error('A SEALED WAY OUT SAID NOTHING');

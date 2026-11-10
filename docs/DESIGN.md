@@ -1355,12 +1355,17 @@ screen's edges; and the anime's Red Gate, a crimson portal.
   | S | 112 | 41 (76) |
 
 - **On screen.** Under the hunter's HP, the meter: `Moves 2/14`, a tick to each move and the Gate's mark
-  at the bar's end; past the budget it becomes the 20 moves to red, `Stirring +6%`, `Red in 14`; turned,
-  `Red Gate`, full and pulsing, `Sealed`. Every room the hunter can enter or walk to shows its moves at
+  at the bar's end; past the budget it becomes the 20 moves to red, `Stirring +6%`, the bar alone showing
+  how far red is (a line counting the moves to red, asked to go after the first look, said what the bar
+  already did); turned, `Red Gate`, full and pulsing, `Sealed`. Every room the hunter can enter or walk to shows its moves at
   its tile's foot, after a footprints glyph. The plan's rim reddens as it stirs; a Red Gate's plan is red
   and striped, its entrance sealed under a lock, and the arena's edges are red. The first move over and
   the move that turns it each open a System window, `[The Gate is stirring.]` and `[The Gate has turned
-  red.]`, each stating the creatures' share; every other move over is a line in the feed. The brief's
+  red.]`, each stating the creatures' share; every other move over is a line in the feed. Asked for after
+  the first look: the Red Gate's share counts up, slowly to 100 and then all at once, and the window
+  shakes as it lands; the arena's head reads `Red Gate` in red, glowing, in place of the Gate's name; and a
+  Red Gate has its own score (`redgate` in `audio.ts`: D2, 54 beats a minute, a minor second and a
+  tritone in every chord, a drone and a heartbeat), with a boom as it turns. The brief's
   Depth cell gives the budget, `14 moves`, and the Guide every rule with its number.
 - **Every Room and Cartographer** count floors: each floor of a cleared Gate with every room on it
   cleared. The settlement also stops counting a Gate cleared without every room as one the hunter was
