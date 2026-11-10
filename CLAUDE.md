@@ -130,7 +130,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Every word a player reads follows `docs/VOICE.md`, including README's description of the game. A
   System window is built with `src/ui/system.ts` and never explains, advises or refers to itself;
   the rules it would explain go in the Guide. `tests/voice.test.ts` checks what it can. A wording
-  decision that will come up again goes into VOICE.md in the same change.
+  decision that will come up again goes into VOICE.md in the same change. A creature is defeated, never
+  felled, in every line a player reads (the voice test holds it); keys the save holds keep their names.
 - The look follows the speaker (VOICE.md, "The look"). Anything the System shows is drawn in its
   frame from `src/ui/frame.tsx`, or `sys()` with a System kind, or a sheet opened with `system`, and
   set in Montserrat. Nothing else uses that frame or that type.

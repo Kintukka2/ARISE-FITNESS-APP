@@ -282,10 +282,13 @@ try {
   // The head: the portal inside the ring, a tick to each of the System's runs.
   if ((await page.locator('.sheet.is-top .bhero .aring__tick').count()) !== 24) throw new Error('THE RING DOES NOT TICK THE SYSTEM’S 24 RUNS');
   // The objectives open on the boss, always; the rewards are a list; the head holds the hunter's condition, a + to each.
-  if (!(await page.locator('.sheet.is-top .bline.is-main', { hasText: 'Fell the boss' }).count())) throw new Error('THE OBJECTIVES DO NOT OPEN ON THE BOSS');
+  if (!(await page.locator('.sheet.is-top .bline.is-main', { hasText: 'Defeat the boss' }).count())) throw new Error('THE OBJECTIVES DO NOT OPEN ON THE BOSS');
   if (!(await page.locator('.sheet.is-top .bline', { hasText: 'Gate clear:' }).count())) throw new Error('THE REWARDS DO NOT LIST THE CLEAR');
-  if ((await page.locator('.sheet.is-top .bhero .bvital__drink').count()) !== 3) throw new Error('THE HEAD DOES NOT HOLD HP, MP AND FATIGUE');
+  if ((await page.locator('.sheet.is-top .bbanner .bvital__drink').count()) !== 3) throw new Error('THE BANNER DOES NOT HOLD HP, MP AND FATIGUE');
   if (await page.locator('.sheet.is-top .bhero', { hasText: 'Runs cleared' }).count()) throw new Error('THE HEAD STILL COUNTS THE RUNS');
+  if (await page.locator('.sheet.is-top .syshead').count()) throw new Error('THE BRIEF STILL HAS A HEADER BOX OVER ITS BANNER');
+  if (!(await page.locator('.sheet.is-top .bhero__title', { hasText: 'E-Rank Gate:' }).count())) throw new Error('THE HEAD DOES NOT NAME THE GATE AFTER ITS GRADE');
+  if (await page.locator('.sheet.is-top', { hasText: /\bFell\b/ }).count()) throw new Error('THE BRIEF SAYS FELL');
   await snap('brief');
   // The +: a Health Potion held is drunk at once, and the HP climbs.
   const hpBefore = await page.locator('.sheet.is-top .bvital.is-hp b, .sheet.is-top .bvital.is-low b').first().textContent();
@@ -293,14 +296,13 @@ try {
   const hpAfter = await page.locator('.sheet.is-top .bvital.is-hp b, .sheet.is-top .bvital.is-low b').first().textContent();
   if (hpBefore === hpAfter) throw new Error('THE + BY HP DRANK NOTHING');
   await snap('brief-drink');
-  // The kit is docked by the way in, and opens its own window: the throwable readied there, a chip to each kind held.
-  await page.locator('.sheet.is-top .bkit').click(); await sleep(500);
-  const ember = page.locator('.sheet.is-top .bthrow__one', { hasText: 'Ember Flask' });
-  if (!(await ember.count())) throw new Error('THE KIT HAS NO THROWABLE TO READY');
-  await ember.click(); await sleep(300);
-  if ((await ember.getAttribute('aria-checked')) !== 'true') throw new Error('A THROWABLE TAPPED IN THE KIT WAS NOT READIED');
-  await snap('brief-kit');
-  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(400);
+  // The banner holds the bag: the throwable to carry in is readied from its wheel, and the dock holds the way in alone.
+  if (await page.locator('.sheet.is-top .bkit').count()) throw new Error('THE DOCK STILL HOLDS THE KIT');
+  await page.locator('.sheet.is-top .bbanner .bagmark').click(); await sleep(500);
+  await page.locator('.bagwheel__slot[aria-label^="Ember Flask"]').click(); await sleep(300);
+  await snap('brief-bag');
+  await page.locator('.bagwheel__hub .btn', { hasText: /^Ready$/ }).click(); await sleep(400);
+  if (!(await page.locator('.toast', { hasText: 'Ember Flask · Readied' }).count())) throw new Error('THE BAG ON THE BRIEF DID NOT READY THE THROWABLE');
   // Seals: one button on the brief, opening their window; a Seal pressed moves the gauge and adds its Ember.
   if (!(await page.locator('.sheet.is-top .bsealbtn').count())) throw new Error('THE BRIEF OFFERS NO SEALS');
   await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(600);
@@ -328,7 +330,8 @@ try {
   if (!(await page.locator('.sheet.is-top .bparty li.is-you').count())) throw new Error('THE PARTY TAB HOLDS NO PARTY');
   await snap('brief-party');
   await tab('Threat').click(); await sleep(500);
-  if (!(await page.locator('.sheet.is-top .bosscard').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS');
+  if (!(await page.locator('.sheet.is-top .bspot').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS IN ITS SPOTLIGHT');
+  if (!(await page.locator('.sheet.is-top .bthreat .bline').count())) throw new Error('THE THREAT TAB LISTS NO CREATURES');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
   // The Association's hunters are not the hunter's to order: the brief holds no standing orders.
   if (await page.locator('.sheet.is-top .chips--orders').count()) throw new Error('THE BRIEF STILL GIVES STANDING ORDERS');

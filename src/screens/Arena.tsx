@@ -277,7 +277,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
         <svg viewBox="0 0 300 300" class="actwheel__svg">
           {acts.map((a, i) => a
             ? <path key={a.use} d={ringSlot(i, n)} role="button" tabIndex={0} data-act={a.use} aria-pressed={a.use === chosen.use}
-              aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'fells it' : 'may fell it'}` : ''}`}
+              aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'defeats it' : 'may defeat it'}` : ''}`}
               class={`actwheel__slot actwheel__slot--${kind(a)} ${a.use === shown.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
               onClick={() => tap(a)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(a); } }} />
             : <path key={`empty${i}`} d={ringSlot(i, n)} class="actwheel__slot is-empty" aria-hidden="true" />)}
@@ -294,7 +294,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
           {/* A skill not ready says so at the hub's foot, in red: its level alone here. */}
           {(st.level || st.ready) && <small class="actwheel__ready">{[st.level, shown.off ? null : st.ready].filter(Boolean).join(' · ')}</small>}
           {shown.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
-          {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May fell it' : 'Fells it'}</span>}
+          {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May defeat it' : 'Defeats it'}</span>}
           <small class={`actwheel__foot ${(over !== undefined ? dragged?.off : chosen.off) ? 'is-off' : ''}`}>{foot}</small>
         </div>
         <button type="button" class="actwheel__close iconbtn" aria-label="Close the actions" onPointerDown={(e) => e.stopPropagation()}
@@ -1364,7 +1364,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         {(r.seals.length > 0 || r.drops > 0) && (
           <div class="alerts">
             {r.seals.length > 0 && <SysAlert fyi delay={150} icon={<Glyph name="lock" />}><strong>[Seals]</strong> {r.seals.map((id) => SEALS[id].name).join(', ')}{r.outcome === 'defeated' ? '. Carried out: nothing is paid.' : '. Their pay is in what the run left.'}</SysAlert>}
-            {r.drops > 0 && <SysAlert fyi delay={200} icon={<Glyph name="bone" />}><strong>[Condition drops]</strong> <span class="grant num">{r.drops}</span> {r.drops === 1 ? 'creature' : 'creatures'} felled the way their condition asks.</SysAlert>}
+            {r.drops > 0 && <SysAlert fyi delay={200} icon={<Glyph name="bone" />}><strong>[Condition drops]</strong> <span class="grant num">{r.drops}</span> {r.drops === 1 ? 'creature' : 'creatures'} defeated the way their condition asks.</SysAlert>}
           </div>
         )}
         {/* The weapon carried in, growing familiar: the System reports it, and a rank reached says so. */}

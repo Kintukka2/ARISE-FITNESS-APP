@@ -1354,7 +1354,7 @@ button.dmap__floor { cursor: pointer; }
 .bhero, .sgauge { --vc: var(--verdant); --vg: var(--verdant-glow); }
 .bhero[data-tone='even'], .sgauge[data-tone='even'] { --vc: var(--gold); --vg: var(--gold-glow); }
 .bhero[data-tone='over'], .sgauge[data-tone='over'] { --vc: var(--blood); --vg: var(--blood-glow); }
-.bhero { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 12px 14px; overflow: hidden; padding: 12px 12px 10px 8px;
+.bhero { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 10px 14px; overflow: hidden; padding: 12px 12px 12px 8px;
   border: 1px solid color-mix(in srgb, var(--rc) 50%, var(--sys-hair));
   background: radial-gradient(80% 120% at 0% 50%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 62%), radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, var(--vc) 10%, transparent), transparent 70%), rgba(6, 4, 2, 0.6);
   animation: bheroIn 520ms var(--ease) both; }
@@ -1374,13 +1374,18 @@ button.dmap__floor { cursor: pointer; }
 .bhero__pct small { font-size: 0.6rem; }
 .bhero__body { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .bhero__grade { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
-.bhero__assess { font-size: 1.55rem; font-weight: 800; line-height: 1.1; letter-spacing: 0.01em; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
+.bhero__side { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bhero__assess { margin-top: 4px; font-size: 1.3rem; font-weight: 800; line-height: 1.1; letter-spacing: 0.01em; text-align: center; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
+.bhero__side .bhero__rate { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+.bhero__side .bhero__rate b { color: #fff; }
+.bhero__title { margin: 2px 0 0; font-size: 1.02rem; font-weight: 700; line-height: 1.3; color: #fff; text-shadow: var(--sys-glow); }
+.bhero__title .label { display: block; margin-bottom: 2px; font-size: 0.56rem; }
 .bhero__body > small { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
 .bhero__body > small b { color: #fff; }
 .bhero__was { text-decoration: line-through; opacity: 0.6; }
 .bhero__body > small.bhero__depth { display: block; }
 .bhero__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
-.bhero > .basc, .bhero > .bvitals { position: relative; grid-column: 1 / -1; }
+.bhero > .basc { position: relative; grid-column: 1 / -1; }
 .bhero .bfile { margin: 1px 0 0; padding: 0; font-size: 0.72rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); -webkit-line-clamp: 3; }
 .bhero .bhero__tags { margin-top: 3px; }
 .bhero .basc { margin: 0 0 0 4px; }
@@ -1399,6 +1404,9 @@ button.dmap__floor { cursor: pointer; }
 .basc { display: flex; gap: 6px; margin: 0; padding: 6px 8px; border-left: 2px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent); font-size: 0.7rem; line-height: 1.4; color: var(--sys-ink); }
 .basc .ico { flex: none; width: 13px; height: 13px; margin-top: 1px; color: var(--gold); }
 
+
+/* Ascendant Ember's own figures, in its orange, wherever a Seal's pay is stated. */
+.emb { font-weight: 700; color: var(--ember); text-shadow: 0 0 8px var(--ember-glow); }
 
 /* A Seal in wax: grey and dull while open, red and lit once pressed. */
 .sealart { flex: none; overflow: visible; color: #3a3f4a; transition: color 260ms, filter 260ms; }
@@ -1461,7 +1469,7 @@ button.dmap__floor { cursor: pointer; }
 .bline.is-bounty b { color: var(--verdant); }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
-.bline__ember { display: inline-flex; align-items: center; gap: 4px; vertical-align: -3px; font-weight: 700; color: var(--verdant); }
+.bline__ember { display: inline-flex; align-items: center; gap: 4px; vertical-align: -3px; font-weight: 700; color: var(--ember); text-shadow: 0 0 8px var(--ember-glow); }
 .bline__mat.is-tracked { color: var(--forge); text-shadow: 0 0 6px var(--forge-glow); }
 .bline__track { display: inline-block; width: 13px; height: 13px; margin-left: 5px; vertical-align: -2px; }
 @keyframes lineIn { from { opacity: 0; transform: translateX(-8px); filter: brightness(2); } }
@@ -1471,9 +1479,58 @@ button.dmap__floor { cursor: pointer; }
 .btabbox .btabs { margin: 0; border: 0; border-bottom: 1px solid var(--sys-hair); background: rgba(255, 255, 255, 0.02); }
 .btabbox .btabs__one.is-on { background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 16%, transparent), rgba(4, 6, 10, 0.55)); }
 .btabbox .btab-panel { padding: 12px 10px 10px; }
-.btabbox .bosscard, .btabbox .bthreat__one, .btabbox .bfeat, .btabbox .bparty li { background: rgba(255, 255, 255, 0.025); }
 .bmap__depth { display: block; margin: -4px 0 2px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
 .bmap__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
+
+/* The brief's banner, at its top: the hunter, the bag, and their condition with its potions. */
+.sysbanner { position: relative; padding: 10px 12px; border: 1px solid var(--sys-hair); background: linear-gradient(180deg, rgba(79, 214, 255, 0.07), rgba(4, 6, 10, 0.6)); }
+.sysbanner__tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
+.bbanner { display: grid; gap: 10px; }
+.bbanner__who { display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 52px; }
+.bbanner__sigil { display: grid; flex: none; place-items: center; width: 44px; height: 44px; }
+.bbanner__name { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.bbanner__name b { overflow: hidden; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.06em; color: #fff; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; text-shadow: var(--sys-glow); }
+.bbanner__name small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bbanner__bag { flex: none; }
+.bbanner .bvitals { padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+
+/* The Threat tab: the boss in a spotlight, then a line to each creature. */
+.bspot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px 12px; text-align: center; background: radial-gradient(55% 70% at 50% 18%, rgba(255, 47, 62, 0.2), transparent 70%); }
+.bspot__art { display: grid; place-items: center; width: 72px; height: 72px; margin-bottom: 4px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 47, 62, 0.22), transparent 68%); color: #ff3b4b; filter: drop-shadow(0 0 10px rgba(255, 47, 62, 0.55)); animation: spotIn 520ms var(--ease) both; }
+.bspot__art .ico { width: 44px; height: 44px; }
+.bspot.is-unknown .bspot__art { color: color-mix(in srgb, #ff3b4b 70%, var(--sys-ink)); }
+.bspot > .label { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.bspot__name { font-size: 1.15rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.bspot__line { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bspot small.bthreat__drop { display: block; max-width: 30em; margin-top: 4px; font-size: 0.72rem; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
+.bspot .bthreat__drop .ico { display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.bspot .bthreat__bound { position: absolute; top: 6px; right: 6px; margin: 0; }
+@keyframes spotIn { from { opacity: 0; transform: scale(0.7); filter: brightness(2); } }
+.bchosen { display: flex; gap: 10px; padding: 8px 10px; border-left: 2px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 75%); }
+.bchosen > .ico { flex: none; width: 22px; height: 22px; color: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
+.bchosen .grow { display: flex; flex-direction: column; gap: 1px; }
+.bchosen small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.bthreat { padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.bthreat .bline__text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+.bthreat .bline__text b { font-weight: 600; }
+.bthreat__kind { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bthreat__one.is-elite .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
+.bthreat__one.is-elite .bthreat__kind { color: var(--gold); }
+.bthreat__one.is-bound .bline__mark > i { background: var(--arcane); box-shadow: 0 0 5px var(--arcane-glow); }
+.bthreat .bline__side small, .bthreat .bthreat__drop { display: inline-flex; align-items: center; gap: 4px; font-size: 0.66rem; font-weight: 600; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
+.bthreat__drop .ico { width: 11px; height: 11px; flex: none; }
+.bthreat__mark { width: 13px; height: 13px; align-self: center; color: #c9a7ff; }
+
+/* The Feats and the party, rows in the box rather than boxes of their own. */
+.bfeats { display: grid; }
+.bfeat { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--sys-hair); animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
+.bfeat:first-child { border-top: 0; padding-top: 2px; }
+.bfeat.is-done .bfeat__body b { color: var(--gold); }
+.sysframe .brief .bparty { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.sysframe .brief .bparty li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 8px; padding: 8px 2px 8px 8px; border: 0; border-left: 2px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); background: none; }
+.sysframe .brief .bparty li > .num { font-size: 0.82rem; }
+.sysframe .brief .bparty li.is-you { border-left-color: var(--mana); }
+.sysframe .brief .bparty li.is-shadow { border-left-color: var(--arcane); background: linear-gradient(90deg, color-mix(in srgb, var(--arcane) 10%, transparent), transparent 80%); }
 
 /* The tabs: a name over a count each, a bar sliding under the one shown. */
 .btabs { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 2px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.6); }
@@ -1493,41 +1550,20 @@ button.dmap__floor { cursor: pointer; }
 @keyframes tabIn { from { opacity: 0; transform: translateX(calc(var(--dir) * 22px)); } }
 .bthreat__sum { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
 .bthreat__sum .ico { width: 14px; height: 14px; color: #c9a7ff; }
-.bthreat__one { animation: rowIn 320ms calc(var(--i) * 40ms) var(--ease) both; }
 /* The threat: the boss's card, then a chip to each creature and the gatekeeper; violet where it already serves. */
-.brief .bosscard { position: relative; }
 .bthreat__bound { margin-left: auto; color: #c9a7ff; filter: drop-shadow(0 0 6px var(--arcane-glow)); }
 .bthreat__bound .ico { width: 16px; height: 16px; }
-.bthreat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
-.bthreat__one { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; }
-.bthreat__one > .famglyph, .bthreat__one > .ico { color: #ff6b77; }
-.bthreat__one > .ico { width: 15px; height: 15px; }
-.bthreat__name { display: flex; flex-direction: column; min-width: 0; }
-.bthreat__name b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.74rem; font-weight: 600; color: var(--sys-ink); }
-.bthreat__name small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 /* A creature's condition drop on the brief: its part's glyph, and the way to fell it. */
-.bthreat__name small.bthreat__drop, .bosscard small.bthreat__drop { display: inline-flex; align-items: center; gap: 4px; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
 .bthreat__drop .ico { width: 11px; height: 11px; flex: none; }
 /* Seals: a row to each, the rule in red and the pay in green; taken, the row is red-rimmed and locked. */
 /* Feats: a star to each, gold once met, the System's odds and the pay at the side. */
-.bthreat__one.is-elite { border-color: color-mix(in srgb, var(--gold) 45%, var(--sys-hair)); }
-.bthreat__one.is-elite .bthreat__name small { color: var(--gold); }
-.bthreat__one.is-bound { border-color: color-mix(in srgb, var(--arcane) 55%, transparent); background: color-mix(in srgb, var(--arcane) 8%, transparent); }
 .bthreat__mark { width: 13px; height: 13px; color: #c9a7ff; }
 /* The party: a card each, two to a row, the Shadows in their violet. */
-.sysframe .brief .bparty { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.sysframe .brief .bparty li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--sys-hair); }
-.sysframe .brief .bparty li > .num { font-size: 0.82rem; }
 .bparty__who { display: flex; flex-direction: column; min-width: 0; }
 .bparty__who b { display: -webkit-box; overflow: hidden; font-size: 0.78rem !important; line-height: 1.2; word-break: break-word; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .bparty__who small { font-size: 0.6rem !important; }
-.sysframe .brief .bparty li.is-you { border-color: color-mix(in srgb, var(--mana) 55%, transparent); }
-.sysframe .brief .bparty li.is-shadow { border-color: color-mix(in srgb, var(--arcane) 50%, transparent); background: color-mix(in srgb, var(--arcane) 8%, rgba(3, 8, 20, 0.45)); }
 /* The Feats: a row each, its star gold once met, the System's odds as a thin bar under its objective. */
-.bfeats { display: grid; gap: 6px; }
-.bfeat { display: flex; align-items: center; gap: 10px; padding: 9px 10px; animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
 .bfeat__star { flex: none; width: 22px; height: 22px; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
-.bfeat.is-done { border-color: color-mix(in srgb, var(--gold) 50%, var(--sys-hair)); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
 .bfeat.is-done .bfeat__star { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
 .bfeat__body { display: grid; flex: 1; gap: 2px; min-width: 0; }
 .bfeat__body b { font-size: 0.8rem; }
@@ -1550,7 +1586,7 @@ button.dmap__floor { cursor: pointer; }
 .sgauge__body > small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
 .sgauge__body > small b { color: #fff; }
 .sgauge__ember { display: flex; grid-area: ember; flex-direction: column; align-items: center; gap: 1px; }
-.sgauge__ember b { font-size: 1.15rem; font-weight: 800; color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); animation: emberCount 420ms var(--ease); }
+.sgauge__ember b { font-size: 1.15rem; font-weight: 800; color: var(--ember); text-shadow: 0 0 10px var(--ember-glow); animation: emberCount 420ms var(--ease); }
 .sgauge__ember small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ember); }
 .sgauge__bar { display: flex; grid-area: bar; align-items: center; gap: 3px; }
 .sgauge__bar i { height: 8px; border: 1px solid rgba(255, 154, 60, 0.35); background: rgba(255, 154, 60, 0.08); transform-origin: left; transition: background 300ms, box-shadow 300ms, border-color 300ms; }
@@ -1567,7 +1603,7 @@ button.dmap__floor { cursor: pointer; }
 .sealcard__body { display: grid; gap: 2px; min-width: 0; }
 .sealcard__body b { font-size: 0.9rem; font-weight: 700; color: #fff; }
 .sealcard__rule { font-size: 0.72rem; color: var(--blood); }
-.sealcard__pay { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.7rem; color: var(--verdant); }
+.sealcard__pay { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.7rem; color: var(--ember); }
 .sealcard__state { display: inline-flex; align-items: center; gap: 4px; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
 .sealcard__state .ico { width: 11px; height: 11px; }
 .sealcard.is-on { border-color: var(--sysred); background: radial-gradient(60% 120% at 0% 50%, rgba(255, 47, 62, 0.22), transparent 70%), rgba(40, 4, 10, 0.7); box-shadow: inset 0 0 16px rgba(255, 40, 70, 0.18), 0 0 10px rgba(255, 47, 62, 0.15); }
@@ -1584,48 +1620,10 @@ button.dmap__floor { cursor: pointer; }
 @keyframes lift { from { transform: scale(1.12) translateY(-3px); filter: brightness(1.6); } }
 @keyframes ripple { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.7); } }
 
-/* THE KIT: the satchel's Health Potions, then the throwables, the one readied lit. */
-.kitsheet { gap: 10px; }
-.kitsheet__satchel { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 10px 12px; }
-.kitsheet__held { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 3px; }
-.kitsheet__held b { font-size: 1rem; color: #fff; }
-.kitsheet__held small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.kitsheet__go { flex-basis: 100%; }
-.kitsheet__satchel .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.kitsheet__satchel strong { font-size: 0.82rem; }
-.kitsheet__satchel small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
-.kitsheet__art { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, var(--verdant) 45%, transparent); background: rgba(72, 245, 168, 0.08); color: var(--verdant); }
-.kitsheet__art .ico { width: 22px; height: 22px; }
-.kitsheet__pips { display: flex; gap: 4px; }
-.kitsheet__pips i { width: 14px; height: 5px; border: 1px solid color-mix(in srgb, var(--verdant) 45%, transparent); }
-.kitsheet__pips i.is-on { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
-.bthrow { display: grid; gap: 8px; }
-.bthrow__kit { display: grid; gap: 6px; }
-.bthrow__one { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; background: rgba(22, 12, 5, 0.7); color: var(--ink-2); font: inherit; text-align: left; cursor: pointer; transition: border-color 200ms, background 200ms, box-shadow 200ms; }
-.bthrow__one .ico { width: 20px; height: 20px; color: var(--ember); }
-.bthrow__name { display: flex; flex-direction: column; min-width: 0; }
-.bthrow__name b { font-size: 0.84rem; color: #fff; }
-.bthrow__name small { font-size: 0.64rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.bthrow__n { font-size: 1rem; color: var(--ink-2); }
-.bthrow__one.is-on { border-color: var(--ember); background: radial-gradient(60% 120% at 0% 50%, rgba(255, 154, 60, 0.24), transparent 70%), rgba(22, 12, 5, 0.85); box-shadow: 0 0 12px var(--ember-glow); }
-.bthrow__one.is-on .bthrow__name small { color: var(--ember); }
-.bthrow__one:disabled { cursor: default; }
-.bthrow__one:disabled:not(.is-on) { opacity: 0.4; }
 
 /* The dock: the kit, then the way in, at the foot whatever is scrolled past. */
 .bdock { position: sticky; bottom: -1px; z-index: 2; margin: 0 -2px -2px; padding: 22px 2px 4px; background: linear-gradient(180deg, transparent, rgba(4, 3, 2, 0.96) 45%); }
-.bdock__row { display: flex; align-items: stretch; gap: 8px; }
 .bdock .btn--primary:not([disabled]) { border-color: var(--ember); color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--ember) 42%, rgba(10, 6, 2, 0.8)), color-mix(in srgb, var(--ember) 18%, rgba(10, 6, 2, 0.9))); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ember) 50%, transparent), 0 0 20px var(--ember-glow); text-shadow: 0 0 8px var(--ember-glow); }
-.bdock__go { min-width: 0; }
-.bkit { display: flex; flex: none; align-items: center; gap: 2px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--ember) 45%, var(--sys-hair)); background: rgba(10, 6, 2, 0.9); color: var(--sys-ink); font: inherit; cursor: pointer; }
-.bkit:active { transform: scale(0.97); }
-.bkit__one { position: relative; display: grid; place-items: center; width: 34px; height: 40px; }
-.bkit__one .ico { width: 20px; height: 20px; }
-.bkit__one.is-hp .ico { color: var(--verdant); }
-.bkit__one.is-throw .ico { color: var(--ember); }
-.bkit__one b { position: absolute; right: 0; bottom: 2px; min-width: 15px; padding: 0 3px; border-radius: 8px; background: rgba(0, 0, 0, 0.85); font-size: 0.62rem; line-height: 1.35; color: #fff; }
-.bkit__one.is-none { opacity: 0.4; }
-.bkit__one + .bkit__one { border-left: 1px solid var(--sys-hair); }
 /* The way in: docked to the foot of the window, the sheet fading behind it. */
 .sysframe .ascension__rules { gap: 6px; padding-left: 0; list-style: none; color: var(--sys-ink); }
 .sysframe .ascension__rules li { padding: 7px 10px; font-size: 0.82rem; }

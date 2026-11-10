@@ -7,7 +7,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { powerOf, THROWABLES } from '@/core/combat';
+import { powerOf } from '@/core/combat';
 import { bossKnown, dungeonById, enemyById, entryBlock, isPractice, mapKnown, rankIdx } from '@/core/gates';
 import { licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
@@ -36,19 +36,18 @@ import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import { createStore, useSave } from '@/store';
-import { Btn, Card, RankPlate, Shards, useNow } from '@/ui/components';
+import { Btn, RankPlate, Shards, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
-import { Glyph, Shard, THROW_GLYPH } from '@/ui/icons';
+import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
-import { bagFor, enterGate, readyThrow } from '@/app/flow';
+import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
 import * as feats from '@/core/feats';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { CONDITION } from '@/data/drops';
 import { conditionLine, dropGlyph } from '@/ui/conditions';
-import { openExchange } from './Exchange';
 import { drinkFlow } from './Inventory';
 
 /**
@@ -181,8 +180,31 @@ export function openBrief(d: Dungeon) {
   openSheet({
     title: trial ? `Trial: Ascension ${trialLevel(d) + 1}` : `Gate: ${d.name}`,
     system: trial ? { icon: <Glyph name="cert" />, kind: 'gold' } : { icon: <RankPlate rank={d.rank} size={40} />, kind: 'gates' },
+    banner: () => <Banner d={d} />,
     render: (close) => <Brief d={d} close={close} />,
   });
+}
+
+/**
+ * The brief's banner, at its top: the hunter, their level and grade, the bag, and their condition, HP, MP
+ * and Fatigue, each with its potion one tap away, so what they walk in with is seen and settled first.
+ */
+function Banner({ d }: { d: Dungeon }) {
+  const s = useSave();
+  return (
+    <div class="bbanner">
+      <span class="bbanner__who">
+        <span class="sysbox bbanner__sigil"><Sigil rank={licensedRank(s)} size={30} /></span>
+        <span class="bbanner__name">
+          <b>{s.hunter.name}</b>
+          <small>Level <span class="num">{s.hunter.level}</span> · {licensedRank(s)}-Rank Hunter</small>
+        </span>
+        {/* The bag: the potions, a Gate Survey, and the throwable to ready for the Gate; a run's own while one is open on it. */}
+        <span class="bbanner__bag"><ItemsMark items={bagFor(s, d)} /></span>
+      </span>
+      <Vitals />
+    </div>
+  );
 }
 
 function Brief({ d, close }: { d: Dungeon; close: () => void }) {
@@ -240,23 +262,25 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   return (
     <div class={`stack brief ${trial ? 'is-trial' : ''}`} style={`--rc: ${trial ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
       {/*
-        The head: the Gate's portal inside the assessment's ring, its grade, the verdict, the Association's file
-        and its chips; at its foot the hunter's condition, each with its potion one tap away.
+        The head: the Gate's portal inside the assessment's ring, the verdict under it; beside them its grade and
+        its name, the Association's file and its chips.
       */}
       <header class={`bhero ${pending ? 'is-pending' : ''} ${taken.length ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
-        <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${taken.length && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
-          <Ring p={proj} plain={plain} r={44} />
-          <span class="bhero__portal ga-portal" aria-hidden="true">
-            <i class="ga-portal__swirl" /><i class="ga-portal__core" />
-            <RankPlate rank={d.rank} size={32} />
+        <span class="bhero__side">
+          <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${taken.length && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
+            <Ring p={proj} plain={plain} r={44} />
+            <span class="bhero__portal ga-portal" aria-hidden="true">
+              <i class="ga-portal__swirl" /><i class="ga-portal__core" />
+              <RankPlate rank={d.rank} size={32} />
+            </span>
+            <b class="bhero__pct num" aria-hidden="true">{rate}<small>%</small></b>
           </span>
-          <b class="bhero__pct num" aria-hidden="true">{rate}<small>%</small></b>
-        </span>
-        <span class="bhero__body">
-          <span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}</span>
           <b class="bhero__assess">{v.text}</b>
           {/* Under Seals that move it, the rate without them and with them; the ring's pill holds it otherwise. */}
-          {taken.length > 0 && plainRate !== rate && <small class="bhero__rate">Clear rate: <span class="bhero__was num">{plainRate}%</span> → <b class="num">{rate}%</b></small>}
+          {taken.length > 0 && plainRate !== rate && <small class="bhero__rate"><span class="bhero__was num">{plainRate}%</span> → <b class="num">{rate}%</b></small>}
+        </span>
+        <span class="bhero__body">
+          <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}:</span> {trial ? `Ascension ${trialLevel(d) + 1}` : d.name}</h3>
           <File d={d} />
           <span class="bhero__tags">
             {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-bounty'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
@@ -268,7 +292,6 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         {level > 0 && (
           <p class="basc"><Glyph name="crown" /><span>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''}</span></p>
         )}
-        <Vitals />
       </header>
 
       <Objectives d={d} level={level} taken={taken} />
@@ -295,7 +318,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </div>
       </section>
 
-      {/* The way in stays at the foot of the window, the kit beside it, whatever is scrolled past. */}
+      {/* The way in stays at the foot of the window, whatever is scrolled past. */}
       <div class="bdock">
         {block === 'open' ? open?.id === d.id
           ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
@@ -304,12 +327,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
             : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
               : (
-                <div class="bdock__row">
-                  <KitButton d={d} />
-                  <Btn kind={trial ? 'gold' : 'primary'} size="lg" class="grow bdock__go" onClick={() => void enterGate(d, taken)} sound="none" tour="enter">
-                    {trial ? 'Enter The Trial' : 'Enter The Gate'}
-                  </Btn>
-                </div>
+                <Btn kind={trial ? 'gold' : 'primary'} size="lg" block onClick={() => void enterGate(d, taken)} sound="none" tour="enter">
+                  {trial ? 'Enter The Trial' : 'Enter The Gate'}
+                </Btn>
               )}
       </div>
     </div>
@@ -317,7 +337,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 }
 
 /**
- * The hunter's condition at the head's foot: HP, MP and Fatigue, a thin bar and the figure each, and a +
+ * The hunter's condition in the banner: HP, MP and Fatigue, a thin bar and the figure each, and a +
  * that drinks the potion for it at once, held or bought (a purchase asked first, as the Exchange asks).
  */
 function Vitals() {
@@ -431,12 +451,12 @@ function Objectives({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
       <ul class="blist">
         <Line cls="is-main" mark={<Glyph name={isTrial(d) ? 'crown' : 'skull'} />}
           side={isTrial(d) ? <span class="num">{d.trial}</span> : met ? <span class="warn">{met.name}</span> : known ? <span class="warn">{boss.name}</span> : '?'}>
-          {isTrial(d) ? 'Fell the Chosen, one after another' : met ? 'Fell the Chosen in the boss’s place' : 'Fell the boss'}
+          {isTrial(d) ? 'Defeat the Chosen, one after another' : met ? 'Defeat the Chosen in the boss’s place' : 'Defeat the boss'}
         </Line>
         {assoc && <Line cls="is-assoc" side={<span class="num">{assoc.got}/{assoc.need}</span>}>Association Quest: {goalOf(assoc)}</Line>}
         {daily.map((k, i) => <Line key={i} cls="is-quest" side={<span class="num">{k.got}/{k.need}</span>}>Daily Quest: {contracts.contractText(k, q.grade)}</Line>)}
         {proof && <Line cls="is-proof" side={<span class="num">{a.proof.gates.length}/{ascension.proofNeeds(s)}</span>}>To open Ascension {a.unlocked + 1}: clear it at Ascension {a.unlocked}</Line>}
-        {taken.includes('wardens') && <Line cls="is-seal" mark={<SealArt size={14} class="is-on" />} side={<span class="grant">Ember +{sealEmber('wardens', d.rank)}</span>}>Wardens Wake: fell the Gatekeeper</Line>}
+        {taken.includes('wardens') && <Line cls="is-seal" mark={<SealArt size={14} class="is-on" />} side={<span class="emb">Ember +{sealEmber('wardens', d.rank)}</span>}>Wardens Wake: defeat the Gatekeeper</Line>}
       </ul>
     </section>
   );
@@ -494,7 +514,7 @@ function SealButton({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; t
       </span>
       <span class="bsealbtn__body">
         <b>{taken.length ? `Sealed: ${taken.map((id) => SEALS[id].name).join(', ')}` : 'Seal The Gate'}</b>
-        <small>{taken.length ? <>{fixed ? 'Fixed for this run' : 'Clear'}: <span class="grant">Ember +{ember}</span></> : SEAL_LINE}</small>
+        <small>{taken.length ? <>{fixed ? 'Fixed for this run' : 'Clear'}: <span class="emb">Ember +{ember}</span></> : SEAL_LINE}</small>
       </span>
       <Glyph name="chevron" class="bsealbtn__go" />
     </button>
@@ -503,7 +523,10 @@ function SealButton({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; t
 
 // ------------------------------------------------------------------ the tabs
 
-/** What stands in the Gate: the boss, one of the Chosen if it holds the Gate today, and the rest of what walks there. */
+/**
+ * What stands in the Gate: the boss in a spotlight at the top, one of the Chosen under it if it holds the
+ * Gate today, then a line to each of the rest of what walks there, and the Shadows bound from them.
+ */
 function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
   const s = useSave();
   const known = bossKnown(s, d);
@@ -516,33 +539,32 @@ function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
   const seen = mapKnown(s, d);
   const counted = [...inside, ...(known ? [boss] : [])];
   const bound = counted.filter((e) => shadows.isBound(s, e.id)).length;
+  const who = met ?? (known ? boss : null);
   return (
     <>
-      <Card class="bosscard" tour="boss">
-        {known || met ? <FamilyGlyph family={(met ?? boss).family} size={40} /> : <Glyph name="unknown" />}
-        <div class="grow">
-          <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
-          <b>{met ? met.name : known ? boss.name : '?'}</b>
-          <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
-          {known && !met && <small class="bthreat__drop"><Glyph name={dropGlyph(boss.id, true)} />{conditionLine(boss.id, true)}</small>}
-        </div>
+      <div class={`bspot ${who ? '' : 'is-unknown'}`} data-tour="boss">
+        <span class="bspot__art">{who ? <FamilyGlyph family={who.family} size={52} /> : <Glyph name="unknown" />}</span>
+        <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
+        <b class="bspot__name">{who ? who.name : '?'}</b>
+        <small class="bspot__line">{who ? `${who.rank}-Rank ${who.family} · ${who.role} · Power ${powerOf(who.base)}` : '?'}</small>
+        {known && !met && <small class="bthreat__drop"><Glyph name={dropGlyph(boss.id, true)} />{conditionLine(boss.id, true)}</small>}
         {known && !met && shadows.isBound(s, boss.id) && <span class="bthreat__bound" title="Serves as a Shadow"><Glyph name="shadows" /></span>}
-      </Card>
-      {holds && <ChosenCard d={d} w={holds} level={level} />}
+      </div>
+      {holds && <ChosenLine d={d} w={holds} level={level} />}
       {!isTrial(d) && inside.length > 0 && (
-        <div class="bthreat">
-          {inside.map((e, i) => (
-            <span key={e.id} class={`sysbox bthreat__one ${seen && shadows.isBound(s, e.id) ? 'is-bound' : ''} ${e.id === d.elite ? 'is-elite' : ''}`} style={`--i: ${i}`}>
-              {seen ? <FamilyGlyph family={e.family} size={16} /> : <Glyph name="unknown" />}
-              <span class="bthreat__name">
-                <b>{seen ? e.name : '?'}</b>
-                <small>{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small>
-                {seen && raid.conditionOf(e.id, false) && <small class="bthreat__drop"><Glyph name={dropGlyph(e.id, false)} />{CONDITION[raid.conditionOf(e.id, false)!].text}</small>}
-              </span>
-              {seen && shadows.isBound(s, e.id) && <Glyph name="shadows" class="bthreat__mark" />}
-            </span>
-          ))}
-        </div>
+        <ul class="blist bthreat">
+          {inside.map((e) => {
+            const cond = seen ? raid.conditionOf(e.id, false) : null;
+            const shadow = seen && shadows.isBound(s, e.id);
+            return (
+              <Line key={e.id} cls={`bthreat__one ${e.id === d.elite ? 'is-elite' : ''} ${shadow ? 'is-bound' : ''}`}
+                side={cond ? <span class="bthreat__drop"><Glyph name={dropGlyph(e.id, false)} />{CONDITION[cond].text}</span> : undefined}>
+                <b>{seen ? e.name : '?'}</b>{shadow && <Glyph name="shadows" class="bthreat__mark" />}
+                <small class="bthreat__kind">{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small>
+              </Line>
+            );
+          })}
+        </ul>
       )}
       {!isPractice(d) && !isTrial(d) && counted.length > 0 && (
         <p class="bthreat__sum"><Glyph name="shadows" />Shadows bound: <span class="num">{bound}/{counted.length}</span></p>
@@ -551,22 +573,22 @@ function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
   );
 }
 
-/** One of the Chosen holding the Gate in the brief: when it shows itself, and what felling it pays. */
-function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: number }) {
+/** One of the Chosen holding the Gate, under the boss's spotlight: when it shows itself, and what defeating it pays. */
+function ChosenLine({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: number }) {
   const s = useSave();
   const pay = ascension.payShare(level);
-  const felled = s.ascension.felled.includes(w.level);
+  const beaten = s.ascension.felled.includes(w.level);
   return (
-    <Card class="bosscard chosencard" tone="gold">
+    <div class="bchosen">
       <Glyph name="crown" />
-      <div class="grow">
+      <span class="grow">
         <span class="label">Chosen</span>
         <b class="warn">[{w.name}]</b>
-        <small class="muted">{level >= w.level ? `In the boss’s place at Ascension ${level}.` : `Appears at Ascension ${w.level} or higher.`}</small>
-        <small>{felled ? <>Bounty: Mana Shards <span class="grant">+{shop.gateShards(d.rank, WALKERS.bounty * pay)}</span></>
+        <small>{level >= w.level ? `In the boss’s place at Ascension ${level}.` : `Appears at Ascension ${w.level} or higher.`}</small>
+        <small>{beaten ? <>Bounty: Mana Shards <span class="grant">+{shop.gateShards(d.rank, WALKERS.bounty * pay)}</span></>
           : <>Masterwork: {RARITY[d.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>}</small>
-      </div>
-    </Card>
+      </span>
+    </div>
   );
 }
 
@@ -581,7 +603,7 @@ function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Par
         const done = met.includes(id);
         const n = odds[id] ?? 0;
         return (
-          <div key={id} class={`sysbox bfeat ${done ? 'is-done' : ''}`} style={`--i: ${i}; --odds: ${runs ? n / runs : 0}`}>
+          <div key={id} class={`bfeat ${done ? 'is-done' : ''}`} style={`--i: ${i}; --odds: ${runs ? n / runs : 0}`}>
             <Glyph name="star" class="bfeat__star" />
             <span class="bfeat__body">
               <b>{FEATS[id].name}</b>
@@ -599,7 +621,7 @@ function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Par
   );
 }
 
-/** Today's map through its fog, a floor at a time, the System's road along it and the bag at its corner. Unidentified until the hunter has been inside. */
+/** Today's map through its fog, a floor at a time, the System's road along it. Unidentified until the hunter has been inside. */
 function MapPanel({ d, road }: { d: Dungeon; road: string[] }) {
   const s = useSave();
   const day = dayKey();
@@ -607,8 +629,6 @@ function MapPanel({ d, road }: { d: Dungeon; road: string[] }) {
   const [floor, setFloor] = useState(0);
   const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, day) ? s.gates.raid : null;
   const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, day)));
-  // The bag: a Gate Survey from it charts every room, before the hunter goes in or after. A tower has no plan to chart.
-  const bag = map.tower ? null : <ItemsMark items={bagFor(s, d)} />;
   // The road's length: its rooms, its floors, the System's way to the boss and the Gate's budget of moves.
   const steps = raid.stepsOf(map);
   const depth = isTrial(d) ? `${steps} Chosen · no rest between them`
@@ -619,11 +639,10 @@ function MapPanel({ d, road }: { d: Dungeon; road: string[] }) {
       <div class="section__head"><span class="label">Today’s map</span><span class="section__right">{mapKnown(s, d) ? <>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></> : 'Unidentified'}</span></div>
       <small class="bmap__depth"><Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />{depth}</small>
       {mapKnown(s, d)
-        ? <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} corner={bag} compact />
+        ? <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} compact />
         : (
           <div class="gmap-fogwrap">
             <div class="gmap-fog" role="img" aria-label="Map unidentified"><Glyph name="unknown" /><b>?</b></div>
-            {bag && <span class="gmap-fog__corner">{bag}</span>}
           </div>
         )}
     </>
@@ -734,72 +753,6 @@ function SealSheet({ d, close }: { d: Dungeon; close: () => void }) {
         })}
       </ul>
       <Btn kind="primary" block onClick={close}>{fixed ? 'Close' : 'Done'}</Btn>
-    </div>
-  );
-}
-
-// ------------------------------------------------------------------ the kit
-
-/** The kit, docked by the way in: the satchel's Health Potions and the throwable readied, each with its count. It opens the kit's window. */
-function KitButton({ d }: { d: Dungeon }) {
-  const s = useSave();
-  const now = shop.readied(s);
-  const kind = THROWABLES.find((k) => k.id === now);
-  const hp = shop.held(s, 'hp');
-  return (
-    <button type="button" class="bkit" aria-haspopup="dialog"
-      aria-label={`Kit: Health Potion ${hp} of ${shop.satchelMax(s)}${kind ? `, ${kind.name} readied, ${shop.held(s, kind.id)} held` : ', nothing readied to throw'}`}
-      onClick={() => { sfx.tap(); openKit(d); }}>
-      <span class={`bkit__one is-hp ${hp ? '' : 'is-none'}`}><Glyph name="potion" /><b class="num">{hp}</b></span>
-      <span class={`bkit__one is-throw ${kind ? '' : 'is-none'}`}><Glyph name={kind ? THROW_GLYPH[kind.id] : 'flash'} /><b class="num">{kind ? shop.held(s, kind.id) : 0}</b></span>
-    </button>
-  );
-}
-
-function openKit(d: Dungeon) {
-  openSheet({ title: `Kit: ${d.name}`, system: { icon: <Glyph name="satchel" />, kind: 'gates' }, render: (close) => <KitSheet d={d} close={close} /> });
-}
-
-/**
- * The kit taken in: the satchel's Health Potions, with the Exchange while it has room, and a chip to each
- * throwable, the one readied lit. The action wheel throws only that one inside.
- */
-function KitSheet({ d, close }: { d: Dungeon; close: () => void }) {
-  const s = useSave();
-  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
-  const now = run ? run.throw ?? null : shop.readied(s);
-  return (
-    <div class="stack kitsheet">
-      <section class="sysbox kitsheet__satchel">
-        <span class="kitsheet__art"><Glyph name="potion" /></span>
-        <span class="grow">
-          <strong>[Item: Health Potion]</strong>
-          <small><span class="grant">HP +{shop.POTION_RESTORE * 100}%</span></small>
-        </span>
-        <span class="kitsheet__held">
-          <b class="num">{shop.held(s, 'hp')}/{shop.satchelMax(s)}</b>
-          <span class="kitsheet__pips" aria-hidden="true">{Array.from({ length: shop.satchelMax(s) }, (_, i) => <i key={i} class={i < shop.held(s, 'hp') ? 'is-on' : ''} />)}</span>
-          <small>Satchel</small>
-        </span>
-        {shop.satchelRoom(s) > 0 && <Btn size="sm" block class="kitsheet__go" onClick={() => { closeAllSheets(); openExchange(); }}>To The Exchange</Btn>}
-      </section>
-      <section class="bthrow">
-        <span class="label">Throw</span>
-        <span class="bthrow__kit" role="radiogroup" aria-label="Throwable readied">
-          {THROWABLES.map((k) => {
-            const n = shop.held(s, k.id);
-            return (
-              <button type="button" key={k.id} role="radio" aria-checked={k.id === now} aria-label={`${k.name}, ${n} held`}
-                class={`sysbox bthrow__one ${k.id === now ? 'is-on' : ''}`} disabled={!!run || n <= 0} onClick={() => readyThrow(k.id)}>
-                <Glyph name={THROW_GLYPH[k.id]} />
-                <span class="bthrow__name"><b>{k.name}</b><small>{k.id === now ? 'Readied' : n > 0 ? 'Ready' : 'None held'}</small></span>
-                <b class="num bthrow__n">{n}</b>
-              </button>
-            );
-          })}
-        </span>
-      </section>
-      <Btn kind="primary" block onClick={close}>Done</Btn>
     </div>
   );
 }

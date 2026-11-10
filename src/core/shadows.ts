@@ -114,7 +114,7 @@ export function requirements(s: Save, sh: Shadow): Requirement[] {
   if (!next) return [];
   const need: Requirement[] = [{ key: 'level', label: 'Level', have: levelOf(sh), need: rankOf(sh).cap, met: atCap(sh) }];
   if (next.essence) need.push({ key: 'essence', label: 'Shadow Essence', have: s.shadows.essence ?? 0, need: next.essence, met: (s.shadows.essence ?? 0) >= next.essence });
-  if (next.bosses) need.push({ key: 'bosses', label: 'Bosses felled', have: sh.bosses, need: next.bosses, met: sh.bosses >= next.bosses });
+  if (next.bosses) need.push({ key: 'bosses', label: 'Bosses defeated', have: sh.bosses, need: next.bosses, met: sh.bosses >= next.bosses });
   return need;
 }
 /** Everything the rank above asks is met. */

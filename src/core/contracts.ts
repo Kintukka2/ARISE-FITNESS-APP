@@ -186,8 +186,8 @@ const names = (ids: string[] = []) => {
 export function contractText(c: Contract, grade: Rank): string {
   switch (c.kind) {
     case 'clear': return `Clear ${c.need} Gates of ${grade}-Rank or higher.`;
-    case 'fell': return `Fell ${c.need} ${c.family} creatures.`;
-    case 'shadows': return `Let your Shadows help fell ${c.need} creatures.`;
+    case 'fell': return `Defeat ${c.need} ${c.family} creatures.`;
+    case 'shadows': return `Let your Shadows help defeat ${c.need} creatures.`;
     case 'tired': return `Clear a Gate you walked into carrying ${c.at} fatigue or more.`;
     case 'gatekeeper': return 'Defeat a Gatekeeper.';
     case 'offroad': return 'Clear a Gate off the marked road.';

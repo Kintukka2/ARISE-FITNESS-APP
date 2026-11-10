@@ -55,7 +55,7 @@ export function lines(b: Beat, name: (uid: string) => string, drop: (uid: string
     } else if (e.t === 'charge') out.push({ text: `◇ ${name(e.a)}: ${e.ab}. ${e.left} to go.`, tone: side(e.a) });
     else if (e.t === 'break') out.push({ text: `✴ ${name(e.v)}: [Broken]. Its move is lost.`, tone: 'status' });
     // Felled the way its condition asks: what it leaves, banked on the run.
-    else if (e.t === 'drop') out.push({ text: `▸ ${name(e.v)}: felled ${drop(e.v) ?? 'as its condition asks.'}`, tone: 'outcome' });
+    else if (e.t === 'drop') out.push({ text: `▸ ${name(e.v)}: defeated ${drop(e.v) ?? 'as its condition asks.'}`, tone: 'outcome' });
     else if (e.t === 'cover') out.push({ text: `◈ ${name(e.a)}: Cover → ${name(e.v)}. Foes turned: ${e.n}.`, tone: side(e.a) });
     else if (e.t === 'throw') out.push({ text: `◆ ${name(e.a)}: ${throwable(e.item)?.name ?? e.item} → ${e.v.map(name).join(', ')}.`, tone: side(e.a) });
     else if (e.t === 'heal') out.push({ text: e.ab ? `✚ ${name(e.a)} HP +${e.amt}` : `✚ ${name(e.a)}: Health Potion. HP +${e.amt}`, tone: side(e.a) });

@@ -144,10 +144,10 @@ gate a contract names with a Quest chip, and the Quests tab counts the day's unt
   and written to the save the first time the day's are shown, so a level-up at noon cannot redraw
   them. They read the two gates that open the day at the hunter's grade, so each one names where it
   can be done.
-- **Six kinds:** clear two or three gates at your grade or above; fell so many of one family (kills
+- **Six kinds:** clear two or three gates at your grade or above; defeat so many of one family (kills
   in any gate count, cleared or not); beat a gatekeeper; clear a gate off the System's marked road;
   clear one walked into carrying three gates' worth of fatigue (the hint says how weak that makes
-  you); and, from D-Rank with a Shadow out, let the Shadows help fell so many creatures.
+  you); and, from D-Rank with a Shadow out, let the Shadows help defeat so many creatures.
 - **Pay:** each contract pays a clear's shards and a tenth of a clear's experience at the grade it
   was issued for; all three pay twice the shards and a fifth of the experience on top. Nothing
   expires into a penalty.
@@ -356,7 +356,7 @@ fight was tried and did not narrow it.
 ### 6. Depth for the Shadows — built
 
 - **Levels, capped by rank** (`data/shadows.ts`, `core/shadows.ts`). A Shadow levels on every
-  creature it helps fell: it landed a hit on it, whoever landed the last (`Unit.hurtBy`, credited in
+  creature it helps defeat: it landed a hit on it, whoever landed the last (`Unit.hurtBy`, credited in
   `raid.openChamber`). Each pays XP 1, a boss 5 (`SHADOW_XP`), and each level asks a little
   more than the last (`LEVEL_XP`). Every level grows each attribute by 2.5% of its creature's own.
   Its rank caps the level: Bound Lv.10, Sworn Lv.20, Vanguard Lv.30, Ascendant Lv.40, so the old kill
@@ -365,7 +365,7 @@ fight was tried and did not narrow it.
   spent the moment it was promoted, so a promotion raised the level too; the hunter read Level
   10 → 12 as a promotion doing what it should not, so the promotion now lifts only the cap.
 - **Promotion** asks for the level at the cap, Shadow Essence (Sworn 4, Vanguard 12, Ascendant 30)
-  and, from Vanguard, bosses it helped fell (1, then 4). The hunter claims it, one rank at a time,
+  and, from Vanguard, bosses it helped defeat (1, then 4). The hunter claims it, one rank at a time,
   from its card (`shadows.promote`, which spends the Essence). `raid.finish` pays each deployed
   Shadow its XP (`grew`) and reports the Shadows the run made ready (`ready`); the results show an
   alert only to each deployed Shadow that levelled up or that the run made ready; a Shadow that only
@@ -397,10 +397,10 @@ fight was tried and did not narrow it.
   which becomes the gold promotion with Hold To Promote once all is met; Stats, a radar of its
   creature's own, its stats now and at Lv.MAX, beside each number and what its level adds; Skills,
   the second sealed until Sworn; Traits, its passive, immunities and resistances; Record: runs
-  deployed, creatures and bosses felled, days served; and Release.
+  deployed, creatures and bosses defeated, days served; and Release.
 - **The results are alerts.** Every report on a run's results is a System alert, never a window
   set into the screen: each deployed Shadow's level and XP, a lingering Shadow, the Daily Quests, a
-  Chosen felled and a level proved. `SysAlert` took a second, smaller line and a meter along its
+  Chosen defeated and a level proved. `SysAlert` took a second, smaller line and a meter along its
   foot for them; the meter moves from where it stood once the alert lands, and a level gained fills
   it, lights it and starts it again.
   An alert that only reports goes when it is tapped, or of itself eight seconds after it lands
@@ -439,7 +439,7 @@ fight was tried and did not narrow it.
   deployed slot has an x in its top right that takes it out.
 - **A save from before** (v7 migration) gives every Shadow the rank its kills had earned and the
   level its growth stood at (a Vanguard with 75% growth is Lv.30), with no Essence. Its kills carry
-  on, now counting every creature it helps fell.
+  on, now counting every creature it helps defeat.
 - **Balance.** Calibration's hunter who keeps up has a full squad of Vanguard Shadows at Lv.30
   (`shadows.raise`), the same +75% the 75 kills gave, so `npm run balance` came out identical and
   `gatetune.ts` stands. The campaign's hunters now fill a slot left free with their strongest Shadow,
@@ -451,7 +451,7 @@ fight was tried and did not narrow it.
   squad levels together, a squad rises as one, where kills once went to its strongest. Sovereign
   comes sooner mostly through the Daily Quests (0.94 a day, was 0.85; 1.46, was 1.16): the Shadows'
   quest, set at about two runs' worth, took four or five when only the last blow counted. It now
-  asks what a Shadow helps fell in two runs at each grade (`SHADOW_KILLS_PER`, measured: about 2.5 a
+  asks what a Shadow helps defeat in two runs at each grade (`SHADOW_KILLS_PER`, measured: about 2.5 a
   Shadow a run, 3 to 4.5 at S). Essence ran short until about day 28 and piled up once every Shadow
   was Ascendant (841 held by day 112 for the three-session hunter), until Awakening gave it a sink.
 
@@ -587,7 +587,7 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
   - **Sent:** in ARISE, winning the Trial that opens level L sends that Trial's last Chosen out into
     the gates.
   - **Walking:** each day one of them holds the first gate of the hunter's grade in the day's order,
-    marked on the board. Those not yet felled walk first. It shows itself only to a hunter who walks
+    marked on the board. Those not yet defeated walk first. It shows itself only to a hunter who walks
     in at Ascension L or higher, and then it stands in the boss's place. The brief says which, and its
     assessment fights it. A clear of the gate, met or not, closes it on the Chosen for the day.
   - **Rewards:** the first time it falls it leaves a masterwork. That is a piece of the gate's grade,
@@ -605,7 +605,7 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
     | S-Rank | day 61 (was 79) | day 48 (was 59) |
     | Ascension opened | 9 (was 5) | 10, by day 84 (was 112) |
     | Last four weeks cleared | 88% (was 37%) | 100% (was 90%) |
-    | Chosen felled / masterworks | 11 / 6 | 57 / 10 |
+    | Chosen defeated / masterworks | 11 / 6 | 57 / 10 |
 
     By day 120 neither hunter wears more than one masterwork. Sets and pieces upgraded past perfect
     replace them by the top.
@@ -624,7 +624,7 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
     it gives the hunter: another step past perfect, a mark, and 10% more pay. The three-session
     hunter climbed from 11 on day 84 to 22 by day 120, three levels in its last eight days. At 8%
     it reaches 11 by day 84, 17 by day 112 and 18 by day 120, still climbing slowly. It clears 82%,
-    90% in its last four weeks, and fells 23 Chosen for 15 masterworks. The one-evening hunter
+    90% in its last four weeks, and defeats 23 Chosen for 15 masterworks. The one-evening hunter
     never passes 10 and plays exactly as before.
 - **Opened at S-Rank.** Ascension used to open at C-Rank, halfway up the climb. A player said it made
   everything "feel all over the place": a second ladder, with rules, marks and a Trial, arriving
@@ -683,7 +683,7 @@ clock (fatigue, the daily board, the Spire's weeks), so the ladder runs on the h
 ## Association Quests — built
 
 A player asked for a line of quests to follow from the start: given by Ryn, one at a time, growing
-harder, about clearing Gates and felling creatures and bosses, each paid for when reported.
+harder, about clearing Gates and defeating creatures and bosses, each paid for when reported.
 
 - **The line** (`data/association.ts`, `core/association.ts`). It loops through three kinds of job,
   hunt, clear, hunt, boss, at the hunter's grade when the job is handed over. A hunt asks for 5 of
@@ -694,7 +694,7 @@ harder, about clearing Gates and felling creatures and bosses, each paid for whe
   its own Gate, cleared. Progress is counted in `raid.finish` and shown on the results as a strip on
   Ryn's channel.
   A Chosen standing in the boss's place is that boss for a boss job: a clear of the job's Gate past it
-  does the job, as it fells the Chosen (`walkers.fell`). Without it, a boss job on the Gate the Chosen
+  does the job, as it defeats the Chosen (`walkers.fell`). Without it, a boss job on the Gate the Chosen
   held was shut out for the day, short of walking in below the Chosen's level.
 - **Reported, not paid on the tap.** A job done waits on Ryn's card at the top of the Quests screen
   until the hunter reports it (`association.report`). He pays, then hands over the next. A job is
@@ -752,7 +752,7 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
   - **Alloys,** one to each rarity: Iron Scrap, Gatesteel, Mana Silver, Runesteel, Abyssal Iron,
     Sovereign Steel. A Gate leaves its own grade's and some of the grade below, so last grade's alloy
     stays useful as the second line of this grade's recipes.
-  - **Parts,** by the family of the creature felled (`FAMILY_PART`): Monster Hide (Beasts, Dragonkin,
+  - **Parts,** by the family of the creature defeated (`FAMILY_PART`): Monster Hide (Beasts, Dragonkin,
     Insectoids and their like) for armour, Monster Bone (the Undead, Orcs, Giantkin) for weapons, Mana
     Cores (Demons, Elementals, Slimes, Constructs) for off-hands and jewellery. Each creature leaves its
     part 15% of the time and every clear one of each, so which Gates a hunter runs decides what comes
@@ -761,7 +761,7 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
     Trophy`; a boss ruling two home Gates is told apart by grade). Every clear there leaves one, and a
     set's piece is forged with one: the home Gate stays where a set is made.
   - **Ascendant Ember,** half a point a level, rounded up, on every clear entered at Ascension, and
-    twice its level from a Chosen felled. A step past perfect takes it, one more for every step
+    twice its level from a Chosen defeated. A step past perfect takes it, one more for every step
     already past, so Ascension pays for its own upgrades.
 - **Recipes** (`forge.recipe`): alloys of the rarity (8 at Common to 24 at Legendary), a few of the
   rarity below (2 to 5), the part (2 to 8) and a clear and a half's shards; a set's piece also takes
@@ -786,7 +786,7 @@ found whole is rare. And a weapon familiarity. Fusion is gone. `core/forge.ts` a
 - **Found whole:** 4% of clears and 10% of caches leave a piece; a cache otherwise leaves alloy of the
   grade below and a part, and an event that found gear finds materials. The Practice Gate still pays
   its ring, with the iron and hide for a first piece. The Chosen's masterworks are as they were.
-- **Weapon Familiarity** (`s.familiarity`, by design): every creature the party fells while a weapon is
+- **Weapon Familiarity** (`s.familiarity`, by design): every creature the party defeats while a weapon is
   carried in is a point toward it, however the run ends. Five ranks, at 40, 120, 260, 480 and 800. Each
   adds attack and magic +2% while the weapon is worn (`forge.familiarityBonus`, through `heroSpec`), and
   lifts every roll of that design forged 8% of the way up its range, so a mastered weapon forges from
@@ -1221,7 +1221,7 @@ and convenience, and the packs stay as they are.
 Auto's clear rate stays where it is. What is added pays only hand play:
 
 - **Feats:** three stated objectives on each Gate, and the brief says how often its 24 runs met each.
-- **Condition drops:** a stated way to fell each family and boss (while Stunned, within three
+- **Condition drops:** a stated way to defeat each family and boss (while Stunned, within three
   rounds) that pays extra materials.
 - **Challenges graded against a par.**
 
@@ -1252,7 +1252,7 @@ where each came from, are in [research/references/step-1-read-the-fight](researc
 
 - **The reckoning** (`reckon` in `core/combat.ts`). One hit of an ability from one unit on another, as
   things stand: its chance to land and to crit, its damage at the bottom and top of the swing and at
-  the most a critical hit does, and whether it fells the target every time, on a high roll, or never.
+  the most a critical hit does, and whether it defeats the target every time, on a high roll, or never.
   It reads the engine's own formula and never a roll: the fight and the reckoning share one function
   for a hit's damage (`blow`), the fight passing its rolls and the reckoning the ends of the range. A
   ward, Cull, Unravel, Unbroken, Deadeye, Ambush and a unit that stands once at 1 HP are all counted.
@@ -1281,12 +1281,12 @@ where each came from, are in [research/references/step-1-read-the-fight](researc
   slots and on its card; a node in the tree keeps its reach's mark, which says what it hits. Guard is
   drawn in the defence's blue (`--guard`) and Health Potion in healing's green, on the slot, the glyph,
   the hub's rim and the shut button while picked; every other action keeps the Gates' ember.
-- **Finishers** (`finishers` in `core/combat.ts`). Marking every action that fells the foe said nothing
-  once a Strike did, so the mark is earned: a skill is marked when it fells the foe aimed at more surely
+- **Finishers** (`finishers` in `core/combat.ts`). Marking every action that defeats the foe said nothing
+  once a Strike did, so the mark is earned: a skill is marked when it defeats the foe aimed at more surely
   than a Strike would (every time against on a high roll or a crit, or at all against not), as surely as
-  it does. A Strike is the baseline and never marked, and when a Strike fells the foe every time nothing
+  it does. A Strike is the baseline and never marked, and when a Strike defeats the foe every time nothing
   is, since no skill is needed for it. On the wheel the mark is a dot under the slot's name, always in
-  the same place; in the hub, `Fells it` or `May fell it` on a line kept for it whether or not it shows.
+  the same place; in the hub, `Defeats it` or `May defeat it` on a line kept for it whether or not it shows.
 - **The arena's head** no longer counts rooms cleared (`Cleared 3/11`). In its place sits the pace: one
   button with the fast-forward glyph and `1×`, `2×` or `Skip`, and `Auto` beside them while it is on,
   opening a menu of the three paces and Auto. A Pale Spire block or a tower keeps its floor count, in
@@ -1517,7 +1517,7 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
   blueprint on most clears. It now also heals nothing after a fight won, which the assessment shows.
 - **Feats** (`data/feats.ts`, `core/feats.ts`). Every Gate holds three, drawn from the Gate itself, the same
   every day: Unbroken (no one in the party falls), Swift End (the boss falls within 5 rounds), Breaker (the
-  boss's wind-up broken), Wardenbane (the Gatekeeper felled, where there is one), Thorough (every room on
+  boss's wind-up broken), Wardenbane (the Gatekeeper defeated, where there is one), Thorough (every room on
   the plan cleared) and Steady Hand (the hunter's HP above 50% in every fight). Each fight is folded into
   the run's tally as it is recorded (`feats.count`), and a clear is judged on it (`feats.judge`). A Feat
   pays once, the first time a clear meets it on its Gate (`s.gates.feats`): Blueprint +1. The brief says
@@ -1551,7 +1551,7 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
   | Seals paying materials | 29, 45, 74 | 44 | 147 | 241 | | | 1790 |
   | Seals paying Ember | 23, 39, 68 | 36 | 153 | 199 | 1952 | 2185 | 1847 |
 
-  Feats met for the first time and condition drops (bosses felled while Broken) on the Ember run: 53 and
+  Feats met for the first time and condition drops (bosses defeated while Broken) on the Ember run: 53 and
   1055 (46) one evening a day, 69 and 2123 (60) three sessions a day. Taken on a 75% reading, Seals cost
   days to every rank: a run carried out locks the hunter out for 12 hours, and a sealed one is carried out
   about one time in seven. Paid in Ember, they no longer pile up alloys and parts, and Dry and Never Alone
@@ -1570,14 +1570,16 @@ its own for the conditions, a gauge that fills as they are taken) and Solo Level
 challenge (the boss, its missions and Start side by side), all in
 [research/references/step-4-seals-feats-drops](research/references/step-4-seals-feats-drops/).
 
+- **The banner** takes the place of the sheet's header box: the hunter, their level and grade, the bag
+  (where a throwable is readied for the Gate), and their condition, HP, MP and Fatigue, each with a + that
+  drinks its potion at once (`drinkFlow` with `quick`: one held is drunk without asking; one bought is
+  asked first, as the Exchange asks). The ring replays as HP or Fatigue moves. A System sheet can take a
+  banner of its own in place of its header box (`openSheet`'s `banner`).
 - **The head** is the Gate's portal inside the assessment's ring: an arc in the verdict's colour and a tick
   for each of the System's 24 runs, lit for each it cleared, the rate in a pill at its foot, so the clear
-  rate and the count it comes from are one picture. Beside it stand the grade, the verdict in large type,
-  the Association's file and the Gate's chips; under Seals that move it, the rate without them stays on the
-  ring as a faint arc and reads `Clear rate: 96% → 46%`. At its foot is the hunter's condition, HP, MP and
-  Fatigue, each with a + that drinks its potion at once (`drinkFlow` with `quick`: one held is drunk
-  without asking; one bought is asked first, as the Exchange asks), and the ring replays as HP or Fatigue
-  moves.
+  rate and the count it comes from are one picture, and the verdict under it. Beside it stand the grade and
+  the Gate's name (`C-Rank Gate:` over `Warcaller's Muster`), the Association's file and the Gate's chips;
+  under Seals that move it, the rate without them stays on the ring as a faint arc and reads `96% → 46%`.
 - **Objectives** open on the boss, always, then list what a clear there also counts toward: Ryn's job, the
   Daily Quests it can move (`contracts.today`, read against the Gate: its grade, the families and the
   Gatekeepers it holds, the fatigue walked in with), the Ascension proof, and Wardens Wake's Gatekeeper.
@@ -1590,10 +1592,11 @@ challenge (the boss, its missions and Start side by side), all in
   Gate and day while the app stays open) and the projections made for them, so a tap replays the 24 runs
   once, after the stamp, the last reading standing meanwhile.
 - **The rest** is one box of four tabs, each with a count under its name: `Threat`, `Feats`, `Map` (with
-  the road's length and its moves) and `Party`, the tab shown opening into the panel under it.
-- **The kit** is docked beside Enter The Gate, the Health Potions and the throwable readied with their
-  counts, and opens a window of its own (`KitSheet`): the satchel and the Exchange, and a row to each
-  throwable to ready.
+  the road's length and its moves) and `Party`, the tab shown opening into the panel under it. Inside the
+  box nothing has a box of its own: the Threat tab puts the boss in a spotlight at its top and the rest of
+  what walks there in a line each; the Feats and the party are rows.
+- **The dock** holds Enter The Gate alone. Ember's figures are in its orange wherever a Seal's pay is
+  stated. And every line a player reads says defeat, never fell (the owner's call, `tests/voice.test.ts`).
 
 ## What stays out
 

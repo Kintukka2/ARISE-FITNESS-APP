@@ -321,6 +321,11 @@ interface SheetOpts {
    * box. `icon` fills the icon box beside it; null leaves the box out.
    */
   system?: { icon?: ComponentChildren; kind?: FrameKind };
+  /**
+   * A System sheet headed by a banner of its own in place of its header box (the brief's, the hunter and
+   * their condition), the close beside it. The title still names the sheet to a screen reader.
+   */
+  banner?: () => ComponentChildren;
 }
 interface OpenSheet extends SheetOpts { id: number }
 
@@ -360,7 +365,9 @@ function Sheet({ s, top }: { s: OpenSheet; top: boolean }) {
         <section class={`sheet__panel sysframe sysframe--${s.system.kind ?? 'system'}`}>
           <Rail at="top" />
           <div class="sysframe__glass sheet__glass">
-            <SysHead title={title} icon={s.system.icon} tools={tools} />
+            {s.banner
+              ? <header class="sysbanner">{s.banner()}<span class="sysbanner__tools">{tools}</span></header>
+              : <SysHead title={title} icon={s.system.icon} tools={tools} />}
             <div class="sheet__body">{s.render(close)}</div>
           </div>
           <Rail at="bottom" />

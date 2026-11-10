@@ -499,7 +499,7 @@ export function openDossier() {
               <Field k="Daily Quests" v={`${s.stats.contracts} · ${s.stats.contractDays} full days`} />
               <Field k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best}` : '-- --'} />
               <Field k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top}${weekBest(s) ? ` · this week ${weekBest(s)}` : ''}` : '-- --'} wide />
-              <Field k="Creatures felled" v={group(felled)} />
+              <Field k="Creatures defeated" v={group(felled)} />
               <Field k="Shadows bound" v={`${s.shadows.army.length} · ${s.stats.extractionsWon}/${s.stats.extractions}`} />
               <Field k="XP earned" v={group(s.stats.xpTotal)} />
               <Field k="Mana Shards earned" v={group(s.wallet.earned)} />

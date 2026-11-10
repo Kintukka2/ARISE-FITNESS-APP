@@ -24,9 +24,9 @@ const pct = (x: number) => Math.round(x * 100);
 /** Each Feat's name and its objective, read from the numbers above. */
 export const FEATS: Record<FeatId, { name: string; text: string }> = {
   unbroken: { name: 'Unbroken', text: 'Clear the Gate with no one in the party falling' },
-  swift: { name: 'Swift End', text: `Fell the boss within ${FEAT.swift.rounds} rounds` },
+  swift: { name: 'Swift End', text: `Defeat the boss within ${FEAT.swift.rounds} rounds` },
   breaker: { name: 'Breaker', text: 'Break the boss’s wind-up' },
-  keeper: { name: 'Wardenbane', text: 'Fell the Gatekeeper' },
+  keeper: { name: 'Wardenbane', text: 'Defeat the Gatekeeper' },
   thorough: { name: 'Thorough', text: 'Clear every room on the plan' },
   steady: { name: 'Steady Hand', text: `Keep your HP above ${pct(FEAT.steady.above)}% in every fight` },
 };
