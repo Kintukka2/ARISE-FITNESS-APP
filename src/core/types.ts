@@ -241,8 +241,8 @@ export interface Settings {
   skipAsk: string[];
 }
 
-/** What can be held in stock: the four potions, and the Association's Gate Survey. */
-export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey';
+/** What can be held in stock: the four potions, the Association's Gate Survey, and what the hunter throws. */
+export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'flash' | 'cord' | 'ember';
 
 export interface Stats {
   xpTotal: number;

@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Reckoning, Threat, Turn } from '@/core/combat';
-import { ability, finishers, POTION_HEAL, GUARD, reachOf, STATUS, STATUS_TEXT, STRIKE } from '@/core/combat';
+import { ability, COVER, finishers, POTION_HEAL, GUARD, reachOf, STATUS, STATUS_TEXT, STRIKE, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import * as story from '@/core/story';
@@ -40,7 +40,7 @@ import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
-import { Glyph, Shard, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
+import { Glyph, Shard, SKILL_GLYPH, STAT_ICON, THROW_GLYPH } from '@/ui/icons';
 import { ringMid, ringSlot } from '@/ui/items';
 import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
@@ -64,6 +64,8 @@ function actLines(s: ReturnType<typeof store.get>, use: string, turn: Turn): { n
   if (use === 'Strike') return { name: 'Strike', level: null, ready: null, lines: [skillLine(STRIKE)] };
   if (use === 'Guard') return { name: 'Guard', level: null, ready: null, lines: [`Damage taken -${(1 - GUARD) * 100}% until your next turn.`] };
   if (use === 'Potion') return { name: 'Health Potion', level: null, ready: null, lines: [`HP +${POTION_HEAL * 100}% · Held: ${turn.potions}`] };
+  if (use === COVER) return { name: COVER, level: null, ready: null, lines: ['What is aimed at the ally you cover comes at you, guarded, until your next turn.', 'Tap an ally to choose whom.'] };
+  if (use === 'Throw') return { name: 'Throw', level: null, ready: null, lines: [] };
   const k = turn.skills.find((x) => x.ability.name === use);
   if (!k) return { name: use, level: null, ready: null, lines: [] };
   const node = NODES.find((n) => n.kind === 'skill' && n.skill === use && skilltree.levelOf(s, n.id) > 0);
@@ -103,9 +105,13 @@ const skillGlyph = (name: string) => SKILL_GLYPH[name] ?? STAT_ICON[NODES.find((
  * with each rank that brings one. A tap picks a slot and the hub shows what it does on the foe aimed at;
  * Use, or a second tap on the slot, uses it. Nothing is used on the first tap.
  */
-function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen }: {
+function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen, ward, names, toss, setToss }: {
   turn: Turn; aim: string | null; canDrink: boolean; slots: number; give: (use: string) => void;
   picked: string; setPicked: (use: string) => void; open: boolean; setOpen: (v: boolean) => void;
+  /** The ally Cover would cover, and every unit's name, for the hub. */
+  ward: string | null; names: Record<string, string>;
+  /** The throwable Throw would throw. */
+  toss: ThrowId | null; setToss: (id: ThrowId) => void;
 }) {
   const s = useSave();
   const fin = aim ? finishers(turn, aim) : {};
@@ -125,20 +131,39 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
     const name = k.ability.name;
     return { use: name, name, glyph: skillGlyph(name), off: k.cd > 0 ? `Ready in ${k.cd}` : undefined, ...dmg(name, k.cd > 0 ? undefined : fin[name]) };
   });
+  // Cover: what is aimed at the ally before the hunter's next turn, and what of it the hunter would take, guarding.
+  const onWard = turn.threats.filter((x) => x.soon && ward && x.at === ward && x.hit && x.guarded);
+  const wsum = (k: 'hit' | 'guarded', end: 'lo' | 'hi') => onWard.reduce((n, x) => n + (x[k]?.[end] ?? 0), 0);
+  const who = ward ? names[ward] ?? 'Ally' : null;
+  const cover: WheelAct = !who
+    ? { use: COVER, name: COVER, glyph: 'cover', off: 'No ally', shown: ['No ally standing'], said: 'No ally standing' }
+    : onWard.length
+      ? { use: COVER, name: COVER, glyph: 'cover', shown: [`On ${who} ${wsum('hit', 'lo')}-${wsum('hit', 'hi')}`, `On you ${wsum('guarded', 'lo')}-${wsum('guarded', 'hi')}`],
+        said: `${who}: incoming ${spoken(wsum('hit', 'lo'), wsum('hit', 'hi'))}. On you, guarded, ${spoken(wsum('guarded', 'lo'), wsum('guarded', 'hi'))}` }
+      : { use: COVER, name: COVER, glyph: 'cover', shown: [`${who}`, 'Nothing aimed at them'], said: `${who}, nothing aimed at them` };
+  // Throw: the kind picked, or the first held.
+  const kit = THROWABLES.filter((k) => (turn.throws[k.id] ?? 0) > 0);
+  const tk = kit.find((k) => k.id === toss) ?? kit[0];
+  const thrown: WheelAct = tk
+    ? { use: 'Throw', name: tk.name, glyph: THROW_GLYPH[tk.id], shown: [tk.status, `${tk.reach > 1 ? `Up to ${tk.reach} foes` : 'One foe'} · Held: ${turn.throws[tk.id]}`],
+      said: `${tk.status} on ${tk.reach > 1 ? `up to ${tk.reach} foes` : 'one foe'}, ${turn.throws[tk.id]} held` }
+    : { use: 'Throw', name: 'Throw', glyph: 'flash', off: 'None held', shown: ['Nothing to throw'], said: 'Nothing to throw' };
   const fixed: WheelAct[] = [
+    thrown,
     { use: 'Potion', name: 'Health Potion', glyph: 'potion', off: !turn.potions ? 'None held' : !canDrink ? 'HP full' : undefined, shown: [`HP +${POTION_HEAL * 100}%`, `Held: ${turn.potions}`], said: `HP +${POTION_HEAL * 100}%, ${turn.potions} held` },
     { use: 'Guard', name: 'Guard', glyph: 'shield',
       shown: coming.length ? [`Incoming ${inc[0]}-${inc[1]}`, `Guarded ${inc[2]}-${inc[3]}`] : [`Damage taken -${(1 - GUARD) * 100}%`],
       said: coming.length ? `Incoming ${spoken(inc[0], inc[1])}, guarded ${spoken(inc[2], inc[3])}` : `Damage taken -${(1 - GUARD) * 100}%` },
+    cover,
     { use: 'Strike', name: 'Strike', glyph: 'Weapon', ...dmg('Strike') },
   ];
   const acts = [...skills, ...fixed];
   const n = acts.length;
-  const chosen = acts.find((a) => a?.use === picked) ?? fixed[2];
+  const chosen = acts.find((a) => a?.use === picked) ?? fixed[fixed.length - 1];
   const info = actLines(s, chosen.use, turn);
   const use = (a: WheelAct) => { if (!a.off) { setPicked(a.use); give(a.use); } };
-  /** Guard is the defence's blue, Potion healing's green; the rest are the Gate's ember. */
-  const kind = (a: WheelAct) => (a.use === 'Guard' ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
+  /** Guard and Cover are the defence's blue, Potion healing's green; the rest are the Gate's ember. */
+  const kind = (a: WheelAct) => (a.use === 'Guard' || a.use === COVER ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
   const tap = (a: WheelAct) => { if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); } };
   if (!open) {
     return (
@@ -177,7 +202,21 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
         </div>
         <button type="button" class="actwheel__close iconbtn" aria-label="Close the actions" onClick={() => { sfx.tap(); setOpen(false); }}><Glyph name="close" /></button>
       </div>
-      <div class="actwheel__lines">{info.lines.map((l) => <p key={l}>{l}</p>)}</div>
+      {chosen.use === 'Throw' && kit.length > 0 && (
+        <div class="actwheel__kit" role="radiogroup" aria-label="What to throw">
+          {kit.map((k) => (
+            <button type="button" key={k.id} role="radio" aria-checked={k.id === tk?.id} class={`actwheel__kitbtn ${k.id === tk?.id ? 'is-on' : ''}`}
+              onClick={() => { sfx.blip(); setToss(k.id); }}>
+              <Glyph name={THROW_GLYPH[k.id]} /><span>{k.name}</span><b class="num">×{turn.throws[k.id]}</b>
+            </button>
+          ))}
+        </div>
+      )}
+      <div class="actwheel__lines">
+        {chosen.use === 'Throw' && tk
+          ? <><p>{`${tk.name}: ${tk.status} on ${tk.reach > 1 ? `up to ${tk.reach} foes, the one aimed at first` : 'the foe aimed at'}, unless it is immune.`}</p><p>{`${tk.status}: ${STATUS_TEXT[tk.status]}`}</p></>
+          : info.lines.map((l) => <p key={l}>{l}</p>)}
+      </div>
     </div>
   );
 }
@@ -221,8 +260,18 @@ function apply(local: UnitView[], b: Beat) {
     else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
     else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
     else if (e.t === 'guard') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+    else if (e.t === 'cover') {
+      const t = u(e.a), w = u(e.v);
+      if (t && !t.status.includes('Guarded')) t.status.push('Guarded');
+      if (w && !w.status.includes('Covered')) w.status.push('Covered');
+    }
     else if (e.t === 'intent') { const t = u(e.u); if (t) t.intent = { ab: e.ab, at: e.at }; }
-    else if (e.t === 'expire') { const t = u(e.v); if (t) t.status = t.status.filter((x) => x !== e.s); }
+    else if (e.t === 'expire') {
+      const t = u(e.v);
+      if (t) t.status = t.status.filter((x) => x !== e.s);
+      // The hunter's guard coming down is their next turn starting: a cover they gave ends with it.
+      if (t?.uid === 'hero' && e.s === 'Guarded') for (const v of local) v.status = v.status.filter((x) => x !== 'Covered');
+    }
     else if (e.t === 'passive' && e.k === 'stand') { const t = u(e.u); if (t) t.hp = 1; }
     else if (e.t === 'passive' && e.hp !== undefined) { const t = u(e.u); if (t) t.hp = e.hp; }
     else if (e.t === 'support') {
@@ -256,6 +305,9 @@ export function Arena() {
   /** The action wheel: open or shut, as the hunter left it, and the action last picked on it. */
   const [wheel, setWheel] = useState(false);
   const [picked, setPicked] = useState('Strike');
+  /** The ally the hunter would cover, and the throwable they would throw. */
+  const [ward, setWard] = useState<string | null>(null);
+  const [toss, setToss] = useState<ThrowId | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
   const paceRef = useRef<Pace>(1);
@@ -463,6 +515,12 @@ export function Arena() {
     if (autoRef.current && !handRef.current) return null;
     const live = local.filter((u) => t.foes.includes(u.uid));
     if (!aimRef.current || !t.foes.includes(aimRef.current)) setAim(live.reduce((a, b) => (b.hp < a.hp ? b : a), live[0])?.uid ?? null);
+    // The ally to cover, unless one still standing was chosen: the one with the most coming at them.
+    setWard((w) => {
+      if (w && t.allies.includes(w)) return w;
+      const most = (a: string) => t.threats.filter((x) => x.soon && x.at === a).reduce((n, x) => n + (x.hit?.hi ?? 0), 0);
+      return t.allies.reduce<string | null>((best, a) => (best === null || most(a) > most(best) ? a : best), null);
+    });
     setTurn(t);
     setPhase('turn');
     if (store.update((x) => story.markOnce(x, 'turn-told'))) {
@@ -620,7 +678,12 @@ export function Arena() {
         <>
           <div class="arena__field">
             <div class="arena__side">
-              {party.map((u) => <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid).length} />)}
+              {party.map((u) => {
+                // With Cover picked, an ally standing is tapped to choose it.
+                const can = phase === 'turn' && picked === COVER && !!turn?.allies.includes(u.uid);
+                return <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid).length}
+                  aimed={can && ward === u.uid} onPick={can ? () => { sfx.tap(); setWard(u.uid); } : undefined} pick="cover" />;
+              })}
             </div>
             <div class="arena__side arena__side--foes">
               {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
@@ -635,9 +698,15 @@ export function Arena() {
       <footer class="arena__foot">
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
-            <small class="turnbar__hint">Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</small>
+            <small class="turnbar__hint">{picked === COVER
+              ? <>Your turn. Covering <b class="is-cover">{party.find((f) => f.uid === ward)?.name ?? 'nobody'}</b>; tap an ally to change.</>
+              : <>Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</>}</small>
             <ActWheel turn={turn} aim={aim} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} slots={skilltree.slots(s)} picked={picked} setPicked={setPicked} open={wheel} setOpen={setWheel}
-              give={(use) => give({ use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
+              ward={ward} names={Object.fromEntries(units.map((u) => [u.uid, u.name]))} toss={toss} setToss={setToss}
+              give={(use) => give(
+                use === COVER ? { use, at: ward ?? undefined }
+                  : use === 'Throw' ? { use: throwOrder(THROWABLES.find((k) => k.id === toss && (turn.throws[k.id] ?? 0) > 0)?.id ?? THROWABLES.find((k) => (turn.throws[k.id] ?? 0) > 0)!.id), at: aim ?? undefined }
+                    : { use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
           </div>
         )}
         {phase === 'decide' && room && (
@@ -885,9 +954,11 @@ function Intent({ intent, party, threat }: { intent: { ab: string; at?: string }
   );
 }
 
-function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat }: {
+function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat, pick = 'aim' }: {
   u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
   intent?: { ab: string; at?: string }; party?: UnitView[]; incoming?: number; threat?: Threat;
+  /** What a tap on it chooses: the foe to aim at, or the ally to cover. */
+  pick?: 'aim' | 'cover';
 }) {
   const pct = (u.hp / Math.max(1, u.mx)) * 100;
   const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''}`;
@@ -895,12 +966,12 @@ function UnitChip({ u, acting, aimed, onPick, intent, party, incoming, threat }:
     <>
       <div class="row between"><b class="unit__name">{u.name}</b><span class="num unit__hp">{incoming && u.hp > 0 ? <span class="unit__incoming" title={`${incoming} foe${incoming === 1 ? ' is' : 's are'} coming for ${u.tag === 'hero' ? 'you' : u.name} next`}>◀{incoming}</span> : null}{Math.max(0, u.hp)}</span></div>
       <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />
-      {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''}`} title={STATUS_TEXT[st]}>{st}</span>)}</div>}
+      {u.status.length > 0 && <div class="unit__status">{u.status.map((st) => <span key={st} class={`tag ${STATUS[st]?.good ? 'is-good' : ''} ${st === 'Covered' ? 'is-cover' : ''}`} title={STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it goes at you' : undefined)}>{st}</span>)}</div>}
       {intent && party && <Intent intent={intent} party={party} threat={threat} />}
     </>
   );
   return onPick
-    ? <button type="button" class={cls} aria-pressed={!!aimed} aria-label={`Aim at ${u.name}, ${Math.max(0, u.hp)} HP`} onClick={onPick}>{inner}</button>
+    ? <button type="button" class={`${cls} ${pick === 'cover' ? 'is-coverpick' : ''}`} aria-pressed={!!aimed} aria-label={`${pick === 'cover' ? 'Cover' : 'Aim at'} ${u.name}, ${Math.max(0, u.hp)} HP`} onClick={onPick}>{inner}</button>
     : <div class={cls}>{inner}</div>;
 }
 

@@ -254,6 +254,7 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .turnbar { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; animation: feedIn 200ms var(--ease) both; }
 .turnbar__hint { color: var(--ink-2); font-size: 0.78rem; text-align: center; }
 .turnbar__hint b { color: var(--blood); }
+.turnbar__hint b.is-cover { color: var(--guard); }
 /* The action wheel, behind one button at the foot of the fight. Shut, it is a round button ringed with a
    tick to each slot the hunter's rank holds; open, a wheel of those slots, the hub what the picked one does. */
 .actbtn { position: relative; display: grid; place-items: center; width: 84px; height: 84px; margin: 2px auto 0; padding: 0; border: 0; border-radius: 50%; background: radial-gradient(circle, rgba(60, 26, 6, 0.95) 55%, rgba(20, 10, 4, 0.95)); color: var(--ink); cursor: pointer; }
@@ -308,6 +309,16 @@ button.unit { display: block; width: 100%; text-align: left; font: inherit; colo
 .actwheel__fell.is-none { visibility: hidden; }
 .actwheel__hub .actwheel__use { margin-top: 3px; min-width: 62%; }
 .actwheel__close { position: absolute; right: -4px; bottom: -4px; }
+/* Throw: a chip to each kind held, under the wheel; the one picked lit. */
+.actwheel__kit { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 420px; }
+.actwheel__kitbtn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid rgba(255, 154, 60, 0.35); border-radius: 999px; background: rgba(22, 12, 5, 0.9); color: var(--ink-2); font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.actwheel__kitbtn .ico { width: 14px; height: 14px; color: var(--ember); }
+.actwheel__kitbtn b { color: var(--ink-3); font-weight: 600; }
+.actwheel__kitbtn.is-on { border-color: var(--ember); background: rgba(255, 154, 60, 0.2); color: var(--ink); box-shadow: 0 0 8px var(--ember-glow); }
+/* Cover: the ally covered wears the defence's blue, and an ally that can be covered is outlined in it while Cover is picked. */
+.unit__status .tag.is-cover { border-color: color-mix(in srgb, var(--guard) 60%, transparent); background: color-mix(in srgb, var(--guard) 16%, transparent); color: #b6d0ff; }
+.arena .unit.is-coverpick { border-color: color-mix(in srgb, var(--guard) 55%, transparent); cursor: pointer; }
+.arena .unit.is-coverpick.is-aimed { border-color: var(--guard); box-shadow: 0 0 0 1px var(--guard), 0 0 14px var(--guard-glow); }
 .actwheel__lines { max-width: 420px; min-height: 2.2em; text-align: center; }
 .actwheel__lines p { margin: 0; color: var(--ink-3); font-size: 0.72rem; line-height: 1.35; }
 /* The pace and Auto, behind one button in the arena's head. */

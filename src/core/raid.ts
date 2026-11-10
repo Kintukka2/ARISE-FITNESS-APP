@@ -12,7 +12,7 @@ import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
 import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { SETS } from '@/data/sets';
-import { battle, POTION_HEAL, STATUS, Unit, type Ev, type FightResult, type Turn, type UnitSpec } from './combat';
+import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
@@ -145,6 +145,8 @@ export interface ChamberOpts {
   tactic?: Tactic;
   /** Health Potions the hunter has to drink in this chamber. */
   potions?: number;
+  /** What the hunter has to throw in this chamber, by kind. */
+  throws?: Partial<Record<ThrowId, number>>;
   /** Orders already given in this chamber, replayed silently to bring it back to where it was. */
   orders?: (Order | null)[];
   /** The Ascension level the run was entered at. */
@@ -171,7 +173,7 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
       t.kills++;
       if (c.boss && victim === foes[0]) t.bosses++;
     }
-  }, log, { hero: opts.manual ? party[0]?.uid : undefined, tactic: opts.tactic, potions: opts.potions });
+  }, log, { hero: opts.manual ? party[0]?.uid : undefined, tactic: opts.tactic, potions: opts.potions, throws: opts.throws });
   let step: IteratorResult<Turn, FightResult> = g.next();
   for (const o of opts.orders ?? []) if (!step.done) step = g.next(o);
   let done: ChamberResult | null = null;
@@ -693,21 +695,28 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   if (!x || !isFight(x)) throw new Error('No fight is underway.');
   const party = partyFor(s, d, run, now);
   const orders = run.orders ?? [];
-  // The satchel has already paid for the potions this chamber's orders drank.
+  // The satchel has already paid for the potions this chamber's orders drank, and the bag for what they threw.
   const potions = shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length;
-  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
+  const throws = Object.fromEntries(THROWABLES.map((t) => [t.id, shop.held(s, t.id) + orders.filter((o) => o?.use === throwOrder(t.id)).length]));
+  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, throws, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
   return { party, ch, node: x };
 }
 
 /**
  * Write the hunter's order to the save, before it plays out. A Health Potion is
- * paid for here, out of the satchel; one the satchel cannot pay for becomes the
- * System's choice. Returns the order as it will be played. Mutates.
+ * paid for here, out of the satchel, and a throw out of the bag; one they cannot pay for
+ * becomes the System's choice. Returns the order as it will be played. Mutates.
  */
 export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
   let given = o;
   if (given?.use === 'Potion') {
     if (shop.held(s, 'hp') > 0) s.stock.hp = shop.held(s, 'hp') - 1;
+    else given = null;
+  }
+  // A throw is paid for out of the bag the same way; one the bag cannot pay for becomes the System's choice.
+  const thrown = given ? thrownBy(given.use) : undefined;
+  if (thrown) {
+    if (shop.held(s, thrown.id) > 0) s.stock[thrown.id] = shop.held(s, thrown.id) - 1;
     else given = null;
   }
   run.orders = [...(run.orders ?? []), given];

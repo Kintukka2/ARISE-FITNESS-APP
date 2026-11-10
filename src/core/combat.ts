@@ -110,6 +110,23 @@ export const GUARD = 0.5;
 STATUS_TEXT.Guarded = `Damage taken -${(1 - GUARD) * 100}% until its next turn`;
 /** A Health Potion restores this share of the drinker's maximum HP, in a fight or out of one. */
 export const POTION_HEAL = 0.25;
+
+/**
+ * What the hunter can throw on their turn, from the bag: each lands its status on the foes it reaches,
+ * the foe aimed at first, with no roll, unless the foe is immune to it. `reach` as an ability's.
+ */
+export const THROWABLES = [
+  { id: 'flash', name: 'Flash Vial', status: 'Stunned', reach: 1 },
+  { id: 'cord', name: 'Binding Cord', status: 'Rooted', reach: 1 },
+  { id: 'ember', name: 'Ember Flask', status: 'Burning', reach: 3 },
+] as const;
+export type ThrowId = (typeof THROWABLES)[number]['id'];
+export const throwable = (id: string) => THROWABLES.find((x) => x.id === id);
+/** A throw as an order names it: `Throw:flash`. */
+export const throwOrder = (id: ThrowId) => `Throw:${id}`;
+export const thrownBy = (use: string) => (use.startsWith('Throw:') ? throwable(use.slice(6)) : undefined);
+/** Cover, the hunter's fourth action: what is aimed at the ally covered comes at the hunter, guarding. */
+export const COVER = 'Cover';
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS, ...TREE_SKILLS].map((a) => [a.name, a]));
 const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES];
 const passiveMap = new Map<string, string>(ALL_PASSIVES.map((p) => [p.name, p.style]));
@@ -156,6 +173,8 @@ export class Unit {
   hurtBy = new Set<Unit>();
   /** A foe's next action, settled in advance and shown: an ability, and the unit it goes at first. */
   intent?: { ab: string; at?: string };
+  /** The ally covering this unit until that ally's next turn: what is aimed at this unit goes at them. */
+  coveredBy?: Unit;
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
@@ -217,6 +236,10 @@ export type Ev =
   | { t: 'expire'; v: string; s: string }
   | { t: 'down'; v: string }
   | { t: 'guard'; a: string }
+  /** Cover: `a` covers `v`; `n` counts the foes it turned. */
+  | { t: 'cover'; a: string; v: string; n: number }
+  /** A throw from the bag: what, and on whom. What it inflicts follows as `status` events. */
+  | { t: 'throw'; a: string; item: string; v: string[] }
   | { t: 'intent'; u: string; ab: string; at?: string }
   /** `ab`: the support that healed; unset is a Health Potion. */
   | { t: 'heal'; a: string; amt: number; hp: number; ab?: string }
@@ -308,7 +331,10 @@ function foresee(u: Unit, enemy: Unit[], r: Rand, log: Ev[], ahead: number) {
   const a = choose(u, r, ahead);
   const live = enemy.filter((x) => x.alive());
   const aimed = a.profile !== 'support' && a.profile !== 'all' && live.length > 0;
-  u.intent = { ab: a.name, at: aimed ? live[Math.floor(r() * live.length)].uid : undefined };
+  let at = aimed ? live[Math.floor(r() * live.length)] : undefined;
+  // A unit covered goes unhit while its cover stands: the action settled on it goes at the one covering.
+  if (at?.coveredBy?.alive()) at = at.coveredBy;
+  u.intent = { ab: a.name, at: at?.uid };
   log.push({ t: 'intent', u: u.uid, ab: u.intent.ab, at: u.intent.at });
 }
 
@@ -359,7 +385,7 @@ function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Un
 }
 
 /** What a turn can do beyond its unit: the party's standing orders, its hunter, and potions left. */
-interface Ctx { tactic: Tactic; hero?: Unit; potions: number }
+interface Ctx { tactic: Tactic; hero?: Unit; potions: number; throws: Partial<Record<ThrowId, number>> }
 
 function survive(t: Unit, log: Ev[]) {
   if (t.hp > 0 || !t.has('survival') || t.spent.has('stand')) return;
@@ -373,6 +399,8 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     delete u.status.Guarded;
     log.push({ t: 'expire', v: u.uid, s: 'Guarded' });
   }
+  // A cover holds until the one covering acts again.
+  for (const f of friends) if (f.coveredBy === u) f.coveredBy = undefined;
   if (u.status.Stunned) {
     // A stun costs the next action, whenever in the round it landed.
     delete u.status.Stunned;
@@ -382,6 +410,35 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   if (o?.use === 'Guard') {
     u.status.Guarded = STATUS.Guarded.turns;
     log.push({ t: 'guard', a: u.uid });
+    return;
+  }
+  const ward = o?.use === COVER ? friends.find((f) => f.uid === o.at && f !== u && f.alive()) : undefined;
+  if (o?.use === COVER && ward) {
+    // Every foe's next action aimed at the ally turns on the one covering, shown before it comes, and so
+    // does every action settled on the ally until the cover's next turn. The one covering guards.
+    u.status.Guarded = STATUS.Guarded.turns;
+    ward.coveredBy = u;
+    let n = 0;
+    for (const f of foes) {
+      if (!f.alive() || f.intent?.at !== ward.uid) continue;
+      f.intent = { ab: f.intent.ab, at: u.uid };
+      log.push({ t: 'intent', u: f.uid, ab: f.intent.ab, at: u.uid });
+      n++;
+    }
+    log.push({ t: 'cover', a: u.uid, v: ward.uid, n });
+    return;
+  }
+  const thrown = o ? thrownBy(o.use) : undefined;
+  if (thrown && (ctx.throws[thrown.id] ?? 0) > 0) {
+    ctx.throws[thrown.id] = (ctx.throws[thrown.id] ?? 0) - 1;
+    const first = foes.find((f) => f.uid === o!.at && f.alive());
+    const hit = targets({ ...STRIKE, profile: thrown.reach > 1 ? 'volley' : 'single' }, foes, r, first);
+    log.push({ t: 'throw', a: u.uid, item: thrown.id, v: hit.map((t) => t.uid) });
+    for (const t of hit) {
+      if (t.imm.includes(thrown.status)) continue;
+      t.status[thrown.status] = STATUS[thrown.status].turns;
+      log.push({ t: 'status', v: t.uid, s: thrown.status });
+    }
     return;
   }
   if (o?.use === 'Potion' && ctx.potions > 0) {
@@ -572,7 +629,7 @@ export interface Threat {
   times: number;
   /** One hit on the unit aimed at, as things stand. Null for a move that does no damage, or no target. */
   hit: Reckoning | null;
-  /** Aimed at the hunter: the same hit, taken guarding. */
+  /** Aimed at the hunter: the same hit, taken guarding. Aimed at an ally: the same hit on the hunter, guarding, if they covered it. */
   guarded: Reckoning | null;
 }
 
@@ -582,6 +639,10 @@ export interface Turn {
   skills: { ability: Ability; cd: number }[];
   foes: string[];
   potions: number;
+  /** What the hunter can throw, by kind. */
+  throws: Partial<Record<ThrowId, number>>;
+  /** The allies the hunter can cover. */
+  allies: string[];
   /** Every foe's next action, in the order they come. */
   threats: Threat[];
   /** One hit of each action that does damage, by its name, on each foe left, by uid. */
@@ -595,6 +656,8 @@ export interface BattleOpts {
   tactic?: Tactic;
   /** Health Potions the waiting unit carries. */
   potions?: number;
+  /** What the waiting unit can throw, by kind. */
+  throws?: Partial<Record<ThrowId, number>>;
 }
 
 /**
@@ -610,7 +673,7 @@ export function* battle(
 ): Generator<Turn, FightResult, Order | null | undefined> {
   openSide(party, log);
   openSide(foes, log);
-  const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0 };
+  const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0, throws: { ...(opts.throws ?? {}) } };
   for (const u of foes) if (u.alive()) foresee(u, party, r, log, 0);
   let round = 0;
   const any = (xs: Unit[]) => xs.some((x) => x.alive());
@@ -627,7 +690,7 @@ export function* battle(
       for (let k = 0; k < reps && any(enemy); k++) {
         // A stunned hunter has no turn to give, so nothing waits for one.
         const wait = u.uid === opts.hero && !u.status.Stunned;
-        const o = wait ? (yield turnOf(u, enemy, own, ctx.potions, order.slice(i + 1), actions)) ?? null : null;
+        const o = wait ? (yield turnOf(u, enemy, own, ctx.potions, order.slice(i + 1), actions, ctx.throws)) ?? null : null;
         act(u, enemy, own, r, log, onKill, o, ctx);
         // A foe settles its next action at once. If that action is next round, a cooldown tick comes first.
         if (u.side === 'e' && u.alive() && any(enemy)) foresee(u, enemy, r, log, k < reps - 1 ? 0 : 1);
@@ -645,7 +708,7 @@ export function* battle(
  * The turn handed to the hunter `u`. `after` is everyone still to act this round, `actions` how often
  * each foe acts in a round. Reads the units and never a roll, so asking for it changes nothing.
  */
-function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit[] = [], actions = 1): Turn {
+function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit[] = [], actions = 1, throws: Partial<Record<ThrowId, number>> = {}): Turn {
   const skills = u.kit.map((n) => u.ab(n)).filter((a): a is Ability => !!a).map((a) => ({ ability: a, cd: u.cd[a.name] ?? 0 }));
   const live = foes.filter((f) => f.alive());
   // The foes' next actions in the order they come: the rest of this round as it was drawn up, then the
@@ -662,7 +725,8 @@ function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit
     const hit = a && t ? reckon(f, t, a, t === u ? false : undefined) : null;
     return {
       uid: f.uid, ab, at, order: k + 1, soon: now.includes(f) || next.indexOf(f) < mine, times: actions, hit,
-      guarded: a && t === u ? reckon(f, t, a, true) : null,
+      // On an ally, what the hunter would take of it covering them.
+      guarded: a && t ? reckon(f, u, a, true) : null,
     };
   });
   const aims: Turn['aims'] = {};
@@ -672,7 +736,8 @@ function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit
       if (r) (aims[a.name] ??= {})[f.uid] = r;
     }
   }
-  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, threats, aims };
+  const allies = own.filter((x) => x !== u && x.alive()).map((x) => x.uid);
+  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, throws: { ...throws }, allies, threats, aims };
 }
 
 const KILL_RANK = { sure: 2, maybe: 1 } as const;

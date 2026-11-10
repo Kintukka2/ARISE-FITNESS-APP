@@ -306,6 +306,18 @@ try {
   const glyphs = await page.locator('.actwheel__item--act .ico path:last-child').evaluateAll((ps) => ps.map((p) => p.getAttribute('d')));
   if (new Set(glyphs).size !== glyphs.length) throw new Error('TWO ACTIONS ON THE WHEEL SHARE A GLYPH');
   await snap('arena-wheel-guard');
+  // Cover: picked, an ally is tapped to choose it, and the hub shows what is aimed at them and what of it would land on the hunter.
+  await page.locator('.actwheel__slot[data-act="Cover"]').click(); await sleep(250);
+  if (!(await page.locator('.actwheel__hub .actwheel__name', { hasText: 'Cover' }).count())) throw new Error('COVER DID NOT SHOW IN THE HUB');
+  const allies = page.locator('.arena__side:not(.arena__side--foes) .unit.is-coverpick');
+  if (!(await allies.count())) throw new Error('NO ALLY CAN BE COVERED');
+  await allies.last().click(); await sleep(250);
+  await snap('arena-wheel-cover');
+  // Throw: picked, a chip to each kind held under the wheel, and the hub shows what it does.
+  await page.locator('.actwheel__slot[data-act="Throw"]').click(); await sleep(250);
+  if ((await page.locator('.actwheel__kitbtn').count()) < 2) throw new Error('THE THROW SHOWS NOT EVERY KIND HELD');
+  await page.locator('.actwheel__kitbtn').last().click(); await sleep(200);
+  await snap('arena-wheel-throw');
   await page.locator('.actwheel__slot[data-act="Strike"]').click(); await sleep(150);
   // The pace and Auto sit behind one button in the head.
   await page.locator('.pacebtn').click(); await sleep(200);

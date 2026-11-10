@@ -319,7 +319,7 @@ describe('the reckoning', () => {
   it('marks as a finisher only a ready skill that fells a foe more surely than a Strike, and never the Strike', () => {
     const hit = (kill: 'sure' | 'maybe' | null) => ({ chance: 90, crit: 10, lo: 1, hi: 2, critHi: 3, kill });
     const turn = (strike: 'sure' | 'maybe' | null, skills: [string, 'sure' | 'maybe' | null, number][]): Turn => ({
-      uid: 'hero', foes: ['e0'], potions: 0, threats: [],
+      uid: 'hero', foes: ['e0'], potions: 0, throws: {}, allies: [], threats: [],
       skills: skills.map(([name, , cd]) => ({ ability: { name, type: 'physical', profile: 'single', mult: 1.2, cd: 2, inflicts: [] }, cd })),
       aims: { Strike: { e0: hit(strike) }, ...Object.fromEntries(skills.map(([name, kill]) => [name, { e0: hit(kill) }])) },
     });
@@ -343,7 +343,8 @@ describe('the reckoning', () => {
       expect(t.threats.map((x) => x.order)).toEqual(t.threats.map((_, i) => i + 1));
       expect(new Set(t.threats.map((x) => x.uid)).size).toBe(t.threats.length);
       for (const x of t.threats) if (x.hit === null) expect(x.guarded).toBeNull();
-      for (const x of t.threats) if (x.at !== t.uid) expect(x.guarded).toBeNull();
+      // A hit on an ally carries what the hunter would take of it covering them, guarded.
+      for (const x of t.threats) if (x.at && x.at !== t.uid && x.hit) expect(x.guarded).not.toBeNull();
       turns++;
       ch.play(raid.order(s, s.gates.raid!, null));
     }
