@@ -675,7 +675,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {cond && (
         <section class="bbox" aria-label="Special drop">
           <span class="label bbox__head">Special drop</span>
-          <p class="bhabit"><b class="bhabit__name">{dropPay(id, boss)}</b><Keyed text={`Defeat it ${CONDITION[cond].text}.`} /></p>
+          <p class="bhabit"><b class="bhabit__name">{dropPay(id, boss)}</b><Keyed text={`${CONDITION[cond].text}.`} /></p>
         </section>
       )}
     </div>
