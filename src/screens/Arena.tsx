@@ -1081,7 +1081,7 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
       : intent.kind === 'rally' ? 'Rallies the pack'
         : intent.kind === 'mark' ? 'Marks a target'
           : intent.kind === 'drink' ? `${intent.ab} · HP +${Math.round(TRICK.secondwind.heal * 100)}%`
-            : pips ? `${channel ? 'Channelling' : 'Winding up'} ${intent.ab}`
+            : pips ? `${channel ? 'Channelling' : 'Charging'} ${intent.ab}`
               : `${intent.ab}${a?.profile === 'support' ? ' · rallies its side' : a?.profile === 'all' ? ' · everyone' : ''}`;
   const hit = intent.broken ? null : threat?.hit;
   const when = threat ? (threat.soon ? `Acts ${ordinal(threat.order)}` : `Acts ${ordinal(threat.order)}, after your next turn`) : '';

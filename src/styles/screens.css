@@ -1489,15 +1489,10 @@ button.dmap__floor { cursor: pointer; }
 .gtag.is-shadow .ico { width: 11px; height: 11px; }
 .bline.is-imm .bline__mark > i { background: var(--sys-ink); }
 .bline.is-res .bline__mark > i { background: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bbox.is-drop { border-color: color-mix(in srgb, var(--verdant) 40%, var(--sys-hair)); }
 /* A habit: its name over one paragraph, in the creature's own numbers. */
 .bhabit { margin: 0; font-size: 0.74rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
 .bhabit__name { display: block; margin-bottom: 2px; font-size: 0.8rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
 .bhabit + .bhabit { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
-.bcreature__drop { margin: 0; font-size: 0.76rem; line-height: 1.45; color: var(--sys-ink); }
-.bcreature__drop > .ico { color: var(--verdant); }
-.bcreature__drop .grant { font-weight: 700; }
-.bcreature__drop .ico { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
 /* A currency on a line: its glyph a little under the text's height, sat on the baseline, then its signed figure. */

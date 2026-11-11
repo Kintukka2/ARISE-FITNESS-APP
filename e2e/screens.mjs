@@ -338,7 +338,7 @@ try {
   // A creature's line opens its card: its habits, a fact to a line, its statuses and its special drop.
   await page.locator('.sheet.is-top .bthreat .bline.is-tap').first().click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .bcreature').count())) throw new Error('A CREATURE’S LINE OPENED NO CARD');
-  if (!(await page.locator('.sheet.is-top .bcreature .bcreature__drop').count())) throw new Error('THE CREATURE CARD STATES NO SPECIAL DROP');
+  if (!(await page.locator('.sheet.is-top .bcreature [aria-label="Special drop"] .bhabit__name').count())) throw new Error('THE CREATURE CARD STATES NO SPECIAL DROP');
   if (!(await page.locator('.sheet.is-top .bcreature .bbox__head', { hasText: 'Special drop' }).count())) throw new Error('THE CREATURE CARD DOES NOT SAY SPECIAL DROP');
   if (await page.locator('.sheet.is-top .bcreature', { hasText: /by grade/ }).count()) throw new Error('A CREATURE CARD GIVES A HABIT BY GRADE, NOT ITS OWN NUMBERS');
   await snap('brief-creature');
