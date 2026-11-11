@@ -20,6 +20,7 @@
  * Contents:
  *   road odd      road rooms that are not fights (the entrance, stairs and boss aside)
  *   rests         rests on the road and off it, per map
+ *   shrines       shrines on the road and off it, per map, and Fonts the same
  *   foes          creatures per fight, on the road and off it
  *   strong        fights holding a creature the plan marks strong (`threatOf` in core/map.ts)
  * Cost of a side fight, for a typical hunter in the middle of the grade, each fight entered at full
@@ -90,7 +91,7 @@ function walk(g: ReturnType<typeof graphOf>, start: string, budget = Infinity) {
 
 interface Row {
   rooms: number; road: number; deadEnds: number; loops: number; passages: number; reach: number; seeAll: number; within: number; budget: number; system: number;
-  roadOdd: number; restsOn: number; restsOff: number; foesOn: number[]; foesOff: number[]; strong: number; fights: number;
+  roadOdd: number; restsOn: number; restsOff: number; shrinesOn: number; shrinesOff: number; fontsOn: number; fontsOff: number; foesOn: number[]; foesOff: number[]; strong: number; fights: number;
 }
 
 function measure(m: GateMap): Row {
@@ -119,6 +120,10 @@ function measure(m: GateMap): Row {
     roadOdd: roadIds.map((id) => m.byId[id]).filter((x) => !['fight', 'boss', 'down', 'up', 'entrance'].includes(x.kind)).length,
     restsOn: m.nodes.filter((x) => x.kind === 'rest' && onRoad(x)).length,
     restsOff: m.nodes.filter((x) => x.kind === 'rest' && !onRoad(x)).length,
+    shrinesOn: m.nodes.filter((x) => x.kind === 'shrine' && onRoad(x)).length,
+    shrinesOff: m.nodes.filter((x) => x.kind === 'shrine' && !onRoad(x)).length,
+    fontsOn: m.nodes.filter((x) => x.kind === 'font' && onRoad(x)).length,
+    fontsOff: m.nodes.filter((x) => x.kind === 'font' && !onRoad(x)).length,
     foesOn: fights.filter(onRoad).map((x) => x.foes?.length ?? 0),
     foesOff: fights.filter((x) => !onRoad(x)).map((x) => x.foes?.length ?? 0),
     strong: fights.filter((x) => threat(x).strong > 0).length,
@@ -146,6 +151,13 @@ for (const r of Object.keys(all)) {
   const rows = all[r];
   const fights = rows.reduce((n, x) => n + x.fights, 0);
   console.log(`  ${r}    ${avg(rows.map((x) => x.roadOdd)).toFixed(1).padEnd(12)}${avg(rows.map((x) => x.restsOn)).toFixed(2).padEnd(15)}${avg(rows.map((x) => x.restsOff)).toFixed(2).padEnd(16)}${avg(rows.flatMap((x) => x.foesOn)).toFixed(2).padEnd(14)}${avg(rows.flatMap((x) => x.foesOff)).toFixed(2).padEnd(15)}${pct(rows.reduce((n, x) => n + x.strong, 0) / Math.max(1, fights))}`);
+}
+
+console.log('\ngrade  shrines on road  shrines off road  Fonts on road  Fonts off road');
+for (const r of Object.keys(all)) {
+  const rows = all[r];
+  const f = (k: keyof Row, w: number) => avg(rows.map((x) => x[k] as number)).toFixed(2).padEnd(w);
+  console.log(`  ${r}    ${f('shrinesOn', 17)}${f('shrinesOff', 18)}${f('fontsOn', 15)}${f('fontsOff', 15)}`);
 }
 
 // What a side fight costs: each entered at full health, the healing every won fight brings counted.

@@ -8,7 +8,8 @@ one folder up say what the games do; these show it.
 | [1. Read the fight and the map](step-1-read-the-fight/) | The reckoning, the order, the pips on the plan | 67 |
 | [2. The Gate clock](step-2-gate-clock/) | Moves, stirring, Red Gates | 64 |
 | [3. More answers per turn](step-3-answers-per-turn/) | Cover, throwables, wind-ups, creature behaviours | 58 |
-| [4. Seals, Feats and condition drops](step-4-seals-feats-drops/) | Opt-in risk for stated pay, three stated objectives to a Gate, a stated way to fell each creature | 41 |
+| [4. Seals, Feats and special drops](step-4-seals-feats-drops/) | Opt-in risk for stated pay, three stated objectives to a Gate, a stated way to defeat each creature | 41 |
+| [5. Shrines and rests](step-5-shrines-rests/) | Blessings by Path in three tiers, Duos, Capstones and Fonts; rests that Heal, Hone or Steady | 43 |
 
 Every image belongs to the game's publisher, or to the wiki, site or player who captured it, as listed beside it. They are kept here as design reference only: nothing in ARISE copies their art, and none of them ships with the game.
 

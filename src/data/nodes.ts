@@ -5,7 +5,7 @@
  */
 import type { Stat } from '@/core/types';
 
-export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'trap' | 'event' | 'boss' | 'entrance' | 'vault' | 'up' | 'down';
+export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'font' | 'trap' | 'event' | 'boss' | 'entrance' | 'vault' | 'up' | 'down';
 
 /** What the map shows as an Event until the hunter steps on it. A shrine shows for what it is. */
 export const HIDDEN: ReadonlySet<NodeKind> = new Set<NodeKind>(['trap', 'treasure']);
@@ -15,9 +15,10 @@ export const HIDDEN_IN_ROOMS: ReadonlySet<NodeKind> = new Set<NodeKind>([...HIDD
 export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string }> = {
   fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the Gate. Pays shards, sometimes gear.' },
   elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. In a Gate, the vault is behind it.' },
-  rest: { name: 'Rest', glyph: 'heart', desc: 'Heals the party once. In a Gate, it passes for an Event until you step in, and keeps until you come back to use it.' },
+  rest: { name: 'Rest', glyph: 'heart', desc: 'Heal, Hone or Steady, once. In a Gate, it passes for an Event until you step in, and keeps until you come back to use it.' },
   treasure: { name: 'Cache', glyph: 'bag', desc: 'Materials one grade below the Gate, now and then a piece found whole. It passes for an Event until you step on it.' },
-  shrine: { name: 'Shrine', glyph: 'star', desc: 'Pick one of two blessings for the rest of the Gate.' },
+  shrine: { name: 'Shrine', glyph: 'star', desc: 'Three blessings of one Path, shown on the plan. Take one for the rest of the Gate.' },
+  font: { name: 'Font', glyph: 'font', desc: 'Raises one blessing you hold a tier. With none to raise, it blesses as a shrine does.' },
   trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It passes for an Event until you step on it.' },
   event: { name: 'Event', glyph: 'event', desc: 'A choice, with its odds stated. A trap, a cache or a rest passes for one until you step in.' },
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
@@ -27,22 +28,37 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   up: { name: 'Stairs Up', glyph: 'stairsUp', desc: 'Back to the floor above.' },
 };
 
-/** A rest restores this share of everyone's maximum HP, and lifts what ails them. */
+/** A rest's Heal restores this share of everyone's maximum HP. */
 export const REST_HEAL = 0.3;
+/** A rest's Steady lifts every debuff from the party and adds this many Health Potions to the satchel, up to its limit. */
+export const STEADY_POTIONS = 1;
+/** A rest's Hone raises one equipped skill this many levels for the Gate. */
+export const HONE_LEVELS = 1;
+/** A level honed past Lv.MAX adds this to the skill's multiplier, as each level past Lv.1 does. */
+export const HONE_PAST = 0.1;
+/**
+ * The System heals at a rest while the hunter's HP is below this share, and hones while it is not. At 1 it
+ * hones only at full HP: a line at 70% left a hunter who raids three times a day 5 days behind at A-Rank,
+ * walking out of each Gate with less HP for the next.
+ */
+export const REST_LINE = 1;
 /** Each fight cleared banks this share of a clear's shards; a gatekeeper, more. */
 export const FIGHT_PURSE = { fight: 0.2, elite: 0.5 } as const;
 
-/** Run-long boons, in the units the combat engine's gear bonuses use. */
+/**
+ * The five blessings shrines offered before the Paths' (`data/blessings.ts`): flat stats, in the units
+ * the combat engine's gear bonuses use. A run opened before them keeps any it took.
+ */
 export interface Blessing { id: string; name: string; text: string; bonus: Record<string, number> }
 
-export const BLESSINGS: Blessing[] = [
+export const OLD_BLESSINGS: Blessing[] = [
   { id: 'iron', name: 'Blessing of Iron', text: 'Maximum HP +20%', bonus: { maxHp: 0.2 } },
   { id: 'edge', name: 'Blessing of the Edge', text: 'Attack and magic +15%', bonus: { patk: 0.15, mpow: 0.15 } },
   { id: 'haste', name: 'Blessing of Haste', text: 'Initiative +12', bonus: { initiative: 12 } },
   { id: 'ward', name: 'Blessing of the Ward', text: 'Defence and resistance +20%', bonus: { defense: 0.2, resist: 0.2 } },
   { id: 'sight', name: 'Blessing of Sight', text: 'Accuracy +10 · Critical chance +6%', bonus: { accuracy: 10, crit: 6 } },
 ];
-export const blessingById = (id: string) => BLESSINGS.find((b) => b.id === id);
+export const blessingById = (id: string) => OLD_BLESSINGS.find((b) => b.id === id);
 
 /**
  * What a choice does. Hurt and heal are shares of maximum HP; shards are shares of a clear's; mana is a

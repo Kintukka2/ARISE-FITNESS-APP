@@ -16,7 +16,8 @@ import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_PA
 
 /** Sight's Foresight, quoted from the tree. */
 const FORESIGHT_P = TREE_PASSIVES.find((p) => p.style === 'foresight')!;
-import { BLESSINGS, FIGHT_PURSE, NODE, REST_HEAL } from '@/data/nodes';
+import { FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NODE, REST_HEAL, REST_LINE, STEADY_POTIONS } from '@/data/nodes';
+import { BOON_LIST, FONT_OFFER, FONT_SHARE, OFFER, STEER, TIER_ODDS, TIERS, type BoonDef } from '@/data/blessings';
 import { LOADOUTS, SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
 import { markText, MARKS_MOST } from '@/core/marks';
@@ -32,6 +33,20 @@ import { ASSOC, SURVEY } from '@/data/association';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
 import { Fold } from '@/ui/components';
 import { openSheet } from '@/ui/overlays';
+
+/**
+ * A blessing's line across its tiers, read from its own text: the number that moves with the tier as a
+ * range, I to III (`Strike inflicts Bleeding for 3-5 turns.`); a word that moves, the tiers named.
+ */
+function acrossTiers(b: BoonDef): string {
+  const [lo, , hi] = b.v.map((v) => b.text(v));
+  const a = lo.split(/(\d+)/);
+  const c = hi.split(/(\d+)/);
+  const i = c.findIndex((x, k) => /^\d+$/.test(x) && x !== a[k]);
+  if (i >= 0 && a.length === c.length) return [...c.slice(0, i), `${a[i]}-${c[i]}`, ...c.slice(i + 1)].join('');
+  return lo === hi ? lo : `${lo} At tier ${TIERS[2]}: ${hi.charAt(0).toLowerCase()}${hi.slice(1)}`;
+}
+const boonLine = (b: BoonDef) => `${b.name}${b.kind === 'duo' ? ` (${b.paths.map((k) => PATHS.find((p) => p.key === k)?.name).join(' + ')})` : ''}${b.kind === 'capstone' ? ` (needs 2 of ${b.needs!.map((id) => BOON_LIST.find((x) => x.id === id)?.name).join(', ')})` : ''}: ${acrossTiers(b)}`;
 
 const ranks = RANK_LADDER.map((r) => `${r.name} at Level ${r.min}`).join(', ');
 /** What proves a level at a grade: the rule's number of its Gates, or all of them for a grade with fewer. */
@@ -98,11 +113,11 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `${CLOCK.red} moves past the budget, the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
       'The System’s road always fits inside the budget, so the brief’s verdict and Auto never stir.',
       'The Practice Gate, the Pale Spire and the Trials have no clock.',
-      ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'trap', 'event', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
+      ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'font', 'trap', 'event', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
       `A vault holds ${CACHE.vault}-${CACHE.vault + 2} alloy of the Gate’s own grade and two parts, or a piece found whole ${FORGED.vault * 100}% of the time.`,
       `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
       `Rests are rare: no floor holds more than ${RESTS_MAX}, and one passes for an Event until you find it.`,
-      `A rest restores ${REST_HEAL * 100}% of health to everyone standing, once. Use it when you find it, or walk back to it later.`,
+      `A rest gives one of three, once: Heal, party HP +${REST_HEAL * 100}%; Hone, one skill equipped +${HONE_LEVELS} level until you leave the Gate; or Steady, every debuff lifted and Health Potion +${STEADY_POTIONS} if the satchel has room. Use it when you find it, or walk back to it later.`,
       'Some Gates hide a passage between two rooms. It opens once you clear a room at either end.',
       'The bag at the map’s corner holds your items, one slot to each. Tap an item to see what it does, then Use.',
       `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it, and costs no moves. The Exchange sells them for ${SURVEY.price}.`,
@@ -110,11 +125,28 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
       'What the run banks is paid when the boss falls or you withdraw. Carried out, you lose it.',
       'You can withdraw only from the entrance, once you have cleared a room, and never from a Red Gate before its boss falls.',
-      `Blessings last until you leave the Gate: ${BLESSINGS.map((b) => `${b.name} (${b.text})`).join(', ')}.`,
       'The brief’s verdict follows the marked road, the fewest rooms to the boss, and makes the System’s choices. Auto does the same.',
-      'The System keeps a rest it finds for the boss.',
+      `A skill honed past Lv.MAX gains ×${HONE_PAST} for each level past it, as each level past Lv.1 does.`,
+      `The System keeps a rest it finds for the boss. There it heals ${REST_LINE >= 1 ? 'unless your HP is full' : `while your HP is below ${REST_LINE * 100}%`}, and otherwise hones its first skill.`,
       'Take another road and the verdict no longer applies.',
       'The Pale Spire and the Trials are climbed floor by floor instead, and only up.',
+    ],
+  },
+  {
+    title: 'Blessings',
+    lines: [
+      `Every shrine belongs to one of the five Paths, and the plan shows which once you have seen it. The Path you have spent the most Skill Points in is ${STEER} times as likely as each other.`,
+      `A shrine offers ${OFFER} blessings of its Path. Take one, and it lasts until you leave the Gate.`,
+      `A blessing comes at tier ${TIERS[0]}, ${TIERS[1]} or ${TIERS[2]}: ${TIERS.map((t, i) => `${t} ${Math.round(TIER_ODDS[i] * 100)}%`).join(', ')} of the time.`,
+      'A Duo belongs to two Paths. A shrine of either offers it once you hold a blessing of each.',
+      'A Capstone needs two of three named blessings of its Path.',
+      `${Math.round(FONT_SHARE * 100)}% of shrines are Fonts. A Font raises one of up to ${FONT_OFFER} blessings you hold a tier, and with none to raise it blesses as a shrine does.`,
+      'A status a blessing inflicts lands unless the foe is immune to it.',
+      'Auto never Guards, Covers or throws, so the System never takes a blessing that needs them.',
+      'The System takes the blessing with the highest tier it can play, a Capstone before a Duo before the rest. At a Font, it raises the lowest.',
+      ...PATHS.flatMap((p) => BOON_LIST.filter((b) => b.kind === 'path' && b.paths[0] === p.key).map((b) => `${p.name}: ${boonLine(b)}`)),
+      ...BOON_LIST.filter((b) => b.kind === 'capstone').map((b) => `Capstone: ${boonLine(b)}`),
+      ...BOON_LIST.filter((b) => b.kind === 'duo').map((b) => `Duo: ${boonLine(b)}`),
     ],
   },
   {

@@ -10,7 +10,9 @@
 import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
-import { BLESSINGS, blessingById, eventById, FIGHT_PURSE, REST_HEAL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, REST_HEAL, REST_LINE, STEADY_POTIONS, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { NODES } from '@/data/tree';
+import * as blessings from './blessings';
 import { SETS } from '@/data/sets';
 import { tricksOf, type TrickId } from '@/data/tricks';
 import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
@@ -268,24 +270,70 @@ export function restore(party: Unit[], carried: OpenRaid['carried']) {
 
 export const buildParty = (specs: UnitSpec[]) => specs.map((sp) => new Unit(sp));
 
-/** The party's specs with the run's blessings worked into the hunter's. */
-export function blessed(specs: UnitSpec[], blessings: string[]): UnitSpec[] {
-  if (!blessings.length) return specs;
+/** What a run's hunter carries beyond who they walked in as: blessings at their tiers, and skills honed. */
+export type Carried = blessings.Held & { honed?: string[]; levels?: Record<string, number> };
+
+/** A skill equipped, as the tree holds it. */
+const skillNode = (name: string) => NODES.find((n) => n.kind === 'skill' && n.name === name);
+
+/**
+ * The party's specs with the run's blessings worked into the hunter's, and the skills honed at its rests
+ * at the levels they were honed to. The five old blessings are stats, and add as gear does.
+ */
+export function blessed(specs: UnitSpec[], run: Carried): UnitSpec[] {
+  const honed = run.honed ?? [];
+  if (!run.blessings.length && !honed.length) return specs;
   const [hero, ...rest] = specs;
   const bonus = { ...(hero.bonus ?? {}) };
-  for (const id of blessings) for (const [k, v] of Object.entries(blessingById(id)?.bonus ?? {})) bonus[k] = (bonus[k] ?? 0) + v;
-  return [{ ...hero, bonus }, ...rest];
+  for (const id of run.blessings) for (const [k, v] of Object.entries(blessingById(id)?.bonus ?? {})) bonus[k] = (bonus[k] ?? 0) + v;
+  const own = (hero.own ?? []).map((a) => {
+    const n = skillNode(a.name);
+    const times = honed.filter((x) => x === a.name).length;
+    if (!n || !times) return a;
+    // Up to Lv.MAX a level honed is the tree's own; past it, each adds the force a level adds.
+    const to = (run.levels?.[a.name] ?? 1) + times * HONE_LEVELS;
+    const at = tree.skillAt(n, Math.min(n.max, to));
+    return to > n.max ? { ...at, mult: Math.round((at.mult + (to - n.max) * HONE_PAST) * 100) / 100 } : at;
+  });
+  return [{ ...hero, bonus, own, boons: blessings.boonsOf(run) }, ...rest];
 }
+
+/** The level of each skill the hunter has equipped, by name: what a run walks in with. */
+export const levelsOf = (s: Save): Record<string, number> => Object.fromEntries(tree.equipped(s).map((n) => [n.name, tree.levelOf(s, n.id)]));
+
+/** The skills a rest can hone for this run: those equipped as it walked in, at any level. */
+export const honeable = (run: Carried & { party?: UnitSpec[] }): string[] => (run.party?.[0]?.kit ?? []).filter((name) => !!skillNode(name));
+
+/** The level a skill fights at in this run: as it walked in, and every level honed since. */
+export const honedLevel = (run: Carried, name: string) => (run.levels?.[name] ?? 1) + (run.honed ?? []).filter((x) => x === name).length * HONE_LEVELS;
 
 // ------------------------------------------------------------------ what a step does to the party
 
-/** A rest: the standing recover, and what ails them lifts. Mutates. */
+/** What a rest's Heal restores, as a share of maximum HP: less in Thin Rest, nothing in a Lightless Gate. */
+export const healShare = (level = 0, seals: readonly SealId[] = []) => REST_HEAL * asc.restShare(level) * sealing.restShare(seals);
+
+/** A rest's Heal: the standing recover. Mutates. */
 export function rest(party: Unit[], level = 0, seals: readonly SealId[] = []) {
-  for (const u of party) {
-    if (!u.alive()) continue;
-    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * REST_HEAL * asc.restShare(level) * sealing.restShare(seals));
-    for (const st of Object.keys(u.status)) if (!STATUS[st]?.good) delete u.status[st];
-  }
+  for (const u of party) if (u.alive()) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * healShare(level, seals));
+}
+
+/** A rest's Steady: what ails the standing lifts. Mutates. */
+export function steady(party: Unit[]) {
+  for (const u of party) if (u.alive()) for (const st of Object.keys(u.status)) if (!STATUS[st]?.good) delete u.status[st];
+}
+
+/** What the hunter does at a rest: Heal the party, Hone one skill, or Steady the party and fill a potion. */
+export type RestPick = { kind: 'heal' } | { kind: 'hone'; skill: string } | { kind: 'steady' };
+
+/**
+ * The System's pick at a rest: Heal while the hunter is below `REST_LINE` of their HP, and Hone its first
+ * skill while they are not; Heal with none to hone, and with nothing to heal (Lightless), Hone, or Steady.
+ */
+export function systemRestPick(hp: number, run: Carried & { party?: UnitSpec[] }, level = 0, seals: readonly SealId[] = []): RestPick {
+  const hone = honeable(run)[0];
+  const heals = healShare(level, seals) > 0;
+  if (heals && (hp < REST_LINE || !hone)) return { kind: 'heal' };
+  return hone ? { kind: 'hone', skill: hone } : { kind: 'steady' };
 }
 
 /** Apply what an effect does to bodies: hurt and status land on the hunter, healing on everyone standing. Mutates. */
@@ -307,8 +355,11 @@ export function oddsOf(c: Choice, hero: UnitSpec, level = 0): number {
 /** What a choice node offers: its event, or the trap. */
 export const eventAt = (x: MapNode): GateEvent | null => (x.kind === 'trap' ? TRAP : x.kind === 'event' && x.event ? eventById(x.event) ?? null : null);
 
-/** The choice the System makes at a shrine, a trap or an event. */
-export const systemChoice = (x: MapNode) => (x.kind === 'shrine' ? 0 : Math.max(0, eventAt(x)?.choices.findIndex((c) => c.system) ?? 0));
+/** The choice the System makes at a shrine, a Font, a trap or an event: at a shrine or a Font, from what it offered the run. */
+export function systemChoice(x: MapNode, run?: blessings.Held): number {
+  if (x.kind === 'shrine' || x.kind === 'font') return run ? blessings.systemPick(blessings.offerAt(run, x), run) : 0;
+  return Math.max(0, eventAt(x)?.choices.findIndex((c) => c.system) ?? 0);
+}
 
 // ------------------------------------------------------------------ the run, in the save
 
@@ -341,6 +392,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
     map: mapSeed(d, day), layout: 'labyrinth', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    lean: blessings.leanOf(s), levels: levelsOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
     ...(toss ? { throw: toss } : {}),
@@ -504,20 +556,48 @@ export function moveTo(d: Dungeon, run: OpenRaid, id: string): boolean {
   return true;
 }
 
-/** The hunter stands in a rest they have found and not yet used, and nothing is underway. */
+/**
+ * A rest waits on the hunter: in a Gate, they stand in one found and not yet used, and nothing is
+ * underway; up a tower, the floor stepped onto is a rest.
+ */
 export function canRest(d: Dungeon, run: OpenRaid): boolean {
+  if (run.lost) return false;
+  const m = mapOf(d, run);
+  if (m.tower) return pending(d, run)?.kind === 'rest';
   const x = standing(d, run);
-  if (!x || x.kind !== 'rest' || run.lost || pending(d, run)) return false;
-  return explored(mapOf(d, run), run).has(x.id) && !(run.rested ?? []).includes(x.id);
+  if (!x || x.kind !== 'rest' || pending(d, run)) return false;
+  return explored(m, run).has(x.id) && !(run.rested ?? []).includes(x.id);
 }
 
-/** Rest where the hunter stands: once at each rest. False if they cannot. Mutates. */
-export function restHere(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): boolean {
+/** What each of a rest's three would do for this run: Heal's share, the skills Hone can raise, and the potions Steady adds. */
+export function restOptions(s: Save, run: OpenRaid) {
+  return { heal: healShare(asc.levelOf(run), sealing.of(run)), hone: honeable(run), potions: Math.min(STEADY_POTIONS, shop.satchelRoom(s)) };
+}
+
+/** The System's pick at the rest waiting on the hunter. */
+export const systemRest = (s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): RestPick => {
+  const hero = partyFor(s, d, run, now)[0];
+  return systemRestPick(hero.hp / hero.maxHp, run, asc.levelOf(run), sealing.of(run));
+};
+
+/**
+ * Rest where the hunter stands, once at each rest: Heal the party, Hone one skill a level for the rest
+ * of the Gate, or Steady the party, lifting every debuff, and add a Health Potion to the satchel. Up a
+ * tower, the rest is the floor's, and the climb goes on from it. False if they cannot, or the pick is not
+ * one this rest offers. Mutates.
+ */
+export function restHere(s: Save, d: Dungeon, run: OpenRaid, pick: RestPick = systemRest(s, d, run), now = Date.now()): boolean {
   if (!canRest(d, run)) return false;
+  if (pick.kind === 'hone' && !honeable(run).includes(pick.skill)) return false;
   const party = partyFor(s, d, run, now);
-  rest(party, asc.levelOf(run), sealing.of(run));
-  settleParty(s, d, run, party, now);
-  run.rested = [...(run.rested ?? []), run.pos!];
+  if (pick.kind === 'heal') rest(party, asc.levelOf(run), sealing.of(run));
+  else if (pick.kind === 'steady') {
+    steady(party);
+    s.stock.hp = shop.held(s, 'hp') + Math.min(STEADY_POTIONS, shop.satchelRoom(s));
+  } else run.honed = [...(run.honed ?? []), pick.skill];
+  settleParty(s, d, run, pick.kind === 'hone' ? rebless(party, run.party, run) : party, now);
+  if (mapOf(d, run).tower) run.at += 1;
+  else run.rested = [...(run.rested ?? []), run.pos!];
   return true;
 }
 
@@ -590,7 +670,7 @@ export function systemMove(s: Save, d: Dungeon, run: OpenRaid, now = Date.now())
   if (!move) return null;
   if ('rest' in move) {
     moveTo(d, run, move.rest);
-    restHere(s, d, run, now);
+    restHere(s, d, run, systemRest(s, d, run, now), now);
     return { move, step: null };
   }
   return { move, step: choose(s, d, run, move.enter, now) };
@@ -647,7 +727,7 @@ export interface StepResult {
  * and used when the hunter chooses (`restHere`). Null if the step is not one
  * the hunter can take. Mutates.
  */
-export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Date.now()): StepResult | null {
+export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, _now = Date.now()): StepResult | null {
   const x = options(d, run).find((o) => o.id === id);
   if (!x) return null;
   const m = mapOf(d, run);
@@ -659,13 +739,11 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
   // Orders given while the last step was underway reach the run here, before this one plays.
   run.tactic = s.gates.tactic;
   const out: StepResult = { node: x };
+  // What a shrine or a Font offers is drawn as the hunter steps in, and written before it plays.
+  if ((x.kind === 'shrine' || x.kind === 'font') && !run.offers?.[x.id]) run.offers = { ...(run.offers ?? {}), [x.id]: blessings.offerFor(run, x) };
+  // A rest in a Gate is found, and used when the hunter chooses (`restHere`); up a tower it waits on them.
   if (x.kind === 'rest') {
-    if (m.tower) {
-      const party = partyFor(s, d, run, now);
-      rest(party, asc.levelOf(run), sealing.of(run));
-      settleParty(s, d, run, party, now);
-    }
-    run.at += 1;
+    if (!m.tower) run.at += 1;
   } else if (x.kind === 'down') {
     // Down the stairs: the floor below's stairs up are reached at once, and the hunter stands on them.
     const below = across(m, x);
@@ -678,7 +756,7 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
   return out;
 }
 
-export interface Resolution { node: MapNode; choice: number; odds: number; won: boolean; effect: Effect; item?: string; mats?: forge.Bundle; blessing?: string }
+export interface Resolution { node: MapNode; choice: number; odds: number; won: boolean; effect: Effect; item?: string; mats?: forge.Bundle; blessing?: string; tier?: number }
 
 /** Make the waiting choice at a shrine, a trap or an event. The roll is the run's own. Null if nothing waits. Mutates. */
 export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now = Date.now()): Resolution | null {
@@ -687,11 +765,15 @@ export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now 
   const party = partyFor(s, d, run, now);
   const roll = rng(`arise|choice|${run.seed}|${x.id}`);
   let out: Resolution;
-  if (x.kind === 'shrine') {
-    const blessing = x.offer?.[choice] ?? x.offer?.[0];
-    if (!blessing) return null;
-    run.blessings = [...(run.blessings ?? []), blessing];
-    out = { node: x, choice, odds: 1, won: true, effect: { text: `${blessingById(blessing)?.name}: ${blessingById(blessing)?.text}.` }, blessing };
+  if (x.kind === 'shrine' || x.kind === 'font') {
+    // A run that stepped in before offers were written draws its offer now, as it would have then.
+    const offer = blessings.offerAt(run, x);
+    run.offers = { ...(run.offers ?? {}), [x.id]: offer };
+    const pick = offer.picks[choice] ?? offer.picks[0];
+    if (!pick) return null;
+    blessings.take(run, pick);
+    const said = blessings.describe(pick.id, pick.tier);
+    out = { node: x, choice, odds: 1, won: true, effect: { text: `${said.name}: ${said.text}` }, blessing: pick.id, tier: pick.tier };
   } else {
     const ev = eventAt(x);
     const c = ev?.choices[choice];
@@ -713,12 +795,11 @@ export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now 
     if (effect.item) Object.assign(out, haulFind(d, run, roll, 0));
     if (effect.shards && !isPractice(d)) run.purse = (run.purse ?? 0) + shop.gateShards(d.rank, effect.shards);
     if (effect.bless) {
-      const free = BLESSINGS.filter((b) => !(run.blessings ?? []).includes(b.id));
-      const b = free[Math.floor(roll() * free.length)];
-      if (b) { run.blessings = [...(run.blessings ?? []), b.id]; out.blessing = b.id; }
+      const b = blessings.gift(run, roll);
+      if (b) { blessings.take(run, b); out.blessing = b.id; out.tier = b.tier; }
     }
   }
-  settleParty(s, d, run, rebless(party, run.party, run.blessings ?? []), now);
+  settleParty(s, d, run, rebless(party, run.party, run), now);
   run.at += 1;
   return out;
 }
@@ -728,8 +809,8 @@ export function resolve(s: Save, d: Dungeon, run: OpenRaid, choice: number, now 
  * unit is, not how hurt it is; maximum HP it adds arrives as HP too, so health
  * written back as a share of the maximum does not drop.
  */
-export function rebless(party: Unit[], specs: UnitSpec[], blessings: string[]): Unit[] {
-  const fresh = restore(buildParty(blessed(specs, blessings)), snapshot(party));
+export function rebless(party: Unit[], specs: UnitSpec[], run: Carried): Unit[] {
+  const fresh = restore(buildParty(blessed(specs, run)), snapshot(party));
   fresh.forEach((u, i) => {
     const grew = u.maxHp - (party[i]?.maxHp ?? u.maxHp);
     if (grew > 0 && u.alive()) u.hp = Math.min(u.maxHp, u.hp + grew);
@@ -779,7 +860,7 @@ export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
  */
 export function partyFor(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const specs = run.party?.length ? run.party : partySpecs(s, d, run.day, run.squad, now, asc.levelOf(run), sealing.of(run));
-  return restore(buildParty(blessed(specs, run.blessings ?? [])), run.carried);
+  return restore(buildParty(blessed(specs, { ...run, blessings: run.blessings ?? [] })), run.carried);
 }
 
 /** Fold a fought chamber into the open run and write the hunter's health back. Mutates. */
@@ -1161,13 +1242,23 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   const m = build(d, mapSeed(d, day));
   const road = systemRoad(m).map((id) => m.byId[id]);
+  const lean = blessings.leanOf(s);
+  const levels = levelsOf(s);
   let clears = 0;
   let heroDown = 0;
   let reached = 0;
   for (let i = 0; i < runs; i++) {
     const seed = `proj|${d.id}|${day}|${i}`;
-    let blessings: string[] = [];
+    // What the System's run carries: the blessings it takes, and the skills it hones.
+    const held: Carried & { party: UnitSpec[]; honed: string[] } = { seed, lean, blessings: [], tiers: {}, honed: [], levels, party: specs };
     let party = buildParty(specs);
+    // A rest as the System uses it: Heal while the hunter is low, Hone while they are not.
+    const restNow = () => {
+      const pick = systemRestPick(party[0].hp / party[0].maxHp, held, level, taken);
+      if (pick.kind === 'heal') rest(party, level, taken);
+      else if (pick.kind === 'steady') steady(party);
+      else { held.honed = [...held.honed, pick.skill]; party = rebless(party, specs, held); }
+    };
     party[0].hp = Math.max(1, Math.round(party[0].maxHp * frac));
     let won = true;
     // A rest found in a Gate is kept for the boss, as the System keeps it.
@@ -1177,19 +1268,19 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
       if (isFight(x)) {
         if (x.kind === 'boss') {
           reached++;
-          if (kept) { rest(party, level, taken); kept = false; }
+          if (kept) { restNow(); kept = false; }
         }
         const ch = runChamber(d, seed, x.n, party, chamberAt(d, x, level, walker, taken), s.gates.tactic, level, taken);
         tally = feats.count(tally, ch, x.kind === 'elite');
         won = ch.won;
         if (!won) break;
       } else if (x.kind === 'rest') {
-        if (m.tower) rest(party, level, taken);
+        if (m.tower) restNow();
         else kept = true;
-      }
-      else if (x.kind === 'shrine' && x.offer) {
-        blessings = [...blessings, x.offer[systemChoice(x)]];
-        party = rebless(party, specs, blessings);
+      } else if (x.kind === 'shrine' || x.kind === 'font') {
+        const offer = blessings.offerFor(held, x);
+        const pick = offer.picks[blessings.systemPick(offer, held)];
+        if (pick) { blessings.take(held, pick); party = rebless(party, specs, held); }
       } else {
         const c = eventAt(x)?.choices[systemChoice(x)];
         if (c) touch(party, rng(`proj|choice|${seed}|${x.id}`)() < oddsOf(c, specs[0], level) ? c.win : c.lose ?? c.win);

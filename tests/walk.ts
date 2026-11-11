@@ -24,7 +24,8 @@ export function walk(s: Save, d: Dungeon, now: number, pick: (t: Turn) => Order 
       if (x.kind === 'boss') return { won: true, turns };
       continue;
     }
-    if (x) { raid.resolve(s, d, run, raid.systemChoice(x), now); continue; }
+    if (x?.kind === 'rest') { raid.restHere(s, d, run, raid.systemRest(s, d, run, now), now); continue; }
+    if (x) { raid.resolve(s, d, run, raid.systemChoice(x, run), now); continue; }
     if (!raid.systemMove(s, d, run, now)) break;
   }
   return { won: false, turns };

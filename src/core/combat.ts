@@ -12,6 +12,7 @@
  * passives are data; statuses are a table of multipliers.
  */
 import { ABILITIES, CLASS_PASSIVES, CLASS_SKILLS, PASSIVES } from '@/data/abilities';
+import { boonById, boonValue, GRUDGE_MAX } from '@/data/blessings';
 import { EDGE, TREE_PASSIVES, TREE_SKILLS } from '@/data/tree';
 import { at as byGrade, TRICK, TRICKS, type TrickId } from '@/data/tricks';
 import type { Ability, Attrs, Order, Tactic } from './types';
@@ -169,6 +170,8 @@ export interface UnitSpec {
   /** A creature's behaviours (`data/tricks.ts`), and the grade its numbers are read at. */
   tricks?: TrickId[];
   grade?: string;
+  /** The hunter's blessings for the run (`data/blessings.ts`), by id, at their tiers 1 to 3. */
+  boons?: Record<string, number>;
 }
 
 /** A foe's next action as shown: an ability and the unit it goes at first, or one of its behaviours. */
@@ -184,6 +187,9 @@ export interface Intent {
   pips?: number;
   max?: number;
 }
+
+/** No blessings: every foe's, and a hunter's without any. */
+const NONE: Record<string, number> = {};
 
 export class Unit {
   uid: string; name: string; side: 'p' | 'e'; base: Attrs; d: Derived;
@@ -213,11 +219,17 @@ export class Unit {
   bold = 0; rage = 0; lust = 0; hardUsed = false; rising = false; drank = false;
   /** The ally covering this unit until that ally's next turn: what is aimed at this unit goes at them. */
   coveredBy?: Unit;
+  /** The hunter's blessings, by id, at their tiers; and, on a foe, the hunter it fights, whose blessings reach it. */
+  boons: Record<string, number>;
+  against?: Unit;
+  /** What blessings have gathered this fight: a Bloodrush waiting, Grudge's hits taken, Thousand Cuts' hits landed, Killing Gaze's quarry, Iron Skin spent this round. */
+  rush = false; grudge = 0; cuts = 0; gaze?: string; ironUsed = false;
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
     this.tag = sp.tag; this.ref = sp.ref;
     this.tricks = new Set(sp.tricks ?? []);
+    this.boons = sp.boons && Object.keys(sp.boons).length ? sp.boons : NONE;
     this.grade = sp.grade ?? 'E';
     this.kit = sp.kit ?? [];
     this.own = new Map((sp.own ?? []).map((a) => [a.name, a]));
@@ -242,6 +254,9 @@ export class Unit {
   }
 
   has(style: string) { return this.styles.includes(style); }
+  /** A blessing's tier on this unit, 0 for none; and its number at that tier. */
+  boon(id: string) { return this.boons[id] ?? 0; }
+  bv(id: string) { return boonValue(id, this.boon(id)); }
   /** An ability as this unit uses it: its own version if it has one. */
   ab(n: string) { return this.own.get(n) ?? ability(n); }
   named(style: string) { return this.names[this.styles.indexOf(style)] ?? style; }
@@ -264,7 +279,7 @@ export class Unit {
   tempo() { return this.has('tempo') && !this.status.Rooted ? 10 : 0; }
   ini() { return (this.d.initiative + this.aura.ini + this.tempo()) * this.mod('ini'); }
   acc() { return (this.d.accuracy + this.aura.acc) * this.mod('acc'); }
-  eva() { return (this.d.evasion + this.tempo()) * this.mod('eva'); }
+  eva() { return (this.d.evasion + this.tempo()) * this.mod('eva') * (this.status.Guarded && this.boon('sidestep') ? 1 + this.bv('sidestep') : 1); }
 }
 
 export type Ev =
@@ -306,11 +321,14 @@ const hitChance = (acc: number, eva: number) => clamp((100 * acc) / (acc + eva),
  * One hit's damage, rounded, before a ward: `swing` is where it falls in the swing, 0 to 1, and
  * `crit` whether it is critical. The fight passes its rolls; the reckoning passes the ends of the range.
  */
-function blow(u: Unit, t: Unit, a: Ability, swing: number, crit: boolean, guarded = !!t.status.Guarded): number {
+function blow(u: Unit, t: Unit, a: Ability, swing: number, crit: boolean, guarded = !!t.status.Guarded, plain = false): number {
   const magic = a.type === 'magic';
   const power = u.atk(magic);
   let dmg = Math.max(1, ((power * a.mult * power) / (power + t.def(magic))) * (1 - SWING + swing * 2 * SWING));
+  // Juggernaut: a Strike carries a share of the hunter's maximum HP.
+  if (a.name === STRIKE.name && u.boon('jugg')) dmg += u.maxHp * u.bv('jugg');
   if (crit) dmg *= u.has('deadeye') && t.status.Marked ? EDGE.deadeye : CRIT.mult;
+  dmg *= edgeOf(u, t, crit, plain);
   if (u.has('execute') && t.hp < t.maxHp * EDGE.execute.below) dmg *= EDGE.execute.mult;
   if (u.has('exploit') && Object.keys(t.status).some((k) => STATUS[k] && !STATUS[k].good)) dmg *= EDGE.exploit;
   if (t.has('stalwart') && t.hp > t.maxHp * EDGE.stalwart.above) dmg *= EDGE.stalwart.mult;
@@ -318,9 +336,46 @@ function blow(u: Unit, t: Unit, a: Ability, swing: number, crit: boolean, guarde
   if (u.does('frenzy') && t.hp < t.maxHp * TRICK.frenzy.below) dmg *= 1 + TRICK.frenzy.dmg;
   if (t.does('hardened') && !t.hardUsed) dmg *= TRICK.hardened.taken;
   if (t.shieldOf?.alive()) dmg *= TRICK.shield.taken;
-  if (guarded) dmg *= GUARD;
+  if (guarded) dmg *= GUARD * (1 - t.bv('aegis'));
   return Math.round(dmg);
 }
+
+const debuffs = (t: Unit) => Object.keys(t.status).filter((k) => STATUS[k] && !STATUS[k].good).length;
+
+/**
+ * What the blessings make of one hit from `u` on `t`, as a multiplier: the attacker's against what the
+ * target is carrying or doing, and the target's own against the hit. `plain`, a counter or a splash,
+ * spends nothing and is raised by nothing waiting for the next hit.
+ */
+function edgeOf(u: Unit, t: Unit, crit: boolean, plain: boolean): number {
+  let m = 1;
+  if (t.status.Bleeding) m *= 1 + u.bv('butcher') + (crit ? u.bv('storm') : 0);
+  if (t.status.Broken || t.status.Stunned) m *= 1 + u.bv('shatter');
+  if (u.boon('wither')) m *= 1 + u.bv('wither') * debuffs(t);
+  if (t.intent?.at === u.uid) m *= 1 + u.bv('read');
+  if (t.wind) m *= 1 + u.bv('weak');
+  if (!plain) {
+    if (u.rush) m *= 1 + u.bv('rush');
+    if (u.boon('quick') && !u.spent.has('quick')) m *= 1 + u.bv('quick');
+    if (u.boon('snap') && !t.spent.has(`first:${u.uid}`)) m *= 1 + u.bv('snap');
+    if (u.grudge) m *= 1 + u.grudge * u.bv('grudge');
+  }
+  if (t.boon('iron') && !t.ironUsed) m *= 1 - t.bv('iron');
+  if (t.hp < t.maxHp / 2) m *= 1 - t.bv('last');
+  return m;
+}
+
+/** A unit's chance to land a critical hit on `t`, as a percentage: what its blessings make certain, or its own. */
+function critOf(u: Unit, t: Unit): number {
+  if (u.boon('killshot') && t.hp < t.maxHp * u.bv('killshot')) return 100;
+  if (u.gaze && u.gaze === t.uid) return 100;
+  if (u.boon('cuts') && (u.cuts + 1) % u.bv('cuts') === 0) return 100;
+  return u.d.crit + (t.status.Marked ? u.bv('deadshot') : 0);
+}
+
+/** A Strike as a blessing makes it: Twin Fangs strikes twice, each lighter. */
+const struck = (u: Unit, a: Ability): { a: Ability; times: number } =>
+  (a.name === STRIKE.name && u.boon('twin') ? { a: { ...a, mult: a.mult * u.bv('twin') }, times: 2 } : { a, times: 1 });
 
 /** What one hit would do as things stand: the odds it lands and crits, as percentages, and its damage. */
 export interface Reckoning {
@@ -343,16 +398,20 @@ export function reckon(u: Unit, t: Unit, a: Ability, guarded = !!t.status.Guarde
   if (a.mult === 0 || a.profile === 'support' || a.profile === 'taunt') return null;
   const magic = a.type === 'magic';
   const chance = Math.round(hitChance(u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0), t.eva()));
-  // Ambush makes the first hit of the fight critical, whatever the roll.
-  const sure = u.has('ambush') && !u.spent.has('ambush');
-  const crit = sure ? 100 : Math.round(Math.min(100, u.d.crit));
+  // Ambush makes the first hit of the fight critical, whatever the roll; and a blessing can.
+  const sure = (u.has('ambush') && !u.spent.has('ambush')) || critOf(u, t) >= 100;
+  const crit = sure ? 100 : Math.round(Math.min(100, critOf(u, t)));
   const ward = (n: number) => (magic && t.has('arcane') && !t.spent.has('ward') ? Math.max(1, Math.round(n / 2)) : n);
-  const lo = ward(blow(u, t, a, 0, sure, guarded));
-  const hi = ward(blow(u, t, a, 1, sure, guarded));
-  const critHi = ward(blow(u, t, a, 1, true, guarded));
-  // A unit that stands at 1 HP once is not felled by the hit that would have felled it.
-  const stands = t.has('survival') && !t.spent.has('stand');
-  const kill = stands ? null : lo >= t.hp ? 'sure' : (crit > 0 ? critHi : hi) >= t.hp ? 'maybe' : null;
+  // Twin Fangs: a Strike is two hits, reckoned together.
+  const { a: one, times } = struck(u, a);
+  const lo = ward(blow(u, t, one, 0, sure, guarded)) * times;
+  const hi = ward(blow(u, t, one, 1, sure, guarded)) * times;
+  const critHi = ward(blow(u, t, one, 1, true, guarded)) * times;
+  // A unit that stands at 1 HP once is not defeated by the hit that would have defeated it.
+  const stands = (t.has('survival') && !t.spent.has('stand')) || (t.boon('unbroken') > 0 && !t.spent.has('unbroken'));
+  // Red Harvest: a Bleeding foe left below its mark is defeated.
+  const need = u.boon('harvest') && t.status.Bleeding ? Math.min(t.hp, Math.floor(t.hp - t.maxHp * u.bv('harvest')) + 1) : t.hp;
+  const kill = stands ? null : lo >= need ? 'sure' : (crit > 0 ? critHi : hi) >= need ? 'maybe' : null;
   return { chance, crit, lo, hi, critHi, kill };
 }
 
@@ -504,6 +563,13 @@ function survive(t: Unit, log: Ev[]) {
     log.push({ t: 'passive', u: t.uid, p: TRICKS.undying.name, k: 'stand', hp: 1 });
     return;
   }
+  if (t.hp <= 0 && t.boon('unbroken') && !t.spent.has('unbroken')) {
+    // Unbreakable: the hunter stands at 1 HP once, and recovers.
+    t.spent.add('unbroken');
+    t.hp = 1 + Math.round(t.maxHp * t.bv('unbroken'));
+    log.push({ t: 'passive', u: t.uid, p: BOON_NAME('unbroken'), k: 'stand', hp: Math.round(t.hp) });
+    return;
+  }
   if (t.hp > 0 || !t.has('survival') || t.spent.has('stand')) return;
   t.spent.add('stand');
   t.hp = 1;
@@ -556,6 +622,83 @@ function trick(u: Unit, foes: Unit[], friends: Unit[], log: Ev[]) {
   }
 }
 
+const BOON_NAME = (id: string) => boonById(id)?.name ?? id;
+
+/** The turns past its own a debuff `u` inflicts lasts: Lingering Curse's and Lingering Dark's, and Deep Cuts' on a wound. */
+function longer(u: Unit, st: string): number {
+  const s = STATUS[st];
+  if (!s || s.skip || s.good) return 0;
+  return (u.has('affliction') ? EDGE.affliction : 0) + u.bv('linger') + (st === 'Bleeding' || st === 'Poisoned' ? u.bv('deep') : 0);
+}
+
+/**
+ * A status a blessing inflicts: it lands unless the target is immune, for `turns` and what makes the
+ * unit's debuffs last longer, and never shortens one already there. A first stagger is braced. Mutates.
+ */
+function inflict(u: Unit, t: Unit, st: string, turns: number, log: Ev[]) {
+  if (!t.alive() || !STATUS[st] || t.imm.includes(st)) return;
+  if (st === 'Staggered' && t.has('brace') && !t.spent.has('brace')) {
+    t.spent.add('brace');
+    log.push({ t: 'passive', u: t.uid, p: t.named('brace'), k: 'brace' });
+    return;
+  }
+  t.status[st] = Math.max(t.status[st] ?? 0, turns + longer(u, st));
+  log.push({ t: 'status', v: t.uid, s: st });
+}
+
+/** A blessing's heal: a share of the unit's maximum HP, said under the blessing's name. Mutates. */
+function mend(u: Unit, share: number, id: string, log: Ev[]) {
+  if (!u.alive() || share <= 0 || u.hp >= u.maxHp) return;
+  const was = u.hp;
+  u.hp = Math.min(u.maxHp, u.hp + u.maxHp * share);
+  log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp), ab: BOON_NAME(id) });
+}
+
+/** `u` defeats `t`: it goes down, and what defeating a foe brings comes. `foes` are `u`'s. Mutates. */
+function downed(u: Unit, t: Unit, foes: Unit[], log: Ev[], onKill: (killer: Unit, victim: Unit) => void) {
+  log.push({ t: 'down', v: t.uid });
+  if (u.has('momentum') && u.mom < EDGE.momentum.max) u.mom += 1;
+  onKill(u, t);
+  if (!u.boon('feast') && !u.boon('rush') && !u.boon('after') && !u.boon('gale') && !u.boon('contagion') && !u.boon('gaze')) return;
+  const live = foes.filter((f) => f.alive() && f !== t);
+  mend(u, u.bv('feast'), 'feast', log);
+  if (u.boon('rush')) u.rush = true;
+  if (u.boon('after') && u.alive()) inflict(u, u, 'Veiled', u.bv('after'), log);
+  if (u.boon('gale')) {
+    let moved = false;
+    for (const k of Object.keys(u.cd)) { moved = true; u.cd[k] -= u.bv('gale'); if (u.cd[k] <= 0) delete u.cd[k]; }
+    if (moved) log.push({ t: 'passive', u: u.uid, p: BOON_NAME('gale'), k: 'flurry' });
+  }
+  const most = live.length ? live.reduce((x, y) => (y.hp > x.hp ? y : x)) : undefined;
+  if (u.boon('contagion') && most) {
+    // Contagion: what the foe carried passes on; a stun and a break stay with the fallen.
+    for (const st of Object.keys(t.status)) if (STATUS[st] && !STATUS[st].good && !STATUS[st].skip && st !== 'Broken') inflict(u, most, st, u.bv('contagion'), log);
+  }
+  if (u.boon('gaze') && t.status.Marked && most) {
+    inflict(u, most, 'Marked', u.bv('gaze'), log);
+    u.gaze = most.uid;
+  }
+}
+
+/**
+ * Damage a blessing deals outside an ability's own hits: a counter, a splash, a curse's burn. It needs no
+ * roll and is never critical; it can break a wind-up and defeat. `foes` are `u`'s. Mutates.
+ */
+function extra(u: Unit, t: Unit, dmg: number, id: string, foes: Unit[], log: Ev[], onKill: (killer: Unit, victim: Unit) => void) {
+  if (!u.alive() || !t.alive() || dmg <= 0) return;
+  t.hp -= dmg;
+  t.hitBy = u;
+  t.hurtBy.add(u);
+  survive(t, log);
+  enrage(t, log);
+  chip(t, log);
+  log.push({ t: 'hit', a: u.uid, v: t.uid, ab: BOON_NAME(id), dmg, crit: false, hp: Math.max(0, Math.round(t.hp)) });
+  if (!t.alive()) downed(u, t, foes, log, onKill);
+}
+
+/** One hit of a Strike at a share of its strength, from `u` on `t`, for a counter or a splash: the middle of its swing. */
+const strikeOf = (u: Unit, t: Unit, share: number, magic = false) => blow(u, t, { ...STRIKE, mult: share, type: magic ? 'magic' : 'physical' }, 0.5, false, undefined, true);
+
 function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill: (killer: Unit, victim: Unit) => void, o: Order | null, ctx: Ctx) {
   if (u.status.Guarded) {
     delete u.status.Guarded;
@@ -587,6 +730,9 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   if (o?.use === 'Guard') {
     u.status.Guarded = STATUS.Guarded.turns;
     log.push({ t: 'guard', a: u.uid });
+    // Shield Wall mends every ally; Forewarned marks whatever is coming at the hunter.
+    if (u.boon('wall')) for (const f of friends) if (f !== u) mend(f, u.bv('wall'), 'wall', log);
+    if (u.boon('forewarn')) for (const f of foes) if (f.alive() && f.intent?.at === u.uid) inflict(u, f, 'Marked', u.bv('forewarn'), log);
     return;
   }
   const ward = o?.use === COVER ? friends.find((f) => f.uid === o.at && f !== u && f.alive()) : undefined;
@@ -605,6 +751,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       n++;
     }
     log.push({ t: 'cover', a: u.uid, v: ward.uid, n });
+    mend(ward, u.bv('warden'), 'warden', log);
     return;
   }
   const thrown = o ? thrownBy(o.use) : undefined;
@@ -615,7 +762,8 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     log.push({ t: 'throw', a: u.uid, item: thrown.id, v: hit.map((t) => t.uid) });
     for (const t of hit) {
       if (t.imm.includes(thrown.status)) continue;
-      t.status[thrown.status] = STATUS[thrown.status].turns;
+      // Ritual Flask: what is thrown lasts longer.
+      t.status[thrown.status] = STATUS[thrown.status].turns + u.bv('ritual');
       log.push({ t: 'status', v: t.uid, s: thrown.status });
     }
     return;
@@ -671,30 +819,52 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     for (const t of targets(a, foes, r, first)) {
       for (const st of a.inflicts) {
         if (!STATUS[st] || t.imm.includes(st)) continue;
-        t.status[st] = STATUS[st].turns + (u.has('affliction') && !STATUS[st].skip && !STATUS[st].good ? EDGE.affliction : 0);
+        t.status[st] = STATUS[st].turns + longer(u, st);
         log.push({ t: 'status', v: t.uid, s: st });
       }
+      // Evil Eye marks what the curse reaches; Hexfire burns it.
+      if (u.boon('eye')) inflict(u, t, 'Marked', u.bv('eye'), log);
+      if (u.boon('hexfire')) extra(u, t, strikeOf(u, t, u.bv('hexfire'), true), 'hexfire', foes, log, onKill);
     }
     return;
   }
   let drawn = 0;
+  let sipped = 0;
   let quick = false;
-  for (const t of targets(a, foes, r, first)) {
+  // Twin Fangs strikes twice: the same targets again, each hit lighter.
+  const { a: one, times } = struck(u, a);
+  const aimedAt = targets(a, foes, r, first);
+  let landed: Unit | undefined;
+  let last = 0;
+  for (let k = 0; k < times; k++) for (const t of aimedAt) {
     // Put down by a foe's spikes partway through, it does no more.
     if (!u.alive()) break;
+    if (!t.alive()) continue;
     const aim = u.acc() + (u.has('targeting') && t.status.Marked ? 10 : 0);
     if (r() * 100 > hitChance(aim, t.eva())) {
       log.push({ t: 'miss', a: u.uid, v: t.uid, ab: a.name });
+      // Riposte: a miss on the hunter is answered.
+      if (t.boon('riposte')) extra(t, u, strikeOf(t, u, t.bv('riposte')), 'riposte', friends, log, onKill);
       continue;
     }
     const swing = r();
-    let crit = r() * 100 < u.d.crit;
+    let crit = r() * 100 < critOf(u, t);
     if (u.has('ambush') && !u.spent.has('ambush')) {
       u.spent.add('ambush');
       if (!crit) log.push({ t: 'passive', u: u.uid, p: u.named('ambush'), k: 'ambush' });
       crit = true;
     }
-    let dmg = blow(u, t, a, swing, crit);
+    const marked = !!t.status.Marked;
+    let dmg = blow(u, t, one, swing, crit);
+    // What waited for this hit is spent on it.
+    u.rush = false;
+    u.grudge = 0;
+    if (u.boon('quick')) u.spent.add('quick');
+    if (u.gaze === t.uid) u.gaze = undefined;
+    if (u.boon('cuts')) u.cuts += 1;
+    const fresh = !t.spent.has(`first:${u.uid}`);
+    t.spent.add(`first:${u.uid}`);
+    if (t.boon('iron')) t.ironUsed = true;
     if (t.does('hardened')) t.hardUsed = true;
     if (crit && u.has('flurry')) quick = true;
     if (magic && t.has('arcane') && !t.spent.has('ward')) {
@@ -704,16 +874,21 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       dmg = half;
     }
     const was = t.alive();
+    // Red Harvest: a Bleeding foe this hit leaves below its mark goes down with it.
+    if (u.boon('harvest') && t.status.Bleeding && t.hp - dmg > 0 && t.hp - dmg < t.maxHp * u.bv('harvest')) dmg = Math.ceil(t.hp);
     const took = Math.min(dmg, Math.max(0, t.hp));
     t.hp -= dmg;
     t.hitBy = u;
     t.hurtBy.add(u);
+    landed ??= t;
+    last = dmg;
     survive(t, log);
     enrage(t, log);
     chip(t, log);
     if (u.does('bloodlust') && u.lust < TRICK.bloodlust.max) u.lust += 1;
     if (u.has('escalation') && u.esc < 2) u.esc += 1;
     if (u.has('vamp')) drawn += took * EDGE.vamp;
+    if (magic) sipped += took * u.bv('siphon');
     log.push({ t: 'hit', a: u.uid, v: t.uid, ab: a.name, dmg, crit, hp: Math.max(0, Math.round(t.hp)) });
     // Spikes: the one who landed it takes a share back, and can fall to it.
     if ((t.has('thorns') || t.does('backlash')) && was) {
@@ -723,10 +898,16 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       survive(u, log);
       if (!u.alive()) { log.push({ t: 'down', v: u.uid }); onKill(t, u); }
     }
+    // What the hunter's blessings do to a foe that lands a hit on them, or on an ally.
+    if (was && t.boons !== NONE) answer(u, t, dmg, friends, log, onKill);
+    // Overwatch: the hunter answers a hit on an ally, once a round.
+    const watch = foes.find((f) => f !== t && f.alive() && f.boon('overwatch') && !f.spent.has('watch'));
+    if (watch && was && u.alive()) {
+      watch.spent.add('watch');
+      extra(watch, u, strikeOf(watch, u, watch.bv('overwatch')), 'overwatch', friends, log, onKill);
+    }
     if (was && !t.alive()) {
-      log.push({ t: 'down', v: t.uid });
-      if (u.has('momentum') && u.mom < EDGE.momentum.max) u.mom += 1;
-      onKill(u, t);
+      downed(u, t, foes, log, onKill);
       continue;
     }
     for (const st of a.inflicts) {
@@ -736,9 +917,28 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
         log.push({ t: 'passive', u: t.uid, p: t.named('brace'), k: 'brace' });
         continue;
       }
-      t.status[st] = STATUS[st].turns + (u.has('affliction') && !STATUS[st].skip && !STATUS[st].good ? EDGE.affliction : 0) + (u.does('virulent') && !STATUS[st].skip ? TRICK.virulent.turns : 0);
+      t.status[st] = STATUS[st].turns + longer(u, st) + (u.does('virulent') && !STATUS[st].skip ? TRICK.virulent.turns : 0);
       log.push({ t: 'status', v: t.uid, s: st });
     }
+    // What the hunter's blessings leave on a foe they hit.
+    if (u.boons !== NONE) {
+      if (a.name === STRIKE.name && u.boon('rend')) inflict(u, t, 'Bleeding', u.bv('rend'), log);
+      if (a.name !== STRIKE.name && u.boon('sunder')) inflict(u, t, 'Staggered', u.bv('sunder'), log);
+      if (crit && u.boon('vein')) inflict(u, t, 'Bleeding', u.bv('vein'), log);
+      if (magic && u.boon('kindle')) inflict(u, t, 'Burning', u.bv('kindle'), log);
+      if (marked && u.boon('head')) inflict(u, t, 'Bleeding', u.bv('head'), log);
+      if (fresh && u.boon('spotter')) inflict(u, t, 'Marked', u.bv('spotter'), log);
+      if (crit && u.boon('expose')) inflict(u, t, 'Marked', u.bv('expose'), log);
+    }
+  }
+  if (a.name === STRIKE.name && landed && u.alive()) {
+    // Wide Swing carries the Strike on to another foe; Spellblade follows it with magic.
+    if (u.boon('sweep')) {
+      const rest = foes.filter((f) => f.alive() && !aimedAt.includes(f));
+      const next = rest.length ? rest.reduce((x, y) => (y.hp < x.hp ? y : x)) : undefined;
+      if (next) extra(u, next, Math.max(1, Math.round(last * u.bv('sweep'))), 'sweep', foes, log, onKill);
+    }
+    if (u.boon('spell') && landed.alive()) extra(u, landed, strikeOf(u, landed, u.bv('spell'), true), 'spell', foes, log, onKill);
   }
   // What a wind-up, a channel or a marked strike gathered is spent with the action.
   if (u.side === 'e') {
@@ -752,6 +952,12 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     u.hp += heal;
     log.push({ t: 'passive', u: u.uid, p: u.named('vamp'), k: 'vamp', amt: heal, hp: Math.round(u.hp) });
   }
+  // Siphon: so does what its magic drew.
+  const sip = Math.min(Math.round(sipped), Math.round(u.maxHp - u.hp));
+  if (sip > 0 && u.alive()) {
+    u.hp += sip;
+    log.push({ t: 'passive', u: u.uid, p: BOON_NAME('siphon'), k: 'vamp', amt: sip, hp: Math.round(u.hp) });
+  }
   // Flurry: a critical hit takes a turn off every other skill's cooldown, once an action.
   if (quick) {
     let moved = false;
@@ -764,9 +970,21 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   }
 }
 
+/** The hunter's blessings, answering a foe `u` that has just hit them (`t`) for `dmg`. Mutates. */
+function answer(u: Unit, t: Unit, dmg: number, friends: Unit[], log: Ev[], onKill: (killer: Unit, victim: Unit) => void) {
+  if (!u.alive()) return;
+  if (t.boon('grudge')) t.grudge = Math.min(GRUDGE_MAX, t.grudge + 1);
+  if (t.boon('thornward')) inflict(t, u, 'Cursed', t.bv('thornward'), log);
+  if (t.boon('vigil')) inflict(t, u, 'Marked', t.bv('vigil'), log);
+  if (t.boon('rebuke')) extra(t, u, Math.max(1, Math.round(dmg * t.bv('rebuke'))), 'rebuke', friends, log, onKill);
+  if (t.status.Guarded && t.boon('brutal')) extra(t, u, strikeOf(t, u, t.bv('brutal')), 'brutal', friends, log, onKill);
+}
+
 function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Unit) => void) {
   if (u.esc) u.esc -= 1;
   u.hardUsed = false;
+  u.ironUsed = false;
+  u.spent.delete('watch');
   // Undying rises; regrowth heals.
   const heal = (share: number, ab: string) => {
     const was = u.hp;
@@ -775,9 +993,24 @@ function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Un
   };
   if (u.rising && u.alive()) { u.rising = false; heal(TRICK.undying.heal, TRICKS.undying.name); }
   if (u.does('regrowth') && u.alive()) heal(byGrade(TRICK.regrowth.heal, u.grade), TRICKS.regrowth.name);
+  if (u.boon('breath') && u.alive()) heal(u.bv('breath'), BOON_NAME('breath'));
+  // The hunter's blessings reach the foes they fight: Doom on the Cursed, Black Sun on every debuff.
+  const h = u.against;
+  if (h && u.alive()) {
+    const share = (u.status.Cursed ? h.bv('doom') : 0) + h.bv('sun') * debuffs(u);
+    if (share > 0) {
+      const d = Math.max(1, Math.round(u.maxHp * share));
+      u.hp -= d;
+      log.push({ t: 'tick', v: u.uid, s: BOON_NAME(u.status.Cursed && h.boon('doom') ? 'doom' : 'sun'), dmg: d, hp: Math.max(0, Math.round(u.hp)) });
+      survive(u, log);
+      enrage(u, log);
+      if (!u.alive()) { log.push({ t: 'down', v: u.uid }); onKill(null, u); }
+    }
+  }
   for (const st of Object.keys(u.status)) {
     if (STATUS[st]?.skip) continue;
-    const dot = STATUS[st]?.dot;
+    // Hemorrhage: a foe's wounds and burns run deeper.
+    const dot = (STATUS[st]?.dot ?? 0) * (h && (st === 'Bleeding' || st === 'Burning') ? 1 + h.bv('hemo') : 1);
     if (dot && u.alive()) {
       const d = Math.max(1, Math.round(u.maxHp * dot));
       u.hp -= d;
@@ -808,7 +1041,10 @@ function hazard(u: Unit, foes: Unit[], r: Rand, log: Ev[]) {
 }
 
 function openSide(side: Unit[], log: Ev[]) {
-  for (const u of side) { u.kin = side; u.esc = 0; u.mom = 0; u.spent = new Set(); u.aura = { ini: 0, acc: 0 }; }
+  for (const u of side) { u.kin = side; u.esc = 0; u.mom = 0; u.spent = new Set(); u.aura = { ini: 0, acc: 0 }; u.rush = false; u.grudge = 0; u.cuts = 0; u.gaze = undefined; u.ironUsed = false; }
+  // Bannerman: the side starts the fight Rallied.
+  const banner = side.find((u) => u.alive() && u.boon('banner'));
+  if (banner) for (const f of side) inflict(banner, f, 'Rallied', banner.bv('banner'), log);
   for (const u of side) {
     if (!u.alive() || !u.has('leadership')) continue;
     for (const f of side) { f.aura.ini += 5; f.aura.acc += 5; }
@@ -881,6 +1117,9 @@ export function* battle(
 ): Generator<Turn, FightResult, Order | null | undefined> {
   openSide(party, log);
   openSide(foes, log);
+  // The hunter's blessings reach the foes they fight.
+  const hunter = party.find((u) => u.boons !== NONE);
+  for (const f of foes) f.against = hunter;
   const ctx: Ctx = { tactic: opts.tactic ?? 'default', hero: party.find((u) => u.uid === opts.hero), potions: opts.potions ?? 0, throws: { ...(opts.throws ?? {}) } };
   for (const u of foes) if (u.alive()) foresee(u, party, r, log, 0);
   let round = 0;
@@ -888,7 +1127,9 @@ export function* battle(
   while (round < ROUND_CAP && any(party) && any(foes)) {
     round++;
     log.push({ t: 'round', n: round });
-    const order = [...party, ...foes].sort((a, b) => b.ini() - a.ini());
+    // Quickdraw: in the first round, the hunter acts first.
+    const first = (u: Unit) => (round === 1 && u.boon('quick') ? 1 : 0);
+    const order = [...party, ...foes].sort((a, b) => first(b) - first(a) || b.ini() - a.ini());
     for (let i = 0; i < order.length; i++) {
       const u = order[i];
       if (!u.alive()) continue;

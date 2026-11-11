@@ -23,7 +23,11 @@ import type { Dungeon, Order } from '@/core/types';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
 import * as spire from '@/core/spire';
 import { chamberOf, isFight, passages, type MapNode } from '@/core/map';
-import { blessingById, NODE, REST_HEAL } from '@/data/nodes';
+import { HONE_LEVELS, NODE } from '@/data/nodes';
+import * as blessings from '@/core/blessings';
+import { pathOf } from '@/data/tree';
+import { BoonCard, BoonChip } from '@/ui/boons';
+import { boonById, TIERS } from '@/data/blessings';
 import { BLOCK } from '@/data/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial } from '@/core/trial';
@@ -374,7 +378,7 @@ interface Room { label: string; boss: boolean; index: number }
 type Phase = 'map' | 'fight' | 'turn' | 'decide' | 'node' | 'results';
 
 /** A step being shown: a rest or a cache as it happened, or a choice waiting, then how it went. */
-interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; done?: raid.Resolution; rested?: boolean }
+interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; done?: raid.Resolution; rested?: { pick: raid.RestPick; potions: number } }
 
 export function Arena() {
   const s = useSave();
@@ -476,7 +480,7 @@ export function Arena() {
           const was = clockNow();
           store.update((x) => raid.moveTo(d!, x.gates.raid!, move.rest));
           await tellClock(was);
-          later(() => void restNow(false));
+          later(() => void restNow(raid.systemRest(store.get(), d!, store.get().gates.raid!), false));
         });
       } else void step(move.enter);
     });
@@ -520,15 +524,28 @@ export function Arena() {
     } else say([{ text: c.red ? `▸ The red deepens. Creatures not yet fought ${more}.` : `▸ The Gate stirs. Creatures not yet fought ${more}.`, tone: 'outcome' }]);
   }
 
-  /** Rest where the hunter stands: once at each rest. From its panel, the panel says so; on the map, the feed does. */
-  function restNow(inPanel: boolean) {
+  /** Rest where the hunter stands, the way picked: once at each rest. From its panel, the panel says so; on the map, the feed does. */
+  function restNow(pick: raid.RestPick, inPanel: boolean) {
     return guarded(() => {
-      if (!store.update((x) => raid.restHere(x, d!, x.gates.raid!))) return;
+      const held = shop.held(store.get(), 'hp');
+      if (!store.update((x) => raid.restHere(x, d!, x.gates.raid!, pick))) return;
       sfx.success();
-      if (inPanel) return setPanel((p) => (p ? { ...p, rested: true } : p));
-      say([{ text: '▸ The party rests.', tone: 'outcome' }]);
+      const potions = shop.held(store.get(), 'hp') - held;
+      if (inPanel) {
+        setPanel((p) => (p ? { ...p, rested: { pick, potions } } : p));
+        if (autoRef.current) later(() => void guarded(dispatch));
+        return;
+      }
+      say([{ text: pick.kind === 'hone' ? `▸ You hone ${pick.skill}.` : pick.kind === 'steady' ? '▸ The party steadies itself.' : '▸ The party rests.', tone: 'outcome' }]);
       if (autoRef.current) toMap();
     });
+  }
+
+  /** Open the rest the hunter stands in, from the plan: its three ways to rest. */
+  function restPanel() {
+    const r = store.get().gates.raid;
+    const x = r ? raid.standing(d!, r) : null;
+    if (x) open({ node: x });
   }
 
   /** Drink a Health Potion between steps, from the bag: the feed says what it restored. */
@@ -570,7 +587,11 @@ export function Arena() {
     setPanel(p);
     setPhase('node');
     if (!autoRef.current) return;
-    if (!p.done && raid.pending(d!, store.get().gates.raid!)) later(() => void choice(raid.systemChoice(p.node)));
+    const r = store.get().gates.raid!;
+    // A rest waiting up a tower takes the System's pick; one found in a Gate is kept for the boss, as the
+    // System keeps it. A shrine, a Font, a trap or an event takes its choice.
+    if (p.node.kind === 'rest' && !p.rested && raid.pending(d!, r)?.id === p.node.id) later(() => void restNow(raid.systemRest(store.get(), d!, store.get().gates.raid!), true));
+    else if (!p.done && raid.pending(d!, r)) later(() => void choice(raid.systemChoice(p.node, r)));
     else later(() => void guarded(dispatch));
   }
 
@@ -743,10 +764,9 @@ export function Arena() {
   };
   const onMap = phase === 'map' || phase === 'node';
   const clock = run ? raid.clockOf(run) : null;
-  const restPct = Math.round(REST_HEAL * ascension.restShare(run ? ascension.levelOf(run) : 0) * 100);
   // The step underway, or about to be taken; a rest or cache already done still counts as where you stand.
   const here = !run ? 1 : Math.min(depth, raid.pending(d, run) || phase !== 'node' ? run.at + 1 : run.at);
-  const head = phase === 'node' && panel ? NODE[panel.node.kind].name : onMap ? 'Choose your way' : room?.label ?? '…';
+  const head = phase === 'node' && panel ? nodeName(panel.node, run) : onMap ? 'Choose your way' : room?.label ?? '…';
   return (
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''} ${clock?.red ? 'is-redgate' : ''}`} role="dialog" aria-label={`${d.name}${clock?.red ? ', a Red Gate' : ''}, in progress`}>
       <header class="arena__head">
@@ -757,21 +777,22 @@ export function Arena() {
         <div class="arena__map">
           <RunStrip s={s} d={d} />
           {phase === 'node' && panel
-            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={() => void restNow(true)} />
+            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
             : <>
               {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
                 pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)}
                 corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} costs={costsOf(d, run)}
-                stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red} />
+                stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red}
+                shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
                   : <small class="muted center">Tap a step that glows.</small>
                 : raid.canRest(d, run)
                   ? <div class="stack stack--tight">
-                    <Btn kind="primary" block sound="tap" onClick={() => void restNow(false)}>Rest</Btn>
-                    <small class="muted center"><span class="grant">Party HP +{restPct}%</span> · Debuffs cleared · Once</small>
+                    <Btn kind="primary" block sound="tap" onClick={restPanel}>Rest</Btn>
+                    <small class="muted center">Heal, Hone or Steady · Once</small>
                   </div>
                   : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
@@ -847,16 +868,7 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
       </div>
       {(run.blessings ?? []).length > 0 && (
         <div class="boons">
-          {run.blessings.map((b) => {
-            const x = blessingById(b);
-            if (!x) return null;
-            return (
-              <span key={b} class="boon" title={x.text}>
-                <span class="boon__mark" aria-hidden="true"><Glyph name="star" /></span>
-                <span class="boon__text"><b>{x.name}</b><small>{x.text}</small></span>
-              </span>
-            );
-          })}
+          {run.blessings.map((b) => <BoonChip key={b} id={b} tier={blessings.tierOf(run, b)} />)}
         </div>
       )}
     </div>
@@ -954,9 +966,19 @@ function CacheFind({ defId }: { defId: string }) {
   );
 }
 
+/** A room's name as the panel heads it: a shrine by its Path (`Shrine of Ruin`). */
+function nodeName(x: MapNode, run: ReturnType<typeof useSave>['gates']['raid']): string {
+  if (x.kind === 'shrine' && run) return `Shrine of ${pathOf(blessings.offerAt(run, x).path)?.name ?? ''}`;
+  return NODE[x.kind].name;
+}
+
+/** The narration over a shrine's or a Font's cards: what the hunter finds, plainly. */
+const SHRINE_LINE = 'Three marks are cut into the altar stone. Each one is warm to the touch.';
+const FONT_LINE = 'Water wells up through a crack in the floor, lit from beneath.';
+
 /** A step that is not a fight: what happened, or the choice it puts to you. */
 function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
-  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: () => void;
+  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: (pick: raid.RestPick) => void;
 }) {
   const s = useSave();
   const run = s.gates.raid;
@@ -966,40 +988,40 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
   const hero = run?.party[0];
   const waiting = !p.done && run && raid.pending(d, run)?.id === x.id;
   const item = p.item ? gear.gearDef(p.item) : null;
-  // A rest in a Gate's rooms is found, not taken: it keeps until the hunter uses it. Up a tower, it heals at once.
+  // A rest in a Gate's rooms is found, not taken: it keeps until the hunter uses it. Up a tower, it waits on them.
   const rooms = !!run && !raid.mapOf(d, run).tower;
-  const healed = x.kind === 'rest' && (!rooms || p.rested);
-  const keep = x.kind === 'rest' && rooms && !p.rested && !!run && raid.canRest(d, run);
-  const pct = Math.round(REST_HEAL * ascension.restShare(run ? ascension.levelOf(run) : 0) * 100);
+  const asks = x.kind === 'rest' && !p.rested && !!run && raid.canRest(d, run);
+  const blessed = x.kind === 'shrine' || x.kind === 'font';
+  const offer = blessed && run ? blessings.offerAt(run, x) : null;
+  const glyph = x.kind === 'shrine' && offer ? STAT_ICON[offer.path] ?? kind.glyph : kind.glyph;
   return (
     <section class={`nodepanel nodepanel--${x.kind}`}>
-      <header class="row"><Glyph name={kind.glyph} /><b>{ev?.title ?? kind.name}</b></header>
-      {healed && <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{pct}%</span> · Debuffs cleared</p></>}
-      {keep && <><p>The air is still here. Nothing has come this way in a long time.</p><p class="muted">Rest: <span class="grant">Party HP +{pct}%</span> · Debuffs cleared · Once</p></>}
+      <header class="row"><Glyph name={glyph} /><b>{ev?.title ?? nodeName(x, run)}</b></header>
+      {x.kind === 'rest' && !p.rested && <p>The air is still here. Nothing has come this way in a long time.</p>}
+      {asks && run && <RestChoice s={s} run={run} onRest={onRest} />}
+      {x.kind === 'rest' && p.rested && <RestDone pick={p.rested.pick} potions={p.rested.potions} run={run} />}
       {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
       {(x.kind === 'treasure' || x.kind === 'vault') && (item ? <CacheFind key={x.id} defId={p.item!} />
         : p.mats ? <><p>Something lies under the dust. You take what is worth carrying.</p><MatList b={p.mats} gain /></>
         : <p>The cache is empty.</p>)}
-      {x.kind === 'shrine' && waiting && <p>Two offerings, and room on the altar for one.</p>}
+      {blessed && waiting && <p>{offer?.font ? FONT_LINE : SHRINE_LINE}</p>}
       {ev && !p.done && <p>{ev.text}</p>}
-      {p.done && <p>{x.kind === 'shrine' ? 'You take the offering.' : p.done.effect.text}</p>}
+      {p.done && <p>{x.kind === 'font' && offer?.font ? 'The water rises around you, and sinks back into the floor.' : blessed ? 'One of the marks burns, and fades into your skin.' : p.done.effect.text}</p>}
       {p.done && (() => {
-        const b = p.done.blessing ? blessingById(p.done.blessing) : undefined;
+        const said = p.done.blessing ? blessings.describe(p.done.blessing, p.done.tier) : undefined;
+        // A Path's blessing is named with its tier, as its card and its chip name it.
+        const b = said && p.done.blessing && p.done.tier && boonById(p.done.blessing) ? { ...said, name: `${said.name} ${TIERS[p.done.tier - 1]}` } : said;
         const lines = system.outcome(p.done.effect, {
           shards: p.done.effect.shards && !isPractice(d) ? shop.gateShards(d.rank, p.done.effect.shards) : undefined,
           item: p.done.item ? gear.gearDef(p.done.item)?.name : undefined,
           mats: p.done.mats ? bundleText(p.done.mats) : undefined,
-          blessing: b ? { name: b.name, text: b.text } : undefined,
+          blessing: b,
         });
         return lines.length ? <p class="muted" dangerouslySetInnerHTML={{ __html: lines.join('<br />') }} /> : null;
       })()}
-      {waiting && x.kind === 'shrine' && (
-        <div class="stack stack--tight">
-          {(x.offer ?? []).map((b, i) => (
-            <button type="button" key={b} class="choice-row" onClick={() => onChoose(i)}>
-              <b>{blessingById(b)?.name}</b><small>{blessingById(b)?.text}</small>
-            </button>
-          ))}
+      {waiting && offer && run && (
+        <div class="boonlist">
+          {offer.picks.map((pk, i) => <BoonCard key={pk.id} id={pk.id} tier={pk.tier} from={offer.font ? blessings.tierOf(run, pk.id) : undefined} onPick={() => onChoose(i)} />)}
         </div>
       )}
       {waiting && ev && hero && (
@@ -1014,22 +1036,72 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
           })}
         </div>
       )}
-      {!waiting && (
+      {!waiting && !asks && (
         x.kind === 'rest' && run && !rooms && raid.canWithdraw(d, run)
           ? <div class="row">
             <Btn kind="ghost" onClick={onWithdraw}>Withdraw</Btn>
             <Btn kind="primary" size="lg" class="grow" sound="gate" onClick={onGo}>Press On</Btn>
           </div>
-          : keep
-          ? <div class="row">
-            <Btn kind="ghost" onClick={onGo}>Later</Btn>
-            <Btn kind="primary" size="lg" class="grow" sound="tap" onClick={onRest}>Rest</Btn>
-          </div>
           : <Btn kind="primary" size="lg" block sound="tap" onClick={onGo}>Continue</Btn>
       )}
+      {asks && rooms && <Btn kind="ghost" block onClick={onGo}>Later</Btn>}
     </section>
   );
 }
+
+/**
+ * A rest's three ways, side by side, after the campfire of the reference games: Heal, Hone and Steady,
+ * each its mark over its name and what it gives, greyed with the reason where this rest cannot give it.
+ * Hone opens the skills it can raise.
+ */
+function RestChoice({ s, run, onRest }: { s: ReturnType<typeof useSave>; run: NonNullable<ReturnType<typeof useSave>['gates']['raid']>; onRest: (pick: raid.RestPick) => void }) {
+  const [honing, setHoning] = useState(false);
+  const o = raid.restOptions(s, run);
+  const heal = Math.round(o.heal * 100);
+  // A level as the tree names it, and past Lv.MAX, how far past it a skill has been honed.
+  const lv = (name: string, k: number) => (k < skillMax(name) ? `Lv.${k}` : k === skillMax(name) ? 'Lv.MAX' : `Lv.MAX+${k - skillMax(name)}`);
+  if (honing) {
+    return (
+      <div class="stack stack--tight">
+        <small class="label">Hone a skill for the rest of the Gate</small>
+        {o.hone.map((name) => (
+          <button type="button" key={name} class="choice-row restskill" onClick={() => onRest({ kind: 'hone', skill: name })}>
+            <span class="row"><Glyph name={SKILL_GLYPH[name] ?? 'bolt'} /><b>{name}</b></span>
+            <small>{lv(name, raid.honedLevel(run, name))} → {lv(name, raid.honedLevel(run, name) + HONE_LEVELS)}</small>
+          </button>
+        ))}
+        <Btn kind="ghost" block onClick={() => setHoning(false)}>Back</Btn>
+      </div>
+    );
+  }
+  const ways: { key: raid.RestPick['kind']; glyph: string; name: string; gives: string; why?: string; go: () => void }[] = [
+    { key: 'heal', glyph: 'heart', name: 'Heal', gives: `Party HP +${heal}%`, why: heal > 0 ? undefined : 'Sealed: Lightless', go: () => onRest({ kind: 'heal' }) },
+    { key: 'hone', glyph: 'forge', name: 'Hone', gives: `A skill +${HONE_LEVELS} level`, why: o.hone.length ? undefined : 'No skill equipped', go: () => setHoning(true) },
+    { key: 'steady', glyph: 'shield', name: 'Steady', gives: o.potions ? `Debuffs cleared · Health Potion +${o.potions}` : 'Debuffs cleared', go: () => onRest({ kind: 'steady' }) },
+  ];
+  return (
+    <div class="restways" role="group" aria-label="Rest">
+      {ways.map((w) => (
+        <button type="button" key={w.key} class={`restway restway--${w.key}`} disabled={!!w.why} onClick={w.go} aria-label={`${w.name}: ${w.why ?? w.gives}`}>
+          <span class="restway__mark" aria-hidden="true"><Glyph name={w.glyph} /></span>
+          <b>{w.name}</b>
+          <small class={w.why ? 'warn' : ''}>{w.why ?? w.gives}</small>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** What a rest just gave: one line of narration, and the System's line under it. */
+function RestDone({ pick, potions, run }: { pick: raid.RestPick; potions: number; run: ReturnType<typeof useSave>['gates']['raid'] }) {
+  const heal = run ? Math.round(raid.healShare(ascension.levelOf(run), sealing.of(run)) * 100) : 0;
+  if (pick.kind === 'heal') return <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{heal}%</span></p></>;
+  if (pick.kind === 'steady') return <><p>You check your straps and bind what is still bleeding.</p><p class="muted"><span class="grant">Debuffs cleared</span>{potions > 0 && <> · <span class="grant">Health Potion +{potions}</span></>}</p></>;
+  return <><p>You run through the motions until they come without thinking.</p><p class="muted"><span class="grant">{pick.skill} +{HONE_LEVELS} level</span> · Until you leave the Gate</p></>;
+}
+
+/** A skill's top level, from the tree. */
+const skillMax = (name: string) => NODES.find((n) => n.kind === 'skill' && n.name === name)?.max ?? 1;
 
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 

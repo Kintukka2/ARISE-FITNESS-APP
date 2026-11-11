@@ -107,8 +107,9 @@ enters that day walks the same one. Every node is reachable and leads on to the 
 layer is all fights and every layer holds at least one.
 
 - **Steps** (`data/nodes.ts`): fight (banks shards, sometimes gear), gatekeeper (a sure piece of
-  gear), rest (heals, and is the only place to withdraw from), cache (gear a grade below the gate),
-  shrine (one of two blessings for the run), trap (a Perception check) and fourteen events, each a
+  gear), rest (Heal, Hone or Steady, and up a tower the only place to withdraw from), cache (gear a grade
+  below the gate), shrine (three blessings of one Path for the run; a Font raises one held a tier; see
+  "Shrines and rests — built"), trap (a Perception check) and fourteen events, each a
   choice with its odds stated, some read off a stat (STR, AGI or INT). Besides HP, shards, gear,
   blessings and debuffs, an event can give or drain MP and ease or add fatigue, both on the hunter at
   once. Each has one choice the System makes on its road, and that one never hurts or curses
@@ -1194,7 +1195,7 @@ Front and rear ranks are the largest gain in combat depth the research found, an
 target rule, every creature's kit, Auto and calibration. Build first what gives a turn more answers
 without positions: Cover (a fourth basic action that turns one ally's incoming intents on the hunter),
 throwables in the bag's empty slots, wind-ups a foe announces and the party can break, and creature
-mechanics shown through intents. Revisit ranks after playing those.
+mechanics shown through intents. Revisit ranks after playing those (step 9 of "Order to build").
 
 ### Seals
 
@@ -1213,7 +1214,7 @@ modifiers, DCSS's conduct gods, Slay the Spire's burning elites).
 ### New power sinks cost Ember
 
 Android sells shard packs. New sinks that buy power (tempering at perfect, bought drop odds, anything
-past perfect) cost Ember or Gate materials, which only play earns. Shards stay for potions, Gate Surveys
+past perfect) cost Ember or Gate materials, which only play earns. Step 7 of "Order to build" is the first. Shards stay for potions, Gate Surveys
 and convenience, and the packs stay as they are.
 
 ### Auto clears; hands earn extras
@@ -1223,7 +1224,7 @@ Auto's clear rate stays where it is. What is added pays only hand play:
 - **Feats:** three stated objectives on each Gate, and the brief says how often its 24 runs met each.
 - **Special drops:** a stated way to defeat each family and boss (while Stunned, within three
   rounds) that pays extra materials.
-- **Challenges graded against a par.**
+- **Challenges graded against a par** (step 8 of "Order to build").
 
 Auto never aims for them, so no tuning moves, and the campaign, which plays Auto, earns none.
 
@@ -1239,9 +1240,20 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 2. **The Gate clock, Stirring and Red Gates** (built, below).
 3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics (built, below).
 4. **Seals, Feats and special drops** (built, below).
-5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
+5. **Shrines rebuilt around the five Paths, and rests that offer a choice** (built, below).
 6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
    with family and role bonuses; rule-changing gear; a daily seeded Gate.
+7. **Something for Ember to buy.** Seals pay Ascendant Ember, and all it buys today is steps past perfect,
+   which the upgrade limit and shards hold back before Ember ever does: both campaign hunters ended their
+   120 days holding more Ember than the Seals had paid them (1,667 and 2,185; "Seals, Feats and special
+   drops — built"). "New power sinks cost Ember" names the candidates, tempering at perfect and bought
+   drop odds. Until one is built, a Seal's pay buys nothing a hunter needs.
+8. **Challenges graded against a par.** The last of "Auto clears; hands earn extras" not yet built. Feats
+   and special drops are; a par is not: a Gate's clear graded against a stated mark (rounds, moves, HP
+   left), and paid by the grade it reaches, which Auto never aims for.
+9. **Ranks, revisited.** Front and rear ranks were put off until Cover, throwables, wind-ups and creature
+   mechanics had been played ("Ranks: not now"). They have been. Decide, from play, whether ranks still
+   earn what they would cost every target rule, every creature's kit, Auto and calibration.
 
 ### Read the fight and the map — built
 
@@ -1603,6 +1615,82 @@ challenge (the boss, its missions and Start side by side), all in
   creature's own numbers, as the fight's tip gives it, its immunities and resistances, and its special drop). The Feats and the party are rows.
 - **The dock** holds Enter The Gate alone. Ember's figures are in its orange wherever a Seal's pay is
   stated. And every line a player reads says defeat, never fell (the owner's call, `tests/voice.test.ts`).
+
+### Shrines and rests — built
+
+The references were Hades' and Hades II's boon windows (three boons of one god, each a row: its icon, its
+name, its rarity, one line and its number), their Duo and Legendary boons, the Pom of Power (a boon held,
+its level and number before and after) and the door's reward orb; Dead Cells' three scroll paths; and Slay
+the Spire's campfire (Rest and Smith as picture tiles, one greyed in place when it cannot be used), with
+Slay the Spire 2's line saying what it gives. Their screenshots are in
+[research/references/step-5-shrines-rests](research/references/step-5-shrines-rests/).
+
+Decided with the owner: blessings change how actions work, not stats; the full set the research proposed
+(about eight to each Path in three tiers, ten Duos, Capstones and a rarer room that raises a tier); rests
+offer Heal, Hone or Steady; Pacts later.
+
+- **Blessings** (`data/blessings.ts`). Eight to each Path, each at tier I, II or III, the tier setting its
+  one number. They work through the verbs the fight already has: Strike (Rending Strike leaves Bleeding,
+  Twin Fangs strikes twice, Wide Swing carries on to another foe, Juggernaut adds a share of the hunter's
+  HP), skills (Sunder staggers, Kindling burns, Hexfire makes a curse hit), a critical hit (Open Vein,
+  Expose), defeating a foe (Blood Feast, Bloodrush, Gale Step, Afterimage, Contagion), being hit or missed
+  (Iron Skin, Rebuke, Riposte, Grudge, Ward of Thorns, Vigil), an ally hit (Overwatch), what a foe carries
+  or is doing (Butcher's Edge on the Bleeding, Shatter on the Broken or Stunned, Read the Blow on a foe whose
+  next action is aimed at the hunter, Weak Point on one Charging or Channelling), the round's end (Second
+  Breath, Doom), the fight's start (Quickdraw, Bannerman), and the hunter's own answers (Guard: Aegis,
+  Shield Wall, Brutal Guard, Sidestep, Forewarned; Cover: Warden; a throw: Ritual Flask). The fight reads
+  them through `Unit.boon`; every damage they change is in `blow` (`edgeOf`), so the reckoning, the foe's
+  threat and the finisher marks show it, and Twin Fangs' Strike is reckoned as both its hits. A blessing's
+  status lands unless the foe is immune.
+- **Duos and Capstones.** A Duo to each pair of Paths (ten), offered by a shrine of either once the run holds
+  a blessing of each. A Capstone to each Path (Red Harvest, Unbreakable, Thousand Cuts, Black Sun, Killing
+  Gaze), offered once the run holds two of its three named blessings.
+- **Shrines** (`core/blessings.ts`). A shrine's Path is drawn from the run and the room, the Path the hunter
+  has spent the most Skill Points in (`run.lean`, as they walked in) three times as likely as each other, and
+  the plan names it once the shrine is seen (`Sight` under its star). Stepping in draws its three from that
+  Path's blessings, Duos and Capstone the run can take, each at a tier (I 70%, II 25%, III 5%), and writes the
+  offer to the run (`run.offers`) before it plays. The map no longer holds a shrine's offer.
+- **Fonts.** A quarter of shrines outside the Practice Gate are Fonts, drawn from the room's own roll: three
+  blessings held, each raised a tier, its number before and after. With none to raise it blesses as a shrine
+  does. To the System's road a Font is a shrine, so no road moved; `npm run mapstats` counts them (Fonts on
+  the road: 0.04 a map at E to 0.27 at S; shrines 0.12 to 0.80).
+- **The System's pick** (`blessings.systemPick`): never one only a hand plays, then the highest tier, a
+  Capstone before a Duo before a Path's; at a Font, the blessing held at the lowest tier. The brief, Auto and
+  calibration all take it, so the projection plays the blessings the System takes.
+- **Rests** (`raid.restHere`, with a pick). **Heal**: party HP +30% (Thin Rest and Lightless as before).
+  **Hone**: one skill equipped +1 level until the hunter leaves the Gate (`run.honed`, read against the
+  levels the run walked in with, `run.levels`). Past Lv.MAX a level honed adds ×0.1, the force each level past
+  Lv.1 adds: a hunter's equipped skills are all at Lv.MAX from about Level 12, so a Hone stopped at MAX would
+  have been greyed on nearly every rest. **Steady**: every debuff lifted, and a Health Potion into the satchel
+  if it has room. Heal no longer lifts debuffs; Steady does. Up a tower a rest waits on the choice, and the
+  climb (or a withdrawal) goes on from it. The System heals unless the hunter's HP is full, and hones its first
+  skill when it is; with nothing to heal (Lightless) it hones. A line at 70% came first: the campaign's hunter
+  who raids three times a day walked out of each Gate with less HP for the next and reached A-Rank 5 days
+  later in two runs out of two (day 23 against `main`'s 18); healing below full put it back (day 17).
+- **Older runs.** A run opened before keeps the five flat blessings it took (`OLD_BLESSINGS`), and a shrine
+  it stepped into before offers were written draws its offer as it is resolved.
+- **Balance.** Calibration moved 29 of 51 Gates (the most Totemscar Encampment, +4.9% harder, and Dread Knight
+  Bastion, -4.8% easier; by grade E +0.7%, D +0.8%, C +1.1%, B -0.7%, A 0.0%, S +0.4%), 31 of 50 Spire blocks
+  (The Petrifying Nursery's +6.3% harder and Champion's Burial March's -5.3% easier the most; by grade -1.2% to
+  +0.5%), 17 of 20 Spire floor bands (-3.4% at 71-75 to +5.3% at 21-25; 1-5, 11-15 and 16-20 stayed), 6 of 10
+  Ascension levels (-1.3% to +1.3%; 3, 5, 6 and 7 stayed) and 3 of 10 Trials (Ascension 1 -1.4%, 2 +1.7%, 8
+  -3.0%). Every other tuning stayed put. The middle of each grade clears 72-80% for a typical hunter, against
+  72-82% on `main`. Over 120 days, two campaigns of this commit against one of `main`:
+
+  | | Days to A, S, N | Carried out | Cleared | Ascension opened |
+  |---|---|---|---|---|
+  | One evening a day, `main` | 33, 59, 110 | 8 | 97% | 9 |
+  | This, first run | 36, 63, 115 | 11 | 96% | 8 |
+  | This, second run | 36, 63, 111 | 9 | 97% | 9 |
+  | Three sessions a day, `main` | 18, 34, 64 | 29 | 93% | 19 |
+  | This, first run | 19, 37, 68 | 35 | 92% | 19 |
+  | This, second run | 17, 32, 61 | 24 | 94% | 18 |
+  | The System honing from 70% HP, three sessions, two runs | 23, 39, 68 and 23, 39, 69 | 33 and 29 | 92%, 93% | 19, 18 |
+
+  Two runs of one commit differ by up to 5 days a rank (the three-session hunter's B-Rank came on day 16 in
+  one run of the 70% line and day 11 in the other). The hunter who raids three times a day is where `main`
+  had them; the one-evening hunter reaches A and S 3-4 days later in both runs.
+
 
 ## What stays out
 

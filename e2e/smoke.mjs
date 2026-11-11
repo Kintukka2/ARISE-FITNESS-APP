@@ -173,6 +173,13 @@ async function raidGate(row, name, auto = false) {
     if (await visible('.nodepanel')) {
       if (!panels++) await snap(`${name}-step`);
       if (await visible('.nodepanel .choice-row')) { await page.locator('.nodepanel .choice-row').first().click(); continue; }
+      // A shrine's blessings, each a card: take the first.
+      if (await visible('.nodepanel button.boonc')) {
+        if ((await page.locator('.nodepanel button.boonc').count()) < 1) throw new Error('A SHRINE OFFERED NOTHING');
+        await snap(`${name}-shrine`);
+        await page.locator('.nodepanel button.boonc').first().click();
+        continue;
+      }
       if (await visible('.nodepanel >> text=Press On')) { await page.locator('.nodepanel >> text=Press On').click(); continue; }
       if (await visible('.nodepanel >> text=Later')) {
         if (name === 'practice' && !kept) {
@@ -181,7 +188,8 @@ async function raidGate(row, name, auto = false) {
           await page.locator('.nodepanel >> text=Later').click();
           continue;
         }
-        await page.locator('.nodepanel .btn', { hasText: /^Rest$/ }).click();
+        if ((await page.locator('.nodepanel .restway').count()) !== 3) throw new Error('A REST DID NOT OFFER HEAL, HONE AND STEADY');
+        await page.locator('.nodepanel .restway--heal').click();
         continue;
       }
       await page.locator('.nodepanel >> text=Continue').click();
@@ -195,6 +203,12 @@ async function raidGate(row, name, auto = false) {
       const rest = page.locator('.arena__map .btn', { hasText: /^Rest$/ });
       if (!(await rest.count())) throw new Error('A REST FOUND AND KEPT COULD NOT BE USED ON THE WAY BACK');
       await rest.click(); await sleep(500);
+      // Its three ways, side by side: Heal, Hone and Steady.
+      if ((await page.locator('.nodepanel .restway').count()) !== 3) throw new Error('A REST DID NOT OFFER HEAL, HONE AND STEADY');
+      await snap('practice-rest-ways');
+      await page.locator('.nodepanel .restway--steady').click(); await sleep(500);
+      if (!(await page.locator('.nodepanel >> text=Debuffs cleared').count())) throw new Error('STEADY DID NOT SAY WHAT IT GAVE');
+      await page.locator('.nodepanel >> text=Continue').click(); await sleep(500);
       if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST COULD BE USED TWICE');
       if (!(await page.locator('.dmap .droom.is-spent').count())) throw new Error('A USED REST DID NOT SHOW AS USED');
       restedBack = true;

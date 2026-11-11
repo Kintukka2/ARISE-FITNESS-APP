@@ -12,7 +12,8 @@
  * Either is drawn from the Gate and the day, so the brief can show it before you go in and everyone
  * who enters that day walks the same one.
  */
-import { BLESSINGS, EVENTS, type NodeKind } from '@/data/nodes';
+import { FONT_SHARE } from '@/data/blessings';
+import { EVENTS, type NodeKind } from '@/data/nodes';
 import { enemyById, isPractice } from './gates';
 import { powerOf } from './combat';
 import type { Dungeon } from './types';
@@ -38,8 +39,6 @@ export interface MapNode {
   foes?: string[];
   /** The event drawn for an event node. */
   event?: string;
-  /** The two blessings a shrine offers. */
-  offer?: string[];
 }
 
 export interface GateMap {
@@ -99,11 +98,8 @@ function furnish(d: Dungeon, seed: string, nodes: MapNode[]) {
     } else if (x.kind === 'elite') x.foes = [d.elite!];
     else if (x.kind === 'boss') x.foes = [d.boss];
     else if (x.kind === 'event') x.event = EVENTS[Math.floor(rr() * EVENTS.length)].id;
-    else if (x.kind === 'shrine') {
-      const pool = BLESSINGS.map((b) => b.id);
-      const first = pool.splice(Math.floor(rr() * pool.length), 1)[0];
-      x.offer = [first, pool[Math.floor(rr() * pool.length)]];
-    }
+    // A shrine is now and then a Font. What either offers is the run's, drawn as the hunter steps in.
+    else if (x.kind === 'shrine' && !isPractice(d) && rr() < FONT_SHARE) x.kind = 'font';
   }
 }
 
@@ -533,7 +529,9 @@ export function reach(m: GateMap, cleared: Set<string>): MapNode[] {
 
 /** The order the System prefers its steps in: fight its way through, rest when it can, and leave the gambles alone. */
 const SYSTEM_ROAD: NodeKind[] = ['rest', 'fight', 'shrine', 'treasure', 'event', 'trap', 'elite', 'vault', 'entrance', 'up', 'down', 'boss'];
-const preference = (a: MapNode, b: MapNode) => SYSTEM_ROAD.indexOf(a.kind) - SYSTEM_ROAD.indexOf(b.kind);
+/** A Font is a shrine's, to the System: the road it walks is the one it walked before Fonts. */
+const placeIn = (k: NodeKind) => SYSTEM_ROAD.indexOf(k === 'font' ? 'shrine' : k);
+const preference = (a: MapNode, b: MapNode) => placeIn(a.kind) - placeIn(b.kind);
 
 /** The System's own pick among the steps on offer. */
 export const systemPick = (options: MapNode[]) => options.slice().sort(preference)[0];

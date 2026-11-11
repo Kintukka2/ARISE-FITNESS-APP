@@ -39,6 +39,8 @@ interface MapProps {
   /** On the Gate clock: how far the Gate has stirred, 0 to 1 on the way to red, and whether it has turned. */
   stir?: number;
   red?: boolean;
+  /** Inside a run: the name of each shrine's Path, shown on it once it is seen. */
+  shrinePath?: (x: MapNode) => string | undefined;
 }
 
 export function MapView(p: MapProps) {
@@ -54,7 +56,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -131,7 +133,9 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           // A room cleared reads as cleared, not as what it held; the rooms the hunter comes back to keep their marks.
           const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss'].includes(x.kind);
           const glyph = plain ? 'check' : sealed ? 'lock' : x.kind === 'vault' ? 'unlock' : kind.glyph;
-          const name = plain ? 'Cleared' : sealed ? 'Sealed' : kind.name;
+          // A shrine seen shows its Path, as the references' doors show the god behind them.
+          const path = looks === 'shrine' && !isDone ? shrinePath?.(x) : undefined;
+          const name = plain ? 'Cleared' : sealed ? 'Sealed' : path ? `Shrine of ${path}` : kind.name;
           // What it costs to go there, in moves, on the Gate clock.
           const cost = costs?.[x.id];
           const moves = cost === undefined ? '' : `, ${cost} ${cost === 1 ? 'move' : 'moves'}`;
@@ -154,7 +158,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
                 </span>
               )}
               <Glyph name={glyph} />
-              {!compact && <small>{spent ? 'Used' : name}</small>}
+              {!compact && <small>{spent ? 'Used' : path ?? name}</small>}
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;

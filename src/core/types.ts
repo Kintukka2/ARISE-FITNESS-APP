@@ -184,6 +184,15 @@ export interface OpenRaid {
   weapon?: string | null;
   /** Blessings picked up at shrines and events, on the hunter for the rest of the run. */
   blessings: string[];
+  /** Each blessing's tier, 1 to 3, by id (`data/blessings.ts`). Unset, I. */
+  tiers?: Record<string, number>;
+  /** What each shrine and Font stepped into offered, written as the hunter stepped in (`blessings.offerFor`). */
+  offers?: Record<string, import('./blessings').Offer>;
+  /** The Path the hunter had spent most in as they walked in: its shrines come up most (`blessings.leanOf`). */
+  lean?: Stat;
+  /** The level of each skill equipped as the run walked in, by name, and the skills honed at its rests since, once for each Hone. */
+  levels?: Record<string, number>;
+  honed?: string[];
   /** A chamber was lost: the run is over, waiting to be settled. */
   lost: boolean;
   /** The hunter's fatigue as they walked in, before this gate added its own. */
