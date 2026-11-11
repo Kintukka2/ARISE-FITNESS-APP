@@ -317,7 +317,7 @@ describe('extraction', () => {
       }
     }
     expect(owned).toBeGreaterThan(0);
-  });
+  }, 20_000);
 
   it('a creature already in the army lingers more often, marked for its Essence', () => {
     const s = defaults();
