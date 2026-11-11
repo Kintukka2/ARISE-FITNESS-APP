@@ -183,7 +183,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Every Gate holds ${FEATS_PER_GATE} Feats, the same every day. Each pays once, the first time a clear meets it on that Gate: Blueprint +${FEAT_PAY.blueprints}.`,
       'The brief’s Feats tab says how often the System met each Feat in its runs. A Feat met wears a gold star there and on the board.',
       ...FEAT_IDS.map((id) => `${FEATS[id].name}: ${FEATS[id].text}.`),
-      `Every family of creature has a special drop, and every boss one of its own: defeat it ${CONDITION[BOSS_CONDITION].text}. Defeated that way, a creature leaves its family’s part +${DROP.part}, and a boss Blueprint +${DROP.bossBlueprints}.`,
+      `Every family of creature has a special drop, and every boss one of its own: defeat it ${CONDITION[BOSS_CONDITION].rule ?? CONDITION[BOSS_CONDITION].text}. Defeated that way, a creature leaves its family’s part +${DROP.part}, and a boss Blueprint +${DROP.bossBlueprints}.`,
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: defeat it ${CONDITION[c].text}.`),
       'A creature’s special drop is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
       'Feats and special drops count however they are met, by your hand or the System’s.',
