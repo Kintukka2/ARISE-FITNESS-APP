@@ -69,87 +69,85 @@ const spanTo = (xs: readonly number[]) => (xs[0] === xs[xs.length - 1] ? pct(xs[
 /** A count that changes with the grade, as its least and most. */
 const countTo = (xs: readonly number[]) => (Math.min(...xs) === Math.max(...xs) ? `${xs[0]}` : `${Math.min(...xs)}-${Math.max(...xs)}`);
 const hits = (n: number) => `${n} ${n === 1 ? 'hit' : 'hits'}`;
-const breaks = (n: number) => (n === 1 ? 'breaks' : 'break');
-/** What a break does, to a wind-up or a channel alike. */
-const BROKEN = `Broken, it is Stunned and its defences fall ${pct(1 - TRICK.windup.broken.def)} for ${TRICK.windup.broken.turns} turns.`;
-
 /**
- * Each behaviour's name, and what it does, read from the numbers above: `about`, one paragraph with a
- * creature's own numbers at its grade, for its card and the fight's tip; `text`, the same across every
- * grade, for the Guide.
+ * Each behaviour's name, and what it does, read from the numbers above, in the references' way of telling
+ * a move (Slay the Spire's "After taking 27 damage, changes to a defensive mode."): the trigger, then what
+ * happens, active, its numbers in the sentence. `about` gives a creature's own numbers at its grade, for
+ * its card and the fight's tip; `text` gives the span across every grade, for the Guide.
  */
+const broken = `it becomes Broken, is Stunned, and loses ${pct(1 - TRICK.windup.broken.def)} defence for ${TRICK.windup.broken.turns} turns`;
 export const TRICKS: Record<TrickId, { name: string; about: (rank: string) => string; text: string }> = {
   shield: {
     name: 'Shields',
-    about: () => `Now and then it shields an ally instead of attacking, and the ally takes ${pct(1 - TRICK.shield.taken)} less damage until this creature acts again.`,
-    text: `Now and then it shields an ally instead of attacking, and the ally takes ${pct(1 - TRICK.shield.taken)} less damage until this creature acts again.`,
+    about: () => `Sometimes shields an ally instead of attacking. That ally takes ${pct(1 - TRICK.shield.taken)} less damage until this creature acts again.`,
+    text: `Sometimes shields an ally instead of attacking. That ally takes ${pct(1 - TRICK.shield.taken)} less damage until this creature acts again.`,
   },
   rally: {
     name: 'Rallies',
-    about: (r) => `Now and then it rallies the pack instead of attacking, and every creature gains Attack +${pct(at(TRICK.rally.atk, r))} for ${TRICK.rally.turns} rounds.`,
-    text: `Now and then it rallies the pack instead of attacking, and every creature gains Attack +${spanTo(TRICK.rally.atk)} by grade for ${TRICK.rally.turns} rounds.`,
+    about: (r) => `Sometimes rallies the pack instead of attacking. Every creature gains ${pct(at(TRICK.rally.atk, r))} Attack for ${TRICK.rally.turns} rounds.`,
+    text: `Sometimes rallies the pack instead of attacking. Every creature gains ${spanTo(TRICK.rally.atk)} Attack by grade for ${TRICK.rally.turns} rounds.`,
   },
   channel: {
     name: 'Channels',
-    about: (r) => `Now and then it channels its spell a turn ahead, for Damage ×${TRICK.channel.mult}. ${hits(at(TRICK.channel.pips, r))} on it while it channels ${breaks(at(TRICK.channel.pips, r))} it. ${BROKEN}`,
-    text: `Now and then it channels its spell a turn ahead, for Damage ×${TRICK.channel.mult}. ${countTo(TRICK.channel.pips)} hits on it while it channels break it, by grade.`,
+    about: (r) => `Sometimes channels a spell for a turn, then casts it for ${pct(TRICK.channel.mult)} damage. After taking ${hits(at(TRICK.channel.pips, r))} while channelling, ${broken}.`,
+    text: `Sometimes channels a spell for a turn, then casts it for ${pct(TRICK.channel.mult)} damage. After taking ${countTo(TRICK.channel.pips)} hits by grade while channelling, ${broken}.`,
   },
   enrage: {
     name: 'Enrages',
-    about: (r) => `Below ${pct(TRICK.enrage.below)} HP it gains Attack +${pct(at(TRICK.enrage.atk, r))} for the rest of the fight.`,
-    text: `Below ${pct(TRICK.enrage.below)} HP it gains Attack +${spanTo(TRICK.enrage.atk)} by grade for the rest of the fight.`,
+    about: (r) => `Below ${pct(TRICK.enrage.below)} HP, gains ${pct(at(TRICK.enrage.atk, r))} Attack for the rest of the fight.`,
+    text: `Below ${pct(TRICK.enrage.below)} HP, gains ${spanTo(TRICK.enrage.atk)} Attack by grade for the rest of the fight.`,
   },
   mark: {
     name: 'Marks',
-    about: () => `Now and then it marks a target, and its next action strikes that target for Damage ×${TRICK.mark.mult}.`,
-    text: `Now and then it marks a target, and its next action strikes that target for Damage ×${TRICK.mark.mult}.`,
+    about: () => `Sometimes marks a target, then hits it for ${pct(TRICK.mark.mult)} damage with its next action.`,
+    text: `Sometimes marks a target, then hits it for ${pct(TRICK.mark.mult)} damage with its next action.`,
   },
-  pickoff: { name: 'Picks off', about: () => 'It always goes for the one with the least HP.', text: 'It always goes for the one with the least HP.' },
-  aloft: { name: 'Aloft', about: () => 'After it acts, it is Veiled until its next action.', text: 'After it acts, it is Veiled until its next action.' },
+  pickoff: { name: 'Picks off', about: () => 'Always attacks whoever has the least HP.', text: 'Always attacks whoever has the least HP.' },
+  aloft: { name: 'Aloft', about: () => 'After acting, is Veiled until its next action.', text: 'After acting, is Veiled until its next action.' },
   virulent: {
     name: 'Virulent',
-    about: () => `What it inflicts always lands, and lasts ${TRICK.virulent.turns} turn longer.`,
-    text: `What it inflicts always lands, and lasts ${TRICK.virulent.turns} turn longer.`,
+    about: () => `Its statuses always land and last ${TRICK.virulent.turns} turn longer.`,
+    text: `Its statuses always land and last ${TRICK.virulent.turns} turn longer.`,
   },
   undying: {
     name: 'Undying',
-    about: () => `The first time it would fall, it stands at 1 HP, and at the round's end it rises again with HP +${pct(TRICK.undying.heal)}.`,
-    text: `The first time it would fall, it stands at 1 HP, and at the round's end it rises again with HP +${pct(TRICK.undying.heal)}.`,
+    about: () => `The first time it would be defeated, survives at 1 HP and recovers ${pct(TRICK.undying.heal)} HP at the end of the round.`,
+    text: `The first time it would be defeated, survives at 1 HP and recovers ${pct(TRICK.undying.heal)} HP at the end of the round.`,
   },
   frenzy: {
     name: 'Frenzy',
-    about: () => `Against a target below ${pct(TRICK.frenzy.below)} HP it deals Damage +${pct(TRICK.frenzy.dmg)}.`,
-    text: `Against a target below ${pct(TRICK.frenzy.below)} HP it deals Damage +${pct(TRICK.frenzy.dmg)}.`,
+    about: () => `Deals ${pct(TRICK.frenzy.dmg)} more damage to targets below ${pct(TRICK.frenzy.below)} HP.`,
+    text: `Deals ${pct(TRICK.frenzy.dmg)} more damage to targets below ${pct(TRICK.frenzy.below)} HP.`,
   },
   bloodlust: {
     name: 'Bloodlust',
-    about: () => `Each hit it lands gives it Attack +${pct(TRICK.bloodlust.step)}, up to Attack +${pct(TRICK.bloodlust.step * TRICK.bloodlust.max)}.`,
-    text: `Each hit it lands gives it Attack +${pct(TRICK.bloodlust.step)}, up to Attack +${pct(TRICK.bloodlust.step * TRICK.bloodlust.max)}.`,
+    about: () => `Gains ${pct(TRICK.bloodlust.step)} Attack each time it lands a hit, up to ${pct(TRICK.bloodlust.step * TRICK.bloodlust.max)}.`,
+    text: `Gains ${pct(TRICK.bloodlust.step)} Attack each time it lands a hit, up to ${pct(TRICK.bloodlust.step * TRICK.bloodlust.max)}.`,
   },
   regrowth: {
     name: 'Regrowth',
-    about: (r) => `At each round's end it heals HP +${pct(at(TRICK.regrowth.heal, r))}.`,
-    text: `At each round's end it heals HP +${spanTo(TRICK.regrowth.heal)} by grade.`,
+    about: (r) => `Recovers ${pct(at(TRICK.regrowth.heal, r))} HP at the end of each round.`,
+    text: `Recovers ${spanTo(TRICK.regrowth.heal)} HP by grade at the end of each round.`,
   },
   hardened: {
     name: 'Hardened',
-    about: () => `The first hit it takes each round deals ${pct(1 - TRICK.hardened.taken)} less damage.`,
-    text: `The first hit it takes each round deals ${pct(1 - TRICK.hardened.taken)} less damage.`,
+    about: () => `Takes ${pct(1 - TRICK.hardened.taken)} less damage from the first hit each round.`,
+    text: `Takes ${pct(1 - TRICK.hardened.taken)} less damage from the first hit each round.`,
   },
   backlash: {
     name: 'Backlash',
-    about: () => `Whoever hits it takes ${pct(TRICK.backlash.back)} of the damage back.`,
-    text: `Whoever hits it takes ${pct(TRICK.backlash.back)} of the damage back.`,
+    about: () => `Reflects ${pct(TRICK.backlash.back)} of the damage it takes back at the attacker.`,
+    text: `Reflects ${pct(TRICK.backlash.back)} of the damage it takes back at the attacker.`,
   },
   secondwind: {
     name: 'Second Wind',
-    about: () => `Once, below ${pct(TRICK.secondwind.below)} HP, it drinks instead of attacking and heals HP +${pct(TRICK.secondwind.heal)}.`,
-    text: `Once, below ${pct(TRICK.secondwind.below)} HP, it drinks instead of attacking and heals HP +${pct(TRICK.secondwind.heal)}.`,
+    about: () => `Once, below ${pct(TRICK.secondwind.below)} HP, drinks instead of attacking and recovers ${pct(TRICK.secondwind.heal)} HP.`,
+    text: `Once, below ${pct(TRICK.secondwind.below)} HP, drinks instead of attacking and recovers ${pct(TRICK.secondwind.heal)} HP.`,
   },
   windup: {
     name: 'Winds up',
-    about: (r) => `It announces its heaviest move ${TRICK.windup.ahead} actions ahead, for Damage ×${TRICK.windup.mult}. ${hits(at(TRICK.windup.pips, r))} on it before then ${breaks(at(TRICK.windup.pips, r))} it. ${BROKEN}`,
-    text: `It announces its heaviest move ${TRICK.windup.ahead} actions ahead, for Damage ×${TRICK.windup.mult}. ${countTo(TRICK.windup.pips)} hits on it before then break it, by grade, and ${BROKEN.replace('Broken, it', 'it')}`,
+    about: (r) => `Charges its strongest attack for ${TRICK.windup.ahead} actions, then strikes for ${pct(TRICK.windup.mult)} damage. After taking ${hits(at(TRICK.windup.pips, r))} while charging, ${broken}.`,
+    text: `Charges its strongest attack for ${TRICK.windup.ahead} actions, then strikes for ${pct(TRICK.windup.mult)} damage. After taking ${countTo(TRICK.windup.pips)} hits by grade while charging, ${broken}.`,
   },
 };
 

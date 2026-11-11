@@ -1210,7 +1210,7 @@ export const GRADES = [
   { min: 0.9, text: 'Safe', tone: 'ready' },
   { min: 0.7, text: 'Likely', tone: 'ready' },
   { min: 0.4, text: 'Even', tone: 'even' },
-  { min: 0.15, text: 'Unfavourable', tone: 'over' },
+  { min: 0.15, text: 'Unlikely', tone: 'over' },
   { min: 0, text: 'Lethal', tone: 'over' },
 ] as const;
 
