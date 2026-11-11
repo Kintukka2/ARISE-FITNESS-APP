@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core/combat';
 import { TRICKS, type TrickId } from '@/data/tricks';
+import { Keyed } from '@/ui/keyed';
 import { CONDITION, type ConditionId } from '@/data/drops';
 import { FEAT_PAY, FEATS } from '@/data/feats';
 import { SEALS } from '@/data/seals';
@@ -589,7 +590,7 @@ export function Arena() {
     // A condition met: the way it fell, and what it leaves.
     const drop = (uid: string) => {
       const u = local.find((x) => x.uid === uid);
-      return u?.ref && u.cond ? `${CONDITION[u.cond].text}. ${dropPay(u.ref, !!u.boss)}.` : null;
+      return u?.ref && u.cond ? `${CONDITION[u.cond].said}. ${dropPay(u.ref, !!u.boss)}.` : null;
     };
     for (const b of toBeats(log.slice(from))) {
       apply(local, b);
@@ -1046,7 +1047,7 @@ function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
     <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
       <div class="tip" role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - tip.y + 6}px` : `top:${tip.below + 6}px`}`}>
         <b class="tip__title">{tip.title}</b>
-        {tip.lines.map((l) => <p key={l}>{l}</p>)}
+        {tip.lines.map((l) => <p key={l}><Keyed text={l} /></p>)}
       </div>
     </div>
   );

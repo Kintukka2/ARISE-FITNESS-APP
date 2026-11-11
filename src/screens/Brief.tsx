@@ -47,7 +47,9 @@ import * as feats from '@/core/feats';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
 import { TRICKS, tricksOf } from '@/data/tricks';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
-import { conditionLine, dropGlyph } from '@/ui/conditions';
+import { dropGlyph, dropPay } from '@/ui/conditions';
+import { CONDITION } from '@/data/drops';
+import { Keyed } from '@/ui/keyed';
 import { drinkFlow } from './Inventory';
 
 /**
@@ -645,7 +647,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
   const e = enemyById(id)!;
   const boss = id === d.boss;
   const habits = tricksOf(e, boss || id === d.elite);
-  const cond = conditionLine(id, boss);
+  const cond = raid.conditionOf(id, boss);
   return (
     <div class="stack bcreature">
       <section class="bspot is-card">
@@ -658,7 +660,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          {habits.map((h) => <p key={h} class="bhabit"><b>{TRICKS[h].name}</b>{TRICKS[h].about(String(e.rank))}</p>)}
+          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name">{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (
@@ -673,7 +675,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {cond && (
         <section class="bbox is-drop" aria-label="Special drop">
           <span class="label bbox__head">Special drop</span>
-          <p class="bcreature__drop"><Glyph name={dropGlyph(id, boss)} />{cond}</p>
+          <p class="bcreature__drop"><Glyph name={dropGlyph(id, boss)} />Defeat it <Keyed text={CONDITION[cond].text} />: <span class="grant">{dropPay(id, boss)}</span></p>
         </section>
       )}
     </div>

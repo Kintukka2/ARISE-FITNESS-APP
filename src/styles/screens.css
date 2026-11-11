@@ -1492,9 +1492,11 @@ button.dmap__floor { cursor: pointer; }
 .bbox.is-drop { border-color: color-mix(in srgb, var(--verdant) 40%, var(--sys-hair)); }
 /* A habit: its name over one paragraph, in the creature's own numbers. */
 .bhabit { margin: 0; font-size: 0.74rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
-.bhabit > b { display: block; margin-bottom: 2px; font-size: 0.8rem; color: #fff; }
+.bhabit__name { display: block; margin-bottom: 2px; font-size: 0.8rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
 .bhabit + .bhabit { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
-.bcreature__drop { margin: 0; font-size: 0.78rem; line-height: 1.45; color: color-mix(in srgb, var(--verdant) 85%, var(--sys-ink)); }
+.bcreature__drop { margin: 0; font-size: 0.76rem; line-height: 1.45; color: var(--sys-ink); }
+.bcreature__drop > .ico { color: var(--verdant); }
+.bcreature__drop .grant { font-weight: 700; }
 .bcreature__drop .ico { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
@@ -2373,3 +2375,7 @@ button.matrow { width: 100%; color: inherit; font: inherit; text-align: left; cu
   78% { transform: translate(2px, 0); }
 }
 @media (prefers-reduced-motion: reduce) { .syswin.is-shake, .redcount.is-done .warn { animation: none; } }
+
+/* A tip's keywords, as the reference games colour theirs: figures in the System's blue, statuses and stats in gold. */
+.kw-num { font-weight: 700; color: var(--mana); }
+.kw { font-weight: 700; color: var(--gold); }
