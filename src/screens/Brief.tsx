@@ -36,7 +36,7 @@ import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import { createStore, useSave } from '@/store';
-import { Btn, RankPlate, Shards, useNow } from '@/ui/components';
+import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
@@ -320,7 +320,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}:</span> {trial ? `Ascension ${trialLevel(d) + 1}` : d.name}</h3>
           <File d={d} />
           <span class="bhero__tags">
-            {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-bounty'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
+            {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-fresh'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
             {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
             {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
             {trial && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
@@ -441,6 +441,18 @@ function File({ d }: { d: Dungeon }) {
   );
 }
 
+/**
+ * A currency's glyph and its signed figure, set on the text's own baseline so nothing on the line sits out
+ * of it: the shard and `+26` in green, Ember's flame and `+12` in its orange.
+ */
+function Cur({ kind, n }: { kind: 'shard' | 'ember'; n: number }) {
+  return (
+    <span class={`bcur is-${kind}`} aria-label={`${kind === 'shard' ? 'Mana Shards' : EMBER.name} +${n}`}>
+      {kind === 'shard' ? <Shard size={12} /> : <Glyph name="ember" />}<span class="num">+{n}</span>
+    </span>
+  );
+}
+
 /** One line of a brief's list: its mark, what it says, and at its side its count or its figure. */
 function Line({ cls, mark, children, side, open, label }: { cls?: string; mark?: ComponentChildren; children: ComponentChildren; side?: ComponentChildren; open?: () => void; label?: string }) {
   const inner = (
@@ -530,11 +542,11 @@ function Rewards({ d, level, taken }: { d: Dungeon; level: number; taken: SealId
     <section class="bbox" aria-label="Rewards">
       <span class="label bbox__head">Rewards{level > 0 && <small class="grant"> · Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
       <ul class="blist">
-        <Line cls="is-clear"><b>Gate clear:</b> XP <span class="num">+{xp}</span>{practice ? `, enough for Level ${PRACTICE_LEVEL}` : <>, <Shards n={sh} /></>}</Line>
-        {first && <Line cls="is-bounty"><b>Bounty:</b> XP <span class="num">+{xp}</span>, <Shards n={sh * 2} /> <span class="muted">(one-time reward)</span></Line>}
+        <Line cls="is-clear"><b>Gate clear:</b> XP <span class="num">+{xp}</span>{practice ? `, enough for Level ${PRACTICE_LEVEL}` : <>, <Cur kind="shard" n={sh} /></>}</Line>
+        {first && <Line cls="is-bounty"><b>Bounty:</b> XP <span class="num">+{xp}</span>, <Cur kind="shard" n={sh * 2} /> <span class="muted">(one-time reward)</span></Line>}
         {trial && <Line cls="is-victory"><b>Victory:</b> Ascension {s.ascension.unlocked + 1} opens</Line>}
         {tower && <Line cls="is-victory"><b>This week:</b> Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}, a new best</Line>}
-        {taken.length > 0 && <Line cls="is-ember" key="ember"><b>Seal bonus:</b> <span class="bline__ember"><MatArt id={EMBER.id} size={16} /><span class="num">{ember}</span></span></Line>}
+        {taken.length > 0 && <Line cls="is-ember" key="ember"><b>Seal bonus:</b> <Cur kind="ember" n={ember} /></Line>}
         <Line cls="is-mats">
           <b>Materials:</b>{' '}
           {mats.map((id, i) => (
@@ -626,7 +638,7 @@ function openCreature(id: string, d: Dungeon) {
 /**
  * What a creature is: its family's glyph in a spotlight, its grade, family, role and power, and whether it
  * serves as a Shadow; what it does besides hit, as the fight's tips word it; the statuses it shrugs off or
- * resists; and its condition drop, how to defeat it for more.
+ * resists; and its special drop, how to defeat it for more.
  */
 function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
   const s = useSave();
@@ -646,7 +658,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          <ul class="blist">{habits.map((h) => <Line key={h} cls="is-habit"><b>{TRICKS[h].name}:</b> {TRICKS[h].text}</Line>)}</ul>
+          <ul class="blist">{habits.map((h) => <Line key={h} cls="is-habit"><b>{TRICKS[h].name}</b>{TRICKS[h].lines(String(e.rank)).map((l, i) => <span key={i} class="bhabit__line">{l}</span>)}</Line>)}</ul>
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (
@@ -659,8 +671,8 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
         </section>
       )}
       {cond && (
-        <section class="bbox is-drop" aria-label="Condition drop">
-          <span class="label bbox__head">Condition drop</span>
+        <section class="bbox is-drop" aria-label="Special drop">
+          <span class="label bbox__head">Special drop</span>
           <p class="bcreature__drop"><Glyph name={dropGlyph(id, boss)} />{cond}</p>
         </section>
       )}

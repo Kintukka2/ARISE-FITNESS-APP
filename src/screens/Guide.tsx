@@ -173,7 +173,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
-    title: 'Seals, Feats and condition drops',
+    title: 'Seals, Feats and special drops',
     lines: [
       `From ${SEALS_FROM}-Rank, a Gate on the board offers up to ${SEALS_PER_GATE} Seals, drawn from its map each day. A Seal is a rule you take on for stated pay.`,
       'Seal The Gate, on the brief, opens its Seals: tap one to press it in, and the assessment plays it at once. The run keeps the Seals it walked in with.',
@@ -185,8 +185,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       ...FEAT_IDS.map((id) => `${FEATS[id].name}: ${FEATS[id].text}.`),
       `Every family of creature has a stated way to fall, and every boss ${CONDITION[BOSS_CONDITION].text}. Defeated that way, a creature leaves its family’s part +${DROP.part}, and a boss Blueprint +${DROP.bossBlueprints}.`,
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: ${CONDITION[c].text}.`),
-      'A creature’s condition is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
-      'Feats and condition drops count however they are met, by your hand or the System’s.',
+      'A creature’s special drop is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
+      'Feats and special drops count however they are met, by your hand or the System’s.',
     ],
   },
   {

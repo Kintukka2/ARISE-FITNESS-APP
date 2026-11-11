@@ -61,6 +61,8 @@ import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 
 interface UnitView {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[];
+  /** A foe's grade, which sets its behaviours' numbers. */
+  grade?: string;
   /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
   ref?: string; cond?: ConditionId; boss?: boolean;
 }
@@ -1151,9 +1153,9 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
       {((u.tricks && u.tricks.length > 0) || cond) && (
         <div class="unit__tricks">
-          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].text]} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
+          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={TRICKS[k].lines(u.grade ?? 'E')} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
           {cond && u.ref && u.hp > 0 && (
-            <Told tell={tell} title="Condition drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
+            <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
               <Glyph name={dropGlyph(u.ref, !!u.boss)} />
             </Told>
           )}
@@ -1364,7 +1366,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         {(r.seals.length > 0 || r.drops > 0) && (
           <div class="alerts">
             {r.seals.length > 0 && <SysAlert fyi delay={150} icon={<Glyph name="lock" />}><strong>[Seals]</strong> {r.seals.map((id) => SEALS[id].name).join(', ')}{r.outcome === 'defeated' ? '. Carried out: nothing is paid.' : '. Their pay is in what the run left.'}</SysAlert>}
-            {r.drops > 0 && <SysAlert fyi delay={200} icon={<Glyph name="bone" />}><strong>[Condition drops]</strong> <span class="grant num">{r.drops}</span> {r.drops === 1 ? 'creature' : 'creatures'} defeated the way their condition asks.</SysAlert>}
+            {r.drops > 0 && <SysAlert fyi delay={200} icon={<Glyph name="bone" />}><strong>[Special drops]</strong> <span class="grant num">{r.drops}</span> {r.drops === 1 ? 'creature' : 'creatures'} defeated the way their condition asks.</SysAlert>}
           </div>
         )}
         {/* The weapon carried in, growing familiar: the System reports it, and a rank reached says so. */}

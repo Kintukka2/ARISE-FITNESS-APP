@@ -333,12 +333,14 @@ try {
   await tab('Threat').click(); await sleep(500);
   if (!(await page.locator('.sheet.is-top .bspot').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS IN ITS SPOTLIGHT');
   if (!(await page.locator('.sheet.is-top .bthreat .bline').count())) throw new Error('THE THREAT TAB LISTS NO CREATURES');
-  // The Threat tab is what walks in the Gate and nothing else: no condition drops, no Shadows bound.
+  // The Threat tab is what walks in the Gate and nothing else: no special drops, no Shadows bound.
   if (await page.locator('.sheet.is-top .btab-panel', { hasText: /Shadows bound|while Burning|while Stunned|Blueprint \+1/ }).count()) throw new Error('THE THREAT TAB STILL SHOWS DROPS OR SHADOWS');
-  // A creature's line opens its card: its habits, its statuses and its condition drop.
+  // A creature's line opens its card: its habits, a fact to a line, its statuses and its special drop.
   await page.locator('.sheet.is-top .bthreat .bline.is-tap').first().click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .bcreature').count())) throw new Error('A CREATURE’S LINE OPENED NO CARD');
-  if (!(await page.locator('.sheet.is-top .bcreature .bcreature__drop').count())) throw new Error('THE CREATURE CARD STATES NO CONDITION DROP');
+  if (!(await page.locator('.sheet.is-top .bcreature .bcreature__drop').count())) throw new Error('THE CREATURE CARD STATES NO SPECIAL DROP');
+  if (!(await page.locator('.sheet.is-top .bcreature .bbox__head', { hasText: 'Special drop' }).count())) throw new Error('THE CREATURE CARD DOES NOT SAY SPECIAL DROP');
+  if (await page.locator('.sheet.is-top .bcreature', { hasText: /by grade/ }).count()) throw new Error('A CREATURE CARD GIVES A HABIT BY GRADE, NOT ITS OWN NUMBERS');
   await snap('brief-creature');
   await close(); await sleep(400);
   await page.locator('.sheet.is-top .bspot.is-tap').click(); await sleep(600);

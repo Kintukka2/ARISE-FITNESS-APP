@@ -1221,7 +1221,7 @@ and convenience, and the packs stay as they are.
 Auto's clear rate stays where it is. What is added pays only hand play:
 
 - **Feats:** three stated objectives on each Gate, and the brief says how often its 24 runs met each.
-- **Condition drops:** a stated way to defeat each family and boss (while Stunned, within three
+- **Special drops:** a stated way to defeat each family and boss (while Stunned, within three
   rounds) that pays extra materials.
 - **Challenges graded against a par.**
 
@@ -1238,7 +1238,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    `npm run mapstats` report of what the maps draw.
 2. **The Gate clock, Stirring and Red Gates** (built, below).
 3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics (built, below).
-4. **Seals, Feats and condition drops** (built, below).
+4. **Seals, Feats and special drops** (built, below).
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice.**
 6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
    with family and role bonuses; rule-changing gear; a daily seeded Gate.
@@ -1477,7 +1477,7 @@ guardian doesn't rise again, but it does shield an ally; a higher rank gets both
     foes act). The card is no longer a button inside which nothing else could be tapped.
 
 
-### Seals, Feats and condition drops — built
+### Seals, Feats and special drops — built
 
 The references were Hades' Pact of Punishment and Hades II's Oath of the Unseen, a rule to each row with
 what it costs and a total that moves; Path of Exile's map modifiers and Diablo IV's Infernal Compass,
@@ -1488,9 +1488,9 @@ condition to each creature, and Monster Hunter's reward screen, which says how e
 Their screenshots are in [research/references/step-4-seals-feats-drops](research/references/step-4-seals-feats-drops/).
 
 Decided with the owner: Seals pay in Ascendant Ember only, never Mana Shards (they paid in alloys, parts
-and blueprints at first; the owner moved them to Ember); Feats and condition drops count
+and blueprints at first; the owner moved them to Ember); Feats and special drops count
 however they are met, by the hunter's hand or the System's; a Feat pays once, the first time it is met on
-its Gate, and more for it; and a creature's condition drop is a small mark on its card, read with a tap.
+its Gate, and more for it; and a creature's special drop is a small mark on its card, read with a tap.
 
 - **Seals** (`data/seals.ts`, `core/seals.ts`). From D-Rank, each Gate on the board offers up to three a
   day, drawn from its day's map (`seals.offered`): only those that would change something there (a
@@ -1523,7 +1523,7 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
   pays once, the first time a clear meets it on its Gate (`s.gates.feats`): Blueprint +1. The brief says
   how often the System met each in its 24 runs (`System 18/24`); its road never meets Thorough or
   Wardenbane. A Feat met wears a gold star on the brief and on the board's row.
-- **Condition drops** (`data/drops.ts`). Every family has a stated way to fall, kindred families sharing
+- **Special drops** (`data/drops.ts`). Every family has a stated way to fall, kindred families sharing
   one (Undead and Aberrations while Burning, Beasts and Chimeras while Rooted, Orcs, Giantkin and
   Goblinoids while Stunned, Insectoids, Plants and Slimes within 3 rounds, Constructs, Dragonkin,
   Humanoids and Aquatics with the hunter's own blow, Demons and Elementals with a Shadow's blow), and
@@ -1536,7 +1536,7 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
   holds, and a tap tells it.
 - **The results** list the Gate's Feats, met or not, and `First time: Blueprint +1` for each paid, and
   report the Seals and the conditions met.
-- **Balance.** No fight changes for any of it: calibration plays no Seals, and Feats and condition drops
+- **Balance.** No fight changes for any of it: calibration plays no Seals, and Feats and special drops
   are read off fights already fought, so no tuning moves and `npm run calibrate` was not rerun. The
   campaign takes every Seal a Gate offers while the brief, read at 24 runs, says 75% or better. Over 120
   days, against the same campaign on `main`, with the Seals' first pay in materials and their pay now in
@@ -1551,7 +1551,7 @@ its Gate, and more for it; and a creature's condition drop is a small mark on it
   | Seals paying materials | 29, 45, 74 | 44 | 147 | 241 | | | 1790 |
   | Seals paying Ember | 23, 39, 68 | 36 | 153 | 199 | 1952 | 2185 | 1847 |
 
-  Feats met for the first time and condition drops (bosses defeated while Broken) on the Ember run: 53 and
+  Feats met for the first time and special drops (bosses defeated while Broken) on the Ember run: 53 and
   1055 (46) one evening a day, 69 and 2123 (60) three sessions a day. Taken on a 75% reading, Seals cost
   days to every rank: a run carried out locks the hunter out for 12 hours, and a sealed one is carried out
   about one time in seven. Paid in Ember, they no longer pile up alloys and parts, and Dry and Never Alone
@@ -1600,7 +1600,7 @@ challenge (the boss, its missions and Start side by side), all in
   box nothing has a box of its own. The Threat tab is what walks in the Gate and nothing else: the boss in
   a spotlight at its top and the rest in a line each, with no drop and no Shadows bound; the boss and each
   creature identified open its card (`CreatureCard`: its habits in the fight's words, its immunities and
-  resistances, and its condition drop). The Feats and the party are rows.
+  resistances, and its special drop). The Feats and the party are rows.
 - **The dock** holds Enter The Gate alone. Ember's figures are in its orange wherever a Seal's pay is
   stated. And every line a player reads says defeat, never fell (the owner's call, `tests/voice.test.ts`).
 

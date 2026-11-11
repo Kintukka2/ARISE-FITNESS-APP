@@ -100,6 +100,8 @@ export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) 
 
 export interface RosterRow {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[];
+  /** A foe's grade, which sets its behaviours' numbers. */
+  grade?: string;
   /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
   ref?: string; cond?: ConditionId; boss?: boolean;
 }
@@ -182,7 +184,7 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
   const roster: RosterRow[] = [...party, ...foes].map((u) => {
     const boss = u.side === 'e' && c.boss && u === foes[0];
     const cond = u.side === 'e' && u.ref ? conditionOf(u.ref, boss) ?? undefined : undefined;
-    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, ...(cond ? { ref: u.ref, cond, boss } : {}) };
+    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, ...(u.side === 'e' ? { grade: u.grade } : {}), ...(cond ? { ref: u.ref, cond, boss } : {}) };
   });
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];

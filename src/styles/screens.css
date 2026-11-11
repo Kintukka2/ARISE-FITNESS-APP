@@ -1300,6 +1300,8 @@ button.dmap__floor { cursor: pointer; }
 .gtag.is-tracked { --tc: var(--forge); }
 .gtag.is-tracked .ico { width: 11px; height: 11px; }
 .gtag.is-bounty { --tc: var(--verdant); }
+/* A Gate not yet taken, in the Gates' orange: Cleared keeps the green. */
+.gtag.is-fresh { --tc: var(--ember); }
 /* The set pieces a Gate's clears leave, held of all: plain, and green once every one is held. */
 .gtag.is-pieces { --tc: var(--sys-ink); letter-spacing: 0.02em; }
 .gtag.is-pieces .ico { width: 11px; height: 11px; }
@@ -1490,10 +1492,17 @@ button.dmap__floor { cursor: pointer; }
 .bline.is-res .bline__mark > i { background: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bbox.is-drop { border-color: color-mix(in srgb, var(--verdant) 40%, var(--sys-hair)); }
 .bcreature__drop { margin: 0; font-size: 0.78rem; line-height: 1.45; color: color-mix(in srgb, var(--verdant) 85%, var(--sys-ink)); }
+.bhabit__line { display: block; font-size: 0.72rem; line-height: 1.45; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.bline.is-habit .bline__text > b { display: block; margin-bottom: 1px; }
+.bline.is-habit .bline__mark { align-self: start; margin-top: 0.5em; }
 .bcreature__drop .ico { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
-.bline__ember { display: inline-flex; align-items: center; gap: 4px; vertical-align: -3px; font-weight: 700; color: var(--ember); text-shadow: 0 0 8px var(--ember-glow); }
+/* A currency on a line: its glyph a little under the text's height, sat on the baseline, then its signed figure. */
+.bcur { font-weight: 700; white-space: nowrap; }
+.bcur .shard, .bcur .ico { display: inline-block; width: 0.95em; height: 0.95em; margin-right: 3px; vertical-align: -0.12em; }
+.bcur.is-shard { color: var(--verdant); }
+.bcur.is-ember { color: var(--ember); text-shadow: 0 0 8px var(--ember-glow); }
 .bline__mat.is-tracked { color: var(--forge); text-shadow: 0 0 6px var(--forge-glow); }
 .bline__track { display: inline-block; width: 13px; height: 13px; margin-left: 5px; vertical-align: -2px; }
 @keyframes lineIn { from { opacity: 0; transform: translateX(-8px); filter: brightness(2); } }
@@ -1519,22 +1528,23 @@ button.dmap__floor { cursor: pointer; }
 .bbanner .bvitals { padding-top: 10px; border-top: 1px solid var(--sys-hair); }
 
 /* The Threat tab: the boss in a spotlight, then a line to each creature. */
-.bspot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px 12px; text-align: center; background: radial-gradient(55% 70% at 50% 18%, rgba(255, 47, 62, 0.2), transparent 70%); }
-.bspot__art { display: grid; place-items: center; width: 72px; height: 72px; margin-bottom: 4px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 47, 62, 0.22), transparent 68%); color: #ff3b4b; filter: drop-shadow(0 0 10px rgba(255, 47, 62, 0.55)); animation: spotIn 520ms var(--ease) both; }
-.bspot__art .ico { width: 44px; height: 44px; }
+.bspot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 2px 8px 8px; text-align: center; background: radial-gradient(55% 70% at 50% 18%, rgba(255, 47, 62, 0.2), transparent 70%); }
+.bspot__art { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 2px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 47, 62, 0.22), transparent 68%); color: #ff3b4b; filter: drop-shadow(0 0 10px rgba(255, 47, 62, 0.55)); animation: spotIn 520ms var(--ease) both; }
+.bspot__art .ico, .bspot__art .famglyph { width: 34px; height: 34px; }
 .bspot.is-unknown .bspot__art { color: color-mix(in srgb, #ff3b4b 70%, var(--sys-ink)); }
 .bspot > .label { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.bspot__name { font-size: 1.15rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
-.bspot__line { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bspot__name { font-size: 0.95rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.bspot__line { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 @keyframes spotIn { from { opacity: 0; transform: scale(0.7); filter: brightness(2); } }
 .bchosen { display: flex; gap: 10px; padding: 8px 10px; border-left: 2px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 75%); }
 .bchosen > .ico { flex: none; width: 22px; height: 22px; color: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
 .bchosen .grow { display: flex; flex-direction: column; gap: 1px; }
 .bchosen small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
-.bthreat { padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.bthreat { gap: 1px; padding-top: 6px; border-top: 1px solid var(--sys-hair); }
 .bthreat .bline__text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
-.bthreat .bline__text b { font-weight: 600; }
-.bthreat__kind { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bthreat .bline__text b { font-size: 0.7rem; font-weight: 600; }
+.bthreat .bline { font-size: 0.7rem; line-height: 1.35; }
+.bthreat__kind { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bthreat__one.is-elite .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
 .bthreat__one.is-elite .bthreat__kind { color: var(--gold); }
 
