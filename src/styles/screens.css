@@ -655,15 +655,14 @@ button.dmap__floor { cursor: pointer; }
 .runstrip__cells small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
 .runstrip__cells b { display: inline-flex; align-items: center; gap: 4px; font-size: 0.92rem; color: var(--ink); }
 /* A blessing held: a framed boon in the Gates' amber, its mark, its name and what it gives. */
-.boons { display: flex; flex-wrap: wrap; gap: 6px; }
-.boon { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
-  background: linear-gradient(90deg, rgba(255, 203, 92, 0.16), rgba(255, 154, 60, 0.04)); clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-  box-shadow: inset 0 0 12px rgba(255, 203, 92, 0.12); animation: qaIn 420ms var(--ease) both; }
-.boon__mark { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent); background: rgba(40, 26, 4, 0.8); color: var(--gold); transform: rotate(45deg) scale(0.82); }
-.boon__mark .ico { width: 13px; height: 13px; transform: rotate(-45deg); filter: drop-shadow(0 0 4px var(--gold-glow)); }
-.boon__text { display: flex; flex-direction: column; line-height: 1.15; }
-.boon__text b { font-size: 0.72rem; color: var(--gold); letter-spacing: 0.04em; }
-.boon__text small { font-size: 0.64rem; color: color-mix(in srgb, var(--verdant) 85%, white); }
+.boons { display: flex; flex-wrap: wrap; gap: 4px 2px; }
+/* A blessing held: its Path's mark in a gold diamond, its tier's numeral at its foot. A tap tells the rest. */
+.boon { position: relative; display: grid; place-items: center; width: 36px; height: 38px; padding: 0; border: 0; background: none; color: var(--gold); font: inherit; cursor: pointer; }
+.boon__mark { display: grid; grid-auto-flow: column; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent); background: rgba(40, 26, 4, 0.85); transform: rotate(45deg); box-shadow: 0 0 8px rgba(255, 203, 92, 0.18); transition: box-shadow 160ms var(--ease), border-color 160ms var(--ease); }
+.boon__mark .ico { width: 14px; height: 14px; transform: rotate(-45deg); filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.boon__mark .ico + .ico { width: 10px; height: 10px; margin-left: -4px; }
+.boon:active .boon__mark, .boon:focus-visible .boon__mark { border-color: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
+.boon__tier { position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); padding: 0 3px; border-radius: 3px; background: var(--panel-solid); font-family: var(--font-num); font-size: 0.56rem; line-height: 1.2; letter-spacing: 0.02em; color: var(--gold); }
 .nodepanel { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: var(--r-md); background: rgba(24, 12, 4, 0.7); animation: windowIn 300ms var(--ease) both; }
 .nodepanel header { gap: 8px; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .nodepanel--rest, .nodepanel--treasure { border-color: rgba(72, 245, 168, 0.45); }
@@ -2374,3 +2373,53 @@ button.matrow { width: 100%; color: inherit; font: inherit; text-align: left; cu
 /* A tip's keywords, as the reference games colour theirs: figures in the System's blue, statuses and stats in gold. */
 .kw-num { font-weight: 700; color: var(--mana); }
 .kw { font-weight: 700; color: var(--gold); }
+
+/* A shrine's or a Font's offer: a card to each blessing, after the boon cards of the references. Its
+   Path's mark in a diamond at its left on a gold wedge that deepens with the tier; its name over its
+   Path, what it does, and its tier in pips at the right. Gold is advancement's. */
+.boonlist { display: flex; flex-direction: column; gap: 8px; }
+.boonc { position: relative; display: flex; align-items: stretch; gap: 12px; width: 100%; padding: 10px 12px 10px 8px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--gold) 34%, transparent); border-radius: var(--r-md); background: linear-gradient(100deg, rgba(40, 28, 6, 0.85), rgba(10, 14, 28, 0.92) 46%); color: var(--ink); text-align: left; font: inherit; }
+button.boonc { cursor: pointer; transition: border-color 160ms var(--ease), transform 160ms var(--ease); }
+button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
+.boonc::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 64px; background: linear-gradient(135deg, color-mix(in srgb, var(--gold) var(--wedge, 18%), transparent), transparent 72%); clip-path: polygon(0 0, 100% 0, 0 100%); pointer-events: none; }
+.boonc--t2 { border-color: color-mix(in srgb, var(--gold) 60%, transparent); --wedge: 34%; }
+.boonc--t3 { border-color: var(--gold); --wedge: 55%; box-shadow: 0 0 14px var(--gold-glow), inset 0 0 18px rgba(255, 203, 92, 0.12); }
+.boonc__seal { position: relative; flex: none; display: grid; place-items: center; align-self: center; width: 40px; height: 40px; margin: 0 4px; border: 1px solid color-mix(in srgb, var(--gold) 75%, transparent); background: rgba(30, 20, 4, 0.92); transform: rotate(45deg); box-shadow: 0 0 10px rgba(255, 203, 92, 0.25); }
+.boonc__seal .ico { width: 20px; height: 20px; color: var(--gold); transform: rotate(-45deg); filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.boonc__seal.is-duo { gap: 0; grid-template-columns: 1fr 1fr; }
+.boonc__seal.is-duo .ico { width: 14px; height: 14px; }
+.boonc__body { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.boonc__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.boonc__name { font-size: 0.98rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gold); line-height: 1.15; }
+.boonc__kind { font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.boonc__text { font-size: 0.82rem; line-height: 1.35; color: var(--ink); }
+.boonc__hand { font-size: 0.66rem; color: var(--ink-3); font-style: italic; }
+.boonc--duo .boonc__kind, .boonc--capstone .boonc__kind { color: color-mix(in srgb, var(--gold) 80%, white); }
+.tierpips { flex: none; display: inline-flex; align-items: center; gap: 3px; }
+.tierpips i { width: 7px; height: 7px; border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent); transform: rotate(45deg); }
+.tierpips i.is-on { background: var(--gold); }
+.tierpips i.is-new { background: var(--gold); box-shadow: 0 0 6px var(--gold); animation: pipIn 900ms var(--ease) infinite alternate; }
+.tierpips b { margin-left: 4px; font-family: var(--font-num); font-size: 0.7rem; color: var(--gold); }
+@keyframes pipIn { from { opacity: 0.45; } to { opacity: 1; } }
+.nodepanel--font { border-color: rgba(255, 207, 92, 0.5); }
+.gnode--font { color: var(--gold); }
+
+/* A rest's three ways, side by side, after the campfire's picture tiles: each its mark large over its
+   name and what it gives; one this rest cannot give greyed in place, with the reason. */
+.restways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.restway { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 6px 12px; border: 1px solid color-mix(in srgb, var(--verdant) 45%, transparent); border-radius: var(--r-md); background: radial-gradient(circle at 50% 30%, rgba(72, 245, 168, 0.14), rgba(6, 18, 16, 0.9) 70%); color: var(--ink); font: inherit; text-align: center; cursor: pointer; transition: transform 160ms var(--ease), border-color 160ms var(--ease); }
+.restway:active { transform: scale(0.97); border-color: var(--verdant); }
+.restway__mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background: rgba(8, 30, 24, 0.9); }
+.restway__mark .ico { width: 24px; height: 24px; color: var(--verdant); filter: drop-shadow(0 0 6px var(--verdant-glow)); }
+.restway b { font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.restway small { font-size: 0.68rem; line-height: 1.25; color: var(--ink-2); }
+.restway--hone { border-color: color-mix(in srgb, var(--gold) 45%, transparent); background: radial-gradient(circle at 50% 30%, rgba(255, 203, 92, 0.14), rgba(20, 14, 4, 0.9) 70%); }
+.restway--hone .restway__mark { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: rgba(30, 20, 4, 0.9); }
+.restway--hone .restway__mark .ico { color: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
+.restway--steady { border-color: color-mix(in srgb, var(--guard) 50%, transparent); background: radial-gradient(circle at 50% 30%, rgba(92, 151, 255, 0.16), rgba(6, 12, 28, 0.9) 70%); }
+.restway--steady .restway__mark { border-color: color-mix(in srgb, var(--guard) 55%, transparent); background: rgba(8, 16, 36, 0.9); }
+.restway--steady .restway__mark .ico { color: var(--guard); filter: drop-shadow(0 0 6px var(--guard-glow)); }
+.restway:disabled { cursor: default; filter: grayscale(1); opacity: 0.5; }
+.restway:disabled small { color: var(--blood); }
+.restskill .row { gap: 8px; }
+.restskill .ico { width: 18px; height: 18px; color: var(--gold); }

@@ -1,7 +1,7 @@
 # Step 4: Seals, Feats and condition drops
 
 The references for Seals, Feats and condition drops, built in
-[docs/DESIGN.md](../../../DESIGN.md#seals-feats-and-condition-drops--built).
+[docs/DESIGN.md](../../../DESIGN.md#seals-feats-and-special-drops--built).
 
 Every image belongs to the game's publisher, or to the wiki, site or player who captured it, as listed beside it. They are kept here as design reference only: nothing in ARISE copies their art, and none of them ships with the game.
 

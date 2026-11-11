@@ -20,7 +20,8 @@ import { CLASSES } from '@/data/classes';
 import { MARKS } from '@/data/ascension';
 import { CONTRACT_KINDS } from '@/data/contracts';
 import { DUNGEONS } from '@/data/dungeons';
-import { BLESSINGS, EVENTS, TRAP } from '@/data/nodes';
+import { OLD_BLESSINGS, EVENTS, TRAP } from '@/data/nodes';
+import { BOON_LIST } from '@/data/blessings';
 import { HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
 import { SPIRE_THEME } from '@/data/spire';
 import { ISSUED } from '@/data/equipment';
@@ -173,7 +174,7 @@ describe('the words', () => {
   });
 
   it('writes a stat name before its value', () => {
-    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2), ...BLESSINGS.map((b) => b.text), ...Object.values(STATUS_TEXT), ...POTIONS.map((p) => p.effect)];
+    const lines = [...systemText, gear.bonusText({ patk: 0.08, mpow: 0.08, crit: 6 }), marks.markText(MARKS[0], 2), ...OLD_BLESSINGS.map((b) => b.text), ...BOON_LIST.flatMap((b) => b.v.map((v) => b.text(v))), ...Object.values(STATUS_TEXT), ...POTIONS.map((p) => p.effect)];
     for (const t of lines) expect(t, t).not.toMatch(/[+-]\d+(?:\.\d+)?%?\s+(STR|VIT|AGI|PER|INT|HP|MP|XP|Mana Shards|shards|attack|magic|defence|resistance|accuracy|evasion|initiative|critical|maximum|fatigue|health|price|grades?)\b/i);
   });
 

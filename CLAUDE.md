@@ -109,6 +109,18 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   and pay once each per Gate (`s.gates.feats`). Special drops (`data/drops.ts`) are read at the kill
   in `openChamber` and banked on the run (`run.drops`). Neither touches a fight, so neither moves a
   tuning; both pay whoever met them, so change what they pay and rerun the campaign.
+- Blessings (`data/blessings.ts`, `core/blessings.ts`) reach the fight only through the hero's spec
+  (`raid.blessed` writes `UnitSpec.boons`), and the fight reads them through `Unit.boon` and `Unit.bv`.
+  Every damage they change is in `blow` (`edgeOf`), so the reckoning shows it; a blessing's statuses land
+  unless the foe is immune. A shrine's Path is drawn from the run and the node, leaning on `run.lean`; its
+  offer is drawn as the hunter steps in and written to the run by `raid.choose` (`run.offers`), as is a
+  Font's. A Font is a shrine to the System's road (`placeIn` in `core/map.ts`), so Fonts move no road. The
+  System takes what `blessings.systemPick` picks, never a blessing marked `hands` (Guard, Cover, a throw),
+  and rests as `raid.systemRestPick` says (Heal below `REST_LINE`, else Hone). Change a blessing, its
+  numbers, either pick or the rests and you must recalibrate. A rest is Heal, Hone or Steady
+  (`raid.restHere` takes the pick); up a tower it waits on the hunter as a pending step. Hone reads
+  `run.levels` and `run.honed`, and past Lv.MAX adds `HONE_PAST` a level. The five flat blessings of old
+  (`OLD_BLESSINGS`) stay only for runs that took them.
 - Sight's Foresight (`FORESIGHT` in `data/tree.ts`) only shows a foe's numbers (`skilltree.foresees`).
   It is never a passive of the fight's build and Auto Assign never takes it, so it moves no tuning;
   keep it so, or recalibrate.

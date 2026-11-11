@@ -381,12 +381,12 @@ describe('walking it', () => {
     expect(raid.canRest(d, run)).toBe(true);
     raid.moveTo(d, run, m.start!);
     expect(raid.canRest(d, run)).toBe(false);
-    expect(raid.restHere(s, d, run, at)).toBe(false);
+    expect(raid.restHere(s, d, run, { kind: 'heal' }, at)).toBe(false);
     raid.moveTo(d, run, x.id);
-    expect(raid.restHere(s, d, run, at)).toBe(true);
+    expect(raid.restHere(s, d, run, { kind: 'heal' }, at)).toBe(true);
     expect(run.carried[0].hp).toBeCloseTo(Math.min(max, 10 + max * REST_HEAL), 5);
     expect(raid.canRest(d, run)).toBe(false);
-    expect(raid.restHere(s, d, run, at)).toBe(false);
+    expect(raid.restHere(s, d, run, { kind: 'heal' }, at)).toBe(false);
   });
 
   it('a Health Potion is drunk between steps, from the satchel, only when it would heal', () => {
@@ -565,7 +565,7 @@ describe('choices', () => {
     const run = raid.begin(s, d, now);
     const party = raid.partyFor(s, d, run, now);
     party[0].hp = party[0].maxHp / 2;
-    const after = raid.rebless(party, run.party, ['iron']);
+    const after = raid.rebless(party, run.party, { ...run, blessings: ['iron'] });
     expect(after[0].maxHp).toBeGreaterThan(party[0].maxHp);
     // Health is written back as a share of the maximum: the blessing must not lower it.
     expect(after[0].hp / after[0].maxHp).toBeGreaterThanOrEqual(party[0].hp / party[0].maxHp);
