@@ -171,7 +171,11 @@ export interface OpenRaid {
   map: string;
   path: string[];
   /** How the map is drawn: a Gate's labyrinth floors. Runs opened before them walk the smaller floors (`floors`), one floor of rooms (`rooms`), or the tower they began on (none). */
-  layout?: 'labyrinth' | 'floors' | 'rooms' | 'layers';
+  layout?: 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+  /** The map has been charted by a Gate Survey: its hidden passages open with no noticing. */
+  charted?: boolean;
+  /** The toll doors paid for, by `map.pairKey`: open for good. */
+  tolls?: string[];
   /** The room the hunter stands in: the last entered, or walked back to. Unset, the entrance. */
   pos?: string;
   /** The rests the run has used: each heals once. */
@@ -367,6 +371,8 @@ export interface Save {
     entered: string[];
     /** Every Gate a Gate Survey has shown the map of, before the hunter went in. */
     surveyed: string[];
+    /** The map seeds charted by a Gate Survey, today's and an open run's: a run walking one needs no noticing. */
+    charted?: string[];
     /** The rooms seen through the fog of each map, by its seed: remembered for as long as the map stands. */
     seen: Record<string, string[]>;
     /** How the last run ended, and clears since the last time you were carried out. */

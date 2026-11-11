@@ -1241,8 +1241,16 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 3. **More answers per turn:** Cover, throwables, breakable wind-ups, creature mechanics (built, below).
 4. **Seals, Feats and special drops** (built, below).
 5. **Shrines rebuilt around the five Paths, and rests that offer a choice** (built, below).
-6. **The rest of the research's roadmap:** a map layout with landmarks, secrets and gradients; Shadows
-   with family and role bonuses; rule-changing gear; a daily seeded Gate.
+6. **The rest of the research's roadmap**, four parts, each its own change, in this order (the owner's call):
+   1. **A map worth reading** (built, below): a new layout with gradients and road beats, landmarks,
+      secrets, Gatekeepers' wings and toll doors, all four of the research's parts.
+   2. **Kin and Formation:** two Shadows of one family deployed share its boon and three a stronger one;
+      each distinct role deployed adds a small aura for the side; Auto Deploy scores whole squads, not raw
+      power.
+   3. **Engravings and a Codex:** named bosses and Gatekeepers leave engraved pieces at stated odds;
+      recycling one keeps its power in a Codex for good; setting a power from the Codex onto a piece costs
+      Ember, which makes it step 7's sink too. Three worn: weapon, armour, jewellery.
+   4. **The Daily Rift:** one Gate a day from the date's seed, the same on every phone.
 7. **Something for Ember to buy.** Seals pay Ascendant Ember, and all it buys today is steps past perfect,
    which the upgrade limit and shards hold back before Ember ever does: both campaign hunters ended their
    120 days holding more Ember than the Seals had paid them (1,667 and 2,185; "Seals, Feats and special
@@ -1691,6 +1699,74 @@ offer Heal, Hone or Steady; Pacts later.
   one run of the 70% line and day 11 in the other). The hunter who raids three times a day is where `main`
   had them; the one-evening hunter reaches A and S 3-4 days later in both runs.
 
+
+### A map worth reading — built
+
+The references were Legend of Grimrock's secrets counted out of a total and its `Secret Found` said once;
+the Binding of Isaac's secret room on its own mark in a gap of the plan, and Enter the Gungeon's hung off a
+corridor; Dead Cells' named biomes and Etrian Odyssey's floor titles; Persona 3 Reload's floor objective
+and its shortcut; and Slay the Spire's map legend. Their screenshots are in
+[research/references/step-6-map-army-gear-daily](research/references/step-6-map-army-gear-daily/).
+
+Decided with the owner: all four of the research's parts (gradients and road beats, landmarks, secrets,
+Gatekeepers' wings and toll doors), in one new layout.
+
+- **A new layout** (`labyrinth2`, `floorPlan2` in `core/map.ts`). Runs open now walk it; a run opened
+  before keeps the plain labyrinth it began on, drawn as it always was (`tests/map.test.ts`). The Practice
+  Gate and the towers are as they were.
+- **Gradients and road beats.** Each floor's road opens on a fight with one creature (`threshold`) and
+  holds one room that is not a fight, in its middle third, never a trap before the stairs or the boss and
+  never a rest. Fights hold 1-2 creatures in the floor's first third, 1-3 in its middle and 2-3 in its last,
+  one more on each floor down, to 3 (`GRADIENT`): at E 1.1, 2.0 and 2.5 creatures from foot to head, at S
+  2.0, 2.6 and 2.9. A room two corridors or more off the road is deep: its cache finds at the Gate's own
+  grade, its fight banks 30% of a clear's shards where one beside the road banks 20% (`FIGHT_PURSE.deep`),
+  and deep side rooms hold the finds more often (`SIDE_DEEP`).
+- **Rests.** A floor holds one rest at most (`REST_CHANCE`: E 30% to S 70%), one corridor off the road
+  beside a road room past halfway, where the System steps in as it passes (`map.systemWalk`). It uses one
+  found on a floor above the boss's at once and keeps the boss's floor's for the boss. The brief, Auto,
+  calibration and the clock all read the one walk, so they cannot drift apart. The System now uses 0.2
+  rests a Gate at E to 2.7 at S, where it used 0.1 to 0.7.
+- **Landmarks** (`data/landmarks.ts`). One room a floor of the family that leads the Gate (its identity):
+  an Ossuary for the Undead, a Gnawed Den for Beasts, a Brood Chamber for Insectoids, sixteen in all. It
+  stands off the road in the floor's middle third, shows through the fog from the start as the boss does,
+  and holds a choice of its own: one gamble with its odds stated, one way past that never hurts, which the
+  System would take. The System's road never goes through one (`placeIn` ranks it after a trap).
+- **Secrets.** A hidden passage no longer opens by itself: as a room at either end is cleared, the hunter
+  notices it at 35% plus 0.6% for each point of Perception, to 90% (`NOTICE`), a roll seeded from the run and
+  the passage, decided once for the run (`raid.openings`), so nothing stores it and nothing rerolls it. A
+  Gate Survey charts every passage, inside the run or from the brief that day (`run.charted`,
+  `s.gates.charted`). A secret cache sits on 60% of floors (`SECRET_CACHE`), in a gap of the plan beside two
+  rooms or more, behind a hidden passage and nothing else, and is not on the plan, not even as fog, until
+  it is found. The plan's head counts the floor's secrets, `Secrets 1/2`.
+- **Gatekeepers' wings.** A Gatekeeper guards 1-3 rooms behind it before its vault (`WING`), reached through
+  its room alone; a wing's caches are deep, and from A-Rank one can hold a rest. A- and S-Rank Gates have
+  two wings (`WINGS`), so two Gatekeepers and two vaults, each vault's blueprint at its own odds.
+- **Toll doors** (`TOLL`, `TOLL_DOOR`). Half the floors hold one: a corridor sealed in red, a lock at its
+  middle, that opens for good when the hunter pays 20% of their maximum HP standing at it (`raid.payToll`,
+  `run.tolls`): a shortcut between rooms four corridors or more apart, or more often the one way into a
+  deep cache of its own. A hunter too hurt to pay and still stand cannot. The System never pays.
+- **Balance.** `npm run mapstats`: rooms a map rise from 12 to 15 at E and 93 to 99 at S (wings, secret
+  caches, toll caches), the budget with them (14 to 18, 112 to 119), and the System's way fits every one.
+  Calibration moved 47 of 51 Gates, from Dominion of the Hell Sovereign's 18.1% easier to Moonfang Hunting
+  Grounds' 12.8% harder (by grade E -1.7%, D +3.8%, C -0.2%, B -2.4%, A +1.0%, S -8.6%), 8 of 10 Ascension
+  levels (-4.7% to +0.6%) and 5 of 10 Trials (+2.4% to +5.8%); the Spire's blocks and floors, towers, stayed
+  put. The middle of each grade clears 73-84% for a typical hunter.
+  Over 120 days, two campaigns of this change against two of `main`:
+
+  | | Days to A, S, N | Carried out | Cleared |
+  |---|---|---|---|
+  | One evening a day, `main` | 36, 63, 115 and 36, 63, 111 | 11 and 9 | 96%, 97% |
+  | This change | 38, 63, 112 and 39, 65, 113 | 17 and 17 | 94%, 94% |
+  | Three sessions a day, `main` | 19, 37, 68 and 17, 32, 61 | 35 and 24 | 92%, 94% |
+  | This change | 23, 38, 69 and 31, 47, 76 | 36 and 48 | 91%, 88% |
+
+  The brief still reads true: on the same maps, its projection and Auto's own runs clear E 67% and 70%, D 75%
+  and 75%, C 75% and 75%, B 66% and 65%. What costs days is that more runs are lost, and a run carried out
+  locks the hunter out for 12 hours: fights grow toward each floor's head and grow again on every floor down,
+  so a deep Gate's last floor is its hardest. The one-evening hunter reaches A-Rank 2-3 days later and S and
+  Sovereign within 2; the three-session hunter, whose runs follow one another with less healing between, 4 to
+  12 days later at A. If that is too much, the first lever is the creature added on each floor down
+  (`GRADIENT` in `furnish`).
 
 ## What stays out
 

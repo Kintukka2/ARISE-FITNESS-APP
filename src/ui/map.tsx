@@ -6,7 +6,8 @@
  * cleared room can be walked back to. On the Gate clock, every room the hunter can enter or walk to shows
  * what it costs in moves; past the budget the plan stirs, and a Red Gate's plan is red, its entrance sealed.
  */
-import { across, passages, threatOf, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { across, pairKey, passages, threatOf, tollDoors, unsealed, type GateMap, type MapNode, type Openings } from '@/core/map';
+import { landmarkOf } from '@/data/landmarks';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
 import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
@@ -41,6 +42,10 @@ interface MapProps {
   red?: boolean;
   /** Inside a run: the name of each shrine's Path, shown on it once it is seen. */
   shrinePath?: (x: MapNode) => string | undefined;
+  /** Inside a run: the passages it has noticed, a map it has charted, and the toll doors it has paid (`raid.openings`). */
+  openings?: Openings;
+  /** Inside a run, on the later plans: a floor's secrets found, of how many. */
+  secrets?: (floor: number) => { found: number; of: number };
 }
 
 export function MapView(p: MapProps) {
@@ -56,7 +61,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -77,19 +82,25 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const rooms = m.nodes.filter(on);
   const halls: [MapNode, MapNode][] = [];
   for (const x of rooms) for (const id of x.next) if (x.id < id && on(m.byId[id])) halls.push([x, m.byId[id]]);
-  const secret = passages(m, done).map(([x, y]) => [m.byId[x], m.byId[y]] as const).filter(([x]) => on(x));
+  const secret = passages(m, done, openings).map(([x, y]) => [m.byId[x], m.byId[y]] as const).filter(([x]) => on(x));
+  // A toll door is a corridor sealed in red until it is paid, its seal at its middle; paid, a corridor like any.
+  const tolls = tollDoors(m).map(([x, y]) => ({ x: m.byId[x], y: m.byId[y], paid: !!openings.tolls?.has(pairKey(x, y)) })).filter((t) => on(t.x));
+  const found = secrets?.(f);
   // What the plan shows of a room: a trap, a cache or a rest passes for an Event until the hunter has stood in it.
   const looksOf = (x: MapNode): NodeKind => (HIDDEN_IN_ROOMS.has(x.kind) && !entered.has(x.id) ? 'event' : x.kind);
   // A room not yet seen is fog: where it lies and its corridors show, nothing of what is in it.
   const fogged = (x: MapNode) => !!seen && !seen.has(x.id);
   const shown = [...new Set(rooms.filter((x) => !fogged(x)).map(looksOf))].filter((k) => k !== 'entrance' && k !== 'up');
-  const fogs = rooms.some(fogged);
+  // A room behind a hidden passage is not on the plan at all until it is found: not even fog.
+  const fogs = rooms.some((x) => fogged(x) && !x.secret);
   const threat = threatOf(m);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''} ${red ? 'is-red' : stir > 0 ? 'is-stir' : ''}`} style={stir > 0 && !red ? { '--stir': stir } as Record<string, number> : undefined}>
-      {(floors > 1 || corner) && (
+      {(floors > 1 || corner || (found && found.of > 0)) && (
         <div class="dmap__bar">
-          <span aria-hidden="true" />
+          {found && found.of > 0
+            ? <span class="dmap__secrets" aria-label={`Secrets found on this floor: ${found.found} of ${found.of}`}><Glyph name="eye" /><small>Secrets</small><b class="num">{found.found}/{found.of}</b></span>
+            : <span aria-hidden="true" />}
           {floors > 1 ? (
             <div class="dmap__floors" role={onFloor ? 'tablist' : undefined} aria-label="Floors">
               {onFloor
@@ -106,7 +117,8 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
         <svg class="dmap__halls" viewBox={`0 0 ${cols * 10} ${rows * 10}`} preserveAspectRatio="none" aria-hidden="true">
           {/* A corridor is drawn twice: its walls, then its floor between them. */}
           {[...halls.map(([x, y]) => [x, y, done.has(x.id) && done.has(y.id) ? 'is-walked' : (done.has(x.id) || done.has(y.id)) && !compact ? 'is-near' : ''] as const),
-            ...secret.map(([x, y]) => [x, y, 'is-hidden'] as const)].map(([x, y, lit]) => (
+            ...secret.map(([x, y]) => [x, y, 'is-hidden'] as const),
+            ...tolls.map((t) => [t.x, t.y, t.paid ? 'is-walked' : 'is-toll'] as const)].map(([x, y, lit]) => (
             <g key={`${x.id}-${y.id}`} class={`dmap__hall ${lit}`}>
               <line class="dmap__wall" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} />
               <line class="dmap__floor" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} />
@@ -116,8 +128,13 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             <line key={`r${x.id}-${y.id}`} class="dmap__trail" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} vector-effect="non-scaling-stroke" />
           ))}
         </svg>
+        {tolls.filter((t) => !t.paid).map((t) => (
+          <span key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll" aria-hidden="true"
+            style={{ left: `${(((t.x.x! + t.y.x!) / 2 + 0.5) / cols) * 100}%`, top: `${(((t.x.y! + t.y.y!) / 2 + 0.5) / rows) * 100}%` }}><Glyph name="lock" /></span>
+        ))}
         {rooms.map((x) => {
           const style = { gridColumn: x.x! + 1, gridRow: x.y! + 1 };
+          if (fogged(x) && x.secret) return null;
           if (fogged(x)) {
             return (
               <span key={x.id} class="gnode droom is-fog" style={style} title="Unseen" aria-label="Unseen room">
@@ -131,11 +148,13 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const kind = NODE[looks];
           const isDone = done.has(x.id);
           // A room cleared reads as cleared, not as what it held; the rooms the hunter comes back to keep their marks.
-          const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss'].includes(x.kind);
+          const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss', 'landmark'].includes(x.kind);
           const glyph = plain ? 'check' : sealed ? 'lock' : x.kind === 'vault' ? 'unlock' : kind.glyph;
           // A shrine seen shows its Path, as the references' doors show the god behind them.
           const path = looks === 'shrine' && !isDone ? shrinePath?.(x) : undefined;
-          const name = plain ? 'Cleared' : sealed ? 'Sealed' : path ? `Shrine of ${path}` : kind.name;
+          // A landmark goes by its own name (`Ossuary`); a cache behind a secret by what it is.
+          const named = x.kind === 'landmark' ? landmarkOf(x.landmark ?? '')?.name : undefined;
+          const name = plain ? 'Cleared' : sealed ? 'Sealed' : path ? `Shrine of ${path}` : named ?? (x.secret ? 'Secret' : kind.name);
           // What it costs to go there, in moves, on the Gate clock.
           const cost = costs?.[x.id];
           const moves = cost === undefined ? '' : `, ${cost} ${cost === 1 ? 'move' : 'moves'}`;
@@ -159,6 +178,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
               )}
               <Glyph name={glyph} />
               {!compact && <small>{spent ? 'Used' : path ?? name}</small>}
+              {x.secret && <span class="droom__secret" aria-hidden="true" />}
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;

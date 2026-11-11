@@ -10,13 +10,14 @@
 import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
-import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, REST_HEAL, REST_LINE, STEADY_POTIONS, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { landmarkEvent } from '@/data/landmarks';
 import { NODES } from '@/data/tree';
 import * as blessings from './blessings';
 import { SETS } from '@/data/sets';
 import { tricksOf, type TrickId } from '@/data/tricks';
 import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
-import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, reach, sight, systemPick, systemRoad, type Chamber, type GateMap, type MapNode } from './map';
+import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, pairKey, passages, reach, sight, systemPick, systemRoad, systemWalk, type Chamber, type GateMap, type MapNode, type Openings } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
@@ -353,7 +354,7 @@ export function oddsOf(c: Choice, hero: UnitSpec, level = 0): number {
 }
 
 /** What a choice node offers: its event, or the trap. */
-export const eventAt = (x: MapNode): GateEvent | null => (x.kind === 'trap' ? TRAP : x.kind === 'event' && x.event ? eventById(x.event) ?? null : null);
+export const eventAt = (x: MapNode): GateEvent | null => (x.kind === 'trap' ? TRAP : x.kind === 'event' && x.event ? eventById(x.event) ?? null : x.kind === 'landmark' && x.event ? landmarkEvent(x.event) ?? null : null);
 
 /** The choice the System makes at a shrine, a Font, a trap or an event: at a shrine or a Font, from what it offered the run. */
 export function systemChoice(x: MapNode, run?: blessings.Held): number {
@@ -383,7 +384,9 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
-  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth'));
+  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth2'));
+  // A map charted from the brief today is charted for the run: its hidden passages need no noticing.
+  const charted = (s.gates.charted ?? []).includes(mapSeed(d, day));
   // The throwable readied is the one its fights throw, whatever is readied while it is open.
   const toss = shop.readied(s);
   s.gates.raid = {
@@ -391,12 +394,13 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'labyrinth', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'labyrinth2', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     lean: blessings.leanOf(s), levels: levelsOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
     ...(toss ? { throw: toss } : {}),
     ...(taken.length ? { seals: [...taken] } : {}),
+    ...(charted ? { charted: true } : {}),
     tally: { downs: 0, lowest: 1 },
   };
   return s.gates.raid;
@@ -421,6 +425,36 @@ export const stepsOf = (m: GateMap) => (m.tower ? m.layers.length : m.nodes.leng
 /** The rooms a run has cleared, the entrance among them; up a tower, the floors done. */
 export const explored = (m: GateMap, run: OpenRaid) => new Set([...(m.start ? [m.start] : []), ...(run.path ?? []).slice(0, run.at)]);
 
+/** The odds the hunter notices a hidden passage, by the Perception they walked in with. */
+export const noticeOdds = (hero: UnitSpec | undefined) => clamp(NOTICE.base + (hero?.base.PER ?? 0) * NOTICE.per, NOTICE.base, NOTICE.max);
+
+/**
+ * What the run has opened beyond its corridors (`map.Openings`): each hidden passage it notices, decided
+ * once for the run by a roll seeded from it and the passage at the odds its hunter walked in with; every
+ * passage, once its map is charted; and the toll doors it has paid.
+ */
+export function openings(run: OpenRaid): Openings {
+  const odds = noticeOdds(run.party?.[0]);
+  return {
+    notice: (a, b) => rng(`arise|notice|${run.seed}|${pairKey(a, b)}`)() < odds,
+    charted: !!run.charted,
+    tolls: new Set(run.tolls ?? []),
+  };
+}
+
+/** The hidden passages the run has opened. */
+export const opened = (d: Dungeon, run: OpenRaid) => { const m = mapOf(d, run); return passages(m, explored(m, run), openings(run)); };
+
+/** A floor's secrets, on the later plans: its hidden passages, and how many of them the run has found. */
+export function secretsOf(d: Dungeon, run: OpenRaid, floor: number): { found: number; of: number } {
+  const m = mapOf(d, run);
+  if (!m.secrets) return { found: 0, of: 0 };
+  const on = (id: string) => (m.byId[id]?.floor ?? 0) === floor;
+  const all = m.nodes.flatMap((x) => (x.hidden ?? []).filter((y) => x.id < y && on(x.id)).map((y) => pairKey(x.id, y)));
+  const found = new Set(opened(d, run).map(([a, b]) => pairKey(a, b)));
+  return { found: all.filter((k) => found.has(k)).length, of: all.length };
+}
+
 /** The room the hunter stands in: the one last entered or walked back to. Null up a tower. */
 export function standing(d: Dungeon, run: OpenRaid): MapNode | null {
   const m = mapOf(d, run);
@@ -438,7 +472,7 @@ export const clockOf = (run: OpenRaid): clock.ClockState | null => (run.clock ? 
 export function movesTo(d: Dungeon, run: OpenRaid, id: string): number | null {
   if (!run.clock) return null;
   const m = mapOf(d, run);
-  const n = clock.walkMoves(m, explored(m, run), standing(d, run)?.id ?? m.start!, id);
+  const n = clock.walkMoves(m, explored(m, run), standing(d, run)?.id ?? m.start!, id, openings(run));
   return Number.isFinite(n) ? n : null;
 }
 
@@ -447,7 +481,7 @@ export function movesFrom(d: Dungeon, run: OpenRaid): Record<string, number> {
   if (!run.clock) return {};
   const m = mapOf(d, run);
   const done = explored(m, run);
-  const dist = clock.walksFrom(m, done, standing(d, run)?.id ?? m.start!);
+  const dist = clock.walksFrom(m, done, standing(d, run)?.id ?? m.start!, openings(run));
   const rep = clock.placeOf(m);
   const out: Record<string, number> = {};
   for (const id of [...options(d, run).map((x) => x.id), ...done]) {
@@ -472,7 +506,7 @@ export const remembered = (s: Save, seed: string) => s.gates.seen?.[seed] ?? [];
 /** The rooms an open run can see through the fog: what it has cleared and stands next to, and what is remembered of the map. */
 export const seen = (s: Save, d: Dungeon, run: OpenRaid) => {
   const m = mapOf(d, run);
-  return sight(m, explored(m, run), remembered(s, run.map ?? mapSeed(d, run.day)));
+  return sight(m, explored(m, run), remembered(s, run.map ?? mapSeed(d, run.day)), openings(run));
 };
 
 /**
@@ -508,6 +542,10 @@ export function survey(s: Save, d: Dungeon, now = Date.now()): boolean {
   const m = run ? mapOf(d, run) : build(d, seed);
   s.stock.survey = shop.held(s, 'survey') - 1;
   remember(s, seed, m.nodes.map((x) => x.id), now);
+  // Charted, its hidden passages open as any corridor does, for the run inside and the runs to come today.
+  if (run) run.charted = true;
+  const keep = new Set([dayKey(now), run?.day]);
+  s.gates.charted = [...new Set([...(s.gates.charted ?? []).filter((k) => keep.has(k.split('|').pop())), seed])];
   if (!(s.gates.surveyed ?? []).includes(d.id)) s.gates.surveyed = [...(s.gates.surveyed ?? []), d.id];
   return true;
 }
@@ -539,7 +577,35 @@ export function options(d: Dungeon, run: OpenRaid): MapNode[] {
   if (pending(d, run) || run.lost) return [];
   const m = mapOf(d, run);
   if (m.tower) return next(m, run.path ?? []);
-  return bossDown(d, run) ? [] : reach(m, explored(m, run));
+  return bossDown(d, run) ? [] : reach(m, explored(m, run), openings(run));
+}
+
+/** The toll doors at the room the hunter stands in, sealed still: each the room beyond it and its key. Empty up a tower, or while a step is underway. */
+export function tollsHere(d: Dungeon, run: OpenRaid): { to: string; key: string }[] {
+  const x = standing(d, run);
+  if (!x || run.lost || pending(d, run)) return [];
+  const paid = new Set(run.tolls ?? []);
+  return (x.toll ?? []).map((to) => ({ to, key: pairKey(x.id, to) })).filter((t) => !paid.has(t.key));
+}
+
+/** What a toll costs the hunter now, in HP: `TOLL.hp` of their maximum. */
+export const tollCost = (hero: { maxHp: number }) => Math.round(hero.maxHp * TOLL.hp);
+
+/**
+ * Pay a toll door where the hunter stands, in HP: it opens for good. False if there is no such door here,
+ * or the hunter has too little HP to pay and still stand. Mutates.
+ */
+export function payToll(s: Save, d: Dungeon, run: OpenRaid, to: string, now = Date.now()): boolean {
+  const door = tollsHere(d, run).find((t) => t.to === to);
+  if (!door) return false;
+  const party = partyFor(s, d, run, now);
+  const hero = party[0];
+  const cost = tollCost(hero);
+  if (hero.hp <= cost) return false;
+  hero.hp -= cost;
+  run.tolls = [...(run.tolls ?? []), door.key];
+  settleParty(s, d, run, party, now);
+  return true;
 }
 
 /**
@@ -651,17 +717,29 @@ export type Move = { enter: string } | { rest: string };
  */
 export function systemNext(d: Dungeon, run: OpenRaid): Move | null {
   const opts = options(d, run);
-  if (!opts.length) return null;
   const m = mapOf(d, run);
-  if (m.tower) return { enter: systemPick(opts).id };
+  if (m.tower) return opts.length ? { enter: systemPick(opts).id } : null;
   const done = explored(m, run);
-  const to = systemRoad(m).find((id) => !done.has(id));
-  const x = opts.find((o) => o.id === to) ?? systemPick(opts);
-  if (x.kind === 'boss') {
-    const spare = m.nodes.find((y) => y.kind === 'rest' && done.has(y.id) && !(run.rested ?? []).includes(y.id));
-    if (spare) return { rest: spare.id };
+  const rested = new Set(run.rested ?? []);
+  // Its own way (`systemWalk`), step by step, from the first step not yet taken.
+  for (const step of systemWalk(m)) {
+    if ('rest' in step) {
+      if (done.has(step.rest) && !rested.has(step.rest)) return { rest: step.rest };
+      continue;
+    }
+    if (done.has(step.enter)) continue;
+    // Before the boss, any rest found and not used, whoever found it.
+    if (m.byId[step.enter].kind === 'boss') {
+      const spare = m.nodes.find((y) => y.kind === 'rest' && done.has(y.id) && !rested.has(y.id));
+      if (spare) return { rest: spare.id };
+    }
+    if (opts.some((o) => o.id === step.enter)) return { enter: step.enter };
+    break;
   }
-  return { enter: x.id };
+  // Off its way, where the hunter walked: the next room of its road on offer, or its pick of those on offer.
+  if (!opts.length) return null;
+  const to = systemRoad(m).find((id) => !done.has(id));
+  return { enter: (opts.find((o) => o.id === to) ?? systemPick(opts)).id };
 }
 
 /** Make the System's move: enter its room, or walk to its rest and use it. False if there was none. Mutates. */
@@ -750,7 +828,8 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, _now = Da
     run.at += 1;
     if (below) { run.path.push(below.id); run.at += 1; run.pos = below.id; }
   } else if (x.kind === 'treasure' || x.kind === 'vault') {
-    Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), x.kind === 'vault' ? 0 : -1, x.kind === 'vault'));
+    // A cache found deep (two corridors off the road, in a wing, behind a secret or a toll) finds at the Gate's own grade.
+    Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), x.kind === 'vault' || x.deep ? 0 : -1, x.kind === 'vault'));
     run.at += 1;
   }
   return out;
@@ -874,7 +953,7 @@ export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: Ch
   if (ch.boss) run.bossFaced = true;
   if (ch.won) {
     run.won += 1;
-    const share = x?.kind === 'fight' ? FIGHT_PURSE.fight * paceOf(d, mapOf(d, run)) : x?.kind === 'elite' ? FIGHT_PURSE.elite : 0;
+    const share = x?.kind === 'fight' ? (x.deep ? FIGHT_PURSE.deep : FIGHT_PURSE.fight) * paceOf(d, mapOf(d, run)) : x?.kind === 'elite' ? FIGHT_PURSE.elite : 0;
     if (share && !isPractice(d)) run.purse = (run.purse ?? 0) + shop.gateShards(d.rank, share);
   } else run.lost = true;
   for (const [id, k] of Object.entries(ch.kills)) {
@@ -973,7 +1052,7 @@ export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?
 /** What a run's Seals, its condition drops and its first Feats add to what it leaves. */
 interface Extras { seals: readonly SealId[]; drops: readonly { ref: string; boss: boolean }[]; feats: number }
 
-function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: boolean, pace = 1, extra: Extras = { seals: [], drops: [], feats: 0 }) {
+function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: number, pace = 1, extra: Extras = { seals: [], drops: [], feats: 0 }) {
   const g = rankIdx(d.rank);
   const rank = RANKS[g];
   const lower = RANKS[Math.max(0, g - 1)];
@@ -1023,7 +1102,8 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     if ((first && !firstPaid) || (!first && r() < BLUEPRINTS.clear)) leave(up());
   }
   for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
-  if (vault && r() < BLUEPRINTS.vault) leave(rank);
+  // Each vault opened leaves a blueprint at its odds: an A- or S-Rank Gate can hold two.
+  for (let k = 0; k < vault; k++) if (r() < BLUEPRINTS.vault) leave(rank);
   // A boss felled the way its condition asks, and each Feat met for the first time, leave a blueprint.
   for (const x of extra.drops) if (x.boss) leave(rank);
   for (let i = 0; i < extra.feats * FEAT_PAY.blueprints; i++) leave(rank);
@@ -1080,7 +1160,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
 
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
   const cleared = outcome === 'cleared';
-  const vault = steps.some((x) => x.kind === 'vault');
+  const vault = steps.filter((x) => x.kind === 'vault').length;
   // The Feats a clear met, of the Gate's three: each pays once, the first time it is met here.
   const asked = feats.featsOf(d);
   // A run opened before Feats were counted has no tally, and is judged on none.
@@ -1242,6 +1322,8 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   const m = build(d, mapSeed(d, day));
   const road = systemRoad(m).map((id) => m.byId[id]);
+  // The System's whole way: its road, the rests it steps into beside it, and where it rests.
+  const walk = systemWalk(m);
   const lean = blessings.leanOf(s);
   const levels = levelsOf(s);
   let clears = 0;
@@ -1261,22 +1343,20 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
     };
     party[0].hp = Math.max(1, Math.round(party[0].maxHp * frac));
     let won = true;
-    // A rest found in a Gate is kept for the boss, as the System keeps it.
-    let kept = false;
     let tally: RunTally = { downs: 0, lowest: 1 };
-    for (const x of road) {
+    for (const step of walk) {
+      // A rest it found, used where the System uses it: at once on a floor above the boss's, before the boss on its own.
+      if ('rest' in step) { restNow(); continue; }
+      const x = m.byId[step.enter];
       if (isFight(x)) {
-        if (x.kind === 'boss') {
-          reached++;
-          if (kept) { restNow(); kept = false; }
-        }
+        if (x.kind === 'boss') reached++;
         const ch = runChamber(d, seed, x.n, party, chamberAt(d, x, level, walker, taken), s.gates.tactic, level, taken);
         tally = feats.count(tally, ch, x.kind === 'elite');
         won = ch.won;
         if (!won) break;
       } else if (x.kind === 'rest') {
+        // Up a tower, a rest is taken as it is reached; in a Gate, the walk says when.
         if (m.tower) restNow();
-        else kept = true;
       } else if (x.kind === 'shrine' || x.kind === 'font') {
         const offer = blessings.offerFor(held, x);
         const pick = offer.picks[blessings.systemPick(offer, held)];

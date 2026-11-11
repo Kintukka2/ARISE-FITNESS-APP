@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaults, parse } from '@/core/save';
 import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
-import { build, COLS, FLOORS, floorsOf, LABYRINTH, PLAN_MAX, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { build, COLS, FLOORS, floorsOf, LABYRINTH, PLAN_MAX, isFight, mapSeed, next, passages, reach, RESTS_MAX, sight, systemRoad, systemWalk, WING, WINGS, type GateMap, type MapNode } from '@/core/map';
+import { budgetOf, systemMoves } from '@/core/clock';
 import * as shop from '@/core/shop';
 import * as forge from '@/core/forge';
 import { CACHE } from '@/data/forge';
@@ -24,7 +25,7 @@ function hunter(level: number) {
   return s;
 }
 
-/** Every room the entrance can reach by corridor. */
+/** Every room the entrance can reach by corridor, hidden passage or toll door. */
 function reachable(m: GateMap) {
   const seen = new Set<string>();
   const stack = [m.start!];
@@ -32,7 +33,7 @@ function reachable(m: GateMap) {
     const id = stack.pop()!;
     if (seen.has(id)) continue;
     seen.add(id);
-    stack.push(...m.byId[id].next);
+    stack.push(...m.byId[id].next, ...(m.byId[id].hidden ?? []), ...(m.byId[id].toll ?? []));
   }
   return seen;
 }
@@ -72,9 +73,9 @@ describe('the map', () => {
           expect(x.x).toBeLessThan(f.cols);
           expect(x.y).toBeGreaterThanOrEqual(0);
           expect(x.y).toBeLessThan(f.rows);
-          for (const id of [...x.next, ...(x.hidden ?? [])]) {
+          for (const id of [...x.next, ...(x.hidden ?? []), ...(x.toll ?? [])]) {
             const y = m.byId[id];
-            expect(y.next.includes(x.id) || (y.hidden ?? []).includes(x.id)).toBe(true);
+            expect(y.next.includes(x.id) || (y.hidden ?? []).includes(x.id) || (y.toll ?? []).includes(x.id)).toBe(true);
             if ((y.floor ?? 0) !== k) {
               expect([x.kind, y.kind].sort()).toEqual(['down', 'up']);
               expect(Math.abs((y.floor ?? 0) - k)).toBe(1);
@@ -115,29 +116,49 @@ describe('the map', () => {
     expect(FLOORS).toMatchObject({ E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 });
   });
 
-  it('a Gate with a Gatekeeper holds it off the road, and its vault behind it, reached through it and nowhere else', () => {
+  it('a Gate with a Gatekeeper holds it off the road, and its wing and vault behind it, reached through it and nowhere else', () => {
+    let wings = 0;
     for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) for (const day of DAYS.slice(0, 4)) {
       const m = build(d, mapSeed(d, day));
       const keepers = m.nodes.filter((x) => x.kind === 'elite');
       const vaults = m.nodes.filter((x) => x.kind === 'vault');
-      expect(keepers).toHaveLength(d.elite ? 1 : 0);
-      expect(vaults).toHaveLength(d.elite ? 1 : 0);
-      if (!d.elite) continue;
-      const [keeper] = keepers;
-      const [vault] = vaults;
-      // The vault's one door is the Gatekeeper's room; the Gatekeeper's room has that door and its own way in.
+      expect(keepers.length).toBe(d.elite ? Math.min(floorsOf(d), WINGS[d.rank]) : 0);
+      expect(vaults.length).toBeLessThanOrEqual(keepers.length);
+      for (const keeper of keepers) {
+        const wing = m.nodes.filter((x) => x.wing === keeper.id);
+        const vault = wing.find((x) => x.kind === 'vault');
+        expect(vault).toBeDefined();
+        expect(wing.length - 1).toBeGreaterThanOrEqual(0);
+        expect(wing.length - 1).toBeLessThanOrEqual(WING.rooms[1]);
+        wings += wing.length - 1;
+        for (const x of [keeper, ...wing]) {
+          expect(x.hidden).toBeUndefined();
+          expect(x.toll).toBeUndefined();
+          expect(x.floor).toBe(keeper.floor);
+        }
+        // The wing's only way in is the Gatekeeper's room: it has that door and its own way in.
+        for (const x of wing) for (const nb of x.next) expect(nb === keeper.id || m.byId[nb].wing === keeper.id).toBe(true);
+        expect(keeper.next.filter((id) => m.byId[id].wing !== keeper.id)).toHaveLength(1);
+        expect(systemRoad(m)).not.toContain(keeper.id);
+        // Everything but the Gatekeeper's room and its wing cleared, nothing in the wing can be entered.
+        const all = new Set(m.nodes.filter((x) => x !== keeper && x.wing !== keeper.id).map((x) => x.id));
+        for (const x of wing) expect(reach(m, all).map((y) => y.id)).not.toContain(x.id);
+        expect(reach(m, new Set([...all, keeper.id])).some((y) => y.wing === keeper.id)).toBe(true);
+      }
+    }
+    // Wings hold rooms before their vaults.
+    expect(wings).toBeGreaterThan(20);
+  });
+
+  it('a run opened before the wings keeps its vault behind its Gatekeeper, one room deep', () => {
+    for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial && g.elite)) {
+      const m = build(d, mapSeed(d, DAYS[0]), 'labyrinth');
+      const [keeper] = m.nodes.filter((x) => x.kind === 'elite');
+      const [vault] = m.nodes.filter((x) => x.kind === 'vault');
       expect(vault.next).toEqual([keeper.id]);
       expect(keeper.next).toHaveLength(2);
-      expect(keeper.next).toContain(vault.id);
-      expect(vault.floor).toBe(keeper.floor);
-      for (const x of [keeper, vault]) expect(x.hidden).toBeUndefined();
-      expect(systemRoad(m)).not.toContain(keeper.id);
-      // Everything but the Gatekeeper's room cleared, the vault still cannot be entered.
-      const all = new Set(m.nodes.filter((x) => x !== keeper && x !== vault).map((x) => x.id));
-      expect(reach(m, all).map((x) => x.id)).not.toContain(vault.id);
-      expect(reach(m, new Set([...all, keeper.id])).map((x) => x.id)).toContain(vault.id);
-      expect(unsealed(m, all)).toBe(false);
-      expect(unsealed(m, new Set([m.start!, keeper.id]))).toBe(true);
+      expect(m.secrets).toBeUndefined();
+      expect(m.nodes.some((x) => x.kind === 'landmark' || x.secret || x.toll)).toBe(false);
     }
   });
 
@@ -281,7 +302,9 @@ describe('the fog', () => {
     const run = raid.begin(s, d, now);
     const m = raid.mapOf(d, run);
     const start = m.byId[m.start!];
-    expect([...raid.seen(s, d, run)].sort()).toEqual([m.start!, m.boss, ...start.next].sort());
+    // Landmarks show through the fog from the start, as the entrance and the boss do.
+    const landmarks = m.nodes.filter((x) => x.kind === 'landmark').map((x) => x.id);
+    expect([...raid.seen(s, d, run)].sort()).toEqual([...new Set([m.start!, m.boss, ...landmarks, ...start.next])].sort());
     const road = systemRoad(m);
     raid.choose(s, d, run, road[0], now);
     clearStep(s, d, run);
@@ -443,14 +466,34 @@ describe('walking it', () => {
     const s = hunter(30);
     const { d, m, x, at } = gateWith('rest', (mm, y) => systemRoad(mm).includes(y.id));
     const run = raid.begin(s, d, at);
-    const road = systemRoad(m);
-    run.path = road.slice(0, -1);
+    // Every room of its way entered but the boss, and no rest used yet.
+    run.path = systemWalk(m).flatMap((w) => ('enter' in w && w.enter !== m.boss ? [w.enter] : []));
     run.at = run.path.length;
     run.pos = run.path[run.at - 1];
-    expect(raid.systemNext(d, run)).toEqual({ rest: x.id });
-    raid.systemMove(s, d, run, at);
-    expect(run.rested).toEqual([x.id]);
+    // Every rest it has found and not used, then the boss.
+    const found = m.nodes.filter((y) => y.kind === 'rest' && run.path.includes(y.id)).map((y) => y.id);
+    for (let k = 0; k < found.length; k++) {
+      const move = raid.systemNext(d, run);
+      expect(move && 'rest' in move && found.includes(move.rest)).toBe(true);
+      raid.systemMove(s, d, run, at);
+    }
+    expect([...(run.rested ?? [])].sort()).toEqual(found.sort());
+    expect(run.rested).toContain(x.id);
     expect(raid.systemNext(d, run)).toEqual({ enter: m.boss });
+  });
+
+  it('the System steps into a rest beside its road as it passes, and uses it there on a floor above the boss’s', () => {
+    const { m } = gateWith('rest', (mm, y) => !systemRoad(mm).includes(y.id) && (y.floor ?? 0) < (mm.byId[mm.boss].floor ?? 0) && y.next.some((id) => systemRoad(mm).includes(id)));
+    const walk = systemWalk(m);
+    const enters = walk.filter((w) => 'enter' in w).map((w) => ('enter' in w ? w.enter : ''));
+    const rests = m.nodes.filter((y) => y.kind === 'rest' && !systemRoad(m).includes(y.id) && y.next.some((id) => systemRoad(m).includes(id)));
+    for (const y of rests) {
+      expect(enters).toContain(y.id);
+      const i = walk.findIndex((w) => 'enter' in w && w.enter === y.id);
+      if ((y.floor ?? 0) < (m.byId[m.boss].floor ?? 0)) expect(walk[i + 1]).toEqual({ rest: y.id });
+    }
+    // And its way fits inside the Gate's budget.
+    expect(systemMoves(m)).toBeLessThanOrEqual(budgetOf(m));
   });
 
   it('what the run finds is paid when it ends on its feet, and lost when it is carried out', () => {
@@ -521,14 +564,28 @@ describe('walking it', () => {
     else expect(res.mats![forge.alloyId(d.rank as Rank)]).toBeGreaterThanOrEqual(CACHE.vault);
   });
 
-  it('a hidden passage opens once a room at either end is cleared', () => {
-    const { m, x } = gateWith('fight', (_, y) => !!y.hidden);
-    const other = x.hidden![0];
+  it('on a run opened before the secrets, a hidden passage opens once a room at either end is cleared', () => {
+    const { d, day, x: found } = gateWith('fight', (_, y) => !!y.hidden);
+    const m = build(d, mapSeed(d, day), 'labyrinth');
+    const x = m.nodes.find((y) => y.hidden?.length) ?? m.byId[found.id];
+    if (!x.hidden) return;
+    const other = x.hidden[0];
     expect(passages(m, new Set([m.start!]))).toEqual([]);
     const open = passages(m, new Set([m.start!, x.id]));
     expect(open).toHaveLength(1);
     expect(open[0]).toContain(other);
     expect(reach(m, new Set([m.start!, x.id])).map((y) => y.id)).toContain(other);
+  });
+
+  it('a hidden passage opens only once it is noticed, or the map is charted', () => {
+    const { m, x } = gateWith('fight', (mm, y) => !!y.hidden && !y.secret && !mm.byId[mm.start!].next.includes(y.hidden[0]) && !y.next.includes(y.hidden[0]));
+    const other = x.hidden![0];
+    const cleared = new Set([m.start!, x.id]);
+    expect(passages(m, cleared)).toEqual([]);
+    expect(reach(m, cleared).map((y) => y.id)).not.toContain(other);
+    expect(passages(m, cleared, { notice: () => true })).toHaveLength(1);
+    expect(passages(m, cleared, { charted: true })).toHaveLength(1);
+    expect(reach(m, cleared, { notice: () => true }).map((y) => y.id)).toContain(other);
   });
 });
 

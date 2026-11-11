@@ -5,7 +5,7 @@
  */
 import type { Stat } from '@/core/types';
 
-export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'font' | 'trap' | 'event' | 'boss' | 'entrance' | 'vault' | 'up' | 'down';
+export type NodeKind = 'fight' | 'elite' | 'rest' | 'treasure' | 'shrine' | 'font' | 'trap' | 'event' | 'landmark' | 'boss' | 'entrance' | 'vault' | 'up' | 'down';
 
 /** What the map shows as an Event until the hunter steps on it. A shrine shows for what it is. */
 export const HIDDEN: ReadonlySet<NodeKind> = new Set<NodeKind>(['trap', 'treasure']);
@@ -20,6 +20,7 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   shrine: { name: 'Shrine', glyph: 'star', desc: 'Three blessings of one Path, shown on the plan. Take one for the rest of the Gate.' },
   font: { name: 'Font', glyph: 'font', desc: 'Raises one blessing you hold a tier. With none to raise, it blesses as a shrine does.' },
   trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It passes for an Event until you step on it.' },
+  landmark: { name: 'Landmark', glyph: 'landmark', desc: 'A named room of the creatures that hold the Gate, one to a floor, seen from the moment you walk in. A choice of its own, with its odds stated.' },
   event: { name: 'Event', glyph: 'event', desc: 'A choice, with its odds stated. A trap, a cache or a rest passes for one until you step in.' },
   boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
   entrance: { name: 'Entrance', glyph: 'gates', desc: 'The way in, and the way out. Withdraw from here.' },
@@ -42,8 +43,18 @@ export const HONE_PAST = 0.1;
  * walking out of each Gate with less HP for the next.
  */
 export const REST_LINE = 1;
-/** Each fight cleared banks this share of a clear's shards; a gatekeeper, more. */
-export const FIGHT_PURSE = { fight: 0.2, elite: 0.5 } as const;
+/** Each fight cleared banks this share of a clear's shards; one two corridors or more off the road, more; a gatekeeper, more again. */
+export const FIGHT_PURSE = { fight: 0.2, deep: 0.3, elite: 0.5 } as const;
+
+/**
+ * A hidden passage, on a Gate's later plans, opens only when the hunter notices it: once, as a room at
+ * either end is cleared, at these odds by Perception (as a trap's). A Gate Survey charts every one, and a
+ * charted passage needs no noticing.
+ */
+export const NOTICE = { base: 0.35, per: 0.006, max: 0.9 } as const;
+
+/** A toll door: a sealed corridor that opens for good when the hunter pays this share of their maximum HP, standing at it. */
+export const TOLL = { hp: 0.2 } as const;
 
 /**
  * The five blessings shrines offered before the Paths' (`data/blessings.ts`): flat stats, in the units

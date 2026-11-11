@@ -10,7 +10,7 @@
  * back across them costs nothing more. The budget is counted on those places, as `npm run mapstats` counts
  * a Gate's rooms. Nothing here reads a roll or the clock on the wall.
  */
-import { across, passages, systemRoad, type GateMap } from './map';
+import { across, passages, systemWalk, tollsOpen, type GateMap, type Openings } from './map';
 import { rankIdx } from './gates';
 import { RANKS } from './types';
 
@@ -57,7 +57,7 @@ export const budgetOf = (m: GateMap) => (m.tower ? 0 : Math.round(CLOCK.budget *
  * or an opened passage, with a floor's stairs as one place, and one step on into any room not yet cleared
  * beside them. Keyed by place (`placeOf`); the room it starts in is 0.
  */
-export function walksFrom(m: GateMap, cleared: Set<string>, from: string): Map<string, number> {
+export function walksFrom(m: GateMap, cleared: Set<string>, from: string, o: Openings = {}): Map<string, number> {
   const rep = placeOf(m);
   const adj = new Map<string, Set<string>>();
   const link = (a: string, b: string) => {
@@ -69,7 +69,8 @@ export function walksFrom(m: GateMap, cleared: Set<string>, from: string): Map<s
     adj.get(rb)!.add(ra);
   };
   for (const x of m.nodes) for (const n of x.next) link(x.id, n);
-  for (const [a, b] of passages(m, cleared)) link(a, b);
+  for (const [a, b] of passages(m, cleared, o)) link(a, b);
+  for (const [a, b] of tollsOpen(m, o)) link(a, b);
   // Only cleared places are walked through; a room not yet cleared is where a walk ends.
   const walkable = new Set([...cleared].map(rep));
   const start = rep(from);
@@ -90,7 +91,7 @@ export function walksFrom(m: GateMap, cleared: Set<string>, from: string): Map<s
  * The fewest moves from one room to another (`walksFrom`). `to` may be a room not yet cleared, entered
  * from one that is. Infinity if there is no way; 0 if they are the same place.
  */
-export const walkMoves = (m: GateMap, cleared: Set<string>, from: string, to: string) => walksFrom(m, cleared, from).get(placeOf(m)(to)) ?? Infinity;
+export const walkMoves = (m: GateMap, cleared: Set<string>, from: string, to: string, o: Openings = {}) => walksFrom(m, cleared, from, o).get(placeOf(m)(to)) ?? Infinity;
 
 /** Where a run stands on its clock. */
 export interface ClockState {
@@ -128,25 +129,22 @@ export function mightOf(c: ClockState, gate: string, held: string): number {
 }
 
 /**
- * The moves the System's way through a Gate takes: its road, room by room, and before the boss a walk
- * back to the first rest it found and did not use (`raid.systemNext`), then on to the boss. What Auto,
- * the brief and calibration walk. Zero for a tower.
+ * The moves the System's way through a Gate takes (`map.systemWalk`): its road, room by room, the steps
+ * into the rests beside it, and before the boss the walk back to a rest it kept. What Auto, the brief and
+ * calibration walk. Zero for a tower.
  */
 export function systemMoves(m: GateMap): number {
   if (m.tower) return 0;
   const done = new Set([m.start!]);
   let at = m.start!;
   let moves = 0;
-  let rested = false;
-  for (const id of systemRoad(m)) {
-    const x = m.byId[id];
-    if (x.kind === 'boss' && !rested) {
-      const spare = m.nodes.find((y) => y.kind === 'rest' && done.has(y.id));
-      if (spare) { moves += walkMoves(m, done, at, spare.id); at = spare.id; rested = true; }
-    }
+  for (const step of systemWalk(m)) {
+    const id = 'enter' in step ? step.enter : step.rest;
     moves += walkMoves(m, done, at, id);
-    done.add(id);
     at = id;
+    if (!('enter' in step)) continue;
+    done.add(id);
+    const x = m.byId[id];
     const below = across(m, x);
     if (x.kind === 'down' && below) { done.add(below.id); at = below.id; }
   }

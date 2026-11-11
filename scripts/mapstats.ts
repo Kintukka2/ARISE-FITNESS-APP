@@ -21,6 +21,14 @@
  *   road odd      road rooms that are not fights (the entrance, stairs and boss aside)
  *   rests         rests on the road and off it, per map
  *   shrines       shrines on the road and off it, per map, and Fonts the same
+ * The later plans (labyrinth2), per map:
+ *   landmarks     landmark rooms
+ *   wings         Gatekeepers, and the rooms behind them before their vaults
+ *   secrets       hidden passages, and caches behind one
+ *   tolls         toll doors: shortcuts, and caches behind one
+ *   deep          rooms two corridors or more off the road
+ *   foes          creatures in a fight by the third of its floor, foot to head
+ *   System rests  rests the System's way steps into, and uses
  *   foes          creatures per fight, on the road and off it
  *   strong        fights holding a creature the plan marks strong (`threatOf` in core/map.ts)
  * Cost of a side fight, for a typical hunter in the middle of the grade, each fight entered at full
@@ -29,7 +37,7 @@
  *   cost          the hunter's HP lost, as a share of the maximum (mean, and the worst seen)
  */
 import { ALL_DUNGEONS, isPractice } from '@/core/gates';
-import { build, mapSeed, systemRoad, threatOf, type GateMap, type MapNode } from '@/core/map';
+import { build, mapSeed, systemRoad, systemWalk, threatOf, tollDoors, type GateMap, type MapNode } from '@/core/map';
 import { chamberAt, partySpecs, runChamber } from '@/core/raid';
 import { Unit } from '@/core/combat';
 import { budgetOf, systemMoves } from '@/core/clock';
@@ -91,7 +99,9 @@ function walk(g: ReturnType<typeof graphOf>, start: string, budget = Infinity) {
 
 interface Row {
   rooms: number; road: number; deadEnds: number; loops: number; passages: number; reach: number; seeAll: number; within: number; budget: number; system: number;
-  roadOdd: number; restsOn: number; restsOff: number; shrinesOn: number; shrinesOff: number; fontsOn: number; fontsOff: number; foesOn: number[]; foesOff: number[]; strong: number; fights: number;
+  roadOdd: number; restsOn: number; restsOff: number; shrinesOn: number; shrinesOff: number; fontsOn: number; fontsOff: number;
+  landmarks: number; keepers: number; wingRooms: number; passages2: number; secretCaches: number; tollCuts: number; tollCaches: number; deep: number; band: number[][]; walkRests: number;
+  foesOn: number[]; foesOff: number[]; strong: number; fights: number;
 }
 
 function measure(m: GateMap): Row {
@@ -110,7 +120,8 @@ function measure(m: GateMap): Row {
     rooms: places.length,
     road: on.size - 1,
     deadEnds: places.filter((id) => g.adj.get(id)!.size === 1 && !end(id)).length,
-    loops: edges - places.length + 1,
+    // Rooms reached only through a secret or a toll door have no corridor, and are no part of a loop.
+    loops: edges - places.filter((id) => g.adj.get(id)!.size > 0).length + 1,
     passages: m.nodes.reduce((n, x) => n + (x.hidden?.length ?? 0), 0) / 2,
     reach: Math.max(...places.map((id) => fromRoad.get(id) ?? 0)),
     seeAll: walk(g, start).spent,
@@ -124,6 +135,16 @@ function measure(m: GateMap): Row {
     shrinesOff: m.nodes.filter((x) => x.kind === 'shrine' && !onRoad(x)).length,
     fontsOn: m.nodes.filter((x) => x.kind === 'font' && onRoad(x)).length,
     fontsOff: m.nodes.filter((x) => x.kind === 'font' && !onRoad(x)).length,
+    landmarks: m.nodes.filter((x) => x.kind === 'landmark').length,
+    keepers: m.nodes.filter((x) => x.kind === 'elite').length,
+    wingRooms: m.nodes.filter((x) => x.wing && x.kind !== 'vault').length,
+    passages2: m.nodes.reduce((n, x) => n + (x.hidden?.length ?? 0), 0) / 2,
+    secretCaches: m.nodes.filter((x) => x.secret).length,
+    tollCuts: tollDoors(m).filter(([a, b]) => m.byId[a].next.length > 0 && m.byId[b].next.length > 0).length,
+    tollCaches: tollDoors(m).filter(([a, b]) => m.byId[a].next.length === 0 || m.byId[b].next.length === 0).length,
+    deep: m.nodes.filter((x) => x.deep).length,
+    band: [0, 1, 2].map((b) => fights.filter((x) => x.band === b).map((x) => x.foes?.length ?? 0)),
+    walkRests: systemWalk(m).filter((w) => 'rest' in w).length,
     foesOn: fights.filter(onRoad).map((x) => x.foes?.length ?? 0),
     foesOff: fights.filter((x) => !onRoad(x)).map((x) => x.foes?.length ?? 0),
     strong: fights.filter((x) => threat(x).strong > 0).length,
@@ -158,6 +179,15 @@ for (const r of Object.keys(all)) {
   const rows = all[r];
   const f = (k: keyof Row, w: number) => avg(rows.map((x) => x[k] as number)).toFixed(2).padEnd(w);
   console.log(`  ${r}    ${f('shrinesOn', 17)}${f('shrinesOff', 18)}${f('fontsOn', 15)}${f('fontsOff', 15)}`);
+}
+
+console.log('\nThe later plans, per map: landmarks, Gatekeepers and their wings, hidden passages and the caches behind them, toll doors, deep rooms, and rests on the System\'s way');
+console.log('grade  landmarks  keepers  wing rooms  passages  secret caches  toll cuts  toll caches  deep rooms  System rests  foes by third (foot, middle, head)');
+for (const r of Object.keys(all)) {
+  const rows = all[r];
+  const f = (k: keyof Row, w: number) => avg(rows.map((x) => x[k] as number)).toFixed(2).padEnd(w);
+  const thirds = [0, 1, 2].map((b) => avg(rows.flatMap((x) => x.band[b])).toFixed(2)).join(' / ');
+  console.log(`  ${r}    ${f('landmarks', 11)}${f('keepers', 9)}${f('wingRooms', 12)}${f('passages2', 10)}${f('secretCaches', 15)}${f('tollCuts', 11)}${f('tollCaches', 13)}${f('deep', 12)}${f('walkRests', 14)}${thirds}`);
 }
 
 // What a side fight costs: each entered at full health, the healing every won fight brings counted.

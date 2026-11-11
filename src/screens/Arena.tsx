@@ -22,7 +22,7 @@ import * as story from '@/core/story';
 import type { Dungeon, Order } from '@/core/types';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
 import * as spire from '@/core/spire';
-import { chamberOf, isFight, passages, type MapNode } from '@/core/map';
+import { chamberOf, isFight, type MapNode } from '@/core/map';
 import { HONE_LEVELS, NODE } from '@/data/nodes';
 import * as blessings from '@/core/blessings';
 import { pathOf } from '@/data/tree';
@@ -466,8 +466,7 @@ export function Arena() {
     // A hidden passage a room's clearing opened, said once, as the hunter comes back to the map.
     const r0 = store.get().gates.raid;
     if (r0) {
-      const m0 = raid.mapOf(d!, r0);
-      const open = passages(m0, raid.explored(m0, r0)).length;
+      const open = raid.opened(d!, r0).length;
       if (open > seen.current.passages && seen.current.passages >= 0) say([{ text: '▸ A wall gives way. There is a passage behind it.', tone: 'outcome' }]);
       seen.current.passages = open;
     }
@@ -538,6 +537,16 @@ export function Arena() {
       }
       say([{ text: pick.kind === 'hone' ? `▸ You hone ${pick.skill}.` : pick.kind === 'steady' ? '▸ The party steadies itself.' : '▸ The party rests.', tone: 'outcome' }]);
       if (autoRef.current) toMap();
+    });
+  }
+
+  /** Pay a toll door where the hunter stands, in HP: it opens for good. */
+  function payToll(to: string) {
+    void guarded(() => {
+      if (!store.update((x) => raid.payToll(x, d!, x.gates.raid!, to))) return;
+      sfx.hit(-40);
+      flash('danger');
+      say([{ text: '▸ You pay the toll. The seal breaks.', tone: 'outcome' }]);
     });
   }
 
@@ -784,15 +793,19 @@ export function Arena() {
                 pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)}
                 corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} costs={costsOf(d, run)}
                 stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red}
-                shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name} />
+                shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name}
+                openings={raid.openings(run)} secrets={(k) => raid.secretsOf(d, run, k)} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
                   : <small class="muted center">Tap a step that glows.</small>
-                : raid.canRest(d, run)
+                : raid.tollsHere(d, run).length > 0 || raid.canRest(d, run)
                   ? <div class="stack stack--tight">
-                    <Btn kind="primary" block sound="tap" onClick={restPanel}>Rest</Btn>
-                    <small class="muted center">Heal, Hone or Steady · Once</small>
+                    {raid.tollsHere(d, run).length > 0 && <TollDoor s={s} d={d} run={run} onPay={payToll} />}
+                    {raid.canRest(d, run) && <>
+                      <Btn kind="primary" block sound="tap" onClick={restPanel}>Rest</Btn>
+                      <small class="muted center">Heal, Hone or Steady · Once</small>
+                    </>}
                   </div>
                   : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
@@ -871,6 +884,23 @@ function RunStrip({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullabl
           {run.blessings.map((b) => <BoonChip key={b} id={b} tier={blessings.tierOf(run, b)} tell={tell} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A toll door where the hunter stands: its seal, what it costs in HP, and the button that pays it. Too hurt
+ * to pay and still stand, it says so.
+ */
+function TollDoor({ s, d, run, onPay }: { s: ReturnType<typeof useSave>; d: Dungeon; run: NonNullable<ReturnType<typeof useSave>['gates']['raid']>; onPay: (to: string) => void }) {
+  const hero = raid.partyFor(s, d, run)[0];
+  const cost = raid.tollCost(hero);
+  const door = raid.tollsHere(d, run)[0];
+  const can = hero.hp > cost;
+  return (
+    <div class="stack stack--tight">
+      <Btn kind="danger" block sound="tap" disabled={!can} onClick={() => onPay(door.to)}>Break The Seal</Btn>
+      <small class="muted center">{can ? <><span class="warn">HP -{cost}</span> · Opens for good</> : <span class="warn">Too hurt to pay: HP -{cost}</span>}</small>
     </div>
   );
 }
