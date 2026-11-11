@@ -1,32 +1,19 @@
-/** The Gates: the board, the brief, and the way in. */
-import { useEffect, useMemo, useState } from 'preact/hooks';
+/** The Gates: the board, and the way to each Gate's brief (`./Brief`). */
+import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { powerOf, THROWABLES } from '@/core/combat';
-import { board, bossKnown, mapKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
+import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import * as gear from '@/core/gear';
-import { RARITY } from '@/core/gear';
 import { SETS } from '@/data/sets';
 import * as forge from '@/core/forge';
-import { ALLOYS } from '@/data/forge';
-import { MatArt, TrackMark } from '@/ui/forge';
-import { GATE_XP, PRACTICE_LEVEL, practiceAward, rankOf } from '@/core/progression';
-import { build, mapSeed, sight } from '@/core/map';
+import { GATE_XP, rankOf } from '@/core/progression';
 import * as contracts from '@/core/contracts';
-import * as spire from '@/core/spire';
 import * as ascension from '@/core/ascension';
-import { isTrial, trialLevel } from '@/core/trial';
-import * as association from '@/core/association';
-import { goalOf } from '@/ui/assoc';
-import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, WALKERS, type Mark } from '@/data/ascension';
-import * as walkers from '@/core/walkers';
+import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, type Mark } from '@/data/ascension';
 import * as marks from '@/core/marks';
 import { GATES_LINE, GATES_TOUR } from '@/data/narrative';
 import * as system from '@/ui/system';
-import { MapView } from '@/ui/map';
-import { ItemsMark } from '@/ui/items';
 import * as raid from '@/core/raid';
-import { budgetOf } from '@/core/clock';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import * as story from '@/core/story';
@@ -38,16 +25,18 @@ import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Card, Chip, RankPlate, Section, Shards, useNow, Voice } from '@/ui/components';
+import { Btn, Chip, RankPlate, Section, Shards, useNow, Voice } from '@/ui/components';
 import { BentoGrid, type Tile as BTile } from '@/ui/bento';
 import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
-import { Glyph, Sigil, THROW_GLYPH } from '@/ui/icons';
-import { FamilyGlyph } from '@/ui/emblems';
-import { closeAllSheets, confirm, openSheet, sys, toast, tour } from '@/ui/overlays';
+import { Glyph, Sigil } from '@/ui/icons';
+import { openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
-import { bagFor, enterGate, readyThrow } from '@/app/flow';
-import { openExchange } from './Exchange';
+import * as feats from '@/core/feats';
+import { FEATS_PER_GATE } from '@/data/feats';
+import { markOf, openBrief } from './Brief';
+
+export { openBrief };
 
 function coachLine(s = store.get()) {
   const v = vitals.read(s);
@@ -88,16 +77,6 @@ export function Gates() {
  */
 function Condition() {
   return <SysFrame class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
-}
-
-/** What marks a Gate on the board today: the Practice Gate, one of the Chosen holding it, Ryn's job, or a Daily Quest naming it. */
-function markOf(s: Save, d: Dungeon, quest: boolean, day: string): 'Training' | 'Chosen' | 'Association' | 'Quest' | undefined {
-  if (isPractice(d)) return 'Training';
-  if (walkers.walking(s, day)?.gateId === d.id) return 'Chosen';
-  // The Association pins its job's Gate: Ryn's, so it carries his name for it.
-  const job = association.current(s);
-  if (job && !association.done(job) && job.gate === d.id) return 'Association';
-  return quest ? 'Quest' : undefined;
 }
 
 type Band = 'all' | 'marked' | Rank;
@@ -221,6 +200,15 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
                 <Glyph name="shadows" /><span class="num">{bound}/{inside.length}</span>
               </span>
             )}
+            {/* Its Feats: a star to each, gold once met here. */}
+            {!practice && (() => {
+              const met = feats.featsOf(d).filter((id) => feats.metOn(s, d).includes(id)).length;
+              return (
+                <span class={`gtag is-feats ${met === FEATS_PER_GATE ? 'is-full' : ''}`} aria-label={`Feats met: ${met} of ${FEATS_PER_GATE}`}>
+                  {Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < met ? 'is-on' : ''} aria-hidden="true">★</i>)}
+                </span>
+              );
+            })()}
             {pieces.length > 0 && (
               <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
                 <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>
@@ -508,25 +496,6 @@ function NextLevel() {
   );
 }
 
-/** One of the Chosen holding the gate in the brief: when it shows itself, and what felling it pays. */
-function ChosenCard({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: number }) {
-  const s = useSave();
-  const pay = ascension.payShare(level);
-  const felled = s.ascension.felled.includes(w.level);
-  return (
-    <Card class="bosscard chosencard" tone="gold">
-      <Glyph name="crown" />
-      <div class="grow">
-        <span class="label">Chosen</span>
-        <b class="warn">[{w.name}]</b>
-        <small class="muted">{level >= w.level ? `In the boss’s place at Ascension ${level}.` : `Appears at Ascension ${w.level} or higher.`}</small>
-        <small>{felled ? <>Bounty: Mana Shards <span class="grant">+{shop.gateShards(d.rank, WALKERS.bounty * pay)}</span></>
-          : <>Masterwork: {RARITY[d.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>}</small>
-      </div>
-    </Card>
-  );
-}
-
 /** The marks: one for every level opened, each set for good. */
 function MarkList() {
   const s = useSave();
@@ -564,248 +533,6 @@ function MarkList() {
         })}
       </ul>
       <small class="ascension__proof">Upgrade limit: Perfect +{ascension.overCap(s)}</small>
-    </div>
-  );
-}
-
-// ------------------------------------------------------------------ the brief
-
-/** The brief: the System's card on a Gate, in the Gates' orange. A Trial is advancement, so its card is gold. */
-export function openBrief(d: Dungeon) {
-  const trial = isTrial(d);
-  openSheet({
-    title: trial ? `Trial: Ascension ${trialLevel(d) + 1}` : `Gate: ${d.name}`,
-    system: trial ? { icon: <Glyph name="cert" />, kind: 'gold' } : { icon: <RankPlate rank={d.rank} size={40} />, kind: 'gates' },
-    render: (close) => <Brief d={d} close={close} />,
-  });
-}
-
-function Brief({ d, close }: { d: Dungeon; close: () => void }) {
-  const s = useSave();
-  useNow();
-  const known = bossKnown(s, d);
-  const boss = enemyById(d.boss)!;
-  // A Trial is fought at the level it proves, whatever is chosen: the party, the pay and the rules shown are that level's.
-  const level = ascension.entryLevel(s, d, isPractice(d));
-  const party = raid.alliesAt(d, dayKey(), licensedRank(s), level);
-  const squad = isPractice(d) ? [] : shadows.squad(s);
-  const hero = raid.heroSpec(s);
-  // The verdict is the engine answering for itself: the gate, run headlessly.
-  const proj = useMemo(() => raid.project(s, d, 24), [d.id, s.hunter.level, s.vitals.hp, s.vitals.fatigue, Object.values(s.equipped).join(), squad.map((x) => x.id).join(), s.gates.tactic, level]);
-  const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
-  const map = useMemo(() => build(d, mapSeed(d, dayKey())), [d.id, dayKey()]);
-  // A deeper Gate's map is shown a floor at a time.
-  const [mapFloor, setMapFloor] = useState(0);
-  // Today's map through its fog: what a run on it is seeing, or what is remembered of it.
-  const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, dayKey()) ? s.gates.raid : null;
-  const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, dayKey())));
-  // The bag: a Gate Survey from it charts every room, before the hunter goes in or after. A tower has no plan to chart.
-  const surveyBtn = map.tower ? null : <ItemsMark items={bagFor(s, d)} />;
-  const v = raid.verdict(proj.rate);
-  const block = entryBlock(s, d);
-  const pay = ascension.payShare(level);
-  const sh = Math.round(shop.GATE_SHARDS[d.rank as Rank] * pay);
-  const xp = isPractice(d) ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
-  const tower = spire.isSpire(d);
-  const first = !tower && !s.gates.cleared.includes(d.id);
-  // One of the Chosen may hold this gate today, and stand in the boss's place for a run entered high enough.
-  const walker = walkers.walking(s, dayKey());
-  const holds = walker?.gateId === d.id ? walker : null;
-  const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
-  const hpNow = vitals.read(s);
-
-  const enter = () => enterGate(d);
-
-  const abandon = async () => {
-    const run = store.get().gates.raid;
-    if (!run || !(await confirm('Abandon the run?', 'You will be carried out. Nothing banked on this run is kept.', 'Abandon', true))) return;
-    store.update((x) => raid.finish(x, d, x.gates.raid!, 'defeated'));
-    close();
-  };
-
-  // What walks in it: its creatures and its gatekeeper, named once the hunter has been inside, as the map is;
-  // the boss counts once it is known. The violet ones already serve as Shadows.
-  const inside = [...new Set([...d.mobs, ...(d.elite ? [d.elite] : [])])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
-  const seen = mapKnown(s, d);
-  const counted = [...inside, ...(known ? [boss] : [])];
-  const bound = counted.filter((e) => shadows.isBound(s, e.id)).length;
-  const mark = markOf(s, d, contracts.named(s, dayKey()).has(d.id), dayKey());
-  const partyPower = powerOf(hero.base) + party.reduce((n, a) => n + powerOf(a.base), 0) + squad.reduce((n, x) => n + shadows.power(x), 0);
-  const C = 2 * Math.PI * 21;
-  const rate = Math.round(proj.rate * 100);
-  const sets = raid.homeSets(d);
-
-  return (
-    <div class={`stack brief ${isTrial(d) ? 'is-trial' : ''}`} style={`--rc: ${isTrial(d) ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
-      {/* The banner: the Gate's portal in its grade's colour, and the Association's file. The Trial is the System's own: it states its terms. */}
-      <header class="sysbox bhead">
-        <span class="bhead__portal ga-portal" aria-hidden="true">
-          <i class="ga-portal__swirl" /><i class="ga-portal__core" />
-          <RankPlate rank={d.rank} size={34} />
-        </span>
-        <span class="bhead__body">
-          <span class="label">{isTrial(d) ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}</span>
-          {isTrial(d)
-            ? <p class="bhead__file">{d.trial} of the Chosen, in a row.</p>
-            : <p class="bhead__file"><span class="label">Association file:</span> {d.theme}</p>}
-          <span class="bhead__tags">
-            {!isTrial(d) && !tower && !isPractice(d) && <span class={`gtag ${s.gates.cleared.includes(d.id) ? 'is-done' : 'is-bounty'}`}>{s.gates.cleared.includes(d.id) ? 'Cleared' : 'Never cleared'}</span>}
-            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
-            {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
-            {isTrial(d) && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
-          </span>
-        </span>
-      </header>
-
-      {/* The assessment: the clear rate as a ring, in the verdict's colour, and what bears on it. */}
-      <section class={`verdict verdict--${v.tone} bassess`} data-tour="assess">
-        <span class="bassess__ring" aria-hidden="true">
-          <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" class="bassess__track" /><circle cx="25" cy="25" r="21" class="bassess__arc" style={`stroke-dasharray: ${C * proj.rate} ${C}`} /></svg>
-          <b class="num">{rate}<small>%</small></b>
-        </span>
-        <span class="bassess__body">
-          <b>Assessment: {v.text}</b>
-          <small>Clear rate: {rate}%</small>
-          {hpNow.hp < hpNow.hpMax * 0.9 && <small>HP: {hpNow.hp}/{hpNow.hpMax}</small>}
-          {level > 0 && <small>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''} · Pay +{Math.round((pay - 1) * 100)}%</small>}
-        </span>
-      </section>
-
-      {/* What it pays: a cell each, small, so the threat and the map stand above the fold. */}
-      <div class="brewards">
-        <span class="sysbox brewards__one"><small class="label">Clear</small><b class="num">XP +{xp}</b><small>{isPractice(d) ? `enough for Level ${PRACTICE_LEVEL}` : <><Shards n={sh} /></>}</small></span>
-        {isTrial(d)
-          ? <span class="sysbox brewards__one"><small class="label">Opens</small><b>Ascension {s.ascension.unlocked + 1}</b><small>if you win it</small></span>
-          : tower
-          ? <span class="sysbox brewards__one"><small class="label">This week</small><b>Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}</b><small>a new best, if you clear it</small></span>
-          : <span class={`sysbox brewards__one ${first && !isPractice(d) ? 'is-bounty' : ''}`}><small class="label">First clear</small><b class="num">{first && !isPractice(d) ? `XP +${xp}` : '-- --'}</b><small>{first && !isPractice(d) ? <><Shards n={sh * 2} />, once</> : isPractice(d) ? 'pays in kit' : 'already claimed'}</small></span>}
-        <span class="sysbox brewards__one"><small class="label">Materials</small><b>{isPractice(d) ? ALLOYS.E.name : ALLOYS[d.rank as Rank].name}</b><small>{isPractice(d) ? 'and a ring' : sets.length ? `${forge.trophyTable().get(d.shape ?? d.id)?.name ?? 'a trophy'} · ${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'and a blueprint' : 'a blueprint, sometimes'}</small></span>
-        <span class="sysbox brewards__one"><small class="label">Depth</small><b>{raid.stepsOf(map)} {isTrial(d) ? 'Chosen' : tower ? 'floors' : 'rooms'}</b><small>{isTrial(d) ? 'no rest between them' : tower ? 'a rest, then the boss' : map.floors.length > 1 ? `${map.floors.length} floors · ${proj.road.length} to the boss` : `${proj.road.length} to the boss`}</small>{!tower && !isPractice(d) && <small class="brewards__moves"><Glyph name="steps" />{budgetOf(map)} moves</small>}</span>
-      </div>
-      {/* The materials tagged at the Forge that this Gate leaves. */}
-      {!isPractice(d) && !isTrial(d) && forge.trackedAt(s, d, level).length > 0 && (
-        <div class="sysbox btracked" aria-label="Tracked materials here">
-          <TrackMark class="btracked__mark" />
-          <span class="label">Tracked</span>
-          <span class="btracked__list">{forge.trackedAt(s, d, level).map((id) => (
-            <span key={id} class="matchip"><MatArt id={id} size={20} /><span class="matchip__name">{forge.materialById(id)?.name}</span></span>
-          ))}</span>
-        </div>
-      )}
-
-      {/* What stands in it: the boss, one of the Chosen if it holds the Gate today, and the rest of what walks there. */}
-      <Section title="Threat" right={!isPractice(d) && !isTrial(d) && counted.length ? `Shadows bound: ${bound}/${counted.length}` : undefined}>
-        <Card class="bosscard" tour="boss">
-          {known || met ? <FamilyGlyph family={(met ?? boss).family} size={40} /> : <Glyph name="unknown" />}
-          <div class="grow">
-            <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
-            <b>{met ? met.name : known ? boss.name : '?'}</b>
-            <small class="muted">{met ? `${met.rank}-Rank ${met.family} · ${met.role} · Power ${powerOf(met.base)}` : known ? `${boss.rank}-Rank ${boss.family} · ${boss.role} · Power ${powerOf(boss.base)}` : '?'}</small>
-          </div>
-          {known && !met && shadows.isBound(s, boss.id) && <span class="bthreat__bound" title="Serves as a Shadow"><Glyph name="shadows" /></span>}
-        </Card>
-        {holds && <ChosenCard d={d} w={holds} level={level} />}
-        {!isTrial(d) && inside.length > 0 && (
-          <div class="bthreat">
-            {inside.map((e) => (
-              <span key={e.id} class={`sysbox bthreat__one ${seen && shadows.isBound(s, e.id) ? 'is-bound' : ''} ${e.id === d.elite ? 'is-elite' : ''}`}>
-                {seen ? <FamilyGlyph family={e.family} size={16} /> : <Glyph name="unknown" />}
-                <span class="bthreat__name">
-                  <b>{seen ? e.name : '?'}</b>
-                  <small>{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small>
-                </span>
-                {seen && shadows.isBound(s, e.id) && <Glyph name="shadows" class="bthreat__mark" />}
-              </span>
-            ))}
-          </div>
-        )}
-      </Section>
-
-      {/* The job Ryn gave for this Gate, if one is in hand: the interface saying what it is. */}
-      {(() => {
-        const job = association.current(s);
-        if (!job || association.done(job) || (job.kind !== 'hunt' && job.gate !== d.id) || (job.kind === 'hunt' && !d.mobs.includes(job.target ?? ''))) return null;
-        return <p class="hint assochint">Association Quest: {goalOf(job)} <span class="num">{job.got}/{job.need}</span></p>;
-      })()}
-
-      {/* Unidentified until the hunter has been inside, as the boss is until it is met. */}
-      {mapKnown(s, d)
-        ? (
-          <Section title="Today’s map" right={<>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></>}>
-            <MapView m={map} road={proj.road} seen={fog} floor={mapFloor} onFloor={map.floors.length > 1 ? setMapFloor : undefined} corner={surveyBtn} compact />
-          </Section>
-        )
-        : (
-          <Section title="Today’s map" right="Unidentified">
-            <div class="gmap-fogwrap">
-              <div class="gmap-fog" role="img" aria-label="Map unidentified">
-                <Glyph name="unknown" />
-                <b>?</b>
-              </div>
-              {surveyBtn && <span class="gmap-fog__corner">{surveyBtn}</span>}
-            </div>
-          </Section>
-        )}
-
-      {/* The party, a card each, after a squad's roster: who walks in, and their power together. */}
-      <Section title={isTrial(d) ? 'Entering' : 'Your party'} right={<>Power <b class="num">{partyPower}</b></>}>
-        <ul class="partylist bparty" data-tour="party">
-          <li class="is-you"><RankPlate rank={licensedRank(s)} size={20} /><span class="bparty__who"><b>{s.hunter.name}</b><small>You</small></span><span class="num">{powerOf(hero.base)}</span></li>
-          {party.map((a) => (
-            <li key={a.id}><RankPlate rank={a.rank} size={20} /><span class="bparty__who"><b>{a.name}</b><small>{a.note ?? a.role}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></span><span class="num">{powerOf(a.base)}</span></li>
-          ))}
-          {squad.map((x) => (
-            <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={20} /><span class="bparty__who"><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small>Shadow</small></span><span class="num">{shadows.power(x)}</span></li>
-          ))}
-        </ul>
-        {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">Shadow slots empty: {shadows.freeSlots(s)}</p>}
-        {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
-      </Section>
-
-      <div class="bsatchel">
-        <span><strong>[Item: Health Potion]</strong> <span class="grant">HP +{shop.POTION_RESTORE * 100}%</span></span>
-        <span class="num">Satchel {shop.held(s, 'hp')}/{shop.satchelMax(s)}</span>
-        {shop.satchelRoom(s) > 0 && <Btn size="sm" onClick={() => { close(); openExchange(); }}>To The Exchange</Btn>}
-      </div>
-      <Readied d={d} />
-
-      {/* The way in stays at the foot of the window, whatever is scrolled past. */}
-      <div class="bdock">
-        {block === 'open' ? open?.id === d.id
-          ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
-          : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
-          : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
-          : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
-            : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
-              : <Btn kind={isTrial(d) ? 'gold' : 'primary'} size="lg" block onClick={enter} sound="none" tour="enter">{isTrial(d) ? 'Enter The Trial' : 'Enter The Gate'}</Btn>}
-      </div>
-    </div>
-  );
-}
-
-/**
- * The throwable readied for the Gate: the one the action wheel throws inside, a chip to each kind with the
- * count held. Tapping one readies it. A run open on the Gate keeps the one it walked in with.
- */
-function Readied({ d }: { d: Dungeon }) {
-  const s = useSave();
-  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
-  const now = run ? run.throw ?? null : shop.readied(s);
-  if (!now && THROWABLES.every((k) => shop.held(s, k.id) <= 0)) return null;
-  return (
-    <div class="bthrow">
-      <span class="label">Throw</span>
-      <span class="bthrow__kit" role="radiogroup" aria-label="Throwable readied">
-        {THROWABLES.map((k) => {
-          const n = shop.held(s, k.id);
-          return (
-            <button type="button" key={k.id} role="radio" aria-checked={k.id === now} aria-label={`${k.name}, ${n} held`}
-              class={`bthrow__one ${k.id === now ? 'is-on' : ''}`} disabled={!!run || n <= 0} onClick={() => readyThrow(k.id)}>
-              <Glyph name={THROW_GLYPH[k.id]} /><span>{k.name}</span><b class="num">{n}</b>
-            </button>
-          );
-        })}
-      </span>
     </div>
   );
 }

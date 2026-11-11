@@ -467,13 +467,13 @@ function ChosenBody({ close }: { close: () => void }) {
   const at = Math.max(s.ascension.level, w.level);
   return (
     <QuestWindow bare name={`Chosen: ${w.name}`} class="quest-chosen"
-      goals={<QuestGoal id="chosen" text={<>Fell <span class="warn">[{w.name}]</span> in {gate.name}.</>}
+      goals={<QuestGoal id="chosen" text={<>Defeat <span class="warn">[{w.name}]</span> in {gate.name}.</>}
         hint={open ? `It appears at Ascension ${w.level} or higher.` : `${gate.name} is closed until tomorrow.`}
         got={0} need={1} done={false} count={open ? undefined : 'Closed'} />}
       rewards={[felled
         ? <>Mana Shards <b class="num grant">+{group(shop.gateShards(gate.rank, WALKERS.bounty * ascension.payShare(at)))}</b> at Ascension {at}</>
         : <>Masterwork: {RARITY[gate.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>]}>
-      <p class="questinfo__note">Chosen felled: {s.ascension.felled.length}/{s.ascension.sent.length}</p>
+      <p class="questinfo__note">Chosen defeated: {s.ascension.felled.length}/{s.ascension.sent.length}</p>
       {open && <Btn kind="primary" block onClick={() => { close(); openBrief(gate); }}>Brief: {gate.name}</Btn>}
     </QuestWindow>
   );

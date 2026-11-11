@@ -26,6 +26,8 @@ import { claimAll } from '@/core/quests';
 import { autoLearn } from '@/core/skilltree';
 import { licensedRank } from '@/core/licence';
 import * as raid from '@/core/raid';
+import * as sealing from '@/core/seals';
+import { sealEmber } from '@/data/seals';
 import { defaults } from '@/core/save';
 import * as shadows from '@/core/shadows';
 import { powerOf } from '@/core/combat';
@@ -57,10 +59,14 @@ interface Tally {
   runs: number; cleared: number; defeated: number; spire: number; chosen: number; masterworks: number;
   contracts: number; bonusDays: number; shardsIn: number; shardsOut: number; upgrades: number; bought: number; assoc: number;
   forged: number; rerolls: number; recycled: number; blueprints: number; found: number;
+  /** Runs walked into under Seals, Feats met for the first time, and creatures felled the way their condition asks. */
+  sealed: number; feats: number; drops: number;
+  /** Of those, bosses felled while Broken, and runs under a Seal that pays a blueprint (Dry, Never Alone). */
+  bossDrops: number; sealEmber: number;
 }
 const TALLY: Tally = {
   runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0,
-  upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0,
+  upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0, sealed: 0, feats: 0, drops: 0, bossDrops: 0, sealEmber: 0,
 };
 
 const rk = (d: GearDef | undefined) => RANKS.indexOf((d?.rank ?? 'E') as Rank);
@@ -216,7 +222,12 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   // Chosen's gate at no lower than its level.
   if (!isTrial(d)) pickLevel(s, d, now, floor);
   const before = s.wallet.earned;
-  const run = raid.begin(s, d, now);
+  // A hunter who reads the brief takes every Seal the Gate offers while the brief still reads three in four or better.
+  const offer = sealing.offered(s, d, dayKey(now));
+  // It reads the brief as the brief is: 24 runs.
+  const seals = offer.length && raid.project(s, d, 24, now, offer).rate >= SAFE ? offer : [];
+  if (seals.length) t.sealed++;
+  const run = raid.begin(s, d, now, seals);
   const { won } = walk(s, d, now);
   // Auto walks the System's road to the boss; it never withdraws.
   const outcome = won ? 'cleared' : 'defeated';
@@ -233,6 +244,12 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   if (res.contracts.bonus) t.bonusDays++;
   if (res.chosen) { t.chosen++; if (res.chosen.item) t.masterworks++; }
   t.blueprints += res.blueprints.length;
+  t.feats += res.feats.fresh.length;
+  t.drops += res.drops;
+  if (outcome === 'cleared') {
+    t.bossDrops += (run.drops ?? []).filter((x) => x.boss).length;
+    t.sealEmber += seals.filter((id) => id !== 'wardens' || !!run.tally?.keeper).reduce((n, id) => n + sealEmber(id, d.rank), 0);
+  }
   t.found += res.loot.length;
   // Every reach it has the mana for, up to the last, while the Shadow lingers.
   for (const l of res.lingering) while (raid.reachesLeft(l) > 0 && vitals.read(s, now).mp >= raid.reachCost(l)) raid.extract(s, l, r(), now);
@@ -302,6 +319,7 @@ function campaign(p: Profile) {
   console.log(`  contracts  ${(t.contracts / days).toFixed(2)} of 3 a day, all three on ${Math.round((t.bonusDays / days) * 100)}% of days${contractsOpen(s) ? '' : ' (never opened)'}`);
   console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} blueprints bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
   console.log(`  forge      ${s.blueprints.length} blueprints known (${t.blueprints} from Gates), ${t.forged} forged, ${t.rerolls} forged again, ${t.recycled} recycled, ${t.found} found whole`);
+  console.log(`  extras     ${t.sealed} runs under Seals, ${t.feats} Feats met for the first time, ${t.drops} condition drops (${t.bossDrops} bosses felled while Broken), ${t.sealEmber} Ember from Seals`);
   console.log(`  materials  ${Object.entries(s.materials).filter(([, n]) => n).map(([k, n]) => `${forge.materialById(k)?.name ?? k} ${n}`).join(', ')}`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);

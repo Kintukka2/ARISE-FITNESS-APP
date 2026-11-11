@@ -7,6 +7,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import ts from 'typescript';
 import { contractHint, contractText } from '@/core/contracts';
 import * as gear from '@/core/gear';
 import * as marks from '@/core/marks';
@@ -145,6 +146,24 @@ describe('the words', () => {
     }
   });
 
+  it('says defeat, never fell, and special drop, never condition drop: in every string, template and line of markup a player can read', () => {
+    // A word in a player's text has a space or a capital beside it, or stands in markup; a lone lowercase
+    // literal is a key ('fell', the Daily Quest's kind), which stays as the save wrote it.
+    const found: string[] = [];
+    for (const f of srcFiles) {
+      const src = ts.createSourceFile(f, readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true, f.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+      const visit = (n: ts.Node) => {
+        const text = ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n) || ts.isJsxText(n) ? n.text : null;
+        if (text && /\b(fell|fells|felled|felling)\b|\bcondition drops?\b/i.test(text) && (ts.isJsxText(n) || /\s|[A-Z]/.test(text.trim()))) {
+          found.push(`${f}:${src.getLineAndCharacterOfPosition(n.getStart()).line + 1} ${text.trim()}`);
+        }
+        ts.forEachChild(n, visit);
+      };
+      visit(src);
+    }
+    expect(found).toEqual([]);
+  });
+
   it('names the Secret Quest tiers, not Missions', () => {
     expect(Object.values(TIER_NAMES)).toEqual(['Citation', 'Directive', 'Edict', 'Testament']);
   });
@@ -225,7 +244,7 @@ describe('the System keeping score', () => {
   });
 
   it('grades the brief from Safe to Lethal and reports nothing else', () => {
-    expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Favourable', 'Even', 'Unfavourable', 'Lethal']);
+    expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Likely', 'Even', 'Unlikely', 'Lethal']);
     expect(verdict(1).text).toBe('Safe');
     expect(verdict(0).text).toBe('Lethal');
   });

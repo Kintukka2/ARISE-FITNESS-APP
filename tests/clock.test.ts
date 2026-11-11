@@ -15,7 +15,7 @@ const days = Array.from({ length: 6 }, (_, i) => dayKey(now + i * 864e5));
 function winPending(s: Save, d: Dungeon) {
   const run = s.gates.raid!;
   const x = raid.pending(d, run)!;
-  raid.record(s, d, run, raid.partyFor(s, d, run, now), { index: x.n, label: '', boss: x.kind === 'boss', won: true, rounds: 1, log: [], roster: [], felled: [], kills: {} }, now);
+  raid.record(s, d, run, raid.partyFor(s, d, run, now), { index: x.n, label: '', boss: x.kind === 'boss', won: true, rounds: 1, log: [], roster: [], felled: [], kills: {}, drops: [] }, now);
 }
 
 /** Walk the System's way through an open run to the boss's fall, every fight won. */
@@ -78,7 +78,8 @@ describe('the Gate clock', () => {
       expect(run.moves, `${d.id} ${day}`).toBe(systemMoves(m));
       expect(raid.clockOf(run)!.over).toBe(0);
     }
-  });
+    // It walks a third of the board over three days' maps: about 3 seconds here, and more on a busy CI runner.
+  }, 20_000);
 
   it('charges the walk to a room and the step into it, and every corridor walked back', () => {
     const d = gates.find((x) => x.rank === 'D')!;

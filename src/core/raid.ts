@@ -30,10 +30,16 @@ import * as spire from './spire';
 import { isTrial } from './trial';
 import * as association from './association';
 import * as clock from './clock';
+import * as sealing from './seals';
+import type { SealId } from '@/data/seals';
+import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION, type ConditionId } from '@/data/drops';
+import { sealEmber } from '@/data/seals';
+import { FEAT_PAY, type FeatId } from '@/data/feats';
+import * as feats from './feats';
 import { LOG_MAX } from './save';
 import type { AssocMove } from './association';
 import * as shop from './shop';
-import type { Dungeon, Item, OpenRaid, Order, Rank, Save, Shadow, Tactic } from './types';
+import type { Dungeon, Item, OpenRaid, Order, Rank, RunTally, Save, Shadow, Tactic } from './types';
 import { RANKS } from './types';
 import { clamp, dayKey, rng } from './util';
 import * as vitals from './vitals';
@@ -76,23 +82,29 @@ export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> 
   return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id };
 }
 
-/** The hunters the Association sends with you at an Ascension level. The Trial is the System's, so it sends none there. */
-export function alliesAt(d: Dungeon, day: string, rank: Rank, level = 0): Ally[] {
+/** The hunters the Association sends with you at an Ascension level, and under the Seals taken. The Trial is the System's, so it sends none there. */
+export function alliesAt(d: Dungeon, day: string, rank: Rank, level = 0, seals: readonly SealId[] = []): Ally[] {
   if (isTrial(d)) return [];
   const all = alliesFor(d, day, rank);
-  return all.slice(0, Math.max(0, all.length - asc.alliesCut(level)));
+  return all.slice(0, Math.max(0, all.length - asc.alliesCut(level) - sealing.alliesCut(seals)));
 }
 
-export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[], now = Date.now(), level = 0): UnitSpec[] {
+export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[], now = Date.now(), level = 0, seals: readonly SealId[] = []): UnitSpec[] {
   const squad = squadIds ? squadIds.map((id) => s.shadows.army.find((x) => x.id === id)).filter((x): x is Shadow => !!x) : shadows.squad(s);
   const bonus = marks.shadowBonus(s);
-  return [heroSpec(s, now, level), ...alliesAt(d, day, licensedRank(s), level).map(allySpec), ...(isPractice(d) ? [] : squad).map((sh, i) => shadowSpec(sh, i, bonus))];
+  return [heroSpec(s, now, level), ...alliesAt(d, day, licensedRank(s), level, seals).map(allySpec), ...(isPractice(d) ? [] : squad).map((sh, i) => shadowSpec(sh, i, bonus))];
 }
 
 /** The share of a gate's fatigue a run costs: more at Heavy Legs, less for every Mark of the Long Stride. */
 export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) * marks.fatigueShare(s);
 
-export interface RosterRow { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[] }
+export interface RosterRow {
+  uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[];
+  /** A foe's grade, which sets its behaviours' numbers. */
+  grade?: string;
+  /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
+  ref?: string; cond?: ConditionId; boss?: boolean;
+}
 
 export interface ChamberResult {
   index: number;
@@ -105,14 +117,20 @@ export interface ChamberResult {
   roster: RosterRow[];
   felled: string[];
   kills: Record<string, { kills: number; bosses: number }>;
+  /** The creatures felled the way their condition asks, by id. */
+  drops: { ref: string; boss: boolean }[];
 }
+
+/** A creature's condition drop: its family's, or a boss's. */
+export const conditionOf = (ref: string, boss: boolean) => (boss ? BOSS_CONDITION : FAMILY_CONDITION[enemyById(ref)?.family ?? ''] ?? null);
 
 /** Per-gate difficulty, from calibration, or a Spire block's own. Exported so the calibrator can drive it. */
 export const tuneOf = (d: Dungeon) => d.scale ?? GATE_TUNE[d.id] ?? 1;
 
-function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1): Unit[] {
-  const k = (EXPECTED_PARTY[d.rank] ?? 4) / 3;
-  const t = tuneOf(d) * asc.ascensionTune(level) * (c.elite ? asc.eliteShare(level) : 1) * might;
+function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1, seals: readonly SealId[] = []): Unit[] {
+  // The run's Seals: Heavier Air fights a level up, Wardens Wake wakes the Gatekeeper, Swollen swells every creature.
+  const k = (EXPECTED_PARTY[d.rank] ?? 4) / 3 * sealing.hpShare(seals);
+  const t = tuneOf(d) * asc.ascensionTune(level + sealing.levelsUp(seals)) * (c.elite ? asc.eliteShare(level) * sealing.eliteShare(seals) : 1) * might;
   const units = c.foes.map((id, j) => {
     const e = enemyById(id)!;
     // Its behaviours: its role's, its family's from C-Rank, and a wind-up for the chamber's boss or Gatekeeper.
@@ -156,18 +174,34 @@ export interface ChamberOpts {
   ascension?: number;
   /** How much stronger the Gate clock has made its creatures: stirring, or a Red Gate (`clock.mightOf`). */
   might?: number;
+  /** The Seals the run walked in with. */
+  seals?: readonly SealId[];
 }
 
 /** Open one chamber, `index` steps into the gate. Mutates the party's units (health, statuses) as it is fought. */
 export function openChamber(d: Dungeon, seed: string, index: number, party: Unit[], c: Chamber, opts: ChamberOpts = {}): ChamberFight {
-  const foes = foeUnits(c, d, index, opts.ascension ?? 0, opts.might ?? 1);
-  const roster: RosterRow[] = [...party, ...foes].map((u) => ({ uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined }));
+  const foes = foeUnits(c, d, index, opts.ascension ?? 0, opts.might ?? 1, opts.seals ?? []);
+  const roster: RosterRow[] = [...party, ...foes].map((u) => {
+    const boss = u.side === 'e' && c.boss && u === foes[0];
+    const cond = u.side === 'e' && u.ref ? conditionOf(u.ref, boss) ?? undefined : undefined;
+    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, ...(u.side === 'e' ? { grade: u.grade } : {}), ...(cond ? { ref: u.ref, cond, boss } : {}) };
+  });
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];
+  const drops: ChamberResult['drops'] = [];
   const log: Ev[] = [];
   const g = battle(party, foes, rng(`arise|raid|${seed}|${index}`), enemyActions(d), (killer, victim) => {
     if (victim.side === 'e' && victim.ref) felled.push(victim.ref);
     if (victim.side !== 'e') return;
+    // Felled the way its condition asks: read as it falls, however it was felled.
+    const boss = c.boss && victim === foes[0];
+    const want = victim.ref ? conditionOf(victim.ref, boss) : null;
+    if (want && victim.ref) {
+      const k = CONDITION[want];
+      const round = log.reduce((n, e) => (e.t === 'round' ? n + 1 : n), 0);
+      const met = (!k.status || !!victim.status[k.status]) && (!k.rounds || round <= k.rounds) && (!k.by || killer?.tag === k.by);
+      if (met) { drops.push({ ref: victim.ref, boss }); log.push({ t: 'drop', v: victim.uid }); }
+    }
     // Every Shadow that landed a hit helped fell it, whoever landed the last.
     const helped = new Set([...victim.hurtBy, ...(killer ? [killer] : [])]);
     for (const u of helped) {
@@ -190,31 +224,33 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
       if (done) return done;
       const res = step.value;
       if (res.won) {
+        // A Dry Gate heals nothing after a fight.
+        const dry = !sealing.potionsAllowed(opts.seals ?? []);
         for (const u of party) {
-          if (u.alive()) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * (ROOM_RECOVERY + u.d.recovery));
+          if (u.alive()) u.hp = Math.min(u.maxHp, u.hp + (dry ? 0 : u.maxHp * (ROOM_RECOVERY + u.d.recovery)));
           else if (u.tag === 'hero') u.hp = Math.round(u.maxHp * REVIVE);
         }
       }
-      done = { index, label: c.label, boss: c.boss, won: res.won, rounds: res.rounds, log: res.log, roster, felled, kills };
+      done = { index, label: c.label, boss: c.boss, won: res.won, rounds: res.rounds, log: res.log, roster, felled, kills, drops };
       return done;
     },
   };
 }
 
 /** Fight one chamber to the end on the auto policy. Mutates the party's units (health, statuses). */
-export function runChamber(d: Dungeon, seed: string, index: number, party: Unit[], c: Chamber, tactic: Tactic = 'default', level = 0): ChamberResult {
-  return openChamber(d, seed, index, party, c, { tactic, ascension: level }).result();
+export function runChamber(d: Dungeon, seed: string, index: number, party: Unit[], c: Chamber, tactic: Tactic = 'default', level = 0, seals: readonly SealId[] = []): ChamberResult {
+  return openChamber(d, seed, index, party, c, { tactic, ascension: level, seals }).result();
 }
 
 /** The fight a node holds at an Ascension level: from Never Alone up, a boss stands with one of its gate's creatures. */
-export function chamberAt(d: Dungeon, x: MapNode, level = 0, walker: number | null = null): Chamber {
+export function chamberAt(d: Dungeon, x: MapNode, level = 0, walker: number | null = null, seals: readonly SealId[] = []): Chamber {
   let c = chamberOf(d, x);
   // A Chosen holding the gate stands in the boss's place, for a run entered high enough to meet it.
   if (c.boss && walker) {
     const w = walkers.walkerOf(walker, d.rank as Rank);
     c = { ...c, label: w.name, foes: [w.id] };
   }
-  if (!c.boss || !asc.bossGuarded(level) || !d.mobs.length) return c;
+  if (!c.boss || !(asc.bossGuarded(level) || sealing.bossGuarded(seals)) || !d.mobs.length) return c;
   return { ...c, foes: [...c.foes, d.mobs[x.n % d.mobs.length]] };
 }
 
@@ -244,10 +280,10 @@ export function blessed(specs: UnitSpec[], blessings: string[]): UnitSpec[] {
 // ------------------------------------------------------------------ what a step does to the party
 
 /** A rest: the standing recover, and what ails them lifts. Mutates. */
-export function rest(party: Unit[], level = 0) {
+export function rest(party: Unit[], level = 0, seals: readonly SealId[] = []) {
   for (const u of party) {
     if (!u.alive()) continue;
-    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * REST_HEAL * asc.restShare(level));
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * REST_HEAL * asc.restShare(level) * sealing.restShare(seals));
     for (const st of Object.keys(u.status)) if (!STATUS[st]?.good) delete u.status[st];
   }
 }
@@ -277,8 +313,11 @@ export const systemChoice = (x: MapNode) => (x.kind === 'shrine' ? 0 : Math.max(
 // ------------------------------------------------------------------ the run, in the save
 
 /** Enter a gate: build the party as it walks in, charge fatigue, open the run. Mutates. */
-export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
+export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly SealId[] = []): OpenRaid {
   const day = dayKey(now);
+  // Only Seals the Gate offers today are taken; with none asked for, the offer need not be drawn.
+  const offer = seals.length ? sealing.offered(s, d, day) : [];
+  const taken = seals.filter((id) => offer.includes(id));
   const fatigue = vitals.read(s, now).fatigue;
   // The practice gate is played as it is, and a Trial at the level it proves, whatever the hunter has chosen.
   const level = asc.entryLevel(s, d, isPractice(d));
@@ -286,7 +325,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
   if (!s.gates.entered.includes(d.id)) s.gates.entered.push(d.id);
   // The party walks in as the brief assessed it: at the fatigue it walked in with. The Gate's own is
   // charged after, for the runs to come, so the fight is the one the projection and calibration played.
-  const specs = partySpecs(s, d, day, undefined, now, level);
+  const specs = partySpecs(s, d, day, undefined, now, level, taken);
   if (!isPractice(d)) vitals.addRaidFatigue(s, d.rank, now, fatigueShare(s, level));
   const party = buildParty(specs);
   const hero = party[0];
@@ -305,6 +344,8 @@ export function begin(s: Save, d: Dungeon, now = Date.now()): OpenRaid {
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
     ...(toss ? { throw: toss } : {}),
+    ...(taken.length ? { seals: [...taken] } : {}),
+    tally: { downs: 0, lowest: 1 },
   };
   return s.gates.raid;
 }
@@ -474,7 +515,7 @@ export function canRest(d: Dungeon, run: OpenRaid): boolean {
 export function restHere(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): boolean {
   if (!canRest(d, run)) return false;
   const party = partyFor(s, d, run, now);
-  rest(party, asc.levelOf(run));
+  rest(party, asc.levelOf(run), sealing.of(run));
   settleParty(s, d, run, party, now);
   run.rested = [...(run.rested ?? []), run.pos!];
   return true;
@@ -489,6 +530,7 @@ export const canDrinkHere = (s: Save, d: Dungeon, run: OpenRaid, now = Date.now(
 /** Why a Health Potion cannot be drunk between steps now, or null if it can. */
 export function drinkIdle(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): string | null {
   if (shop.held(s, 'hp') <= 0) return 'None held';
+  if (!sealing.potionsAllowed(sealing.of(run))) return 'Sealed: Dry';
   if (run.lost || pending(d, run) || bossDown(d, run)) return 'Not now';
   const hero = partyFor(s, d, run, now)[0];
   if (!hero?.alive()) return 'Not now';
@@ -620,7 +662,7 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, now = Dat
   if (x.kind === 'rest') {
     if (m.tower) {
       const party = partyFor(s, d, run, now);
-      rest(party, asc.levelOf(run));
+      rest(party, asc.levelOf(run), sealing.of(run));
       settleParty(s, d, run, party, now);
     }
     run.at += 1;
@@ -702,9 +744,9 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
   const party = partyFor(s, d, run, now);
   const orders = run.orders ?? [];
   // The satchel has already paid for the potions this chamber's orders drank, and the bag for what they threw.
-  const potions = shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length;
+  const potions = sealing.potionsAllowed(sealing.of(run)) ? shop.held(s, 'hp') + orders.filter((o) => o?.use === 'Potion').length : 0;
   const throws = Object.fromEntries(THROWABLES.filter((t) => !run.throw || t.id === run.throw).map((t) => [t.id, shop.held(s, t.id) + orders.filter((o) => o?.use === throwOrder(t.id)).length]));
-  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null), { manual: true, tactic: run.tactic ?? 'default', potions, throws, orders, ascension: asc.levelOf(run), might: mightOf(d, run) });
+  const ch = openChamber(d, run.seed, x.n, party, chamberAt(d, x, asc.levelOf(run), run.chosen ?? null, sealing.of(run)), { manual: true, tactic: run.tactic ?? 'default', potions, throws, orders, ascension: asc.levelOf(run), might: mightOf(d, run), seals: sealing.of(run) });
   return { party, ch, node: x };
 }
 
@@ -716,7 +758,7 @@ export function resume(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
 export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
   let given = o;
   if (given?.use === 'Potion') {
-    if (shop.held(s, 'hp') > 0) s.stock.hp = shop.held(s, 'hp') - 1;
+    if (shop.held(s, 'hp') > 0 && sealing.potionsAllowed(sealing.of(run))) s.stock.hp = shop.held(s, 'hp') - 1;
     else given = null;
   }
   // A throw is paid for out of the bag the same way; one the bag cannot pay for, or of a kind the run did
@@ -736,7 +778,7 @@ export function order(s: Save, run: OpenRaid, o: Order | null): Order | null {
  * reach it: a chamber replayed from its orders must meet the same party.
  */
 export function partyFor(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()) {
-  const specs = run.party?.length ? run.party : partySpecs(s, d, run.day, run.squad, now, asc.levelOf(run));
+  const specs = run.party?.length ? run.party : partySpecs(s, d, run.day, run.squad, now, asc.levelOf(run), sealing.of(run));
   return restore(buildParty(blessed(specs, run.blessings ?? [])), run.carried);
 }
 
@@ -746,6 +788,8 @@ export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: Ch
   run.at += 1;
   run.orders = [];
   run.felled.push(...ch.felled);
+  if (ch.drops.length) run.drops = [...(run.drops ?? []), ...ch.drops];
+  run.tally = feats.count(run.tally ?? { downs: 0, lowest: 1 }, ch, x?.kind === 'elite');
   if (ch.boss) run.bossFaced = true;
   if (ch.won) {
     run.won += 1;
@@ -824,6 +868,12 @@ export interface RaidResult {
   /** The hunter's health afterwards, on the real (vitals) scale. */
   heroHp: number;
   heroMax: number;
+  /** The Seals the run walked in with, whose pay is in `mats` and `blueprints`. */
+  seals: SealId[];
+  /** The Gate's Feats, those the clear met, and those met here for the first time, which paid. */
+  feats: { asked: FeatId[]; met: FeatId[]; fresh: FeatId[] };
+  /** Creatures felled the way their condition asks, kept by the run. */
+  drops: number;
   allies: string[];
 }
 
@@ -839,7 +889,10 @@ export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?
  * other clears and from gatekeepers; and now and then a piece found whole. Blueprints are learned here.
  * Mutates.
  */
-function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: boolean, pace = 1) {
+/** What a run's Seals, its condition drops and its first Feats add to what it leaves. */
+interface Extras { seals: readonly SealId[]; drops: readonly { ref: string; boss: boolean }[]; feats: number }
+
+function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: boolean, pace = 1, extra: Extras = { seals: [], drops: [], feats: 0 }) {
   const g = rankIdx(d.rank);
   const rank = RANKS[g];
   const lower = RANKS[Math.max(0, g - 1)];
@@ -860,10 +913,15 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     const fam = enemyById(id)?.family;
     if (fam && r() < DROPS.part) parts.push({ [forge.partId(FAMILY_PART[fam] ?? 'hide')]: 1 });
   }
+  // Seals pay in Ember on a clear, by the Gate's grade; Wardens Wake only if the Gatekeeper it woke fell.
+  const sealed = cleared ? extra.seals.filter((id) => id !== 'wardens' || !!run.tally?.keeper).reduce((n, id) => n + sealEmber(id, d.rank), 0) : 0;
+  // A creature felled the way its condition asks leaves its family's part twice over; a boss, a blueprint below.
+  for (const x of extra.drops) if (!x.boss) parts.push({ [forge.partId(FAMILY_PART[enemyById(x.ref)?.family ?? ''] ?? 'hide')]: DROP.part });
   const trophy = cleared ? forge.trophyAt(d) : null;
   const mats = forge.addUp(
     { [forge.alloyId(rank)]: alloy + (g === 0 ? low : 0) }, g > 0 ? { [forge.alloyId(lower)]: low } : {}, ...parts,
     trophy ? { [trophy]: 1 } : {}, cleared && level > 0 ? { [forge.EMBER.id]: Math.ceil(DROPS.ember * level) } : {},
+    sealed ? { [forge.EMBER.id]: sealed } : {},
   );
   // Blueprints: a set's from its home Gate, then the Gate's own.
   const blueprints: string[] = [];
@@ -885,6 +943,9 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
   }
   for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
   if (vault && r() < BLUEPRINTS.vault) leave(rank);
+  // A boss felled the way its condition asks, and each Feat met for the first time, leave a blueprint.
+  for (const x of extra.drops) if (x.boss) leave(rank);
+  for (let i = 0; i < extra.feats * FEAT_PAY.blueprints; i++) leave(rank);
   // A piece found whole, rarely.
   const forged: string[] = [];
   if (cleared && r() < FORGED.clear) {
@@ -939,7 +1000,13 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // Carried out, the party leaves with nothing it found; walking out, it keeps everything.
   const cleared = outcome === 'cleared';
   const vault = steps.some((x) => x.kind === 'vault');
-  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m)) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
+  // The Feats a clear met, of the Gate's three: each pays once, the first time it is met here.
+  const asked = feats.featsOf(d);
+  // A run opened before Feats were counted has no tally, and is judged on none.
+  const met = cleared && !practice && !tower && run.tally ? feats.judge(asked, run.tally, !m.tower && chartedFloors(m, explored(m, run)) === m.floors.length) : [];
+  const fresh = feats.settle(s, d, met);
+  const extra: Extras = { seals: sealing.of(run), drops: run.drops ?? [], feats: fresh.length };
+  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m), extra) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
   let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
   let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};
   if (practice) {
@@ -1042,6 +1109,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
+    seals: extra.seals.slice(), feats: { asked, met, fresh }, drops: kept ? extra.drops.length : 0,
   };
 }
 
@@ -1079,12 +1147,17 @@ export function extract(s: Save, l: Lingering, roll: number, now = Date.now()): 
  * and count. No hand-tuned ladder to drift out of date; the engine answers for
  * itself, about the road it shows.
  */
-export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
+export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals: readonly SealId[] = []) {
   const day = dayKey(now);
-  // The run would be entered at the level chosen (a Trial, at its own): the projection plays every rule it brings.
+  // The run would be entered at the level chosen (a Trial, at its own): the projection plays every rule it brings, and every Seal taken.
   const level = asc.entryLevel(s, d, isPractice(d));
+  const offer = seals.length ? sealing.offered(s, d, day) : [];
+  const taken = seals.filter((id) => offer.includes(id));
   const walker = walkers.meets(s, d, day, level);
-  const specs = partySpecs(s, d, day, undefined, now, level);
+  const specs = partySpecs(s, d, day, undefined, now, level, taken);
+  // How often the System met each of the Gate's Feats, on the clears it made.
+  const asked = feats.featsOf(d);
+  const featsMet = Object.fromEntries(asked.map((id) => [id, 0])) as Record<FeatId, number>;
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   const m = build(d, mapSeed(d, day));
   const road = systemRoad(m).map((id) => m.byId[id]);
@@ -1099,16 +1172,19 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
     let won = true;
     // A rest found in a Gate is kept for the boss, as the System keeps it.
     let kept = false;
+    let tally: RunTally = { downs: 0, lowest: 1 };
     for (const x of road) {
       if (isFight(x)) {
         if (x.kind === 'boss') {
           reached++;
-          if (kept) { rest(party, level); kept = false; }
+          if (kept) { rest(party, level, taken); kept = false; }
         }
-        won = runChamber(d, seed, x.n, party, chamberAt(d, x, level, walker), s.gates.tactic, level).won;
+        const ch = runChamber(d, seed, x.n, party, chamberAt(d, x, level, walker, taken), s.gates.tactic, level, taken);
+        tally = feats.count(tally, ch, x.kind === 'elite');
+        won = ch.won;
         if (!won) break;
       } else if (x.kind === 'rest') {
-        if (m.tower) rest(party, level);
+        if (m.tower) rest(party, level, taken);
         else kept = true;
       }
       else if (x.kind === 'shrine' && x.offer) {
@@ -1119,18 +1195,22 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now()) {
         if (c) touch(party, rng(`proj|choice|${seed}|${x.id}`)() < oddsOf(c, specs[0], level) ? c.win : c.lose ?? c.win);
       }
     }
-    if (won) clears++;
+    if (won) {
+      clears++;
+      // The System's road never clears every room, so Thorough is never the System's.
+      for (const id of feats.judge(asked, tally, false)) featsMet[id]++;
+    }
     if (!won && party[0].hp <= 0) heroDown++;
   }
-  return { runs, cleared: clears, rate: clears / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id) };
+  return { runs, cleared: clears, rate: clears / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id), feats: featsMet };
 }
 
 /** The System's assessment of a Gate, graded from its clear rate. It reports; it does not advise. */
 export const GRADES = [
   { min: 0.9, text: 'Safe', tone: 'ready' },
-  { min: 0.7, text: 'Favourable', tone: 'ready' },
+  { min: 0.7, text: 'Likely', tone: 'ready' },
   { min: 0.4, text: 'Even', tone: 'even' },
-  { min: 0.15, text: 'Unfavourable', tone: 'over' },
+  { min: 0.15, text: 'Unlikely', tone: 'over' },
   { min: 0, text: 'Lethal', tone: 'over' },
 ] as const;
 

@@ -100,6 +100,15 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   must recalibrate. Auto never covers or throws: throwables, like potions, are the hunter's own, so the
   brief assumes none. A run keeps the throwable readied as it walked in (`run.throw`, from
   `shop.readied`), and its fights throw only that kind: readying another reaches the next Gate.
+- Seals (`data/seals.ts`, `core/seals.ts`) are taken on the brief and written to the run as `run.seals`;
+  every rule they play reads the run's own list, as every Ascension rule reads `run.ascension`, and the
+  brief's projection plays the ones taken. They pay Ascendant Ember only (`sealEmber`), never shards, in `raid.finish`.
+  The brief (`screens/Brief.tsx`) and its Seals' window share the Seals set and the projections made for them.
+  Calibration plays no Seals; the campaign takes a Gate's while the brief reads 75% or better.
+- Feats (`data/feats.ts`, `core/feats.ts`) are judged from the run's tally, counted in `raid.record`,
+  and pay once each per Gate (`s.gates.feats`). Special drops (`data/drops.ts`) are read at the kill
+  in `openChamber` and banked on the run (`run.drops`). Neither touches a fight, so neither moves a
+  tuning; both pay whoever met them, so change what they pay and rerun the campaign.
 - Sight's Foresight (`FORESIGHT` in `data/tree.ts`) only shows a foe's numbers (`skilltree.foresees`).
   It is never a passive of the fight's build and Auto Assign never takes it, so it moves no tuning;
   keep it so, or recalibrate.
@@ -121,7 +130,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Every word a player reads follows `docs/VOICE.md`, including README's description of the game. A
   System window is built with `src/ui/system.ts` and never explains, advises or refers to itself;
   the rules it would explain go in the Guide. `tests/voice.test.ts` checks what it can. A wording
-  decision that will come up again goes into VOICE.md in the same change.
+  decision that will come up again goes into VOICE.md in the same change. A creature is defeated, never
+  felled, in every line a player reads (the voice test holds it); keys the save holds keep their names.
 - The look follows the speaker (VOICE.md, "The look"). Anything the System shows is drawn in its
   frame from `src/ui/frame.tsx`, or `sys()` with a System kind, or a sheet opened with `system`, and
   set in Montserrat. Nothing else uses that frame or that type.

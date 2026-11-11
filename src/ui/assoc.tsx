@@ -45,8 +45,8 @@ export function briefOf(q: AssocQuest): string {
 /** The job, as a goal: what to do and where. */
 export function goalOf(q: AssocQuest): string {
   if (q.kind === 'clear') return `Clear ${gateName(q)}.`;
-  if (q.kind === 'boss') return `Fell ${targetName(q)}, in ${gateName(q)}.`;
-  return `Fell ${q.need} ${plural(targetName(q))}, in any Gate.`;
+  if (q.kind === 'boss') return `Defeat ${targetName(q)}, in ${gateName(q)}.`;
+  return `Defeat ${q.need} ${plural(targetName(q))}, in any Gate.`;
 }
 
 /** What a job pays besides its experience, in words. */

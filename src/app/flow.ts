@@ -33,6 +33,7 @@ import * as ascension from '@/core/ascension';
 import { isPractice } from '@/core/gates';
 import * as raid from '@/core/raid';
 import type { Dungeon, Save } from '@/core/types';
+import type { SealId } from '@/data/seals';
 import type { BagItem } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
 import { drinkFlow } from '@/screens/Inventory';
@@ -273,7 +274,8 @@ export async function rewardChain(xp: XpResult | null, then?: Route): Promise<Ro
  * Walk into a Gate: past the fatigue warning first, as the brief gives it, then the run begins and the
  * arena opens on it. False if the hunter turned back, or drank a potion instead.
  */
-export async function enterGate(d: Dungeon): Promise<boolean> {
+/** Walk into a Gate from its brief, with the Seals taken there. */
+export async function enterGate(d: Dungeon, seals: readonly SealId[] = []): Promise<boolean> {
   const s = store.get();
   const f = vitals.read(s).fatigue;
   if (f > 20 && !isPractice(d)) {
@@ -291,7 +293,7 @@ export async function enterGate(d: Dungeon): Promise<boolean> {
     if (!want) return false;
   }
   closeAllSheets();
-  store.update((x) => raid.begin(x, d));
+  store.update((x) => raid.begin(x, d, Date.now(), seals));
   sfx.gate();
   buzz([26, 40, 20, 40, 90]);
   arena.set(d.id);

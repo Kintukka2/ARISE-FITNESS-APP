@@ -762,7 +762,7 @@ function Record({ sh }: { sh: Shadow }) {
     <Section title="Record">
       <div class="sp-record">
         <span><b class="num">{sh.out}</b><small>Deployed</small></span>
-        <span><b class="num">{sh.kills}</b><small>Felled</small></span>
+        <span><b class="num">{sh.kills}</b><small>Defeated</small></span>
         <span><b class="num">{sh.bosses}</b><small>Bosses</small></span>
         <span><b class="num">{days}</b><small>Days served</small></span>
       </div>

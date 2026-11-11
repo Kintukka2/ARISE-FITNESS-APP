@@ -1,6 +1,8 @@
 /** Shared shapes for the game data and the save. */
 import type { ContractKind } from '@/data/contracts';
 import type { UnitSpec } from './combat';
+import type { SealId } from '@/data/seals';
+import type { FeatId } from '@/data/feats';
 
 export const STATS = ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const;
 export type Stat = (typeof STATS)[number];
@@ -204,6 +206,26 @@ export interface OpenRaid {
    * nothing was held, or the run was opened before throwables were readied, and any kind held can be thrown.
    */
   throw?: ThrowKind;
+  /** The Seals taken on the brief as the run walked in: their rules play in every step, their pay in `raid.finish`. */
+  seals?: SealId[];
+  /** The creatures felled the way their condition asks (`data/drops.ts`), by id, banked for `raid.finish`. */
+  drops?: { ref: string; boss: boolean }[];
+  /** What the Feats are judged by, counted as each fight is recorded. */
+  tally?: RunTally;
+}
+
+/** A run's fights, counted for its Feats: who fell, the boss's fight, and the lowest the hunter's HP stood. */
+export interface RunTally {
+  /** Party members felled, in every fight. */
+  downs: number;
+  /** Rounds the boss's chamber took, once fought and won. */
+  bossRounds?: number;
+  /** Whether the boss's wind-up was broken. */
+  bossBroken?: boolean;
+  /** Whether the Gatekeeper fell. */
+  keeper?: boolean;
+  /** The lowest the hunter's HP stood in any fight, as a share of its maximum. */
+  lowest: number;
 }
 
 /** What a week on the Spire paid when it closed. */
@@ -346,6 +368,8 @@ export interface Save {
     tactic: Tactic;
     /** The throwable readied for the Gates to come, on the brief or from the bag (`shop.ready`). */
     ready?: ThrowKind;
+    /** Each Gate's Feats met, by Gate id: each pays once, the first time (`feats.settle`). */
+    feats?: Record<string, FeatId[]>;
   };
 
   shadows: {

@@ -8,6 +8,12 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core/combat';
 import { TRICKS, type TrickId } from '@/data/tricks';
+import { Keyed } from '@/ui/keyed';
+import { CONDITION, type ConditionId } from '@/data/drops';
+import { FEAT_PAY, FEATS } from '@/data/feats';
+import { SEALS } from '@/data/seals';
+import * as sealing from '@/core/seals';
+import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { ability, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
@@ -54,7 +60,13 @@ import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 
-interface UnitView { uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[] }
+interface UnitView {
+  uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[];
+  /** A foe's grade, which sets its behaviours' numbers. */
+  grade?: string;
+  /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
+  ref?: string; cond?: ConditionId; boss?: boolean;
+}
 
 /** A foe's next action as its card shows it: the engine's intent, and whether a break has cancelled it. */
 type IntentView = CombatIntent & { broken?: boolean };
@@ -114,7 +126,7 @@ const DRAG = 10;
  *   on it to use it; let go anywhere else and nothing is used;
  * - tap a slot and the hub shows it, and tap it again to use it.
  */
-function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen, ward, names, toss, sight }: {
+function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, setOpen, ward, names, toss, sight, dry = false }: {
   turn: Turn; aim: string | null; canDrink: boolean; slots: number; give: (use: string) => void;
   picked: string; setPicked: (use: string) => void; open: boolean; setOpen: (v: boolean) => void;
   /** The ally Cover would cover, and every unit's name, for the hub. */
@@ -123,6 +135,8 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
   toss: ThrowId | null;
   /** Foresight: what comes at the hunter or the ally, in numbers, on Guard and Cover. */
   sight: boolean;
+  /** A Dry Gate: no Health Potion. */
+  dry?: boolean;
 }) {
   const s = useSave();
   const ring = useRef<HTMLDivElement>(null);
@@ -181,7 +195,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
     : { use: 'Throw', name: 'Throw', glyph: 'flash', off: 'None readied', shown: ['Nothing to throw'], said: 'Nothing to throw' };
   const fixed: WheelAct[] = [
     thrown,
-    { use: 'Potion', name: 'Health Potion', glyph: 'potion', count: turn.potions, off: !turn.potions ? 'None held' : !canDrink ? 'HP full' : undefined,
+    { use: 'Potion', name: 'Health Potion', glyph: 'potion', count: turn.potions, off: dry ? 'Sealed: Dry' : !turn.potions ? 'None held' : !canDrink ? 'HP full' : undefined,
       shown: [`HP +${POTION_HEAL * 100}%`], said: `HP +${POTION_HEAL * 100}%, ${turn.potions} held` },
     { use: 'Guard', name: 'Guard', glyph: 'shield',
       // With Foresight, what is coming in numbers; without, how many are aimed at the hunter.
@@ -266,7 +280,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
         <svg viewBox="0 0 300 300" class="actwheel__svg">
           {acts.map((a, i) => a
             ? <path key={a.use} d={ringSlot(i, n)} role="button" tabIndex={0} data-act={a.use} aria-pressed={a.use === chosen.use}
-              aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'fells it' : 'may fell it'}` : ''}`}
+              aria-label={`${a.name}. ${a.off ?? a.said}${a.fell ? `, ${a.fell === 'sure' ? 'defeats it' : 'may defeat it'}` : ''}`}
               class={`actwheel__slot actwheel__slot--${kind(a)} ${a.use === shown.use ? 'is-picked' : ''} ${a.off ? 'is-off' : ''}`}
               onClick={() => tap(a)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(a); } }} />
             : <path key={`empty${i}`} d={ringSlot(i, n)} class="actwheel__slot is-empty" aria-hidden="true" />)}
@@ -283,7 +297,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
           {/* A skill not ready says so at the hub's foot, in red: its level alone here. */}
           {(st.level || st.ready) && <small class="actwheel__ready">{[st.level, shown.off ? null : st.ready].filter(Boolean).join(' · ')}</small>}
           {shown.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
-          {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May fell it' : 'Fells it'}</span>}
+          {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May defeat it' : 'Defeats it'}</span>}
           <small class={`actwheel__foot ${(over !== undefined ? dragged?.off : chosen.off) ? 'is-off' : ''}`}>{foot}</small>
         </div>
         <button type="button" class="actwheel__close iconbtn" aria-label="Close the actions" onPointerDown={(e) => e.stopPropagation()}
@@ -383,6 +397,8 @@ export function Arena() {
   const [ward, setWard] = useState<string | null>(null);
   /** A word on a card tapped to tell what it is. */
   const [tip, setTip] = useState<TipAt | null>(null);
+  /** The round the fight shown stands in: a condition within three rounds is met only while it lasts. */
+  const [round, setRound] = useState(0);
   const tell: Tell = (el, title, lines) => {
     const r = el.getBoundingClientRect();
     setTip({ title, lines, x: r.left + r.width / 2, y: r.top, below: r.bottom });
@@ -571,10 +587,16 @@ export function Arena() {
   /** Play the log from `from` to its end, at the chosen pace. Returns where it got to. */
   async function show(log: Ev[], from: number, local: UnitView[]) {
     const name = (uid: string) => local.find((u) => u.uid === uid)?.name ?? '?';
+    // A condition met: the way it fell, and what it leaves.
+    const drop = (uid: string) => {
+      const u = local.find((x) => x.uid === uid);
+      return u?.ref && u.cond ? `${CONDITION[u.cond].said}. ${dropPay(u.ref, !!u.boss)}.` : null;
+    };
     for (const b of toBeats(log.slice(from))) {
       apply(local, b);
+      if (b.ev[0]?.t === 'round') setRound(b.ev[0].n);
       const p = paceRef.current;
-      const ls = lines(b, name);
+      const ls = lines(b, name, drop);
       // Skip still writes the log, so what happened between turns can be read; it only takes no time.
       if (p === 'skip') { say(ls); continue; }
       setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
@@ -642,6 +664,7 @@ export function Arena() {
     setPhase('fight');
     const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
     setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+    setRound(ch.log.reduce((n, e) => (e.t === 'round' ? n + 1 : n), 0));
     setFeed([{ text: c.boss ? `[${c.label}] has appeared.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
     if (handRef.current) say([{ text: '▸ Auto is not available in this chamber.', tone: 'muted' }]);
     // Coming back mid-chamber: everything the saved orders already played is shown at once.
@@ -773,7 +796,7 @@ export function Arena() {
             </div>
             <div class="arena__side arena__side--foes">
               {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-                intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} />)}
+                intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />)}
             </div>
           </div>
           <ol class="arena__feed" aria-live="polite">
@@ -789,7 +812,7 @@ export function Arena() {
               ? <>Your turn. Covering <b class="is-cover">{party.find((f) => f.uid === ward)?.name ?? 'nobody'}</b>; tap an ally to change.</>
               : <>Your turn. Aiming at <b>{foes.find((f) => f.uid === aim)?.name ?? 'nothing'}</b>; tap a foe to change.</>}</small>
             <ActWheel turn={turn} aim={aim} canDrink={!!turn.potions && !!hero && hero.hp < hero.mx} slots={skilltree.slots(s)} picked={picked} setPicked={setPicked} open={wheel} setOpen={setWheel}
-              ward={ward} names={Object.fromEntries(units.map((u) => [u.uid, u.name]))} toss={toss} sight={sight}
+              ward={ward} names={Object.fromEntries(units.map((u) => [u.uid, u.name]))} toss={toss} sight={sight} dry={!sealing.potionsAllowed(sealing.of(run))}
               give={(use) => give(
                 use === COVER ? { use, at: ward ?? undefined }
                   : use === 'Throw' && toss ? { use: throwOrder(toss), at: aim ?? undefined }
@@ -1024,7 +1047,7 @@ function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
     <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
       <div class="tip" role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - tip.y + 6}px` : `top:${tip.below + 6}px`}`}>
         <b class="tip__title">{tip.title}</b>
-        {tip.lines.map((l) => <p key={l}>{l}</p>)}
+        {tip.lines.map((l) => <p key={l}><Keyed text={l} /></p>)}
       </div>
     </div>
   );
@@ -1058,7 +1081,7 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
       : intent.kind === 'rally' ? 'Rallies the pack'
         : intent.kind === 'mark' ? 'Marks a target'
           : intent.kind === 'drink' ? `${intent.ab} · HP +${Math.round(TRICK.secondwind.heal * 100)}%`
-            : pips ? `${channel ? 'Channelling' : 'Winding up'} ${intent.ab}`
+            : pips ? `${channel ? 'Channelling' : 'Charging'} ${intent.ab}`
               : `${intent.ab}${a?.profile === 'support' ? ' · rallies its side' : a?.profile === 'all' ? ' · everyone' : ''}`;
   const hit = intent.broken ? null : threat?.hit;
   const when = threat ? (threat.soon ? `Acts ${ordinal(threat.order)}` : `Acts ${ordinal(threat.order)}, after your next turn`) : '';
@@ -1085,7 +1108,7 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
   );
 }
 
-function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell }: {
+function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell, round = 0 }: {
   u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
   intent?: IntentView; threat?: Threat;
   /** The foes coming for it next: their places in the order on the hunter's turn, or how many otherwise. */
@@ -1097,8 +1120,14 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
   /** Foresight: a foe's damage and chance to hit on its card. */
   sight?: boolean;
   tell?: Tell;
+  /** The round the fight stands in, for a condition within three rounds. */
+  round?: number;
 }) {
   const pct = (u.hp / Math.max(1, u.mx)) * 100;
+  // A foe's condition drop: gold while its condition holds (the status on it, or the rounds not yet past).
+  const cond = u.side === 'e' ? u.cond : undefined;
+  const want = cond ? CONDITION[cond] : null;
+  const ready = !!want && (want.status ? u.status.includes(want.status) : want.rounds ? round > 0 && round <= want.rounds : false);
   const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''} ${onPick && pick === 'cover' ? 'is-coverpick' : ''}`;
   // A wind-up or a channel turns its HP bar into the break: blue, a section to each hit it can still take.
   const brk = intent && intent.wind && !intent.broken && intent.max ? { left: intent.pips ?? 0, max: intent.max } : null;
@@ -1123,9 +1152,14 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           {Array.from({ length: brk.max }, (_, i) => <i key={i} class={i < brk.left ? 'is-on' : ''} />)}
         </div>
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
-      {u.tricks && u.tricks.length > 0 && (
+      {((u.tricks && u.tricks.length > 0) || cond) && (
         <div class="unit__tricks">
-          {u.tricks.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].text]} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}
+          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
+          {cond && u.ref && u.hp > 0 && (
+            <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
+              <Glyph name={dropGlyph(u.ref, !!u.boss)} />
+            </Told>
+          )}
         </div>
       )}
       {u.status.length > 0 && (
@@ -1317,6 +1351,24 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             <span class="label">Materials</span>
             <MatList b={r.mats} gain />
           </section>
+        )}
+        {r.outcome === 'cleared' && r.feats.asked.length > 0 && (
+          <section class="sysbox bfeats" aria-label="Feats">
+            <div class="row between"><span class="label">Feats</span><small class="num">{r.feats.met.length}/{r.feats.asked.length}</small></div>
+            {r.feats.asked.map((id) => (
+              <div key={id} class={`bfeat ${r.feats.met.includes(id) ? 'is-done' : ''}`}>
+                <Glyph name="star" class="bfeat__star" />
+                <span class="bfeat__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
+                <span class="bfeat__side"><small class={r.feats.fresh.includes(id) ? 'grant' : 'muted'}>{r.feats.fresh.includes(id) ? `First time: Blueprint +${FEAT_PAY.blueprints}` : r.feats.met.includes(id) ? 'Met' : 'Not met'}</small></span>
+              </div>
+            ))}
+          </section>
+        )}
+        {(r.seals.length > 0 || r.drops > 0) && (
+          <div class="alerts">
+            {r.seals.length > 0 && <SysAlert fyi delay={150} icon={<Glyph name="lock" />}><strong>[Seals]</strong> {r.seals.map((id) => SEALS[id].name).join(', ')}{r.outcome === 'defeated' ? '. Carried out: nothing is paid.' : '. Their pay is in what the run left.'}</SysAlert>}
+            {r.drops > 0 && <SysAlert fyi delay={200} icon={<Glyph name="bone" />}><strong>[Special drops]</strong> <span class="grant num">{r.drops}</span> {r.drops === 1 ? 'creature' : 'creatures'} defeated the way their condition asks.</SysAlert>}
+          </div>
         )}
         {/* The weapon carried in, growing familiar: the System reports it, and a rank reached says so. */}
         {r.familiarity && (() => {
