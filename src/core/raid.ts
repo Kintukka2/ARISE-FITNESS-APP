@@ -1208,7 +1208,7 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
 /** The System's assessment of a Gate, graded from its clear rate. It reports; it does not advise. */
 export const GRADES = [
   { min: 0.9, text: 'Safe', tone: 'ready' },
-  { min: 0.7, text: 'Favourable', tone: 'ready' },
+  { min: 0.7, text: 'Likely', tone: 'ready' },
   { min: 0.4, text: 'Even', tone: 'even' },
   { min: 0.15, text: 'Unfavourable', tone: 'over' },
   { min: 0, text: 'Lethal', tone: 'over' },

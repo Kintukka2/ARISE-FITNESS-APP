@@ -1377,7 +1377,7 @@ button.dmap__floor { cursor: pointer; }
 .bhero__body { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .bhero__grade { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
 .bhero__side { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.bhero__assess { margin-top: 4px; font-size: 1.3rem; font-weight: 800; line-height: 1.1; letter-spacing: 0.01em; text-align: center; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
+.bhero__assess { margin-top: 2px; font-size: 0.98rem; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; text-align: center; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
 .bhero__title { margin: 2px 0 0; font-size: 1.02rem; font-weight: 700; line-height: 1.3; color: #fff; text-shadow: var(--sys-glow); }
 .bhero__title .label { display: block; margin-bottom: 2px; font-size: 0.56rem; }
 .bhero__body > small { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
@@ -1487,14 +1487,14 @@ button.dmap__floor { cursor: pointer; }
 .bspot.is-card .gtag { margin-top: 6px; }
 .gtag.is-shadow { --tc: var(--arcane); display: inline-flex; align-items: center; gap: 4px; }
 .gtag.is-shadow .ico { width: 11px; height: 11px; }
-.bline.is-habit .bline__mark > i { background: var(--blood); box-shadow: 0 0 5px var(--blood-glow); }
 .bline.is-imm .bline__mark > i { background: var(--sys-ink); }
 .bline.is-res .bline__mark > i { background: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bbox.is-drop { border-color: color-mix(in srgb, var(--verdant) 40%, var(--sys-hair)); }
+/* A habit: its name over one paragraph, in the creature's own numbers. */
+.bhabit { margin: 0; font-size: 0.74rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
+.bhabit > b { display: block; margin-bottom: 2px; font-size: 0.8rem; color: #fff; }
+.bhabit + .bhabit { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
 .bcreature__drop { margin: 0; font-size: 0.78rem; line-height: 1.45; color: color-mix(in srgb, var(--verdant) 85%, var(--sys-ink)); }
-.bhabit__line { display: block; font-size: 0.72rem; line-height: 1.45; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
-.bline.is-habit .bline__text > b { display: block; margin-bottom: 1px; }
-.bline.is-habit .bline__mark { align-self: start; margin-top: 0.5em; }
 .bcreature__drop .ico { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
@@ -1603,7 +1603,7 @@ button.dmap__floor { cursor: pointer; }
 .sgauge__ring b { position: relative; font-size: 1rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 8px var(--vg); }
 .sgauge__ring b small { font-size: 0.6rem; }
 .sgauge__body { display: flex; grid-area: body; flex-direction: column; gap: 2px; min-width: 0; }
-.sgauge__verdict { font-size: 1.2rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 12px var(--vg); transition: color 300ms; }
+.sgauge__verdict { font-size: 1rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 12px var(--vg); transition: color 300ms; }
 .sgauge__body > small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
 .sgauge__body > small b { color: #fff; }
 .sgauge__ember { display: flex; grid-area: ember; flex-direction: column; align-items: center; gap: 1px; }

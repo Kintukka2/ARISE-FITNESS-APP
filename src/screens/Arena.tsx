@@ -1153,7 +1153,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
       {((u.tricks && u.tricks.length > 0) || cond) && (
         <div class="unit__tricks">
-          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={TRICKS[k].lines(u.grade ?? 'E')} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
+          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
           {cond && u.ref && u.hp > 0 && (
             <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
               <Glyph name={dropGlyph(u.ref, !!u.boss)} />

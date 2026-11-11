@@ -658,7 +658,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          <ul class="blist">{habits.map((h) => <Line key={h} cls="is-habit"><b>{TRICKS[h].name}</b>{TRICKS[h].lines(String(e.rank)).map((l, i) => <span key={i} class="bhabit__line">{l}</span>)}</Line>)}</ul>
+          {habits.map((h) => <p key={h} class="bhabit"><b>{TRICKS[h].name}</b>{TRICKS[h].about(String(e.rank))}</p>)}
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (

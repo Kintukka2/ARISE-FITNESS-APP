@@ -1599,8 +1599,8 @@ challenge (the boss, its missions and Start side by side), all in
   the road's length and its moves) and `Party`, the tab shown opening into the panel under it. Inside the
   box nothing has a box of its own. The Threat tab is what walks in the Gate and nothing else: the boss in
   a spotlight at its top and the rest in a line each, with no drop and no Shadows bound; the boss and each
-  creature identified open its card (`CreatureCard`: its habits in the fight's words, its immunities and
-  resistances, and its special drop). The Feats and the party are rows.
+  creature identified open its card (`CreatureCard`: each habit its name over one paragraph in the
+  creature's own numbers, as the fight's tip gives it, its immunities and resistances, and its special drop). The Feats and the party are rows.
 - **The dock** holds Enter The Gate alone. Ember's figures are in its orange wherever a Seal's pay is
   stated. And every line a player reads says defeat, never fell (the owner's call, `tests/voice.test.ts`).
 

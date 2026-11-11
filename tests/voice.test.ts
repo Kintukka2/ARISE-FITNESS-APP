@@ -244,7 +244,7 @@ describe('the System keeping score', () => {
   });
 
   it('grades the brief from Safe to Lethal and reports nothing else', () => {
-    expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Favourable', 'Even', 'Unfavourable', 'Lethal']);
+    expect(GRADES.map((g) => g.text)).toEqual(['Safe', 'Likely', 'Even', 'Unfavourable', 'Lethal']);
     expect(verdict(1).text).toBe('Safe');
     expect(verdict(0).text).toBe('Lethal');
   });
