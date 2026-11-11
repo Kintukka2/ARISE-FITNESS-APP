@@ -70,14 +70,18 @@ export function BoonCard({ id, tier, from, onPick }: { id: string; tier: number;
     : <div class={cls}>{body}</div>;
 }
 
-/** A blessing the run holds, as the run strip shows it: its mark, its name and tier, and what it does. */
-export function BoonChip({ id, tier }: { id: string; tier: number }) {
+/**
+ * A blessing the run holds, as the run strip shows it: its Path's mark in a diamond and its tier's numeral,
+ * nothing more. A tap tells its name and what it does, in the tip the fight's words open (`tell`).
+ */
+export function BoonChip({ id, tier, tell }: { id: string; tier: number; tell: (el: Element, title: string, lines: string[]) => void }) {
   const said = describe(id, tier);
   const b = boonById(id);
+  const title = `${said.name}${b ? ` ${TIERS[tier - 1]}` : ''}`;
   return (
-    <span class="boon" title={said.text}>
-      <span class="boon__mark" aria-hidden="true"><Glyph name={b ? STAT_ICON[b.paths[0]] ?? 'star' : 'star'} /></span>
-      <span class="boon__text"><b>{said.name}{b ? ` ${TIERS[tier - 1]}` : ''}</b><small>{said.text}</small></span>
-    </span>
+    <button type="button" class="boon" aria-label={`${title}: ${said.text}`} onClick={(e) => tell(e.currentTarget, title, [said.text])}>
+      <span class="boon__mark" aria-hidden="true">{(b?.paths ?? ['']).map((k, i) => <Glyph key={i} name={STAT_ICON[k] ?? 'star'} />)}</span>
+      {b && <b class="boon__tier" aria-hidden="true">{TIERS[tier - 1]}</b>}
+    </button>
   );
 }

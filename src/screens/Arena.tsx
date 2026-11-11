@@ -775,7 +775,7 @@ export function Arena() {
       </header>
       {onMap && run && m ? (
         <div class="arena__map">
-          <RunStrip s={s} d={d} />
+          <RunStrip s={s} d={d} tell={tell} />
           {phase === 'node' && panel
             ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
             : <>
@@ -851,7 +851,7 @@ export function Arena() {
 }
 
 /** What the run is carrying: the hunter's health, the allies still up, what it has banked, its blessings. */
-function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<ReturnType<typeof dungeonById>> }) {
+function RunStrip({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<ReturnType<typeof dungeonById>>; tell: Tell }) {
   const run = s.gates.raid;
   if (!run) return null;
   const party = raid.partyFor(s, d, run);
@@ -867,8 +867,8 @@ function RunStrip({ s, d }: { s: ReturnType<typeof useSave>; d: NonNullable<Retu
         <span><small>Found</small><b class="num">{(run.haul ?? []).length + Object.values(run.stash ?? {}).reduce((n, x) => n + x, 0)}</b></span>
       </div>
       {(run.blessings ?? []).length > 0 && (
-        <div class="boons">
-          {run.blessings.map((b) => <BoonChip key={b} id={b} tier={blessings.tierOf(run, b)} />)}
+        <div class="boons" aria-label="Blessings">
+          {run.blessings.map((b) => <BoonChip key={b} id={b} tier={blessings.tierOf(run, b)} tell={tell} />)}
         </div>
       )}
     </div>

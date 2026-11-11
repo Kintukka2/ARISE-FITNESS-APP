@@ -655,15 +655,14 @@ button.dmap__floor { cursor: pointer; }
 .runstrip__cells small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
 .runstrip__cells b { display: inline-flex; align-items: center; gap: 4px; font-size: 0.92rem; color: var(--ink); }
 /* A blessing held: a framed boon in the Gates' amber, its mark, its name and what it gives. */
-.boons { display: flex; flex-wrap: wrap; gap: 6px; }
-.boon { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
-  background: linear-gradient(90deg, rgba(255, 203, 92, 0.16), rgba(255, 154, 60, 0.04)); clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-  box-shadow: inset 0 0 12px rgba(255, 203, 92, 0.12); animation: qaIn 420ms var(--ease) both; }
-.boon__mark { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent); background: rgba(40, 26, 4, 0.8); color: var(--gold); transform: rotate(45deg) scale(0.82); }
-.boon__mark .ico { width: 13px; height: 13px; transform: rotate(-45deg); filter: drop-shadow(0 0 4px var(--gold-glow)); }
-.boon__text { display: flex; flex-direction: column; line-height: 1.15; }
-.boon__text b { font-size: 0.72rem; color: var(--gold); letter-spacing: 0.04em; }
-.boon__text small { font-size: 0.64rem; color: color-mix(in srgb, var(--verdant) 85%, white); }
+.boons { display: flex; flex-wrap: wrap; gap: 4px 2px; }
+/* A blessing held: its Path's mark in a gold diamond, its tier's numeral at its foot. A tap tells the rest. */
+.boon { position: relative; display: grid; place-items: center; width: 36px; height: 38px; padding: 0; border: 0; background: none; color: var(--gold); font: inherit; cursor: pointer; }
+.boon__mark { display: grid; grid-auto-flow: column; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent); background: rgba(40, 26, 4, 0.85); transform: rotate(45deg); box-shadow: 0 0 8px rgba(255, 203, 92, 0.18); transition: box-shadow 160ms var(--ease), border-color 160ms var(--ease); }
+.boon__mark .ico { width: 14px; height: 14px; transform: rotate(-45deg); filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.boon__mark .ico + .ico { width: 10px; height: 10px; margin-left: -4px; }
+.boon:active .boon__mark, .boon:focus-visible .boon__mark { border-color: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
+.boon__tier { position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); padding: 0 3px; border-radius: 3px; background: var(--panel-solid); font-family: var(--font-num); font-size: 0.56rem; line-height: 1.2; letter-spacing: 0.02em; color: var(--gold); }
 .nodepanel { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: var(--r-md); background: rgba(24, 12, 4, 0.7); animation: windowIn 300ms var(--ease) both; }
 .nodepanel header { gap: 8px; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .nodepanel--rest, .nodepanel--treasure { border-color: rgba(72, 245, 168, 0.45); }
