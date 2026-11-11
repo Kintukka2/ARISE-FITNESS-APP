@@ -185,6 +185,28 @@ describe('toll doors', () => {
   });
 });
 
+describe('breaking a seal from the plan', () => {
+  it('walks the hunter to the door, a move for each corridor, then pays', () => {
+    const { d, m, x, at } = find((mm, y) => !!y.toll && y.next.length > 0 && !y.wing && wayLen(mm, y) > 1);
+    const s = hunter(30);
+    const run = raid.begin(s, d, at);
+    const way = wayTo(m, x.id);
+    run.path = way;
+    run.at = way.length;
+    // Standing back at the entrance, the door's cleared end a walk away.
+    run.pos = m.start!;
+    const door = raid.tollDoorsOpen(d, run).find((t) => t.near === x.id || t.far === x.id);
+    expect(door).toBeDefined();
+    const moves = run.moves ?? 0;
+    const walk = raid.movesTo(d, run, door!.near) ?? 0;
+    expect(raid.payToll(s, d, run, door!.far, at)).toBe(true);
+    expect(run.pos).toBe(door!.near);
+    if (run.clock) expect(run.moves).toBe(moves + walk);
+    expect(run.tolls).toContain(door!.key);
+    expect(raid.tollDoorsOpen(d, run).map((t) => t.key)).not.toContain(door!.key);
+  });
+});
+
 describe('deep rooms', () => {
   it('a cache two corridors off the road finds at the Gate’s own grade', () => {
     const { d, m, x, at } = find((mm, y) => y.kind === 'treasure' && !!y.deep && !y.secret && !y.wing && y.next.length > 0 && wayLen(mm, y) > 0);

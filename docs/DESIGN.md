@@ -1744,7 +1744,12 @@ Gatekeepers' wings and toll doors), in one new layout.
 - **Toll doors** (`TOLL`, `TOLL_DOOR`). Half the floors hold one: a corridor sealed in red, a lock at its
   middle, that opens for good when the hunter pays 20% of their maximum HP standing at it (`raid.payToll`,
   `run.tolls`): a shortcut between rooms four corridors or more apart, or more often the one way into a
-  deep cache of its own. A hunter too hurt to pay and still stand cannot. The System never pays.
+  deep cache of its own. A hunter too hurt to pay and still stand cannot. The System never pays. The seal,
+  or the room it seals, is tapped to break it, and a window asks first (`Yes · HP -289` or `No`); from
+  across the plan the hunter walks to it, its moves counted (`raid.tollDoorsOpen`). The owner's call, after
+  a first look with a button under the plan.
+- **A quieter plan.** A room's moves are no longer drawn on its tile, only read aloud with it: the plan
+  felt busy (the owner's call). The meter under the hunter's HP and the hint under the plan say the clock.
 - **Balance.** `npm run mapstats`: rooms a map rise from 12 to 15 at E and 93 to 99 at S (wings, secret
   caches, toll caches), the budget with them (14 to 18, 112 to 119), and the System's way fits every one.
   Calibration moved 47 of 51 Gates, from Dominion of the Hell Sovereign's 18.1% easier to Moonfang Hunting

@@ -588,6 +588,29 @@ export function tollsHere(d: Dungeon, run: OpenRaid): { to: string; key: string 
   return (x.toll ?? []).map((to) => ({ to, key: pairKey(x.id, to) })).filter((t) => !paid.has(t.key));
 }
 
+/**
+ * The toll doors the hunter can break from where they are: sealed still, with a cleared room at one end
+ * (`near`, the one they would pay at) and the room it opens at the other (`far`). Nothing while a step is
+ * underway, or up a tower.
+ */
+export function tollDoorsOpen(d: Dungeon, run: OpenRaid): { key: string; near: string; far: string }[] {
+  const m = mapOf(d, run);
+  if (m.tower || run.lost || pending(d, run)) return [];
+  const done = explored(m, run);
+  const paid = new Set(run.tolls ?? []);
+  const here = standing(d, run)?.id;
+  const out: { key: string; near: string; far: string }[] = [];
+  for (const x of m.nodes) for (const y of x.toll ?? []) {
+    const key = pairKey(x.id, y);
+    if (x.id > y || paid.has(key) || (!done.has(x.id) && !done.has(y))) continue;
+    // Paid where the hunter stands if they stand at it; otherwise at the end they have cleared, the nearer if both.
+    const ends = [x.id, y].filter((id) => done.has(id));
+    const near = ends.includes(here ?? '') ? here! : ends.sort((a, b) => (movesTo(d, run, a) ?? 0) - (movesTo(d, run, b) ?? 0))[0];
+    out.push({ key, near, far: near === x.id ? y : x.id });
+  }
+  return out;
+}
+
 /** What a toll costs the hunter now, in HP: `TOLL.hp` of their maximum. */
 export const tollCost = (hero: { maxHp: number }) => Math.round(hero.maxHp * TOLL.hp);
 
@@ -596,7 +619,14 @@ export const tollCost = (hero: { maxHp: number }) => Math.round(hero.maxHp * TOL
  * or the hunter has too little HP to pay and still stand. Mutates.
  */
 export function payToll(s: Save, d: Dungeon, run: OpenRaid, to: string, now = Date.now()): boolean {
-  const door = tollsHere(d, run).find((t) => t.to === to);
+  // Broken from the plan, the hunter walks to the door first, a move for each corridor, as walking back is.
+  const far = tollDoorsOpen(d, run).find((t) => t.far === to || t.key === to);
+  if (far && standing(d, run)?.id !== far.near) {
+    const party = partyFor(s, d, run, now);
+    if (party[0].hp <= tollCost(party[0])) return false;
+    moveTo(d, run, far.near);
+  }
+  const door = tollsHere(d, run).find((t) => t.to === (far?.far ?? to));
   if (!door) return false;
   const party = partyFor(s, d, run, now);
   const hero = party[0];

@@ -540,13 +540,29 @@ export function Arena() {
     });
   }
 
-  /** Pay a toll door where the hunter stands, in HP: it opens for good. */
-  function payToll(to: string) {
-    void guarded(() => {
-      if (!store.update((x) => raid.payToll(x, d!, x.gates.raid!, to))) return;
+  /**
+   * A toll door's seal, or the room it seals, tapped: ask first, then walk to it and pay, in HP, and it opens
+   * for good. Too hurt to pay and still stand, the window says so and nothing is paid.
+   */
+  function askToll(key: string) {
+    return guarded(async () => {
+      const r = store.get().gates.raid;
+      const door = r ? raid.tollDoorsOpen(d!, r).find((t) => t.key === key) : undefined;
+      if (!r || !door) return;
+      const hero = raid.partyFor(store.get(), d!, r)[0];
+      const cost = raid.tollCost(hero);
+      if (hero.hp <= cost) {
+        await sys(system.refuse(['Not enough HP.', `HP -${cost}`], 'danger'));
+        return;
+      }
+      const yes = await sys(system.offer(['Would you like to break the seal and open the room?', system.red(`HP -${cost}`)], 'danger', `Yes · HP -${cost}`, 'No'));
+      if (!yes) return;
+      const was = clockNow();
+      if (!store.update((x) => raid.payToll(x, d!, x.gates.raid!, door.far))) return;
       sfx.hit(-40);
       flash('danger');
       say([{ text: '▸ You pay the toll. The seal breaks.', tone: 'outcome' }]);
+      await tellClock(was);
     });
   }
 
@@ -794,18 +810,16 @@ export function Arena() {
                 corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} costs={costsOf(d, run)}
                 stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red}
                 shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name}
-                openings={raid.openings(run)} secrets={(k) => raid.secretsOf(d, run, k)} />
+                openings={raid.openings(run)} secrets={(k) => raid.secretsOf(d, run, k)}
+                tollable={raid.tollDoorsOpen(d, run)} onToll={(key) => void askToll(key)} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
                   : <small class="muted center">Tap a step that glows.</small>
-                : raid.tollsHere(d, run).length > 0 || raid.canRest(d, run)
+                : raid.canRest(d, run)
                   ? <div class="stack stack--tight">
-                    {raid.tollsHere(d, run).length > 0 && <TollDoor s={s} d={d} run={run} onPay={payToll} />}
-                    {raid.canRest(d, run) && <>
-                      <Btn kind="primary" block sound="tap" onClick={restPanel}>Rest</Btn>
-                      <small class="muted center">Heal, Hone or Steady · Once</small>
-                    </>}
+                    <Btn kind="primary" block sound="tap" onClick={restPanel}>Rest</Btn>
+                    <small class="muted center">Heal, Hone or Steady · Once</small>
                   </div>
                   : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
@@ -884,23 +898,6 @@ function RunStrip({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullabl
           {run.blessings.map((b) => <BoonChip key={b} id={b} tier={blessings.tierOf(run, b)} tell={tell} />)}
         </div>
       )}
-    </div>
-  );
-}
-
-/**
- * A toll door where the hunter stands: its seal, what it costs in HP, and the button that pays it. Too hurt
- * to pay and still stand, it says so.
- */
-function TollDoor({ s, d, run, onPay }: { s: ReturnType<typeof useSave>; d: Dungeon; run: NonNullable<ReturnType<typeof useSave>['gates']['raid']>; onPay: (to: string) => void }) {
-  const hero = raid.partyFor(s, d, run)[0];
-  const cost = raid.tollCost(hero);
-  const door = raid.tollsHere(d, run)[0];
-  const can = hero.hp > cost;
-  return (
-    <div class="stack stack--tight">
-      <Btn kind="danger" block sound="tap" disabled={!can} onClick={() => onPay(door.to)}>Break The Seal</Btn>
-      <small class="muted center">{can ? <><span class="warn">HP -{cost}</span> · Opens for good</> : <span class="warn">Too hurt to pay: HP -{cost}</span>}</small>
     </div>
   );
 }

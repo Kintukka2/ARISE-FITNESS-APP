@@ -46,6 +46,9 @@ interface MapProps {
   openings?: Openings;
   /** Inside a run, on the later plans: a floor's secrets found, of how many. */
   secrets?: (floor: number) => { found: number; of: number };
+  /** Inside a run: the toll doors it can break, by key, with the room each opens; and breaking one, from its seal or that room. */
+  tollable?: { key: string; far: string }[];
+  onToll?: (key: string) => void;
 }
 
 export function MapView(p: MapProps) {
@@ -61,7 +64,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets, tollable = [], onToll }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -128,10 +131,14 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             <line key={`r${x.id}-${y.id}`} class="dmap__trail" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} vector-effect="non-scaling-stroke" />
           ))}
         </svg>
-        {tolls.filter((t) => !t.paid).map((t) => (
-          <span key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll" aria-hidden="true"
-            style={{ left: `${(((t.x.x! + t.y.x!) / 2 + 0.5) / cols) * 100}%`, top: `${(((t.x.y! + t.y.y!) / 2 + 0.5) / rows) * 100}%` }}><Glyph name="lock" /></span>
-        ))}
+        {tolls.filter((t) => !t.paid).map((t) => {
+          const style = { left: `${(((t.x.x! + t.y.x!) / 2 + 0.5) / cols) * 100}%`, top: `${(((t.x.y! + t.y.y!) / 2 + 0.5) / rows) * 100}%` };
+          // A seal the hunter can break is tapped to break it: it asks first.
+          const can = onToll ? tollable.find((k) => k.key === pairKey(t.x.id, t.y.id)) : undefined;
+          return can
+            ? <button type="button" key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll is-live" style={style} aria-label="Toll door: break the seal" onClick={() => { sfx.tap(); onToll!(can.key); }}><Glyph name="lock" /></button>
+            : <span key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll" aria-hidden="true" style={style}><Glyph name="lock" /></span>;
+        })}
         {rooms.map((x) => {
           const style = { gridColumn: x.x! + 1, gridRow: x.y! + 1 };
           if (fogged(x) && x.secret) return null;
@@ -168,9 +175,9 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far', plain ? 'is-cleared' : '',
             sealed ? 'is-sealed' : '', spent ? 'is-spent' : '', here?.id === x.id ? 'is-at' : '', road.includes(x.id) ? 'is-road' : '',
           ].filter(Boolean).join(' ');
+          // The moves a room costs are read aloud with it, never drawn on it: the meter and the hint say the clock.
           const body = (
             <>
-              {cost !== undefined && <span class="droom__cost" aria-hidden="true"><Glyph name="steps" /><b class="num">{cost}</b></span>}
               {t && t.n > 0 && (
                 <span class="droom__pips" aria-hidden="true">
                   {Array.from({ length: t.n }, (_, i) => <i key={i} class={i < t.strong ? 'is-strong' : ''} />)}
@@ -182,6 +189,12 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;
+          // The room a toll door seals is tapped to break the seal: it asks first.
+          const sealedBy = onToll && !next && !isDone ? tollable.find((k) => k.far === x.id) : undefined;
+          if (sealedBy) {
+            return <button type="button" key={x.id} class={`${cls} is-tolled`} style={style} data-node={x.id} aria-label={`${name}, behind a toll door: break the seal`} title="Behind a toll door"
+              onClick={() => { sfx.tap(); onToll!(sealedBy.key); }}>{body}</button>;
+          }
           if (next && onPick) {
             return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Enter ${name}${who}${moves}: ${kind.desc}`} title={kind.desc}
               onClick={() => { sfx.tap(); onPick(x.id); }}>{body}</button>;
