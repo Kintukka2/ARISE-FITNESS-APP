@@ -70,7 +70,10 @@ const spanTo = (xs: readonly number[]) => (xs[0] === xs[xs.length - 1] ? pct(xs[
 const countTo = (xs: readonly number[]) => (Math.min(...xs) === Math.max(...xs) ? `${xs[0]}` : `${Math.min(...xs)}-${Math.max(...xs)}`);
 const hits = (n: number) => `${n} ${n === 1 ? 'hit' : 'hits'}`;
 /**
- * Each behaviour's name, and what it does, read from the numbers above, in the references' way of telling
+ * Each behaviour's name, as the references name a trait (Slay the Spire's Thorns, Flight, Enrage and
+ * Incantation, Darkest Dungeon's Defender and Mark for Death): a noun for the thing, an adjective for the
+ * state, or the move's own name, never a verb in the third person. And what it does, read from the numbers
+ * above, in the references' way of telling
  * a move (Slay the Spire's "After taking 27 damage, changes to a defensive mode."): the trigger, then what
  * happens, active, its numbers in the sentence. `about` gives a creature's own numbers at its grade, for
  * its card and the fight's tip; `text` gives the span across every grade, for the Guide.
@@ -78,32 +81,32 @@ const hits = (n: number) => `${n} ${n === 1 ? 'hit' : 'hits'}`;
 const broken = `it becomes Broken, is Stunned, and loses ${pct(1 - TRICK.windup.broken.def)} defence for ${TRICK.windup.broken.turns} turns`;
 export const TRICKS: Record<TrickId, { name: string; about: (rank: string) => string; text: string }> = {
   shield: {
-    name: 'Shields',
+    name: 'Bodyguard',
     about: () => `Sometimes shields an ally instead of attacking. That ally takes ${pct(1 - TRICK.shield.taken)} less damage until this creature acts again.`,
     text: `Sometimes shields an ally instead of attacking. That ally takes ${pct(1 - TRICK.shield.taken)} less damage until this creature acts again.`,
   },
   rally: {
-    name: 'Rallies',
+    name: 'War Cry',
     about: (r) => `Sometimes rallies the pack instead of attacking. Every creature gains ${pct(at(TRICK.rally.atk, r))} Attack for ${TRICK.rally.turns} rounds.`,
     text: `Sometimes rallies the pack instead of attacking. Every creature gains ${spanTo(TRICK.rally.atk)} Attack by grade for ${TRICK.rally.turns} rounds.`,
   },
   channel: {
-    name: 'Channels',
+    name: 'Incantation',
     about: (r) => `Sometimes channels a spell for a turn, then casts it for ${pct(TRICK.channel.mult)} damage. After taking ${hits(at(TRICK.channel.pips, r))} while channelling, ${broken}.`,
     text: `Sometimes channels a spell for a turn, then casts it for ${pct(TRICK.channel.mult)} damage. After taking ${countTo(TRICK.channel.pips)} hits by grade while channelling, ${broken}.`,
   },
   enrage: {
-    name: 'Enrages',
+    name: 'Enrage',
     about: (r) => `Below ${pct(TRICK.enrage.below)} HP, gains ${pct(at(TRICK.enrage.atk, r))} Attack for the rest of the fight.`,
     text: `Below ${pct(TRICK.enrage.below)} HP, gains ${spanTo(TRICK.enrage.atk)} Attack by grade for the rest of the fight.`,
   },
   mark: {
-    name: 'Marks',
+    name: 'Death Mark',
     about: () => `Sometimes marks a target, then hits it for ${pct(TRICK.mark.mult)} damage with its next action.`,
     text: `Sometimes marks a target, then hits it for ${pct(TRICK.mark.mult)} damage with its next action.`,
   },
-  pickoff: { name: 'Picks off', about: () => 'Always attacks whoever has the least HP.', text: 'Always attacks whoever has the least HP.' },
-  aloft: { name: 'Aloft', about: () => 'After acting, is Veiled until its next action.', text: 'After acting, is Veiled until its next action.' },
+  pickoff: { name: 'Opportunist', about: () => 'Always attacks whoever has the least HP.', text: 'Always attacks whoever has the least HP.' },
+  aloft: { name: 'Flight', about: () => 'After acting, is Veiled until its next action.', text: 'After acting, is Veiled until its next action.' },
   virulent: {
     name: 'Virulent',
     about: () => `Its statuses always land and last ${TRICK.virulent.turns} turn longer.`,
@@ -115,7 +118,7 @@ export const TRICKS: Record<TrickId, { name: string; about: (rank: string) => st
     text: `The first time it would be defeated, survives at 1 HP and recovers ${pct(TRICK.undying.heal)} HP at the end of the round.`,
   },
   frenzy: {
-    name: 'Frenzy',
+    name: 'Predator',
     about: () => `Deals ${pct(TRICK.frenzy.dmg)} more damage to targets below ${pct(TRICK.frenzy.below)} HP.`,
     text: `Deals ${pct(TRICK.frenzy.dmg)} more damage to targets below ${pct(TRICK.frenzy.below)} HP.`,
   },
@@ -145,7 +148,7 @@ export const TRICKS: Record<TrickId, { name: string; about: (rank: string) => st
     text: `Once, below ${pct(TRICK.secondwind.below)} HP, drinks instead of attacking and recovers ${pct(TRICK.secondwind.heal)} HP.`,
   },
   windup: {
-    name: 'Winds up',
+    name: 'Charged Strike',
     about: (r) => `Charges its strongest attack for ${TRICK.windup.ahead} actions, then strikes for ${pct(TRICK.windup.mult)} damage. After taking ${hits(at(TRICK.windup.pips, r))} while charging, ${broken}.`,
     text: `Charges its strongest attack for ${TRICK.windup.ahead} actions, then strikes for ${pct(TRICK.windup.mult)} damage. After taking ${countTo(TRICK.windup.pips)} hits by grade while charging, ${broken}.`,
   },
