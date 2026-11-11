@@ -1376,8 +1376,6 @@ button.dmap__floor { cursor: pointer; }
 .bhero__grade { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
 .bhero__side { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .bhero__assess { margin-top: 4px; font-size: 1.3rem; font-weight: 800; line-height: 1.1; letter-spacing: 0.01em; text-align: center; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
-.bhero__side .bhero__rate { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
-.bhero__side .bhero__rate b { color: #fff; }
 .bhero__title { margin: 2px 0 0; font-size: 1.02rem; font-weight: 700; line-height: 1.3; color: #fff; text-shadow: var(--sys-glow); }
 .bhero__title .label { display: block; margin-bottom: 2px; font-size: 0.56rem; }
 .bhero__body > small { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
@@ -1433,20 +1431,23 @@ button.dmap__floor { cursor: pointer; }
 @keyframes waxIn { from { opacity: 0; transform: scale(1.6) rotate(-16deg); } 70% { transform: scale(0.94) rotate(3deg); opacity: 1; } }
 
 /* The head's foot: HP, MP and Fatigue, a thin bar and the figure each, and the + that drinks for it. */
-.bvitals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
-.bvital { --vt: var(--verdant); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 4px 5px; min-width: 0; }
+.bvitals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 16px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.bvital { --vt: var(--verdant); position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .bvital.is-low { --vt: var(--blood); } .bvital.is-mp { --vt: var(--mana); } .bvital.is-gold { --vt: var(--gold); } .bvital.is-ember { --vt: var(--ember); } .bvital.is-blood { --vt: var(--blood); }
-.bvital__top { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bvital__top { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
 .bvital__top .label { font-size: 0.48rem; line-height: 1.2; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bvital__top b { overflow: hidden; font-size: 0.72rem; font-weight: 700; line-height: 1.2; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
-.bvital__top b small { font-size: 0.6rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.bvital__bar { position: relative; grid-column: 1; height: 4px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.bvital__val { overflow: hidden; font-size: 0.74rem; font-weight: 700; line-height: 1.15; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
+.bvital__val small { font-size: 0.6rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.bvital__bar { position: relative; height: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
 .bvital__bar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--fill) * 100%); background: var(--vt); box-shadow: 0 0 6px var(--vt); transition: width 600ms var(--ease); }
-.bvital__drink { position: relative; display: grid; grid-column: 2; grid-row: 1 / 3; place-items: center; width: 28px; height: 28px; border: 1px solid color-mix(in srgb, var(--vt) 60%, transparent); background: color-mix(in srgb, var(--vt) 12%, rgba(4, 6, 10, 0.8)); color: var(--vt); font: inherit; cursor: pointer; transition: transform 120ms, opacity 200ms; }
-.bvital__drink .ico { width: 15px; height: 15px; }
-.bvital__drink small { position: absolute; right: -5px; bottom: -6px; display: inline-flex; align-items: center; gap: 1px; padding: 0 3px; border-radius: 7px; background: rgba(0, 0, 0, 0.9); font-size: 0.52rem; line-height: 1.4; color: #fff; }
-.bvital__drink:active:not(:disabled) { transform: scale(0.92); }
-.bvital__drink:disabled { cursor: default; opacity: 0.3; }
+/* The potion's quick use: a small pill on the figure's label row, its + and the count held, or the price. */
+.bvital__drink { position: relative; display: inline-flex; flex: none; align-items: center; gap: 2px; height: 15px; padding: 0 5px 0 3px; border: 1px solid color-mix(in srgb, var(--vt) 50%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--vt) 14%, transparent); color: var(--vt); font: inherit; font-size: 0.56rem; font-weight: 700; line-height: 1; cursor: pointer; transition: transform 120ms, opacity 200ms, background 200ms; }
+.bvital__drink::before { content: ''; position: absolute; inset: -9px -6px; }
+.bvital__drink .ico { width: 9px; height: 9px; }
+.bvital__drink .num { display: inline-flex; align-items: center; gap: 1px; color: #fff; }
+.bvital__drink .shard { width: 8px; height: 8px; }
+.bvital__drink:active:not(:disabled) { transform: scale(0.9); background: color-mix(in srgb, var(--vt) 30%, transparent); }
+.bvital__drink:disabled { cursor: default; opacity: 0.35; }
 
 /* A section of the brief: a box with its name on its rim; the lists in it a line each. */
 .bbox { position: relative; display: grid; gap: 6px; padding: 14px 12px 10px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.55); }
@@ -1464,9 +1465,32 @@ button.dmap__floor { cursor: pointer; }
 .bline.is-assoc .bline__text { color: var(--coach); }
 .bline.is-assoc .bline__mark > i { background: var(--coach); box-shadow: 0 0 5px var(--coach); }
 .bline.is-quest .bline__mark > i { background: var(--sys-ink); box-shadow: 0 0 5px var(--sys-ink); }
-.bline.is-proof .bline__mark > i, .bline.is-gold .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
 .bline.is-bounty .bline__mark > i { background: var(--verdant); box-shadow: 0 0 5px var(--verdant-glow); }
-.bline.is-bounty b { color: var(--verdant); }
+/* The rewards, a colour of their own to each: the clear gold, the bounty green, the Seals' Ember orange, the materials cyan. */
+.bline.is-clear .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
+.bline.is-bounty .bline__mark > i { background: var(--verdant); box-shadow: 0 0 5px var(--verdant-glow); }
+.bline.is-mats .bline__mark > i { background: var(--mana); box-shadow: 0 0 5px var(--mana); }
+.bline.is-victory .bline__mark > i { background: #e8ecf4; box-shadow: 0 0 5px rgba(232, 236, 244, 0.6); }
+.bline.is-proof .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
+/* A line that opens a card: the width of its list, lit while pressed, its chevron at its side. */
+.bline__li { list-style: none; }
+.bline.is-tap { width: calc(100% + 8px); margin: 0 -4px; padding: 3px 4px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; transition: background 150ms; }
+.bline.is-tap:active { background: rgba(255, 255, 255, 0.06); }
+.bline__go { width: 12px; height: 12px; align-self: center; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.bspot.is-tap { width: 100%; border: 0; font: inherit; color: inherit; cursor: pointer; }
+.bspot.is-tap:active .bspot__art { transform: scale(0.95); }
+.bspot__go { position: absolute; top: 50%; right: 4px; width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); transform: translateY(-50%); }
+/* A creature's card: its spotlight, its habits, its statuses, and its condition drop in green. */
+.bcreature { gap: 12px; }
+.bspot.is-card .gtag { margin-top: 6px; }
+.gtag.is-shadow { --tc: var(--arcane); display: inline-flex; align-items: center; gap: 4px; }
+.gtag.is-shadow .ico { width: 11px; height: 11px; }
+.bline.is-habit .bline__mark > i { background: var(--blood); box-shadow: 0 0 5px var(--blood-glow); }
+.bline.is-imm .bline__mark > i { background: var(--sys-ink); }
+.bline.is-res .bline__mark > i { background: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bbox.is-drop { border-color: color-mix(in srgb, var(--verdant) 40%, var(--sys-hair)); }
+.bcreature__drop { margin: 0; font-size: 0.78rem; line-height: 1.45; color: color-mix(in srgb, var(--verdant) 85%, var(--sys-ink)); }
+.bcreature__drop .ico { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
 .bline__ember { display: inline-flex; align-items: center; gap: 4px; vertical-align: -3px; font-weight: 700; color: var(--ember); text-shadow: 0 0 8px var(--ember-glow); }
@@ -1502,9 +1526,6 @@ button.dmap__floor { cursor: pointer; }
 .bspot > .label { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .bspot__name { font-size: 1.15rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
 .bspot__line { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bspot small.bthreat__drop { display: block; max-width: 30em; margin-top: 4px; font-size: 0.72rem; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
-.bspot .bthreat__drop .ico { display: inline-block; margin-right: 5px; vertical-align: -1px; }
-.bspot .bthreat__bound { position: absolute; top: 6px; right: 6px; margin: 0; }
 @keyframes spotIn { from { opacity: 0; transform: scale(0.7); filter: brightness(2); } }
 .bchosen { display: flex; gap: 10px; padding: 8px 10px; border-left: 2px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 75%); }
 .bchosen > .ico { flex: none; width: 22px; height: 22px; color: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
@@ -1516,10 +1537,6 @@ button.dmap__floor { cursor: pointer; }
 .bthreat__kind { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bthreat__one.is-elite .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
 .bthreat__one.is-elite .bthreat__kind { color: var(--gold); }
-.bthreat__one.is-bound .bline__mark > i { background: var(--arcane); box-shadow: 0 0 5px var(--arcane-glow); }
-.bthreat .bline__side small, .bthreat .bthreat__drop { display: inline-flex; align-items: center; gap: 4px; font-size: 0.66rem; font-weight: 600; color: color-mix(in srgb, var(--verdant) 80%, var(--sys-ink)); }
-.bthreat__drop .ico { width: 11px; height: 11px; flex: none; }
-.bthreat__mark { width: 13px; height: 13px; align-self: center; color: #c9a7ff; }
 
 /* The Feats and the party, rows in the box rather than boxes of their own. */
 .bfeats { display: grid; }
@@ -1548,16 +1565,10 @@ button.dmap__floor { cursor: pointer; }
 .btab-panel { display: flex; flex-direction: column; gap: 8px; min-height: 180px; animation: tabIn 300ms var(--ease) both; }
 @keyframes rowIn { from { opacity: 0; transform: translateY(5px); } }
 @keyframes tabIn { from { opacity: 0; transform: translateX(calc(var(--dir) * 22px)); } }
-.bthreat__sum { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
-.bthreat__sum .ico { width: 14px; height: 14px; color: #c9a7ff; }
 /* The threat: the boss's card, then a chip to each creature and the gatekeeper; violet where it already serves. */
-.bthreat__bound { margin-left: auto; color: #c9a7ff; filter: drop-shadow(0 0 6px var(--arcane-glow)); }
-.bthreat__bound .ico { width: 16px; height: 16px; }
 /* A creature's condition drop on the brief: its part's glyph, and the way to fell it. */
-.bthreat__drop .ico { width: 11px; height: 11px; flex: none; }
 /* Seals: a row to each, the rule in red and the pay in green; taken, the row is red-rimmed and locked. */
 /* Feats: a star to each, gold once met, the System's odds and the pay at the side. */
-.bthreat__mark { width: 13px; height: 13px; color: #c9a7ff; }
 /* The party: a card each, two to a row, the Shadows in their violet. */
 .bparty__who { display: flex; flex-direction: column; min-width: 0; }
 .bparty__who b { display: -webkit-box; overflow: hidden; font-size: 0.78rem !important; line-height: 1.2; word-break: break-word; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }

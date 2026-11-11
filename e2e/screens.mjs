@@ -312,8 +312,9 @@ try {
   if ((await seal.getAttribute('aria-checked')) !== 'true') throw new Error('A SEAL TAPPED WAS NOT TAKEN');
   if (!(await page.locator('.sheet.is-top .sgauge__ember', { hasText: '+' }).count())) throw new Error('THE GAUGE SHOWS NO EMBER');
   await snap('brief-seals');
-  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(700);
+  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(1400);
   if (!(await page.locator('.sheet.is-top .bline.is-ember', { hasText: 'Seal bonus' }).count())) throw new Error('A SEAL TAKEN ADDS NO SEAL BONUS TO THE REWARDS');
+  if (await page.locator('.sheet.is-top .bhero', { hasText: '→' }).count()) throw new Error('THE HEAD STILL STATES THE RATE BEFORE AND AFTER');
   await snap('brief-sealed');
   // Given back, so the run below walks in unsealed.
   await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(500);
@@ -332,6 +333,18 @@ try {
   await tab('Threat').click(); await sleep(500);
   if (!(await page.locator('.sheet.is-top .bspot').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS IN ITS SPOTLIGHT');
   if (!(await page.locator('.sheet.is-top .bthreat .bline').count())) throw new Error('THE THREAT TAB LISTS NO CREATURES');
+  // The Threat tab is what walks in the Gate and nothing else: no condition drops, no Shadows bound.
+  if (await page.locator('.sheet.is-top .btab-panel', { hasText: /Shadows bound|while Burning|while Stunned|Blueprint \+1/ }).count()) throw new Error('THE THREAT TAB STILL SHOWS DROPS OR SHADOWS');
+  // A creature's line opens its card: its habits, its statuses and its condition drop.
+  await page.locator('.sheet.is-top .bthreat .bline.is-tap').first().click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .bcreature').count())) throw new Error('A CREATURE’S LINE OPENED NO CARD');
+  if (!(await page.locator('.sheet.is-top .bcreature .bcreature__drop').count())) throw new Error('THE CREATURE CARD STATES NO CONDITION DROP');
+  await snap('brief-creature');
+  await close(); await sleep(400);
+  await page.locator('.sheet.is-top .bspot.is-tap').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .bcreature', { hasText: 'Gate boss' }).count())) throw new Error('THE BOSS’S SPOTLIGHT OPENED NO CARD');
+  await snap('brief-boss');
+  await close(); await sleep(400);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
   // The Association's hunters are not the hunter's to order: the brief holds no standing orders.
   if (await page.locator('.sheet.is-top .chips--orders').count()) throw new Error('THE BRIEF STILL GIVES STANDING ORDERS');

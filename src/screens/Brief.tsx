@@ -45,8 +45,8 @@ import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
 import * as feats from '@/core/feats';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
+import { TRICKS, tricksOf } from '@/data/tricks';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
-import { CONDITION } from '@/data/drops';
 import { conditionLine, dropGlyph } from '@/ui/conditions';
 import { drinkFlow } from './Inventory';
 
@@ -76,6 +76,8 @@ let briefTab: Tab = 'threat';
 const wanted = createStore<Record<string, SealId[]>>({});
 const wantKey = (d: Dungeon) => `${d.id}|${dayKey()}`;
 const inOrder = (ids: readonly SealId[]) => [...ids].sort((a, b) => SEAL_IDS.indexOf(a) - SEAL_IDS.indexOf(b));
+/** Whether the Seals' window stands over the brief: the brief's head holds its reading until it closes. */
+const sealWindow = createStore(false);
 
 /**
  * The Seals a brief plays. A run open on the Gate keeps the ones it walked in with, fixed; otherwise the
@@ -172,6 +174,28 @@ function Ring({ p, plain, r }: { p: Proj; plain: Proj; r: number }) {
   );
 }
 
+/** A figure that counts its way to a new value, eased as the ring's arc is; it stands still at first. */
+function useTween(to: number, ms = 720): number {
+  const [v, setV] = useState(to);
+  const at = useRef(to);
+  useEffect(() => {
+    const from = at.current;
+    if (from === to) return;
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / ms);
+      const x = from + (to - from) * (1 - (1 - k) ** 3);
+      at.current = x;
+      setV(x);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return v;
+}
+
 // ------------------------------------------------------------------ the brief
 
 /** The brief: the System's card on a Gate, in the Gates' orange. A Trial is advancement, so its card is gold. */
@@ -222,9 +246,24 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const { proj, pending } = useProjection(s, d, taken);
   const { proj: plain } = useProjection(s, d, []);
   const map = build(d, mapSeed(d, day));
-  const v = raid.verdict(proj.rate);
-  const rate = Math.round(proj.rate * 100);
-  const plainRate = Math.round(plain.rate * 100);
+  // While the Seals' window stands over the brief, the head holds what it read. As the window closes it
+  // sweeps to what the System reads now: the ring's arc and its figure count there together, and the
+  // verdict and its colour change as the figure passes each grade.
+  const sealing = sealWindow.use();
+  const [held, setHeld] = useState<{ proj: Proj; plain: Proj; sealed: boolean } | null>(null);
+  const wasSealing = useRef(sealing);
+  useEffect(() => {
+    if (sealing && !wasSealing.current) setHeld({ proj, plain, sealed: taken.length > 0 });
+    wasSealing.current = sealing;
+    if (sealing) return;
+    const t = setTimeout(() => setHeld(null), 380);
+    return () => clearTimeout(t);
+  }, [sealing]);
+  const shown = held ?? { proj, plain, sealed: taken.length > 0 };
+  const figure = useTween(shown.proj.rate * 100);
+  const v = raid.verdict(figure / 100);
+  const rate = Math.round(figure);
+  const plainRate = Math.round(shown.plain.rate * 100);
   const block = entryBlock(s, d);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const hpNow = vitals.read(s);
@@ -265,10 +304,10 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         The head: the Gate's portal inside the assessment's ring, the verdict under it; beside them its grade and
         its name, the Association's file and its chips.
       */}
-      <header class={`bhero ${pending ? 'is-pending' : ''} ${taken.length ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
+      <header class={`bhero ${pending && !held ? 'is-pending' : ''} ${shown.sealed ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
         <span class="bhero__side">
-          <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${taken.length && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
-            <Ring p={proj} plain={plain} r={44} />
+          <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${shown.sealed && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
+            <Ring p={shown.proj} plain={shown.plain} r={44} />
             <span class="bhero__portal ga-portal" aria-hidden="true">
               <i class="ga-portal__swirl" /><i class="ga-portal__core" />
               <RankPlate rank={d.rank} size={32} />
@@ -276,8 +315,6 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
             <b class="bhero__pct num" aria-hidden="true">{rate}<small>%</small></b>
           </span>
           <b class="bhero__assess">{v.text}</b>
-          {/* Under Seals that move it, the rate without them and with them; the ring's pill holds it otherwise. */}
-          {taken.length > 0 && plainRate !== rate && <small class="bhero__rate"><span class="bhero__was num">{plainRate}%</span> → <b class="num">{rate}%</b></small>}
         </span>
         <span class="bhero__body">
           <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}:</span> {trial ? `Ascension ${trialLevel(d) + 1}` : d.name}</h3>
@@ -351,16 +388,16 @@ function Vitals() {
       <span class={`bvital is-${tone}`} style={`--fill: ${Math.max(0, Math.min(1, cur / Math.max(1, max)))}`}>
         <span class="bvital__top">
           <small class="label">{name}</small>
-          <b class="num">{text}</b>
+          <button type="button" class={`bvital__drink ${have ? 'is-held' : ''}`} disabled={!!idle}
+            aria-label={idle ? `${p.name}: ${idle}` : have ? `Drink a ${p.name}, ${have} held` : `Buy and drink a ${p.name}, ${p.price} shards`}
+            title={idle ? `${p.name} · ${idle}` : have ? `${p.name} · Held: ${have}` : `${p.name} · ${p.price}`}
+            onClick={() => void drinkFlow(id, true)}>
+            <Glyph name="plus" />
+            {have > 0 ? <span class="num">{have}</span> : !idle && <span class="num"><Shard size={8} />{p.price}</span>}
+          </button>
         </span>
+        <b class="num bvital__val">{text}</b>
         <span class="bvital__bar" aria-hidden="true"><i /></span>
-        <button type="button" class={`bvital__drink ${have ? 'is-held' : ''}`} disabled={!!idle}
-          aria-label={idle ? `${p.name}: ${idle}` : have ? `Drink a ${p.name}, ${have} held` : `Buy and drink a ${p.name}, ${p.price} shards`}
-          title={idle ? `${p.name} · ${idle}` : have ? `${p.name} · Held: ${have}` : `${p.name} · ${p.price}`}
-          onClick={() => void drinkFlow(id, true)}>
-          <Glyph name="plus" />
-          {!idle && <small class="num">{have || <><Shard size={9} />{p.price}</>}</small>}
-        </button>
       </span>
     );
   };
@@ -405,14 +442,23 @@ function File({ d }: { d: Dungeon }) {
 }
 
 /** One line of a brief's list: its mark, what it says, and at its side its count or its figure. */
-function Line({ cls, mark, children, side }: { cls?: string; mark?: ComponentChildren; children: ComponentChildren; side?: ComponentChildren }) {
-  return (
-    <li class={`bline ${cls ?? ''}`}>
+function Line({ cls, mark, children, side, open, label }: { cls?: string; mark?: ComponentChildren; children: ComponentChildren; side?: ComponentChildren; open?: () => void; label?: string }) {
+  const inner = (
+    <>
       <span class="bline__mark" aria-hidden="true">{mark ?? <i />}</span>
       <span class="bline__text">{children}</span>
       {side != null && <span class="bline__side">{side}</span>}
-    </li>
+    </>
   );
+  // A line that opens a card is a button the width of the list, its chevron at its side.
+  if (open) {
+    return (
+      <li class="bline__li">
+        <button type="button" class={`bline is-tap ${cls ?? ''}`} aria-label={label} aria-haspopup="dialog" onClick={() => { sfx.tap(); open(); }}>{inner}</button>
+      </li>
+    );
+  }
+  return <li class={`bline ${cls ?? ''}`}>{inner}</li>;
 }
 
 /**
@@ -479,15 +525,15 @@ function Rewards({ d, level, taken }: { d: Dungeon; level: number; taken: SealId
   const tracked = new Set(practice ? [] : s.tracked ?? []);
   const mats = practice ? [ALLOYS.E.id] : forge.sourcesOf(d, level);
   const ember = emberOf(taken, d);
-  const extra = practice ? 'a ring' : sets.length ? `${sets.map((x) => x.id).join(' or ')} blueprints` : first ? 'a blueprint' : 'a blueprint, sometimes';
+  const extra = practice ? 'Ring ×1' : sets.length ? `Blueprint ×1 (${sets.map((x) => x.id).join(' or ')})` : first ? 'Blueprint ×1' : 'Blueprint ×1 (sometimes)';
   return (
     <section class="bbox" aria-label="Rewards">
       <span class="label bbox__head">Rewards{level > 0 && <small class="grant"> · Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
       <ul class="blist">
-        <Line><b>Gate clear:</b> XP <span class="num">+{xp}</span>{practice ? `, enough for Level ${PRACTICE_LEVEL}` : <>, <Shards n={sh} /></>}</Line>
+        <Line cls="is-clear"><b>Gate clear:</b> XP <span class="num">+{xp}</span>{practice ? `, enough for Level ${PRACTICE_LEVEL}` : <>, <Shards n={sh} /></>}</Line>
         {first && <Line cls="is-bounty"><b>Bounty:</b> XP <span class="num">+{xp}</span>, <Shards n={sh * 2} /> <span class="muted">(one-time reward)</span></Line>}
-        {trial && <Line cls="is-gold"><b>Victory:</b> Ascension {s.ascension.unlocked + 1} opens</Line>}
-        {tower && <Line><b>This week:</b> Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}, a new best</Line>}
+        {trial && <Line cls="is-victory"><b>Victory:</b> Ascension {s.ascension.unlocked + 1} opens</Line>}
+        {tower && <Line cls="is-victory"><b>This week:</b> Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}, a new best</Line>}
         {taken.length > 0 && <Line cls="is-ember" key="ember"><b>Seal bonus:</b> <span class="bline__ember"><MatArt id={EMBER.id} size={16} /><span class="num">{ember}</span></span></Line>}
         <Line cls="is-mats">
           <b>Materials:</b>{' '}
@@ -524,8 +570,9 @@ function SealButton({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; t
 // ------------------------------------------------------------------ the tabs
 
 /**
- * What stands in the Gate: the boss in a spotlight at the top, one of the Chosen under it if it holds the
- * Gate today, then a line to each of the rest of what walks there, and the Shadows bound from them.
+ * What walks in the Gate, and nothing else: the boss in a spotlight at the top, one of the Chosen under it if
+ * it holds the Gate today, then a line to each of the rest. The boss and each creature identified open its
+ * card, where what it does and what it leaves stand.
  */
 function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
   const s = useSave();
@@ -534,42 +581,90 @@ function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
   const walker = walkers.walking(s, dayKey());
   const holds = walker?.gateId === d.id ? walker : null;
   const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
-  // Its creatures and its Gatekeeper, named once the hunter has been inside, as the map is; the violet ones serve as Shadows.
+  // Its creatures and its Gatekeeper, named once the hunter has been inside, as the map is.
   const inside = [...new Set([...d.mobs, ...(d.elite ? [d.elite] : [])])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
   const seen = mapKnown(s, d);
-  const counted = [...inside, ...(known ? [boss] : [])];
-  const bound = counted.filter((e) => shadows.isBound(s, e.id)).length;
   const who = met ?? (known ? boss : null);
+  const head = (
+    <>
+      <span class="bspot__art">{who ? <FamilyGlyph family={who.family} size={52} /> : <Glyph name="unknown" />}</span>
+      <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
+      <b class="bspot__name">{who ? who.name : '?'}</b>
+      <small class="bspot__line">{who ? `${who.rank}-Rank ${who.family} · ${who.role} · Power ${powerOf(who.base)}` : '?'}</small>
+    </>
+  );
   return (
     <>
-      <div class={`bspot ${who ? '' : 'is-unknown'}`} data-tour="boss">
-        <span class="bspot__art">{who ? <FamilyGlyph family={who.family} size={52} /> : <Glyph name="unknown" />}</span>
-        <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
-        <b class="bspot__name">{who ? who.name : '?'}</b>
-        <small class="bspot__line">{who ? `${who.rank}-Rank ${who.family} · ${who.role} · Power ${powerOf(who.base)}` : '?'}</small>
-        {known && !met && <small class="bthreat__drop"><Glyph name={dropGlyph(boss.id, true)} />{conditionLine(boss.id, true)}</small>}
-        {known && !met && shadows.isBound(s, boss.id) && <span class="bthreat__bound" title="Serves as a Shadow"><Glyph name="shadows" /></span>}
-      </div>
+      {known && !met
+        ? <button type="button" class="bspot is-tap" data-tour="boss" aria-haspopup="dialog" onClick={() => { sfx.tap(); openCreature(boss.id, d); }}>{head}<Glyph name="chevron" class="bspot__go" /></button>
+        : <div class={`bspot ${who ? '' : 'is-unknown'}`} data-tour="boss">{head}</div>}
       {holds && <ChosenLine d={d} w={holds} level={level} />}
       {!isTrial(d) && inside.length > 0 && (
         <ul class="blist bthreat">
           {inside.map((e) => {
-            const cond = seen ? raid.conditionOf(e.id, false) : null;
-            const shadow = seen && shadows.isBound(s, e.id);
-            return (
-              <Line key={e.id} cls={`bthreat__one ${e.id === d.elite ? 'is-elite' : ''} ${shadow ? 'is-bound' : ''}`}
-                side={cond ? <span class="bthreat__drop"><Glyph name={dropGlyph(e.id, false)} />{CONDITION[cond].text}</span> : undefined}>
-                <b>{seen ? e.name : '?'}</b>{shadow && <Glyph name="shadows" class="bthreat__mark" />}
-                <small class="bthreat__kind">{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small>
-              </Line>
-            );
+            const body = <><b>{seen ? e.name : '?'}</b><small class="bthreat__kind">{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small></>;
+            return seen
+              ? <Line key={e.id} cls={`bthreat__one ${e.id === d.elite ? 'is-elite' : ''}`} side={<Glyph name="chevron" class="bline__go" />} open={() => openCreature(e.id, d)} label={`${e.name}, ${e.id === d.elite ? 'Gatekeeper' : `${e.rank}-Rank ${e.family}`}`}>{body}</Line>
+              : <Line key={e.id} cls={`bthreat__one ${e.id === d.elite ? 'is-elite' : ''}`}>{body}</Line>;
           })}
         </ul>
       )}
-      {!isPractice(d) && !isTrial(d) && counted.length > 0 && (
-        <p class="bthreat__sum"><Glyph name="shadows" />Shadows bound: <span class="num">{bound}/{counted.length}</span></p>
-      )}
     </>
+  );
+}
+
+/** A creature's card, over the brief: the boss, the Gatekeeper or one of the Gate's creatures. */
+function openCreature(id: string, d: Dungeon) {
+  const e = enemyById(id)!;
+  openSheet({
+    title: id === d.boss ? `Boss: ${e.name}` : id === d.elite ? `Gatekeeper: ${e.name}` : `Creature: ${e.name}`,
+    system: { icon: <FamilyGlyph family={e.family} size={30} />, kind: 'gates' },
+    render: () => <CreatureCard id={id} d={d} />,
+  });
+}
+
+/**
+ * What a creature is: its family's glyph in a spotlight, its grade, family, role and power, and whether it
+ * serves as a Shadow; what it does besides hit, as the fight's tips word it; the statuses it shrugs off or
+ * resists; and its condition drop, how to defeat it for more.
+ */
+function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
+  const s = useSave();
+  const e = enemyById(id)!;
+  const boss = id === d.boss;
+  const habits = tricksOf(e, boss || id === d.elite);
+  const cond = conditionLine(id, boss);
+  return (
+    <div class="stack bcreature">
+      <section class="bspot is-card">
+        <span class="bspot__art"><FamilyGlyph family={e.family} size={52} /></span>
+        <span class="label">{boss ? 'Gate boss' : id === d.elite ? 'Gatekeeper' : 'Creature'}</span>
+        <b class="bspot__name">{e.name}</b>
+        <small class="bspot__line">{e.rank}-Rank {e.family} · {e.role} · Power {powerOf(e.base)}</small>
+        {shadows.isBound(s, id) && <span class="gtag is-shadow"><Glyph name="shadows" />Serves as a Shadow</span>}
+      </section>
+      {habits.length > 0 && (
+        <section class="bbox" aria-label="Habits">
+          <span class="label bbox__head">Habits</span>
+          <ul class="blist">{habits.map((h) => <Line key={h} cls="is-habit"><b>{TRICKS[h].name}:</b> {TRICKS[h].text}</Line>)}</ul>
+        </section>
+      )}
+      {(e.imm.length > 0 || e.res.length > 0) && (
+        <section class="bbox" aria-label="Statuses">
+          <span class="label bbox__head">Statuses</span>
+          <ul class="blist">
+            {e.imm.length > 0 && <Line cls="is-imm"><b>Immune:</b> {e.imm.join(', ')}</Line>}
+            {e.res.length > 0 && <Line cls="is-res"><b>Resists:</b> {e.res.join(', ')}</Line>}
+          </ul>
+        </section>
+      )}
+      {cond && (
+        <section class="bbox is-drop" aria-label="Condition drop">
+          <span class="label bbox__head">Condition drop</span>
+          <p class="bcreature__drop"><Glyph name={dropGlyph(id, boss)} />{cond}</p>
+        </section>
+      )}
+    </div>
   );
 }
 
@@ -675,8 +770,10 @@ function PartyPanel({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
 
 /** The Seals' window, over the brief: the assessment as it stands, the Ember they add, and a card to each Seal offered. */
 function openSeals(d: Dungeon) {
+  sealWindow.set(true);
   openSheet({
     title: `Seals: ${d.name}`,
+    onClose: () => sealWindow.set(false),
     system: { icon: <SealArt size={34} class="is-on" />, kind: 'gates' },
     render: (close) => <SealSheet d={d} close={close} />,
   });

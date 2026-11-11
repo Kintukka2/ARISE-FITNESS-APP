@@ -1572,19 +1572,23 @@ challenge (the boss, its missions and Start side by side), all in
 
 - **The banner** takes the place of the sheet's header box: the hunter, their level and grade, the bag
   (where a throwable is readied for the Gate), and their condition, HP, MP and Fatigue, each with a + that
-  drinks its potion at once (`drinkFlow` with `quick`: one held is drunk without asking; one bought is
+  drinks its potion at once from a small pill on its label's row (`drinkFlow` with `quick`: one held is drunk without asking; one bought is
   asked first, as the Exchange asks). The ring replays as HP or Fatigue moves. A System sheet can take a
   banner of its own in place of its header box (`openSheet`'s `banner`).
 - **The head** is the Gate's portal inside the assessment's ring: an arc in the verdict's colour and a tick
   for each of the System's 24 runs, lit for each it cleared, the rate in a pill at its foot, so the clear
   rate and the count it comes from are one picture, and the verdict under it. Beside it stand the grade and
-  the Gate's name (`C-Rank Gate:` over `Warcaller's Muster`), the Association's file and the Gate's chips;
-  under Seals that move it, the rate without them stays on the ring as a faint arc and reads `96% → 46%`.
+  the Gate's name (`C-Rank Gate:` over `Warcaller's Muster`), the Association's file and the Gate's chips.
+  Under Seals that move it, the rate without them stays on the ring as a faint arc, and nothing states the
+  two figures: while the Seals' window stands over the brief the head holds what it read (`sealWindow`),
+  and as the window closes the ring sweeps to the new reading, its figure counting there (`useTween`) and
+  the verdict and its colour changing as it passes each grade.
 - **Objectives** open on the boss, always, then list what a clear there also counts toward: Ryn's job, the
   Daily Quests it can move (`contracts.today`, read against the Gate: its grade, the families and the
   Gatekeepers it holds, the fatigue walked in with), the Ascension proof, and Wardens Wake's Gatekeeper.
-- **Rewards** are one list: the clear, the bounty while the Gate has never been cleared, the Seals' Ember
-  once one is taken, and every material the Gate can leave (`forge.sourcesOf`), the tracked ones marked.
+- **Rewards** are one list, a colour of its own to each line: the clear in gold, the bounty in green while
+  the Gate has never been cleared, the Seals' Ember in orange once one is taken, and every material the
+  Gate can leave in cyan (`forge.sourcesOf`), the tracked ones marked, and `Blueprint ×1`.
 - **The Seals** are one button with their wax on it, grey while open, red once pressed, and a line saying
   what Sealing does (the owner's call). It opens their own window (`SealSheet`): the gauge (the ring, the
   verdict, `Clear rate: 96% → 46%` and the Ember, a bar filled by each Seal's share), and a card to each
@@ -1593,8 +1597,10 @@ challenge (the boss, its missions and Start side by side), all in
   once, after the stamp, the last reading standing meanwhile.
 - **The rest** is one box of four tabs, each with a count under its name: `Threat`, `Feats`, `Map` (with
   the road's length and its moves) and `Party`, the tab shown opening into the panel under it. Inside the
-  box nothing has a box of its own: the Threat tab puts the boss in a spotlight at its top and the rest of
-  what walks there in a line each; the Feats and the party are rows.
+  box nothing has a box of its own. The Threat tab is what walks in the Gate and nothing else: the boss in
+  a spotlight at its top and the rest in a line each, with no drop and no Shadows bound; the boss and each
+  creature identified open its card (`CreatureCard`: its habits in the fight's words, its immunities and
+  resistances, and its condition drop). The Feats and the party are rows.
 - **The dock** holds Enter The Gate alone. Ember's figures are in its orange wherever a Seal's pay is
   stated. And every line a player reads says defeat, never fell (the owner's call, `tests/voice.test.ts`).
 

@@ -185,7 +185,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       ...FEAT_IDS.map((id) => `${FEATS[id].name}: ${FEATS[id].text}.`),
       `Every family of creature has a stated way to fall, and every boss ${CONDITION[BOSS_CONDITION].text}. Defeated that way, a creature leaves its family’s part +${DROP.part}, and a boss Blueprint +${DROP.bossBlueprints}.`,
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: ${CONDITION[c].text}.`),
-      'A creature’s condition shows on the brief and on its card, its part’s glyph gold while the condition holds. A tap on the glyph tells it.',
+      'A creature’s condition is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
       'Feats and condition drops count however they are met, by your hand or the System’s.',
     ],
   },
