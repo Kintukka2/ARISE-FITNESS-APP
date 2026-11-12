@@ -1828,6 +1828,10 @@ with what ARISE took from them.
   asks and the buttons. Kin and Formation, stats, skills, traits and the record are rows on the glass under a
   small label; the roster's tabs are underlined; its sort and views are plain; Auto Deploy and Recall are text
   beside the squad's count; Release is a quiet red line at the foot. VOICE.md, "The look", states the rule.
+  The brief took the same rule at the owner's next call: the hunter's banner is the window's head over a
+  hairline; Objectives and Rewards are lines under a small label; Seal The Gate is a row between hairlines,
+  red down its left only once a Seal is taken; the four tabs are underlined in the grade's colour with no box
+  around them or their panel. The Gate's head, its ring and its verdict, is the one box before Enter The Gate.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;
