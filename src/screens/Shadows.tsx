@@ -18,7 +18,7 @@ import type { RaidResult } from '@/core/raid';
 import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
 import { skillLine } from './Skills';
-import { Field, SysAlert, SysFrame } from '@/ui/frame';
+import { Field, SysAlert } from '@/ui/frame';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { KinOfShadow, KinTracker } from '@/ui/kin';
@@ -39,9 +39,9 @@ export function Shadows() {
   return (
     <div class="stack">
       {news.length > 0 && (
-        <SysFrame title="Notification" kind="shadow" class="sysnotice">
-          <p>{joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}</p>
-        </SysFrame>
+        <SysAlert kind="shadow" fyi icon={<Glyph name="shadows" />} class="shadownews">
+          {joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}
+        </SysAlert>
       )}
       <BentoGrid class="shadowgrid" tiles={tiles(s, news)} label="Shadows" />
     </div>
@@ -78,12 +78,11 @@ function tiles(s: Save, news: string[]): BTile[] {
     art: (
       <span class="sa-host">
         <span class="sa-host__squad">
-          {Array.from({ length: slots }, (_, i) => {
-            const sh = squad[i];
-            const e = sh && enemyById(sh.enemyId);
-            if (!sh || !e) return <span key={`free-${i}`} class="sysbox sa-host__slot is-free" style={`--i: ${i}`}><Glyph name="plus" /><small>Free</small></span>;
+          {squad.map((sh, i) => {
+            const e = enemyById(sh.enemyId);
+            if (!e) return null;
             return (
-              <span key={sh.id} class={`sysbox sa-host__slot ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
+              <span key={sh.id} class={`sa-host__slot ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
                 <span class="sa-host__grade"><RankPlate rank={e.rank} size={16} /></span>
                 <span class="sa-host__smoke" />
                 <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} />
@@ -92,6 +91,12 @@ function tiles(s: Save, news: string[]): BTile[] {
               </span>
             );
           })}
+          {slots > squad.length && (
+            <span class="sa-host__slot is-free" style={`--i: ${squad.length}`}>
+              <span class="sa-host__plus"><Glyph name="plus" /></span>
+              <small>{slots - squad.length === 1 ? 'Free' : `${slots - squad.length} Free`}</small>
+            </span>
+          )}
         </span>
         {reserve.length > 0 && (
           <span class="sa-host__reserve">
@@ -117,7 +122,7 @@ function tiles(s: Save, news: string[]): BTile[] {
     art: (
       <span class="sa-orders">
         {TACTICS.map((x) => (
-          <span key={x.key} class={`sysbox sa-orders__one ${x.key === t ? 'is-on' : ''}`}><Glyph name={TACTIC_GLYPH[x.key]} /><small>{x.name}</small></span>
+          <span key={x.key} class={`sa-orders__one ${x.key === t ? 'is-on' : ''}`}><Glyph name={TACTIC_GLYPH[x.key]} /><small>{x.name}</small></span>
         ))}
       </span>
     ),

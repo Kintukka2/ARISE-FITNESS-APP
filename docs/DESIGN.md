@@ -1832,6 +1832,10 @@ with what ARISE took from them.
   hairline; Objectives and Rewards are lines under a small label; Seal The Gate is a row between hairlines,
   red down its left only once a Seal is taken; the four tabs are underlined in the grade's colour with no box
   around them or their panel. The Gate's head, its ring and its verdict, is the one box before Enter The Gate.
+  So did the Shadows screen: its news is an alert strip, as a run's results tell theirs, not a window set into
+  the screen; the Army tile's Shadows are badges on the glass, a name gold while it waits on the hunter, the
+  free slots gathered into one dashed ring (`2 Free`); the Orders tile's four orders are marks and names, the
+  one set underlined. The tiles, which are what is tapped, keep their frames.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

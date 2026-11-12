@@ -1679,15 +1679,17 @@ button.dmap__floor { cursor: pointer; }
 /* The Army, on its tile: the squad's slots, each a badge in smoke with its grade, name and level; the reserve under them, a glyph each. */
 .sa-host { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 .sa-host__squad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.sa-host__slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 104px; padding: 12px 4px 7px; border-color: color-mix(in srgb, var(--win) 60%, transparent); color: var(--sys-ink); background: radial-gradient(80% 70% at 50% 35%, color-mix(in srgb, var(--win) 18%, transparent), transparent 75%), rgba(6, 3, 18, 0.55); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 20%, transparent); animation: qaIn 520ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
+/* The tile's squad: each Shadow's badge, name and level on the glass, the free slots gathered into one mark. The tile itself is what is tapped. */
+.sa-host__slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 96px; padding: 8px 4px 4px; color: var(--sys-ink); animation: qaIn 520ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
 .sa-host__slot .emblem { position: relative; color: var(--win); filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.6s); }
 .sa-host__smoke { position: absolute; top: 10px; left: 50%; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 45%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; }
 .sa-host__slot small { position: relative; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.64rem; font-weight: 600; text-shadow: var(--sys-glow); }
 .sa-host__slot b { position: relative; font-size: 0.62rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.sa-host__grade { position: absolute; top: 5px; left: 5px; z-index: 1; }
-.sa-host__slot.is-free { border-style: dashed; border-color: var(--sys-hair); background: none; box-shadow: none; color: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
-.sa-host__slot.is-free .ico { width: 18px; height: 18px; }
-.sa-host__slot.is-ready { border-color: var(--gold); box-shadow: inset 0 0 14px color-mix(in srgb, var(--gold) 22%, transparent), 0 0 10px var(--gold-glow); }
+.sa-host__grade { position: absolute; top: 6px; left: calc(50% - 40px); z-index: 1; }
+.sa-host__slot.is-free { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.sa-host__plus { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 4px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 30%, transparent); border-radius: 50%; }
+.sa-host__plus .ico { width: 16px; height: 16px; }
+.sa-host__slot.is-ready small { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
 .sa-host__slot.is-ready .emblem { filter: drop-shadow(0 0 10px var(--gold-glow)); }
 .sa-host__reserve { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
 .sa-host__reserve .label { flex: none; font-size: 0.56rem; }
@@ -1808,13 +1810,13 @@ button.dmap__floor { cursor: pointer; }
 
 /* Orders, on its tile: the four standing orders, the one the army fights on lit. */
 .sa-orders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
-.sa-orders__one { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 66px; padding: 6px 4px; border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 38%, transparent); animation: qaIn 520ms var(--ease) both; }
+.sa-orders__one { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 60px; padding: 6px 4px; color: color-mix(in srgb, var(--sys-ink) 38%, transparent); animation: qaIn 520ms var(--ease) both; }
 .sa-orders__one:nth-child(2) { animation-delay: 80ms; }
 .sa-orders__one:nth-child(3) { animation-delay: 160ms; }
 .sa-orders__one:nth-child(4) { animation-delay: 240ms; }
 .sa-orders__one .ico { width: 18px; height: 18px; }
 .sa-orders__one small { font-size: 0.56rem; font-weight: 600; line-height: 1.2; text-align: center; }
-.sa-orders__one.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 75%, transparent); color: var(--sys-ink); background: color-mix(in srgb, var(--win) 12%, transparent); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 25%, transparent), 0 0 10px var(--win-glow); text-shadow: var(--sys-glow); }
+.sa-orders__one.is-on { color: #fff; box-shadow: inset 0 -2px 0 var(--win); text-shadow: var(--sys-glow); }
 .sa-orders__one.is-on .ico { color: #e2d2ff; filter: drop-shadow(0 0 6px var(--win-glow)); }
 
 /* ARMY: ORDERS: a card to each standing order, then a row to each Shadow, its own orders lit. */
