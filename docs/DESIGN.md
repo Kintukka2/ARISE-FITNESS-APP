@@ -1754,6 +1754,12 @@ Gatekeepers' wings and toll doors), in one new layout.
   first, its moves counted), opens a window, `Would you like to rest now?`, **Not Yet** or **Rest**; Rest
   opens its three ways. The button under the plan is gone (the owner's call, as for the toll door). Auto
   keeps its rest for the boss and never asks.
+- **One window from the plan.** The seal's question first came up in the red `danger` frame, which is
+  another voice's, beside the rest's in the System's: two structures for one kind of question. Every
+  window the plan opens is now the System's Notification, laid out alike, the colour alone following
+  the subject (the rest's cyan, the seal's Gates' orange); a Yes that costs is red and says its cost. The
+  System's windows take only the System's kinds (`SysKind` in `ui/system.ts`), so it cannot drift back.
+  The owner's call.
 - **Balance.** `npm run mapstats`: rooms a map rise from 12 to 15 at E and 93 to 99 at S (wings, secret
   caches, toll caches), the budget with them (14 to 18, 112 to 119), and the System's way fits every one.
   Calibration moved 47 of 51 Gates, from Dominion of the Hell Sovereign's 18.1% easier to Moonfang Hunting

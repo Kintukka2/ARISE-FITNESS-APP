@@ -552,10 +552,11 @@ export function Arena() {
       const hero = raid.partyFor(store.get(), d!, r)[0];
       const cost = raid.tollCost(hero);
       if (hero.hp <= cost) {
-        await sys(system.refuse(['Not enough HP.', `HP -${cost}`], 'danger'));
+        await sys(system.refuse(['Not enough HP.', `HP -${cost}`], 'gates'));
         return;
       }
-      const yes = await sys(system.offer(['Would you like to break the seal and open the room?', system.red(`HP -${cost}`)], 'danger', `Yes · HP -${cost}`, 'No'));
+      // The System's window, as every window the plan opens: the Gates' frame, the cost in red.
+      const yes = await sys(system.offer(['Would you like to break the seal and open the room?', system.red(`HP -${cost}`)], 'gates', `Yes · HP -${cost}`, 'No', true));
       if (!yes) return;
       const was = clockNow();
       if (!store.update((x) => raid.payToll(x, d!, x.gates.raid!, door.far))) return;

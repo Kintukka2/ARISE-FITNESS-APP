@@ -13,8 +13,13 @@ import type { Action, Kind, WinOpts } from './overlays';
 export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Stats', 'Skills', 'Equipment', 'Inventory', 'Forge', 'Exchange', 'Gates', 'Army', 'Settings', 'Guide'] as const;
 export type Header = (typeof HEADERS)[number];
 
-/** The window kinds the System speaks in. The others belong to Valcorde, the app and the `???` voice. */
-export const SYSTEM_KINDS: Kind[] = ['system', 'gold', 'gates', 'shadow', 'gear', 'redgate'];
+/**
+ * The window kinds the System speaks in, each drawn in its frame. The others (`danger`, `coach`, `app`)
+ * belong to the `???` voice, Valcorde and the app, and are drawn in frames of their own, so a System
+ * window can only take one of these: the type holds it.
+ */
+export type SysKind = Extract<Kind, 'system' | 'gold' | 'gates' | 'shadow' | 'gear' | 'redgate'>;
+export const SYSTEM_KINDS: readonly Kind[] = ['system', 'gold', 'gates', 'shadow', 'gear', 'redgate'] satisfies SysKind[];
 
 // ------------------------------------------------------------------ marks
 
@@ -49,18 +54,21 @@ export const short = (what: string, have: number, need: number) => red(`Not enou
 const CLOSE: Action[] = [{ label: 'Close', value: null }];
 
 /** A NOTIFICATION: an announcement, an event, a warning. It reports, so it closes. */
-export function notify(lines: string[], kind: Kind = 'system', actions: Action[] = CLOSE): WinOpts {
+export function notify(lines: string[], kind: SysKind = 'system', actions: Action[] = CLOSE): WinOpts {
   return { title: 'Notification', kind, center: true, lines, actions };
 }
 
 /** Something that could not be done: the reason, then the result, all in red. */
-export function refuse(lines: string[], kind: Kind = 'system'): WinOpts {
+export function refuse(lines: string[], kind: SysKind = 'system'): WinOpts {
   return { ...notify(lines.map(red), kind), typed: false };
 }
 
-/** A yes-or-no question. Resolves true for Yes. */
-export function offer(lines: string[], kind: Kind = 'system', yes = 'Yes', no = 'No'): WinOpts {
-  return { ...notify(lines, kind, [{ label: no, value: false }, { label: yes, value: true, primary: true }]), typed: false };
+/**
+ * A yes-or-no question. Resolves true for Yes. A Yes that costs the hunter (`costs`: the HP a seal takes)
+ * is drawn in red, not lit, in the same frame and the same place.
+ */
+export function offer(lines: string[], kind: SysKind = 'system', yes = 'Yes', no = 'No', costs = false): WinOpts {
+  return { ...notify(lines, kind, [{ label: no, value: false }, { label: yes, value: true, primary: !costs, danger: costs }]), typed: false };
 }
 
 /** Levels gained, then the Ability Points they paid. Resolves 'inventory' for Allocate: the screen opens on its Status sheet. */
@@ -80,7 +88,7 @@ export const rewardList = (rewards: string[]) =>
   `<span class="sysrewards">${rewards.map((r, i) => `<span class="sysbox sysreward">${i + 1}. ${r}</span>`).join('<br>')}</span>`;
 
 /** What a finished quest paid. The engine has already paid it, so the window only reports. */
-export function questRewards(rewards: string[], kind: Kind = 'system'): WinOpts {
+export function questRewards(rewards: string[], kind: SysKind = 'system'): WinOpts {
   return {
     title: 'Quest Rewards', kind, center: true,
     lines: ['You got rewards.', rewardList(rewards)],
