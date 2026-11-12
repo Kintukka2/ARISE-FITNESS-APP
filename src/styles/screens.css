@@ -2514,7 +2514,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
    After the stage cards of the reference games: the facts under the head, the rewards as tiles, the Seals
    pressed in place, the enemies as portraits, the party lined up, the Feats, and the map folded. */
 /* The facts: the party's power against the boss's, and the road. */
-.bfacts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); }
+.bfacts { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); }
 .bfacts > div { display: grid; justify-items: center; gap: 2px; padding: 9px 2px; }
 .bfacts > div + div { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
 .bfacts dt { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
@@ -2596,15 +2596,17 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .blineup__one.is-free b { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
 .blineup__one small { font-size: 0.62rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 
-/* The map, folded under its road until it is wanted. */
-.bmapfold { border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); }
-.bmapfold__head { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 16px; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 6px 2px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.bmapfold__head > .ico:first-child { width: 18px; height: 18px; color: var(--rc); }
-.bmapfold__text { display: grid; gap: 2px; min-width: 0; }
-.bmapfold__text .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
-.bmapfold__text small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
-.bmapfold__redraw { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
-.bmapfold__go { width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); transition: transform 220ms var(--ease); }
-.bmapfold.is-open .bmapfold__go { transform: rotate(90deg); }
-.bmapfold__body { padding: 2px 0 12px; animation: fadein 260ms both; }
+/* Today's map, one row: a tap opens it in its own window once the hunter has been inside. */
+.bmaprow { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 16px; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 6px 2px; border: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); background: none; color: inherit; font: inherit; text-align: left; }
+.bmaprow.is-tap { cursor: pointer; transition: background 160ms var(--ease); }
+.bmaprow.is-tap:active { background: color-mix(in srgb, var(--rc) 8%, transparent); }
+.bmaprow.is-tap:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+.bmaprow > .ico:first-child { width: 18px; height: 18px; color: var(--rc); }
+.bmaprow:not(.is-tap) > .ico:first-child { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.bmaprow__text { display: grid; gap: 2px; min-width: 0; }
+.bmaprow__text .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.bmaprow__text small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.bmaprow__redraw { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.bmaprow__go { width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bmapsheet { padding-bottom: 4px; }
 @media (prefers-reduced-motion: reduce) { .bhero__glow { animation: none; } }

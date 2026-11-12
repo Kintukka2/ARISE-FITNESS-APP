@@ -1861,8 +1861,14 @@ with what ARISE took from them.
   reading. The enemies are portraits in a row, the boss first and larger in red, as Honkai: Star Rail lists a
   stage's enemies; one identified opens its card. The party is a lineup, as Darkest Dungeon lines its four up
   before it embarks: the hunter, the Association's hunters and the Shadows, each over its power, a free slot
-  dashed, and the squad's Kin and Formation under them. The Feats keep their rows and stars. The map is folded
-  under its road and redraw, a tap opening it in its fog. Enter The Gate stays alone in the dock.
+  dashed, and the squad's Kin and Formation under them. The Feats keep their rows and stars. Enter The Gate
+  stays alone in the dock.
+- **The map off the brief** (the owner's next call). `Today's map` is one row, its rooms and its floors where
+  there are more than one, and its redraw; its moves and the road to the boss were said twice, so only the
+  facts say them. A tap opens the map in a window of its own (`openMap`), and only once the hunter has been
+  inside: until then the row is `Unidentified` and opens nothing. The blueprint's tile says `Blueprint`, not
+  `Blueprint · sometimes`. On the Trial the facts are three, `Your party`, `Last Chosen` and `Chosen`: its
+  road is its Chosen, so `To the last` only said `Chosen` again.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

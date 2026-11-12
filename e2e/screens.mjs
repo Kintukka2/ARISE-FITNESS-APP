@@ -286,6 +286,7 @@ try {
   if (!(await page.locator('.sheet.is-top .breward.is-xp', { hasText: 'Gate clear' }).count())) throw new Error('THE REWARDS DO NOT SHOW THE CLEAR');
   // The facts under the head set the party's power against the boss's.
   if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 4) throw new Error('THE HEAD HAS NO FACTS UNDER IT');
+  if (/sometimes/i.test(await page.locator('.sheet.is-top .brewards').innerText())) throw new Error('THE BLUEPRINT STILL SAYS SOMETIMES');
   if ((await page.locator('.sheet.is-top .bbanner .bvital__drink').count()) !== 3) throw new Error('THE BANNER DOES NOT HOLD HP, MP AND FATIGUE');
   if (await page.locator('.sheet.is-top .bhero', { hasText: 'Runs cleared' }).count()) throw new Error('THE HEAD STILL COUNTS THE RUNS');
   if (await page.locator('.sheet.is-top .syshead').count()) throw new Error('THE BRIEF STILL HAS A HEADER BOX OVER ITS BANNER');
@@ -324,11 +325,15 @@ try {
   if (await page.locator('.sheet.is-top .btabs').count()) throw new Error('THE BRIEF STILL HAS TABS');
   if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
   await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
-  // The map unfolds from its road's length.
-  await page.locator('.sheet.is-top .bmapfold__head').click(); await sleep(600);
-  if (!(await page.locator('.sheet.is-top .bmapfold.is-open .dmap, .sheet.is-top .bmapfold.is-open .gmap-fog, .sheet.is-top .bmapfold.is-open .gmap').count())) throw new Error('THE MAP DID NOT UNFOLD');
-  await page.locator('.sheet.is-top .bmapfold').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-map');
-  await page.locator('.sheet.is-top .bmapfold__head').click(); await sleep(300);
+  // Today's map is one row, its rooms and floors and no more; a tap opens the map in its own window.
+  const maprow = page.locator('.sheet.is-top .bmaprow');
+  if (/moves|to the boss/i.test(await maprow.innerText())) throw new Error('TODAY’S MAP STILL COUNTS MOVES OR THE ROAD');
+  if (await page.locator('.sheet.is-top .dmap').count()) throw new Error('THE BRIEF STILL HOLDS THE MAP ITSELF');
+  await maprow.scrollIntoViewIfNeeded(); await maprow.click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .bmapsheet .dmap').count())) throw new Error('THE MAP DID NOT OPEN IN ITS OWN WINDOW');
+  await snap('brief-map');
+  await page.locator('.sheet.is-top [aria-label="Close"]').first().click(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .bfacts').count())) throw new Error('CLOSING THE MAP DID NOT RETURN TO THE BRIEF');
   // The party lined up, the hunter first, and the squad's Formation under it.
   if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
   if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Formation:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S FORMATION');
@@ -800,6 +805,8 @@ try {
   await snap('trial-brief', true);
   if (await page.locator('.sheet.is-top', { hasText: 'Association file' }).count()) throw new Error('THE TRIAL CARRIES AN ASSOCIATION FILE');
   if (await page.locator('.sheet.is-top .bfeat').count()) throw new Error('THE TRIAL HOLDS FEATS');
+  if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 3) throw new Error('THE TRIAL’S FACTS COUNT ITS CHOSEN TWICE');
+  if (!(await page.locator('.sheet.is-top .bfacts dt', { hasText: 'Last Chosen' }).count())) throw new Error('THE TRIAL DOES NOT NAME ITS LAST CHOSEN');
   await page.locator('.sheet.is-top .blineup').scrollIntoViewIfNeeded(); await sleep(400);
   if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE TRIAL’S PARTY HOLDS NO ONE');
   if (await page.locator('.sheet.is-top .blineup .is-ally').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');

@@ -302,7 +302,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <EnemyRow d={d} level={level} />
       <Lineup d={d} level={level} taken={taken} />
       {hasFeats && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
-      <MapFold d={d} road={proj.road} />
+      <MapRow d={d} road={proj.road} />
 
       {/* The way in stays at the foot of the window, whatever is scrolled past. */}
       <div class="bdock">
@@ -332,7 +332,8 @@ function bossOf(s: Save, d: Dungeon, level: number) {
 
 /**
  * The facts under the head, as the reference games set a stage's recommended power over its enemies: the
- * party's power against the boss's, and the road, its rooms and the Gate's budget of moves.
+ * party's power against the boss's (the last of the Chosen's, on the Trial), and the road, its rooms and the
+ * Gate's budget of moves. The Trial's road is its Chosen, so it has three.
  */
 function Facts({ d, level, taken, road }: { d: Dungeon; level: number; taken: SealId[]; road: number }) {
   const s = useSave();
@@ -343,9 +344,9 @@ function Facts({ d, level, taken, road }: { d: Dungeon; level: number; taken: Se
   return (
     <dl class="bfacts">
       <div><dt>Your party</dt><dd class="num">{partyPower(s, d, level, taken)}</dd></div>
-      <div><dt>{isTrial(d) ? 'The last' : 'Boss'}</dt><dd class="num is-foe">{who ? powerOf(who.base) : '?'}</dd></div>
+      <div><dt>{isTrial(d) ? 'Last Chosen' : 'Boss'}</dt><dd class="num is-foe">{who ? powerOf(who.base) : '?'}</dd></div>
       <div><dt>{isTrial(d) ? 'Chosen' : map.tower ? 'Floors' : 'Rooms'}</dt><dd class="num">{known ? raid.stepsOf(map) : '?'}</dd></div>
-      <div><dt>{moves !== null ? 'Moves' : isTrial(d) ? 'To the last' : 'To the boss'}</dt><dd class="num">{known ? moves ?? road : '?'}</dd></div>
+      {!isTrial(d) && <div><dt>{moves !== null ? 'Moves' : 'To the boss'}</dt><dd class="num">{known ? moves ?? road : '?'}</dd></div>}
     </dl>
   );
 }
@@ -387,7 +388,7 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {taken.length > 0 && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Seal bonus', `+${ember}`, `Seal bonus: Ember +${ember}`)}
         {mats.map((id) => tile(id, `is-mat ${tracked.has(id) ? 'is-tracked' : ''}`, <><MatArt id={id} size={30} />{tracked.has(id) && <TrackMark class="breward__track" />}</>, forge.materialById(id)?.name ?? id))}
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
-          practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : first ? 'Blueprint' : 'Blueprint · sometimes', '×1')}
+          practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint', '×1')}
       </ul>
     </section>
   );
@@ -553,49 +554,54 @@ function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Par
   );
 }
 
-/** Whether the map is unfolded on the brief, held while the app stays open. */
-let mapOpen = false;
-
 /**
- * Today's map, folded under its road's length until it is wanted: its rooms, floors, the System's way to the boss
- * and the Gate's budget of moves; unfolded, the map through its fog, a floor at a time, the System's road along
- * it. Unidentified until the hunter has been inside.
+ * Today's map, as one row: its rooms and floors (the Spire's floors, the Trial's Chosen) and when it is
+ * redrawn. Once the hunter has been inside, a tap opens the map in a window of its own; until then it is
+ * Unidentified and opens nothing.
  */
-function MapFold({ d, road }: { d: Dungeon; road: string[] }) {
+function MapRow({ d, road }: { d: Dungeon; road: string[] }) {
+  const s = useSave();
+  const map = build(d, mapSeed(d, dayKey()));
+  const known = mapKnown(s, d);
+  const steps = raid.stepsOf(map);
+  const size = !known ? 'Unidentified'
+    : isTrial(d) ? `${steps} Chosen`
+      : map.tower ? `${steps} floors`
+        : `${steps} rooms${map.floors.length > 1 ? ` · ${map.floors.length} floors` : ''}`;
+  const body = (
+    <>
+      <Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />
+      <span class="bmaprow__text"><span class="label">Today’s map</span><small>{size}</small></span>
+      <small class="bmaprow__redraw">{known ? <>Redraw <span class="num">{hhmmss(msUntilMidnight())}</span></> : null}</small>
+      {known ? <Glyph name="chevron" class="bmaprow__go" /> : <Glyph name="lock" class="bmaprow__go" />}
+    </>
+  );
+  return known
+    ? <button type="button" class="bmaprow is-tap" aria-haspopup="dialog" aria-label={`Today’s map: ${size}`} onClick={() => { sfx.tap(); openMap(d, road); }}>{body}</button>
+    : <div class="bmaprow" aria-label="Today’s map: Unidentified">{body}</div>;
+}
+
+/** Today's map in its own window over the brief: the plan through its fog, a floor at a time, the System's road along it. */
+function openMap(d: Dungeon, road: string[]) {
+  const trial = isTrial(d);
+  openSheet({
+    title: `Map: ${trial ? `Ascension ${trialLevel(d) + 1}` : d.name}`,
+    system: { icon: <Glyph name={trial ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />, kind: trial ? 'gold' : 'gates' },
+    render: () => <MapSheet d={d} road={road} />,
+  });
+}
+
+function MapSheet({ d, road }: { d: Dungeon; road: string[] }) {
   const s = useSave();
   const day = dayKey();
   const map = build(d, mapSeed(d, day));
   const [floor, setFloor] = useState(0);
-  const [unfolded, setUnfolded] = useState(mapOpen);
   const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, day) ? s.gates.raid : null;
   const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, day)));
-  const steps = raid.stepsOf(map);
-  const known = mapKnown(s, d);
-  const depth = !known ? 'Unidentified'
-    : isTrial(d) ? `${steps} Chosen · no rest between them`
-      : spire.isSpire(d) ? `${steps} floors · a rest, then the boss`
-        : `${steps} rooms · ${map.floors.length > 1 ? `${map.floors.length} floors · ` : ''}${road.length} to the boss${map.tower || isPractice(d) ? '' : ` · ${budgetOf(map)} moves`}`;
-  const flip = () => { sfx.tap(); mapOpen = !unfolded; setUnfolded(!unfolded); };
   return (
-    <section class={`bmapfold ${unfolded ? 'is-open' : ''}`} aria-label="Map">
-      <button type="button" class="bmapfold__head" aria-expanded={unfolded} onClick={flip}>
-        <Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />
-        <span class="bmapfold__text"><span class="label">Today’s map</span><small>{depth}</small></span>
-        <small class="bmapfold__redraw">{known ? <>Redraw <span class="num">{hhmmss(msUntilMidnight())}</span></> : null}</small>
-        <Glyph name="chevron" class="bmapfold__go" />
-      </button>
-      {unfolded && (
-        <div class="bmapfold__body">
-          {known
-            ? <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} compact />
-            : (
-              <div class="gmap-fogwrap">
-                <div class="gmap-fog" role="img" aria-label="Map unidentified"><Glyph name="unknown" /><b>?</b></div>
-              </div>
-            )}
-        </div>
-      )}
-    </section>
+    <div class="bmapsheet">
+      <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} compact />
+    </div>
   );
 }
 
