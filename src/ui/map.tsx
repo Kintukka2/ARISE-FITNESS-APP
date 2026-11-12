@@ -49,6 +49,9 @@ interface MapProps {
   /** Inside a run: the toll doors it can break, by key, with the room each opens; and breaking one, from its seal or that room. */
   tollable?: { key: string; far: string }[];
   onToll?: (key: string) => void;
+  /** Inside a Gate: the rests found and not yet used, tapped to rest there (it asks first), wherever the hunter stands. */
+  restable?: string[];
+  onRestRoom?: (id: string) => void;
 }
 
 export function MapView(p: MapProps) {
@@ -64,7 +67,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets, tollable = [], onToll }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets, tollable = [], onToll, restable = [], onRestRoom }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -189,6 +192,11 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;
+          // A rest found and not yet used is tapped to rest there, even where the hunter stands: it asks first.
+          if (onRestRoom && restable.includes(x.id)) {
+            return <button type="button" key={x.id} class={`${cls} is-restable`} style={style} data-node={x.id} aria-label={`Rest${moves}: ${kind.desc}`} title="Rest here"
+              onClick={() => { sfx.tap(); onRestRoom(x.id); }}>{body}</button>;
+          }
           // The room a toll door seals is tapped to break the seal: it asks first.
           const sealedBy = onToll && !next && !isDone ? tollable.find((k) => k.far === x.id) : undefined;
           if (sealedBy) {

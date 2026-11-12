@@ -1750,6 +1750,10 @@ Gatekeepers' wings and toll doors), in one new layout.
   a first look with a button under the plan.
 - **A quieter plan.** A room's moves are no longer drawn on its tile, only read aloud with it: the plan
   felt busy (the owner's call). The meter under the hunter's HP and the hint under the plan say the clock.
+- **A rest asks.** Stepping into a rest, or tapping one found and not yet used on the plan (walked back to
+  first, its moves counted), opens a window, `Would you like to rest now?`, **Not Yet** or **Rest**; Rest
+  opens its three ways. The button under the plan is gone (the owner's call, as for the toll door). Auto
+  keeps its rest for the boss and never asks.
 - **Balance.** `npm run mapstats`: rooms a map rise from 12 to 15 at E and 93 to 99 at S (wings, secret
   caches, toll caches), the budget with them (14 to 18, 112 to 119), and the System's way fits every one.
   Calibration moved 47 of 51 Gates, from Dominion of the Hell Sovereign's 18.1% easier to Moonfang Hunting

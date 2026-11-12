@@ -2443,3 +2443,5 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .dmap .gnode.droom.is-tolled:not(.is-done):not(.is-fog) { border-style: dashed; border-color: color-mix(in srgb, var(--blood) 60%, transparent); cursor: pointer; }
 @keyframes tollPulse { from { box-shadow: 0 0 4px var(--blood-glow); } to { box-shadow: 0 0 12px var(--blood-glow); } }
 @media (prefers-reduced-motion: reduce) { .dmap__toll.is-live { animation: none; } }
+/* A rest found and not yet used, tapped to rest there: lit in healing's green. */
+.dmap .gnode.droom.is-restable:not(.is-fog) { border-color: color-mix(in srgb, var(--verdant) 65%, transparent); box-shadow: inset 0 0 10px rgba(72, 245, 168, 0.18); cursor: pointer; }

@@ -665,6 +665,15 @@ export function canRest(d: Dungeon, run: OpenRaid): boolean {
   return explored(m, run).has(x.id) && !(run.rested ?? []).includes(x.id);
 }
 
+/** The rests a Gate's run has found and not yet used: each can be walked back to, and used once. */
+export function restsFound(d: Dungeon, run: OpenRaid): string[] {
+  const m = mapOf(d, run);
+  if (m.tower || run.lost || pending(d, run) || bossDown(d, run)) return [];
+  const done = explored(m, run);
+  const used = new Set(run.rested ?? []);
+  return m.nodes.filter((x) => x.kind === 'rest' && done.has(x.id) && !used.has(x.id)).map((x) => x.id);
+}
+
 /** What each of a rest's three would do for this run: Heal's share, the skills Hone can raise, and the potions Steady adds. */
 export function restOptions(s: Save, run: OpenRaid) {
   return { heal: healShare(asc.levelOf(run), sealing.of(run)), hone: honeable(run), potions: Math.min(STEADY_POTIONS, shop.satchelRoom(s)) };

@@ -123,7 +123,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
       `A floor holds one rest at most, ${Object.entries(REST_CHANCE).map(([r, x]) => `${r}-Rank ${Math.round(x * 100)}%`).join(', ')} of the time, one corridor off the road past halfway. It passes for an Event until you find it.`,
       `A Gatekeeper guards a wing of ${WING.rooms[0]}-${WING.rooms[1]} rooms before its vault, reached through its room alone; from ${WING.restFrom}-Rank a wing can hold a rest. A- and S-Rank Gates have ${WINGS.A} wings.`,
-      `A rest gives one of three, once: Heal, party HP +${REST_HEAL * 100}%; Hone, one skill equipped +${HONE_LEVELS} level until you leave the Gate; or Steady, every debuff lifted and Health Potion +${STEADY_POTIONS} if the satchel has room. Use it when you find it, or walk back to it later.`,
+      `A rest gives one of three, once: Heal, party HP +${REST_HEAL * 100}%; Hone, one skill equipped +${HONE_LEVELS} level until you leave the Gate; or Steady, every debuff lifted and Health Potion +${STEADY_POTIONS} if the satchel has room. Use it when you find it, or tap it on the plan to walk back to it later.`,
       `Some floors hide a passage between two rooms. As you clear a room at either end, you notice it ${Math.round(NOTICE.base * 100)}% of the time, ${NOTICE.per * 100}% more for each point of Perception, up to ${Math.round(NOTICE.max * 100)}%.`,
       'A passage noticed opens for good. A Gate Survey charts every passage, and a charted one needs no noticing.',
       'A secret cache sits in a gap in the plan beside rooms, behind a hidden passage. Each floor counts its secrets found at the plan’s top.',

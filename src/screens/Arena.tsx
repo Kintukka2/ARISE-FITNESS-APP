@@ -566,6 +566,27 @@ export function Arena() {
     });
   }
 
+  /** Ask whether to rest where the hunter stands now: Rest opens its three ways; Not Yet keeps it for later. */
+  async function askRest() {
+    const yes = await sys(system.offer(['Would you like to rest now?'], 'system', 'Rest', 'Not Yet'));
+    if (yes) restPanel();
+    else toMap();
+  }
+
+  /** A rest found and not yet used, tapped on the plan: walk there, a move for each corridor, then ask. */
+  function restAt(id: string) {
+    void guarded(async () => {
+      const r = store.get().gates.raid;
+      if (!r) return;
+      if (raid.standing(d!, r)?.id !== id) {
+        const was = clockNow();
+        if (!store.update((x) => raid.moveTo(d!, x.gates.raid!, id))) return;
+        await tellClock(was);
+      }
+      await askRest();
+    });
+  }
+
   /** Open the rest the hunter stands in, from the plan: its three ways to rest. */
   function restPanel() {
     const r = store.get().gates.raid;
@@ -596,6 +617,8 @@ export function Arena() {
       if (!res) return;
       await tellClock(was);
       if (isFight(res.node)) return chamber();
+      // A rest found in a Gate asks whether to rest now; Auto keeps it for the boss, as the System does.
+      if (res.node.kind === 'rest' && !raid.mapOf(d!, store.get().gates.raid!).tower && !autoRef.current) return askRest();
       // Down the stairs: the next floor's plan, at once.
       if (res.node.kind === 'down') {
         const r = store.get().gates.raid!;
@@ -811,17 +834,13 @@ export function Arena() {
                 stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red}
                 shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name}
                 openings={raid.openings(run)} secrets={(k) => raid.secretsOf(d, run, k)}
-                tollable={raid.tollDoorsOpen(d, run)} onToll={(key) => void askToll(key)} />
+                tollable={raid.tollDoorsOpen(d, run)} onToll={(key) => void askToll(key)}
+                restable={raid.restsFound(d, run)} onRestRoom={restAt} />
               {m.tower
                 ? raid.canWithdraw(d, run)
                   ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
                   : <small class="muted center">Tap a step that glows.</small>
-                : raid.canRest(d, run)
-                  ? <div class="stack stack--tight">
-                    <Btn kind="primary" block sound="tap" onClick={restPanel}>Rest</Btn>
-                    <small class="muted center">Heal, Hone or Steady · Once</small>
-                  </div>
-                  : raid.canWithdraw(d, run)
+                : raid.canWithdraw(d, run)
                     ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
                     : raid.sealed(d, run) && raid.standing(d, run)?.id === m.start
                       ? <small class="warn center">The way out is sealed until the boss falls.</small>
