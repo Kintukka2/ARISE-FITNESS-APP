@@ -1813,10 +1813,16 @@ with what ARISE took from them.
   test holds it against every squad of three a mixed army of nine can make. The same army always gives the
   same squad.
 - **Shown where the squad is made**, after Teamfight Tactics' trait tracker: on the Army, under the squad's
-  slots, a row to each family deployed with its count and its steps `2 › 3`, the one reached lit and what it
-  gives in green, a family short of its first step dimmed; then a chip to each role with its aura. A
-  Shadow's card says its Kin at each step and its role's aura under its stats, as Solo Leveling: Arise sets a
-  Shadow's aura under its own. The brief's party ends `Kin: Orc II · Formation: Brute, Caster`.
+  slots, a chip to each family and each role deployed, two to a row, the active first, its mark in a hexagon,
+  its count and its breakpoints (`2 › 3`, or `1 / 2` while short). A tap opens what it gives, as the
+  tracker's tooltip does (`(2) Attack +10%`, `(3) Attack +20%`). The brief's party ends
+  `Kin: Orc II · Formation: Brute, Caster`.
+- **The card, cleaned up after the references** (the owner's call). Its head is Solo Leveling: Arise's info
+  panel: what it was, small, over `Rank │ Bound`, `Lv. │ 3/10` and `Power │ 80`, a gold arrow at the end of
+  Rank's while a promotion or a star waits. Next rank and Awakening follow at once. Stats are a row each,
+  with the growth share in their head; the growth graph and the radar are gone, the Rank row and Next rank
+  saying what the graph did. Under the stats, as the panel sets `Shadow's Authority`, its role's aura and
+  its Kin's breakpoints.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

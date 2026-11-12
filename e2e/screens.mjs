@@ -591,14 +591,20 @@ try {
   // Kin and Formation under the squad: a row to each family deployed, a chip to each role.
   {
     const squad = await page.locator('.sheet.is-top .roster__slot:not(.is-free)').count();
-    const fams = await page.locator('.sheet.is-top .kinrow').count();
-    const roles = await page.locator('.sheet.is-top .kinrole').count();
+    const fams = await page.locator('.sheet.is-top .kinchip--kin, .sheet.is-top .kinchip--all').count();
+    const roles = await page.locator('.sheet.is-top .kinchip--role').count();
     if (!squad || !fams || !roles || fams > squad || roles > squad) throw new Error(`KIN AND FORMATION DO NOT FOLLOW THE SQUAD (${squad} deployed, ${fams} families, ${roles} roles)`);
+    // A tap on a Kin opens its breakpoints under the tracker, as a trait's tooltip does; another closes it.
+    await page.locator('.sheet.is-top .kinchip--kin').first().click(); await sleep(300);
+    if (!(await page.locator('.sheet.is-top .kintip .kintiers li', { hasText: '(2)' }).count())) throw new Error('A KIN DID NOT OPEN ITS BREAKPOINTS');
+    await snap('army-kin');
+    await page.locator('.sheet.is-top .kinchip--kin').first().click(); await sleep(200);
+    if (await page.locator('.sheet.is-top .kintip').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
-  if (!(await page.locator('.sheet.is-top .kincard', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');
+  if (!(await page.locator('.sheet.is-top .sp-auth', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
   // Naming from the card: the System's line, the field across the window, and the two acts under it.
   await page.locator('.sheet.is-top .btn', { hasText: /^(Name|Rename)$/ }).click(); await sleep(400);

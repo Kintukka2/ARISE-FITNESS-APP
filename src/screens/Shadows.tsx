@@ -19,7 +19,7 @@ import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
 import { skillLine } from './Skills';
 import { Field, SysAlert, SysFrame } from '@/ui/frame';
-import { Glyph } from '@/ui/icons';
+import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { KinOfShadow, KinTracker } from '@/ui/kin';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
@@ -235,8 +235,8 @@ function ArmySheet({ news }: { news: string[] }) {
         </div>
         <KinTracker squad={squad} />
         <div class="row roster__acts">
-          <Btn class="grow" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
-          <Btn class="grow" disabled={!squad.length} onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall · {squad.length}</Btn>
+          <Btn class="grow" size="sm" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
+          <Btn size="sm" disabled={!squad.length} onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall · {squad.length}</Btn>
         </div>
       </Section>
       <div class={`roster__out ${drag.over === 'out' && held && squad.includes(held) ? 'is-over' : ''}`} data-drop="out">
@@ -447,11 +447,10 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
   return (
     <div class="stack shadowcard">
       <Profile sh={sh} e={e} close={close} />
-      <Growth sh={sh} />
       <NextRank sh={sh} e={e} />
       <Awakening sh={sh} />
       <Stats sh={sh} e={e} />
-      {/* What it brings to a squad, under its stats, as the references set a Shadow's aura. */}
+      {/* What it brings to a squad, under its stats, as Solo Leveling: Arise sets a Shadow's aura. */}
       <KinOfShadow sh={sh} family={e.family} role={e.role} squad={shadows.squad(s)} />
       <Kit sh={sh} e={e} />
       <Record sh={sh} />
@@ -460,7 +459,12 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
   );
 }
 
-/** The head of the card: its badge inside the ring of its next level, its rank, what it was, its power, and its XP to the next level. */
+/**
+ * The head of the card, after the info panel of Solo Leveling: Arise's Army of Shadows: its badge inside
+ * the ring of its next level, and beside it what it was (small, as the panel's epithet), then a row to
+ * each of `Rank | Bound` (an arrow at its end while a promotion waits), `Lv. | 3/10` over its XP, and
+ * `Power | 80`; its grade, family, role and whether it is deployed under them.
+ */
 function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) {
   const s = useSave();
   const squad = shadows.squad(s);
@@ -473,6 +477,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
   const ready = shadows.waiting(s, sh);
   const share = p.need ? p.into / p.need : 1;
   const c = 2 * Math.PI * 52;
+  const toPromotion = () => { sfx.tap(); document.querySelector('.sheet.is-top .sp-next')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
   return (
     <>
       <section class={`sysbox sp-head ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
@@ -484,23 +489,33 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           </svg>
           <span class="sp-head__smoke" />
           <ShadowEmblem family={e.family} rank={at} size={66} />
-          <b class="sp-head__lv"><small>Lv.</small>{top ? 'MAX' : lv}</b>
+          {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
         </div>
         <div class="sp-head__who">
-          <span class="sa-rank sp-head__rank"><Insignia rank={at} size={15} />{shadows.rankOf(sh).name} Rank{shadows.starsOf(sh) ? <Stars n={shadows.starsOf(sh)} /> : null}</span>
-          <span class="sp-head__was"><span class="label">Was</span> {sh.name ? `${e.name} · ${e.shadow}` : e.name}</span>
+          <span class="sp-head__was">{sh.name ? `${e.name} · ${e.shadow}` : e.name}</span>
+          <dl class="sp-rows">
+            <div class="sp-row">
+              <dt>Rank</dt>
+              <dd class="sp-row__rank"><Insignia rank={at} size={14} />{shadows.rankOf(sh).name}</dd>
+              {ready && <button type="button" class="sysbox sp-up" aria-label={shadows.canPromote(s, sh) ? 'Promotion ready' : 'Awakening ready'} onClick={toPromotion}><Glyph name="up" /></button>}
+            </div>
+            <div class="sp-row">
+              <dt>Lv.</dt>
+              <dd class="num"><span>{top ? 'MAX' : lv}{!top && <small>/{shadows.rankOf(sh).cap}</small>}</span></dd>
+              <span class="sp-row__xp num">{top ? '' : p.need ? `XP ${p.into}/${p.need}` : 'Level cap'}</span>
+            </div>
+            <div class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></div>
+            <div class="sp-row">
+              <dt>Power</dt>
+              <dd class="sp-row__power num">{shadows.power(sh)}</dd>
+            </div>
+          </dl>
           <span class="sp-head__tags">
             <RankPlate rank={e.rank} size={20} />
             <span class="sp-tag"><FamilyGlyph family={e.family} size={13} />{e.family}</span>
             <span class="sp-tag">{e.role}</span>
             <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Not deployed'}</span>
           </span>
-          <span class="sp-head__power"><span class="label">Power</span><b class="num">{shadows.power(sh)}</b></span>
-        </div>
-        <div class="sp-head__exp">
-          <span class="label">XP</span>
-          <span class="sp-exp"><i style={`width: ${pct(unit(share))}%`} /></span>
-          <span class="num">{top ? 'Lv.MAX' : p.need ? `${p.into}/${p.need}` : 'Level cap'}</span>
         </div>
       </section>
       <div class="row">
@@ -511,49 +526,6 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
         <Btn onClick={async () => { const v = await nameShadow(sh.id); if (typeof v === 'string') { close(); openShadow(sh.id); } }}>{sh.name ? 'Rename' : 'Name'}</Btn>
       </div>
     </>
-  );
-}
-
-/**
- * Its growth, as a graph: a bar for every level, rising with what each adds, in a run for each rank.
- * Lit to the level held, open to its cap, and dark past it, where a seal stands across the road until
- * it is promoted.
- */
-function Growth({ sh }: { sh: Shadow }) {
-  const R = shadows.SHADOW_RANKS;
-  const MAX = shadows.MAX_LEVEL;
-  const at = shadows.rankIndex(sh);
-  const lv = shadows.levelOf(sh);
-  const cap = R[at].cap;
-  const W = 300, H = 60, GAP = 9;
-  const run = (W - GAP * (R.length - 1)) / R.length;
-  const bars = R.flatMap((r, ri) => {
-    const lo = ri ? R[ri - 1].cap + 1 : 1;
-    const w = run / (r.cap - lo + 1);
-    return Array.from({ length: r.cap - lo + 1 }, (_, j) => {
-      const l = lo + j;
-      const h = 6 + (H - 8) * (l / MAX);
-      const state = l <= lv ? 'is-lit' : l <= cap ? 'is-open' : 'is-shut';
-      return <rect key={l} x={ri * (run + GAP) + j * w + 0.7} y={H - h} width={Math.max(1, w - 1.4)} height={h} class={`sp-bar ${state} ${l === lv ? 'is-here' : ''}`} style={`--i: ${l}`} />;
-    });
-  });
-  const seal = cap < MAX ? (at + 1) * run + at * GAP + GAP / 2 : null;
-  return (
-    <Section title="Growth" right={<span class="num"><span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
-      <div class="sp-growth">
-        <svg viewBox={`0 0 ${W} ${H + 4}`} class="sp-graph" role="img" aria-label={`Level ${lv} of ${MAX}. Level cap ${cap}.`}>
-          {bars}
-          {seal !== null && <g class="sp-seal"><line x1={seal} y1="0" x2={seal} y2={H + 4} /><rect x={seal - 3} y={H / 2 - 3} width="6" height="6" transform={`rotate(45 ${seal} ${H / 2})`} /></g>}
-        </svg>
-        <ol class="sp-ranks">
-          {R.map((r, i) => (
-            <li key={r.name} class={`${i < at ? 'is-held' : ''} ${i === at ? 'is-here' : ''}`}>
-              <Insignia rank={i} size={14} /><b>{r.name}</b><small class="num">Lv.{i ? R[i - 1].cap + 1 : 1}-{r.cap}</small>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </Section>
   );
 }
 
@@ -674,40 +646,24 @@ function Awakening({ sh }: { sh: Shadow }) {
 }
 
 /**
- * Its stats: a radar of its creature's own (dim), where its level has them now (lit) and where Lv.MAX
- * would (outlined), every shape on one scale; and each stat with what its level adds.
+ * Its stats, as Solo Leveling: Arise lists them: a row each, its mark, its name and its value, and what
+ * its level and stars have added to its creature's own, in green. Over them, how far it has grown of the
+ * most it can.
  */
 function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   const now = shadows.statsOf(sh);
-  const peak = 1 + shadows.MAX_GROWTH;
-  const top = Math.max(1, ...ORDER.map((k) => e.base[k] * peak));
-  const at = (i: number, r: number) => {
-    const a = (-90 + i * 72) * (Math.PI / 180);
-    return [50 + Math.cos(a) * r, 50 + Math.sin(a) * r];
-  };
-  const shape = (v: (k: (typeof ORDER)[number]) => number) => ORDER.map((k, i) => at(i, 3 + 35 * unit(v(k) / top)).join(',')).join(' ');
-  const ring = (r: number) => ORDER.map((_, i) => at(i, r).join(',')).join(' ');
   return (
-    <Section title="Stats" right={<span class="sp-legend"><i class="is-now" />Now<i class="is-max" />Lv.MAX</span>}>
-      <div class="sp-stats">
-        <svg viewBox="0 0 100 100" class="sp-radar" role="img" aria-label={ORDER.map((k) => `${k} ${now[k]}`).join(', ')}>
-          {[13, 25.5, 38].map((r) => <polygon key={r} points={ring(r)} class="sp-radar__ring" />)}
-          {ORDER.map((_, i) => { const [x, y] = at(i, 38); return <line key={i} x1="50" y1="50" x2={x} y2={y} class="sp-radar__axis" />; })}
-          <polygon points={shape((k) => e.base[k] * peak)} class="sp-radar__max" />
-          <polygon points={shape((k) => e.base[k])} class="sp-radar__base" />
-          <polygon points={shape((k) => now[k])} class="sp-radar__now" />
-          {ORDER.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class="sp-radar__label">{k}</text>; })}
-        </svg>
-        <ul class="sp-statlist">
-          {ORDER.map((k) => (
-            <li key={k}>
-              <span class="label">{k}</span>
-              <b class="num">{now[k]}</b>
-              <small class="num grant">{now[k] > e.base[k] ? `+${now[k] - e.base[k]}` : ''}</small>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <Section title="Stats" right={<span class="num">Growth <span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
+      <ul class="sysbox sp-statrows">
+        {ORDER.map((k) => (
+          <li key={k}>
+            <Glyph name={STAT_ICON[k] ?? 'star'} />
+            <span class="sp-statrows__name">{k}</span>
+            <b class="num">{now[k]}</b>
+            <small class="num grant">{now[k] > e.base[k] ? `+${now[k] - e.base[k]}` : ''}</small>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }

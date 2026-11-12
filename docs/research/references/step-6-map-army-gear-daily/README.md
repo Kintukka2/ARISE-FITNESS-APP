@@ -130,14 +130,17 @@ Built as "A map worth reading" in [docs/DESIGN.md](../../../DESIGN.md#a-map-wort
 Built as "Kin and Formation" in [docs/DESIGN.md](../../../DESIGN.md#kin-and-formation--built).
 
 - **A tracker beside the squad**, as Teamfight Tactics lists its traits down the board and Dota Underlords
-  lights its alliances' pips: on the Army, under the squad's slots, a row to each family deployed, its glyph
-  and its count, its steps written out (`2 › 3`) with the step reached lit, and what it gives at that step.
-  A family short of its first step stays in the list, dimmed, as a grey trait does, so a pair is one Shadow
-  away in plain sight.
+  lights its alliances' pips: on the Army, under the squad's slots, a chip to each family and role deployed,
+  its mark in a hexagon lit or grey, its count, its name over its breakpoints written as Teamfight Tactics
+  writes them (`2 › 3`, the one reached lit; `1 / 2` while short). A family short of its first step stays in
+  the list, grey, as a trait does, so a pair is one Shadow away in plain sight.
+- **The trait's tooltip**, opened by a tap: each breakpoint in brackets with what it gives, `(2) Attack +10%`,
+  the one reached lit, and who takes it.
 - **Tiers by count**, as both games step theirs: a Kin opens at two of a family and doubles at three.
-- **An aura for the whole side under each Shadow's stats**, as Solo Leveling: Arise Overdrive writes
-  `Shadow's Authority: Increases entire team's Defense` under its Shadow's: a Shadow's card says its role's
-  aura, `Formation: Initiative +4 for you and every Shadow`, under its stats, and its Kin at each step.
+- **The Shadow's panel**, as Solo Leveling: Arise Overdrive sets it: what it was over `Rank │ Bound`,
+  `Lv. │ 3/10` and `Power │ 80`, a label and its value each, the arrow at the end of a row that can be raised;
+  its stats a row each; and `Shadow's Authority` over `Increases entire team's Defense` under them, which
+  becomes `Formation · Leader` over `Initiative +4 for you and every Shadow`, with its Kin's breakpoints.
 - **A bonus held only while the condition holds**, as Siralim's Master of Banshees holds only while the
   party is all Banshees: a Kin and an aura last while their Shadows are deployed, and a run keeps the ones
   it walked in with.
