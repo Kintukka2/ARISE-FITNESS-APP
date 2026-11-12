@@ -11,16 +11,17 @@ import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Chip, Empty, RankPlate, Section } from '@/ui/components';
-import { BentoGrid, type Tile as BTile } from '@/ui/bento';
+import * as kin from '@/core/kin';
 import type { Enemy, Save, Shadow, Tactic } from '@/core/types';
 import { RANKS } from '@/core/types';
 import type { RaidResult } from '@/core/raid';
 import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
 import { skillLine } from './Skills';
-import { Field, SysAlert, SysFrame } from '@/ui/frame';
-import { Glyph } from '@/ui/icons';
+import { SysAlert, SysFrame } from '@/ui/frame';
+import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
+import { KIN_TIER, KinHex, KinOfShadow, KinTracker } from '@/ui/kin';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
 import { claimAll, claimPromotion } from '@/app/flow';
@@ -36,13 +37,14 @@ export function Shadows() {
   const [news] = useState(() => [...fresh]);
   const joined = news.length === 1 ? enemyById(s.shadows.army.find((x) => x.id === news[0])?.enemyId ?? '')?.shadow : null;
   return (
-    <div class="stack">
+    <div class="stack shadowhome">
       {news.length > 0 && (
-        <SysFrame title="Notification" kind="shadow" class="sysnotice">
-          <p>{joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}</p>
-        </SysFrame>
+        <SysAlert kind="shadow" fyi icon={<Glyph name="shadows" />} class="shadownews">
+          {joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}
+        </SysAlert>
       )}
-      <BentoGrid class="shadowgrid" tiles={tiles(s, news)} label="Shadows" />
+      <ArmyStage news={news} />
+      <OrdersBand />
     </div>
   );
 }
@@ -56,73 +58,145 @@ const ranked = (s: Save) => {
 /** A Shadow's short name, for a slot: the name bestowed, or its creature's without `Shadow`. */
 const shortName = (sh: Shadow) => sh.name || (enemyById(sh.enemyId)?.shadow ?? '').replace(/^Shadow /, '');
 
-/** How many of the reserve the Army tile shows before it counts the rest. */
-const RESERVE_SHOWN = 7;
+/**
+ * Where each Shadow of the squad stands on the stage, after the Army of Shadows of Solo Leveling: Arise:
+ * the first deployed in front at its centre, the rest in a V behind it, each a little smaller and higher,
+ * a sixth on the ridge behind them. `x` is across the stage, `y` how far back, `s` its size.
+ */
+const FORMATION_AT: { x: number; y: number; s: number }[] = [
+  { x: 50, y: 0, s: 1 }, { x: 25, y: 14, s: 0.66 }, { x: 75, y: 14, s: 0.66 },
+  { x: 8, y: 26, s: 0.52 }, { x: 92, y: 26, s: 0.52 }, { x: 50, y: 40, s: 0.46 },
+];
 
-/** The Shadows screen: the Army, large, then the Orders. */
-function tiles(s: Save, news: string[]): BTile[] {
-  const slots = shadows.slots(s);
+/** How many of the reserve stand in the fog behind the squad. */
+const RESERVE_SHOWN = 6;
+
+/**
+ * The army, as Solo Leveling: Arise sets its Army of Shadows: a stage of violet fog with the squad
+ * standing on it, the first deployed large and lit in front, the rest in a V behind it, the free slots
+ * as outlines where a Shadow would stand, and the reserve as their families' shapes in the fog. Over it,
+ * the squad's count and its power; under it, what its Kin and Formation give, as Teamfight Tactics lights
+ * its traits, and the Essence, the bound and the reserve. A tap on the stage opens the Army. A promotion
+ * or a star waiting lights the stage gold and puts the act at its foot.
+ */
+function ArmyStage({ news }: { news: string[] }) {
+  const s = useSave();
+  const n = shadows.slots(s);
   const squad = shadows.squad(s);
-  const army = ranked(s);
-  const reserve = army.filter((x) => !squad.includes(x));
+  const reserve = ranked(s).filter((x) => !squad.includes(x));
   const waiting = shadows.waitingAll(s);
+  const lead = squad[0];
+  const leadE = lead && enemyById(lead.enemyId);
+  const m = kin.makeOf(squad);
+  const lit = [
+    ...m.kin.filter((k) => k.tier > 0).map((k) => ({ key: `kin:${k.family}`, family: k.family, role: undefined as string | undefined, n: k.n, name: `${k.family} ${KIN_TIER[k.tier - 1]}` })),
+    ...m.roles.map((r) => ({ key: `role:${r}`, family: undefined as string | undefined, role: r, n: squad.filter((x) => enemyById(x.enemyId)?.role === r).length, name: r })),
+  ];
+  const call = waiting.length > 0 || shadows.freeSlots(s) > 0;
+  const places = Array.from({ length: Math.min(n, FORMATION_AT.length) }, (_, i) => i);
   const promos = shadows.promotable(s).length;
-  const armyTile: BTile = {
-    key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="shadows" />,
-    // A slot free, or a Shadow waiting to be promoted or awakened: each waits on the hunter. One just
-    // bound is news, told by the notification above and its New mark, not a call.
-    call: shadows.freeSlots(s) > 0 || waiting.length > 0,
-    count: `${squad.length}/${slots}`,
-    status: promos ? `Promotion ready: ${promos}` : waiting.length ? `Awakening ready: ${waiting.length}` : <>Bound: {army.length} · Shadow Essence: <b class="num">{s.shadows.essence ?? 0}</b></>,
-    art: (
-      <span class="sa-host">
-        <span class="sa-host__squad">
-          {Array.from({ length: slots }, (_, i) => {
+  return (
+    <SysFrame kind="shadow" class={`armystage ${call ? 'is-call' : ''}`} label="Army">
+      <header class="armystage__head">
+        <span class="armystage__title">
+          <small>Army of Shadows</small>
+          <b>Squad <span class="num">{squad.length}/{n}</span></b>
+        </span>
+        <span class="armystage__power"><small>Squad Power</small><b class="num">{shadows.squadPower(s)}</b></span>
+      </header>
+      <button type="button" class="armystage__stage" onClick={() => { sfx.tap(); openArmy(news); }}
+        aria-label={`Army. Squad ${squad.length} of ${n}${lead ? `, led by ${shadows.nameOf(lead)}` : ''}. Open the Army.`}>
+        <span class="armystage__beam" aria-hidden="true" />
+        <span class="armystage__fog" aria-hidden="true"><i /><i /><i /></span>
+        <span class="armystage__ghosts" aria-hidden="true">
+          {reserve.slice(0, RESERVE_SHOWN).map((sh, i) => (
+            <i key={sh.id} style={`--i: ${i}; --x: ${8 + (i * 84) / Math.max(1, Math.min(reserve.length, RESERVE_SHOWN) - 1)}`}><FamilyGlyph family={enemyById(sh.enemyId)!.family} size={34} /></i>
+          ))}
+        </span>
+        <span class="armystage__floor" aria-hidden="true" />
+        <span class="armystage__line" aria-hidden="true">
+          {places.map((i) => {
+            const at = FORMATION_AT[i];
             const sh = squad[i];
             const e = sh && enemyById(sh.enemyId);
-            if (!sh || !e) return <span key={`free-${i}`} class="sysbox sa-host__slot is-free" style={`--i: ${i}`}><Glyph name="plus" /><small>Free</small></span>;
+            const style = `--x: ${at.x}; --y: ${at.y}; --s: ${at.s}; --i: ${i}; z-index: ${10 - i}`;
+            if (!sh || !e) return <span key={`free-${i}`} class="armystage__one is-free" style={style}><Glyph name="plus" /></span>;
             return (
-              <span key={sh.id} class={`sysbox sa-host__slot ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
-                <span class="sa-host__grade"><RankPlate rank={e.rank} size={16} /></span>
-                <span class="sa-host__smoke" />
-                <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} />
-                <small>{shortName(sh)}</small>
-                <b class="num">Lv.{shadows.levelOf(sh)}</b>
+              <span key={sh.id} class={`armystage__one ${i === 0 ? 'is-lead' : ''} ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={style}>
+                {i === 0 && <span class="armystage__aura" />}
+                <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={92} />
+                {i > 0 && <small>{shortName(sh)}</small>}
               </span>
             );
           })}
         </span>
-        {reserve.length > 0 && (
-          <span class="sa-host__reserve">
-            <span class="label">Reserve</span>
-            <span class="sa-host__ones">
-              {reserve.slice(0, RESERVE_SHOWN).map((sh, i) => (
-                <span key={sh.id} class={`sa-host__one ${shadows.waiting(s, sh) ? 'is-ready' : ''} ${news.includes(sh.id) ? 'is-new' : ''}`} style={`--i: ${i}`}>
-                  <FamilyGlyph family={enemyById(sh.enemyId)!.family} size={16} />
-                </span>
-              ))}
-              {reserve.length > RESERVE_SHOWN && <span class="sa-host__more num">+{reserve.length - RESERVE_SHOWN}</span>}
-            </span>
-          </span>
-        )}
-      </span>
-    ),
-    open: () => openArmy(news),
-  };
+        <span class="armystage__lead">
+          {lead && leadE
+            ? <>
+              <b>{shortName(lead)}</b>
+              <small><Insignia rank={shadows.rankIndex(lead)} size={12} />{shadows.rankOf(lead).name} · <span class="num">Lv.{shadows.levelOf(lead)}</span>{shadows.starsOf(lead) > 0 && <span class="armystage__stars"> {'★'.repeat(shadows.starsOf(lead))}</span>}</small>
+            </>
+            : <b>No Shadow deployed</b>}
+        </span>
+      </button>
+      {lit.length > 0 && (
+        <ul class="armystage__traits" aria-label="Kin and Formation">
+          {lit.map((t) => (
+            <li key={t.key} title={t.name}>
+              <KinHex family={t.family} role={t.role} on />
+              <span><b class="num">{t.n}</b> {t.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {waiting.length > 0
+        ? <button type="button" class="armystage__call" onClick={(ev) => { sfx.tap(); void claimAll(ev.currentTarget); }}>
+          <Glyph name="up" /><span>{promos ? 'Promotion ready' : 'Awakening ready'}: <b class="num">{waiting.length}</b></span><Glyph name="chevron" class="armystage__go" />
+        </button>
+        : shadows.freeSlots(s) > 0
+          ? <button type="button" class="armystage__call" onClick={() => { sfx.tap(); openArmy(news); }}>
+            <Glyph name="plus" /><span>Shadow slots free: <b class="num">{shadows.freeSlots(s)}</b></span><Glyph name="chevron" class="armystage__go" />
+          </button>
+          : null}
+      <footer class="armystage__foot">
+        <span class="armystage__stat"><EssenceMark /><b class="num">{s.shadows.essence ?? 0}</b><small>Shadow Essence</small></span>
+        <span class="armystage__stat"><b class="num">{s.shadows.army.length}</b><small>Bound</small></span>
+        <span class="armystage__stat"><b class="num">{reserve.length}</b><small>Reserve</small></span>
+      </footer>
+    </SysFrame>
+  );
+}
+
+/**
+ * The standing orders, set where they are read: a mark over a name each, the one set lit, and what it
+ * does under them. A tap sets it at once; a step underway keeps the orders it opened with.
+ */
+function OrdersBand() {
+  const s = useSave();
   const t = s.gates.tactic ?? 'default';
-  const ordersTile: BTile = {
-    key: 'orders', kind: 'shadow', name: 'Orders', head: true, wide: true, icon: <Glyph name="orders" />,
-    status: <>Standing orders: <b>{tacticName(t)}</b></>,
-    art: (
-      <span class="sa-orders">
-        {TACTICS.map((x) => (
-          <span key={x.key} class={`sysbox sa-orders__one ${x.key === t ? 'is-on' : ''}`}><Glyph name={TACTIC_GLYPH[x.key]} /><small>{x.name}</small></span>
-        ))}
-      </span>
-    ),
-    open: openOrders,
+  const run = s.gates.raid;
+  const held = run && run.tactic !== t ? tacticName(run.tactic) : null;
+  const set = (k: Tactic) => {
+    if (k === t) return;
+    store.update((x) => { const r = x.gates.raid ?? null; raid.setTactic(x, r ? dungeonById(r.dungeonId) ?? null : null, r, k); });
+    sfx.blip();
   };
-  return [armyTile, ordersTile];
+  const now = TACTICS.find((x) => x.key === t) ?? TACTICS[0];
+  return (
+    <SysFrame kind="shadow" class="ordersband" label="Standing orders">
+      <header class="ordersband__head"><span class="label">Standing Orders</span><small>Shadows and Auto</small></header>
+      <div class="ordersband__set" role="radiogroup" aria-label="Standing orders">
+        {TACTICS.map((x) => (
+          <button key={x.key} type="button" role="radio" aria-checked={x.key === t} class={`ordersband__one ${x.key === t ? 'is-on' : ''}`} onClick={() => set(x.key)}>
+            <Glyph name={TACTIC_GLYPH[x.key]} />
+            <small>{x.name}</small>
+          </button>
+        ))}
+      </div>
+      <p class="ordersband__desc">{now.desc}</p>
+      {held && <small class="ordersband__held">Step underway: {held}</small>}
+    </SysFrame>
+  );
 }
 
 // ------------------------------------------------------------------ the army
@@ -204,7 +278,13 @@ function ArmySheet({ news }: { news: string[] }) {
           )
           : <span><b class="num">0</b><small>Ready</small></span>}
       </div>
-      <Section title="Squad" right={<span class="num roster__count">{squad.length}/{n}</span>}>
+      <Section title="Squad" right={(
+        <span class="roster__headacts">
+          <Btn class="roster__act" size="sm" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
+          <Btn class="roster__act" size="sm" disabled={!squad.length} title="Recall the squad" onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall</Btn>
+          <span class="num roster__count">{squad.length}/{n}</span>
+        </span>
+      )}>
         <div class="roster__slots">
           {Array.from({ length: n }, (_, i) => {
             const sh = squad[i];
@@ -232,27 +312,24 @@ function ArmySheet({ news }: { news: string[] }) {
             );
           })}
         </div>
-        <div class="row roster__acts">
-          <Btn class="grow" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
-          <Btn class="grow" disabled={!squad.length} onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall · {squad.length}</Btn>
-        </div>
+        <KinTracker squad={squad} />
       </Section>
       <div class={`roster__out ${drag.over === 'out' && held && squad.includes(held) ? 'is-over' : ''}`} data-drop="out">
       <div class="roster__tools" ref={listRef}>
         <div class="rostabs" role="tablist" aria-label="Show">
           {SHOWS.map((x) => (
-            <button key={x.key} type="button" role="tab" aria-selected={show === x.key} class={`sysbox rostab ${show === x.key ? 'is-on' : ''} ${x.key === 'ready' && counts.ready ? 'is-call' : ''}`} onClick={() => pick(x.key)}>
+            <button key={x.key} type="button" role="tab" aria-selected={show === x.key} class={`rostab ${show === x.key ? 'is-on' : ''} ${x.key === 'ready' && counts.ready ? 'is-call' : ''}`} onClick={() => pick(x.key)}>
               {x.name}<small class="num">{counts[x.key]}</small>
             </button>
           ))}
         </div>
         <div class="roster__bar">
-          <button type="button" class="sysbox roster__sort" onClick={() => order(SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key)}>
+          <button type="button" class="roster__sort" onClick={() => order(SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key)}>
             <Glyph name="swap" /> Sort: {SORTS.find((x) => x.key === sort)!.name}
           </button>
           <span class="roster__views">
             {(['list', 'grid'] as const).map((k) => (
-              <button key={k} type="button" aria-label={k === 'list' ? 'List' : 'Grid'} aria-pressed={view === k} class={`sysbox roster__view ${view === k ? 'is-on' : ''}`} onClick={() => look(k)}><Glyph name={k} /></button>
+              <button key={k} type="button" aria-label={k === 'list' ? 'List' : 'Grid'} aria-pressed={view === k} class={`roster__view ${view === k ? 'is-on' : ''}`} onClick={() => look(k)}><Glyph name={k} /></button>
             ))}
           </span>
         </div>
@@ -375,40 +452,6 @@ export function EssenceMark({ size = 14 }: { size?: number }) {
 const TACTIC_GLYPH: Record<Tactic, string> = { default: 'eye', finish: 'skull', protect: 'profile', spread: 'bolt' };
 const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.name ?? TACTICS[0].name;
 
-/** ARMY: ORDERS: the standing orders the army fights on. */
-function openOrders() {
-  openSheet({ title: 'Army: Orders', system: { icon: <Glyph name="orders" />, kind: 'shadow' }, render: () => <OrdersSheet /> });
-}
-
-function OrdersSheet() {
-  const s = useSave();
-  const t = s.gates.tactic ?? 'default';
-  const run = s.gates.raid;
-  // A step underway keeps the orders it opened with; the new ones reach the run at its next step.
-  const held = run && run.tactic !== t ? tacticName(run.tactic) : null;
-  const set = (k: Tactic) => {
-    if (k === t) return;
-    store.update((x) => { const r = x.gates.raid ?? null; raid.setTactic(x, r ? dungeonById(r.dungeonId) ?? null : null, r, k); });
-    sfx.blip();
-  };
-  return (
-    <div class="stack">
-      <Section title="Standing Orders" right="Shadows and Auto">
-        <div class="ord-grid" role="radiogroup" aria-label="Standing orders">
-          {TACTICS.map((x) => (
-            <button key={x.key} type="button" role="radio" aria-checked={x.key === t} class={`sysbox ord-card ${x.key === t ? 'is-on' : ''}`} onClick={() => set(x.key)}>
-              <span class="ord-card__ico"><Glyph name={TACTIC_GLYPH[x.key]} /></span>
-              <b>{x.name}</b>
-              <small>{x.desc}</small>
-            </button>
-          ))}
-        </div>
-        {held && <div class="sysfields"><Field k="Step underway" v={held} /></div>}
-      </Section>
-    </div>
-  );
-}
-
 // ------------------------------------------------------------------ the card
 
 function openShadow(id: string) {
@@ -445,10 +488,11 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
   return (
     <div class="stack shadowcard">
       <Profile sh={sh} e={e} close={close} />
-      <Growth sh={sh} />
       <NextRank sh={sh} e={e} />
       <Awakening sh={sh} />
       <Stats sh={sh} e={e} />
+      {/* What it brings to a squad, under its stats, as Solo Leveling: Arise sets a Shadow's aura. */}
+      <KinOfShadow sh={sh} family={e.family} role={e.role} squad={shadows.squad(s)} />
       <Kit sh={sh} e={e} />
       <Record sh={sh} />
       <Release sh={sh} close={close} />
@@ -456,7 +500,12 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
   );
 }
 
-/** The head of the card: its badge inside the ring of its next level, its rank, what it was, its power, and its XP to the next level. */
+/**
+ * The head of the card, after the info panel of Solo Leveling: Arise's Army of Shadows: its badge inside
+ * the ring of its next level, and beside it what it was (small, as the panel's epithet), then a row to
+ * each of `Rank | Bound` (an arrow at its end while a promotion waits), `Lv. | 3/10` over its XP, and
+ * `Power | 80`; its grade, family, role and whether it is deployed under them.
+ */
 function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) {
   const s = useSave();
   const squad = shadows.squad(s);
@@ -469,6 +518,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
   const ready = shadows.waiting(s, sh);
   const share = p.need ? p.into / p.need : 1;
   const c = 2 * Math.PI * 52;
+  const toPromotion = () => { sfx.tap(); document.querySelector('.sheet.is-top .sp-next')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
   return (
     <>
       <section class={`sysbox sp-head ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
@@ -480,23 +530,33 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           </svg>
           <span class="sp-head__smoke" />
           <ShadowEmblem family={e.family} rank={at} size={66} />
-          <b class="sp-head__lv"><small>Lv.</small>{top ? 'MAX' : lv}</b>
+          {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
         </div>
         <div class="sp-head__who">
-          <span class="sa-rank sp-head__rank"><Insignia rank={at} size={15} />{shadows.rankOf(sh).name} Rank{shadows.starsOf(sh) ? <Stars n={shadows.starsOf(sh)} /> : null}</span>
-          <span class="sp-head__was"><span class="label">Was</span> {sh.name ? `${e.name} · ${e.shadow}` : e.name}</span>
+          <span class="sp-head__was">{sh.name ? `${e.name} · ${e.shadow}` : e.name}</span>
+          <dl class="sp-rows">
+            <div class="sp-row">
+              <dt>Rank</dt>
+              <dd class="sp-row__rank"><Insignia rank={at} size={14} />{shadows.rankOf(sh).name}</dd>
+              {ready && <button type="button" class="sysbox sp-up" aria-label={shadows.canPromote(s, sh) ? 'Promotion ready' : 'Awakening ready'} onClick={toPromotion}><Glyph name="up" /></button>}
+            </div>
+            <div class="sp-row">
+              <dt>Lv.</dt>
+              <dd class="num"><span>{top ? 'MAX' : lv}{!top && <small>/{shadows.rankOf(sh).cap}</small>}</span></dd>
+              <span class="sp-row__xp num">{top ? '' : p.need ? `XP ${p.into}/${p.need}` : 'Level cap'}</span>
+            </div>
+            <div class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></div>
+            <div class="sp-row">
+              <dt>Power</dt>
+              <dd class="sp-row__power num">{shadows.power(sh)}</dd>
+            </div>
+          </dl>
           <span class="sp-head__tags">
             <RankPlate rank={e.rank} size={20} />
             <span class="sp-tag"><FamilyGlyph family={e.family} size={13} />{e.family}</span>
             <span class="sp-tag">{e.role}</span>
             <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Not deployed'}</span>
           </span>
-          <span class="sp-head__power"><span class="label">Power</span><b class="num">{shadows.power(sh)}</b></span>
-        </div>
-        <div class="sp-head__exp">
-          <span class="label">XP</span>
-          <span class="sp-exp"><i style={`width: ${pct(unit(share))}%`} /></span>
-          <span class="num">{top ? 'Lv.MAX' : p.need ? `${p.into}/${p.need}` : 'Level cap'}</span>
         </div>
       </section>
       <div class="row">
@@ -507,49 +567,6 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
         <Btn onClick={async () => { const v = await nameShadow(sh.id); if (typeof v === 'string') { close(); openShadow(sh.id); } }}>{sh.name ? 'Rename' : 'Name'}</Btn>
       </div>
     </>
-  );
-}
-
-/**
- * Its growth, as a graph: a bar for every level, rising with what each adds, in a run for each rank.
- * Lit to the level held, open to its cap, and dark past it, where a seal stands across the road until
- * it is promoted.
- */
-function Growth({ sh }: { sh: Shadow }) {
-  const R = shadows.SHADOW_RANKS;
-  const MAX = shadows.MAX_LEVEL;
-  const at = shadows.rankIndex(sh);
-  const lv = shadows.levelOf(sh);
-  const cap = R[at].cap;
-  const W = 300, H = 60, GAP = 9;
-  const run = (W - GAP * (R.length - 1)) / R.length;
-  const bars = R.flatMap((r, ri) => {
-    const lo = ri ? R[ri - 1].cap + 1 : 1;
-    const w = run / (r.cap - lo + 1);
-    return Array.from({ length: r.cap - lo + 1 }, (_, j) => {
-      const l = lo + j;
-      const h = 6 + (H - 8) * (l / MAX);
-      const state = l <= lv ? 'is-lit' : l <= cap ? 'is-open' : 'is-shut';
-      return <rect key={l} x={ri * (run + GAP) + j * w + 0.7} y={H - h} width={Math.max(1, w - 1.4)} height={h} class={`sp-bar ${state} ${l === lv ? 'is-here' : ''}`} style={`--i: ${l}`} />;
-    });
-  });
-  const seal = cap < MAX ? (at + 1) * run + at * GAP + GAP / 2 : null;
-  return (
-    <Section title="Growth" right={<span class="num"><span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
-      <div class="sp-growth">
-        <svg viewBox={`0 0 ${W} ${H + 4}`} class="sp-graph" role="img" aria-label={`Level ${lv} of ${MAX}. Level cap ${cap}.`}>
-          {bars}
-          {seal !== null && <g class="sp-seal"><line x1={seal} y1="0" x2={seal} y2={H + 4} /><rect x={seal - 3} y={H / 2 - 3} width="6" height="6" transform={`rotate(45 ${seal} ${H / 2})`} /></g>}
-        </svg>
-        <ol class="sp-ranks">
-          {R.map((r, i) => (
-            <li key={r.name} class={`${i < at ? 'is-held' : ''} ${i === at ? 'is-here' : ''}`}>
-              <Insignia rank={i} size={14} /><b>{r.name}</b><small class="num">Lv.{i ? R[i - 1].cap + 1 : 1}-{r.cap}</small>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </Section>
   );
 }
 
@@ -670,40 +687,24 @@ function Awakening({ sh }: { sh: Shadow }) {
 }
 
 /**
- * Its stats: a radar of its creature's own (dim), where its level has them now (lit) and where Lv.MAX
- * would (outlined), every shape on one scale; and each stat with what its level adds.
+ * Its stats, as Solo Leveling: Arise lists them: a row each, its mark, its name and its value, and what
+ * its level and stars have added to its creature's own, in green. Over them, how far it has grown of the
+ * most it can.
  */
 function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   const now = shadows.statsOf(sh);
-  const peak = 1 + shadows.MAX_GROWTH;
-  const top = Math.max(1, ...ORDER.map((k) => e.base[k] * peak));
-  const at = (i: number, r: number) => {
-    const a = (-90 + i * 72) * (Math.PI / 180);
-    return [50 + Math.cos(a) * r, 50 + Math.sin(a) * r];
-  };
-  const shape = (v: (k: (typeof ORDER)[number]) => number) => ORDER.map((k, i) => at(i, 3 + 35 * unit(v(k) / top)).join(',')).join(' ');
-  const ring = (r: number) => ORDER.map((_, i) => at(i, r).join(',')).join(' ');
   return (
-    <Section title="Stats" right={<span class="sp-legend"><i class="is-now" />Now<i class="is-max" />Lv.MAX</span>}>
-      <div class="sp-stats">
-        <svg viewBox="0 0 100 100" class="sp-radar" role="img" aria-label={ORDER.map((k) => `${k} ${now[k]}`).join(', ')}>
-          {[13, 25.5, 38].map((r) => <polygon key={r} points={ring(r)} class="sp-radar__ring" />)}
-          {ORDER.map((_, i) => { const [x, y] = at(i, 38); return <line key={i} x1="50" y1="50" x2={x} y2={y} class="sp-radar__axis" />; })}
-          <polygon points={shape((k) => e.base[k] * peak)} class="sp-radar__max" />
-          <polygon points={shape((k) => e.base[k])} class="sp-radar__base" />
-          <polygon points={shape((k) => now[k])} class="sp-radar__now" />
-          {ORDER.map((k, i) => { const [x, y] = at(i, 47); return <text key={k} x={x} y={y} class="sp-radar__label">{k}</text>; })}
-        </svg>
-        <ul class="sp-statlist">
-          {ORDER.map((k) => (
-            <li key={k}>
-              <span class="label">{k}</span>
-              <b class="num">{now[k]}</b>
-              <small class="num grant">{now[k] > e.base[k] ? `+${now[k] - e.base[k]}` : ''}</small>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <Section title="Stats" right={<span class="num">Growth <span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
+      <ul class="sp-statrows">
+        {ORDER.map((k) => (
+          <li key={k}>
+            <Glyph name={STAT_ICON[k] ?? 'star'} />
+            <span class="sp-statrows__name">{k}</span>
+            <b class="num">{now[k]}</b>
+            <small class="num grant">{now[k] > e.base[k] ? `+${now[k] - e.base[k]}` : ''}</small>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
@@ -721,7 +722,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
             const a = ability(n);
             const on = known.includes(n);
             return (
-              <div key={n} class={`sysbox sp-skill ${on ? '' : 'is-sealed'}`}>
+              <div key={n} class={`sp-skill ${on ? '' : 'is-sealed'}`}>
                 <span class="sp-skill__ico"><Glyph name={!on ? 'lock' : a?.type === 'magic' ? 'bolt' : 'fist'} /></span>
                 <span class="sp-skill__body">
                   <b>[Skill: {n}]</b>
@@ -737,7 +738,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
         <Section title="Traits">
           <div class="sp-traits">
             {e.passive && (
-              <div class="sysbox sp-skill is-passive">
+              <div class="sp-skill is-passive">
                 <span class="sp-skill__ico"><Glyph name="star" /></span>
                 <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small>{passiveText(e.passive)}</small></span>
               </div>

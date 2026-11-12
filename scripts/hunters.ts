@@ -51,8 +51,10 @@ function familiar(s: ReturnType<typeof defaults>, rank: number) {
 /**
  * A hunter who keeps up, as `npm run campaign` finds one: a typical hunter whose worn gear has been
  * upgraded to perfect, whose weapon they know to its last rank of Familiarity, with a full squad of
- * Vanguard Shadows taken from their grade's gates. Not past perfect: that is the edge a hunter with
- * materials to spare buys. Calibration sets the marks.
+ * Vanguard Shadows taken from their grade's gates, no creature twice, as extraction allows. Their Kin
+ * and Formation are whatever those Shadows make: a squad built for its Kin is an edge the hunter earns,
+ * as one past perfect is. Not past perfect: that is the edge a hunter with materials to spare buys.
+ * Calibration sets the marks.
  */
 export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
   const s = typicalHunter(level, gearRank, seed);
@@ -62,8 +64,9 @@ export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
   }
   familiar(s, FAMILIARITY.at.length);
   const r = rng(seed + '|shadows');
-  const mobs = ALL_DUNGEONS.filter((d) => d.rank === gearRank).flatMap((d) => d.mobs);
+  // One Shadow of a creature at most, as extraction allows: a second is Essence.
+  const mobs = [...new Set(ALL_DUNGEONS.filter((d) => d.rank === gearRank).flatMap((d) => d.mobs))];
   // A hunter who keeps up has promoted every Shadow to Vanguard, and levelled each to its cap.
-  for (let k = 0; k < shadows.slots(s); k++) shadows.raise(shadows.bind(s, mobs[Math.floor(r() * mobs.length)]), 2);
+  for (let k = 0; k < shadows.slots(s) && mobs.length; k++) shadows.raise(shadows.bind(s, mobs.splice(Math.floor(r() * mobs.length), 1)[0]), 2);
   return s;
 }

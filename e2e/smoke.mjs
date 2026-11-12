@@ -108,9 +108,8 @@ async function raidGate(row, name, auto = false) {
   await snap(`${name}-brief`);
   // A Gate never walked into keeps its map unidentified, as its boss is until met.
   if (name === 'practice') {
-    await page.locator('.sheet.is-top .btabs__one', { hasText: 'Map' }).click(); await sleep(400);
-    if (!(await visible('.sheet.is-top .gmap-fog'))) throw new Error('THE PRACTICE BRIEF SHOWED A MAP BEFORE THE HUNTER WENT IN');
-    await page.locator('.sheet.is-top .btabs__one', { hasText: 'Threat' }).click(); await sleep(300);
+    if (await page.locator('.sheet.is-top button.bmaprow').count()) throw new Error('THE PRACTICE BRIEF OPENS A MAP BEFORE THE HUNTER WENT IN');
+    if (!(await page.locator('.sheet.is-top .bmaprow', { hasText: 'Unidentified' }).count())) throw new Error('THE PRACTICE MAP IS NOT UNIDENTIFIED');
   }
   await page.locator('text=Enter The Gate').click();
   await drain();

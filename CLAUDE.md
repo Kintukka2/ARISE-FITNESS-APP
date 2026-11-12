@@ -111,7 +111,7 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Seals (`data/seals.ts`, `core/seals.ts`) are taken on the brief and written to the run as `run.seals`;
   every rule they play reads the run's own list, as every Ascension rule reads `run.ascension`, and the
   brief's projection plays the ones taken. They pay Ascendant Ember only (`sealEmber`), never shards, in `raid.finish`.
-  The brief (`screens/Brief.tsx`) and its Seals' window share the Seals set and the projections made for them.
+  The brief (`screens/Brief.tsx`) presses them in place; its head and its Seals share the Seals set and the projections made for them.
   Calibration plays no Seals; the campaign takes a Gate's while the brief reads 75% or better.
 - Feats (`data/feats.ts`, `core/feats.ts`) are judged from the run's tally, counted in `raid.record`,
   and pay once each per Gate (`s.gates.feats`). Special drops (`data/drops.ts`) are read at the kill
@@ -132,6 +132,13 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Sight's Foresight (`FORESIGHT` in `data/tree.ts`) only shows a foe's numbers (`skilltree.foresees`).
   It is never a passive of the fight's build and Auto Assign never takes it, so it moves no tuning;
   keep it so, or recalibrate.
+- Kin and Formation (`data/kin.ts`, `core/kin.ts`) reach the fight only through `raid.partySpecs`: each
+  deployed Shadow's spec takes its Kin's boon, and the hunter's and every Shadow's the Formation's auras.
+  The Association's hunters take neither, and an open run keeps both in `run.party`. Auto Deploy
+  (`shadows.bestSquad`) weighs whole squads (`squadScore`, `WORTH`); the campaign deploys as it does.
+  Calibration's `keptUpHunter` fields a squad drawn from its grade's gates, no creature twice, and plays
+  whatever Kin it makes. Change a boon, an aura, `KIN_AT`, `WORTH` or how Auto Deploy weighs, and you must
+  recalibrate and rerun the campaign.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

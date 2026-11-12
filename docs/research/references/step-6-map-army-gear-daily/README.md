@@ -124,3 +124,25 @@ Built as "A map worth reading" in [docs/DESIGN.md](../../../DESIGN.md#a-map-wort
 - No game shades its plan by distance or danger, so neither does ARISE: the gradient is in what the rooms
   hold, stated in the Guide, and a fight's pips already say how many wait in it.
 
+
+## What ARISE took, for the army
+
+Built as "Kin and Formation" in [docs/DESIGN.md](../../../DESIGN.md#kin-and-formation--built).
+
+- **A tracker beside the squad**, as Teamfight Tactics lists its traits down the board and Dota Underlords
+  lights its alliances' pips: on the Army, under the squad's slots, a chip to each family and role deployed,
+  its mark in a hexagon lit or grey, its count, its name over its breakpoints written as Teamfight Tactics
+  writes them (`2 › 3`, the one reached lit; `1 / 2` while short). A family short of its first step stays in
+  the list, grey, as a trait does, so a pair is one Shadow away in plain sight.
+- **The trait's tooltip**, opened by a tap: each breakpoint in brackets with what it gives, `(2) Attack +10%`,
+  the one reached lit, and who takes it.
+- **Tiers by count**, as both games step theirs: a Kin opens at two of a family and doubles at three.
+- **The Shadow's panel**, as Solo Leveling: Arise Overdrive sets it: what it was over `Rank │ Bound`,
+  `Lv. │ 3/10` and `Power │ 80`, a label and its value each, the arrow at the end of a row that can be raised;
+  its stats a row each; and `Shadow's Authority` over `Increases entire team's Defense` under them, which
+  becomes `Formation · Leader` over `Initiative +4 for you and every Shadow`, with its Kin's breakpoints.
+- **A bonus held only while the condition holds**, as Siralim's Master of Banshees holds only while the
+  party is all Banshees: a Kin and an aura last while their Shadows are deployed, and a run keeps the ones
+  it walked in with.
+- Not taken: Hades II's cost in Grasp and Diablo IV's sacrifice. A squad's slots are already its budget,
+  and nothing about a Kin asks the hunter to give anything up but the slot.

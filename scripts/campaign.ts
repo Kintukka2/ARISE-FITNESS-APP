@@ -30,7 +30,6 @@ import * as sealing from '@/core/seals';
 import { sealEmber } from '@/data/seals';
 import { defaults } from '@/core/save';
 import * as shadows from '@/core/shadows';
-import { powerOf } from '@/core/combat';
 import * as association from '@/core/association';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
@@ -153,9 +152,9 @@ function tidy(s: Save, now: number, t: Tally) {
   setAllBySystem(s);
   sweep(s);
   gear.autoEquip(s);
-  // A slot left free is filled with the strongest Shadow not deployed, as the Squad tile calls for.
-  const bench = s.shadows.army.filter((x) => !shadows.squad(s).includes(x)).sort((a, b) => powerOf(shadows.statsOf(b)) - powerOf(shadows.statsOf(a)));
-  for (const x of bench) if (shadows.freeSlots(s) > 0) shadows.toggleDeploy(s, x.id);
+  // The squad as Auto Deploy makes it, its Kin and Formation weighed: a slot left free calls for it, and a
+  // Shadow bound or grown can change what weighs most.
+  shadows.autoDeploy(s);
   const day = dayKey(now);
   // A blueprint off the shelf, if it is rarer than what its slot can be forged from now, for no more than half the purse.
   const shelf = shop.shelf(s, day).filter((o) => {

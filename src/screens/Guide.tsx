@@ -9,6 +9,8 @@ import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
+import { FORMATION, KIN, KIN_ALL, KIN_AT } from '@/data/kin';
+import { bonusText } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
@@ -360,10 +362,23 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A newly bound Shadow fights with its creature’s first ability.',
       `At ${SHADOW_RANKS[SECOND_AT].name} it remembers a second, from its own kit or, if it had only one, from its kin.`,
       'Every Shadow follows the army’s standing orders.',
-      'Auto Deploy, on the Army, fills the squad with your strongest Shadows by power.',
+      'Auto Deploy, on the Army, makes the squad that weighs most: each Shadow’s power, with what its Kin and the Formation add, and what the auras add to you.',
       'Drag a Shadow onto a slot to place it there, or onto another deployed Shadow to swap the two.',
       'Drop a deployed Shadow on the list to take it out. On a phone, hold it a moment first.',
       'You may bestow a name on a Shadow when it joins your army, or later from its card. It goes by that name everywhere.',
+    ],
+  },
+  {
+    title: 'Kin and Formation',
+    lines: [
+      `${KIN_AT[0]} deployed Shadows of one family make a Kin, and each of them takes its family’s boon. ${KIN_AT[1]} or more take it twice over.`,
+      ...Object.entries(KIN).map(([f, b]) => `${f}: ${bonusText(b)} at ${KIN_AT[0]}.`),
+      `${KIN_ALL} is kin to every family. One deployed counts as one of each family beside it, and takes the boon of every Kin it completes.`,
+      'Each role in the squad gives its aura to you and to every Shadow, once however many share it: the Formation.',
+      ...Object.entries(FORMATION).map(([r, b]) => `${r}: ${bonusText(b)}.`),
+      'The Association’s hunters take neither.',
+      'A Gate keeps the Kin and the Formation you walked in with until you leave it.',
+      'The Army shows each Kin your squad makes, its steps lit as they are reached, and each aura its roles give.',
     ],
   },
   {

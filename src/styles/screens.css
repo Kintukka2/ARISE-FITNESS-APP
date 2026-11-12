@@ -1352,16 +1352,19 @@ button.dmap__floor { cursor: pointer; }
 .gtag.is-ascension { --tc: var(--gold); }
 
 /* The head. The verdict's colour runs through the ring, its ticks and the verdict itself. */
-.bhero, .sgauge { --vc: var(--verdant); --vg: var(--verdant-glow); }
-.bhero[data-tone='even'], .sgauge[data-tone='even'] { --vc: var(--gold); --vg: var(--gold-glow); }
-.bhero[data-tone='over'], .sgauge[data-tone='over'] { --vc: var(--blood); --vg: var(--blood-glow); }
-.bhero { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 10px 14px; overflow: hidden; padding: 12px 12px 12px 8px;
+.bhero { --vc: var(--verdant); --vg: var(--verdant-glow); }
+.bhero[data-tone='even'] { --vc: var(--gold); --vg: var(--gold-glow); }
+.bhero[data-tone='over'] { --vc: var(--blood); --vg: var(--blood-glow); }
+/* The head, as a boss is revealed: centred, the portal in its ring large, the grade's light turning behind it. */
+.bhero { position: relative; display: grid; justify-items: center; gap: 6px; overflow: hidden; padding: 16px 14px 14px; text-align: center;
   border: 1px solid color-mix(in srgb, var(--rc) 50%, var(--sys-hair));
-  background: radial-gradient(80% 120% at 0% 50%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 62%), radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, var(--vc) 10%, transparent), transparent 70%), rgba(6, 4, 2, 0.6);
+  background: radial-gradient(60% 50% at 50% 44%, color-mix(in srgb, var(--rc) 30%, transparent), transparent 72%), radial-gradient(80% 60% at 50% 100%, color-mix(in srgb, var(--vc) 12%, transparent), transparent 70%), rgba(6, 4, 2, 0.6);
   animation: bheroIn 520ms var(--ease) both; }
+.bhero__glow { position: absolute; left: 50%; top: 44px; width: 280px; height: 280px; margin-left: -140px; border-radius: 50%; background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--rc) 28%, transparent), transparent 30%, transparent 50%, color-mix(in srgb, var(--rc) 22%, transparent), transparent 80%); filter: blur(16px); opacity: 0.7; animation: spSpin 24s linear infinite; pointer-events: none; }
+.bhero > :not(.bhero__glow) { position: relative; }
 /* A line of light sweeps the head once as the brief opens: the System reading the Gate. */
 .bhero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--vc) 16%, transparent) 50%, transparent 70%); transform: translateX(-110%); animation: bheroScan 1300ms 180ms var(--ease) both; pointer-events: none; }
-.bhero__ring { position: relative; display: grid; place-items: center; width: 112px; height: 112px; }
+.bhero__ring { position: relative; display: grid; place-items: center; width: 150px; height: 150px; margin-top: 2px; }
 .aring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--vc); filter: drop-shadow(0 0 5px var(--vg)); }
 .aring circle { fill: none; }
 .aring__track { stroke: rgba(255, 255, 255, 0.08); stroke-width: 4; }
@@ -1369,27 +1372,21 @@ button.dmap__floor { cursor: pointer; }
 .aring__ghost { stroke: rgba(255, 255, 255, 0.3); stroke-width: 4; stroke-linecap: round; transition: stroke-dasharray 700ms var(--ease); }
 .aring__tick { stroke: rgba(255, 255, 255, 0.13); stroke-width: 2; stroke-linecap: round; transition: stroke 260ms calc(var(--i) * 18ms), opacity 260ms; }
 .aring__tick.is-on { stroke: currentColor; animation: tickIn 420ms calc(240ms + var(--i) * 26ms) var(--ease) both; }
-.bhero__portal.ga-portal { width: 72px; height: 72px; }
-.bhero__portal .ga-portal__core { inset: 12px; }
-.bhero__pct { position: absolute; bottom: -2px; left: 50%; z-index: 1; padding: 1px 9px; border: 1px solid var(--vc); border-radius: 999px; background: rgba(4, 5, 6, 0.94); color: var(--vc); font-size: 0.86rem; font-weight: 800; line-height: 1.35; text-shadow: 0 0 8px var(--vg); transform: translateX(-50%); transition: color 300ms, border-color 300ms; }
-.bhero__pct small { font-size: 0.6rem; }
-.bhero__body { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bhero__portal.ga-portal { width: 100px; height: 100px; }
+.bhero__portal .ga-portal__core { inset: 16px; }
+.bhero__read { display: flex; align-items: baseline; justify-content: center; gap: 10px; margin-top: -4px; }
+.bhero__pct { color: var(--vc); font-size: 1.7rem; font-weight: 800; line-height: 1; text-shadow: 0 0 12px var(--vg); transition: color 300ms; }
+.bhero__pct small { font-size: 0.9rem; }
 .bhero__grade { color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
-.bhero__side { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.bhero__assess { margin-top: 2px; font-size: 0.98rem; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; text-align: center; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
-.bhero__title { margin: 2px 0 0; font-size: 1.02rem; font-weight: 700; line-height: 1.3; color: #fff; text-shadow: var(--sys-glow); }
-.bhero__title .label { display: block; margin-bottom: 2px; font-size: 0.56rem; }
-.bhero__body > small { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
-.bhero__body > small b { color: #fff; }
-.bhero__was { text-decoration: line-through; opacity: 0.6; }
-.bhero__body > small.bhero__depth { display: block; }
-.bhero__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
-.bhero > .basc { position: relative; grid-column: 1 / -1; }
-.bhero .bfile { margin: 1px 0 0; padding: 0; font-size: 0.72rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); -webkit-line-clamp: 3; }
-.bhero .bhero__tags { margin-top: 3px; }
-.bhero .basc { margin: 0 0 0 4px; }
+.bhero__assess { font-size: 1.2rem; font-weight: 800; line-height: 1; letter-spacing: 0.02em; color: var(--vc); text-shadow: 0 0 14px var(--vg); transition: color 300ms; }
+.bhero__title { margin: 0; font-size: 1.28rem; font-weight: 800; line-height: 1.2; color: #fff; text-shadow: 0 0 4px rgba(255, 255, 255, 0.4), 0 0 18px color-mix(in srgb, var(--rc) 50%, transparent); }
+.bhero__title .label { display: block; margin-bottom: 4px; font-size: 0.58rem; }
+.bhero > .basc { justify-self: stretch; text-align: left; }
+.bhero .bfile { max-width: 300px; margin: 0; padding: 0; font-size: 0.74rem; line-height: 1.45; text-align: center; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); -webkit-line-clamp: 2; }
+.bhero .bhero__tags { justify-content: center; }
+.bhero .basc { margin: 2px 0 0; }
 /* While the System replays the Gate under the Seals just set, what it reads waits, breathing. */
-.bhero.is-pending .bhero__pct, .bhero.is-pending .bhero__assess, .sgauge.is-pending .sgauge__ring b, .sgauge.is-pending .sgauge__verdict { animation: projWait 700ms ease-in-out infinite alternate; }
+.bhero.is-pending .bhero__pct, .bhero.is-pending .bhero__assess { animation: projWait 700ms ease-in-out infinite alternate; }
 .bhero.is-sealed { border-color: color-mix(in srgb, var(--sysred) 55%, var(--sys-hair)); box-shadow: inset 0 0 22px rgba(255, 47, 62, 0.12); }
 @keyframes bheroIn { from { opacity: 0; transform: translateY(6px) scale(0.985); } }
 @keyframes bheroScan { to { transform: translateX(110%); } }
@@ -1416,19 +1413,6 @@ button.dmap__floor { cursor: pointer; }
 .sealart.is-on .sealart__wax { stroke: rgba(255, 160, 160, 0.45); }
 
 /* The Seals' button: their wax, overlapping, and what they are. */
-.bsealbtn { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; overflow: hidden; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--sysred) 45%, var(--sys-hair)); background: linear-gradient(90deg, rgba(60, 6, 14, 0.45), rgba(4, 6, 10, 0.6) 70%); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; transition: border-color 200ms, box-shadow 200ms; }
-.bsealbtn:active { transform: scale(0.99); }
-.bsealbtn__wax { display: flex; flex: none; padding-left: 2px; }
-.bsealbtn__wax .sealart { margin-left: -10px; }
-.bsealbtn__wax .sealart:first-child { margin-left: 0; }
-.bsealbtn__wax .sealart.is-on { animation: waxIn 420ms calc(var(--i) * 70ms) var(--ease) both; }
-.bsealbtn__body { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
-.bsealbtn__body b { display: -webkit-box; overflow: hidden; font-size: 0.84rem; font-weight: 700; line-height: 1.3; color: #fff; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.bsealbtn__body small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bsealbtn__go { flex: none; width: 16px; height: 16px; color: var(--sysred); }
-.bsealbtn.is-on { border-style: solid; border-color: var(--sysred); background: linear-gradient(90deg, rgba(90, 8, 18, 0.6), rgba(30, 4, 8, 0.6)); box-shadow: inset 0 0 18px rgba(255, 47, 62, 0.2), 0 0 12px rgba(255, 47, 62, 0.18); }
-.bsealbtn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(255, 80, 90, 0.14) 50%, transparent 65%); transform: translateX(-110%); animation: bheroScan 3.4s 1.2s ease-in-out infinite; pointer-events: none; }
-.bsealbtn.is-on::after { display: none; }
 @keyframes waxIn { from { opacity: 0; transform: scale(1.6) rotate(-16deg); } 70% { transform: scale(0.94) rotate(3deg); opacity: 1; } }
 
 /* The head's foot: HP, MP and Fatigue, a thin bar and the figure each, and the + that drinks for it. */
@@ -1451,8 +1435,11 @@ button.dmap__floor { cursor: pointer; }
 .bvital__drink:disabled { cursor: default; opacity: 0.35; }
 
 /* A section of the brief: a box with its name on its rim; the lists in it a line each. */
-.bbox { position: relative; display: grid; gap: 6px; padding: 14px 12px 10px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.55); }
-.bbox__head { position: absolute; top: -7px; left: 9px; padding: 0 5px; background: rgb(8, 7, 6); font-size: 0.56rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* Objectives and Rewards: a small label over their lines, on the glass. A box is for what the hunter acts on. */
+.bbox { position: relative; display: grid; gap: 7px; padding: 2px 2px 0; }
+.bbox__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.bbox__right { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bbox__right b { color: #fff; }
 .bbox__head small { font-size: inherit; letter-spacing: inherit; }
 .blist { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
 .bline { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: baseline; gap: 8px; font-size: 0.76rem; line-height: 1.45; color: var(--sys-ink); }
@@ -1504,15 +1491,9 @@ button.dmap__floor { cursor: pointer; }
 @keyframes lineIn { from { opacity: 0; transform: translateX(-8px); filter: brightness(2); } }
 
 /* The tabs and what they show, one box: the tabs its head, the one shown opening into the panel under it. */
-.btabbox { gap: 0; padding: 0; }
-.btabbox .btabs { margin: 0; border: 0; border-bottom: 1px solid var(--sys-hair); background: rgba(255, 255, 255, 0.02); }
-.btabbox .btabs__one.is-on { background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 16%, transparent), rgba(4, 6, 10, 0.55)); }
-.btabbox .btab-panel { padding: 12px 10px 10px; }
-.bmap__depth { display: block; margin: -4px 0 2px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
-.bmap__depth .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; color: var(--rc); }
 
 /* The brief's banner, at its top: the hunter, the bag, and their condition with its potions. */
-.sysbanner { position: relative; padding: 10px 12px; border: 1px solid var(--sys-hair); background: linear-gradient(180deg, rgba(79, 214, 255, 0.07), rgba(4, 6, 10, 0.6)); }
+.sysbanner { position: relative; padding: 6px 2px 12px; border-bottom: 1px solid var(--sys-hair); }
 .sysbanner__tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
 .bbanner { display: grid; gap: 10px; }
 .bbanner__who { display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 52px; }
@@ -1536,13 +1517,6 @@ button.dmap__floor { cursor: pointer; }
 .bchosen > .ico { flex: none; width: 22px; height: 22px; color: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
 .bchosen .grow { display: flex; flex-direction: column; gap: 1px; }
 .bchosen small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
-.bthreat { gap: 1px; padding-top: 6px; border-top: 1px solid var(--sys-hair); }
-.bthreat .bline__text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
-.bthreat .bline__text b { font-size: 0.7rem; font-weight: 600; }
-.bthreat .bline { font-size: 0.7rem; line-height: 1.35; }
-.bthreat__kind { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bthreat__one.is-elite .bline__mark > i { background: var(--gold); box-shadow: 0 0 5px var(--gold-glow); }
-.bthreat__one.is-elite .bthreat__kind { color: var(--gold); }
 
 /* The Feats and the party, rows in the box rather than boxes of their own. */
 .bfeats { display: grid; }
@@ -1556,21 +1530,10 @@ button.dmap__floor { cursor: pointer; }
 .sysframe .brief .bparty li.is-shadow { border-left-color: var(--arcane); background: linear-gradient(90deg, color-mix(in srgb, var(--arcane) 10%, transparent), transparent 80%); }
 
 /* The tabs: a name over a count each, a bar sliding under the one shown. */
-.btabs { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 2px; border: 1px solid var(--sys-hair); background: rgba(4, 6, 10, 0.6); }
-.btabs::after { content: ''; position: absolute; bottom: -1px; left: calc(100% / var(--n) * var(--at)); width: calc(100% / var(--n)); height: 2px; background: var(--rc); box-shadow: 0 0 10px var(--rc); transition: left 320ms var(--ease); }
-.btabs__one { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; min-height: 48px; padding: 6px 2px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font: inherit; cursor: pointer; transition: color 200ms, background 200ms; }
-.btabs__one + .btabs__one { border-left: 1px solid var(--sys-hair); }
-.btabs__one b { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
-.btabs__one small { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; font-weight: 700; }
-.btabs__one small .ico { width: 11px; height: 11px; }
-.btabs__one.is-on { color: #fff; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--rc) 16%, transparent)); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
-.btabs__one.is-on small { color: var(--rc); }
 .btabs__stars { display: inline-flex; gap: 1px; letter-spacing: 0; }
 .btabs__stars i { font-style: normal; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
 .btabs__stars i.is-on { color: var(--gold); text-shadow: 0 0 6px var(--gold-glow); }
-.btab-panel { display: flex; flex-direction: column; gap: 8px; min-height: 180px; animation: tabIn 300ms var(--ease) both; }
 @keyframes rowIn { from { opacity: 0; transform: translateY(5px); } }
-@keyframes tabIn { from { opacity: 0; transform: translateX(calc(var(--dir) * 22px)); } }
 /* The threat: the boss's card, then a chip to each creature and the gatekeeper; violet where it already serves. */
 /* A creature's condition drop on the brief: its part's glyph, and the way to fell it. */
 /* Seals: a row to each, the rule in red and the pay in green; taken, the row is red-rimmed and locked. */
@@ -1593,45 +1556,10 @@ button.dmap__floor { cursor: pointer; }
 @keyframes oddsIn { from { width: 0; } }
 
 /* THE SEALS' WINDOW: the gauge as it stands, and a card to each Seal, pressed in wax when taken. */
-.sealsheet { gap: 10px; }
-.sgauge { position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; grid-template-areas: 'ring body ember' 'bar bar bar'; align-items: center; gap: 8px 12px; padding: 12px; border-color: color-mix(in srgb, var(--vc) 45%, var(--sys-hair)); background: radial-gradient(70% 100% at 0% 0%, color-mix(in srgb, var(--vc) 12%, transparent), transparent 70%), rgba(6, 4, 2, 0.6); transition: border-color 300ms; }
-.sgauge__ring { position: relative; display: grid; grid-area: ring; place-items: center; width: 76px; height: 76px; }
-.sgauge__ring b { position: relative; font-size: 1rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 8px var(--vg); }
-.sgauge__ring b small { font-size: 0.6rem; }
-.sgauge__body { display: flex; grid-area: body; flex-direction: column; gap: 2px; min-width: 0; }
-.sgauge__verdict { font-size: 1rem; font-weight: 800; color: var(--vc); text-shadow: 0 0 12px var(--vg); transition: color 300ms; }
-.sgauge__body > small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
-.sgauge__body > small b { color: #fff; }
-.sgauge__ember { display: flex; grid-area: ember; flex-direction: column; align-items: center; gap: 1px; }
-.sgauge__ember b { font-size: 1.15rem; font-weight: 800; color: var(--ember); text-shadow: 0 0 10px var(--ember-glow); animation: emberCount 420ms var(--ease); }
-.sgauge__ember small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ember); }
-.sgauge__bar { display: flex; grid-area: bar; align-items: center; gap: 3px; }
-.sgauge__bar i { height: 8px; border: 1px solid rgba(255, 154, 60, 0.35); background: rgba(255, 154, 60, 0.08); transform-origin: left; transition: background 300ms, box-shadow 300ms, border-color 300ms; }
-.sgauge__bar i.is-on { border-color: var(--ember); background: linear-gradient(90deg, #ff6a2a, #ffb347); box-shadow: 0 0 10px var(--ember-glow); animation: barIn 420ms var(--ease) both; }
-.sgauge__bar small { flex: none; margin-left: 6px; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 @keyframes emberCount { from { transform: scale(1.5); filter: brightness(2); } }
 @keyframes barIn { from { transform: scaleX(0.2); filter: brightness(2); } }
 
-.sealcards { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.sealcards > li { animation: rowIn 340ms calc(var(--i) * 70ms) var(--ease) both; }
-.sealcard { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; overflow: hidden; padding: 10px 12px 10px 8px; background: rgba(4, 6, 10, 0.7); color: var(--sys-ink); font: inherit; text-align: left; cursor: pointer; transition: border-color 220ms, background 220ms, box-shadow 220ms; }
-.sealcard:active:not(:disabled) { transform: scale(0.985); }
-.sealcard__slot { position: relative; display: grid; place-items: center; width: 52px; height: 52px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 28%, transparent); border-radius: 50%; }
-.sealcard__body { display: grid; gap: 2px; min-width: 0; }
-.sealcard__body b { font-size: 0.9rem; font-weight: 700; color: #fff; }
-.sealcard__rule { font-size: 0.72rem; color: var(--blood); }
-.sealcard__pay { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 0.7rem; color: var(--ember); }
-.sealcard__state { display: inline-flex; align-items: center; gap: 4px; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-.sealcard__state .ico { width: 11px; height: 11px; }
-.sealcard.is-on { border-color: var(--sysred); background: radial-gradient(60% 120% at 0% 50%, rgba(255, 47, 62, 0.22), transparent 70%), rgba(40, 4, 10, 0.7); box-shadow: inset 0 0 16px rgba(255, 40, 70, 0.18), 0 0 10px rgba(255, 47, 62, 0.15); }
-.sealcard.is-on .sealcard__slot { border-color: transparent; }
-.sealcard.is-on .sealcard__state { color: var(--sysred); }
-.sealcard.is-stamped .sealart { animation: stamp 520ms var(--ease) both; }
-.sealcard.is-stamped { animation: stampShake 360ms 180ms ease-out; }
-.sealcard.is-lifted .sealart { animation: lift 360ms var(--ease) both; }
 .sealcard__ripple { position: absolute; inset: 4px; border: 2px solid var(--sysred); border-radius: 50%; opacity: 0; animation: ripple 620ms 200ms ease-out; pointer-events: none; }
-.sealcard:disabled { cursor: default; }
-.sealcard:disabled:not(.is-on) { opacity: 0.45; }
 @keyframes stamp { 0% { opacity: 0; transform: scale(2.1) rotate(-24deg); } 45% { opacity: 1; transform: scale(0.86) rotate(4deg); } 70% { transform: scale(1.06) rotate(-1deg); } }
 @keyframes stampShake { 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 75% { transform: translateX(-1px); } }
 @keyframes lift { from { transform: scale(1.12) translateY(-3px); filter: brightness(1.6); } }
@@ -1676,25 +1604,6 @@ button.dmap__floor { cursor: pointer; }
 /* The squad: a slot to each Shadow that can walk in, filled or waiting. */
 
 /* The Army, on its tile: the squad's slots, each a badge in smoke with its grade, name and level; the reserve under them, a glyph each. */
-.sa-host { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-.sa-host__squad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.sa-host__slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 104px; padding: 12px 4px 7px; border-color: color-mix(in srgb, var(--win) 60%, transparent); color: var(--sys-ink); background: radial-gradient(80% 70% at 50% 35%, color-mix(in srgb, var(--win) 18%, transparent), transparent 75%), rgba(6, 3, 18, 0.55); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 20%, transparent); animation: qaIn 520ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
-.sa-host__slot .emblem { position: relative; color: var(--win); filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.6s); }
-.sa-host__smoke { position: absolute; top: 10px; left: 50%; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 45%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; }
-.sa-host__slot small { position: relative; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.64rem; font-weight: 600; text-shadow: var(--sys-glow); }
-.sa-host__slot b { position: relative; font-size: 0.62rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.sa-host__grade { position: absolute; top: 5px; left: 5px; z-index: 1; }
-.sa-host__slot.is-free { border-style: dashed; border-color: var(--sys-hair); background: none; box-shadow: none; color: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
-.sa-host__slot.is-free .ico { width: 18px; height: 18px; }
-.sa-host__slot.is-ready { border-color: var(--gold); box-shadow: inset 0 0 14px color-mix(in srgb, var(--gold) 22%, transparent), 0 0 10px var(--gold-glow); }
-.sa-host__slot.is-ready .emblem { filter: drop-shadow(0 0 10px var(--gold-glow)); }
-.sa-host__reserve { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
-.sa-host__reserve .label { flex: none; font-size: 0.56rem; }
-.sa-host__ones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
-.sa-host__one { position: relative; display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--win) 40%, transparent); border-radius: 50%; color: #c9a7ff; background: color-mix(in srgb, var(--win) 10%, transparent); animation: saRise 520ms var(--ease) both; animation-delay: calc(var(--i) * 50ms); }
-.sa-host__one.is-ready { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
-.sa-host__one.is-new::after { content: ''; position: absolute; top: -1px; right: -1px; width: 7px; height: 7px; border-radius: 50%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
-.sa-host__more { font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 
 /* ARMY: the roster. Its counts, the squad's slots, then a row to every Shadow, made into the squad from here. */
 .roster { gap: 12px; }
@@ -1724,20 +1633,25 @@ button.dmap__floor { cursor: pointer; }
 .roster__slot.is-free { justify-content: center; min-height: 92px; border-style: dashed; border-color: var(--sys-hair); background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
 .roster__slot.is-free .ico { width: 16px; height: 16px; }
 .roster__slot.is-ready { border-color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
-.roster__acts { gap: 8px; margin-top: 8px; }
+.roster__headacts { display: inline-flex; align-items: center; gap: 2px; }
+/* The squad's acts as quiet text beside its count: the slots are what the eye goes to. */
+.sysframe .btn.roster__act { min-height: 44px; padding: 0 8px; border-color: transparent; background: none; box-shadow: none; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.sysframe .btn.roster__act .ico { width: 14px; height: 14px; }
+.sysframe .btn.roster__act:disabled { opacity: 0.35; }
+.roster__headacts .roster__count { margin-left: 6px; }
 .roster__tools { display: flex; flex-direction: column; gap: 6px; scroll-margin-top: 8px; }
-.rostabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.rostab { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 0 6px; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; }
+.rostabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--sys-hair); }
+.rostab { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 0 6px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer; }
 .rostab small { font-size: 0.6rem; font-weight: 700; opacity: 0.8; }
-.rostab.is-on { color: #fff; border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 22%, rgba(3, 8, 20, 0.5)); box-shadow: 0 0 12px color-mix(in srgb, var(--win) 30%, transparent); }
+.rostab.is-on { color: #fff; box-shadow: inset 0 -2px 0 var(--win); text-shadow: 0 0 8px var(--win-glow); }
 .rostab.is-call small { color: var(--gold); opacity: 1; }
 .roster__bar { display: flex; align-items: center; gap: 6px; }
-.roster__sort { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; }
+.roster__sort { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
 .roster__sort .ico { width: 13px; height: 13px; }
 .roster__views { display: flex; gap: 4px; margin-left: auto; }
-.roster__view { display: grid; place-items: center; width: 34px; height: 32px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.roster__view { display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); cursor: pointer; }
 .roster__view .ico { width: 14px; height: 14px; }
-.roster__view.is-on { color: #fff; border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 20%, rgba(3, 8, 20, 0.5)); }
+.roster__view.is-on { color: #fff; filter: drop-shadow(0 0 5px var(--win-glow)); }
 /* The table: a head of labels over a row to each Shadow; the deployed ones lit along their start. */
 .roster__table { display: flex; flex-direction: column; }
 .roster__head { display: grid; grid-template-columns: 34px minmax(0, 1fr) 40px 42px; column-gap: 8px; align-items: end; padding: 0 10px 6px 0; border-bottom: 1px solid var(--sys-hair); }
@@ -1801,15 +1715,6 @@ button.dmap__floor { cursor: pointer; }
 .rostercard:not(.is-on):not(.is-ready) .rostercard__art { opacity: 0.8; }
 
 /* Orders, on its tile: the four standing orders, the one the army fights on lit. */
-.sa-orders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
-.sa-orders__one { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 66px; padding: 6px 4px; border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 38%, transparent); animation: qaIn 520ms var(--ease) both; }
-.sa-orders__one:nth-child(2) { animation-delay: 80ms; }
-.sa-orders__one:nth-child(3) { animation-delay: 160ms; }
-.sa-orders__one:nth-child(4) { animation-delay: 240ms; }
-.sa-orders__one .ico { width: 18px; height: 18px; }
-.sa-orders__one small { font-size: 0.56rem; font-weight: 600; line-height: 1.2; text-align: center; }
-.sa-orders__one.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 75%, transparent); color: var(--sys-ink); background: color-mix(in srgb, var(--win) 12%, transparent); box-shadow: inset 0 0 14px color-mix(in srgb, var(--win) 25%, transparent), 0 0 10px var(--win-glow); text-shadow: var(--sys-glow); }
-.sa-orders__one.is-on .ico { color: #e2d2ff; filter: drop-shadow(0 0 6px var(--win-glow)); }
 
 /* ARMY: ORDERS: a card to each standing order, then a row to each Shadow, its own orders lit. */
 .ord-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1940,26 +1845,25 @@ button.dmap__floor { cursor: pointer; }
 .sp-legend i.is-max { border: 1px dashed color-mix(in srgb, var(--arcane) 75%, white); }
 
 /* Skills and traits: a card each, its kind's glyph in a box at its side. */
-.sp-skills, .sp-traits { display: flex; flex-direction: column; gap: 8px; }
-.sp-skill { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: stretch; min-height: 50px; }
-.sp-skill__ico { display: grid; place-items: center; border-right: 1px solid var(--sys-hair); background: color-mix(in srgb, var(--win) 14%, transparent); color: #e2d2ff; }
+.sp-skills, .sp-traits { display: flex; flex-direction: column; }
+.sp-skill { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; gap: 8px; padding: 2px 0; }
+.sp-skill + .sp-skill { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.sp-skill__ico { display: grid; place-items: center; height: 36px; color: #e2d2ff; }
 .sp-skill__ico .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 5px var(--win-glow)); }
-.sp-skill__body { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 7px 10px; }
+.sp-skill__body { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 8px 0; }
 .sp-skill__body b { font-size: 0.86rem; font-style: italic; font-weight: 700; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 10px var(--win-glow); }
 .sp-skill__body small { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
-.sp-skill.is-sealed { border-style: dashed; opacity: 0.6; }
-.sp-skill.is-sealed .sp-skill__ico { background: none; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.sp-skill.is-passive .sp-skill__ico { background: color-mix(in srgb, var(--win) 8%, transparent); }
+.sp-skill.is-sealed { opacity: 0.5; }
+.sp-skill.is-sealed .sp-skill__ico { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 
 /* The record: four numbers, a column each. */
-.sp-record { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
-.sp-record > span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px; text-align: center; }
-.sp-record > span + span { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.sp-record { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sp-record > span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 4px; text-align: center; }
 .sp-record b { font-size: 1.15rem; font-weight: 800; text-shadow: var(--sys-glow); }
 .sp-record small { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 64%, transparent); }
 
 /* Release: the one act that cannot be taken back, a red hairline. */
-.sysframe .btn.sp-release { border-color: rgba(255, 59, 75, 0.55); color: #ff8a94; text-shadow: 0 0 8px rgba(255, 47, 62, 0.4); }
+.sysframe .btn.sp-release { margin-top: 6px; border-color: transparent; background: none; box-shadow: none; font-size: 0.8rem; color: #ff8a94; text-shadow: none; }
 .sysframe .btn.sp-release:disabled { opacity: 0.45; }
 
 /* Shadow Essence: its mark, a drop of the dark. */
@@ -2445,3 +2349,264 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .dmap__toll.is-live { animation: none; } }
 /* A rest found and not yet used, tapped to rest there: lit in healing's green. */
 .dmap .gnode.droom.is-restable:not(.is-fog) { border-color: color-mix(in srgb, var(--verdant) 65%, transparent); box-shadow: inset 0 0 10px rgba(72, 245, 168, 0.18); cursor: pointer; }
+
+/* Kin and Formation on the Army sheet, as Teamfight Tactics tracks its traits: a chip to each, its mark in a
+   hexagon (lit in the Shadows' violet while active, grey while short), its count, its name over its
+   breakpoints; two to a row. A tap opens what it gives under them, as the tracker's tooltip does. */
+.kintrack { display: grid; gap: 4px; margin-top: 12px; }
+.kintrack__head { font-size: 0.62rem; letter-spacing: 0.16em; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.kintrack__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
+.kinchip {
+  display: grid; grid-template-columns: 30px 18px minmax(0, 1fr); align-items: center; gap: 6px; width: 100%; min-height: 44px;
+  padding: 4px 4px 4px 0; border: 0; text-align: left; font: inherit; color: color-mix(in srgb, var(--sys-ink) 48%, transparent);
+  background: none; cursor: pointer;
+}
+.kinchip.is-on { color: var(--sys-ink); }
+.kinchip.is-open .kinchip__name { text-decoration: underline; text-decoration-color: var(--win); text-underline-offset: 3px; }
+.kinchip__n { font-size: 0.95rem; text-align: center; }
+.kinchip.is-on .kinchip__n { color: #fff; text-shadow: 0 0 8px var(--win-glow); }
+.kinchip__body { display: grid; min-width: 0; line-height: 1.2; }
+.kinchip__name { font-size: 0.8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kinchip__sub { font-size: 0.64rem; letter-spacing: 0.04em; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.kinhex {
+  display: grid; place-items: center; width: 28px; height: 30px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: rgba(150, 150, 170, 0.22);
+}
+.kinhex svg { width: 15px; height: 15px; }
+.kinhex.is-on { color: #fff; background: linear-gradient(160deg, color-mix(in srgb, var(--win) 95%, white), color-mix(in srgb, var(--win) 55%, black)); filter: drop-shadow(0 0 6px var(--win-glow)); }
+.kinsteps { display: inline-flex; align-items: center; gap: 3px; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.kinsteps span { display: inline-flex; align-items: center; gap: 3px; }
+.kinsteps i { font-style: normal; opacity: 0.6; }
+.kinsteps b { font-weight: 600; }
+.kinsteps b.is-on { color: #fff; text-shadow: 0 0 6px var(--win-glow); }
+.kintip { display: grid; gap: 5px; margin: 2px 0 4px; padding: 2px 0 2px 12px; border-left: 2px solid var(--win); animation: fadein 200ms both; }
+.kintip__head { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.kintip__head b { font-size: 0.86rem; font-weight: 700; }
+.kintip__kind, .kintip__who { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.kintiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.78rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.kintiers b { margin-right: 4px; font-weight: 700; }
+.kintiers li.is-on { color: var(--verdant); }
+.kintiers li.is-on b { color: #fff; }
+
+/* What a Shadow brings to a squad, on its card, as Solo Leveling: Arise sets its Shadow's Authority: a name
+   over one line, a hairline between; lit in a gain's green while its squad has it. */
+.sp-auth { display: grid; }
+.sp-auth__row { display: grid; gap: 3px; padding: 6px 0; }
+.sp-auth__row + .sp-auth__row { border-top: 1px solid var(--sys-hair); }
+.sp-auth__name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.sp-auth__name svg { width: 13px; height: 13px; }
+.sp-auth__row p { margin: 0; font-size: 0.84rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.sp-auth__row p.is-on { color: var(--verdant); }
+
+/* The card's head, as the panel's rows: a label, a hairline and the value, an arrow at the end of Rank's while a promotion waits. */
+.sp-rows { display: grid; gap: 4px; margin: 0; }
+.sp-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 24px; }
+.sp-row dt { position: relative; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.sp-row dt::after { content: ''; position: absolute; right: -8px; top: 18%; bottom: 18%; width: 1px; background: var(--sys-hair-hot); }
+.sp-row dd { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; font-weight: 600; }
+.sp-row dd small { font-size: 0.7rem; opacity: 0.6; }
+.sp-row__rank .insignia { color: #d9c6ff; }
+.sp-row__xp { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.sp-row__power { font-size: 1.3rem !important; font-weight: 800 !important; text-shadow: 0 0 3px rgba(255, 255, 255, 0.5), 0 0 14px var(--win-glow); }
+.sp-rows .sp-exp { margin: -1px 0 2px 58px; height: 4px; }
+.sp-up { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border-color: var(--gold); color: var(--gold); background: rgba(255, 203, 92, 0.1); box-shadow: 0 0 10px var(--gold-glow); cursor: pointer; animation: readyCall 2.4s ease-in-out infinite; }
+.sp-up svg { width: 14px; height: 14px; }
+.sp-head__stars { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; }
+
+/* Its stats, as the panel lists them: a mark, a name, a value, and what its level has added in green. */
+.sp-statrows { list-style: none; margin: 0; padding: 0; display: grid; }
+.sp-statrows li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 36px; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
+.sp-statrows li:last-child { border-bottom: 0; }
+.sp-statrows svg { width: 15px; height: 15px; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.sp-statrows__name { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; }
+.sp-statrows b { font-size: 1.02rem; font-weight: 700; text-shadow: var(--sys-glow); }
+.sp-statrows small { font-size: 0.72rem; text-align: right; }
+
+/* The brief's party: the squad's Kin and Formation under it. */
+.bparty__kin { margin: 6px 0 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 72%, transparent); }
+
+/* ------------------------------------------------------------------ the Shadows screen
+   The army as Solo Leveling: Arise sets its Army of Shadows: a stage of violet fog, the squad standing on it,
+   the first deployed large and lit in front, the rest in a V behind it, the reserve as shapes in the fog. */
+.shadowhome { gap: 14px; }
+.armystage { --stage: var(--arcane); }
+.armystage .sysframe__glass { gap: 0; padding: 14px 14px 12px; }
+.armystage.is-call { --win: var(--gold); --win-glow: var(--gold-glow); animation: btileCall 1.8s ease-in-out infinite; }
+/* The head lies over the stage's fog, so the stage runs to the frame's top. */
+.armystage__head { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 3; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; }
+.armystage__title, .armystage__power { display: grid; gap: 2px; }
+.armystage__title small, .armystage__power small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.armystage__title b { font-size: 1.02rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; text-shadow: 0 0 10px color-mix(in srgb, var(--stage) 70%, transparent); }
+.armystage__power { text-align: right; }
+.armystage__power b { font-size: 1.5rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 3px rgba(255, 255, 255, 0.5), 0 0 18px color-mix(in srgb, var(--stage) 80%, transparent); }
+
+/* The stage: fog that drifts, a floor that glows, the squad on it, the lead's name at its foot. */
+.armystage__stage { position: relative; display: block; width: calc(100% + 28px); height: 340px; margin: -14px -14px 0; padding: 0; overflow: hidden; border: 0; color: inherit; font: inherit; cursor: pointer;
+  background:
+    radial-gradient(70% 55% at 50% 72%, color-mix(in srgb, var(--stage) 34%, transparent), transparent 72%),
+    radial-gradient(90% 60% at 50% 0%, color-mix(in srgb, var(--stage) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(10, 4, 26, 0.35), rgba(6, 2, 16, 0.8) 78%, transparent); }
+/* A light falls on the lead from above, as a boss is revealed. */
+.armystage__beam { position: absolute; left: 50%; top: 0; width: 220px; height: 74%; margin-left: -110px; clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, color-mix(in srgb, var(--stage) 30%, transparent), transparent 90%); filter: blur(6px); opacity: 0.55; pointer-events: none; animation: beamBreathe 6s ease-in-out infinite; }
+@keyframes beamBreathe { 50% { opacity: 0.35; } }
+.armystage__stage:active .armystage__one.is-lead .emblem { transform: scale(0.97); }
+.armystage__fog { position: absolute; inset: 0; pointer-events: none; }
+.armystage__fog i { position: absolute; width: 70%; height: 46%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--stage) 30%, transparent), transparent); filter: blur(18px); opacity: 0.7; animation: stageFog 14s ease-in-out infinite; }
+.armystage__fog i:nth-child(1) { left: -20%; top: 30%; }
+.armystage__fog i:nth-child(2) { right: -24%; top: 18%; animation-duration: 18s; animation-direction: reverse; }
+.armystage__fog i:nth-child(3) { left: 15%; bottom: -10%; width: 80%; animation-duration: 22s; opacity: 0.5; }
+@keyframes stageFog { 50% { transform: translateX(12%) scale(1.08); opacity: 0.45; } }
+/* The reserve, standing in the fog behind the squad. */
+.armystage__ghosts { position: absolute; inset: 84px 0 auto 0; height: 60px; pointer-events: none; }
+.armystage__ghosts i { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--i) % 2 * 18px); transform: translateX(-50%) scale(1.25); color: color-mix(in srgb, var(--stage) 70%, white); opacity: 0.18; filter: blur(0.7px); animation: floaty 5s ease-in-out infinite; animation-delay: calc(var(--i) * -0.8s); }
+.armystage__floor { position: absolute; left: 6%; right: 6%; bottom: 58px; height: 46px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--stage) 45%, transparent), transparent); box-shadow: 0 -1px 0 color-mix(in srgb, var(--stage) 30%, transparent); pointer-events: none; }
+.armystage__line { position: absolute; inset: 0; }
+.armystage__one { position: absolute; left: calc(var(--x) * 1%); bottom: calc(76px + var(--y) * 2.4px); display: flex; flex-direction: column; align-items: center; gap: 2px; transform: translateX(-50%); animation: stageRise 640ms var(--ease) both; animation-delay: calc(var(--i) * 90ms); }
+@keyframes stageRise { from { opacity: 0; transform: translate(-50%, 14px); } to { transform: translate(-50%, 0); } }
+.armystage__one .emblem { width: calc(92px * var(--s)); height: calc(92px * var(--s)); color: var(--stage); filter: drop-shadow(0 0 10px var(--arcane-glow)) brightness(calc(0.6 + var(--s) * 0.4)); animation: floaty 3.6s ease-in-out infinite; animation-delay: calc(var(--i) * -0.7s); transition: transform 150ms; }
+.armystage__one small { max-width: 84px; overflow: hidden; font-size: 0.62rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); text-shadow: 0 1px 4px #000; }
+.armystage__aura { position: absolute; left: 50%; bottom: -10px; width: calc(150px * var(--s)); height: calc(34px * var(--s)); margin-left: calc(-75px * var(--s)); border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--stage) 60%, transparent), transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--stage) 25%, transparent); pointer-events: none; }
+.armystage__one.is-lead .armystage__aura { box-shadow: 0 0 0 1px color-mix(in srgb, var(--stage) 55%, transparent), 0 0 24px var(--arcane-glow); animation: auraPulse 3s ease-in-out infinite; }
+.armystage__one.is-lead .emblem { filter: drop-shadow(0 0 14px var(--arcane-glow)) drop-shadow(0 0 30px color-mix(in srgb, var(--stage) 45%, transparent)); }
+.armystage__one.is-ready .emblem { filter: drop-shadow(0 0 12px var(--gold-glow)); }
+.armystage__one.is-ready::after { content: ''; position: absolute; top: 2px; right: calc(50% - 46px * var(--s)); width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.armystage__one.is-ready small { color: var(--gold); }
+.armystage__one.is-free { width: calc(70px * var(--s)); height: calc(70px * var(--s)); justify-content: center; border: 1px dashed color-mix(in srgb, var(--sys-ink) 26%, transparent); border-radius: 50%; color: color-mix(in srgb, var(--sys-ink) 34%, transparent); }
+.armystage__one.is-free .ico { width: 14px; height: 14px; }
+.armystage__lead { position: absolute; left: 0; right: 0; bottom: 12px; display: grid; justify-items: center; gap: 2px; text-align: center; }
+.armystage__lead b { font-size: 1.12rem; font-weight: 800; letter-spacing: 0.04em; color: #fff; text-shadow: 0 0 4px rgba(255, 255, 255, 0.5), 0 0 18px var(--arcane-glow); }
+.armystage__lead small { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.armystage__lead .insignia { color: #d9c6ff; }
+.armystage__stars { color: var(--gold); letter-spacing: 1px; }
+
+/* What the squad's make-up lights, as Teamfight Tactics lights its traits; then the army's counts and the act waiting. */
+.armystage__traits { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin: 10px 0 0; padding: 0; list-style: none; }
+.armystage__traits li { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--sys-ink); }
+.armystage__traits .kinhex { width: 22px; height: 24px; }
+.armystage__traits .kinhex.is-on { background: linear-gradient(160deg, color-mix(in srgb, var(--stage) 95%, white), color-mix(in srgb, var(--stage) 55%, black)); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.armystage__traits .kinhex svg { width: 12px; height: 12px; }
+.armystage__traits b { font-weight: 800; color: #fff; }
+.armystage__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 6px 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.armystage__stat { display: inline-flex; align-items: baseline; gap: 5px; }
+.armystage__stat b { font-size: 0.95rem; font-weight: 800; color: #fff; }
+.armystage__stat small { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.armystage__stat .essence { align-self: center; }
+.armystage__call { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 46px; margin-top: 12px; padding: 0 14px; border: 1px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.16), rgba(255, 203, 92, 0.04)); color: var(--gold); font: inherit; font-size: 0.8rem; font-weight: 700; text-align: left; text-shadow: 0 0 8px var(--gold-glow); box-shadow: 0 0 14px var(--gold-glow); cursor: pointer; animation: readyCall 2s ease-in-out infinite; }
+.armystage__call > span { flex: 1; }
+.armystage__call .ico { width: 15px; height: 15px; }
+
+/* The standing orders, set where they are read. */
+.ordersband .sysframe__glass { gap: 8px; padding: 12px 14px 14px; }
+.ordersband__head { display: flex; align-items: baseline; justify-content: space-between; }
+.ordersband__head small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.ordersband__set { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--sys-hair); }
+.ordersband__one { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 64px; padding: 6px 2px 8px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); font: inherit; cursor: pointer; transition: color 160ms; }
+.ordersband__one .ico { width: 18px; height: 18px; }
+.ordersband__one small { font-size: 0.58rem; font-weight: 600; line-height: 1.2; text-align: center; }
+.ordersband__one.is-on { color: #fff; box-shadow: inset 0 -2px 0 var(--win); text-shadow: var(--sys-glow); }
+.ordersband__one.is-on .ico { color: #e2d2ff; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.ordersband__desc { margin: 2px 0 0; font-size: 0.76rem; line-height: 1.45; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.ordersband__held { font-size: 0.66rem; color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .armystage__fog i, .armystage__ghosts i, .armystage__one .emblem, .armystage.is-call, .armystage__call, .armystage__beam { animation: none; } }
+
+
+/* ------------------------------------------------------------------ the brief, read top to bottom
+   After the stage cards of the reference games: the facts under the head, the rewards as tiles, the Seals
+   pressed in place, the enemies as portraits, the party lined up, the Feats, and the map folded. */
+/* The facts: the party's power against the boss's, and the road. */
+.bfacts { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); }
+.bfacts > div { display: grid; justify-items: center; gap: 2px; padding: 9px 2px; }
+.bfacts > div + div { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
+.bfacts dt { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bfacts dd { margin: 0; font-size: 1.08rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.bfacts dd.is-foe { color: #ff6b74; text-shadow: 0 0 10px rgba(255, 47, 62, 0.45); }
+
+/* The rewards: a tile to each, framed in its kind's colour, its figure in the corner, its name under it. */
+.brewards { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px 8px; margin: 0; padding: 0; list-style: none; }
+.breward { --tc: var(--sys-ink); display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; text-align: center; animation: rowIn 320ms var(--ease) both; }
+.breward__art { position: relative; display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid color-mix(in srgb, var(--tc) 55%, transparent); background: linear-gradient(165deg, color-mix(in srgb, var(--tc) 26%, transparent), rgba(6, 4, 2, 0.75) 72%); box-shadow: inset 0 -14px 18px -12px color-mix(in srgb, var(--tc) 45%, transparent), 0 0 10px color-mix(in srgb, var(--tc) 16%, transparent); color: var(--tc); }
+.breward__art > .ico { width: 26px; height: 26px; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--tc) 50%, transparent)); }
+.breward__n { position: absolute; right: 3px; bottom: 1px; font-size: 0.68rem; font-weight: 800; color: #fff; text-shadow: 0 1px 3px #000, 0 0 6px #000; }
+.breward__name { display: -webkit-box; max-width: 76px; overflow: hidden; font-size: 0.62rem; line-height: 1.25; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.breward__xp { font-family: var(--font-sys); font-size: 1rem; font-weight: 900; letter-spacing: 0.04em; color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.breward__track { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; }
+.breward.is-xp { --tc: var(--gold); }
+.breward.is-shard, .breward.is-bounty { --tc: var(--verdant); }
+.breward.is-bounty .breward__name { color: var(--verdant); }
+.breward.is-ember, .breward.is-mat.is-tracked { --tc: var(--ember); }
+.breward.is-mat, .breward.is-print { --tc: var(--mana); }
+.breward.is-victory { --tc: var(--gold); }
+
+/* The Seals, pressed where they are read: a wax seal to each, red once pressed, what one does under them. */
+.bseals { display: grid; gap: 8px; padding: 10px 2px; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); transition: background 300ms; }
+.bseals.is-on { background: radial-gradient(70% 100% at 50% 40%, rgba(255, 47, 62, 0.12), transparent 72%); }
+.bseals__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.bseals__head .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.bseals__ember { display: inline-flex; align-items: center; gap: 5px; }
+.bseals__ember b { font-size: 0.9rem; animation: emberCount 420ms var(--ease); }
+.bseals__ember small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bseals__set { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bseals__set > li { animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
+.bseal { display: grid; justify-items: center; gap: 3px; width: 100%; min-height: 44px; padding: 6px 2px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); font: inherit; cursor: pointer; }
+.bseal__wax { position: relative; display: grid; place-items: center; width: 58px; height: 58px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 26%, transparent); border-radius: 50%; transition: border-color 220ms, box-shadow 220ms; }
+.bseal b { font-size: 0.74rem; font-weight: 700; color: #fff; }
+.bseal small { font-size: 0.66rem; }
+.bseal.is-on .bseal__wax { border-color: transparent; box-shadow: 0 0 22px rgba(255, 47, 62, 0.35); }
+.bseal.is-on b { color: #ff8a94; text-shadow: 0 0 8px rgba(255, 47, 62, 0.45); }
+.bseal.is-shown b { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--sys-ink) 45%, transparent); text-underline-offset: 3px; }
+.bseal.is-stamped .sealart { animation: stamp 520ms var(--ease) both; }
+.bseal.is-stamped .bseal__wax { animation: stampShake 360ms 180ms ease-out; }
+.bseal.is-lifted .sealart { animation: lift 360ms var(--ease) both; }
+.bseal[aria-disabled='true'] { cursor: default; }
+.bseals__rule { min-height: 2.9em; margin: 0; font-size: 0.74rem; line-height: 1.45; text-align: center; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.bseals__rule b { color: #fff; }
+
+/* The enemies: a portrait to each, the boss first and larger in red, a Gatekeeper ringed in gold. */
+.benemies { display: flex; align-items: flex-end; gap: 10px; margin: 0; padding: 2px 0 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
+.benemies::-webkit-scrollbar { display: none; }
+.benemy { display: grid; justify-items: center; gap: 3px; width: 68px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
+.benemy.is-tap { cursor: pointer; }
+.benemy.is-tap:active .benemy__face { transform: scale(0.95); }
+.benemy__face { display: grid; place-items: center; width: 50px; height: 50px; border: 1px solid color-mix(in srgb, var(--sys-ink) 26%, transparent); border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.06), rgba(6, 4, 2, 0.85)); color: color-mix(in srgb, var(--sys-ink) 85%, transparent); transition: transform 150ms; }
+.benemy__face .ico { width: 20px; height: 20px; }
+.benemy__name { display: -webkit-box; max-width: 100%; min-height: 2.5em; overflow: hidden; font-size: 0.64rem; font-weight: 600; line-height: 1.25; color: #fff; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.benemy__tag { max-width: 100%; overflow: hidden; font-size: 0.56rem; white-space: nowrap; text-overflow: ellipsis; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.benemy.is-boss { width: 92px; }
+.benemy.is-boss .benemy__face { width: 70px; height: 70px; border-color: #ff3b4b; color: #ff3b4b; background: radial-gradient(circle, rgba(255, 47, 62, 0.32), rgba(20, 2, 4, 0.9)); box-shadow: 0 0 18px rgba(255, 47, 62, 0.35); animation: spotIn 520ms var(--ease) both; }
+.benemy.is-boss .benemy__name { font-size: 0.72rem; }
+.benemy.is-boss .benemy__tag { color: #ff6b74; }
+.benemy.is-chosen .benemy__face { border-color: var(--gold); color: var(--gold); background: radial-gradient(circle, rgba(255, 203, 92, 0.25), rgba(20, 14, 2, 0.9)); box-shadow: 0 0 18px var(--gold-glow); }
+.benemy.is-chosen .benemy__tag { color: var(--gold); }
+.benemy.is-elite .benemy__face { border-color: var(--gold); color: var(--gold); }
+.benemy.is-elite .benemy__tag { color: var(--gold); }
+
+/* The party lined up: the hunter, the Association's hunters, the Shadows, each over a name and a power. */
+.blineup { display: flex; flex-wrap: wrap; gap: 10px 8px; margin: 0; padding: 0 0 2px; list-style: none; }
+.blineup::-webkit-scrollbar { display: none; }
+.blineup__one { display: grid; flex: none; justify-items: center; gap: 2px; width: 62px; text-align: center; animation: rowIn 320ms var(--ease) both; }
+.blineup__face { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.6); }
+.blineup__one.is-you .blineup__face { border-color: color-mix(in srgb, var(--mana) 70%, transparent); box-shadow: 0 0 10px rgba(79, 214, 255, 0.25); }
+.blineup__one.is-shadow .blineup__face { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 25%, transparent), rgba(6, 3, 18, 0.8)); }
+.blineup__one.is-shadow .blineup__face .emblem { color: var(--arcane); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.blineup__one.is-free .blineup__face { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.blineup__one.is-free .blineup__face .ico { width: 14px; height: 14px; }
+.blineup__one b { max-width: 100%; overflow: hidden; font-size: 0.62rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; color: #fff; }
+.blineup__one.is-you b { color: var(--mana); }
+.blineup__one.is-shadow b { color: #d9c6ff; }
+.blineup__one.is-free b { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.blineup__one small { font-size: 0.62rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+
+/* Today's map, one row: a tap opens it in its own window once the hunter has been inside. */
+.bmaprow { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 16px; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 6px 2px; border: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); background: none; color: inherit; font: inherit; text-align: left; }
+.bmaprow.is-tap { cursor: pointer; transition: background 160ms var(--ease); }
+.bmaprow.is-tap:active { background: color-mix(in srgb, var(--rc) 8%, transparent); }
+.bmaprow.is-tap:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+.bmaprow > .ico:first-child { width: 18px; height: 18px; color: var(--rc); }
+.bmaprow:not(.is-tap) > .ico:first-child { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.bmaprow__text { display: grid; gap: 2px; min-width: 0; }
+.bmaprow__text .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.bmaprow__text small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.bmaprow__redraw { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.bmaprow__go { width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bmapsheet { padding-bottom: 4px; }
+@media (prefers-reduced-motion: reduce) { .bhero__glow { animation: none; } }

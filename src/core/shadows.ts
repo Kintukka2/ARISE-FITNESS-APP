@@ -9,6 +9,7 @@
 import { AWAKENING, ECHO, ECHO_COST, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND_AT, SHADOW_RANKS, SHADOW_XP, SLOTS } from '@/data/shadows';
 import { powerOf } from './combat';
 import { ALL_ENEMIES, enemyById } from './gates';
+import * as kin from './kin';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
 import type { Attrs, Enemy, Rank, Save, Shadow } from './types';
@@ -269,10 +270,78 @@ export const power = (sh: Shadow) => powerOf(statsOf(sh));
 /** What the deployed Shadows' power comes to. */
 export const squadPower = (s: Save) => squad(s).reduce((n, sh) => n + power(sh), 0);
 
-/** The strongest Shadows, as many as the slots hold, strongest first: the squad Auto Deploy makes. */
-export const bestSquad = (s: Save): string[] => s.shadows.army.slice().sort((a, b) => power(b) - power(a)).slice(0, slots(s)).map((x) => x.id);
+/** The strongest first, and between two as strong the one bound first: an order that never wavers. */
+const byPower = (a: Shadow, b: Shadow) => power(b) - power(a) || a.id.localeCompare(b.id);
 
-/** Deploy the strongest Shadows (`bestSquad`). Returns the ids deployed. Mutates. */
+/**
+ * What Auto Deploy weighs a squad at: each Shadow's power, grown by what its Kin boon and the
+ * Formation's auras are worth (`kin.worth`), and the hunter's own grown by the auras, which reach them too.
+ */
+export function squadScore(s: Save, squad: readonly Shadow[]): number {
+  const make = kin.makeOf(squad);
+  const aura = kin.worth(make.aura);
+  return squad.reduce((n, sh) => n + power(sh) * (1 + aura + kin.worth(kin.kinBonusOf(sh, make))), 0) + powerOf(s.hunter.attrs) * aura;
+}
+
+/**
+ * The squad Auto Deploy makes: the one it weighs highest (`squadScore`), strongest first. A whole squad is
+ * weighed, not a Shadow alone, so a weaker Shadow earns its slot through its Kin or its role. It looks
+ * among each family's strongest and each role's, starting from the strongest squad and from each family's
+ * strongest together, and trades one Shadow at a time while a trade weighs more. The same army always
+ * gives the same squad.
+ */
+export function bestSquad(s: Save): string[] {
+  const n = slots(s);
+  const army = s.shadows.army.filter((x) => enemyById(x.enemyId)).sort(byPower);
+  if (army.length <= n) return army.map((x) => x.id);
+  const fam = (sh: Shadow) => enemyById(sh.enemyId)!.family;
+  const role = (sh: Shadow) => enemyById(sh.enemyId)!.role;
+  // Each family's strongest, as many as the slots hold, and each role's strongest: no other is worth more.
+  const pool: Shadow[] = [];
+  const seen = new Map<string, number>();
+  for (const sh of army) {
+    const f = fam(sh);
+    const r = `role:${role(sh)}`;
+    const keep = (seen.get(f) ?? 0) < n || !seen.has(r);
+    seen.set(f, (seen.get(f) ?? 0) + 1);
+    seen.set(r, (seen.get(r) ?? 0) + 1);
+    if (keep) pool.push(sh);
+  }
+  const fill = (from: Shadow[]) => {
+    const out = from.slice(0, n);
+    for (const sh of pool) if (out.length < n && !out.includes(sh)) out.push(sh);
+    return out;
+  };
+  const families = [...new Set(pool.map(fam))].filter((f) => f !== kin.KIN_ALL);
+  const wild = pool.filter((sh) => fam(sh) === kin.KIN_ALL);
+  const starts = [fill([]), ...families.map((f) => fill([...wild, ...pool.filter((sh) => fam(sh) === f)].slice(0, Math.min(n, kin.KIN_AT[kin.KIN_AT.length - 1]))))];
+  let best: Shadow[] = starts[0];
+  let bestScore = squadScore(s, best);
+  for (const start of starts) {
+    let cur = start;
+    let score = squadScore(s, cur);
+    for (;;) {
+      let trade: Shadow[] | null = null;
+      let tradeScore = score;
+      for (let i = 0; i < cur.length; i++) {
+        for (const sh of pool) {
+          if (cur.includes(sh)) continue;
+          const next = cur.slice();
+          next[i] = sh;
+          const v = squadScore(s, next);
+          if (v > tradeScore + 1e-9) { trade = next; tradeScore = v; }
+        }
+      }
+      if (!trade) break;
+      cur = trade;
+      score = tradeScore;
+    }
+    if (score > bestScore + 1e-9) { best = cur; bestScore = score; }
+  }
+  return best.slice().sort(byPower).map((x) => x.id);
+}
+
+/** Deploy the squad Auto Deploy weighs highest (`bestSquad`). Returns the ids deployed. Mutates. */
 export function autoDeploy(s: Save): string[] {
   s.shadows.squad = bestSquad(s);
   return s.shadows.squad;

@@ -53,12 +53,13 @@ describe('the levels', () => {
   });
 
   it('every level is harder than the one below it', () => {
-    // A hunter who keeps up in the middle of S-Rank, marks set as the System would, over its gates and
-    // three days: the one the levels are calibrated for, with room to fall at every step.
+    // Hunters who keep up in the middle of S-Rank, marks set as the System would, over its gates and
+    // three days: the ones the levels are calibrated for, with room to fall at every step. Three of them,
+    // as calibration tries several: one squad drawn at random can hold a Kin that clears a level whole.
     const rate = (L: number) => {
       let c = 0, n = 0;
-      for (const id of TOP) for (const dd of ['04', '11', '18']) {
-        const s = keptUpHunter(85, 'S', 'asc-rate');
+      for (const seed of ['asc-rate', 'asc-rate|1', 'asc-rate|2']) for (const id of TOP) for (const dd of ['04', '11', '18']) {
+        const s = keptUpHunter(85, 'S', seed);
         s.ascension.unlocked = ASCENSION_RULED;
         setAllBySystem(s);
         asc.choose(s, L);
