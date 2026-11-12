@@ -587,7 +587,7 @@ try {
   await sleep(600);
   // The Army is one tile: the squad's slots over the reserve. There is no Squad tile beside it.
   if (await page.locator('.btile--squad').count()) throw new Error('THE SQUAD IS STILL A TILE OF ITS OWN');
-  await page.locator('.btile--army .btile__hit').click(); await sleep(700); await snap('army'); await snap('army-full', true);
+  await page.locator('.armystage__stage').click(); await sleep(700); await snap('army'); await snap('army-full', true);
   // Kin and Formation under the squad: a row to each family deployed, a chip to each role.
   {
     const squad = await page.locator('.sheet.is-top .roster__slot:not(.is-free)').count();
@@ -689,12 +689,13 @@ try {
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200); await snap('army-edit');
   await close();
   // ARMY: ORDERS: the standing orders change and hold.
-  await page.locator('.btile--orders .btile__hit').click(); await sleep(500); await snap('orders', true);
-  await page.locator('.sheet.is-top .ord-card', { hasText: 'Protect The Hunter' }).click(); await sleep(250);
-  if (!(await page.locator('.sheet.is-top .ord-card.is-on', { hasText: 'Protect The Hunter' }).count())) throw new Error('THE STANDING ORDERS DID NOT CHANGE');
+  // The standing orders are set on the screen itself, a tap each, and say what the one set does.
+  await page.locator('.ordersband__one', { hasText: 'Protect The Hunter' }).click(); await sleep(250);
+  if (!(await page.locator('.ordersband__one.is-on', { hasText: 'Protect The Hunter' }).count())) throw new Error('THE STANDING ORDERS DID NOT CHANGE');
+  if (!(await page.locator('.ordersband__desc', { hasText: 'about to hit you' }).count())) throw new Error('THE ORDERS DO NOT SAY WHAT THE ONE SET DOES');
+  await page.locator('.ordersband').scrollIntoViewIfNeeded(); await sleep(200); await snap('orders', true);
   // The orders are the army's alone: no Shadow takes orders of its own.
-  if (await page.locator('.sheet.is-top .ordrow, .sheet.is-top .chip--btn', { hasText: 'Army Orders' }).count()) throw new Error('A SHADOW STILL TAKES ORDERS OF ITS OWN');
-  await close();
+  if (await page.locator('.ordrow, .chip--btn', { hasText: 'Army Orders' }).count()) throw new Error('A SHADOW STILL TAKES ORDERS OF ITS OWN');
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true);
   // The shelf is blueprints now: a row each, marked as one.
   if ((await page.locator('.sheet.is-top .shopbp').count()) < 1) throw new Error('THE EXCHANGE SHELF HOLDS NO BLUEPRINTS');
@@ -739,7 +740,7 @@ try {
   // Igris, Ascendant at the top with two stars and the Essence for a third: the Awakening panel and its hold.
   await nav('shadows');
   await sleep(600); await snap('asc-shadows', true);
-  await page.locator('.btile--army .btile__hit').click(); await sleep(900); await snap('asc-army'); await snap('asc-army-full', true);
+  await page.locator('.armystage__stage').click(); await sleep(900); await snap('asc-army'); await snap('asc-army-full', true);
   await page.locator('.sheet.is-top .roster__view[aria-label="Grid"]').click(); await sleep(700); await snap('asc-army-grid', true);
   await page.locator('.sheet.is-top .roster__view[aria-label="List"]').click(); await sleep(300);
   await page.locator('.sheet.is-top .roster__row .roster__who', { hasText: 'Igris' }).first().click(); await sleep(900);
@@ -760,7 +761,7 @@ try {
   await page.evaluate(() => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.shadows.essence = 200; localStorage.setItem(k, JSON.stringify(x)); });
   await page.reload(); await sleep(1400); await drain();
   await nav('shadows');
-  await page.locator('.btile--army .btile__hit').click(); await sleep(900);
+  await page.locator('.armystage__stage').click(); await sleep(900);
   if (!(await page.locator('.sheet.is-top .roster__ready').count())) throw new Error('THE READY COUNT IS NOT A BUTTON WHILE SHADOWS ARE READY');
   {
     const n = Number((await page.locator('.sheet.is-top .roster__ready b').innerText()).trim());

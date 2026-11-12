@@ -1836,6 +1836,15 @@ with what ARISE took from them.
   the screen; the Army tile's Shadows are badges on the glass, a name gold while it waits on the hunter, the
   free slots gathered into one dashed ring (`2 Free`); the Orders tile's four orders are marks and names, the
   one set underlined. The tiles, which are what is tapped, keep their frames.
+- **The Shadows screen, rebuilt** (the owner's call: overhaul it freely, after the references). It is no longer
+  two bento tiles. The army is a stage, after Solo Leveling: Arise's Army of Shadows: a falling light and
+  drifting violet fog, the squad standing in a V on a lit floor (`FORMATION_AT`), the first deployed large and
+  lit in front with its name, rank, level and stars under it, the rest smaller behind, the free slots as rings,
+  the reserve as their families' shapes in the fog; `Squad 3/5` and Squad Power laid over it. Under it the Kin
+  and roles the squad lights, as Teamfight Tactics lights its traits; one gold row while anything waits,
+  `Promotion ready: 3` promoting them all at once (`claimAll`), or `Shadow slots free: 2` opening the Army;
+  and the Essence, the bound and the reserve. A tap on the stage opens the Army. The standing orders are set
+  on the screen, a tap each, with what the one set does under them; their window is gone.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

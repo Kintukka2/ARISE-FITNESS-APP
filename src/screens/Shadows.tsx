@@ -11,17 +11,17 @@ import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Chip, Empty, RankPlate, Section } from '@/ui/components';
-import { BentoGrid, type Tile as BTile } from '@/ui/bento';
+import * as kin from '@/core/kin';
 import type { Enemy, Save, Shadow, Tactic } from '@/core/types';
 import { RANKS } from '@/core/types';
 import type { RaidResult } from '@/core/raid';
 import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
 import { skillLine } from './Skills';
-import { Field, SysAlert } from '@/ui/frame';
+import { SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
-import { KinOfShadow, KinTracker } from '@/ui/kin';
+import { KIN_TIER, KinHex, KinOfShadow, KinTracker } from '@/ui/kin';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
 import { claimAll, claimPromotion } from '@/app/flow';
@@ -37,13 +37,14 @@ export function Shadows() {
   const [news] = useState(() => [...fresh]);
   const joined = news.length === 1 ? enemyById(s.shadows.army.find((x) => x.id === news[0])?.enemyId ?? '')?.shadow : null;
   return (
-    <div class="stack">
+    <div class="stack shadowhome">
       {news.length > 0 && (
         <SysAlert kind="shadow" fyi icon={<Glyph name="shadows" />} class="shadownews">
           {joined ? <><strong>[{joined}]</strong> has joined your army.</> : `[${news.length} Shadows have joined your army.]`}
         </SysAlert>
       )}
-      <BentoGrid class="shadowgrid" tiles={tiles(s, news)} label="Shadows" />
+      <ArmyStage news={news} />
+      <OrdersBand />
     </div>
   );
 }
@@ -57,78 +58,145 @@ const ranked = (s: Save) => {
 /** A Shadow's short name, for a slot: the name bestowed, or its creature's without `Shadow`. */
 const shortName = (sh: Shadow) => sh.name || (enemyById(sh.enemyId)?.shadow ?? '').replace(/^Shadow /, '');
 
-/** How many of the reserve the Army tile shows before it counts the rest. */
-const RESERVE_SHOWN = 7;
+/**
+ * Where each Shadow of the squad stands on the stage, after the Army of Shadows of Solo Leveling: Arise:
+ * the first deployed in front at its centre, the rest in a V behind it, each a little smaller and higher,
+ * a sixth on the ridge behind them. `x` is across the stage, `y` how far back, `s` its size.
+ */
+const FORMATION_AT: { x: number; y: number; s: number }[] = [
+  { x: 50, y: 0, s: 1 }, { x: 25, y: 14, s: 0.66 }, { x: 75, y: 14, s: 0.66 },
+  { x: 8, y: 26, s: 0.52 }, { x: 92, y: 26, s: 0.52 }, { x: 50, y: 40, s: 0.46 },
+];
 
-/** The Shadows screen: the Army, large, then the Orders. */
-function tiles(s: Save, news: string[]): BTile[] {
-  const slots = shadows.slots(s);
+/** How many of the reserve stand in the fog behind the squad. */
+const RESERVE_SHOWN = 6;
+
+/**
+ * The army, as Solo Leveling: Arise sets its Army of Shadows: a stage of violet fog with the squad
+ * standing on it, the first deployed large and lit in front, the rest in a V behind it, the free slots
+ * as outlines where a Shadow would stand, and the reserve as their families' shapes in the fog. Over it,
+ * the squad's count and its power; under it, what its Kin and Formation give, as Teamfight Tactics lights
+ * its traits, and the Essence, the bound and the reserve. A tap on the stage opens the Army. A promotion
+ * or a star waiting lights the stage gold and puts the act at its foot.
+ */
+function ArmyStage({ news }: { news: string[] }) {
+  const s = useSave();
+  const n = shadows.slots(s);
   const squad = shadows.squad(s);
-  const army = ranked(s);
-  const reserve = army.filter((x) => !squad.includes(x));
+  const reserve = ranked(s).filter((x) => !squad.includes(x));
   const waiting = shadows.waitingAll(s);
+  const lead = squad[0];
+  const leadE = lead && enemyById(lead.enemyId);
+  const m = kin.makeOf(squad);
+  const lit = [
+    ...m.kin.filter((k) => k.tier > 0).map((k) => ({ key: `kin:${k.family}`, family: k.family, role: undefined as string | undefined, n: k.n, name: `${k.family} ${KIN_TIER[k.tier - 1]}` })),
+    ...m.roles.map((r) => ({ key: `role:${r}`, family: undefined as string | undefined, role: r, n: squad.filter((x) => enemyById(x.enemyId)?.role === r).length, name: r })),
+  ];
+  const call = waiting.length > 0 || shadows.freeSlots(s) > 0;
+  const places = Array.from({ length: Math.min(n, FORMATION_AT.length) }, (_, i) => i);
   const promos = shadows.promotable(s).length;
-  const armyTile: BTile = {
-    key: 'army', kind: 'shadow', name: 'Army', head: true, wide: true, icon: <Glyph name="shadows" />,
-    // A slot free, or a Shadow waiting to be promoted or awakened: each waits on the hunter. One just
-    // bound is news, told by the notification above and its New mark, not a call.
-    call: shadows.freeSlots(s) > 0 || waiting.length > 0,
-    count: `${squad.length}/${slots}`,
-    status: promos ? `Promotion ready: ${promos}` : waiting.length ? `Awakening ready: ${waiting.length}` : <>Bound: {army.length} · Shadow Essence: <b class="num">{s.shadows.essence ?? 0}</b></>,
-    art: (
-      <span class="sa-host">
-        <span class="sa-host__squad">
-          {squad.map((sh, i) => {
-            const e = enemyById(sh.enemyId);
-            if (!e) return null;
+  return (
+    <SysFrame kind="shadow" class={`armystage ${call ? 'is-call' : ''}`} label="Army">
+      <header class="armystage__head">
+        <span class="armystage__title">
+          <small>Army of Shadows</small>
+          <b>Squad <span class="num">{squad.length}/{n}</span></b>
+        </span>
+        <span class="armystage__power"><small>Squad Power</small><b class="num">{shadows.squadPower(s)}</b></span>
+      </header>
+      <button type="button" class="armystage__stage" onClick={() => { sfx.tap(); openArmy(news); }}
+        aria-label={`Army. Squad ${squad.length} of ${n}${lead ? `, led by ${shadows.nameOf(lead)}` : ''}. Open the Army.`}>
+        <span class="armystage__beam" aria-hidden="true" />
+        <span class="armystage__fog" aria-hidden="true"><i /><i /><i /></span>
+        <span class="armystage__ghosts" aria-hidden="true">
+          {reserve.slice(0, RESERVE_SHOWN).map((sh, i) => (
+            <i key={sh.id} style={`--i: ${i}; --x: ${8 + (i * 84) / Math.max(1, Math.min(reserve.length, RESERVE_SHOWN) - 1)}`}><FamilyGlyph family={enemyById(sh.enemyId)!.family} size={34} /></i>
+          ))}
+        </span>
+        <span class="armystage__floor" aria-hidden="true" />
+        <span class="armystage__line" aria-hidden="true">
+          {places.map((i) => {
+            const at = FORMATION_AT[i];
+            const sh = squad[i];
+            const e = sh && enemyById(sh.enemyId);
+            const style = `--x: ${at.x}; --y: ${at.y}; --s: ${at.s}; --i: ${i}; z-index: ${10 - i}`;
+            if (!sh || !e) return <span key={`free-${i}`} class="armystage__one is-free" style={style}><Glyph name="plus" /></span>;
             return (
-              <span key={sh.id} class={`sa-host__slot ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={`--i: ${i}`}>
-                <span class="sa-host__grade"><RankPlate rank={e.rank} size={16} /></span>
-                <span class="sa-host__smoke" />
-                <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} />
-                <small>{shortName(sh)}</small>
-                <b class="num">Lv.{shadows.levelOf(sh)}</b>
+              <span key={sh.id} class={`armystage__one ${i === 0 ? 'is-lead' : ''} ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={style}>
+                {i === 0 && <span class="armystage__aura" />}
+                <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={92} />
+                {i > 0 && <small>{shortName(sh)}</small>}
               </span>
             );
           })}
-          {slots > squad.length && (
-            <span class="sa-host__slot is-free" style={`--i: ${squad.length}`}>
-              <span class="sa-host__plus"><Glyph name="plus" /></span>
-              <small>{slots - squad.length === 1 ? 'Free' : `${slots - squad.length} Free`}</small>
-            </span>
-          )}
         </span>
-        {reserve.length > 0 && (
-          <span class="sa-host__reserve">
-            <span class="label">Reserve</span>
-            <span class="sa-host__ones">
-              {reserve.slice(0, RESERVE_SHOWN).map((sh, i) => (
-                <span key={sh.id} class={`sa-host__one ${shadows.waiting(s, sh) ? 'is-ready' : ''} ${news.includes(sh.id) ? 'is-new' : ''}`} style={`--i: ${i}`}>
-                  <FamilyGlyph family={enemyById(sh.enemyId)!.family} size={16} />
-                </span>
-              ))}
-              {reserve.length > RESERVE_SHOWN && <span class="sa-host__more num">+{reserve.length - RESERVE_SHOWN}</span>}
-            </span>
-          </span>
-        )}
-      </span>
-    ),
-    open: () => openArmy(news),
-  };
+        <span class="armystage__lead">
+          {lead && leadE
+            ? <>
+              <b>{shortName(lead)}</b>
+              <small><Insignia rank={shadows.rankIndex(lead)} size={12} />{shadows.rankOf(lead).name} · <span class="num">Lv.{shadows.levelOf(lead)}</span>{shadows.starsOf(lead) > 0 && <span class="armystage__stars"> {'★'.repeat(shadows.starsOf(lead))}</span>}</small>
+            </>
+            : <b>No Shadow deployed</b>}
+        </span>
+      </button>
+      {lit.length > 0 && (
+        <ul class="armystage__traits" aria-label="Kin and Formation">
+          {lit.map((t) => (
+            <li key={t.key} title={t.name}>
+              <KinHex family={t.family} role={t.role} on />
+              <span><b class="num">{t.n}</b> {t.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {waiting.length > 0
+        ? <button type="button" class="armystage__call" onClick={(ev) => { sfx.tap(); void claimAll(ev.currentTarget); }}>
+          <Glyph name="up" /><span>{promos ? 'Promotion ready' : 'Awakening ready'}: <b class="num">{waiting.length}</b></span><Glyph name="chevron" class="armystage__go" />
+        </button>
+        : shadows.freeSlots(s) > 0
+          ? <button type="button" class="armystage__call" onClick={() => { sfx.tap(); openArmy(news); }}>
+            <Glyph name="plus" /><span>Shadow slots free: <b class="num">{shadows.freeSlots(s)}</b></span><Glyph name="chevron" class="armystage__go" />
+          </button>
+          : null}
+      <footer class="armystage__foot">
+        <span class="armystage__stat"><EssenceMark /><b class="num">{s.shadows.essence ?? 0}</b><small>Shadow Essence</small></span>
+        <span class="armystage__stat"><b class="num">{s.shadows.army.length}</b><small>Bound</small></span>
+        <span class="armystage__stat"><b class="num">{reserve.length}</b><small>Reserve</small></span>
+      </footer>
+    </SysFrame>
+  );
+}
+
+/**
+ * The standing orders, set where they are read: a mark over a name each, the one set lit, and what it
+ * does under them. A tap sets it at once; a step underway keeps the orders it opened with.
+ */
+function OrdersBand() {
+  const s = useSave();
   const t = s.gates.tactic ?? 'default';
-  const ordersTile: BTile = {
-    key: 'orders', kind: 'shadow', name: 'Orders', head: true, wide: true, icon: <Glyph name="orders" />,
-    status: <>Standing orders: <b>{tacticName(t)}</b></>,
-    art: (
-      <span class="sa-orders">
-        {TACTICS.map((x) => (
-          <span key={x.key} class={`sa-orders__one ${x.key === t ? 'is-on' : ''}`}><Glyph name={TACTIC_GLYPH[x.key]} /><small>{x.name}</small></span>
-        ))}
-      </span>
-    ),
-    open: openOrders,
+  const run = s.gates.raid;
+  const held = run && run.tactic !== t ? tacticName(run.tactic) : null;
+  const set = (k: Tactic) => {
+    if (k === t) return;
+    store.update((x) => { const r = x.gates.raid ?? null; raid.setTactic(x, r ? dungeonById(r.dungeonId) ?? null : null, r, k); });
+    sfx.blip();
   };
-  return [armyTile, ordersTile];
+  const now = TACTICS.find((x) => x.key === t) ?? TACTICS[0];
+  return (
+    <SysFrame kind="shadow" class="ordersband" label="Standing orders">
+      <header class="ordersband__head"><span class="label">Standing Orders</span><small>Shadows and Auto</small></header>
+      <div class="ordersband__set" role="radiogroup" aria-label="Standing orders">
+        {TACTICS.map((x) => (
+          <button key={x.key} type="button" role="radio" aria-checked={x.key === t} class={`ordersband__one ${x.key === t ? 'is-on' : ''}`} onClick={() => set(x.key)}>
+            <Glyph name={TACTIC_GLYPH[x.key]} />
+            <small>{x.name}</small>
+          </button>
+        ))}
+      </div>
+      <p class="ordersband__desc">{now.desc}</p>
+      {held && <small class="ordersband__held">Step underway: {held}</small>}
+    </SysFrame>
+  );
 }
 
 // ------------------------------------------------------------------ the army
@@ -383,40 +451,6 @@ export function EssenceMark({ size = 14 }: { size?: number }) {
 /** Each standing order's mark: an eye for their own judgement, a skull for the kill, the hunter, and the bolt of what spreads. */
 const TACTIC_GLYPH: Record<Tactic, string> = { default: 'eye', finish: 'skull', protect: 'profile', spread: 'bolt' };
 const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.name ?? TACTICS[0].name;
-
-/** ARMY: ORDERS: the standing orders the army fights on. */
-function openOrders() {
-  openSheet({ title: 'Army: Orders', system: { icon: <Glyph name="orders" />, kind: 'shadow' }, render: () => <OrdersSheet /> });
-}
-
-function OrdersSheet() {
-  const s = useSave();
-  const t = s.gates.tactic ?? 'default';
-  const run = s.gates.raid;
-  // A step underway keeps the orders it opened with; the new ones reach the run at its next step.
-  const held = run && run.tactic !== t ? tacticName(run.tactic) : null;
-  const set = (k: Tactic) => {
-    if (k === t) return;
-    store.update((x) => { const r = x.gates.raid ?? null; raid.setTactic(x, r ? dungeonById(r.dungeonId) ?? null : null, r, k); });
-    sfx.blip();
-  };
-  return (
-    <div class="stack">
-      <Section title="Standing Orders" right="Shadows and Auto">
-        <div class="ord-grid" role="radiogroup" aria-label="Standing orders">
-          {TACTICS.map((x) => (
-            <button key={x.key} type="button" role="radio" aria-checked={x.key === t} class={`sysbox ord-card ${x.key === t ? 'is-on' : ''}`} onClick={() => set(x.key)}>
-              <span class="ord-card__ico"><Glyph name={TACTIC_GLYPH[x.key]} /></span>
-              <b>{x.name}</b>
-              <small>{x.desc}</small>
-            </button>
-          ))}
-        </div>
-        {held && <div class="sysfields"><Field k="Step underway" v={held} /></div>}
-      </Section>
-    </div>
-  );
-}
 
 // ------------------------------------------------------------------ the card
 

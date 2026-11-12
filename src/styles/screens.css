@@ -1677,27 +1677,6 @@ button.dmap__floor { cursor: pointer; }
 /* The squad: a slot to each Shadow that can walk in, filled or waiting. */
 
 /* The Army, on its tile: the squad's slots, each a badge in smoke with its grade, name and level; the reserve under them, a glyph each. */
-.sa-host { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-.sa-host__squad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-/* The tile's squad: each Shadow's badge, name and level on the glass, the free slots gathered into one mark. The tile itself is what is tapped. */
-.sa-host__slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 96px; padding: 8px 4px 4px; color: var(--sys-ink); animation: qaIn 520ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
-.sa-host__slot .emblem { position: relative; color: var(--win); filter: drop-shadow(0 0 8px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.6s); }
-.sa-host__smoke { position: absolute; top: 10px; left: 50%; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--win) 45%, transparent), transparent 70%); filter: blur(4px); animation: saSmoke 3.6s ease-in-out infinite; }
-.sa-host__slot small { position: relative; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.64rem; font-weight: 600; text-shadow: var(--sys-glow); }
-.sa-host__slot b { position: relative; font-size: 0.62rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.sa-host__grade { position: absolute; top: 6px; left: calc(50% - 40px); z-index: 1; }
-.sa-host__slot.is-free { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-.sa-host__plus { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 4px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 30%, transparent); border-radius: 50%; }
-.sa-host__plus .ico { width: 16px; height: 16px; }
-.sa-host__slot.is-ready small { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
-.sa-host__slot.is-ready .emblem { filter: drop-shadow(0 0 10px var(--gold-glow)); }
-.sa-host__reserve { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
-.sa-host__reserve .label { flex: none; font-size: 0.56rem; }
-.sa-host__ones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
-.sa-host__one { position: relative; display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--win) 40%, transparent); border-radius: 50%; color: #c9a7ff; background: color-mix(in srgb, var(--win) 10%, transparent); animation: saRise 520ms var(--ease) both; animation-delay: calc(var(--i) * 50ms); }
-.sa-host__one.is-ready { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
-.sa-host__one.is-new::after { content: ''; position: absolute; top: -1px; right: -1px; width: 7px; height: 7px; border-radius: 50%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
-.sa-host__more { font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 
 /* ARMY: the roster. Its counts, the squad's slots, then a row to every Shadow, made into the squad from here. */
 .roster { gap: 12px; }
@@ -1809,15 +1788,6 @@ button.dmap__floor { cursor: pointer; }
 .rostercard:not(.is-on):not(.is-ready) .rostercard__art { opacity: 0.8; }
 
 /* Orders, on its tile: the four standing orders, the one the army fights on lit. */
-.sa-orders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
-.sa-orders__one { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 60px; padding: 6px 4px; color: color-mix(in srgb, var(--sys-ink) 38%, transparent); animation: qaIn 520ms var(--ease) both; }
-.sa-orders__one:nth-child(2) { animation-delay: 80ms; }
-.sa-orders__one:nth-child(3) { animation-delay: 160ms; }
-.sa-orders__one:nth-child(4) { animation-delay: 240ms; }
-.sa-orders__one .ico { width: 18px; height: 18px; }
-.sa-orders__one small { font-size: 0.56rem; font-weight: 600; line-height: 1.2; text-align: center; }
-.sa-orders__one.is-on { color: #fff; box-shadow: inset 0 -2px 0 var(--win); text-shadow: var(--sys-glow); }
-.sa-orders__one.is-on .ico { color: #e2d2ff; filter: drop-shadow(0 0 6px var(--win-glow)); }
 
 /* ARMY: ORDERS: a card to each standing order, then a row to each Shadow, its own orders lit. */
 .ord-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -2527,3 +2497,87 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 
 /* The brief's party: the squad's Kin and Formation under it. */
 .bparty__kin { margin: 6px 0 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 72%, transparent); }
+
+/* ------------------------------------------------------------------ the Shadows screen
+   The army as Solo Leveling: Arise sets its Army of Shadows: a stage of violet fog, the squad standing on it,
+   the first deployed large and lit in front, the rest in a V behind it, the reserve as shapes in the fog. */
+.shadowhome { gap: 14px; }
+.armystage { --stage: var(--arcane); }
+.armystage .sysframe__glass { gap: 0; padding: 14px 14px 12px; }
+.armystage.is-call { --win: var(--gold); --win-glow: var(--gold-glow); animation: btileCall 1.8s ease-in-out infinite; }
+/* The head lies over the stage's fog, so the stage runs to the frame's top. */
+.armystage__head { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 3; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; }
+.armystage__title, .armystage__power { display: grid; gap: 2px; }
+.armystage__title small, .armystage__power small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.armystage__title b { font-size: 1.02rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; text-shadow: 0 0 10px color-mix(in srgb, var(--stage) 70%, transparent); }
+.armystage__power { text-align: right; }
+.armystage__power b { font-size: 1.5rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 3px rgba(255, 255, 255, 0.5), 0 0 18px color-mix(in srgb, var(--stage) 80%, transparent); }
+
+/* The stage: fog that drifts, a floor that glows, the squad on it, the lead's name at its foot. */
+.armystage__stage { position: relative; display: block; width: calc(100% + 28px); height: 340px; margin: -14px -14px 0; padding: 0; overflow: hidden; border: 0; color: inherit; font: inherit; cursor: pointer;
+  background:
+    radial-gradient(70% 55% at 50% 72%, color-mix(in srgb, var(--stage) 34%, transparent), transparent 72%),
+    radial-gradient(90% 60% at 50% 0%, color-mix(in srgb, var(--stage) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(10, 4, 26, 0.35), rgba(6, 2, 16, 0.8) 78%, transparent); }
+/* A light falls on the lead from above, as a boss is revealed. */
+.armystage__beam { position: absolute; left: 50%; top: 0; width: 220px; height: 74%; margin-left: -110px; clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, color-mix(in srgb, var(--stage) 30%, transparent), transparent 90%); filter: blur(6px); opacity: 0.55; pointer-events: none; animation: beamBreathe 6s ease-in-out infinite; }
+@keyframes beamBreathe { 50% { opacity: 0.35; } }
+.armystage__stage:active .armystage__one.is-lead .emblem { transform: scale(0.97); }
+.armystage__fog { position: absolute; inset: 0; pointer-events: none; }
+.armystage__fog i { position: absolute; width: 70%; height: 46%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--stage) 30%, transparent), transparent); filter: blur(18px); opacity: 0.7; animation: stageFog 14s ease-in-out infinite; }
+.armystage__fog i:nth-child(1) { left: -20%; top: 30%; }
+.armystage__fog i:nth-child(2) { right: -24%; top: 18%; animation-duration: 18s; animation-direction: reverse; }
+.armystage__fog i:nth-child(3) { left: 15%; bottom: -10%; width: 80%; animation-duration: 22s; opacity: 0.5; }
+@keyframes stageFog { 50% { transform: translateX(12%) scale(1.08); opacity: 0.45; } }
+/* The reserve, standing in the fog behind the squad. */
+.armystage__ghosts { position: absolute; inset: 84px 0 auto 0; height: 60px; pointer-events: none; }
+.armystage__ghosts i { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--i) % 2 * 18px); transform: translateX(-50%) scale(1.25); color: color-mix(in srgb, var(--stage) 70%, white); opacity: 0.18; filter: blur(0.7px); animation: floaty 5s ease-in-out infinite; animation-delay: calc(var(--i) * -0.8s); }
+.armystage__floor { position: absolute; left: 6%; right: 6%; bottom: 58px; height: 46px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--stage) 45%, transparent), transparent); box-shadow: 0 -1px 0 color-mix(in srgb, var(--stage) 30%, transparent); pointer-events: none; }
+.armystage__line { position: absolute; inset: 0; }
+.armystage__one { position: absolute; left: calc(var(--x) * 1%); bottom: calc(76px + var(--y) * 2.4px); display: flex; flex-direction: column; align-items: center; gap: 2px; transform: translateX(-50%); animation: stageRise 640ms var(--ease) both; animation-delay: calc(var(--i) * 90ms); }
+@keyframes stageRise { from { opacity: 0; transform: translate(-50%, 14px); } to { transform: translate(-50%, 0); } }
+.armystage__one .emblem { width: calc(92px * var(--s)); height: calc(92px * var(--s)); color: var(--stage); filter: drop-shadow(0 0 10px var(--arcane-glow)) brightness(calc(0.6 + var(--s) * 0.4)); animation: floaty 3.6s ease-in-out infinite; animation-delay: calc(var(--i) * -0.7s); transition: transform 150ms; }
+.armystage__one small { max-width: 84px; overflow: hidden; font-size: 0.62rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); text-shadow: 0 1px 4px #000; }
+.armystage__aura { position: absolute; left: 50%; bottom: -10px; width: calc(150px * var(--s)); height: calc(34px * var(--s)); margin-left: calc(-75px * var(--s)); border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--stage) 60%, transparent), transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--stage) 25%, transparent); pointer-events: none; }
+.armystage__one.is-lead .armystage__aura { box-shadow: 0 0 0 1px color-mix(in srgb, var(--stage) 55%, transparent), 0 0 24px var(--arcane-glow); animation: auraPulse 3s ease-in-out infinite; }
+.armystage__one.is-lead .emblem { filter: drop-shadow(0 0 14px var(--arcane-glow)) drop-shadow(0 0 30px color-mix(in srgb, var(--stage) 45%, transparent)); }
+.armystage__one.is-ready .emblem { filter: drop-shadow(0 0 12px var(--gold-glow)); }
+.armystage__one.is-ready::after { content: ''; position: absolute; top: 2px; right: calc(50% - 46px * var(--s)); width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.armystage__one.is-ready small { color: var(--gold); }
+.armystage__one.is-free { width: calc(70px * var(--s)); height: calc(70px * var(--s)); justify-content: center; border: 1px dashed color-mix(in srgb, var(--sys-ink) 26%, transparent); border-radius: 50%; color: color-mix(in srgb, var(--sys-ink) 34%, transparent); }
+.armystage__one.is-free .ico { width: 14px; height: 14px; }
+.armystage__lead { position: absolute; left: 0; right: 0; bottom: 12px; display: grid; justify-items: center; gap: 2px; text-align: center; }
+.armystage__lead b { font-size: 1.12rem; font-weight: 800; letter-spacing: 0.04em; color: #fff; text-shadow: 0 0 4px rgba(255, 255, 255, 0.5), 0 0 18px var(--arcane-glow); }
+.armystage__lead small { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.armystage__lead .insignia { color: #d9c6ff; }
+.armystage__stars { color: var(--gold); letter-spacing: 1px; }
+
+/* What the squad's make-up lights, as Teamfight Tactics lights its traits; then the army's counts and the act waiting. */
+.armystage__traits { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin: 10px 0 0; padding: 0; list-style: none; }
+.armystage__traits li { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--sys-ink); }
+.armystage__traits .kinhex { width: 22px; height: 24px; }
+.armystage__traits .kinhex.is-on { background: linear-gradient(160deg, color-mix(in srgb, var(--stage) 95%, white), color-mix(in srgb, var(--stage) 55%, black)); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.armystage__traits .kinhex svg { width: 12px; height: 12px; }
+.armystage__traits b { font-weight: 800; color: #fff; }
+.armystage__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 6px 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--sys-hair); }
+.armystage__stat { display: inline-flex; align-items: baseline; gap: 5px; }
+.armystage__stat b { font-size: 0.95rem; font-weight: 800; color: #fff; }
+.armystage__stat small { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.armystage__stat .essence { align-self: center; }
+.armystage__call { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 46px; margin-top: 12px; padding: 0 14px; border: 1px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.16), rgba(255, 203, 92, 0.04)); color: var(--gold); font: inherit; font-size: 0.8rem; font-weight: 700; text-align: left; text-shadow: 0 0 8px var(--gold-glow); box-shadow: 0 0 14px var(--gold-glow); cursor: pointer; animation: readyCall 2s ease-in-out infinite; }
+.armystage__call > span { flex: 1; }
+.armystage__call .ico { width: 15px; height: 15px; }
+
+/* The standing orders, set where they are read. */
+.ordersband .sysframe__glass { gap: 8px; padding: 12px 14px 14px; }
+.ordersband__head { display: flex; align-items: baseline; justify-content: space-between; }
+.ordersband__head small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.ordersband__set { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--sys-hair); }
+.ordersband__one { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 64px; padding: 6px 2px 8px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); font: inherit; cursor: pointer; transition: color 160ms; }
+.ordersband__one .ico { width: 18px; height: 18px; }
+.ordersband__one small { font-size: 0.58rem; font-weight: 600; line-height: 1.2; text-align: center; }
+.ordersband__one.is-on { color: #fff; box-shadow: inset 0 -2px 0 var(--win); text-shadow: var(--sys-glow); }
+.ordersband__one.is-on .ico { color: #e2d2ff; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.ordersband__desc { margin: 2px 0 0; font-size: 0.76rem; line-height: 1.45; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.ordersband__held { font-size: 0.66rem; color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .armystage__fog i, .armystage__ghosts i, .armystage__one .emblem, .armystage.is-call, .armystage__call, .armystage__beam { animation: none; } }
