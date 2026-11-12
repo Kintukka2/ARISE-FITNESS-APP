@@ -618,10 +618,18 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
 button.dmap__floor { cursor: pointer; }
 .dmap__floor.is-on { border-color: var(--ember); color: var(--ember); box-shadow: 0 0 10px var(--ember-glow); }
 .dmap__floor b { color: inherit; }
-.dmap__key { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
-.dmap__key li { display: inline-flex; align-items: center; gap: 4px; }
-.dmap__key i { display: inline-flex; }
-.dmap__key .ico { width: 12px; height: 12px; }
+/* The plan's key, folded behind a button at its top right; a tap drops it over the plan, however long it is. */
+.dmap__keybox { position: relative; display: inline-flex; }
+.dmap__keybtn { display: inline-flex; align-items: center; gap: 5px; min-height: 40px; padding: 0 12px; border: 1px solid var(--sys-hair, var(--edge)); border-radius: 0; background: rgba(6, 8, 14, 0.72); color: var(--ink-2); font: inherit; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
+.dmap__keybtn .ico { width: 12px; height: 12px; transition: transform 200ms var(--ease); }
+.dmap__keybox.is-open .dmap__keybtn { border-color: var(--ember); color: var(--ink); }
+.dmap__keybox.is-open .dmap__keybtn .ico { transform: rotate(180deg); }
+.dmap__keybtn:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.dmap__key { position: absolute; top: calc(100% + 6px); right: 0; z-index: 6; display: grid; gap: 9px; min-width: 176px; max-height: min(60vh, 360px); overflow-y: auto; margin: 0; padding: 12px 14px; list-style: none; border: 1px solid var(--sys-hair, var(--edge)); background: rgba(6, 8, 14, 0.97); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65); color: var(--ink-2); font-size: 0.64rem; letter-spacing: 0.08em; text-align: left; text-transform: uppercase; animation: fadein 160ms both; }
+.dmap__key li { display: flex; align-items: center; gap: 9px; }
+.dmap__key i { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: none; }
+.dmap__key .ico { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) { .dmap__key { animation: none; } .dmap__keybtn .ico { transition: none; } }
 .runstrip { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(6, 12, 26, 0.8); }
 .runstrip__hp { display: flex; align-items: center; gap: 8px; }
 /* The HP row and the clock's share their label column, so the two bars line up. */
@@ -2519,6 +2527,11 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bfacts > div + div { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
 .bfacts dt { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bfacts dd { margin: 0; font-size: 1.08rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.bfacts dd { display: inline-flex; align-items: center; gap: 5px; }
+.bfacts dd .ico { width: 19px; height: 19px; flex: none; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sys-ink) 30%, transparent)); }
+.bfacts dd.is-foe .ico { color: #ff6b74; filter: drop-shadow(0 0 5px rgba(255, 47, 62, 0.45)); }
+.bpower { display: inline-flex; align-items: center; gap: 4px; }
+.bpower .ico { width: 15px; height: 15px; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
 .bfacts dd.is-foe { color: #ff6b74; text-shadow: 0 0 10px rgba(255, 47, 62, 0.45); }
 
 /* The rewards: a tile to each, framed in its kind's colour, its figure in the corner, its name under it. */

@@ -114,7 +114,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'You see every room next to one you have cleared. A room seen stays seen on that map, for as long as it stands.',
       'You can enter any room next to one you have cleared.',
       'You can walk back to any cleared room at any time.',
-      `Every Gate has a budget of moves: ${Math.round(CLOCK.budget * 100)}% of its rooms, a floor’s stairs down and up counted as one. The brief shows it, and so does the meter under your health inside.`,
+      `Every Gate has a budget of moves: ${Math.round(CLOCK.budget * 100)}% of its rooms, a floor’s stairs down and up counted as one. The meter under your health shows it inside.`,
       'Entering a room is a move, and so is every corridor walked back through cleared rooms, the shortest way.',
       `Past the budget the Gate stirs: every creature you have not yet fought, and the boss, is ${Math.round(CLOCK.stir * 100)}% stronger for each move over.`,
       `${CLOCK.red} moves past the budget, the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,

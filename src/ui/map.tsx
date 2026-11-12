@@ -10,6 +10,7 @@ import { across, pairKey, passages, threatOf, tollDoors, unsealed, type GateMap,
 import { landmarkOf } from '@/data/landmarks';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
 import type { ComponentChildren } from 'preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { Glyph } from './icons';
 
@@ -102,7 +103,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const threat = threatOf(m);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''} ${red ? 'is-red' : stir > 0 ? 'is-stir' : ''}`} style={stir > 0 && !red ? { '--stir': stir } as Record<string, number> : undefined}>
-      {(floors > 1 || corner || (found && found.of > 0)) && (
+      {(floors > 1 || corner || compact || (found && found.of > 0)) && (
         <div class="dmap__bar">
           {found && found.of > 0
             ? <span class="dmap__secrets" aria-label={`Secrets found on this floor: ${found.found} of ${found.of}`}><Glyph name="eye" /><small>Secrets</small><b class="num">{found.found}/{found.of}</b></span>
@@ -116,7 +117,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
                 : <span class="dmap__floor is-on">Floor <b class="num">{f + 1}/{floors}</b></span>}
             </div>
           ) : <span aria-hidden="true" />}
-          <span class="dmap__corner">{corner}</span>
+          <span class="dmap__corner">{corner}{compact && <MapKey shown={shown} fogs={fogs} />}</span>
         </div>
       )}
       <div class={`dmap ${compact ? 'dmap--compact' : ''}`} style={{ '--cols': cols, '--rows': rows } as Record<string, number>} role="group" aria-label={floors > 1 ? `Map of the Gate, floor ${f + 1} of ${floors}` : 'Map of the Gate'}>
@@ -225,13 +226,37 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           </span>
         )}
       </div>
-      {compact && (
-        <ul class="dmap__key" aria-label="Map key">
+    </div>
+  );
+}
+
+/**
+ * The plan's key, behind a button at its top right, as a strategy map keeps its legend folded: a tap drops
+ * every kind of room the plan shows under it, its mark and its name, however many there are; a tap anywhere
+ * else, or on the button again, folds it.
+ */
+function MapKey({ shown, fogs }: { shown: NodeKind[]; fogs: boolean }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
+  if (!shown.length && !fogs) return null;
+  return (
+    <span class={`dmap__keybox ${open ? 'is-open' : ''}`} ref={box}>
+      <button type="button" class="dmap__keybtn" aria-expanded={open} aria-controls="dmap-key" onClick={() => { sfx.tap(); setOpen(!open); }}>
+        Key<Glyph name="down" />
+      </button>
+      {open && (
+        <ul class="dmap__key" id="dmap-key" aria-label="Map key">
           {shown.map((k) => <li key={k}><i class={`gnode--${k}`}><Glyph name={k === 'vault' ? 'lock' : NODE[k].glyph} /></i>{NODE[k].name}</li>)}
           {fogs && <li><i class="is-fog"><Glyph name="unknown" /></i>Unseen</li>}
         </ul>
       )}
-    </div>
+    </span>
   );
 }
 

@@ -2,9 +2,9 @@
  * The brief: the System's card on a Gate, and the way in, read top to bottom as the reference games lay a
  * stage before it is entered (Honkai: Star Rail's and Genshin Impact's stage cards, Darkest Dungeon's embark,
  * Hades' Pact). Its head is the Gate's portal inside the assessment's ring, a tick to each of the System's runs;
- * under it the facts (the party's power against the boss's, the road), the objectives, the rewards as tiles, the
- * Seals pressed in place, the enemies as portraits, the party lined up, the Feats and the map, folded. The way
- * in is docked at its foot. Only a creature's card and the bag open over it.
+ * under it the facts (the party's power against the boss's, its floors), the objectives, the rewards as tiles, the
+ * Seals pressed in place, the enemies as portraits, the party lined up, the Feats and Today's map in a row. The
+ * way in is docked at its foot. A creature's card, the map and the bag open over it.
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -29,7 +29,6 @@ import * as walkers from '@/core/walkers';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import * as raid from '@/core/raid';
-import { budgetOf } from '@/core/clock';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import type { Dungeon, Rank, Save } from '@/core/types';
@@ -295,7 +294,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         )}
       </header>
 
-      <Facts d={d} level={level} taken={taken} road={proj.road.length} />
+      <Facts d={d} level={level} taken={taken} />
       <Objectives d={d} level={level} taken={taken} />
       <RewardTiles d={d} level={level} taken={taken} />
       {offer.length > 0 && <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} />}
@@ -332,21 +331,25 @@ function bossOf(s: Save, d: Dungeon, level: number) {
 
 /**
  * The facts under the head, as the reference games set a stage's recommended power over its enemies: the
- * party's power against the boss's (the last of the Chosen's, on the Trial), and the road, its rooms and the
- * Gate's budget of moves. The Trial's road is its Chosen, so it has three.
+ * party's power against the boss's (the last of the Chosen's, on the Trial), each by the power mark, and how
+ * deep it goes, its floors, said before anyone has been inside (the Trial's Chosen). Never its moves: the Gate
+ * clock is felt inside, not counted out here (the owner's call). Its rooms wait in Today's map.
  */
-function Facts({ d, level, taken, road }: { d: Dungeon; level: number; taken: SealId[]; road: number }) {
+function Facts({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
   const s = useSave();
   const map = build(d, mapSeed(d, dayKey()));
-  const known = mapKnown(s, d);
   const { who } = bossOf(s, d, level);
-  const moves = !map.tower && !isPractice(d) ? budgetOf(map) : null;
+  const trial = isTrial(d);
+  const party = partyPower(s, d, level, taken);
+  const foe = who ? powerOf(who.base) : null;
   return (
     <dl class="bfacts">
-      <div><dt>Your party</dt><dd class="num">{partyPower(s, d, level, taken)}</dd></div>
-      <div><dt>{isTrial(d) ? 'Last Chosen' : 'Boss'}</dt><dd class="num is-foe">{who ? powerOf(who.base) : '?'}</dd></div>
-      <div><dt>{isTrial(d) ? 'Chosen' : map.tower ? 'Floors' : 'Rooms'}</dt><dd class="num">{known ? raid.stepsOf(map) : '?'}</dd></div>
-      {!isTrial(d) && <div><dt>{moves !== null ? 'Moves' : 'To the boss'}</dt><dd class="num">{known ? moves ?? road : '?'}</dd></div>}
+      <div><dt>Party</dt><dd class="num" aria-label={`Power ${party}`}><Glyph name="power" />{party}</dd></div>
+      <div><dt>{trial ? 'Last Chosen' : 'Boss'}</dt><dd class="num is-foe" aria-label={foe === null ? 'Power unknown' : `Power ${foe}`}><Glyph name="power" />{foe ?? '?'}</dd></div>
+      <div>
+        <dt>{trial ? 'Chosen' : 'Floors'}</dt>
+        <dd class="num">{trial || map.tower ? raid.stepsOf(map) : Math.max(1, map.floors.length)}</dd>
+      </div>
     </dl>
   );
 }
@@ -501,7 +504,7 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
   const { hero, party, squad } = partyOf(s, d, level, taken);
   return (
     <section class="bbox" aria-label="Party" data-tour="party">
-      <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right">Power <b class="num">{partyPower(s, d, level, taken)}</b></small></span>
+      <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right bpower" aria-label={`Power ${partyPower(s, d, level, taken)}`}><Glyph name="power" /><b class="num">{partyPower(s, d, level, taken)}</b></small></span>
       <ul class="blineup">
         <li class="blineup__one is-you"><span class="blineup__face"><Sigil rank={licensedRank(s)} size={30} /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small></li>
         {party.map((a) => (
@@ -555,8 +558,8 @@ function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Par
 }
 
 /**
- * Today's map, as one row: its rooms and floors (the Spire's floors, the Trial's Chosen) and when it is
- * redrawn. Once the hunter has been inside, a tap opens the map in a window of its own; until then it is
+ * Today's map, as one row: its rooms (the Spire's floors, the Trial's Chosen), once the hunter has been
+ * inside, and when it is redrawn. Once the hunter has been inside, a tap opens the map in a window of its own; until then it is
  * Unidentified and opens nothing.
  */
 function MapRow({ d, road }: { d: Dungeon; road: string[] }) {
@@ -567,7 +570,7 @@ function MapRow({ d, road }: { d: Dungeon; road: string[] }) {
   const size = !known ? 'Unidentified'
     : isTrial(d) ? `${steps} Chosen`
       : map.tower ? `${steps} floors`
-        : `${steps} rooms${map.floors.length > 1 ? ` · ${map.floors.length} floors` : ''}`;
+        : `${steps} rooms`;
   const body = (
     <>
       <Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />

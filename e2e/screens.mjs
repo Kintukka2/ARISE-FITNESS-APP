@@ -285,7 +285,10 @@ try {
   if (!(await page.locator('.sheet.is-top .bline.is-main', { hasText: 'Defeat the boss' }).count())) throw new Error('THE OBJECTIVES DO NOT OPEN ON THE BOSS');
   if (!(await page.locator('.sheet.is-top .breward.is-xp', { hasText: 'Gate clear' }).count())) throw new Error('THE REWARDS DO NOT SHOW THE CLEAR');
   // The facts under the head set the party's power against the boss's.
-  if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 4) throw new Error('THE HEAD HAS NO FACTS UNDER IT');
+  if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 3) throw new Error('THE HEAD HAS NO FACTS UNDER IT');
+  if (/moves|rooms/i.test(await page.locator('.sheet.is-top .bfacts').innerText())) throw new Error('THE FACTS COUNT THE MOVES OR THE ROOMS');
+  if ((await page.locator('.sheet.is-top .bfacts dd .ico').count()) !== 2) throw new Error('THE POWERS IN THE FACTS HAVE NO MARK');
+  if (!(await page.locator('.sheet.is-top .bfacts dt', { hasText: 'Floors' }).count())) throw new Error('THE FACTS DO NOT SAY THE FLOORS');
   if (/sometimes/i.test(await page.locator('.sheet.is-top .brewards').innerText())) throw new Error('THE BLUEPRINT STILL SAYS SOMETIMES');
   if ((await page.locator('.sheet.is-top .bbanner .bvital__drink').count()) !== 3) throw new Error('THE BANNER DOES NOT HOLD HP, MP AND FATIGUE');
   if (await page.locator('.sheet.is-top .bhero', { hasText: 'Runs cleared' }).count()) throw new Error('THE HEAD STILL COUNTS THE RUNS');
@@ -331,7 +334,14 @@ try {
   if (await page.locator('.sheet.is-top .dmap').count()) throw new Error('THE BRIEF STILL HOLDS THE MAP ITSELF');
   await maprow.scrollIntoViewIfNeeded(); await maprow.click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .bmapsheet .dmap').count())) throw new Error('THE MAP DID NOT OPEN IN ITS OWN WINDOW');
+  // The key is folded behind its button and drops under it.
+  if (await page.locator('.sheet.is-top .dmap__key').count()) throw new Error('THE MAP KEY IS NOT FOLDED');
   await snap('brief-map');
+  await page.locator('.sheet.is-top .dmap__keybtn').click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .dmap__key li').count())) throw new Error('THE MAP KEY DID NOT DROP');
+  await snap('brief-map-key');
+  await page.locator('.sheet.is-top .bmapsheet .dmap').click({ position: { x: 20, y: 200 } }); await sleep(250);
+  if (await page.locator('.sheet.is-top .dmap__key').count()) throw new Error('A TAP AWAY DID NOT FOLD THE MAP KEY');
   await page.locator('.sheet.is-top [aria-label="Close"]').first().click(); await sleep(400);
   if (!(await page.locator('.sheet.is-top .bfacts').count())) throw new Error('CLOSING THE MAP DID NOT RETURN TO THE BRIEF');
   // The party lined up, the hunter first, and the squad's Formation under it.

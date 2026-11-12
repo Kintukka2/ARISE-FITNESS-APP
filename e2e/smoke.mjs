@@ -110,6 +110,8 @@ async function raidGate(row, name, auto = false) {
   if (name === 'practice') {
     if (await page.locator('.sheet.is-top button.bmaprow').count()) throw new Error('THE PRACTICE BRIEF OPENS A MAP BEFORE THE HUNTER WENT IN');
     if (!(await page.locator('.sheet.is-top .bmaprow', { hasText: 'Unidentified' }).count())) throw new Error('THE PRACTICE MAP IS NOT UNIDENTIFIED');
+    if (!(await page.locator('.sheet.is-top .bfacts', { hasText: 'Floors' }).count())) throw new Error('A NEW GATE DOES NOT SAY ITS FLOORS');
+    if (/moves/i.test(await page.locator('.sheet.is-top .bfacts').innerText())) throw new Error('A NEW GATE COUNTS ITS MOVES');
   }
   await page.locator('text=Enter The Gate').click();
   await drain();

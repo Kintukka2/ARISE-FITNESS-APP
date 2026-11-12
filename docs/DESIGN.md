@@ -1869,6 +1869,12 @@ with what ARISE took from them.
   inside: until then the row is `Unidentified` and opens nothing. The blueprint's tile says `Blueprint`, not
   `Blueprint · sometimes`. On the Trial the facts are three, `Your party`, `Last Chosen` and `Chosen`: its
   road is its Chosen, so `To the last` only said `Chosen` again.
+- **No moves before the Gate** (the owner's next call: the hunter never counts the clock out before walking
+  in). The facts are `Party` and `Boss`, each by a power mark (two crossed swords, `?` until the boss is
+  known), and `Floors`, said before anyone has been inside; the Trial's are `Party`, `Last Chosen` and
+  `Chosen`. The rooms wait in Today's map, once identified, and the moves are nowhere on the brief; the Guide
+  no longer says the brief shows the budget. The map's key folds behind `Key` at the window's top right and
+  drops over the plan, so seven kinds of room read as seven lines, not a wrapping band.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;
