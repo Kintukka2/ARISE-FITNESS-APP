@@ -6,7 +6,8 @@
  * cleared room can be walked back to. On the Gate clock, every room the hunter can enter or walk to shows
  * what it costs in moves; past the budget the plan stirs, and a Red Gate's plan is red, its entrance sealed.
  */
-import { across, passages, threatOf, unsealed, type GateMap, type MapNode } from '@/core/map';
+import { across, pairKey, passages, threatOf, tollDoors, unsealed, type GateMap, type MapNode, type Openings } from '@/core/map';
+import { landmarkOf } from '@/data/landmarks';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
 import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
@@ -41,6 +42,16 @@ interface MapProps {
   red?: boolean;
   /** Inside a run: the name of each shrine's Path, shown on it once it is seen. */
   shrinePath?: (x: MapNode) => string | undefined;
+  /** Inside a run: the passages it has noticed, a map it has charted, and the toll doors it has paid (`raid.openings`). */
+  openings?: Openings;
+  /** Inside a run, on the later plans: a floor's secrets found, of how many. */
+  secrets?: (floor: number) => { found: number; of: number };
+  /** Inside a run: the toll doors it can break, by key, with the room each opens; and breaking one, from its seal or that room. */
+  tollable?: { key: string; far: string }[];
+  onToll?: (key: string) => void;
+  /** Inside a Gate: the rests found and not yet used, tapped to rest there (it asks first), wherever the hunter stands. */
+  restable?: string[];
+  onRestRoom?: (id: string) => void;
 }
 
 export function MapView(p: MapProps) {
@@ -56,7 +67,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets, tollable = [], onToll, restable = [], onRestRoom }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -77,19 +88,25 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const rooms = m.nodes.filter(on);
   const halls: [MapNode, MapNode][] = [];
   for (const x of rooms) for (const id of x.next) if (x.id < id && on(m.byId[id])) halls.push([x, m.byId[id]]);
-  const secret = passages(m, done).map(([x, y]) => [m.byId[x], m.byId[y]] as const).filter(([x]) => on(x));
+  const secret = passages(m, done, openings).map(([x, y]) => [m.byId[x], m.byId[y]] as const).filter(([x]) => on(x));
+  // A toll door is a corridor sealed in red until it is paid, its seal at its middle; paid, a corridor like any.
+  const tolls = tollDoors(m).map(([x, y]) => ({ x: m.byId[x], y: m.byId[y], paid: !!openings.tolls?.has(pairKey(x, y)) })).filter((t) => on(t.x));
+  const found = secrets?.(f);
   // What the plan shows of a room: a trap, a cache or a rest passes for an Event until the hunter has stood in it.
   const looksOf = (x: MapNode): NodeKind => (HIDDEN_IN_ROOMS.has(x.kind) && !entered.has(x.id) ? 'event' : x.kind);
   // A room not yet seen is fog: where it lies and its corridors show, nothing of what is in it.
   const fogged = (x: MapNode) => !!seen && !seen.has(x.id);
   const shown = [...new Set(rooms.filter((x) => !fogged(x)).map(looksOf))].filter((k) => k !== 'entrance' && k !== 'up');
-  const fogs = rooms.some(fogged);
+  // A room behind a hidden passage is not on the plan at all until it is found: not even fog.
+  const fogs = rooms.some((x) => fogged(x) && !x.secret);
   const threat = threatOf(m);
   return (
     <div class={`dmapwrap ${compact ? 'is-compact' : ''} ${red ? 'is-red' : stir > 0 ? 'is-stir' : ''}`} style={stir > 0 && !red ? { '--stir': stir } as Record<string, number> : undefined}>
-      {(floors > 1 || corner) && (
+      {(floors > 1 || corner || (found && found.of > 0)) && (
         <div class="dmap__bar">
-          <span aria-hidden="true" />
+          {found && found.of > 0
+            ? <span class="dmap__secrets" aria-label={`Secrets found on this floor: ${found.found} of ${found.of}`}><Glyph name="eye" /><small>Secrets</small><b class="num">{found.found}/{found.of}</b></span>
+            : <span aria-hidden="true" />}
           {floors > 1 ? (
             <div class="dmap__floors" role={onFloor ? 'tablist' : undefined} aria-label="Floors">
               {onFloor
@@ -106,7 +123,8 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
         <svg class="dmap__halls" viewBox={`0 0 ${cols * 10} ${rows * 10}`} preserveAspectRatio="none" aria-hidden="true">
           {/* A corridor is drawn twice: its walls, then its floor between them. */}
           {[...halls.map(([x, y]) => [x, y, done.has(x.id) && done.has(y.id) ? 'is-walked' : (done.has(x.id) || done.has(y.id)) && !compact ? 'is-near' : ''] as const),
-            ...secret.map(([x, y]) => [x, y, 'is-hidden'] as const)].map(([x, y, lit]) => (
+            ...secret.map(([x, y]) => [x, y, 'is-hidden'] as const),
+            ...tolls.map((t) => [t.x, t.y, t.paid ? 'is-walked' : 'is-toll'] as const)].map(([x, y, lit]) => (
             <g key={`${x.id}-${y.id}`} class={`dmap__hall ${lit}`}>
               <line class="dmap__wall" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} />
               <line class="dmap__floor" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} />
@@ -116,8 +134,17 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             <line key={`r${x.id}-${y.id}`} class="dmap__trail" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} vector-effect="non-scaling-stroke" />
           ))}
         </svg>
+        {tolls.filter((t) => !t.paid).map((t) => {
+          const style = { left: `${(((t.x.x! + t.y.x!) / 2 + 0.5) / cols) * 100}%`, top: `${(((t.x.y! + t.y.y!) / 2 + 0.5) / rows) * 100}%` };
+          // A seal the hunter can break is tapped to break it: it asks first.
+          const can = onToll ? tollable.find((k) => k.key === pairKey(t.x.id, t.y.id)) : undefined;
+          return can
+            ? <button type="button" key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll is-live" style={style} aria-label="Toll door: break the seal" onClick={() => { sfx.tap(); onToll!(can.key); }}><Glyph name="lock" /></button>
+            : <span key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll" aria-hidden="true" style={style}><Glyph name="lock" /></span>;
+        })}
         {rooms.map((x) => {
           const style = { gridColumn: x.x! + 1, gridRow: x.y! + 1 };
+          if (fogged(x) && x.secret) return null;
           if (fogged(x)) {
             return (
               <span key={x.id} class="gnode droom is-fog" style={style} title="Unseen" aria-label="Unseen room">
@@ -131,11 +158,13 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const kind = NODE[looks];
           const isDone = done.has(x.id);
           // A room cleared reads as cleared, not as what it held; the rooms the hunter comes back to keep their marks.
-          const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss'].includes(x.kind);
+          const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss', 'landmark'].includes(x.kind);
           const glyph = plain ? 'check' : sealed ? 'lock' : x.kind === 'vault' ? 'unlock' : kind.glyph;
           // A shrine seen shows its Path, as the references' doors show the god behind them.
           const path = looks === 'shrine' && !isDone ? shrinePath?.(x) : undefined;
-          const name = plain ? 'Cleared' : sealed ? 'Sealed' : path ? `Shrine of ${path}` : kind.name;
+          // A landmark goes by its own name (`Ossuary`); a cache behind a secret by what it is.
+          const named = x.kind === 'landmark' ? landmarkOf(x.landmark ?? '')?.name : undefined;
+          const name = plain ? 'Cleared' : sealed ? 'Sealed' : path ? `Shrine of ${path}` : named ?? (x.secret ? 'Secret' : kind.name);
           // What it costs to go there, in moves, on the Gate clock.
           const cost = costs?.[x.id];
           const moves = cost === undefined ? '' : `, ${cost} ${cost === 1 ? 'move' : 'moves'}`;
@@ -149,9 +178,9 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far', plain ? 'is-cleared' : '',
             sealed ? 'is-sealed' : '', spent ? 'is-spent' : '', here?.id === x.id ? 'is-at' : '', road.includes(x.id) ? 'is-road' : '',
           ].filter(Boolean).join(' ');
+          // The moves a room costs are read aloud with it, never drawn on it: the meter and the hint say the clock.
           const body = (
             <>
-              {cost !== undefined && <span class="droom__cost" aria-hidden="true"><Glyph name="steps" /><b class="num">{cost}</b></span>}
               {t && t.n > 0 && (
                 <span class="droom__pips" aria-hidden="true">
                   {Array.from({ length: t.n }, (_, i) => <i key={i} class={i < t.strong ? 'is-strong' : ''} />)}
@@ -159,9 +188,21 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
               )}
               <Glyph name={glyph} />
               {!compact && <small>{spent ? 'Used' : path ?? name}</small>}
+              {x.secret && <span class="droom__secret" aria-hidden="true" />}
             </>
           );
           const cls = `gnode droom gnode--${looks} ${state}`;
+          // A rest found and not yet used is tapped to rest there, even where the hunter stands: it asks first.
+          if (onRestRoom && restable.includes(x.id)) {
+            return <button type="button" key={x.id} class={`${cls} is-restable`} style={style} data-node={x.id} aria-label={`Rest${moves}: ${kind.desc}`} title="Rest here"
+              onClick={() => { sfx.tap(); onRestRoom(x.id); }}>{body}</button>;
+          }
+          // The room a toll door seals is tapped to break the seal: it asks first.
+          const sealedBy = onToll && !next && !isDone ? tollable.find((k) => k.far === x.id) : undefined;
+          if (sealedBy) {
+            return <button type="button" key={x.id} class={`${cls} is-tolled`} style={style} data-node={x.id} aria-label={`${name}, behind a toll door: break the seal`} title="Behind a toll door"
+              onClick={() => { sfx.tap(); onToll!(sealedBy.key); }}>{body}</button>;
+          }
           if (next && onPick) {
             return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Enter ${name}${who}${moves}: ${kind.desc}`} title={kind.desc}
               onClick={() => { sfx.tap(); onPick(x.id); }}>{body}</button>;

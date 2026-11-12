@@ -13,6 +13,7 @@
  * who enters that day walks the same one.
  */
 import { FONT_SHARE } from '@/data/blessings';
+import { landmarkOf, leadFamily } from '@/data/landmarks';
 import { EVENTS, type NodeKind } from '@/data/nodes';
 import { enemyById, isPractice } from './gates';
 import { powerOf } from './combat';
@@ -37,8 +38,25 @@ export interface MapNode {
   hidden?: string[];
   /** Who waits in a fight, a Gatekeeper's room or the boss's. */
   foes?: string[];
-  /** The event drawn for an event node. */
+  /** The event drawn for an event node, or a landmark's own. */
   event?: string;
+  /**
+   * The later plans' (`labyrinth2`): a room's corridors from the System's road (0 on it), the third of its
+   * floor it lies in from the foot (0 to 2), and whether it is the floor's first fight, held by one creature.
+   */
+  off?: number;
+  band?: number;
+  threshold?: boolean;
+  /** Deep: two corridors or more off the road, behind a Gatekeeper, behind a hidden passage or a toll door. A cache finds at the Gate's own grade, a fight banks more. */
+  deep?: boolean;
+  /** A room behind a hidden passage and nothing else: found only when the passage is. */
+  secret?: boolean;
+  /** A room in a Gatekeeper's wing: reached through the Gatekeeper's room alone. The Gatekeeper's id. */
+  wing?: string;
+  /** The rooms its toll doors lead to, both ways: a sealed corridor that opens when its toll is paid. */
+  toll?: string[];
+  /** A landmark's family. */
+  landmark?: string;
 }
 
 export interface GateMap {
@@ -57,14 +75,27 @@ export interface GateMap {
   rows: number;
   /** A dungeon's floors, the entrance's first: where each starts and ends, and its plan's size. */
   floors: { start: string; end: string; rows: number; cols: number }[];
+  /** The later plans' (`labyrinth2`): a hidden passage opens only when it is noticed or charted. */
+  secrets?: boolean;
 }
 
 /**
- * How an open run's map is drawn: a Gate's floors of labyrinth (`labyrinth`). Runs opened before the
+ * What a run has opened on its map beyond its corridors: the hidden passages it noticed (`notice`, asked of
+ * each passage with a cleared room at either end), every passage at once once the map is charted, and the
+ * toll doors it paid for, by `pairKey`.
+ */
+export interface Openings { notice?: (a: string, b: string) => boolean; charted?: boolean; tolls?: ReadonlySet<string> }
+
+/** Two rooms joined by a passage or a toll door, as one key, the same either way round. */
+export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+/**
+ * How an open run's map is drawn: a Gate's floors of labyrinth with landmarks, secrets, Gatekeepers' wings,
+ * toll doors and gradients (`labyrinth2`). Runs opened before them walk the plain labyrinths (`labyrinth`), runs opened before the
  * labyrinths walk the smaller floors they began on (`floors`), runs opened before the floors one floor
  * of rooms (`rooms`), and runs opened before the dungeons the tower they began on (`layers`).
  */
-export type Layout = 'labyrinth' | 'floors' | 'rooms' | 'layers';
+export type Layout = 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
 
 /** How many floors a Gate goes down, by its grade. */
 export const FLOORS: Record<string, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 };
@@ -92,12 +123,16 @@ function furnish(d: Dungeon, seed: string, nodes: MapNode[]) {
   for (const x of nodes) {
     const rr = rng(`arise|node|${seed}|${x.id}`);
     if (x.kind === 'fight') {
-      // The practice Gate's fights are one or two creatures: a first dungeon is not lost.
-      const count = 1 + Math.floor(rr() * (isPractice(d) ? 2 : 3));
+      // The practice Gate's fights are one or two creatures: a first dungeon is not lost. On the later
+      // plans, fights grow toward the floor's head and on every floor down, and a floor opens on one creature.
+      const band = x.band;
+      const span = band === undefined ? null : x.threshold ? [1, 1] : [Math.min(3, GRADIENT.lo[band] + (x.floor ?? 0)), Math.min(3, GRADIENT.hi[band] + (x.floor ?? 0))];
+      const count = span ? span[0] + Math.floor(rr() * (span[1] - span[0] + 1)) : 1 + Math.floor(rr() * (isPractice(d) ? 2 : 3));
       x.foes = Array.from({ length: count }, () => d.mobs[Math.floor(rr() * d.mobs.length)]);
     } else if (x.kind === 'elite') x.foes = [d.elite!];
     else if (x.kind === 'boss') x.foes = [d.boss];
     else if (x.kind === 'event') x.event = EVENTS[Math.floor(rr() * EVENTS.length)].id;
+    else if (x.kind === 'landmark') x.event = landmarkOf(x.landmark ?? '')?.event.id;
     // A shrine is now and then a Font. What either offers is the run's, drawn as the hunter steps in.
     else if (x.kind === 'shrine' && !isPractice(d) && rr() < FONT_SHARE) x.kind = 'font';
   }
@@ -445,22 +480,328 @@ function floorPlan(d: Dungeon, seed: string, o: FloorOpts) {
   return { nodes, byId, start: entrance, end: boss, rows, cols };
 }
 
+// ------------------------------------------------------------------ the later plans (labyrinth2)
+
+/** The later plans' fights by the third of the floor they lie in, foot to head: the fewest and the most creatures, before one more for each floor down (to 3). */
+export const GRADIENT = { lo: [1, 1, 2], hi: [2, 3, 3] } as const;
+/** The road's one odd room, in its middle third: never a rest (a floor's rest is off the road), never a trap before the stairs or the boss. */
+const ROAD2: { kind: NodeKind; w: number }[] = [{ kind: 'event', w: 30 }, { kind: 'shrine', w: 26 }, { kind: 'trap', w: 22 }, { kind: 'treasure', w: 22 }];
+/** A side room one corridor off the road, and one two or more off it, which hold the finds more often. */
+const SIDE2: { kind: NodeKind; w: number }[] = [{ kind: 'fight', w: 34 }, { kind: 'treasure', w: 20 }, { kind: 'event', w: 18 }, { kind: 'trap', w: 16 }, { kind: 'shrine', w: 12 }];
+const SIDE_DEEP: { kind: NodeKind; w: number }[] = [{ kind: 'treasure', w: 32 }, { kind: 'fight', w: 24 }, { kind: 'shrine', w: 22 }, { kind: 'event', w: 14 }, { kind: 'trap', w: 8 }];
+/** A floor's one rest is drawn this often, by grade, one corridor off the road beside a road room past halfway. */
+export const REST_CHANCE: Record<string, number> = { E: 0.3, D: 0.4, C: 0.45, B: 0.5, A: 0.6, S: 0.7 };
+/** A Gatekeeper's wing: the rooms behind it before its vault, and what they hold; a rest only at A and S. */
+export const WING = { rooms: [1, 3], restFrom: 'A' } as const;
+const WING_ROOMS: { kind: NodeKind; w: number }[] = [{ kind: 'treasure', w: 45 }, { kind: 'shrine', w: 25 }, { kind: 'event', w: 20 }, { kind: 'rest', w: 10 }];
+/** Gatekeepers on a Gate of these grades: one wing to every two floors. */
+export const WINGS: Record<string, number> = { E: 1, D: 1, C: 1, B: 1, A: 2, S: 2 };
+/** A secret cache is drawn on this share of floors, in a cell beside at least `beside` rooms, joined to one by a hidden passage. */
+export const SECRET_CACHE = { chance: 0.6, beside: 2 } as const;
+/** A toll door is drawn on this share of floors: a shortcut between rooms at least `apart` corridors apart, or else the one way into a cache. */
+export const TOLL_DOOR = { chance: 0.5, apart: 4 } as const;
+
+/**
+ * A floor of the later plans. Drawn as a labyrinth's, then: its Gatekeeper guards a wing of rooms before
+ * its vault; its road opens on one creature and holds one odd room, in its middle third; its fights grow
+ * toward its head; its side rooms two corridors off the road hold the finds; its one rest, if it has one,
+ * sits one corridor off the road past halfway; a landmark of the Gate's leading family stands off the road
+ * in its middle third; a secret cache may sit behind a hidden passage, and a toll door seal a shortcut or
+ * a cache.
+ */
+function floorPlan2(d: Dungeon, seed: string, o: FloorOpts & { size: FloorSize }) {
+  const r: Rand = rng('arise|plan|' + seed);
+  const rv: Rand = rng('arise|shape|' + seed);
+  const rk: Rand = rng('arise|plan2|' + seed);
+  const L = o.size;
+  const cols0 = L.cols;
+  const footX = Math.floor(rv() * cols0);
+  let beyond = Math.floor(rv() * (BEYOND_FOOT + 1));
+  const nodes: MapNode[] = [];
+  const byId: Record<string, MapNode> = {};
+  const cells = new Map<string, MapNode>();
+  const parent: Record<string, string> = {};
+  const at = (x: number, y: number) => cells.get(`${x},${y}`);
+  const add = (x: number, y: number, kind: NodeKind) => {
+    const node: MapNode = { id: `${o.prefix}${nodes.length}`, n: 0, layer: 0, kind, next: [], x, y, floor: o.floor };
+    nodes.push(node);
+    byId[node.id] = node;
+    cells.set(`${x},${y}`, node);
+    return node;
+  };
+  const link = (a: MapNode, b: MapNode) => { a.next.push(b.id); b.next.push(a.id); };
+
+  const entrance = add(footX, 0, o.floor === 0 ? 'entrance' : 'up');
+  const road: MapNode[] = [];
+  let prev = entrance;
+  let along = 0;
+  let ups = 0;
+  for (let i = 0; i < o.road; i++) {
+    const sideways: { dx: number; w: number }[] = [];
+    if (i > 0 && along < L.along) for (const dx of [-1, 1]) if (!at(prev.x! + dx, prev.y!) && prev.x! + dx >= 0 && prev.x! + dx < cols0) sideways.push({ dx, w: 1.5 });
+    const capped = ups >= PLAN_MAX.rows - 3 && sideways.length > 0;
+    const ways: { dx: number; w: number }[] = [...(capped ? [] : [{ dx: 0, w: 2 }]), ...sideways];
+    const { dx } = weighted(ways, r());
+    if (!dx) ups++;
+    along = dx ? along + 1 : 0;
+    const room = add(prev.x! + dx, prev.y! + (dx ? 0 : -1), 'fight');
+    link(prev, room);
+    road.push(room);
+    prev = room;
+  }
+  const top = Math.min(...road.map((x) => x.y!));
+  beyond = Math.min(beyond, PLAN_MAX.rows - 2 + top);
+  const boss = add(prev.x!, top - 1, o.floor === o.floors - 1 ? 'boss' : 'down');
+  link(prev, boss);
+
+  const depth: Record<string, number> = { [entrance.id]: 0 };
+  for (const x of road) depth[x.id] = 0;
+  const free = (x: number, y: number) => x >= 0 && x < cols0 && y >= top && y <= beyond && !at(x, y);
+  const sprouts = (from: (x: MapNode) => boolean) => {
+    const out: { parent: MapNode; x: number; y: number }[] = [];
+    for (const p of nodes) {
+      if (!from(p)) continue;
+      for (const [dx, dy] of DIRS) if (free(p.x! + dx, p.y! + dy)) out.push({ parent: p, x: p.x! + dx, y: p.y! + dy });
+    }
+    return out;
+  };
+  const branch = (from: (x: MapNode) => boolean, kind: NodeKind) => {
+    const options = sprouts(from);
+    if (!options.length) return null;
+    const c = options[Math.floor(r() * options.length)];
+    const room = add(c.x, c.y, kind);
+    link(c.parent, room);
+    parent[room.id] = c.parent.id;
+    depth[room.id] = (depth[c.parent.id] ?? 0) + 1;
+    return room;
+  };
+  let deep = L.depth;
+  const growing = (x: MapNode) => (x.kind === 'fight' || x === entrance) && depth[x.id] !== undefined && depth[x.id] < deep && !x.wing;
+  const sides: MapNode[] = [];
+  const roomier = () => {
+    if (2 - top + beyond < PLAN_MAX.rows) { beyond++; return true; }
+    if (deep < 8) { deep++; return true; }
+    return false;
+  };
+  const want = L.rooms - 2 - road.length - (o.keeper ? 1 : 0) - (o.vault ? 1 : 0);
+  while (sides.length < want) {
+    const room = branch(growing, 'fight');
+    if (room) sides.push(room);
+    else if (!roomier()) break;
+  }
+
+  // The Gatekeeper at the mouth of a wing: rooms behind it, reached through its room and nowhere else, its vault at the far end.
+  let keeper: MapNode | null = null;
+  const wing: MapNode[] = [];
+  let vault: MapNode | null = null;
+  const behind = (x: number, y: number) => DIRS.map(([dx, dy]) => [x + dx, y + dy] as const).filter(([bx, by]) => free(bx, by));
+  if (o.keeper) {
+    let spots = sprouts((x) => sides.includes(x) && x.next.length === 1).filter((c) => behind(c.x, c.y).length);
+    if (!spots.length) spots = sprouts(growing).filter((c) => behind(c.x, c.y).length);
+    while (!spots.length && roomier()) spots = sprouts((x) => sides.includes(x) || x === entrance).filter((c) => behind(c.x, c.y).length);
+    if (spots.length) {
+      const c = spots[Math.floor(r() * spots.length)];
+      keeper = add(c.x, c.y, 'elite');
+      link(c.parent, keeper);
+      parent[keeper.id] = c.parent.id;
+      depth[keeper.id] = (depth[c.parent.id] ?? 0) + 1;
+      // The wing grows out from the Gatekeeper's room: each room beside the last, or the Gatekeeper's.
+      const size = WING.rooms[0] + Math.floor(rk() * (WING.rooms[1] - WING.rooms[0] + 1));
+      const into = (from: MapNode[]) => from.flatMap((p) => behind(p.x!, p.y!).map(([x, y]) => ({ p, x, y })));
+      for (let k = 0; k < size; k++) {
+        const opts = into(wing.length ? [wing[wing.length - 1], keeper] : [keeper]);
+        if (!opts.length) break;
+        const c2 = opts[Math.floor(rk() * opts.length)];
+        const room = add(c2.x, c2.y, 'treasure');
+        room.wing = keeper.id;
+        link(c2.p, room);
+        parent[room.id] = c2.p.id;
+        depth[room.id] = depth[c2.p.id] + 1;
+        wing.push(room);
+      }
+      if (o.vault) {
+        // The vault at the wing's far end; with no room left for it, the wing's last room is the vault.
+        const opts = into([...wing].reverse().concat(keeper));
+        if (opts.length) {
+          const c2 = opts[0];
+          vault = add(c2.x, c2.y, 'vault');
+          vault.wing = keeper.id;
+          link(c2.p, vault);
+          depth[vault.id] = depth[c2.p.id] + 1;
+        } else if (wing.length) {
+          vault = wing.pop()!;
+          vault.kind = 'vault';
+        }
+      }
+    }
+  }
+
+  // A second corridor between rooms side by side, now and then, never into a wing, the entrance or the boss, and never one that shortens the road.
+  const shut = (x: MapNode) => x === entrance || x === boss || x === keeper || !!x.wing;
+  const pairs: [MapNode, MapNode][] = [];
+  for (const a of nodes) for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
+    const b = at(a.x! + dx, a.y! + dy);
+    if (b && !shut(a) && !shut(b) && !a.next.includes(b.id)) pairs.push([a, b]);
+  }
+  let roadDist = distances(nodes, byId, entrance.id)[boss.id];
+  for (const [a, b] of pairs) {
+    if (r() >= L.loop) continue;
+    link(a, b);
+    const now = distances(nodes, byId, entrance.id)[boss.id];
+    if (now < roadDist) { a.next.pop(); b.next.pop(); } else roadDist = now;
+  }
+
+  // Where each room lies: its corridors from the road, and the third of the floor it lies in from the foot.
+  const fromFoot = distances(nodes, byId, entrance.id);
+  const span = Math.max(1, fromFoot[boss.id]);
+  const onRoad = new Set([entrance.id, boss.id, ...road.map((x) => x.id)]);
+  const fromRoad = (() => {
+    const dist: Record<string, number> = {};
+    const q = [...onRoad];
+    for (const id of q) dist[id] = 0;
+    while (q.length) {
+      const id = q.shift()!;
+      for (const nb of byId[id].next) if (dist[nb] === undefined) { dist[nb] = dist[id] + 1; q.push(nb); }
+    }
+    return dist;
+  })();
+  for (const x of nodes) {
+    x.off = fromRoad[x.id] ?? 0;
+    const t = Math.min(1, (fromFoot[x.id] ?? span) / span);
+    x.band = t < 1 / 3 ? 0 : t < 2 / 3 ? 1 : 2;
+    if (x.off >= 2 || x.wing) x.deep = true;
+  }
+
+  // What waits in each room. The road opens on one creature and holds one odd room, in its middle third.
+  road[0].threshold = true;
+  const mids = road.map((_, i) => i).filter((i) => i >= Math.max(1, Math.ceil(road.length / 3)) && i <= Math.floor((2 * road.length) / 3) && i < road.length - 1);
+  if (mids.length) {
+    const room = road[mids[Math.floor(r() * mids.length)]];
+    room.kind = weighted(ROAD2, r()).kind;
+  }
+  for (const x of sides) x.kind = weighted(x.off! >= 2 ? SIDE_DEEP : SIDE2, r()).kind;
+  for (const x of wing) x.kind = weighted(WING_ROOMS.filter((k) => k.kind !== 'rest' || RANKS_FROM(d.rank, WING.restFrom)), rk()).kind;
+  // The floor's one rest: one corridor off the road, beside a road room past halfway, where the System steps in as it passes.
+  const half = Math.ceil(road.length / 2);
+  const restSpots = sides.filter((x) => x.off === 1 && road.findIndex((y) => y.id === parent[x.id]) >= half);
+  if (restSpots.length && rk() < (REST_CHANCE[d.rank] ?? 0.4)) restSpots[Math.floor(rk() * restSpots.length)].kind = 'rest';
+  // The floor's landmark: off the road, in its middle third, of the family that leads the Gate.
+  const family = leadFamily(d.identity ?? '');
+  if (landmarkOf(family)) {
+    const middle = sides.filter((x) => x.kind !== 'rest' && x.band === 1);
+    const pool = middle.length ? middle : sides.filter((x) => x.kind !== 'rest');
+    if (pool.length) {
+      const lm = pool[Math.floor(rk() * pool.length)];
+      lm.kind = 'landmark';
+      lm.landmark = family;
+    }
+  }
+
+  // A hidden passage: a wall between two rooms far apart by corridor; on these plans the hunter must notice it.
+  for (let k = 0; k < L.passages; k++) {
+    if (r() >= HIDDEN_PASSAGE.chance) continue;
+    const far = pairs.filter(([a, b]) => !a.hidden && !b.hidden && !a.next.includes(b.id) && distances(nodes, byId, a.id)[b.id] >= HIDDEN_PASSAGE.apart);
+    if (far.length) {
+      const [a, b] = far[Math.floor(r() * far.length)];
+      a.hidden = [b.id];
+      b.hidden = [a.id];
+    }
+  }
+  // A secret cache: a cell with no corridor, beside rooms enough that the plan's shape gives it away, behind a hidden passage.
+  const beside = (x: number, y: number) => DIRS.map(([dx, dy]) => at(x + dx, y + dy)).filter((n): n is MapNode => !!n && !shut(n) && n.kind !== 'landmark');
+  if (rk() < SECRET_CACHE.chance) {
+    const holes: { x: number; y: number }[] = [];
+    for (let y = top; y <= beyond; y++) for (let x = 0; x < cols0; x++) if (free(x, y) && beside(x, y).length >= SECRET_CACHE.beside) holes.push({ x, y });
+    if (holes.length) {
+      const h = holes[Math.floor(rk() * holes.length)];
+      const nbs = beside(h.x, h.y);
+      const n = nbs[Math.floor(rk() * nbs.length)];
+      const room = add(h.x, h.y, 'treasure');
+      room.secret = true;
+      room.deep = true;
+      room.off = (n.off ?? 0) + 1;
+      room.band = n.band;
+      room.hidden = [n.id];
+      n.hidden = [...(n.hidden ?? []), room.id];
+    }
+  }
+  // A toll door: a shortcut between rooms far apart, or else the one way into a cache of its own.
+  if (rk() < TOLL_DOOR.chance) {
+    const cut = pairs.filter(([a, b]) => !a.next.includes(b.id) && !a.hidden?.includes(b.id) && !a.secret && !b.secret && distances(nodes, byId, a.id)[b.id] >= TOLL_DOOR.apart);
+    if (cut.length && rk() < 0.5) {
+      const [a, b] = cut[Math.floor(rk() * cut.length)];
+      a.toll = [b.id];
+      b.toll = [a.id];
+    } else {
+      const spots = sprouts((x) => !shut(x) && !x.secret && x.kind !== 'landmark' && (x.off ?? 0) >= 1);
+      if (spots.length) {
+        const c = spots[Math.floor(rk() * spots.length)];
+        const room = add(c.x, c.y, 'treasure');
+        room.deep = true;
+        room.off = (c.parent.off ?? 0) + 1;
+        room.band = c.parent.band;
+        room.toll = [c.parent.id];
+        c.parent.toll = [...(c.parent.toll ?? []), room.id];
+      }
+    }
+  }
+
+  // Number the rooms from the foot out, as a plan would, every way into them counted, and set the head's row at the top.
+  const made = new Map(nodes.map((x, i) => [x.id, i]));
+  for (const x of nodes) x.next.sort((p, q) => made.get(p)! - made.get(q)!);
+  const all = (() => {
+    const dist: Record<string, number> = { [entrance.id]: 0 };
+    const q = [entrance.id];
+    while (q.length) {
+      const id = q.shift()!;
+      const x = byId[id];
+      for (const nb of [...x.next, ...(x.hidden ?? []), ...(x.toll ?? [])]) if (dist[nb] === undefined) { dist[nb] = dist[id] + 1; q.push(nb); }
+    }
+    return dist;
+  })();
+  const order = nodes.slice().sort((a, b) => all[a.id] - all[b.id] || b.y! - a.y! || a.x! - b.x!);
+  order.forEach((x, i) => { x.n = i; x.layer = all[x.id]; });
+  const bottom = Math.max(...nodes.map((x) => x.y!));
+  for (const x of nodes) x.y = x.y! - (top - 1);
+  let rows = bottom - (top - 1) + 1;
+  let cols = cols0;
+  const turns = rows <= cols0 ? TURNS : TURNS.filter((t) => t.turn === 'up' || t.turn === 'down');
+  const { turn } = weighted(turns, rv());
+  for (const x of nodes) {
+    const [px, py] = [x.x!, x.y!];
+    if (turn === 'down') x.y = rows - 1 - py;
+    else if (turn === 'left') { x.x = py; x.y = px; }
+    else if (turn === 'right') { x.x = rows - 1 - py; x.y = px; }
+  }
+  if (turn === 'left' || turn === 'right') [cols, rows] = [rows, cols0];
+  furnish(d, seed, nodes);
+  return { nodes, byId, start: entrance, end: boss, rows, cols };
+}
+
+/** A grade at or above another, E to S. */
+const RANKS_FROM = (rank: string, from: string) => 'EDCBAS'.indexOf(rank) >= 'EDCBAS'.indexOf(from);
+
 /** A Gate as a dungeon: its floors, each a plan of its own, joined by stairs. One floor is the Gate as it always was. */
-function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: FloorSize | null = null): GateMap {
+function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: FloorSize | null = null, v2 = false): GateMap {
   const road = size ? size.road : floorRoad(d, floors);
   // A deeper Gate's Gatekeeper and vault each keep to a floor of their own drawing.
   const pr = rng('arise|plan|' + seed + '|keeper');
   const keeperOn = floors === 1 ? 0 : Math.floor(pr() * floors);
   // Behind its Gatekeeper, the vault keeps to the Gatekeeper's floor; sealed elsewhere, to one of its own.
   const vaultOn = floors === 1 || vary ? keeperOn : Math.floor(pr() * floors);
+  // On the later plans, an A- or S-Rank Gate has a Gatekeeper's wing to every two floors.
+  const wings = new Set([keeperOn]);
+  if (v2) {
+    const want = Math.min(floors, WINGS[d.rank] ?? 1);
+    for (let guard = 0; wings.size < want && guard < 20; guard++) wings.add(Math.floor(pr() * floors));
+  }
   const nodes: MapNode[] = [];
   const byId: Record<string, MapNode> = {};
   const plans: GateMap['floors'] = [];
   let prev: MapNode | null = null;
   for (let k = 0; k < floors; k++) {
-    const f = floorPlan(d, k === 0 ? seed : `${seed}|${k}`, {
-      floor: k, floors, road, keeper: !!d.elite && keeperOn === k, vault: !!d.elite && vaultOn === k, prefix: floors === 1 ? 'r' : `f${k}r`, vary, size,
-    });
+    const opts = { floor: k, floors, road, keeper: !!d.elite && (v2 ? wings.has(k) : keeperOn === k), vault: !!d.elite && (v2 ? wings.has(k) : vaultOn === k), prefix: floors === 1 ? 'r' : `f${k}r`, vary, size };
+    const f = v2 && size ? floorPlan2(d, k === 0 ? seed : `${seed}|${k}`, { ...opts, size }) : floorPlan(d, k === 0 ? seed : `${seed}|${k}`, opts);
     const base = nodes.length;
     for (const x of f.nodes) { x.n += base; nodes.push(x); byId[x.id] = x; }
     // The stairs down from the floor above lead to this floor's stairs up.
@@ -468,19 +809,19 @@ function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: 
     plans.push({ start: f.start.id, end: f.end.id, rows: f.rows, cols: f.cols });
     prev = f.end;
   }
-  return { tower: false, layers: [], nodes, byId, start: plans[0].start, boss: plans[floors - 1].end, cols: plans[0].cols, rows: plans[0].rows, floors: plans };
+  return { tower: false, layers: [], nodes, byId, start: plans[0].start, boss: plans[floors - 1].end, cols: plans[0].cols, rows: plans[0].rows, floors: plans, ...(v2 && size ? { secrets: true } : {}) };
 }
 
 /**
  * Draw a Gate's map. A Trial and a block of the Spire are towers; any other Gate is a dungeon of its
  * grade's floors, unless an open run began on a tower or on one floor of rooms.
  */
-export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth'): GateMap {
+export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth2'): GateMap {
   if (d.trial) return trialMap(d);
   if (d.floor || layout === 'layers') return layered(d, seed);
   if (layout === 'rooms') return dungeon(d, seed, 1, false);
   if (layout === 'floors') return dungeon(d, seed, floorsOf(d), true);
-  return dungeon(d, seed, floorsOf(d), true, floorSizeOf(d));
+  return dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout === 'labyrinth2');
 }
 
 /** The stairs a stairway leads to, on the floor above or below. */
@@ -496,39 +837,66 @@ export function next(m: GateMap, path: string[]): MapNode[] {
 /** The vault's seal is broken once the Gatekeeper is down. */
 export const unsealed = (m: GateMap, cleared: Set<string>) => m.nodes.some((x) => x.kind === 'elite' && cleared.has(x.id));
 
-/** The hidden passages that have opened: those with a cleared room at either end. */
-export function passages(m: GateMap, cleared: Set<string>): [string, string][] {
+/**
+ * The hidden passages that have opened: those with a cleared room at either end; on the later plans, only
+ * those the run noticed, or every one once the map is charted.
+ */
+export function passages(m: GateMap, cleared: Set<string>, o: Openings = {}): [string, string][] {
   const out: [string, string][] = [];
-  for (const x of m.nodes) for (const y of x.hidden ?? []) if (x.id < y && (cleared.has(x.id) || cleared.has(y))) out.push([x.id, y]);
+  for (const x of m.nodes) for (const y of x.hidden ?? []) {
+    if (x.id < y && (cleared.has(x.id) || cleared.has(y)) && (!m.secrets || o.charted || !!o.notice?.(x.id, y))) out.push([x.id, y]);
+  }
+  return out;
+}
+
+/** Every toll door on the map, each once. */
+export function tollDoors(m: GateMap): [string, string][] {
+  const out: [string, string][] = [];
+  for (const x of m.nodes) for (const y of x.toll ?? []) if (x.id < y) out.push([x.id, y]);
+  return out;
+}
+
+/** The toll doors the run has paid for, open for good. */
+export const tollsOpen = (m: GateMap, o: Openings = {}) => tollDoors(m).filter(([a, b]) => !!o.tolls?.has(pairKey(a, b)));
+
+/** Every way out of a room beyond its corridors that stands open: its passages opened and its toll doors paid. */
+function opened(m: GateMap, cleared: Set<string>, o: Openings): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  const add = (a: string, b: string) => { out.set(a, [...(out.get(a) ?? []), b]); out.set(b, [...(out.get(b) ?? []), a]); };
+  for (const [a, b] of passages(m, cleared, o)) add(a, b);
+  for (const [a, b] of tollsOpen(m, o)) add(a, b);
   return out;
 }
 
 /**
- * What a dungeon's walker can see through the fog: the entrance and the boss's room, every room cleared
- * and every room next to one, by corridor or an opened passage, and whatever is remembered of the map.
- * Corridors are never fogged. A tower has no fog.
+ * What a dungeon's walker can see through the fog: the entrance, the boss's room and every landmark, every
+ * room cleared and every room next to one, by corridor, an opened passage or a toll door (sealed or not),
+ * and whatever is remembered of the map. Corridors are never fogged; a room behind a hidden passage shows
+ * only once it has opened. A tower has no fog.
  */
-export function sight(m: GateMap, cleared: Set<string>, remembered: Iterable<string> = []): Set<string> {
+export function sight(m: GateMap, cleared: Set<string>, remembered: Iterable<string> = [], o: Openings = {}): Set<string> {
   if (m.tower) return new Set(m.nodes.map((x) => x.id));
-  const out = new Set<string>([m.start!, m.boss, ...remembered, ...cleared]);
-  for (const id of cleared) for (const nb of [...(m.byId[id]?.next ?? []), ...(m.byId[id]?.hidden ?? [])]) out.add(nb);
+  const out = new Set<string>([m.start!, m.boss, ...m.nodes.filter((x) => x.kind === 'landmark').map((x) => x.id), ...remembered, ...cleared]);
+  for (const id of cleared) for (const nb of [...(m.byId[id]?.next ?? []), ...(m.byId[id]?.toll ?? [])]) out.add(nb);
+  for (const [a, b] of passages(m, cleared, o)) { out.add(a); out.add(b); }
   return out;
 }
 
-/** The rooms a dungeon's walker can enter: any not yet cleared next to one that is, by corridor or an opened passage. */
-export function reach(m: GateMap, cleared: Set<string>): MapNode[] {
+/** The rooms a dungeon's walker can enter: any not yet cleared next to one that is, by corridor, an opened passage or a paid toll door. */
+export function reach(m: GateMap, cleared: Set<string>, o: Openings = {}): MapNode[] {
   const open = unsealed(m, cleared);
+  const extra = opened(m, cleared, o);
   const out = new Set<string>();
   for (const id of cleared) {
     const x = m.byId[id];
     if (!x) continue;
-    for (const nb of [...x.next, ...(x.hidden ?? [])]) if (!cleared.has(nb) && (m.byId[nb].kind !== 'vault' || open)) out.add(nb);
+    for (const nb of [...x.next, ...(extra.get(id) ?? [])]) if (!cleared.has(nb) && (m.byId[nb].kind !== 'vault' || open)) out.add(nb);
   }
   return m.nodes.filter((x) => out.has(x.id));
 }
 
 /** The order the System prefers its steps in: fight its way through, rest when it can, and leave the gambles alone. */
-const SYSTEM_ROAD: NodeKind[] = ['rest', 'fight', 'shrine', 'treasure', 'event', 'trap', 'elite', 'vault', 'entrance', 'up', 'down', 'boss'];
+const SYSTEM_ROAD: NodeKind[] = ['rest', 'fight', 'shrine', 'treasure', 'event', 'trap', 'landmark', 'elite', 'vault', 'entrance', 'up', 'down', 'boss'];
 /** A Font is a shrine's, to the System: the road it walks is the one it walked before Fonts. */
 const placeIn = (k: NodeKind) => SYSTEM_ROAD.indexOf(k === 'font' ? 'shrine' : k);
 const preference = (a: MapNode, b: MapNode) => placeIn(a.kind) - placeIn(b.kind);
@@ -555,6 +923,46 @@ export function systemRoad(m: GateMap): string[] {
     path.push(at);
   }
   return path;
+}
+
+/** A step of the System's way: a room entered, or a rest it has found used. */
+export type WalkStep = { enter: string } | { rest: string };
+
+/**
+ * The System's whole way through a Gate, step by step: what the brief assesses, Auto follows and the clock
+ * counts. Its road (`systemRoad`), and on the later plans a step into each rest one corridor off it, as it
+ * passes the road room beside it. A rest found on the boss's floor is kept for the boss, and used before it;
+ * one on a floor above is used at once. On the plans before (`labyrinth` and older), every rest it finds is
+ * kept for the boss. Up a tower, its road alone: a tower's rest waits on it as it climbs.
+ */
+export function systemWalk(m: GateMap): WalkStep[] {
+  const road = systemRoad(m);
+  if (m.tower) return road.map((id) => ({ enter: id }));
+  const onRoad = new Set([m.start!, ...road]);
+  const bossFloor = m.byId[m.boss].floor ?? 0;
+  const steps: WalkStep[] = [];
+  const entered = new Set<string>();
+  let kept: string[] = [];
+  const found = (y: MapNode) => {
+    if (!m.secrets || (y.floor ?? 0) === bossFloor) kept.push(y.id);
+    else steps.push({ rest: y.id });
+  };
+  for (const id of road) {
+    const x = m.byId[id];
+    if (x.kind === 'boss') { for (const k of kept) steps.push({ rest: k }); kept = []; }
+    steps.push({ enter: id });
+    entered.add(id);
+    if (x.kind === 'rest') found(x);
+    if (!m.secrets) continue;
+    for (const nb of x.next) {
+      const y = m.byId[nb];
+      if (y.kind !== 'rest' || onRoad.has(nb) || entered.has(nb)) continue;
+      steps.push({ enter: nb });
+      entered.add(nb);
+      found(y);
+    }
+  }
+  return steps;
 }
 
 /** The fight a node holds. */

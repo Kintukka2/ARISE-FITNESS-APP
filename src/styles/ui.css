@@ -103,7 +103,9 @@
 .syswin.sysframe .syswin__body { gap: 8px; padding: 18px 8px 16px; }
 .syswin.sysframe .syswin__line { color: var(--sys-ink); font-size: 0.94rem; line-height: 1.55; }
 .syswin.sysframe .syswin__foot { padding: 2px 8px 2px; gap: 12px; }
-.syswin.sysframe .syswin__foot .btn { flex: 1 1 0; max-width: 176px; }
+.syswin.sysframe .syswin__foot .btn { flex: 1 1 0; max-width: 176px; padding-inline: 10px; text-align: center; }
+/* A question's two answers keep a line each, a costly Yes with its cost (`Yes · HP -289`), side by side as every other. */
+.syswin.sysframe .syswin__foot .btn:first-child:nth-last-child(2), .syswin.sysframe .syswin__foot .btn:nth-child(2):last-child { white-space: nowrap; }
 
 /* Valcorde's window, the app's, and the other voices': a plain frame of their own. */
 .syswin:not(.sysframe) {

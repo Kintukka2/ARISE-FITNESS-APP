@@ -2,7 +2,7 @@
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
-import { FLOORS, LABYRINTH, RESTS_MAX } from '@/core/map';
+import { FLOORS, GRADIENT, LABYRINTH, REST_CHANCE, WING, WINGS } from '@/core/map';
 import { CLOCK } from '@/core/clock';
 import { POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES } from '@/core/combat';
 import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
@@ -16,7 +16,8 @@ import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_PA
 
 /** Sight's Foresight, quoted from the tree. */
 const FORESIGHT_P = TREE_PASSIVES.find((p) => p.style === 'foresight')!;
-import { FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NODE, REST_HEAL, REST_LINE, STEADY_POTIONS } from '@/data/nodes';
+import { FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NODE, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL } from '@/data/nodes';
+import { LANDMARKS } from '@/data/landmarks';
 import { BOON_LIST, FONT_OFFER, FONT_SHARE, OFFER, STEER, TIER_ODDS, TIERS, type BoonDef } from '@/data/blessings';
 import { LOADOUTS, SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
@@ -102,32 +103,42 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A deeper Gate’s road is longer, and its fights share out what a one-floor road pays.',
       'The map is drawn from the Gate and the day.',
       'The brief shows a Gate’s map only once you have been inside it. Until then it is unidentified, like its boss.',
-      'Every room is in the fog until you see it, the stairs among them. Corridors, the entrance and the boss’s room always show.',
+      'Every room is in the fog until you see it, the stairs among them. Corridors, the entrance, the boss’s room and the landmarks always show.',
+      `Each floor holds a landmark of the family that leads the Gate (${LANDMARKS.slice(0, 3).map((l) => `${l.name} for ${l.family}`).join(', ')} and so on), off the road and seen from the moment you walk in.`,
+      `A floor opens on a fight with one creature. Its fights hold ${GRADIENT.lo[0]}-${GRADIENT.hi[0]} creatures in its first third, ${GRADIENT.lo[1]}-${GRADIENT.hi[1]} in its middle and ${GRADIENT.lo[2]}-${GRADIENT.hi[2]} in its last, and one more on each floor down, to 3.`,
+      'The road holds one room that is not a fight, in its middle third, and never a trap before the stairs or the boss.',
+      `A room two corridors or more off the road is deep. A cache there finds at the Gate’s own grade, and a fight there banks ${FIGHT_PURSE.deep * 100}% of a clear’s shards.`,
       'A room you have cleared reads Cleared. A rest, the stairs and the entrance keep their marks, for coming back to.',
       'You see every room next to one you have cleared. A room seen stays seen on that map, for as long as it stands.',
       'You can enter any room next to one you have cleared.',
       'You can walk back to any cleared room at any time.',
       `Every Gate has a budget of moves: ${Math.round(CLOCK.budget * 100)}% of its rooms, a floor’s stairs down and up counted as one. The brief shows it, and so does the meter under your health inside.`,
-      'Entering a room is a move, and so is every corridor walked back through cleared rooms, the shortest way. Each room you can go to shows its moves.',
+      'Entering a room is a move, and so is every corridor walked back through cleared rooms, the shortest way.',
       `Past the budget the Gate stirs: every creature you have not yet fought, and the boss, is ${Math.round(CLOCK.stir * 100)}% stronger for each move over.`,
       `${CLOCK.red} moves past the budget, the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
       'The System’s road always fits inside the budget, so the brief’s verdict and Auto never stir.',
       'The Practice Gate, the Pale Spire and the Trials have no clock.',
-      ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'font', 'trap', 'event', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
+      ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'font', 'trap', 'event', 'landmark', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
       `A vault holds ${CACHE.vault}-${CACHE.vault + 2} alloy of the Gate’s own grade and two parts, or a piece found whole ${FORGED.vault * 100}% of the time.`,
       `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
-      `Rests are rare: no floor holds more than ${RESTS_MAX}, and one passes for an Event until you find it.`,
-      `A rest gives one of three, once: Heal, party HP +${REST_HEAL * 100}%; Hone, one skill equipped +${HONE_LEVELS} level until you leave the Gate; or Steady, every debuff lifted and Health Potion +${STEADY_POTIONS} if the satchel has room. Use it when you find it, or walk back to it later.`,
-      'Some Gates hide a passage between two rooms. It opens once you clear a room at either end.',
+      `A floor holds one rest at most, ${Object.entries(REST_CHANCE).map(([r, x]) => `${r}-Rank ${Math.round(x * 100)}%`).join(', ')} of the time, one corridor off the road past halfway. It passes for an Event until you find it.`,
+      `A Gatekeeper guards a wing of ${WING.rooms[0]}-${WING.rooms[1]} rooms before its vault, reached through its room alone; from ${WING.restFrom}-Rank a wing can hold a rest. A- and S-Rank Gates have ${WINGS.A} wings.`,
+      `A rest gives one of three, once: Heal, party HP +${REST_HEAL * 100}%; Hone, one skill equipped +${HONE_LEVELS} level until you leave the Gate; or Steady, every debuff lifted and Health Potion +${STEADY_POTIONS} if the satchel has room. Use it when you find it, or tap it on the plan to walk back to it later.`,
+      `Some floors hide a passage between two rooms. As you clear a room at either end, you notice it ${Math.round(NOTICE.base * 100)}% of the time, ${NOTICE.per * 100}% more for each point of Perception, up to ${Math.round(NOTICE.max * 100)}%.`,
+      'A passage noticed opens for good. A Gate Survey charts every passage, and a charted one needs no noticing.',
+      'A secret cache sits in a gap in the plan beside rooms, behind a hidden passage. Each floor counts its secrets found at the plan’s top.',
+      `A toll door is a corridor sealed in red. Tap its seal, or the room it seals, and pay ${TOLL.hp * 100}% of your maximum HP: it opens for good, to a shortcut or a cache of its own.`,
+      'Breaking a seal from across the plan walks you to it first, a move for each corridor.',
       'The bag at the map’s corner holds your items, one slot to each. Tap an item to see what it does, then Use.',
       `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it, and costs no moves. The Exchange sells them for ${SURVEY.price}.`,
       `A Health Potion can be drunk from the bag between rooms, for ${POTION_HEAL * 100}% of your health, as well as on your turn in a fight. A Mana Potion can be drunk from it too.`,
-      `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
+      `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards, ${FIGHT_PURSE.deep * 100}% deep. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
       'What the run banks is paid when the boss falls or you withdraw. Carried out, you lose it.',
       'You can withdraw only from the entrance, once you have cleared a room, and never from a Red Gate before its boss falls.',
       'The brief’s verdict follows the marked road, the fewest rooms to the boss, and makes the System’s choices. Auto does the same.',
       `A skill honed past Lv.MAX gains ×${HONE_PAST} for each level past it, as each level past Lv.1 does.`,
-      `The System keeps a rest it finds for the boss. There it heals ${REST_LINE >= 1 ? 'unless your HP is full' : `while your HP is below ${REST_LINE * 100}%`}, and otherwise hones its first skill.`,
+      'The System steps into a rest beside its road as it passes. It uses one on a floor above the boss’s at once, and keeps the boss’s floor’s for the boss.',
+      `At a rest the System heals ${REST_LINE >= 1 ? 'unless your HP is full' : `while your HP is below ${REST_LINE * 100}%`}, and otherwise hones its first skill.`,
       'Take another road and the verdict no longer applies.',
       'The Pale Spire and the Trials are climbed floor by floor instead, and only up.',
     ],

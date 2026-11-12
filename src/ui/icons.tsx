@@ -27,6 +27,8 @@ const P: Record<string, string> = {
   swap: 'M7 7h11l-3-3 1.4-1.4L21.8 8l-5.4 5.4L15 12l3-3H7zm10 10H6l3 3-1.4 1.4L2.2 16l5.4-5.4L9 12l-3 3h11z',
   trash: 'M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7z',
   star: 'm12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z',
+  // A landmark: a standing stone on its plinth, a banner from its top.
+  landmark: 'M9 21V7.5L12 3l3 4.5V21zM6 21h12v-1.8H6zM15 5.2l4.6 1.6-4.6 1.6z',
   // A Font: water welling up out of a basin, under a mark that rises.
   font: 'M12 2.5 15 6h-2v3h-2V6H9zM12 10.5c2 2.3 3.2 4 3.2 5.3a3.2 3.2 0 0 1-6.4 0c0-1.3 1.2-3 3.2-5.3zM3.5 15h3.3a5.3 5.3 0 0 0 10.4 0h3.3l-1.8 6.5H5.3z',
   timer: 'M9 1h6v2H9zm3 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6l5 3 1-1.6-4-2.4V8z',

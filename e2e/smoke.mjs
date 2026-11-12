@@ -127,6 +127,16 @@ async function raidGate(row, name, auto = false) {
   for (let i = 0; i < 600; i++) {
     await page.waitForSelector('.arena__foot .btn, .turnbar, .syswin, .arena--results, button.gnode.is-next, .nodepanel', { timeout: 20000 });
     if (await visible('.arena--results')) break;
+    // A rest found asks whether to rest now: the practice Gate keeps its rest for later, every other rests at once.
+    if (await visible('.syswin:has-text("Would you like to rest now?")')) {
+      if (name === 'practice' && !kept) {
+        kept = true;
+        await snap('practice-rest-found');
+        await page.locator('.syswin__foot .btn', { hasText: /^Not Yet$/ }).click();
+      } else await page.locator('.syswin__foot .btn', { hasText: /^Rest$/ }).click();
+      await sleep(400);
+      continue;
+    }
     if (await visible('.syswin')) { await drain(); continue; }
     if (await visible('.arena__foot >> text=Claim The Gate')) { await page.locator('.arena__foot >> text=Claim The Gate').click(); break; }
     if (await visible('.arena__foot >> text=Carried Out')) {
@@ -182,12 +192,6 @@ async function raidGate(row, name, auto = false) {
       }
       if (await visible('.nodepanel >> text=Press On')) { await page.locator('.nodepanel >> text=Press On').click(); continue; }
       if (await visible('.nodepanel >> text=Later')) {
-        if (name === 'practice' && !kept) {
-          kept = true;
-          await snap('practice-rest-found');
-          await page.locator('.nodepanel >> text=Later').click();
-          continue;
-        }
         if ((await page.locator('.nodepanel .restway').count()) !== 3) throw new Error('A REST DID NOT OFFER HEAL, HONE AND STEADY');
         await page.locator('.nodepanel .restway--heal').click();
         continue;
@@ -198,18 +202,19 @@ async function raidGate(row, name, auto = false) {
     if (name === 'practice' && kept && !restedBack && await visible('.dmap button.gnode--boss.is-next')) {
       // Walk away to the entrance, then back to the rest kept for later, and use it, once.
       await page.locator('.dmap button.gnode--entrance').click(); await sleep(600);
-      if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST COULD BE USED FROM ANOTHER ROOM');
-      await page.locator('.dmap button.droom.gnode--rest').click(); await sleep(600);
-      const rest = page.locator('.arena__map .btn', { hasText: /^Rest$/ });
-      if (!(await rest.count())) throw new Error('A REST FOUND AND KEPT COULD NOT BE USED ON THE WAY BACK');
-      await rest.click(); await sleep(500);
+      // No button under the plan: the rest found is tapped on the plan, and asks.
+      if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST STILL HAS A BUTTON UNDER THE PLAN');
+      await page.locator('.dmap button.droom.gnode--rest.is-restable').click(); await sleep(600);
+      if (!(await visible('.syswin:has-text("Would you like to rest now?")'))) throw new Error('A REST FOUND AND KEPT DID NOT ASK WHEN TAPPED');
+      await snap('practice-rest-ask');
+      await page.locator('.syswin__foot .btn', { hasText: /^Rest$/ }).click(); await sleep(500);
       // Its three ways, side by side: Heal, Hone and Steady.
       if ((await page.locator('.nodepanel .restway').count()) !== 3) throw new Error('A REST DID NOT OFFER HEAL, HONE AND STEADY');
       await snap('practice-rest-ways');
       await page.locator('.nodepanel .restway--steady').click(); await sleep(500);
       if (!(await page.locator('.nodepanel >> text=Debuffs cleared').count())) throw new Error('STEADY DID NOT SAY WHAT IT GAVE');
       await page.locator('.nodepanel >> text=Continue').click(); await sleep(500);
-      if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST COULD BE USED TWICE');
+      if (await page.locator('.dmap .droom.is-restable').count()) throw new Error('A REST COULD BE USED TWICE');
       if (!(await page.locator('.dmap .droom.is-spent').count())) throw new Error('A USED REST DID NOT SHOW AS USED');
       restedBack = true;
       await snap('practice-rested');

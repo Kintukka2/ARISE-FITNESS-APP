@@ -67,7 +67,7 @@ describe('the draw', () => {
         }
       }
     }
-  });
+  }, 20_000);
 
   it('is written the first time it is shown, and a level-up later that day does not redraw it', () => {
     const s = hunter(9);

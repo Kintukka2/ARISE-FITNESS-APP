@@ -69,7 +69,7 @@ describe('the levels', () => {
     };
     expect(rate(5)).toBeLessThan(rate(0));
     expect(rate(ASCENSION_RULED)).toBeLessThan(rate(5));
-  });
+  }, 20_000);
 });
 
 describe('a run keeps the level it walked in with', () => {

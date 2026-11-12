@@ -68,9 +68,17 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   System's way must fit inside the budget on every Gate, or Auto and the brief would stir:
   `tests/clock.test.ts` holds it, and `npm run mapstats` reports it. Never let the clock reach a fight
   except through `might`, and never change how an open run's budget was counted.
-- The brief, Auto and calibration all walk the System's road (`map.systemRoad`, moved along by
-  `raid.systemNext`, which keeps a rest it finds for the boss) and make the System's choices
+- The brief, Auto, calibration and the clock all walk the System's way (`map.systemWalk`: its road,
+  `map.systemRoad`, with a step into each rest one corridor off it, used at once on a floor above the boss's
+  and kept for the boss on its own; moved along by `raid.systemNext`) and make the System's choices
   (`raid.systemChoice`). Change any of them, or how a map is drawn, and you must recalibrate.
+- Gates are drawn on the later plans (`labyrinth2`, `floorPlan2` in `core/map.ts`): landmarks
+  (`data/landmarks.ts`), secrets, Gatekeepers' wings, toll doors and gradients. What a run has opened beyond
+  its corridors is `raid.openings`: a hidden passage noticed by a roll seeded from the run and the passage at
+  the hunter's Perception as they walked in (`NOTICE`), every passage once charted (`run.charted`), and the
+  toll doors paid (`run.tolls`). Pass it to `reach`, `sight`, `passages` and the clock's walks; never store
+  what it decides. Landmarks, secrets, wings and toll doors are off the System's way, so they move no road;
+  what they pay needs the campaign rerun.
 - Gear is forged (`core/forge.ts`, `data/forge.ts`): Gates leave materials and now and then a
   blueprint, and a blueprint forges its design as often as the materials allow. There is no fusion.
   Weapon Familiarity reaches the fight only through `raid.heroSpec` (`forge.familiarityBonus`); the

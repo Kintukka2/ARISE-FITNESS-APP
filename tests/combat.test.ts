@@ -31,11 +31,12 @@ function hunter(level: number) {
   return s;
 }
 
-/** Enter a gate and step into its first fight. */
+/** Enter a gate and step into the fight beside the entrance with the most creatures in it: one with turns enough to test. */
 function enter(s: Save, id: string) {
   const d = dungeonById(id)!;
   const run = raid.begin(s, d, now);
-  raid.choose(s, d, run, raid.options(d, run)[0].id, now);
+  const fights = raid.options(d, run).filter(isFight).sort((a, b) => (b.foes?.length ?? 0) - (a.foes?.length ?? 0));
+  raid.choose(s, d, run, (fights[0] ?? raid.options(d, run)[0]).id, now);
   return run;
 }
 
@@ -189,7 +190,7 @@ describe('turn by turn', () => {
     const s = hunter(20);
     shop.stockUp(s, 'hp');
     const d = dungeonById('DNG-015')!;
-    enter(s, d.id);
+    atBoss(s, d.id);
     const { ch } = raid.resume(s, d, s.gates.raid!, now);
     ch.play(raid.order(s, s.gates.raid!, { use: 'Potion' }));
     expect(shop.held(s, 'hp')).toBe(0);
@@ -200,7 +201,7 @@ describe('turn by turn', () => {
   it('recording a chamber clears its orders for the next', () => {
     const s = hunter(20);
     const d = dungeonById('DNG-015')!;
-    enter(s, d.id);
+    atBoss(s, d.id);
     const ch = fightOut(s, () => ({ use: 'Strike' }));
     expect(s.gates.raid!.orders.length).toBeGreaterThan(0);
     raid.record(s, d, s.gates.raid!, raid.partyFor(s, d, s.gates.raid!, now), ch.result(), now);
