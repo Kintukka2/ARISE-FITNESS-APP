@@ -12,6 +12,7 @@ import { bonusText } from '@/core/gear';
 import { enemyById } from '@/core/gates';
 import * as kin from '@/core/kin';
 import type { Shadow } from '@/core/types';
+import { Section } from './components';
 import { FamilyGlyph } from './emblems';
 import { Glyph } from './icons';
 
@@ -91,10 +92,11 @@ export function KinTracker({ squad }: { squad: readonly Shadow[] }) {
   const tap = (key: string) => { sfx.tap(); setOpen(open === key ? null : key); };
   return (
     <div class="kintrack">
+      <span class="label kintrack__head">Kin & Formation</span>
       <ul class="kintrack__list">
         {traits.map((t) => (
           <li key={t.key}>
-            <button type="button" class={`sysbox kinchip kinchip--${t.kind} ${t.tier ? 'is-on' : ''} ${open === t.key ? 'is-open' : ''}`}
+            <button type="button" class={`kinchip kinchip--${t.kind} ${t.tier ? 'is-on' : ''} ${open === t.key ? 'is-open' : ''}`}
               aria-expanded={open === t.key} onClick={() => tap(t.key)}
               aria-label={t.kind === 'role' ? `Formation, ${t.name}: ${auraText(t.name)}` : t.kind === 'all' ? `${t.name}: kin to every family` : `${t.name} Kin: ${t.n} deployed${t.tier ? `, tier ${KIN_TIER[t.tier - 1]}` : `, ${kin.KIN_AT[0]} needed`}`}>
               <KinHex family={t.kind === 'role' ? undefined : t.name} role={t.kind === 'role' ? t.name : undefined} on={t.tier > 0} />
@@ -108,7 +110,7 @@ export function KinTracker({ squad }: { squad: readonly Shadow[] }) {
         ))}
       </ul>
       {shown && (
-        <div class="sysbox kintip" role="note">
+        <div class="kintip" role="note">
           <header class="kintip__head">
             <KinHex family={shown.kind === 'role' ? undefined : shown.name} role={shown.kind === 'role' ? shown.name : undefined} on={shown.tier > 0} />
             <b>{shown.kind === 'role' ? shown.name : `${shown.name} Kin`}</b>
@@ -140,7 +142,8 @@ export function KinOfShadow({ sh, family, role, squad }: { sh: Shadow; family: s
   const m = on ? kin.makeOf(squad) : null;
   const tier = m ? (family === kin.KIN_ALL ? Math.max(0, ...m.kin.map((k) => k.tier)) : m.kin.find((k) => k.family === family)?.tier ?? 0) : 0;
   return (
-    <section class="sysbox sp-auth">
+    <Section title="Kin & Formation">
+    <div class="sp-auth">
       <div class="sp-auth__row">
         <span class="sp-auth__name"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} />Formation · {role}</span>
         <p class={on ? 'is-on' : ''}>{auraText(role)} for you and every Shadow</p>
@@ -151,6 +154,7 @@ export function KinOfShadow({ sh, family, role, squad }: { sh: Shadow; family: s
           ? <p class={tier ? 'is-on' : ''}>Kin to every family</p>
           : <Tiers family={family} tier={tier} />}
       </div>
-    </section>
+    </div>
+    </Section>
   );
 }

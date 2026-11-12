@@ -1724,20 +1724,25 @@ button.dmap__floor { cursor: pointer; }
 .roster__slot.is-free { justify-content: center; min-height: 92px; border-style: dashed; border-color: var(--sys-hair); background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
 .roster__slot.is-free .ico { width: 16px; height: 16px; }
 .roster__slot.is-ready { border-color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
-.roster__acts { gap: 8px; margin-top: 8px; }
+.roster__headacts { display: inline-flex; align-items: center; gap: 2px; }
+/* The squad's acts as quiet text beside its count: the slots are what the eye goes to. */
+.sysframe .btn.roster__act { min-height: 44px; padding: 0 8px; border-color: transparent; background: none; box-shadow: none; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.sysframe .btn.roster__act .ico { width: 14px; height: 14px; }
+.sysframe .btn.roster__act:disabled { opacity: 0.35; }
+.roster__headacts .roster__count { margin-left: 6px; }
 .roster__tools { display: flex; flex-direction: column; gap: 6px; scroll-margin-top: 8px; }
-.rostabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.rostab { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 0 6px; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; }
+.rostabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--sys-hair); }
+.rostab { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 0 6px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer; }
 .rostab small { font-size: 0.6rem; font-weight: 700; opacity: 0.8; }
-.rostab.is-on { color: #fff; border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 22%, rgba(3, 8, 20, 0.5)); box-shadow: 0 0 12px color-mix(in srgb, var(--win) 30%, transparent); }
+.rostab.is-on { color: #fff; box-shadow: inset 0 -2px 0 var(--win); text-shadow: 0 0 8px var(--win-glow); }
 .rostab.is-call small { color: var(--gold); opacity: 1; }
 .roster__bar { display: flex; align-items: center; gap: 6px; }
-.roster__sort { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; }
+.roster__sort { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
 .roster__sort .ico { width: 13px; height: 13px; }
 .roster__views { display: flex; gap: 4px; margin-left: auto; }
-.roster__view { display: grid; place-items: center; width: 34px; height: 32px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.roster__view { display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); cursor: pointer; }
 .roster__view .ico { width: 14px; height: 14px; }
-.roster__view.is-on { color: #fff; border-color: var(--sys-hair-hot); background: color-mix(in srgb, var(--win) 20%, rgba(3, 8, 20, 0.5)); }
+.roster__view.is-on { color: #fff; filter: drop-shadow(0 0 5px var(--win-glow)); }
 /* The table: a head of labels over a row to each Shadow; the deployed ones lit along their start. */
 .roster__table { display: flex; flex-direction: column; }
 .roster__head { display: grid; grid-template-columns: 34px minmax(0, 1fr) 40px 42px; column-gap: 8px; align-items: end; padding: 0 10px 6px 0; border-bottom: 1px solid var(--sys-hair); }
@@ -1940,26 +1945,25 @@ button.dmap__floor { cursor: pointer; }
 .sp-legend i.is-max { border: 1px dashed color-mix(in srgb, var(--arcane) 75%, white); }
 
 /* Skills and traits: a card each, its kind's glyph in a box at its side. */
-.sp-skills, .sp-traits { display: flex; flex-direction: column; gap: 8px; }
-.sp-skill { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: stretch; min-height: 50px; }
-.sp-skill__ico { display: grid; place-items: center; border-right: 1px solid var(--sys-hair); background: color-mix(in srgb, var(--win) 14%, transparent); color: #e2d2ff; }
+.sp-skills, .sp-traits { display: flex; flex-direction: column; }
+.sp-skill { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; gap: 8px; padding: 2px 0; }
+.sp-skill + .sp-skill { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.sp-skill__ico { display: grid; place-items: center; height: 36px; color: #e2d2ff; }
 .sp-skill__ico .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 5px var(--win-glow)); }
-.sp-skill__body { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 7px 10px; }
+.sp-skill__body { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 8px 0; }
 .sp-skill__body b { font-size: 0.86rem; font-style: italic; font-weight: 700; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 10px var(--win-glow); }
 .sp-skill__body small { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
-.sp-skill.is-sealed { border-style: dashed; opacity: 0.6; }
-.sp-skill.is-sealed .sp-skill__ico { background: none; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.sp-skill.is-passive .sp-skill__ico { background: color-mix(in srgb, var(--win) 8%, transparent); }
+.sp-skill.is-sealed { opacity: 0.5; }
+.sp-skill.is-sealed .sp-skill__ico { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 
 /* The record: four numbers, a column each. */
-.sp-record { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
-.sp-record > span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px; text-align: center; }
-.sp-record > span + span { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.sp-record { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sp-record > span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 4px; text-align: center; }
 .sp-record b { font-size: 1.15rem; font-weight: 800; text-shadow: var(--sys-glow); }
 .sp-record small { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 64%, transparent); }
 
 /* Release: the one act that cannot be taken back, a red hairline. */
-.sysframe .btn.sp-release { border-color: rgba(255, 59, 75, 0.55); color: #ff8a94; text-shadow: 0 0 8px rgba(255, 47, 62, 0.4); }
+.sysframe .btn.sp-release { margin-top: 6px; border-color: transparent; background: none; box-shadow: none; font-size: 0.8rem; color: #ff8a94; text-shadow: none; }
 .sysframe .btn.sp-release:disabled { opacity: 0.45; }
 
 /* Shadow Essence: its mark, a drop of the dark. */
@@ -2449,15 +2453,16 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 /* Kin and Formation on the Army sheet, as Teamfight Tactics tracks its traits: a chip to each, its mark in a
    hexagon (lit in the Shadows' violet while active, grey while short), its count, its name over its
    breakpoints; two to a row. A tap opens what it gives under them, as the tracker's tooltip does. */
-.kintrack { display: grid; gap: 6px; margin-top: 10px; }
-.kintrack__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.kintrack { display: grid; gap: 4px; margin-top: 12px; }
+.kintrack__head { font-size: 0.62rem; letter-spacing: 0.16em; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.kintrack__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
 .kinchip {
   display: grid; grid-template-columns: 30px 18px minmax(0, 1fr); align-items: center; gap: 6px; width: 100%; min-height: 44px;
-  padding: 5px 8px 5px 6px; text-align: left; font: inherit; color: color-mix(in srgb, var(--sys-ink) 55%, transparent);
-  background: rgba(6, 3, 18, 0.45); cursor: pointer;
+  padding: 4px 4px 4px 0; border: 0; text-align: left; font: inherit; color: color-mix(in srgb, var(--sys-ink) 48%, transparent);
+  background: none; cursor: pointer;
 }
-.kinchip.is-on { color: var(--sys-ink); border-color: color-mix(in srgb, var(--win) 70%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 20%, transparent), rgba(6, 3, 18, 0.45) 75%); }
-.kinchip.is-open { border-color: #fff; box-shadow: 0 0 10px var(--win-glow); }
+.kinchip.is-on { color: var(--sys-ink); }
+.kinchip.is-open .kinchip__name { text-decoration: underline; text-decoration-color: var(--win); text-underline-offset: 3px; }
 .kinchip__n { font-size: 0.95rem; text-align: center; }
 .kinchip.is-on .kinchip__n { color: #fff; text-shadow: 0 0 8px var(--win-glow); }
 .kinchip__body { display: grid; min-width: 0; line-height: 1.2; }
@@ -2474,7 +2479,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .kinsteps i { font-style: normal; opacity: 0.6; }
 .kinsteps b { font-weight: 600; }
 .kinsteps b.is-on { color: #fff; text-shadow: 0 0 6px var(--win-glow); }
-.kintip { display: grid; gap: 6px; padding: 8px 10px 9px; border-color: color-mix(in srgb, var(--win) 60%, transparent); background: rgba(8, 4, 22, 0.85); animation: fadein 200ms both; }
+.kintip { display: grid; gap: 5px; margin: 2px 0 4px; padding: 2px 0 2px 12px; border-left: 2px solid var(--win); animation: fadein 200ms both; }
 .kintip__head { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .kintip__head b { font-size: 0.86rem; font-weight: 700; }
 .kintip__kind, .kintip__who { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
@@ -2485,8 +2490,8 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 
 /* What a Shadow brings to a squad, on its card, as Solo Leveling: Arise sets its Shadow's Authority: a name
    over one line, a hairline between; lit in a gain's green while its squad has it. */
-.sp-auth { display: grid; padding: 0 12px; }
-.sp-auth__row { display: grid; gap: 3px; padding: 9px 0; }
+.sp-auth { display: grid; }
+.sp-auth__row { display: grid; gap: 3px; padding: 6px 0; }
 .sp-auth__row + .sp-auth__row { border-top: 1px solid var(--sys-hair); }
 .sp-auth__name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .sp-auth__name svg { width: 13px; height: 13px; }
@@ -2509,8 +2514,8 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .sp-head__stars { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; }
 
 /* Its stats, as the panel lists them: a mark, a name, a value, and what its level has added in green. */
-.sp-statrows { list-style: none; margin: 0; padding: 4px 12px; display: grid; }
-.sp-statrows li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 36px; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.sp-statrows { list-style: none; margin: 0; padding: 0; display: grid; }
+.sp-statrows li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 36px; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
 .sp-statrows li:last-child { border-bottom: 0; }
 .sp-statrows svg { width: 15px; height: 15px; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 .sp-statrows__name { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; }

@@ -205,7 +205,13 @@ function ArmySheet({ news }: { news: string[] }) {
           )
           : <span><b class="num">0</b><small>Ready</small></span>}
       </div>
-      <Section title="Squad" right={<span class="num roster__count">{squad.length}/{n}</span>}>
+      <Section title="Squad" right={(
+        <span class="roster__headacts">
+          <Btn class="roster__act" size="sm" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
+          <Btn class="roster__act" size="sm" disabled={!squad.length} title="Recall the squad" onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall</Btn>
+          <span class="num roster__count">{squad.length}/{n}</span>
+        </span>
+      )}>
         <div class="roster__slots">
           {Array.from({ length: n }, (_, i) => {
             const sh = squad[i];
@@ -234,27 +240,23 @@ function ArmySheet({ news }: { news: string[] }) {
           })}
         </div>
         <KinTracker squad={squad} />
-        <div class="row roster__acts">
-          <Btn class="grow" size="sm" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
-          <Btn size="sm" disabled={!squad.length} onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall · {squad.length}</Btn>
-        </div>
       </Section>
       <div class={`roster__out ${drag.over === 'out' && held && squad.includes(held) ? 'is-over' : ''}`} data-drop="out">
       <div class="roster__tools" ref={listRef}>
         <div class="rostabs" role="tablist" aria-label="Show">
           {SHOWS.map((x) => (
-            <button key={x.key} type="button" role="tab" aria-selected={show === x.key} class={`sysbox rostab ${show === x.key ? 'is-on' : ''} ${x.key === 'ready' && counts.ready ? 'is-call' : ''}`} onClick={() => pick(x.key)}>
+            <button key={x.key} type="button" role="tab" aria-selected={show === x.key} class={`rostab ${show === x.key ? 'is-on' : ''} ${x.key === 'ready' && counts.ready ? 'is-call' : ''}`} onClick={() => pick(x.key)}>
               {x.name}<small class="num">{counts[x.key]}</small>
             </button>
           ))}
         </div>
         <div class="roster__bar">
-          <button type="button" class="sysbox roster__sort" onClick={() => order(SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key)}>
+          <button type="button" class="roster__sort" onClick={() => order(SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key)}>
             <Glyph name="swap" /> Sort: {SORTS.find((x) => x.key === sort)!.name}
           </button>
           <span class="roster__views">
             {(['list', 'grid'] as const).map((k) => (
-              <button key={k} type="button" aria-label={k === 'list' ? 'List' : 'Grid'} aria-pressed={view === k} class={`sysbox roster__view ${view === k ? 'is-on' : ''}`} onClick={() => look(k)}><Glyph name={k} /></button>
+              <button key={k} type="button" aria-label={k === 'list' ? 'List' : 'Grid'} aria-pressed={view === k} class={`roster__view ${view === k ? 'is-on' : ''}`} onClick={() => look(k)}><Glyph name={k} /></button>
             ))}
           </span>
         </div>
@@ -654,7 +656,7 @@ function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   const now = shadows.statsOf(sh);
   return (
     <Section title="Stats" right={<span class="num">Growth <span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
-      <ul class="sysbox sp-statrows">
+      <ul class="sp-statrows">
         {ORDER.map((k) => (
           <li key={k}>
             <Glyph name={STAT_ICON[k] ?? 'star'} />
@@ -681,7 +683,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
             const a = ability(n);
             const on = known.includes(n);
             return (
-              <div key={n} class={`sysbox sp-skill ${on ? '' : 'is-sealed'}`}>
+              <div key={n} class={`sp-skill ${on ? '' : 'is-sealed'}`}>
                 <span class="sp-skill__ico"><Glyph name={!on ? 'lock' : a?.type === 'magic' ? 'bolt' : 'fist'} /></span>
                 <span class="sp-skill__body">
                   <b>[Skill: {n}]</b>
@@ -697,7 +699,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
         <Section title="Traits">
           <div class="sp-traits">
             {e.passive && (
-              <div class="sysbox sp-skill is-passive">
+              <div class="sp-skill is-passive">
                 <span class="sp-skill__ico"><Glyph name="star" /></span>
                 <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small>{passiveText(e.passive)}</small></span>
               </div>

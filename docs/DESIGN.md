@@ -1823,6 +1823,11 @@ with what ARISE took from them.
   with the growth share in their head; the growth graph and the radar are gone, the Rank row and Next rank
   saying what the graph did. Under the stats, as the panel sets `Shadow's Authority`, its role's aura and
   its Kin's breakpoints.
+- **Fewer boxes** (the owner's call, after a second look: every box was competing for attention). On the
+  Army and a Shadow's card only what the hunter acts on keeps a box: the slots, the card's head, the rank's
+  asks and the buttons. Kin and Formation, stats, skills, traits and the record are rows on the glass under a
+  small label; the roster's tabs are underlined; its sort and views are plain; Auto Deploy and Recall are text
+  beside the squad's count; Release is a quiet red line at the foot. VOICE.md, "The look", states the rule.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;
