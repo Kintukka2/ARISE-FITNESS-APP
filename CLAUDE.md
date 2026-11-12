@@ -132,6 +132,13 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Sight's Foresight (`FORESIGHT` in `data/tree.ts`) only shows a foe's numbers (`skilltree.foresees`).
   It is never a passive of the fight's build and Auto Assign never takes it, so it moves no tuning;
   keep it so, or recalibrate.
+- Kin and Formation (`data/kin.ts`, `core/kin.ts`) reach the fight only through `raid.partySpecs`: each
+  deployed Shadow's spec takes its Kin's boon, and the hunter's and every Shadow's the Formation's auras.
+  The Association's hunters take neither, and an open run keeps both in `run.party`. Auto Deploy
+  (`shadows.bestSquad`) weighs whole squads (`squadScore`, `WORTH`); the campaign deploys as it does.
+  Calibration's `keptUpHunter` fields a squad drawn from its grade's gates, no creature twice, and plays
+  whatever Kin it makes. Change a boon, an aura, `KIN_AT`, `WORTH` or how Auto Deploy weighs, and you must
+  recalibrate and rerun the campaign.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

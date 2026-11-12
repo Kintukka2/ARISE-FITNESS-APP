@@ -124,3 +124,22 @@ Built as "A map worth reading" in [docs/DESIGN.md](../../../DESIGN.md#a-map-wort
 - No game shades its plan by distance or danger, so neither does ARISE: the gradient is in what the rooms
   hold, stated in the Guide, and a fight's pips already say how many wait in it.
 
+
+## What ARISE took, for the army
+
+Built as "Kin and Formation" in [docs/DESIGN.md](../../../DESIGN.md#kin-and-formation--built).
+
+- **A tracker beside the squad**, as Teamfight Tactics lists its traits down the board and Dota Underlords
+  lights its alliances' pips: on the Army, under the squad's slots, a row to each family deployed, its glyph
+  and its count, its steps written out (`2 › 3`) with the step reached lit, and what it gives at that step.
+  A family short of its first step stays in the list, dimmed, as a grey trait does, so a pair is one Shadow
+  away in plain sight.
+- **Tiers by count**, as both games step theirs: a Kin opens at two of a family and doubles at three.
+- **An aura for the whole side under each Shadow's stats**, as Solo Leveling: Arise Overdrive writes
+  `Shadow's Authority: Increases entire team's Defense` under its Shadow's: a Shadow's card says its role's
+  aura, `Formation: Initiative +4 for you and every Shadow`, under its stats, and its Kin at each step.
+- **A bonus held only while the condition holds**, as Siralim's Master of Banshees holds only while the
+  party is all Banshees: a Kin and an aura last while their Shadows are deployed, and a run keeps the ones
+  it walked in with.
+- Not taken: Hades II's cost in Grasp and Diablo IV's sacrifice. A squad's slots are already its budget,
+  and nothing about a Kin asks the hunter to give anything up but the slot.

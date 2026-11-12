@@ -40,6 +40,7 @@ import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { FamilyGlyph } from '@/ui/emblems';
+import { makeLine } from '@/ui/kin';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
@@ -774,6 +775,7 @@ function PartyPanel({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
           <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={20} /><span class="bparty__who"><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small>Shadow</small></span><span class="num">{shadows.power(x)}</span></li>
         ))}
       </ul>
+      {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
       {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">Shadow slots empty: {shadows.freeSlots(s)}</p>}
       {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
     </>

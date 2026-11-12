@@ -26,6 +26,7 @@ import * as tree from './skilltree';
 import { licensedRank } from './licence';
 import * as asc from './ascension';
 import * as contracts from './contracts';
+import * as kin from './kin';
 import * as marks from './marks';
 import * as walkers from './walkers';
 import * as shadows from './shadows';
@@ -79,7 +80,7 @@ export function allySpec(a: Ally, i: number): UnitSpec {
   return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id, atkMult: a.atkMult };
 }
 
-/** A Shadow as it fights. `bonus` is what the hunter's marks give every Shadow. */
+/** A Shadow as it fights. `bonus` is what it takes beyond its own: the hunter's marks, its Kin's boon and the Formation's auras. */
 export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
   return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id };
@@ -92,10 +93,19 @@ export function alliesAt(d: Dungeon, day: string, rank: Rank, level = 0, seals: 
   return all.slice(0, Math.max(0, all.length - asc.alliesCut(level) - sealing.alliesCut(seals)));
 }
 
+/**
+ * Who walks in: the hunter, the Association's hunters, the Shadows deployed. The squad's Kin and
+ * Formation (`core/kin.ts`) are worked in here, so a run keeps them as it walked in: each Shadow takes
+ * its Kin's boon, and the hunter and every Shadow the Formation's auras. The Association's hunters fight
+ * as they are. The Practice Gate takes no Shadows, and so none of either.
+ */
 export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[], now = Date.now(), level = 0, seals: readonly SealId[] = []): UnitSpec[] {
-  const squad = squadIds ? squadIds.map((id) => s.shadows.army.find((x) => x.id === id)).filter((x): x is Shadow => !!x) : shadows.squad(s);
+  const squad = isPractice(d) ? [] : squadIds ? squadIds.map((id) => s.shadows.army.find((x) => x.id === id)).filter((x): x is Shadow => !!x) : shadows.squad(s);
   const bonus = marks.shadowBonus(s);
-  return [heroSpec(s, now, level), ...alliesAt(d, day, licensedRank(s), level, seals).map(allySpec), ...(isPractice(d) ? [] : squad).map((sh, i) => shadowSpec(sh, i, bonus))];
+  const built = kin.makeOf(squad);
+  const hero = heroSpec(s, now, level);
+  const lead = Object.keys(built.aura).length ? { ...hero, bonus: sumBonuses(hero.bonus ?? {}, built.aura) } : hero;
+  return [lead, ...alliesAt(d, day, licensedRank(s), level, seals).map(allySpec), ...squad.map((sh, i) => shadowSpec(sh, i, sumBonuses(bonus, built.aura, kin.kinBonusOf(sh, built))))];
 }
 
 /** The share of a gate's fatigue a run costs: more at Heavy Legs, less for every Mark of the Long Stride. */

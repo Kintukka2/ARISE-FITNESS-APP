@@ -329,6 +329,8 @@ try {
   await tab('Map').click(); await sleep(600); await snap('brief-map');
   await tab('Party').click(); await sleep(500);
   if (!(await page.locator('.sheet.is-top .bparty li.is-you').count())) throw new Error('THE PARTY TAB HOLDS NO PARTY');
+  // The squad's Formation is said under the party: every deployed Shadow has a role.
+  if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Formation:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S FORMATION');
   await snap('brief-party');
   await tab('Threat').click(); await sleep(500);
   if (!(await page.locator('.sheet.is-top .bspot').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS IN ITS SPOTLIGHT');
@@ -586,9 +588,17 @@ try {
   // The Army is one tile: the squad's slots over the reserve. There is no Squad tile beside it.
   if (await page.locator('.btile--squad').count()) throw new Error('THE SQUAD IS STILL A TILE OF ITS OWN');
   await page.locator('.btile--army .btile__hit').click(); await sleep(700); await snap('army'); await snap('army-full', true);
+  // Kin and Formation under the squad: a row to each family deployed, a chip to each role.
+  {
+    const squad = await page.locator('.sheet.is-top .roster__slot:not(.is-free)').count();
+    const fams = await page.locator('.sheet.is-top .kinrow').count();
+    const roles = await page.locator('.sheet.is-top .kinrole').count();
+    if (!squad || !fams || !roles || fams > squad || roles > squad) throw new Error(`KIN AND FORMATION DO NOT FOLLOW THE SQUAD (${squad} deployed, ${fams} families, ${roles} roles)`);
+  }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
+  if (!(await page.locator('.sheet.is-top .kincard', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
   // Naming from the card: the System's line, the field across the window, and the two acts under it.
   await page.locator('.sheet.is-top .btn', { hasText: /^(Name|Rename)$/ }).click(); await sleep(400);

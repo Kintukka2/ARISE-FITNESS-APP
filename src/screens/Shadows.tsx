@@ -21,6 +21,7 @@ import { skillLine } from './Skills';
 import { Field, SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
+import { KinOfShadow, KinTracker } from '@/ui/kin';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
 import { claimAll, claimPromotion } from '@/app/flow';
@@ -232,6 +233,7 @@ function ArmySheet({ news }: { news: string[] }) {
             );
           })}
         </div>
+        <KinTracker squad={squad} />
         <div class="row roster__acts">
           <Btn class="grow" disabled={settled} onClick={() => { store.update((x) => shadows.autoDeploy(x)); sfx.blip(); toast('Squad deployed.', 'good'); }}><Glyph name="shadows" /> Auto Deploy</Btn>
           <Btn class="grow" disabled={!squad.length} onClick={() => { store.update((x) => { x.shadows.squad = []; }); toast('Squad stood down.', 'warn'); }}><Glyph name="recall" /> Recall · {squad.length}</Btn>
@@ -449,6 +451,8 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
       <NextRank sh={sh} e={e} />
       <Awakening sh={sh} />
       <Stats sh={sh} e={e} />
+      {/* What it brings to a squad, under its stats, as the references set a Shadow's aura. */}
+      <KinOfShadow sh={sh} family={e.family} role={e.role} squad={shadows.squad(s)} />
       <Kit sh={sh} e={e} />
       <Record sh={sh} />
       <Release sh={sh} close={close} />

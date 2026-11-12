@@ -1244,9 +1244,9 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
 6. **The rest of the research's roadmap**, four parts, each its own change, in this order (the owner's call):
    1. **A map worth reading** (built, below): a new layout with gradients and road beats, landmarks,
       secrets, Gatekeepers' wings and toll doors, all four of the research's parts.
-   2. **Kin and Formation:** two Shadows of one family deployed share its boon and three a stronger one;
-      each distinct role deployed adds a small aura for the side; Auto Deploy scores whole squads, not raw
-      power.
+   2. **Kin and Formation** (built, below): two Shadows of one family deployed share its boon and three a
+      stronger one; each distinct role deployed adds a small aura for the side; Auto Deploy scores whole
+      squads, not raw power.
    3. **Engravings and a Codex:** named bosses and Gatekeepers leave engraved pieces at stated odds;
       recycling one keeps its power in a Codex for good; setting a power from the Codex onto a piece costs
       Ember, which makes it step 7's sink too. Three worn: weapon, armour, jewellery.
@@ -1782,6 +1782,74 @@ Gatekeepers' wings and toll doors), in one new layout.
   Sovereign within 2; the three-session hunter, whose runs follow one another with less healing between, 4 to
   12 days later at A. If that is too much, the first lever is the creature added on each floor down
   (`GRADIENT` in `furnish`).
+
+### Kin and Formation — built
+
+The second of step 6's four parts: the research's first idea for the army
+([collection-armies.md](research/collection-armies.md), "Kin and Formation"), as the owner chose it. The
+references are under "Army" in [step 6's README](research/references/step-6-map-army-gear-daily/README.md#army),
+with what ARISE took from them.
+
+- **Kin** (`data/kin.ts`, `core/kin.ts`). Two deployed Shadows of one family each take the family's boon
+  (`KIN`, tier I), and three or more take it twice over (tier II; `KIN_AT`). There are fifteen boons, one a
+  family, each one or two stats at about a tenth: Undead Maximum HP +8% and Status save +8, Beast
+  Initiative +6 and Attack +5%, Orc Attack +10%, Construct Defence +10% and Resistance +6%, and so on, the
+  Guide quoting them all. The Aberration, the one family with a single creature, is kin to every family
+  (`KIN_ALL`): one deployed counts in every family beside it and takes the boon of every Kin it completes.
+  The family that could never make a Kin of its own becomes the key to any.
+- **Formation.** Each distinct role deployed gives its aura (`FORMATION`) to the hunter and to every
+  Shadow, once however many share the role: Brute Attack +4%, Assassin Critical chance +3, Flier Evasion +4,
+  Archer / Shooter Accuracy +5, Guardian Defence +5%, Caster Magic +5%, Leader Initiative +4, Status
+  Specialist Status chance +6. The Association's hunters take neither: they are not the hunter's army.
+- **Numbers, never targets.** Both are stats on the specs `raid.partySpecs` builds, each Shadow's `bonus`
+  and the hunter's, fixed as a run walks in and kept in `run.party`. An open run keeps them however the
+  squad changes after, the brief's projection plays them, and no intent changes. The Practice Gate takes no
+  Shadows, and so neither.
+- **Auto Deploy weighs whole squads** (`shadows.bestSquad`, `squadScore`): each Shadow's power grown by what
+  its Kin's boon and the auras are worth, and the hunter's power by what the auras are worth (`WORTH`: a share
+  is its own share, a point of the rest about what a percent of the stat it moves is). It looks among each
+  family's strongest, as many as the slots hold, and each role's strongest; starts from the strongest squad
+  and from each family's strongest together; and trades one Shadow at a time while a trade weighs more. A
+  test holds it against every squad of three a mixed army of nine can make. The same army always gives the
+  same squad.
+- **Shown where the squad is made**, after Teamfight Tactics' trait tracker: on the Army, under the squad's
+  slots, a row to each family deployed with its count and its steps `2 › 3`, the one reached lit and what it
+  gives in green, a family short of its first step dimmed; then a chip to each role with its aura. A
+  Shadow's card says its Kin at each step and its role's aura under its stats, as Solo Leveling: Arise sets a
+  Shadow's aura under its own. The brief's party ends `Kin: Orc II · Formation: Brute, Caster`.
+- **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
+  its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
+  could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;
+  a squad built for its Kin is an edge the hunter earns. Gates and the Spire are tuned against the typical
+  hunter, who has no Shadows, and none moved. Ascension moved at 9 of 10 levels, +1.2% to +3.1% harder (level
+  8 stayed); the Trials at 5 of 10, +1.4% to +3.3% harder (Ascension 2-6 stayed). The balance report's days to
+  each rank do not move. The Ascension test that each level is harder than the one below now plays three
+  hunters, not one: the first one's draw holds an Undead pair and clears level 5 whole.
+- **A finding, not built.** A hunter who keeps up and holds twice the army the squad needs, deploying as
+  Auto Deploy does, clears Ascension far more often than `keptUpHunter`, with or without Kin: at the old
+  tunings level 5 at 91% against 71%, level 10 at 80% against 53%. Kin and Formation alone add 2 to 5 points
+  (85% to 87% at level 1, 71% to 76% at 5, 53% to 58% at 10). The campaign's hunters hold 34 to 38 Shadows by
+  day 112, so `keptUpHunter` may under-rate a hunter who keeps up. Giving it a larger army would
+  make every Ascension level about a fifth harder: the owner's call, not this change's.
+- **Campaign.** It now presses Auto Deploy between runs, as the Squad tile asks. Before, it only filled a free
+  slot with the strongest Shadow left and never changed one deployed, so its squads went stale. Over 120
+  days, two campaigns of this change, one with Kin and Formation switched off (Auto Deploy kept), against
+  `main`'s two from "A map worth reading":
+
+  | | Days to A, S, N | Carried out | Cleared |
+  |---|---|---|---|
+  | One evening a day, `main` | 38, 63, 112 and 39, 65, 113 | 17 and 17 | 94%, 94% |
+  | Auto Deploy only | 34, 60, 110 | 12 | 96% |
+  | This change | 31, 56, 107 and 30, 55, 106 | 7 and 7 | 97%, 97% |
+  | Three sessions a day, `main` | 23, 38, 69 and 31, 47, 76 | 36 and 48 | 91%, 88% |
+  | Auto Deploy only | 26, 42, 71 | 30 | 93% |
+  | This change | 23, 38, 69 and 26, 41, 71 | 22 and 33 | 95%, 92% |
+
+  Keeping the squad current and Kin and Formation each bring the one-evening hunter about 4 days nearer
+  A-Rank, and between them cut its runs carried out from 17 to 7. Half of that is what any player who
+  presses Auto Deploy already had over the campaign; the other half is this change. The three-session
+  hunter's campaigns differ by as much as 8 days at A between two runs of `main`, and both this change's
+  runs fall inside that spread, nearer its fast end.
 
 ## What stays out
 

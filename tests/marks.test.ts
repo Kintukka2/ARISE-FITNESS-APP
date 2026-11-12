@@ -63,7 +63,9 @@ describe('marks', () => {
     expect((hero(after).bonus!.patk ?? 0) - (hero(before).bonus!.patk ?? 0)).toBeCloseTo(edge * 2, 6);
     expect(new Unit(hero(after)).d.patk).toBeGreaterThan(new Unit(hero(before)).d.patk);
     expect(new Unit(shadow(after)).maxHp).toBeGreaterThan(new Unit(shadow(before)).maxHp);
-    expect(new Unit(shadow(after)).d.patk).toBeCloseTo(new Unit(shadow(before)).d.patk * (1 + mark('legion').shadows!.patk), 6);
+    // Its attack share adds to the one it already takes (its Formation's aura), as every bonus does.
+    const had = shadow(before).bonus!.patk ?? 0;
+    expect(new Unit(shadow(after)).d.patk).toBeCloseTo(new Unit(shadow(before)).d.patk * (1 + had + mark('legion').shadows!.patk) / (1 + had), 6);
   });
 
   it('the Long Stride makes every gate cost less fatigue to walk into', () => {

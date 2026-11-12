@@ -2445,3 +2445,50 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .dmap__toll.is-live { animation: none; } }
 /* A rest found and not yet used, tapped to rest there: lit in healing's green. */
 .dmap .gnode.droom.is-restable:not(.is-fog) { border-color: color-mix(in srgb, var(--verdant) 65%, transparent); box-shadow: inset 0 0 10px rgba(72, 245, 168, 0.18); cursor: pointer; }
+
+/* Kin and Formation on the Army sheet, after the trait trackers of the references: a row to each family
+   deployed, its count by its mark, its steps with the one reached lit, and what it gives; a chip to each
+   role deployed with its aura. A Kin reached glows in the Shadows' violet; what it gives is a gain's green. */
+.kintrack { display: grid; gap: 6px; margin-top: 10px; }
+.kintrack__head { font-size: 0.62rem; letter-spacing: 0.16em; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.kintrack__kin, .kintrack__form { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.kintrack__form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.kinrow {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; grid-template-areas: "mark name steps" "mark does does";
+  align-items: center; column-gap: 10px; row-gap: 1px; padding: 6px 10px; background: rgba(6, 3, 18, 0.45);
+  color: color-mix(in srgb, var(--sys-ink) 55%, transparent);
+}
+.kinrow.is-on, .kinrow.is-all {
+  border-color: color-mix(in srgb, var(--win) 75%, transparent); color: var(--sys-ink);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--win) 22%, transparent), rgba(6, 3, 18, 0.45) 72%);
+  box-shadow: inset 3px 0 0 var(--win);
+}
+.kinrow__mark { grid-area: mark; display: inline-flex; align-items: center; justify-content: center; gap: 4px; align-self: stretch; border-right: 1px solid var(--sys-hair); padding-right: 8px; }
+.kinrow__mark b { font-size: 1rem; }
+.kinrow.is-on .kinrow__mark { color: #fff; text-shadow: 0 0 8px var(--win-glow); }
+.kinrow__name { grid-area: name; font-weight: 600; font-size: 0.86rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kinrow__steps { grid-area: steps; display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-sys); font-size: 0.8rem; }
+.kinrow__steps span { display: inline-flex; align-items: center; gap: 4px; }
+.kinrow__steps b { opacity: 0.42; }
+.kinrow__steps b.is-on { opacity: 1; color: #fff; text-shadow: 0 0 8px var(--win-glow); }
+.kinrow__steps i { font-style: normal; opacity: 0.4; }
+.kinrow__does { grid-area: does; font-size: 0.72rem; }
+.kinrow.is-on .kinrow__does { color: var(--verdant); }
+.kinrole { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; border-color: color-mix(in srgb, var(--win) 55%, transparent); background: rgba(6, 3, 18, 0.45); }
+.kinrole > svg { flex: none; width: 18px; height: 18px; color: #fff; filter: drop-shadow(0 0 5px var(--win-glow)); }
+.kinrole > span { display: grid; min-width: 0; }
+.kinrole b { font-size: 0.76rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kinrole small { font-size: 0.68rem; color: var(--verdant); }
+
+/* What a Shadow brings to a squad, on its card: its Kin at each step, its role's aura; lit while the squad has it. */
+.kincard { display: grid; gap: 8px; padding: 10px 12px; }
+.kincard__row { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; }
+.kincard__mark { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--win) 55%, transparent); }
+.kincard__mark svg { width: 16px; height: 16px; }
+.kincard__body { display: grid; gap: 1px; min-width: 0; }
+.kincard__body b { font-size: 0.82rem; font-weight: 600; }
+.kincard__body small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.kincard__body small.is-on { color: var(--verdant); }
+
+/* The brief's party: the squad's Kin and Formation under it. */
+.bparty__kin { margin: 6px 0 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 72%, transparent); }
