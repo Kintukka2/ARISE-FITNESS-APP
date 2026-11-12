@@ -283,7 +283,9 @@ try {
   if ((await page.locator('.sheet.is-top .bhero .aring__tick').count()) !== 24) throw new Error('THE RING DOES NOT TICK THE SYSTEM’S 24 RUNS');
   // The objectives open on the boss, always; the rewards are a list; the head holds the hunter's condition, a + to each.
   if (!(await page.locator('.sheet.is-top .bline.is-main', { hasText: 'Defeat the boss' }).count())) throw new Error('THE OBJECTIVES DO NOT OPEN ON THE BOSS');
-  if (!(await page.locator('.sheet.is-top .bline', { hasText: 'Gate clear:' }).count())) throw new Error('THE REWARDS DO NOT LIST THE CLEAR');
+  if (!(await page.locator('.sheet.is-top .breward.is-xp', { hasText: 'Gate clear' }).count())) throw new Error('THE REWARDS DO NOT SHOW THE CLEAR');
+  // The facts under the head set the party's power against the boss's.
+  if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 4) throw new Error('THE HEAD HAS NO FACTS UNDER IT');
   if ((await page.locator('.sheet.is-top .bbanner .bvital__drink').count()) !== 3) throw new Error('THE BANNER DOES NOT HOLD HP, MP AND FATIGUE');
   if (await page.locator('.sheet.is-top .bhero', { hasText: 'Runs cleared' }).count()) throw new Error('THE HEAD STILL COUNTS THE RUNS');
   if (await page.locator('.sheet.is-top .syshead').count()) throw new Error('THE BRIEF STILL HAS A HEADER BOX OVER ITS BANNER');
@@ -303,50 +305,48 @@ try {
   await snap('brief-bag');
   await page.locator('.bagwheel__hub .btn', { hasText: /^Ready$/ }).click(); await sleep(400);
   if (!(await page.locator('.toast', { hasText: 'Ember Flask · Readied' }).count())) throw new Error('THE BAG ON THE BRIEF DID NOT READY THE THROWABLE');
-  // Seals: one button on the brief, opening their window; a Seal pressed moves the gauge and adds its Ember.
-  if (!(await page.locator('.sheet.is-top .bsealbtn').count())) throw new Error('THE BRIEF OFFERS NO SEALS');
-  await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(600);
-  const seal = page.locator('.sheet.is-top .sealcard').first();
-  if (!(await seal.count())) throw new Error('THE SEALS’ WINDOW HOLDS NO SEAL');
-  await seal.click(); await sleep(1200);
+  // Seals: pressed on the brief itself, a tap each; one pressed adds its Ember and says what it does.
+  if (!(await page.locator('.sheet.is-top .bseal').count())) throw new Error('THE BRIEF OFFERS NO SEALS');
+  if (await page.locator('.sheet.is-top .bsealbtn').count()) throw new Error('THE SEALS STILL HIDE BEHIND A BUTTON');
+  const seal = page.locator('.sheet.is-top .bseal').first();
+  await seal.scrollIntoViewIfNeeded(); await seal.click(); await sleep(1200);
   if ((await seal.getAttribute('aria-checked')) !== 'true') throw new Error('A SEAL TAPPED WAS NOT TAKEN');
-  if (!(await page.locator('.sheet.is-top .sgauge__ember', { hasText: '+' }).count())) throw new Error('THE GAUGE SHOWS NO EMBER');
-  await snap('brief-seals');
-  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(1400);
-  if (!(await page.locator('.sheet.is-top .bline.is-ember', { hasText: 'Seal bonus' }).count())) throw new Error('A SEAL TAKEN ADDS NO SEAL BONUS TO THE REWARDS');
+  if (!(await page.locator('.sheet.is-top .bseals__rule b').count())) throw new Error('A SEAL PRESSED DOES NOT SAY WHAT IT DOES');
+  if (!(await page.locator('.sheet.is-top .breward.is-ember', { hasText: 'Seal bonus' }).count())) throw new Error('A SEAL TAKEN ADDS NO SEAL BONUS TO THE REWARDS');
   if (await page.locator('.sheet.is-top .bhero', { hasText: '→' }).count()) throw new Error('THE HEAD STILL STATES THE RATE BEFORE AND AFTER');
+  await snap('brief-seals');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(300);
   await snap('brief-sealed');
   // Given back, so the run below walks in unsealed.
-  await page.locator('.sheet.is-top .bsealbtn').click(); await sleep(500);
-  await page.locator('.sheet.is-top .sealcard').first().click(); await sleep(900);
-  await page.locator('.sheet.is-top .btn', { hasText: 'Done' }).click(); await sleep(500);
-  if (await page.locator('.sheet.is-top .bline.is-ember').count()) throw new Error('A SEAL GIVEN BACK STILL PAYS');
-  // The tabs: the Feats state the System's odds; the map; the party.
-  const tab = (name) => page.locator('.sheet.is-top .btabs__one', { hasText: name });
-  await tab('Feats').click(); await sleep(500);
+  await seal.scrollIntoViewIfNeeded(); await seal.click(); await sleep(900);
+  if (await page.locator('.sheet.is-top .breward.is-ember').count()) throw new Error('A SEAL GIVEN BACK STILL PAYS');
+  // No tabs: what the Gate holds reads top to bottom. The Feats state the System's odds.
+  if (await page.locator('.sheet.is-top .btabs').count()) throw new Error('THE BRIEF STILL HAS TABS');
   if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
-  await snap('brief-feats');
-  await tab('Map').click(); await sleep(600); await snap('brief-map');
-  await tab('Party').click(); await sleep(500);
-  if (!(await page.locator('.sheet.is-top .bparty li.is-you').count())) throw new Error('THE PARTY TAB HOLDS NO PARTY');
-  // The squad's Formation is said under the party: every deployed Shadow has a role.
+  await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
+  // The map unfolds from its road's length.
+  await page.locator('.sheet.is-top .bmapfold__head').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .bmapfold.is-open .dmap, .sheet.is-top .bmapfold.is-open .gmap-fog, .sheet.is-top .bmapfold.is-open .gmap').count())) throw new Error('THE MAP DID NOT UNFOLD');
+  await page.locator('.sheet.is-top .bmapfold').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-map');
+  await page.locator('.sheet.is-top .bmapfold__head').click(); await sleep(300);
+  // The party lined up, the hunter first, and the squad's Formation under it.
+  if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
   if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Formation:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S FORMATION');
-  await snap('brief-party');
-  await tab('Threat').click(); await sleep(500);
-  if (!(await page.locator('.sheet.is-top .bspot').count())) throw new Error('THE THREAT TAB HOLDS NO BOSS IN ITS SPOTLIGHT');
-  if (!(await page.locator('.sheet.is-top .bthreat .bline').count())) throw new Error('THE THREAT TAB LISTS NO CREATURES');
-  // The Threat tab is what walks in the Gate and nothing else: no special drops, no Shadows bound.
-  if (await page.locator('.sheet.is-top .btab-panel', { hasText: /Shadows bound|while Burning|while Stunned|Blueprint \+1/ }).count()) throw new Error('THE THREAT TAB STILL SHOWS DROPS OR SHADOWS');
-  // A creature's line opens its card: its habits, a fact to a line, its statuses and its special drop.
-  await page.locator('.sheet.is-top .bthreat .bline.is-tap').first().click(); await sleep(600);
-  if (!(await page.locator('.sheet.is-top .bcreature').count())) throw new Error('A CREATURE’S LINE OPENED NO CARD');
+  await page.locator('.sheet.is-top .blineup').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
+  // The enemies as portraits, the boss first: what walks in the Gate and nothing else.
+  if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
+  if ((await page.locator('.sheet.is-top .benemy').count()) < 2) throw new Error('THE ENEMIES SHOW NO CREATURES');
+  if (await page.locator('.sheet.is-top .benemies', { hasText: /Shadows bound|while Burning|while Stunned|Blueprint \+1/ }).count()) throw new Error('THE ENEMIES STILL SHOW DROPS OR SHADOWS');
+  // A creature's portrait opens its card: its habits, a fact to a line, its statuses and its special drop.
+  await page.locator('.sheet.is-top .benemy.is-tap:not(.is-boss)').first().click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .bcreature').count())) throw new Error('A CREATURE’S PORTRAIT OPENED NO CARD');
   if (!(await page.locator('.sheet.is-top .bcreature [aria-label="Special drop"] .bhabit__name').count())) throw new Error('THE CREATURE CARD STATES NO SPECIAL DROP');
   if (!(await page.locator('.sheet.is-top .bcreature .bbox__head', { hasText: 'Special drop' }).count())) throw new Error('THE CREATURE CARD DOES NOT SAY SPECIAL DROP');
   if (await page.locator('.sheet.is-top .bcreature', { hasText: /by grade/ }).count()) throw new Error('A CREATURE CARD GIVES A HABIT BY GRADE, NOT ITS OWN NUMBERS');
   await snap('brief-creature');
   await close(); await sleep(400);
-  await page.locator('.sheet.is-top .bspot.is-tap').click(); await sleep(600);
-  if (!(await page.locator('.sheet.is-top .bcreature', { hasText: 'Gate boss' }).count())) throw new Error('THE BOSS’S SPOTLIGHT OPENED NO CARD');
+  await page.locator('.sheet.is-top .benemy.is-boss.is-tap').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .bcreature', { hasText: 'Gate boss' }).count())) throw new Error('THE BOSS’S PORTRAIT OPENED NO CARD');
   await snap('brief-boss');
   await close(); await sleep(400);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('brief-foot');
@@ -799,10 +799,10 @@ try {
   await page.locator('.sheet.is-top .btn', { hasText: 'Face The Trial' }).click(); await sleep(800);
   await snap('trial-brief', true);
   if (await page.locator('.sheet.is-top', { hasText: 'Association file' }).count()) throw new Error('THE TRIAL CARRIES AN ASSOCIATION FILE');
-  if (await page.locator('.sheet.is-top .btabs__one', { hasText: 'Feats' }).count()) throw new Error('THE TRIAL HOLDS FEATS');
-  await page.locator('.sheet.is-top .btabs__one', { hasText: 'Party' }).click(); await sleep(500);
-  if (!(await page.locator('.sheet.is-top .partylist li.is-you').count())) throw new Error('THE TRIAL’S PARTY TAB HOLDS NO ONE');
-  if (await page.locator('.sheet.is-top .partylist li:not(.is-you):not(.is-shadow)').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
+  if (await page.locator('.sheet.is-top .bfeat').count()) throw new Error('THE TRIAL HOLDS FEATS');
+  await page.locator('.sheet.is-top .blineup').scrollIntoViewIfNeeded(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE TRIAL’S PARTY HOLDS NO ONE');
+  if (await page.locator('.sheet.is-top .blineup .is-ally').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
   await snap('trial-brief-party');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));

@@ -1,8 +1,10 @@
 /**
- * The brief: the System's card on a Gate, and the way in. Its head is the Gate's portal inside the
- * assessment's ring, a tick to each of the System's runs; under it what a clear pays, one button to the
- * Seals, and what the Gate holds behind four tabs: its threat, its Feats, its map, the party. The kit and
- * the way in are docked at its foot. The Seals and the kit each open a window of their own over it.
+ * The brief: the System's card on a Gate, and the way in, read top to bottom as the reference games lay a
+ * stage before it is entered (Honkai: Star Rail's and Genshin Impact's stage cards, Darkest Dungeon's embark,
+ * Hades' Pact). Its head is the Gate's portal inside the assessment's ring, a tick to each of the System's runs;
+ * under it the facts (the party's power against the boss's, the road), the objectives, the rewards as tiles, the
+ * Seals pressed in place, the enemies as portraits, the party lined up, the Feats and the map, folded. The way
+ * in is docked at its foot. Only a creature's card and the bag open over it.
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -39,7 +41,7 @@ import { createStore, useSave } from '@/store';
 import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
-import { FamilyGlyph } from '@/ui/emblems';
+import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { makeLine } from '@/ui/kin';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
@@ -71,16 +73,10 @@ export function markOf(s: Save, d: Dungeon, quest: boolean, day: string): 'Train
 
 // ------------------------------------------------------------------ what the brief holds between windows
 
-type Tab = 'threat' | 'feats' | 'map' | 'party';
-/** The brief's tab, held while the app stays open, as the board's filter is. */
-let briefTab: Tab = 'threat';
-
 /** The Seals set on a Gate's brief before going in, by Gate and day, held while the app stays open. */
 const wanted = createStore<Record<string, SealId[]>>({});
 const wantKey = (d: Dungeon) => `${d.id}|${dayKey()}`;
 const inOrder = (ids: readonly SealId[]) => [...ids].sort((a, b) => SEAL_IDS.indexOf(a) - SEAL_IDS.indexOf(b));
-/** Whether the Seals' window stands over the brief: the brief's head holds its reading until it closes. */
-const sealWindow = createStore(false);
 
 /**
  * The Seals a brief plays. A run open on the Gate keeps the ones it walked in with, fixed; otherwise the
@@ -106,7 +102,7 @@ function setSeal(d: Dungeon, id: SealId, on: boolean) {
 const emberOf = (taken: readonly SealId[], d: Dungeon) => taken.reduce((n, id) => n + sealEmber(id, d.rank), 0);
 
 type Proj = ReturnType<typeof raid.project>;
-/** The projections made for briefs, by everything they read: the brief and the Seal window share them. */
+/** The projections made for briefs, by everything they read: with each Seal pressed, a projection of its own. */
 const projections = new Map<string, Proj>();
 const projKey = (s: Save, d: Dungeon, taken: readonly SealId[]) => JSON.stringify([
   d.id, dayKey(), ascension.entryLevel(s, d, isPractice(d)), taken, raid.heroSpec(s), shadows.squad(s).map((x) => x.id),
@@ -248,51 +244,17 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   // The verdict is the engine answering for itself: the Gate, run headlessly, under the Seals taken; and without them, behind.
   const { proj, pending } = useProjection(s, d, taken);
   const { proj: plain } = useProjection(s, d, []);
-  const map = build(d, mapSeed(d, day));
-  // While the Seals' window stands over the brief, the head holds what it read. As the window closes it
-  // sweeps to what the System reads now: the ring's arc and its figure count there together, and the
-  // verdict and its colour change as the figure passes each grade.
-  const sealing = sealWindow.use();
-  const [held, setHeld] = useState<{ proj: Proj; plain: Proj; sealed: boolean } | null>(null);
-  const wasSealing = useRef(sealing);
-  useEffect(() => {
-    if (sealing && !wasSealing.current) setHeld({ proj, plain, sealed: taken.length > 0 });
-    wasSealing.current = sealing;
-    if (sealing) return;
-    const t = setTimeout(() => setHeld(null), 380);
-    return () => clearTimeout(t);
-  }, [sealing]);
-  const shown = held ?? { proj, plain, sealed: taken.length > 0 };
-  const figure = useTween(shown.proj.rate * 100);
+  const figure = useTween(proj.rate * 100);
   const v = raid.verdict(figure / 100);
   const rate = Math.round(figure);
-  const plainRate = Math.round(shown.plain.rate * 100);
+  const plainRate = Math.round(plain.rate * 100);
+  const sealed = taken.length > 0;
   const block = entryBlock(s, d);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
   const hpNow = vitals.read(s);
-  const steps = raid.stepsOf(map);
   const cleared = s.gates.cleared.includes(d.id);
   const mark = markOf(s, d, contracts.named(s, day).has(d.id), day);
-
-  // Feats on a Gate of the board alone; the tabs a Gate has, each with its count.
   const hasFeats = !practice && !tower && !trial;
-  const met = hasFeats ? feats.featsOf(d).filter((id) => feats.metOn(s, d).includes(id)).length : 0;
-  const tabs: { id: Tab; name: string; read: ComponentChildren }[] = [
-    { id: 'threat', name: 'Threat', read: <><Glyph name="skull" /><span class="num">{threatCount(s, d)}</span></> },
-    ...(hasFeats ? [{ id: 'feats' as Tab, name: 'Feats', read: <span class="btabs__stars" aria-label={`${met} of ${FEATS_PER_GATE} met`}>{Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < met ? 'is-on' : ''}>★</i>)}</span> }] : []),
-    { id: 'map', name: 'Map', read: mapKnown(s, d) ? <><Glyph name="steps" /><span class="num">{steps}</span></> : <span class="num">?</span> },
-    { id: 'party', name: 'Party', read: <span class="num">{partyPower(s, d, level, taken)}</span> },
-  ];
-  const [tab, setTabState] = useState<Tab>(tabs.some((t) => t.id === briefTab) ? briefTab : 'threat');
-  const [dir, setDir] = useState(0);
-  const at = Math.max(0, tabs.findIndex((t) => t.id === tab));
-  const pick = (id: Tab) => {
-    if (id === tab) return;
-    sfx.tap();
-    setDir(tabs.findIndex((t) => t.id === id) > at ? 1 : -1);
-    briefTab = id;
-    setTabState(id);
-  };
 
   const abandon = async () => {
     const run = store.get().gates.raid;
@@ -304,59 +266,43 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   return (
     <div class={`stack brief ${trial ? 'is-trial' : ''}`} style={`--rc: ${trial ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
       {/*
-        The head: the Gate's portal inside the assessment's ring, the verdict under it; beside them its grade and
-        its name, the Association's file and its chips.
+        The head, as a boss is revealed: the Gate's portal inside the assessment's ring at its centre, the rate and
+        the verdict under it, its grade and its name over it; the file, the chips and the Ascension's rules after.
       */}
-      <header class={`bhero ${pending && !held ? 'is-pending' : ''} ${shown.sealed ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
-        <span class="bhero__side">
-          <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${shown.sealed && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
-            <Ring p={shown.proj} plain={shown.plain} r={44} />
-            <span class="bhero__portal ga-portal" aria-hidden="true">
-              <i class="ga-portal__swirl" /><i class="ga-portal__core" />
-              <RankPlate rank={d.rank} size={32} />
-            </span>
-            <b class="bhero__pct num" aria-hidden="true">{rate}<small>%</small></b>
+      <header class={`bhero ${pending ? 'is-pending' : ''} ${sealed ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
+        <span class="bhero__glow" aria-hidden="true" />
+        <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}:</span> <span class="bhero__name">{trial ? `Ascension ${trialLevel(d) + 1}` : d.name}</span></h3>
+        <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${sealed && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
+          <Ring p={proj} plain={plain} r={62} />
+          <span class="bhero__portal ga-portal" aria-hidden="true">
+            <i class="ga-portal__swirl" /><i class="ga-portal__core" />
+            <RankPlate rank={d.rank} size={40} />
           </span>
+        </span>
+        <span class="bhero__read" aria-hidden="true">
+          <b class="bhero__pct num">{rate}<small>%</small></b>
           <b class="bhero__assess">{v.text}</b>
         </span>
-        <span class="bhero__body">
-          <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}:</span> {trial ? `Ascension ${trialLevel(d) + 1}` : d.name}</h3>
-          <File d={d} />
-          <span class="bhero__tags">
-            {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-fresh'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
-            {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
-            {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
-            {trial && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
-          </span>
+        <span class="bhero__tags">
+          {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-fresh'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
+          {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
+          {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
+          {trial && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
         </span>
+        <File d={d} />
         {level > 0 && (
           <p class="basc"><Glyph name="crown" /><span>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''}</span></p>
         )}
       </header>
 
+      <Facts d={d} level={level} taken={taken} road={proj.road.length} />
       <Objectives d={d} level={level} taken={taken} />
-      <Rewards d={d} level={level} taken={taken} />
-
-      {/* The Seals: one button, its wax lit for each taken, opening their window. */}
-      {offer.length > 0 && <SealButton d={d} offer={offer} taken={taken} fixed={fixed} />}
-
-      {/* What the Gate holds, in one box: a tab to each, its count under its name, and the one shown under them. */}
-      <section class="bbox btabbox">
-        <div class="btabs" role="tablist" aria-label="Brief" style={`--n: ${tabs.length}; --at: ${at}`}>
-          {tabs.map((t) => (
-            <button type="button" key={t.id} role="tab" id={`btab-${t.id}`} aria-selected={t.id === tab} aria-controls="btab-panel"
-              class={`btabs__one ${t.id === tab ? 'is-on' : ''}`} onClick={() => pick(t.id)}>
-              <b>{t.name}</b><small>{t.read}</small>
-            </button>
-          ))}
-        </div>
-        <div class="btab-panel" id="btab-panel" role="tabpanel" aria-labelledby={`btab-${tab}`} key={tab} style={`--dir: ${dir}`}>
-          {tab === 'threat' && <ThreatPanel d={d} level={level} />}
-          {tab === 'feats' && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
-          {tab === 'map' && <MapPanel d={d} road={proj.road} />}
-          {tab === 'party' && <PartyPanel d={d} level={level} taken={taken} />}
-        </div>
-      </section>
+      <RewardTiles d={d} level={level} taken={taken} />
+      {offer.length > 0 && <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} />}
+      <EnemyRow d={d} level={level} />
+      <Lineup d={d} level={level} taken={taken} />
+      {hasFeats && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
+      <MapFold d={d} road={proj.road} />
 
       {/* The way in stays at the foot of the window, whatever is scrolled past. */}
       <div class="bdock">
@@ -373,6 +319,283 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
               )}
       </div>
     </div>
+  );
+}
+
+/** The boss, or one of the Chosen in its place, that the brief may name: once the boss is known, or the Chosen walks it. */
+function bossOf(s: Save, d: Dungeon, level: number) {
+  const walker = walkers.walking(s, dayKey());
+  const holds = walker?.gateId === d.id ? walker : null;
+  const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
+  return { holds, met, who: met ?? (bossKnown(s, d) ? enemyById(d.boss)! : null) };
+}
+
+/**
+ * The facts under the head, as the reference games set a stage's recommended power over its enemies: the
+ * party's power against the boss's, and the road, its rooms and the Gate's budget of moves.
+ */
+function Facts({ d, level, taken, road }: { d: Dungeon; level: number; taken: SealId[]; road: number }) {
+  const s = useSave();
+  const map = build(d, mapSeed(d, dayKey()));
+  const known = mapKnown(s, d);
+  const { who } = bossOf(s, d, level);
+  const moves = !map.tower && !isPractice(d) ? budgetOf(map) : null;
+  return (
+    <dl class="bfacts">
+      <div><dt>Your party</dt><dd class="num">{partyPower(s, d, level, taken)}</dd></div>
+      <div><dt>{isTrial(d) ? 'The last' : 'Boss'}</dt><dd class="num is-foe">{who ? powerOf(who.base) : '?'}</dd></div>
+      <div><dt>{isTrial(d) ? 'Chosen' : map.tower ? 'Floors' : 'Rooms'}</dt><dd class="num">{known ? raid.stepsOf(map) : '?'}</dd></div>
+      <div><dt>{moves !== null ? 'Moves' : isTrial(d) ? 'To the last' : 'To the boss'}</dt><dd class="num">{known ? moves ?? road : '?'}</dd></div>
+    </dl>
+  );
+}
+
+/**
+ * What a clear pays, as Honkai: Star Rail and Genshin Impact lay a stage's drops: a tile to each, its mark
+ * framed over its name, its figure in the tile's corner. The clear's XP and shards; the bounty while it has
+ * never been cleared (the Spire's week, the Trial's level); the Seals' Ember once one is taken; every material
+ * the Gate can leave, a tracked one with the Forge's anvil; and the blueprint.
+ */
+function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
+  const s = useSave();
+  const trial = isTrial(d);
+  const practice = isPractice(d);
+  const tower = spire.isSpire(d);
+  const pay = ascension.payShare(level);
+  const sh = Math.round(shop.GATE_SHARDS[d.rank as Rank] * pay);
+  const xp = practice ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
+  const first = !tower && !trial && !practice && !s.gates.cleared.includes(d.id);
+  const sets = raid.homeSets(d);
+  const tracked = new Set(practice ? [] : s.tracked ?? []);
+  const mats = practice ? [ALLOYS.E.id] : forge.sourcesOf(d, level);
+  const ember = emberOf(taken, d);
+  const tile = (key: string, cls: string, art: ComponentChildren, name: ComponentChildren, n?: ComponentChildren, label?: string) => (
+    <li key={key} class={`breward ${cls}`} aria-label={label}>
+      <span class="breward__art">{art}{n != null && <b class="breward__n num">{n}</b>}</span>
+      <small class="breward__name">{name}</small>
+    </li>
+  );
+  return (
+    <section class="bbox" aria-label="Rewards">
+      <span class="label bbox__head">Rewards{level > 0 && <small class="grant"> · Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
+      <ul class="brewards">
+        {tile('xp', 'is-xp', <span class="breward__xp">XP</span>, practice ? `Gate clear · Level ${PRACTICE_LEVEL}` : 'Gate clear', `+${xp}`, `Gate clear: XP +${xp}`)}
+        {!practice && tile('shards', 'is-shard', <Shard size={26} />, 'Gate clear', `+${sh}`, `Gate clear: Mana Shards +${sh}`)}
+        {first && tile('bounty', 'is-bounty', <Shard size={26} />, 'Bounty · once', `+${sh * 2}`, `Bounty: XP +${xp}, Mana Shards +${sh * 2}, one-time reward`)}
+        {trial && tile('victory', 'is-victory', <Glyph name="crown" />, `Ascension ${s.ascension.unlocked + 1} opens`)}
+        {tower && tile('week', 'is-victory', <Glyph name="spire" />, `Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`, undefined, 'This week: a new best')}
+        {taken.length > 0 && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Seal bonus', `+${ember}`, `Seal bonus: Ember +${ember}`)}
+        {mats.map((id) => tile(id, `is-mat ${tracked.has(id) ? 'is-tracked' : ''}`, <><MatArt id={id} size={30} />{tracked.has(id) && <TrackMark class="breward__track" />}</>, forge.materialById(id)?.name ?? id))}
+        {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
+          practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : first ? 'Blueprint' : 'Blueprint · sometimes', '×1')}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * The Seals, set where they are read, as Hades lays its Pact of Punishment: a wax seal to each, pressed with a
+ * tap and lit red, its name under it; what the one last touched does and pays, under them; and the Ember they
+ * add on the right. The head's ring answers as each is pressed. A run open on the Gate keeps its own, fixed.
+ */
+function SealStrip({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean }) {
+  const [shown, setShown] = useState<SealId | null>(null);
+  const [pressed, setPressed] = useState<{ id: SealId; on: boolean } | null>(null);
+  const ember = emberOf(taken, d);
+  const toggle = (id: SealId) => {
+    setShown(id);
+    if (fixed) return;
+    const on = !taken.includes(id);
+    setSeal(d, id, on);
+    setPressed({ id, on });
+    if (on) { sfx.stamp(); buzz([10, 24, 34]); } else { sfx.blip(); buzz(8); }
+  };
+  const x = shown ? SEALS[shown] : null;
+  return (
+    <section class={`bseals ${taken.length ? 'is-on' : ''}`} aria-label="Seals" data-tour="seals">
+      <span class="bseals__head">
+        <span class="label">Seals</span>
+        <span class="bseals__ember"><MatArt id={EMBER.id} size={16} /><b class="num emb" key={ember}>+{ember}</b><small>Ember on a clear</small></span>
+      </span>
+      <ul class="bseals__set">
+        {offer.map((id, i) => {
+          const on = taken.includes(id);
+          const just = pressed?.id === id;
+          return (
+            <li key={id} style={`--i: ${i}`}>
+              <button type="button" role="switch" aria-checked={on} aria-disabled={fixed}
+                class={`bseal ${on ? 'is-on' : ''} ${shown === id ? 'is-shown' : ''} ${just ? (pressed!.on ? 'is-stamped' : 'is-lifted') : ''}`}
+                onClick={() => toggle(id)}>
+                <span class="bseal__wax"><SealArt size={42} class={on ? 'is-on' : ''} />{just && pressed!.on && <i class="sealcard__ripple" />}</span>
+                <b>{SEALS[id].name}</b>
+                <small class="emb">+{sealEmber(id, d.rank)}</small>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="bseals__rule">
+        {x ? <><b>{x.name}:</b> {x.rule}{x.note ? <span class="muted"> {x.note}</span> : null}</>
+          : fixed ? 'Fixed for this run.' : SEAL_LINE}
+      </p>
+    </section>
+  );
+}
+
+/**
+ * Who stands in the Gate, as Honkai: Star Rail lays a stage's enemies: a portrait to each, the boss first and
+ * larger in red, one of the Chosen holding the Gate in gold, the Gatekeeper ringed in gold, the rest after;
+ * each named under its portrait, `?` until it is known. One identified opens its card.
+ */
+function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
+  const s = useSave();
+  const known = bossKnown(s, d);
+  const boss = enemyById(d.boss)!;
+  const { holds, met } = bossOf(s, d, level);
+  const seen = mapKnown(s, d);
+  const inside = isTrial(d) ? [] : [...new Set([...d.mobs, ...(d.elite ? [d.elite] : [])])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
+  const one = (key: string, cls: string, family: string | null, name: string, tag: string, openIt?: () => void, label?: string) => {
+    const body = (
+      <>
+        <span class="benemy__face">{family ? <FamilyGlyph family={family} size={cls.includes('is-boss') ? 34 : 24} /> : <Glyph name="unknown" />}</span>
+        <b class="benemy__name">{name}</b>
+        <small class="benemy__tag">{tag}</small>
+      </>
+    );
+    return (
+      <li key={key}>
+        {openIt
+          ? <button type="button" class={`benemy is-tap ${cls}`} aria-haspopup="dialog" aria-label={label ?? `${name}, ${tag}`} onClick={() => { sfx.tap(); openIt(); }}>{body}</button>
+          : <span class={`benemy ${cls}`} aria-label={label ?? `${name}, ${tag}`}>{body}</span>}
+      </li>
+    );
+  };
+  return (
+    <section class="bbox" aria-label="Enemies" data-tour="boss">
+      <span class="label bbox__head">Enemies</span>
+      <ul class="benemies">
+        {met
+          ? one('chosen', 'is-boss is-chosen', null, met.name, 'In the boss’s place')
+          : isTrial(d)
+            ? one('trial', 'is-boss is-chosen', null, `${d.trial} Chosen`, 'One after another')
+            : known
+              ? one(boss.id, 'is-boss', boss.family, boss.name, 'Gate boss', () => openCreature(boss.id, d), `Gate boss: ${boss.name}`)
+              : one('boss', 'is-boss', null, '?', 'Gate boss')}
+        {inside.map((e) => seen
+          ? one(e.id, e.id === d.elite ? 'is-elite' : '', e.family, e.name, e.id === d.elite ? 'Gatekeeper' : `${e.rank}-Rank ${e.family}`, () => openCreature(e.id, d))
+          : one(e.id, e.id === d.elite ? 'is-elite' : '', null, '?', e.id === d.elite ? 'Gatekeeper' : 'Unidentified'))}
+      </ul>
+      {holds && <ChosenLine d={d} w={holds} level={level} />}
+    </section>
+  );
+}
+
+/**
+ * Who walks in, as Darkest Dungeon lines its party up before it embarks: a portrait to each, the hunter first,
+ * the Association's hunters, then the Shadows; their power under them and together; the squad's Kin and
+ * Formation under the line.
+ */
+function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
+  const s = useSave();
+  const { hero, party, squad } = partyOf(s, d, level, taken);
+  return (
+    <section class="bbox" aria-label="Party" data-tour="party">
+      <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right">Power <b class="num">{partyPower(s, d, level, taken)}</b></small></span>
+      <ul class="blineup">
+        <li class="blineup__one is-you"><span class="blineup__face"><Sigil rank={licensedRank(s)} size={30} /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small></li>
+        {party.map((a) => (
+          <li key={a.id} class="blineup__one is-ally"><span class="blineup__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></li>
+        ))}
+        {squad.map((x) => {
+          const e = enemyById(x.enemyId)!;
+          return <li key={x.id} class="blineup__one is-shadow"><span class="blineup__face"><ShadowEmblem family={e.family} rank={shadows.rankIndex(x)} size={34} /></span><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small class="num">{shadows.power(x)}</small></li>;
+        })}
+        {!isPractice(d) && Array.from({ length: shadows.freeSlots(s) }, (_, i) => (
+          <li key={`free-${i}`} class="blineup__one is-free" aria-label="Shadow slot empty"><span class="blineup__face"><Glyph name="plus" /></span><b>Free</b><small> </small></li>
+        ))}
+      </ul>
+      {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
+      {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
+    </section>
+  );
+}
+
+/**
+ * A Gate's three Feats, as Honkai: Star Rail sets a stage's three challenges: a star to each, gold once met
+ * here, what it asks, how often the System met it on today's map, and what it pays the first time.
+ */
+function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Partial<Record<FeatId, number>>; runs: number }) {
+  const got = feats.featsOf(d).filter((id) => met.includes(id)).length;
+  return (
+    <section class="bbox" aria-label="Feats">
+      <span class="label bbox__head">Feats<small class="bbox__right"><span class="btabs__stars">{Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''}>★</i>)}</span></small></span>
+      <div class="bfeats">
+        {feats.featsOf(d).map((id, i) => {
+          const done = met.includes(id);
+          const n = odds[id] ?? 0;
+          return (
+            <div key={id} class={`bfeat ${done ? 'is-done' : ''}`} style={`--i: ${i}; --odds: ${runs ? n / runs : 0}`}>
+              <Glyph name="star" class="bfeat__star" />
+              <span class="bfeat__body">
+                <b>{FEATS[id].name}</b>
+                <small>{FEATS[id].text}</small>
+                <span class="bfeat__odds" aria-hidden="true"><i /></span>
+              </span>
+              <span class="bfeat__side">
+                <small class="num" aria-label={`The System met it in ${n} of ${runs} runs`}>System {n}/{runs}</small>
+                <small class={done ? 'muted' : 'grant'}>{done ? 'Met' : `Blueprint +${FEAT_PAY.blueprints}`}</small>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Whether the map is unfolded on the brief, held while the app stays open. */
+let mapOpen = false;
+
+/**
+ * Today's map, folded under its road's length until it is wanted: its rooms, floors, the System's way to the boss
+ * and the Gate's budget of moves; unfolded, the map through its fog, a floor at a time, the System's road along
+ * it. Unidentified until the hunter has been inside.
+ */
+function MapFold({ d, road }: { d: Dungeon; road: string[] }) {
+  const s = useSave();
+  const day = dayKey();
+  const map = build(d, mapSeed(d, day));
+  const [floor, setFloor] = useState(0);
+  const [unfolded, setUnfolded] = useState(mapOpen);
+  const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, day) ? s.gates.raid : null;
+  const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, day)));
+  const steps = raid.stepsOf(map);
+  const known = mapKnown(s, d);
+  const depth = !known ? 'Unidentified'
+    : isTrial(d) ? `${steps} Chosen · no rest between them`
+      : spire.isSpire(d) ? `${steps} floors · a rest, then the boss`
+        : `${steps} rooms · ${map.floors.length > 1 ? `${map.floors.length} floors · ` : ''}${road.length} to the boss${map.tower || isPractice(d) ? '' : ` · ${budgetOf(map)} moves`}`;
+  const flip = () => { sfx.tap(); mapOpen = !unfolded; setUnfolded(!unfolded); };
+  return (
+    <section class={`bmapfold ${unfolded ? 'is-open' : ''}`} aria-label="Map">
+      <button type="button" class="bmapfold__head" aria-expanded={unfolded} onClick={flip}>
+        <Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />
+        <span class="bmapfold__text"><span class="label">Today’s map</span><small>{depth}</small></span>
+        <small class="bmapfold__redraw">{known ? <>Redraw <span class="num">{hhmmss(msUntilMidnight())}</span></> : null}</small>
+        <Glyph name="chevron" class="bmapfold__go" />
+      </button>
+      {unfolded && (
+        <div class="bmapfold__body">
+          {known
+            ? <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} compact />
+            : (
+              <div class="gmap-fogwrap">
+                <div class="gmap-fog" role="img" aria-label="Map unidentified"><Glyph name="unknown" /><b>?</b></div>
+              </div>
+            )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -414,11 +637,6 @@ function Vitals() {
   );
 }
 
-/** The creatures a brief counts: the kinds that walk in the Gate, and its boss once it is known. */
-function threatCount(s: Save, d: Dungeon) {
-  return new Set([...d.mobs, ...(d.elite ? [d.elite] : []), ...(bossKnown(s, d) ? [d.boss] : [])]).size;
-}
-
 /** Who walks in, and their power together: the hunter, the Association's hunters, the Shadows. */
 function partyOf(s: Save, d: Dungeon, level: number, taken: readonly SealId[]) {
   return {
@@ -441,18 +659,6 @@ function File({ d }: { d: Dungeon }) {
       onClick={() => { sfx.tap(); setFull(!full); }}>
       {d.theme}
     </button>
-  );
-}
-
-/**
- * A currency's glyph and its signed figure, set on the text's own baseline so nothing on the line sits out
- * of it: the shard and `+26` in green, Ember's flame and `+12` in its orange.
- */
-function Cur({ kind, n }: { kind: 'shard' | 'ember'; n: number }) {
-  return (
-    <span class={`bcur is-${kind}`} aria-label={`${kind === 'shard' ? 'Mana Shards' : EMBER.name} +${n}`}>
-      {kind === 'shard' ? <Shard size={12} /> : <Glyph name="ember" />}<span class="num">+{n}</span>
-    </span>
   );
 }
 
@@ -520,111 +726,6 @@ function Objectives({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
         {taken.includes('wardens') && <Line cls="is-seal" mark={<SealArt size={14} class="is-on" />} side={<span class="emb">Ember +{sealEmber('wardens', d.rank)}</span>}>Wardens Wake: defeat the Gatekeeper</Line>}
       </ul>
     </section>
-  );
-}
-
-/**
- * What a clear pays, a line each: the clear, the bounty while it has never been cleared (the Spire's week, the
- * Trial's level), the Seals' Ember once one is taken, and every material the Gate can leave.
- */
-function Rewards({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
-  const s = useSave();
-  const trial = isTrial(d);
-  const practice = isPractice(d);
-  const tower = spire.isSpire(d);
-  const pay = ascension.payShare(level);
-  const sh = Math.round(shop.GATE_SHARDS[d.rank as Rank] * pay);
-  const xp = practice ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
-  const first = !tower && !trial && !practice && !s.gates.cleared.includes(d.id);
-  const sets = raid.homeSets(d);
-  const tracked = new Set(practice ? [] : s.tracked ?? []);
-  const mats = practice ? [ALLOYS.E.id] : forge.sourcesOf(d, level);
-  const ember = emberOf(taken, d);
-  const extra = practice ? 'Ring ×1' : sets.length ? `Blueprint ×1 (${sets.map((x) => x.id).join(' or ')})` : first ? 'Blueprint ×1' : 'Blueprint ×1 (sometimes)';
-  return (
-    <section class="bbox" aria-label="Rewards">
-      <span class="label bbox__head">Rewards{level > 0 && <small class="grant"> · Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
-      <ul class="blist">
-        <Line cls="is-clear"><b>Gate clear:</b> XP <span class="num">+{xp}</span>{practice ? `, enough for Level ${PRACTICE_LEVEL}` : <>, <Cur kind="shard" n={sh} /></>}</Line>
-        {first && <Line cls="is-bounty"><b>Bounty:</b> XP <span class="num">+{xp}</span>, <Cur kind="shard" n={sh * 2} /> <span class="muted">(one-time reward)</span></Line>}
-        {trial && <Line cls="is-victory"><b>Victory:</b> Ascension {s.ascension.unlocked + 1} opens</Line>}
-        {tower && <Line cls="is-victory"><b>This week:</b> Floor {spire.lastFloor(spire.blockOf(d.floor ?? 1))}, a new best</Line>}
-        {taken.length > 0 && <Line cls="is-ember" key="ember"><b>Seal bonus:</b> <Cur kind="ember" n={ember} /></Line>}
-        <Line cls="is-mats">
-          <b>Materials:</b>{' '}
-          {mats.map((id, i) => (
-            <span key={id} class={`bline__mat ${tracked.has(id) ? 'is-tracked' : ''}`}>
-              {forge.materialById(id)?.name}{i < mats.length - 1 ? ', ' : ''}
-            </span>
-          ))}, {extra}
-          {[...tracked].some((id) => mats.includes(id)) && <TrackMark class="bline__track" />}
-        </Line>
-      </ul>
-    </section>
-  );
-}
-
-/** The Seals' button: their wax, lit for each taken, what Sealing does, or what they are and the Ember they add to a clear. */
-function SealButton({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean }) {
-  const ember = emberOf(taken, d);
-  return (
-    <button type="button" class={`bsealbtn ${taken.length ? 'is-on' : ''}`} aria-haspopup="dialog" data-tour="seals"
-      onClick={() => { sfx.tap(); openSeals(d); }}>
-      <span class="bsealbtn__wax" aria-hidden="true">
-        {offer.map((id, i) => <SealArt key={id} size={30} class={taken.includes(id) ? 'is-on' : ''} style={`--i: ${i}`} />)}
-      </span>
-      <span class="bsealbtn__body">
-        <b>{taken.length ? `Sealed: ${taken.map((id) => SEALS[id].name).join(', ')}` : 'Seal The Gate'}</b>
-        <small>{taken.length ? <>{fixed ? 'Fixed for this run' : 'Clear'}: <span class="emb">Ember +{ember}</span></> : SEAL_LINE}</small>
-      </span>
-      <Glyph name="chevron" class="bsealbtn__go" />
-    </button>
-  );
-}
-
-// ------------------------------------------------------------------ the tabs
-
-/**
- * What walks in the Gate, and nothing else: the boss in a spotlight at the top, one of the Chosen under it if
- * it holds the Gate today, then a line to each of the rest. The boss and each creature identified open its
- * card, where what it does and what it leaves stand.
- */
-function ThreatPanel({ d, level }: { d: Dungeon; level: number }) {
-  const s = useSave();
-  const known = bossKnown(s, d);
-  const boss = enemyById(d.boss)!;
-  const walker = walkers.walking(s, dayKey());
-  const holds = walker?.gateId === d.id ? walker : null;
-  const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
-  // Its creatures and its Gatekeeper, named once the hunter has been inside, as the map is.
-  const inside = [...new Set([...d.mobs, ...(d.elite ? [d.elite] : [])])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
-  const seen = mapKnown(s, d);
-  const who = met ?? (known ? boss : null);
-  const head = (
-    <>
-      <span class="bspot__art">{who ? <FamilyGlyph family={who.family} size={52} /> : <Glyph name="unknown" />}</span>
-      <span class="label">{met ? 'In the boss’s place' : isTrial(d) ? 'The last of the Chosen' : `Gate boss${known ? '' : ': unidentified'}`}</span>
-      <b class="bspot__name">{who ? who.name : '?'}</b>
-      <small class="bspot__line">{who ? `${who.rank}-Rank ${who.family} · ${who.role} · Power ${powerOf(who.base)}` : '?'}</small>
-    </>
-  );
-  return (
-    <>
-      {known && !met
-        ? <button type="button" class="bspot is-tap" data-tour="boss" aria-haspopup="dialog" onClick={() => { sfx.tap(); openCreature(boss.id, d); }}>{head}<Glyph name="chevron" class="bspot__go" /></button>
-        : <div class={`bspot ${who ? '' : 'is-unknown'}`} data-tour="boss">{head}</div>}
-      {holds && <ChosenLine d={d} w={holds} level={level} />}
-      {!isTrial(d) && inside.length > 0 && (
-        <ul class="blist bthreat">
-          {inside.map((e) => {
-            const body = <><b>{seen ? e.name : '?'}</b><small class="bthreat__kind">{e.id === d.elite ? 'Gatekeeper' : seen ? `${e.rank}-Rank ${e.family}` : 'Unidentified'}</small></>;
-            return seen
-              ? <Line key={e.id} cls={`bthreat__one ${e.id === d.elite ? 'is-elite' : ''}`} side={<Glyph name="chevron" class="bline__go" />} open={() => openCreature(e.id, d)} label={`${e.name}, ${e.id === d.elite ? 'Gatekeeper' : `${e.rank}-Rank ${e.family}`}`}>{body}</Line>
-              : <Line key={e.id} cls={`bthreat__one ${e.id === d.elite ? 'is-elite' : ''}`}>{body}</Line>;
-          })}
-        </ul>
-      )}
-    </>
   );
 }
 
@@ -702,170 +803,3 @@ function ChosenLine({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
   );
 }
 
-/**
- * A Gate's three Feats, a star to each: gold once met here. Each says what it asks, how often the System
- * met it in its runs on today's map, and, until it is met, what it pays the first time.
- */
-function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Partial<Record<FeatId, number>>; runs: number }) {
-  return (
-    <div class="bfeats" aria-label="Feats">
-      {feats.featsOf(d).map((id, i) => {
-        const done = met.includes(id);
-        const n = odds[id] ?? 0;
-        return (
-          <div key={id} class={`bfeat ${done ? 'is-done' : ''}`} style={`--i: ${i}; --odds: ${runs ? n / runs : 0}`}>
-            <Glyph name="star" class="bfeat__star" />
-            <span class="bfeat__body">
-              <b>{FEATS[id].name}</b>
-              <small>{FEATS[id].text}</small>
-              <span class="bfeat__odds" aria-hidden="true"><i /></span>
-            </span>
-            <span class="bfeat__side">
-              <small class="num" aria-label={`The System met it in ${n} of ${runs} runs`}>System {n}/{runs}</small>
-              <small class={done ? 'muted' : 'grant'}>{done ? 'Met' : `Blueprint +${FEAT_PAY.blueprints}`}</small>
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Today's map through its fog, a floor at a time, the System's road along it. Unidentified until the hunter has been inside. */
-function MapPanel({ d, road }: { d: Dungeon; road: string[] }) {
-  const s = useSave();
-  const day = dayKey();
-  const map = build(d, mapSeed(d, day));
-  const [floor, setFloor] = useState(0);
-  const onIt = s.gates.raid?.dungeonId === d.id && s.gates.raid.map === mapSeed(d, day) ? s.gates.raid : null;
-  const fog = map.tower ? undefined : onIt ? raid.seen(s, d, onIt) : sight(map, new Set(), raid.remembered(s, mapSeed(d, day)));
-  // The road's length: its rooms, its floors, the System's way to the boss and the Gate's budget of moves.
-  const steps = raid.stepsOf(map);
-  const depth = isTrial(d) ? `${steps} Chosen · no rest between them`
-    : spire.isSpire(d) ? `${steps} floors · a rest, then the boss`
-    : `${steps} rooms · ${map.floors.length > 1 ? `${map.floors.length} floors · ` : ''}${road.length} to the boss${map.tower || isPractice(d) ? '' : ` · ${budgetOf(map)} moves`}`;
-  return (
-    <>
-      <div class="section__head"><span class="label">Today’s map</span><span class="section__right">{mapKnown(s, d) ? <>Redraw: <span class="num">{hhmmss(msUntilMidnight())}</span></> : 'Unidentified'}</span></div>
-      <small class="bmap__depth"><Glyph name={isTrial(d) ? 'crown' : spire.isSpire(d) ? 'spire' : 'steps'} />{depth}</small>
-      {mapKnown(s, d)
-        ? <MapView m={map} road={road} seen={fog} floor={floor} onFloor={map.floors.length > 1 ? setFloor : undefined} compact />
-        : (
-          <div class="gmap-fogwrap">
-            <div class="gmap-fog" role="img" aria-label="Map unidentified"><Glyph name="unknown" /><b>?</b></div>
-          </div>
-        )}
-    </>
-  );
-}
-
-/** The party, a card each, after a squad's roster: who walks in, and their power together. */
-function PartyPanel({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
-  const s = useSave();
-  const { hero, party, squad } = partyOf(s, d, level, taken);
-  return (
-    <>
-      <div class="section__head"><span class="label">{isTrial(d) ? 'Entering' : 'Your party'}</span><span class="section__right">Power <b class="num">{partyPower(s, d, level, taken)}</b></span></div>
-      <ul class="partylist bparty" data-tour="party">
-        <li class="is-you"><RankPlate rank={licensedRank(s)} size={20} /><span class="bparty__who"><b>{s.hunter.name}</b><small>You</small></span><span class="num">{powerOf(hero.base)}</span></li>
-        {party.map((a) => (
-          <li key={a.id}><RankPlate rank={a.rank} size={20} /><span class="bparty__who"><b>{a.name}</b><small>{a.note ?? a.role}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></span><span class="num">{powerOf(a.base)}</span></li>
-        ))}
-        {squad.map((x) => (
-          <li key={x.id} class="is-shadow"><RankPlate rank={enemyById(x.enemyId)!.rank} size={20} /><span class="bparty__who"><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small>Shadow</small></span><span class="num">{shadows.power(x)}</span></li>
-        ))}
-      </ul>
-      {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
-      {!isPractice(d) && shadows.freeSlots(s) > 0 && <p class="hint">Shadow slots empty: {shadows.freeSlots(s)}</p>}
-      {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
-    </>
-  );
-}
-
-// ------------------------------------------------------------------ the Seals' window
-
-/** The Seals' window, over the brief: the assessment as it stands, the Ember they add, and a card to each Seal offered. */
-function openSeals(d: Dungeon) {
-  sealWindow.set(true);
-  openSheet({
-    title: `Seals: ${d.name}`,
-    onClose: () => sealWindow.set(false),
-    system: { icon: <SealArt size={34} class="is-on" />, kind: 'gates' },
-    render: (close) => <SealSheet d={d} close={close} />,
-  });
-}
-
-function SealSheet({ d, close }: { d: Dungeon; close: () => void }) {
-  const s = useSave();
-  wanted.use();
-  const { offer, taken, fixed } = sealsOn(s, d);
-  const { proj, pending } = useProjection(s, d, taken);
-  const { proj: plain } = useProjection(s, d, []);
-  // The Seal just pressed plays its stamp; one given back lifts.
-  const [pressed, setPressed] = useState<{ id: SealId; on: boolean } | null>(null);
-  const v = raid.verdict(proj.rate);
-  const rate = Math.round(proj.rate * 100);
-  const plainRate = Math.round(plain.rate * 100);
-  const ember = emberOf(taken, d);
-  const most = emberOf(offer, d);
-  const toggle = (id: SealId) => {
-    if (fixed) return;
-    const on = !taken.includes(id);
-    setSeal(d, id, on);
-    setPressed({ id, on });
-    if (on) { sfx.stamp(); buzz([10, 24, 34]); } else { sfx.blip(); buzz(8); }
-  };
-  return (
-    <div class="stack sealsheet">
-      {/* The gauge: the ring and the verdict as they stand under the Seals taken, and the Ember they add, a share of the bar to each. */}
-      <section class={`sysbox sgauge ${pending ? 'is-pending' : ''}`} data-tone={v.tone} aria-live="polite"
-        aria-label={`Assessment: ${v.text}. Clear rate ${rate}%. Ember on a clear: ${ember}.`}>
-        <span class="sgauge__ring">
-          <Ring p={proj} plain={plain} r={30} />
-          <b class="num">{rate}<small>%</small></b>
-        </span>
-        <span class="sgauge__body">
-          <span class="label">Assessment</span>
-          <b class="sgauge__verdict">{v.text}</b>
-          <small>Clear rate: {plainRate !== rate ? <><span class="bhero__was num">{plainRate}%</span> → <b class="num">{rate}%</b></> : <b class="num">{rate}%</b>}</small>
-        </span>
-        <span class="sgauge__ember">
-          <MatArt id={EMBER.id} size={30} />
-          <b class="num" key={ember}>+{ember}</b>
-          <small>Ember</small>
-        </span>
-        <span class="sgauge__bar" aria-hidden="true">
-          {offer.map((id) => <i key={id} class={taken.includes(id) ? 'is-on' : ''} style={`flex-grow: ${sealEmber(id, d.rank)}`} />)}
-          <small class="num">{ember}/{most}</small>
-        </span>
-      </section>
-
-      <ul class="sealcards">
-        {offer.map((id, i) => {
-          const on = taken.includes(id);
-          const x = SEALS[id];
-          const just = pressed?.id === id;
-          return (
-            <li key={id} style={`--i: ${i}`}>
-              <button type="button" role="switch" aria-checked={on} disabled={fixed}
-                class={`sysbox sealcard ${on ? 'is-on' : ''} ${just ? (pressed!.on ? 'is-stamped' : 'is-lifted') : ''}`}
-                onClick={() => toggle(id)}>
-                <span class="sealcard__slot" aria-hidden="true">
-                  <SealArt size={44} class={on ? 'is-on' : ''} />
-                  {just && pressed!.on && <i class="sealcard__ripple" />}
-                </span>
-                <span class="sealcard__body">
-                  <b>{x.name}</b>
-                  <small class="sealcard__rule">{x.rule}</small>
-                  <small class="sealcard__pay"><MatArt id={EMBER.id} size={14} />Ember +{sealEmber(id, d.rank)}{x.note ? <span class="muted"> · {x.note}</span> : null}</small>
-                </span>
-                <span class="sealcard__state">{on ? <><Glyph name="lock" />Sealed</> : 'Open'}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      <Btn kind="primary" block onClick={close}>{fixed ? 'Close' : 'Done'}</Btn>
-    </div>
-  );
-}

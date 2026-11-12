@@ -1528,7 +1528,7 @@ its Gate, and more for it; and a creature's special drop is a small mark on its 
   | Never Alone | The boss stands with one of its creatures | 3 | 3 to 9 |
   | Heavier Air | Creatures fight as if Ascension +1 | 3 | 3 to 9 |
 
-  Pressed in the Seals' window, a Seal is taken, and the brief's 24 runs play it (`raid.project` takes the
+  Pressed on the brief, a Seal is taken, and the brief's 24 runs play it (`raid.project` takes the
   Seals), so the assessment and the pay move together. The run keeps the Seals it walked in with
   (`run.seals`), and every rule they play reads that list, as every Ascension rule reads `run.ascension`.
   Carried out, a run pays nothing, Seals included. Lightless and Wardens Wake leave the assessment where it
@@ -1623,6 +1623,8 @@ challenge (the boss, its missions and Start side by side), all in
   creature's own numbers, as the fight's tip gives it, its immunities and resistances, and its special drop). The Feats and the party are rows.
 - **The dock** holds Enter The Gate alone. Ember's figures are in its orange wherever a Seal's pay is
   stated. And every line a player reads says defeat, never fell (the owner's call, `tests/voice.test.ts`).
+- **Since rebuilt** in step 6 as one dossier read in one scroll: the Seals' window and the four tabs are gone
+  ("The brief, rebuilt" under Kin and Formation).
 
 ### Shrines and rests — built
 
@@ -1845,6 +1847,22 @@ with what ARISE took from them.
   `Promotion ready: 3` promoting them all at once (`claimAll`), or `Shadow slots free: 2` opening the Army;
   and the Essence, the bound and the reserve. A tap on the stage opens the Army. The standing orders are set
   on the screen, a tap each, with what the one set does under them; their window is gone.
+- **The brief, rebuilt** (the owner's call: overhaul it and the windows and tabs it opens, freely, after the
+  references). It is one dossier, read top to bottom in one scroll, as the reference games lay a stage before
+  it is entered; its four tabs and the Seals' window are gone. The head is centred, as a boss is revealed: the
+  grade's light turning behind it, the grade small over the Gate's name large, the ring with the portal in it,
+  and the rate large beside the verdict. Under it four facts between hairlines, as Honkai: Star Rail and
+  Genshin Impact set a stage's recommended level by its enemies: `Your party` against the `Boss` in red, the
+  `Rooms` and the `Moves`. The objectives stay lines. The rewards are tiles, as those games lay a stage's
+  drops: each thing's art framed in its kind's colour, its figure in the corner, its name under it, a tracked
+  material in the Forge's ember. The Seals are pressed where they stand, as Hades sets its Pact of Punishment
+  in one place with the heat it adds: a wax seal to each, stamped red when pressed, the Ember they add at their
+  head, the last one touched saying what it does under them; the head's ring answers at once with the new
+  reading. The enemies are portraits in a row, the boss first and larger in red, as Honkai: Star Rail lists a
+  stage's enemies; one identified opens its card. The party is a lineup, as Darkest Dungeon lines its four up
+  before it embarks: the hunter, the Association's hunters and the Shadows, each over its power, a free slot
+  dashed, and the squad's Kin and Formation under them. The Feats keep their rows and stars. The map is folded
+  under its road and redraw, a tap opening it in its fog. Enter The Gate stays alone in the dock.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

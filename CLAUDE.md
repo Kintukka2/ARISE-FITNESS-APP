@@ -111,7 +111,7 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Seals (`data/seals.ts`, `core/seals.ts`) are taken on the brief and written to the run as `run.seals`;
   every rule they play reads the run's own list, as every Ascension rule reads `run.ascension`, and the
   brief's projection plays the ones taken. They pay Ascendant Ember only (`sealEmber`), never shards, in `raid.finish`.
-  The brief (`screens/Brief.tsx`) and its Seals' window share the Seals set and the projections made for them.
+  The brief (`screens/Brief.tsx`) presses them in place; its head and its Seals share the Seals set and the projections made for them.
   Calibration plays no Seals; the campaign takes a Gate's while the brief reads 75% or better.
 - Feats (`data/feats.ts`, `core/feats.ts`) are judged from the run's tally, counted in `raid.record`,
   and pay once each per Gate (`s.gates.feats`). Special drops (`data/drops.ts`) are read at the kill
