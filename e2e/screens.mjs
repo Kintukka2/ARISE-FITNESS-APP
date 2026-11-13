@@ -205,6 +205,8 @@ try {
   if (await page.locator('.bagtile__dupe').count()) throw new Error('A FUSION MARK IS STILL ON THE BAG');
   await page.locator('.bag__views .seg__btn', { hasText: 'Sets' }).click(); await sleep(700); await snap('inventory-sets');
   if (!(await page.locator('.sheet.is-top .codexrow').count())) throw new Error('THE SETS VIEW HAS NO ROWS');
+  // A 4-piece's blessing is named on one line, never squeezed into a box a letter wide.
+  if (await page.locator('.sheet.is-top .settiers__boon b').evaluateAll((els) => els.some((e) => e.getBoundingClientRect().height > 30))) throw new Error('A SET BLESSING NAME IS SQUEEZED');
   await page.locator('.sheet.is-top .codexrow').first().click(); await sleep(500);
   if (!(await page.locator('.sheet.is-top .setcard').count())) throw new Error('A SET ROW DID NOT OPEN ITS WINDOW');
   await close(); await sleep(250);
