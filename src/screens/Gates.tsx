@@ -359,10 +359,9 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
 
 /** The hunter's grade with the Association: what it opens, and the licence that lifts the hold, where there is one to buy. */
 function openGrade() {
-  const s = store.get();
   openSheet({
-    // Its number is on the licence itself, so the head names the window only.
-    title: 'Licence', system: { icon: <Sigil rank={licensedRank(s)} size={40} />, kind: 'gates' },
+    // Its number and its seal are on the licence itself, so the head names the window only and holds no icon (the owner's call).
+    title: 'Licence', system: { icon: null, kind: 'gates' },
     render: () => {
       const s = store.get();
       const mine = licensedRank(s);
@@ -539,40 +538,77 @@ function NextLevel() {
   );
 }
 
-/** The marks: one for every level opened, each set for good, its sets as diamonds. */
+/** Each mark's sigil: the Edge's crossed blades, the Bulwark's heart, the Ward's shield, the Legion's Shadows, the Long Stride's steps. */
+const MARK_GLYPH: Record<string, string> = { edge: 'power', bulwark: 'heart', ward: 'shield', legion: 'shadows', stride: 'steps' };
+
+/** A mark's seal: its sigil in a diamond of gold, brighter for every set, its sets as four diamonds under it, the one just set lit. */
+function MarkSeal({ m, n, lit }: { m: Mark; n: number; lit?: number }) {
+  return (
+    <span class={`markseal ${n ? 'is-set' : ''} ${n >= MARK_MAX ? 'is-full' : ''}`} style={`--sets: ${n / MARK_MAX}`} aria-hidden="true">
+      <span class="markseal__gem"><Glyph name={MARK_GLYPH[m.id] ?? 'crown'} /></span>
+      <span class="markseal__pips">{Array.from({ length: MARK_MAX }, (_, i) => <i key={i} class={`${i < n ? 'is-on' : ''} ${lit === i ? 'is-new' : ''}`} />)}</span>
+    </span>
+  );
+}
+
+/**
+ * The marks, after Hades' Mirror of Night and Darkest Dungeon II's Altar of Hope: a seal to each in a grid of two, its
+ * sigil in gold, its sets as diamonds, what it gives now and what the next set adds. A seal that can take a set glows
+ * and is tapped to set it; one at its most burns brightest. How many are set of all, and how many wait, at its head.
+ */
 function MarkList() {
   const s = useSave();
   const waiting = marks.unset(s);
-  // The System's offer, as a purchase is: the mark, what it adds, where it stands, and that it is for good.
+  const setAll = MARKS.reduce((k, m) => k + marks.setOn(s, m.id), 0);
+  // The System's offer, as a purchase is: the mark, what it adds, where it stands, and that it is for good;
+  // the seal before and after under its lines.
   const set = async (m: Mark) => {
+    sfx.tap();
     const n = marks.setOn(store.get(), m.id);
-    const ok = await sys(system.offer([
-      'Would you like to set this mark?',
-      system.tag(m.name),
-      system.gain(marks.markText(m)),
-      `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)} · Marks to set: ${marks.unset(store.get())}`,
-      system.red('A mark cannot be moved once set.'),
-    ], 'gold', 'Set', 'Cancel'));
+    const ok = await sys({
+      ...system.offer([
+        'Would you like to set this mark?',
+        system.tag(m.name),
+        system.gain(marks.markText(m)),
+        `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)} · Marks to set: ${marks.unset(store.get())}`,
+        system.red('A mark cannot be moved once set.'),
+      ], 'gold', 'Set', 'Cancel'),
+      body: () => <div class="markstamp"><MarkSeal m={m} n={n} /><Glyph name="chevron" class="markstamp__to" /><MarkSeal m={m} n={n + 1} lit={n} /></div>,
+    });
     if (ok !== true || !store.update((x) => marks.setMark(x, m.id))) return;
     sfx.success();
     buzz([14, 30, 22]);
-    await sys({ ...system.notify([`${system.tag(m.name)} has been set.`, system.gain(marks.markText(m, n + 1))], 'gold'), typed: false });
+    await sys({
+      ...system.notify([`${system.tag(m.name)} has been set.`, system.gain(marks.markText(m, n + 1))], 'gold'), typed: false,
+      body: () => <div class="markstamp is-set"><MarkSeal m={m} n={n + 1} lit={n} /></div>,
+    });
   };
   return (
     <section class="marks" data-tour="asc-marks" aria-label="Marks">
-      <span class="label">Marks{waiting ? <> · <span class="marks__waiting">{waiting} to set</span></> : ''}</span>
-      <ul class="marks__list">
+      <header class="marks__head">
+        <span class="label">Marks</span>
+        {waiting > 0 && <span class="marks__waiting">{waiting} to set</span>}
+        <small class="marks__count">Set <b class="num">{setAll}</b>/{marks.MARKS_MOST}</small>
+      </header>
+      <ul class="markgrid">
         {MARKS.map((m) => {
           const n = marks.setOn(s, m.id);
+          const ready = waiting > 0 && marks.canSet(s, m.id);
+          const body = (
+            <>
+              <MarkSeal m={m} n={n} />
+              <b class="markcard__name">{m.name}</b>
+              <small class="markcard__now">{n ? marks.markText(m, n) : `Each: ${marks.markText(m)}`}</small>
+              {n > 0 && n < MARK_MAX && <small class="markcard__next">Next: {marks.markText(m, n + 1)}</small>}
+              {ready && <span class="markcard__cta">Set</span>}
+            </>
+          );
+          const cls = `markcard ${n ? 'is-set' : ''} ${n >= MARK_MAX ? 'is-full' : ''} ${ready ? 'is-ready' : ''}`;
           return (
-            <li key={m.id} class={n ? 'is-set' : ''}>
-              <div class="grow">
-                <span class="marks__name"><b>{m.name}</b>
-                  <span class="marks__pips" role="img" aria-label={`Set ${n} of ${MARK_MAX}`}>{Array.from({ length: MARK_MAX }, (_, i) => <i key={i} class={i < n ? 'is-on' : ''} />)}</span>
-                </span>
-                <small class="muted">{n ? marks.markText(m, n) : `Each: ${marks.markText(m)}`}</small>
-              </div>
-              {waiting > 0 && marks.canSet(s, m.id) && <Btn kind="gold" size="sm" onClick={() => void set(m)}>Set</Btn>}
+            <li key={m.id}>
+              {ready
+                ? <button type="button" class={cls} aria-label={`${m.name}, set ${n} of ${MARK_MAX}: set it`} onClick={() => void set(m)}>{body}</button>
+                : <div class={cls} aria-label={`${m.name}, set ${n} of ${MARK_MAX}`}>{body}</div>}
             </li>
           );
         })}

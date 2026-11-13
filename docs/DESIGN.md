@@ -1931,6 +1931,11 @@ with what ARISE took from them.
   level on a line, lit where its rule is in force, a tap entering at it, the next level locked at the top with its
   road and Face The Trial. The level chips and the separate Rules in force are gone; the marks show their sets as
   four diamonds. A head with two tools (help and close) now leaves room for both.
+- **The marks as seals** (the owner's call, after Hades' Mirror of Night and Darkest Dungeon II's Altar of Hope). A
+  seal to each mark, two to a row: its sigil in a diamond of gold that brightens with every set, its sets as four
+  diamonds, what it gives now and what the next set adds; a seal that can take a set is tapped to set it. The System's
+  offer to set one carries the seal before and after, and its answer the seal stamped down, the new diamond landing.
+  The licence's head holds no icon: the seal is on the card.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

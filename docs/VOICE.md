@@ -536,8 +536,8 @@ for advancement. Every quest's name wears its type, and these are the names:
   rows, each with its potion, so a potion is one tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
-- **The licence's window**, `LICENCE` (its number is on the licence, so the head names the window only: the owner's
-  call, after it stood twice), opens on the licence itself, as the Association issues it: the grade's seal in a ring,
+- **The licence's window**, `LICENCE` (its number and its seal are on the licence, so the head names the window only
+  and holds no icon: the owner's calls, after both stood twice), opens on the licence itself, as the Association issues it: the grade's seal in a ring,
   `Hunter` over the hunter's name and `Licence` over their number, the grade's letter vast and faint behind, the card
   washed in the grade's colour; under it `Association grade` and `Gates open` as facts, with no box. `Rank` stands
   beside them only where the hunter's own rank differs from the grade the board answers to (held at D-Rank without the
@@ -551,8 +551,15 @@ for advancement. Every quest's name wears its type, and these are the names:
   line, each a diamond with its level over its rule (`[Thin Rest]` over `A rest heals 50% of what it would.`), lit gold
   where its rule is in force, the one entered at filled and tagged `Entering`, a tap on an open rung entering at it;
   the next level locked at the top, a dashed diamond with a lock, its rule, and under `To open Ascension 4` its two
-  steps and **Face The Trial**; past the ruled levels `[Beyond]` as one rung. `Marks` last, `1 to set` in gold, a row
-  each between hairlines, its sets as four diamonds (read aloud `Set 1 of 4`), the Set buttons keeping their boxes.
+  steps and **Face The Trial**; past the ruled levels `[Beyond]` as one rung. `Marks` last, rebuilt at the owner's call after Hades'
+  Mirror of Night and Darkest Dungeon II's Altar of Hope: `1 to set` in a gold badge and `Set 2/20` at its head, then a
+  seal to each mark, two to a row (the last alone across the row): its sigil in a diamond of gold, brighter for every
+  set (the Edge's crossed blades, the Bulwark's heart, the Ward's shield, the Legion's Shadows, the Long Stride's
+  steps), its sets as four diamonds under it, its name, what it gives now (`Each: Maximum HP +6%` while none is set),
+  `Next: Attack and magic +8%` under it, and `Set` at its foot while a set waits, the whole seal tapped to set it (read
+  aloud `Mark of the Edge, set 1 of 4: set it`). The offer to set one, `Would you like to set this mark?`, carries
+  the seal before and after under its lines, the new diamond lit; its answer, `[Mark of the Edge] has been set.`, the
+  seal as it now stands, stamped down, the new diamond landing.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
   the bracketed name, one line under it, and the count in a hairline box: `5/10`, `0/3`, `Closed`.
   A tile says nothing its window does not; the window holds the goals, the hints and the rewards.
