@@ -1903,6 +1903,15 @@ with what ARISE took from them.
   a padlock, now a strongbox (the padlock stays for a seal); the boss a skull, now a demon's skull, on the board
   and the brief's objective too. The HUD's `Found` is the chest. The room scenes fill the screen: the mark vast
   and faint behind light turning round a larger emblem, the line and the choices at the foot.
+- **The board, rebuilt** (the owner's call: overhaul it and what it opens, freely, after the references). Its four
+  boxed counts are facts between hairlines, as the brief sets its own: Open, Entered (the open Gates walked into,
+  in place of Never Cleared), Closed (for Closed Today) and Redraw. The grades' boxed tabs are a rail of
+  portals, each grade's in its colour, the one picked lit and underlined, pinned at the top as the board scrolls.
+  A grade's band is a divider, its letter large in its colour over a rule. Each Gate is a stage card, as Honkai:
+  Star Rail and Solo Leveling: Arise list their stages: its grade's colour down its left, a larger portal, its name
+  over two lines rather than cut, and at its right the boss's power by the power mark (`?` until known), as a stage
+  states its recommended level. Its counts (the Shadows bound, its Feats, the set blueprints, the Forge's anvil)
+  lose their boxes; what calls the hunter there (Association, Quest, Chosen, Training, Bounty) keeps its pill.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

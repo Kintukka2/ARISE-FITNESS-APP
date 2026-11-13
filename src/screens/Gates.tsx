@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
+import { powerOf } from '@/core/combat';
 import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import * as gear from '@/core/gear';
 import { SETS } from '@/data/sets';
@@ -103,29 +104,34 @@ function BoardSheet() {
   const pick = (b: Band) => { sfx.tap(); boardBand = b; setBand(b); };
   const shown = gates.filter((d) => band === 'all' || (band === 'marked' ? !!marks.get(d.id) : d.rank === band));
   const closed = s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0;
-  const fresh = gates.filter((d) => !isPractice(d) && !s.gates.cleared.includes(d.id)).length;
+  // The open Gates the hunter has walked into, ever: a Gate cleared before the list was kept counts too.
+  const entered = gates.filter((d) => !isPractice(d) && (s.gates.entered.includes(d.id) || s.gates.cleared.includes(d.id))).length;
   const grades = RANKS.filter((r) => shown.some((d) => d.rank === r));
   return (
     <div class="stack gboard">
-      <div class="bag__head gboard__sum">
-        <span><b class="num">{gates.length}</b><small>Open</small></span>
-        <span class={fresh ? 'is-new' : ''}><b class="num">{fresh}</b><small>Never Cleared</small></span>
-        <span><b class="num">{closed}</b><small>Closed Today</small></span>
-        <span><b class="num countdown">{hhmmss(msUntilMidnight())}</b><small>Redraw</small></span>
-      </div>
+      {/* The day at a glance, read not tapped, so no box: the facts between hairlines, as the brief sets its own. */}
+      <dl class="bfacts gboard__facts">
+        <div><dt>Open</dt><dd class="num">{gates.length}</dd></div>
+        <div><dt>Entered</dt><dd class="num">{entered}</dd></div>
+        <div><dt>Closed</dt><dd class="num">{closed}</dd></div>
+        <div class="is-redraw"><dt>Redraw</dt><dd class="num countdown"><Glyph name="timer" />{hhmmss(msUntilMidnight())}</dd></div>
+      </dl>
+      {/* The rail, as the reference games filter their stages: a portal to each grade in its colour, lit and underlined when picked. */}
       <div class="gbands" role="tablist" aria-label="Filter Gates">
-        <button type="button" role="tab" aria-selected={band === 'all'} class={`gband-tab ${band === 'all' ? 'is-on' : ''}`} onClick={() => pick('all')}>All<small class="num">{gates.length}</small></button>
+        <button type="button" role="tab" aria-selected={band === 'all'} aria-label={`All, ${gates.length}`} class={`gband-tab is-all ${band === 'all' ? 'is-on' : ''}`} onClick={() => pick('all')}>
+          <span class="gband-tab__ring"><b>All</b></span><small class="num">{gates.length}</small>
+        </button>
         {marked > 0 && (
-          <button type="button" role="tab" aria-selected={band === 'marked'} aria-label="Marked" title="Marked" class={`gband-tab is-marked ${band === 'marked' ? 'is-on' : ''}`} onClick={() => pick('marked')}>
-            <Glyph name="star" /><small class="num">{marked}</small>
+          <button type="button" role="tab" aria-selected={band === 'marked'} aria-label={`Marked, ${marked}`} title="Marked" class={`gband-tab is-marked ${band === 'marked' ? 'is-on' : ''}`} onClick={() => pick('marked')}>
+            <span class="gband-tab__ring"><Glyph name="star" /></span><small class="num">{marked}</small>
           </button>
         )}
         {RANKS.map((r) => {
           const n = gates.filter((d) => d.rank === r).length;
           return (
-            <button type="button" role="tab" key={r} aria-selected={band === r} data-rank={r} class={`gband-tab ${band === r ? 'is-on' : ''} ${n ? '' : 'is-empty'}`}
+            <button type="button" role="tab" key={r} aria-selected={band === r} aria-label={`${r}-Rank, ${n}`} data-rank={r} class={`gband-tab ${band === r ? 'is-on' : ''} ${n ? '' : 'is-empty'}`}
               onClick={() => { if (n) pick(r); else { sfx.tap(); toast(`No ${r}-Rank Gate opened today.`, 'warn'); } }}>
-              {r}<small class="num">{n}</small>
+              <span class="gband-tab__ring ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span><small class="num">{n}</small>
             </button>
           );
         })}
@@ -142,12 +148,10 @@ function GradeBand({ s, r, gates, marks, k }: { s: Save; r: Rank; gates: Dungeon
   const shut = gates.every((d) => entryBlock(s, d) === 'licence');
   return (
     <section class={`gband ${shut ? 'is-shut' : ''}`} style={`--rc: var(--rank-${r}); --k: ${k}`}>
+      {/* A grade is a divider, not a box: its letter in its colour, what a clear pays, how many stand open, a rule in its colour. */}
       <header class="gband__head">
-        <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
-        <span class="gband__name">
-          <b>{r}-Rank</b>
-          <small>Clear: XP <b class="num">{Math.round(GATE_XP[r] * pay)}</b> · <Shards n={shop.gateShards(r, pay)} /></small>
-        </span>
+        <b class="gband__rank"><span class="gband__letter">{r}</span>-Rank</b>
+        <small class="gband__pay">Clear: XP <b class="num">{Math.round(GATE_XP[r] * pay)}</b> · <Shards n={shop.gateShards(r, pay)} /></small>
         <span class="gband__count">{shut ? <><Glyph name="lock" /> Licence</> : <><b class="num">{gates.length}</b> {gates.length === 1 ? 'Gate' : 'Gates'}</>}</span>
       </header>
       <ul class="glist">
@@ -179,6 +183,8 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
   const bounty = !cleared && !practice ? shop.gateShards(d.rank, 2 * ascension.payShare(ascension.entryLevel(s, d, false))) : 0;
   // The materials the hunter has tagged to find that this Gate leaves: the Forge's anvil, and their names.
   const tracked = practice ? [] : forge.trackedAt(s, d, ascension.entryLevel(s, d, false));
+  // The boss's power once it is known, at the card's right as the reference games set a stage's recommended level.
+  const might = known && boss ? powerOf(boss.base) : null;
   return (
     <li style={`--i: ${Math.min(i, 8)}`}>
       <button type="button"
@@ -192,7 +198,7 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
         </span>
         <span class="gaterow__body">
           <span class="gaterow__name"><b>[{d.name}]</b></span>
-          <small>{locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?'}</small>
+          <small class="gaterow__boss">{locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?'}</small>
           {/* The counts first, the Shadows bound and the set blueprints known, so they line up row to row; then what marks it. */}
           <span class="gaterow__tags">
             {inside.length > 0 && !practice && (
@@ -224,6 +230,13 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
             )}
           </span>
         </span>
+        {locked
+          ? <span aria-hidden="true" />
+          : (
+            <span class={`gaterow__might ${might === null ? 'is-unknown' : ''}`} aria-label={might === null ? 'Boss power unknown' : `Boss power ${might}`}>
+              <Glyph name="power" /><b class="num">{might ?? '?'}</b>
+            </span>
+          )}
         <Glyph name="chevron" class="gaterow__go" />
       </button>
     </li>

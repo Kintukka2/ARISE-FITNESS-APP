@@ -264,6 +264,12 @@ try {
   await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
   // The board: a band to each grade, a row to each Gate; the rail filters by grade, and to the marked ones.
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
+  // The day as facts, the grades as a rail of portals, and each Gate's boss power at its card's right.
+  if ((await page.locator('.sheet.is-top .gboard__facts > div').count()) !== 4) throw new Error('THE BOARD DOES NOT STATE ITS DAY');
+  if ((await page.locator('.sheet.is-top .gboard__facts dt').allInnerTexts()).map((x) => x.toLowerCase()).join(',') !== 'open,entered,closed,redraw') throw new Error('THE BOARD\'S FACTS ARE NOT OPEN, ENTERED, CLOSED AND REDRAW');
+  if ((await page.locator('.sheet.is-top .gband-tab .ga-portal').count()) !== 6) throw new Error('THE RAIL HAS NO PORTAL TO EACH GRADE');
+  if (!(await page.locator('.sheet.is-top .gaterow__might').count())) throw new Error('NO GATE STATES ITS BOSS\'S POWER');
+  if (await page.evaluate(() => getComputedStyle(document.querySelector('.sheet.is-top .gbands')).position) !== 'sticky') throw new Error('THE RAIL DOES NOT STAY AT THE TOP');
   // A Gate home to a set counts its pieces held, of all; it names no set.
   if (await page.locator('.sheet.is-top .gtag.is-set').count()) throw new Error('THE BOARD STILL NAMES SETS');
   // The material tracked at the Forge marks the Gates that leave it with the anvil.
