@@ -117,7 +117,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Every Gate has a budget of moves, set by the size of its map. You never see it, or the moves you have spent.',
       'Entering a room is a move, and so is every corridor walked back through cleared rooms, the shortest way.',
       `Past the budget the Gate stirs: every creature you have not yet fought, and the boss, is ${Math.round(CLOCK.stir * 100)}% stronger for each move over.`,
-      `${CLOCK.red} moves past the budget, the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
+      `Stir long enough and the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
       'The System’s road always fits inside the budget, so the brief’s verdict and Auto never stir.',
       'The Practice Gate, the Pale Spire and the Trials have no clock.',
       ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'font', 'trap', 'event', 'landmark', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),

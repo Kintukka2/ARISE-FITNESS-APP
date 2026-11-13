@@ -373,7 +373,8 @@ try {
   await sleep(400); await snap('arena-map');
   // Orders are the Shadows screen's: the map gives none.
   if (await page.locator('.arena .chips--orders, .arena .runorders').count()) throw new Error('THE MAP STILL GIVES ORDERS');
-  if (!(await page.locator('.runstrip__cells').count())) throw new Error('THE RUN STRIP HAS NO CELLS');
+  if ((await page.locator('.runhud__stat').count()) !== 3) throw new Error('THE RUN HUD DOES NOT CARRY ITS ALLIES, BANKED AND FOUND');
+  if (await page.evaluate(() => document.querySelector('.arena').scrollWidth > window.innerWidth)) throw new Error('THE MAP SCREEN SCROLLS SIDEWAYS');
   await page.locator('button.gnode.is-next').first().click();
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
@@ -460,12 +461,12 @@ try {
     if (!(await page.locator('.dmap__you').count())) throw new Error('THE MAP DOES NOT SHOW WHERE THE HUNTER STANDS');
     // Walk back to the entrance: the way out.
     await page.locator('.dmap button.gnode--entrance').click(); await sleep(700);
-    if (!(await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count())) throw new Error('THE ENTRANCE DID NOT OFFER A WITHDRAWAL');
+    if (!(await page.locator('.mapdock .btn', { hasText: /^Withdraw$/ }).count())) throw new Error('THE ENTRANCE DID NOT OFFER A WITHDRAWAL');
     await snap('arena-map-entrance');
     // The fog: unseen rooms show nothing of what is in them, and a Gate Survey charts every one.
     if (!(await page.locator('.dmap .droom.is-fog').count())) throw new Error('THE MAP HAS NO FOG');
-    // The bag at the plan's corner opens the wheel: a slot to each item, the hub what a tapped one does.
-    const bag = page.locator('.arena__map .dmap__corner .bagmark');
+    // The bag in the dock opens the wheel: a slot to each item, the hub what a tapped one does.
+    const bag = page.locator('.mapdock .bagmark');
     if (!(await bag.count())) throw new Error('THE MAP HAS NO BAG');
     if (!/\d/.test(await bag.innerText())) throw new Error('THE BAG SHOWS NO COUNT');
     const slot = (name) => page.locator(`.bagwheel__slot[aria-label^="${name}"]`);
@@ -497,7 +498,7 @@ try {
     await snap('arena-map-surveyed');
     // The Gate clock counts, but the hunter never sees the moves (the owner's call): no meter inside the budget,
     // no room's cost drawn on it or read aloud with it.
-    if (await page.locator('.runstrip .gclock').count()) throw new Error('THE RUN SHOWS ITS MOVES INSIDE THE BUDGET');
+    if (await page.locator('.arena__map .gclock').count()) throw new Error('THE RUN SHOWS ITS MOVES INSIDE THE BUDGET');
     if (await page.locator('.dmap button.droom[aria-label*="move"]').count()) throw new Error('A ROOM SAYS WHAT IT COSTS IN MOVES');
     if (await page.evaluate(() => JSON.parse(localStorage.getItem('arise-rpg:save')).gates.raid.moves) !== 2) throw new Error('A ROOM ENTERED AND A WALK BACK DID NOT COST 2 MOVES');
     /** Set the open run's clock (moves past its budget, or as they were), and go back in. Returns the moves it had. */
@@ -520,9 +521,9 @@ try {
     await snap('arena-stir-window'); await drain();
     await clockTo({ over: 9 });
     if (!(await page.locator('.dmapwrap.is-stir').count())) throw new Error('A STIRRING GATE\'S PLAN DOES NOT STIR');
-    if (!(await page.locator('.runstrip .gclock.is-stir').count())) throw new Error('A STIRRING GATE SHOWS NO CLOCK');
-    if (/\/|left/.test(await page.locator('.runstrip .gclock').innerText())) throw new Error('THE STIRRING CLOCK COUNTS MOVES');
-    await page.locator('.runstrip').screenshot({ path: `${OUT}/arena-clock.png` });
+    if (!(await page.locator('.arena__map .gclock.is-stir').count())) throw new Error('A STIRRING GATE SHOWS NO CLOCK');
+    if (/\/|left/.test(await page.locator('.arena__map .gclock').innerText())) throw new Error('THE STIRRING CLOCK COUNTS MOVES');
+    await page.locator('.arena__map > .gclock').screenshot({ path: `${OUT}/arena-clock.png` });
     await snap('arena-map-stirring');
     // One move short of red, one more: the Gate turns red, and the way out seals.
     await clockTo({ over: 19 });
@@ -535,11 +536,20 @@ try {
     await sleep(700); await snap('arena-red-window'); await drain(); await sleep(400);
     if (!(await page.locator('.arena__head .arena__red', { hasText: 'Red Gate' }).count())) throw new Error('A RED GATE KEPT ITS NAME IN THE HEAD');
     if (!(await page.locator('.arena.is-redgate .dmapwrap.is-red').count())) throw new Error('A RED GATE\'S PLAN IS NOT RED');
-    if (await page.locator('.arena__map .btn', { hasText: /^Withdraw$/ }).count()) throw new Error('A RED GATE OFFERED A WITHDRAWAL');
-    if (!(await page.locator('.arena__map', { hasText: 'The way out is sealed' }).count())) throw new Error('A SEALED WAY OUT SAID NOTHING');
+    if (await page.locator('.mapdock .btn', { hasText: /^Withdraw$/ }).count()) throw new Error('A RED GATE OFFERED A WITHDRAWAL');
+    if (!(await page.locator('.mapdock', { hasText: 'The way out is sealed' }).count())) throw new Error('A SEALED WAY OUT SAID NOTHING');
     await snap('arena-map-red');
     // Back to the clock as it was, for the System to finish the road.
     await clockTo({ moves });
+    // A room stepped into is a scene: its mark in its kind's light, its name, its line, and its choices with
+    // their odds. Auto then makes the choice and finishes the road.
+    const ev = page.locator('.dmap button.gnode--event.is-next').first();
+    if (await ev.count()) {
+      await ev.click();
+      await page.waitForSelector('.nodepanel', { timeout: 10000 }); await sleep(600);
+      if (!(await page.locator('.nodepanel__emblem').count())) throw new Error('A ROOM STEPPED INTO HAS NO EMBLEM');
+      await snap('arena-scene');
+    }
   }
   await autoToResults();
   await revealLoot();
@@ -567,7 +577,7 @@ try {
     await page.waitForSelector('.arena', { timeout: 10000 });
     await page.waitForSelector('button.gnode.is-next', { timeout: 20000 });
     // Up a tower too, the bag sits at the map's corner: a Health Potion is drunk between floors.
-    if (!(await page.locator('.arena__map .dmap__corner .bagmark').count())) throw new Error('A TOWER HAS NO BAG');
+    if (!(await page.locator('.mapdock .bagmark').count())) throw new Error('A TOWER HAS NO BAG');
     await sleep(300); await snap('spire-map');
     await page.locator('button.gnode.is-next').first().click();
     // A floor the party clears before the hunter's turn comes back to the map with no turn to give.

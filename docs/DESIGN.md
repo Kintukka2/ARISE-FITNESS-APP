@@ -1881,6 +1881,19 @@ with what ARISE took from them.
   room's cost is drawn on it or read aloud with it. The Guide says what a move is and what the budget does,
   with no figure for the budget. Auto, the brief's verdict and calibration read the clock as before, so no
   tuning moves.
+- **The map, rebuilt** (the owner's call: overhaul the screen and what it opens, freely, after the references,
+  and take the 20 moves out of the Guide). The head is the Gate's title card, as Persona 3 Reload names a floor:
+  the grade's plate, `E-Rank Gate · Floor 1 of 2` over the Gate's name, in place of `Choose your way`. The run
+  strip's box is gone: one HUD row, as Slay the Spire keeps a run in view, the heart and the health bar, then
+  Allies, Banked and Found, each a mark and figure over its word, the blessings under it as Hades lines its
+  boons. The last line of the feed sits under it with its tone's rule down its left. The Gate clock is a band
+  over the plan, and only once the Gate stirs, as Darkest Dungeon's torch sits over its corridor. The plan is
+  cropped to its floor's rooms, every one, found or not, so it fills its frame instead of carrying empty
+  columns, and sits in the middle of the room it has; unseen rooms and cleared rooms lose their words, the
+  mark saying it. Withdraw, the hint and the bag are docked at the foot, the bag in the thumb's reach. A room
+  stepped into is a scene: its mark large in a ring lit in its kind's colour, its title, its line, and each
+  choice a row with a bar filled to its odds. The Guide says the Gate turns red if it stirs long enough, with
+  no count of moves.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

@@ -74,17 +74,23 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   const floors = Math.max(1, m.floors.length);
   const f = Math.min(floors - 1, floor ?? here?.floor ?? 0);
   const on = (x: MapNode) => (x.floor ?? 0) === f;
-  const rows = m.floors[f]?.rows ?? m.rows;
-  const cols = m.floors[f]?.cols ?? m.cols;
+  // The plan is cropped to the floor's rooms, every one of them, found or not, so it fills the frame and never
+  // shifts as a secret is found; an empty floor keeps its whole plan.
+  const rooms = m.nodes.filter(on);
+  const ox = rooms.length ? Math.min(...rooms.map((x) => x.x!)) : 0;
+  const oy = rooms.length ? Math.min(...rooms.map((x) => x.y!)) : 0;
+  const cols = rooms.length ? Math.max(...rooms.map((x) => x.x!)) - ox + 1 : m.floors[f]?.cols ?? m.cols;
+  const rows = rooms.length ? Math.max(...rooms.map((x) => x.y!)) - oy + 1 : m.floors[f]?.rows ?? m.rows;
+  const X = (x: MapNode) => x.x! - ox;
+  const Y = (x: MapNode) => x.y! - oy;
   const way = [m.start!, ...road];
   const onRoad = (a: string, b: string) => {
     const i = way.indexOf(a);
     const j = way.indexOf(b);
     return i >= 0 && j >= 0 && Math.abs(i - j) === 1;
   };
-  const cx = (x: MapNode) => x.x! * 10 + 5;
-  const cy = (x: MapNode) => x.y! * 10 + 5;
-  const rooms = m.nodes.filter(on);
+  const cx = (x: MapNode) => X(x) * 10 + 5;
+  const cy = (x: MapNode) => Y(x) * 10 + 5;
   const halls: [MapNode, MapNode][] = [];
   for (const x of rooms) for (const id of x.next) if (x.id < id && on(m.byId[id])) halls.push([x, m.byId[id]]);
   const secret = passages(m, done, openings).map(([x, y]) => [m.byId[x], m.byId[y]] as const).filter(([x]) => on(x));
@@ -134,7 +140,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           ))}
         </svg>
         {tolls.filter((t) => !t.paid).map((t) => {
-          const style = { left: `${(((t.x.x! + t.y.x!) / 2 + 0.5) / cols) * 100}%`, top: `${(((t.x.y! + t.y.y!) / 2 + 0.5) / rows) * 100}%` };
+          const style = { left: `${(((X(t.x) + X(t.y)) / 2 + 0.5) / cols) * 100}%`, top: `${(((Y(t.x) + Y(t.y)) / 2 + 0.5) / rows) * 100}%` };
           // A seal the hunter can break is tapped to break it: it asks first.
           const can = onToll ? tollable.find((k) => k.key === pairKey(t.x.id, t.y.id)) : undefined;
           return can
@@ -142,12 +148,12 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             : <span key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll" aria-hidden="true" style={style}><Glyph name="lock" /></span>;
         })}
         {rooms.map((x) => {
-          const style = { gridColumn: x.x! + 1, gridRow: x.y! + 1 };
+          const style = { gridColumn: X(x) + 1, gridRow: Y(x) + 1 };
           if (fogged(x) && x.secret) return null;
           if (fogged(x)) {
             return (
               <span key={x.id} class="gnode droom is-fog" style={style} title="Unseen" aria-label="Unseen room">
-                <Glyph name="unknown" />{!compact && <small>Unseen</small>}
+                <Glyph name="unknown" />
               </span>
             );
           }
@@ -182,7 +188,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
                 </span>
               )}
               <Glyph name={glyph} />
-              {!compact && <small>{spent ? 'Used' : path ?? name}</small>}
+              {!compact && !plain && <small>{spent ? 'Used' : path ?? name}</small>}
               {x.secret && <span class="droom__secret" aria-hidden="true" />}
             </>
           );
@@ -215,7 +221,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`} aria-label={`${name}${who}`}>{body}</span>;
         })}
         {here && on(here) && (
-          <span class="dmap__you" aria-label={`You are here: ${NODE[looksOf(here)].name}`} style={{ left: `${((here.x! + 0.5) / cols) * 100}%`, top: `${((here.y! + 0.5) / rows) * 100}%` }}>
+          <span class="dmap__you" aria-label={`You are here: ${NODE[looksOf(here)].name}`} style={{ left: `${((X(here) + 0.5) / cols) * 100}%`, top: `${((Y(here) + 0.5) / rows) * 100}%` }}>
             <i class="dmap__you-tag">You</i>
           </span>
         )}

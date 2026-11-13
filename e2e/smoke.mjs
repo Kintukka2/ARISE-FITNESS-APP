@@ -204,7 +204,7 @@ async function raidGate(row, name, auto = false) {
       // Walk away to the entrance, then back to the rest kept for later, and use it, once.
       await page.locator('.dmap button.gnode--entrance').click(); await sleep(600);
       // No button under the plan: the rest found is tapped on the plan, and asks.
-      if (await page.locator('.arena__map .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST STILL HAS A BUTTON UNDER THE PLAN');
+      if (await page.locator('.arena__map .btn, .mapdock .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST STILL HAS A BUTTON UNDER THE PLAN');
       await page.locator('.dmap button.droom.gnode--rest.is-restable').click(); await sleep(600);
       if (!(await visible('.syswin:has-text("Would you like to rest now?")'))) throw new Error('A REST FOUND AND KEPT DID NOT ASK WHEN TAPPED');
       await snap('practice-rest-ask');
