@@ -918,7 +918,10 @@ back, and **Recycle**. The Sets view: `Designs discovered` as a ring, an arc to 
 designs of it found, round `26` over `/543` and `Designs`, beside each rarity's count and bar; then each rarity's
 sets (`Rare sets` and `1/4` complete) as rows, as Equipment draws a set worn: its mark, its name, `2/3` and
 `Worn 2`, a square to each piece (its art when held, a blueprint's sign when known, its slot when seen, `?` when
-not), and what two and three pay, lit once worn. A row opens the set's own window.
+not), and what two and three pay under `2-piece` and `3-piece`, lit once worn. A row opens the set's own window.
+Cleaned at the owner's call (too many boxes, awkward spacing): the head, the kinds, the toolbar, the collection
+and the set rows stand unframed, the set rows a list with a hairline between them; the cards, the dock, Quick
+select's chips and the recycle bar keep their edges, being what is tapped.
 
 ## Valcorde
 
@@ -1152,6 +1155,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Familiarity | affinity, mastery, proficiency, weapon XP | What a weapon's design grows by the creatures defeated while it is carried: `Familiarity 3`, `Familiarity points: 150/260`. It belongs to the design, never the piece |
 | found whole | dropped, looted | A piece a run left as a piece, not as a blueprint: rare. "A piece found whole" |
 | Loadout | build, preset, outfit | What was worn, saved: `Loadout I`, `Loadout II`, `Loadout III` |
+| 2-piece, 3-piece | (2), (3) in a box, set of 2 | What a set pays for that many of its pieces worn, as Genshin Impact and World of Warcraft write it: `2-piece` over `Defence +10%`, `3-piece` over `Maximum HP +12%`. The labels stand before the bonus, unboxed |
 | Effect chance | status chance, stat chance | The chance a hit inflicts its status, the owner's word: `Effect chance +26.7`, `Effect Chance +10.4%` on a piece (the data's `Status Potency` reads Effect Potency). Not stat chance: a stat is STR, VIT, AGI, INT or PER. Its counterpart keeps its name: `Status save` |
 | Upgrade (a piece) | better, recommended | A piece rarer than what is worn where it goes, marked ▲ in gold, as Diablo IV and Lost Ark mark one: `▲ Upgrade` on a blueprint, `Upgrades` to show only those, `3 Upgrades` in the Forge's hearth, `▲ 3` on its station. Never `3 better`: a number wants a noun. The step that raises a piece's quality keeps its name too, `Upgrade · 120`, as Diablo IV's blacksmith keeps both |
 | Crit chance | critical chance, critical hit chance | The chance a hit is critical, the owner's word: `Crit chance +6`, `Crit Chance +9.8%` on a piece, `Crit chance` on Stats. A hit that is critical keeps its name: `Critical hits inflict Bleeding`, `(Critical)` |

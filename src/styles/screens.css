@@ -3333,3 +3333,42 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .costgrid__one.is-tracked { box-shadow: inset 0 0 0 1px var(--forge), 0 0 10px var(--forge-glow); }
 .mattile { border-color: transparent; background: rgba(3, 8, 20, 0.35); }
 .mattile.is-tracked { border-color: var(--forge); }
+
+
+/* The Item Bag and the sets, cleaned (the owner's call: too many boxes, awkward spacing). What is read stands
+ * unframed; what is tapped keeps a light edge. A set's bonuses are labelled `2-piece` and `3-piece`, as Genshin
+ * Impact and World of Warcraft write them, in place of a boxed numeral. */
+.baghead { grid-template-columns: auto auto minmax(0, 1fr); gap: 10px 12px; padding: 2px 2px 12px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent);
+  background: radial-gradient(55% 120% at 0% 30%, color-mix(in srgb, var(--win) 12%, transparent), transparent 70%); }
+.baghead__icon { width: 30px; height: 30px; border: 0; box-shadow: none; }
+.baghead__icon .ico { width: 26px; height: 26px; }
+.baghead__facts { justify-content: flex-end; gap: 16px; padding-left: 0; border-left: 0; }
+.baghead__spread { height: 12px; }
+.bag__items > .bagtools { padding-bottom: 6px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.bag__items .bagtools > button { min-height: 40px; border-color: transparent; background: none; }
+.bag__items .bagtools__sort { padding-left: 2px; }
+.bag__items .bagtools__pick.is-on { border-color: transparent !important; background: none !important; color: #ff6b77; }
+.bagmenu { border: 0; background: rgba(3, 8, 20, 0.4); }
+.bagpick { gap: 6px 8px; padding: 2px 0 2px 10px; border: 0; border-left: 2px solid rgba(255, 59, 75, 0.6); background: none; }
+.bagpick__chip { border-color: color-mix(in srgb, var(--sys-ink) 22%, transparent); background: none; }
+.collect { padding: 2px; border: 0; background: none; }
+.setrows { gap: 0; }
+.setrow, .codexrow { gap: 7px; padding: 12px 4px 12px 12px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); border-left: 2px solid color-mix(in srgb, var(--sc) 55%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sc) 7%, transparent), transparent 40%); box-shadow: none; }
+.setrow.is-on, .codexrow.is-on { border-left-color: var(--sc); box-shadow: none; background: linear-gradient(90deg, color-mix(in srgb, var(--sc) 13%, transparent), transparent 55%); }
+.codexrow.is-complete { box-shadow: none; }
+.codexrow__body { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.codexrow__piece, .codexrow__piece.is-known { border: 0; }
+.codexrow__piece:not(.is-held) { background: color-mix(in srgb, var(--sys-ink) 5%, transparent); }
+.codexrow__piece.is-known { background: color-mix(in srgb, var(--win) 12%, transparent); }
+.pc { display: inline-block; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1.6; text-transform: uppercase; white-space: nowrap; }
+.setrow__bonus { grid-template-columns: 56px minmax(0, 1fr); }
+.setrow__bonus b.pc, .setbonus b.pc { display: inline-block; width: auto; height: auto; border: 0; font-size: 0.56rem; }
+.setbonus { grid-template-columns: 56px minmax(0, 1fr); }
+.baghead { background: none; }
+.baghead__icon .ico { filter: drop-shadow(0 0 8px var(--win-glow)); }
+.bag__items .bagkind { height: 40px; }
+.bag__items { gap: 10px; }
+.gearstats { padding: 2px; border: 0; background: none; }
+.gearstats__core > span { border: 0; background: none; }
+.gearstats__core > span + span { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }

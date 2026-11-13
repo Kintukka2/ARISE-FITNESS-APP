@@ -406,8 +406,8 @@ function CodexRow({ set }: { set: GearSet }) {
           })}
         </span>
         <span class="codexrow__bonus">
-          <span class={`setrow__bonus ${worn >= 2 ? 'is-on' : ''}`}><b class="num">2</b><Gains parts={bonusParts(set.two)} /></span>
-          <span class={`setrow__bonus ${worn >= 3 ? 'is-on' : ''}`}><b class="num">3</b><Gains parts={bonusParts(set.three)} /></span>
+          <span class={`setrow__bonus ${worn >= 2 ? 'is-on' : ''}`}><b class="pc">2-piece</b><Gains parts={bonusParts(set.two)} /></span>
+          <span class={`setrow__bonus ${worn >= 3 ? 'is-on' : ''}`}><b class="pc">3-piece</b><Gains parts={bonusParts(set.three)} /></span>
         </span>
       </span>
     </button>
@@ -446,8 +446,8 @@ export function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
           );
         })}
       </div>
-      <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b class="num">2</b><Gains parts={bonusParts(set.two)} /></div>
-      <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b class="num">3</b><Gains parts={bonusParts(set.three)} /></div>
+      <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b class="pc">2-piece</b><Gains parts={bonusParts(set.two)} /></div>
+      <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b class="pc">3-piece</b><Gains parts={bonusParts(set.three)} /></div>
       {home && <small class="setcard__home"><Glyph name="gates" /> {home.name} · {home.rank}-Rank</small>}
     </div>
   );
@@ -831,8 +831,8 @@ function SetRow({ id, n }: { id: string; n: number }) {
         <small class="num">{n}/{all}</small>
         <Glyph name="chevron" class="setrow__go" />
       </span>
-      <span class={`setrow__bonus ${n >= 2 ? 'is-on' : ''}`}><b class="num">2</b><Gains parts={bonusParts(set.two)} /></span>
-      <span class={`setrow__bonus ${n >= 3 ? 'is-on' : ''}`}><b class="num">3</b><Gains parts={bonusParts(set.three)} /></span>
+      <span class={`setrow__bonus ${n >= 2 ? 'is-on' : ''}`}><b class="pc">2-piece</b><Gains parts={bonusParts(set.two)} /></span>
+      <span class={`setrow__bonus ${n >= 3 ? 'is-on' : ''}`}><b class="pc">3-piece</b><Gains parts={bonusParts(set.three)} /></span>
     </button>
   );
 }
