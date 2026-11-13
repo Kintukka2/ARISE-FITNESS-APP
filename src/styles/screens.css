@@ -3372,3 +3372,24 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .gearstats { padding: 2px; border: 0; background: none; }
 .gearstats__core > span { border: 0; background: none; }
 .gearstats__core > span + span { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+
+
+/* Quick select, as one segmented row (the owner's call: chips of every width spilling onto a second row): a cell to
+ * each rarity, its letter in its colour over how many of it can go, and a last cell for the duplicates; each the
+ * same width, the row shrinking with the window. A cell with nothing to take is dimmed and cannot be tapped. */
+.qsel { display: flex; flex-direction: column; gap: 6px; animation: qaIn 220ms var(--ease) both; }
+.qsel__head { display: flex; align-items: center; justify-content: space-between; min-height: 24px; }
+.qsel__head .label { color: #ff8a94; }
+.qsel__clear { padding: 2px 4px; border: 0; background: none; color: #ff8a94; font-family: var(--font-sys); font-size: 0.72rem; font-weight: 700; }
+.qsel__row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid rgba(255, 59, 75, 0.35); }
+.qsel__cell { --rc: var(--sys-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 0; min-height: 48px; padding: 4px 0; border: 0; background: rgba(3, 8, 20, 0.45); color: inherit; font: inherit; transition: background 140ms, color 140ms; }
+.qsel__cell + .qsel__cell { border-left: 1px solid rgba(255, 59, 75, 0.2); }
+.qsel__cell[data-rarity='E'] { --rc: var(--rank-E); } .qsel__cell[data-rarity='D'] { --rc: var(--rank-D); } .qsel__cell[data-rarity='C'] { --rc: var(--rank-C); }
+.qsel__cell[data-rarity='B'] { --rc: var(--rank-B); } .qsel__cell[data-rarity='A'] { --rc: var(--rank-A); } .qsel__cell[data-rarity='S'] { --rc: var(--rank-S); }
+.qsel__cell b { font-family: var(--font-sys); font-size: 0.92rem; font-weight: 800; color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 50%, transparent); }
+.qsel__cell small { font-size: 0.62rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.qsel__cell.is-dupes b { color: var(--sys-ink); text-shadow: none; }
+.qsel__cell.is-on { background: color-mix(in srgb, var(--rc) 30%, rgba(3, 8, 20, 0.6)); box-shadow: inset 0 -3px 0 var(--rc); }
+.qsel__cell.is-on b, .qsel__cell.is-on small { color: #fff; }
+.qsel__cell:disabled { opacity: 0.3; }
+.qsel__cell:focus-visible { outline: 2px solid var(--sys-hair-hot); outline-offset: -2px; }

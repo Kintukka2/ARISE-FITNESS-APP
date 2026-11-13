@@ -196,27 +196,34 @@ function Items() {
         </div>
       )}
       {picking && (
-        <div class="bagpick">
-          <span class="label">Quick select</span>
-          {(['E', 'D', 'C', 'B', 'A', 'S'] as const).filter((r) => s.items.some((it) => gear.defOf(it)?.rank === r && loose(s, it))).map((r) => {
-            const ids = s.items.filter((it) => gear.defOf(it)?.rank === r && loose(s, it)).map((x) => x.id);
-            const on = ids.every((id) => picked.includes(id));
-            return (
-              <button type="button" key={r} aria-pressed={on} class={`sysbox bagpick__chip ${on ? 'is-on' : ''}`} data-rarity={r} onClick={() => { sfx.tap(); toggleAll(ids, on); }}>
-                {on && <Glyph name="check" />}{rarity(r)}
-              </button>
-            );
-          })}
-          {(() => {
-            const ids = spares();
-            const on = ids.length > 0 && ids.every((id) => picked.includes(id));
-            return (
-              <button type="button" aria-pressed={on} class={`sysbox bagpick__chip ${on ? 'is-on' : ''}`} onClick={() => { sfx.tap(); toggleAll(ids, on); }}>
-                {on && <Glyph name="check" />}Duplicates
-              </button>
-            );
-          })()}
-          {picked.length > 0 && <button type="button" class="sysbox bagpick__chip is-clear" onClick={() => { sfx.tap(); setPicked([]); }}>Clear</button>}
+        <div class="qsel">
+          <span class="qsel__head">
+            <span class="label">Quick select</span>
+            {picked.length > 0 && <button type="button" class="qsel__clear" onClick={() => { sfx.tap(); setPicked([]); }}>Clear</button>}
+          </span>
+          {/* One row of equal cells, a rarity to each, then the duplicates: what can go, counted, one tap to take it all. */}
+          <div class="qsel__row" role="group" aria-label="Quick select">
+            {(['E', 'D', 'C', 'B', 'A', 'S'] as const).map((r) => {
+              const ids = s.items.filter((it) => gear.defOf(it)?.rank === r && loose(s, it)).map((x) => x.id);
+              const on = ids.length > 0 && ids.every((id) => picked.includes(id));
+              return (
+                <button type="button" key={r} aria-pressed={on} disabled={!ids.length} class={`qsel__cell ${on ? 'is-on' : ''}`} data-rarity={r}
+                  aria-label={`${rarity(r)}: ${ids.length}`} title={rarity(r)} onClick={() => { sfx.tap(); toggleAll(ids, on); }}>
+                  <b>{r}</b><small class="num">{ids.length}</small>
+                </button>
+              );
+            })}
+            {(() => {
+              const ids = spares();
+              const on = ids.length > 0 && ids.every((id) => picked.includes(id));
+              return (
+                <button type="button" aria-pressed={on} disabled={!ids.length} class={`qsel__cell is-dupes ${on ? 'is-on' : ''}`}
+                  aria-label={`Duplicates: ${ids.length}`} title="Duplicates" onClick={() => { sfx.tap(); toggleAll(ids, on); }}>
+                  <b>2×</b><small class="num">{ids.length}</small>
+                </button>
+              );
+            })()}
+          </div>
         </div>
       )}
       {!list.length && <Empty>{s.items.length ? 'Nothing matches.' : 'No items yet.'}</Empty>}

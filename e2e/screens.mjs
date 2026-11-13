@@ -188,13 +188,13 @@ try {
   // Select: the rarity chips pick every piece that can go, and the bar counts what they would pay.
   await page.locator('.bagtools__pick').click(); await sleep(200);
   // A rarity chip picked shows it, in its colour with a tick; tapped again, it unpicks its pieces.
-  const chip = page.locator('.bagpick__chip[data-rarity]').first();
+  const chip = page.locator('.qsel__cell[data-rarity]:not([disabled])').first();
   await chip.click(); await sleep(300);
-  if (!(await page.locator('.bagpick__chip[data-rarity].is-on').count())) throw new Error('A PICKED RARITY CHIP DOES NOT SHOW IT');
+  if (!(await page.locator('.qsel__cell[data-rarity].is-on').count())) throw new Error('A PICKED RARITY CHIP DOES NOT SHOW IT');
   const picked = await page.locator('.baggrid .bagtile.is-picked').count();
   await snap('inventory-select');
   await chip.click(); await sleep(300);
-  if (await page.locator('.bagpick__chip[data-rarity].is-on').count()) throw new Error('TAPPING A PICKED CHIP AGAIN DID NOT UNPICK IT');
+  if (await page.locator('.qsel__cell[data-rarity].is-on').count()) throw new Error('TAPPING A PICKED CHIP AGAIN DID NOT UNPICK IT');
   if (picked && (await page.locator('.baggrid .bagtile.is-picked').count())) throw new Error('THE UNPICKED CHIP LEFT ITS PIECES PICKED');
   // What the picked pieces would give back is counted in materials, not shards.
   await chip.click(); await sleep(300);

@@ -912,8 +912,7 @@ in gold at its top and a gold ▲ on its corner where it beats what is worn. A c
 the bag's foot, as the reference games keep the piece picked beside their grids: its art, its name, `Legendary
 Weapon` in its colour, `Quality 78%`, its stats spaced, its score large and what it gains on the piece worn
 (`▲ 16`), then **Equip**, the star, **Details** and the close; tapped again, or Details, its own card opens.
-Select makes the toolbar's button **Done** and opens `Quick select` in red (a chip to each rarity that has a
-piece to go, `Duplicates`, `Clear`), the dock giving way to the bar that counts what is picked and what it gives
+Select makes the toolbar's button **Done** and opens `Quick select` in red, `Clear` at its right while anything is picked, over one row of seven equal cells (the owner's call: chips of every width spilled onto a second row): a cell to each rarity, its letter in its colour over how many of it can go (`C` over `6`, read aloud `Rare: 6`), and `2×` for the duplicates; a cell with nothing to take dimmed, a cell picked filled in its colour, the dock giving way to the bar that counts what is picked and what it gives
 back, and **Recycle**. The Sets view: `Designs discovered` as a ring, an arc to each rarity as long as the
 designs of it found, round `26` over `/543` and `Designs`, beside each rarity's count and bar; then each rarity's
 sets (`Rare sets` and `1/4` complete) as rows, as Equipment draws a set worn: its mark, its name, `2/3` and
