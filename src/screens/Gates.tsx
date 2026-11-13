@@ -104,15 +104,16 @@ function BoardSheet() {
   const pick = (b: Band) => { sfx.tap(); boardBand = b; setBand(b); };
   const shown = gates.filter((d) => band === 'all' || (band === 'marked' ? !!marks.get(d.id) : d.rank === band));
   const closed = s.gates.sealed.day === day ? s.gates.sealed.ids.length : 0;
-  const fresh = gates.filter((d) => !isPractice(d) && !s.gates.cleared.includes(d.id)).length;
+  // The open Gates the hunter has walked into, ever: a Gate cleared before the list was kept counts too.
+  const entered = gates.filter((d) => !isPractice(d) && (s.gates.entered.includes(d.id) || s.gates.cleared.includes(d.id))).length;
   const grades = RANKS.filter((r) => shown.some((d) => d.rank === r));
   return (
     <div class="stack gboard">
       {/* The day at a glance, read not tapped, so no box: the facts between hairlines, as the brief sets its own. */}
       <dl class="bfacts gboard__facts">
         <div><dt>Open</dt><dd class="num">{gates.length}</dd></div>
-        <div class={fresh ? 'is-new' : ''}><dt>Never Cleared</dt><dd class="num">{fresh}</dd></div>
-        <div><dt>Closed Today</dt><dd class="num">{closed}</dd></div>
+        <div><dt>Entered</dt><dd class="num">{entered}</dd></div>
+        <div><dt>Closed</dt><dd class="num">{closed}</dd></div>
         <div class="is-redraw"><dt>Redraw</dt><dd class="num countdown"><Glyph name="timer" />{hhmmss(msUntilMidnight())}</dd></div>
       </dl>
       {/* The rail, as the reference games filter their stages: a portal to each grade in its colour, lit and underlined when picked. */}

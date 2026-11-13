@@ -266,6 +266,7 @@ try {
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
   // The day as facts, the grades as a rail of portals, and each Gate's boss power at its card's right.
   if ((await page.locator('.sheet.is-top .gboard__facts > div').count()) !== 4) throw new Error('THE BOARD DOES NOT STATE ITS DAY');
+  if ((await page.locator('.sheet.is-top .gboard__facts dt').allInnerTexts()).map((x) => x.toLowerCase()).join(',') !== 'open,entered,closed,redraw') throw new Error('THE BOARD\'S FACTS ARE NOT OPEN, ENTERED, CLOSED AND REDRAW');
   if ((await page.locator('.sheet.is-top .gband-tab .ga-portal').count()) !== 6) throw new Error('THE RAIL HAS NO PORTAL TO EACH GRADE');
   if (!(await page.locator('.sheet.is-top .gaterow__might').count())) throw new Error('NO GATE STATES ITS BOSS\'S POWER');
   if (await page.evaluate(() => getComputedStyle(document.querySelector('.sheet.is-top .gbands')).position) !== 'sticky') throw new Error('THE RAIL DOES NOT STAY AT THE TOP');

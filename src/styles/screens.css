@@ -1317,10 +1317,9 @@ button.dmap__floor { cursor: pointer; }
 .gboard { gap: 14px; }
 /* GATES, rebuilt after the stage lists of Honkai: Star Rail and Solo Leveling: Arise: the day as facts, the grades as
    a rail of portals, each grade a divider, each Gate a stage card with the boss's power at its right. */
-.gboard__facts dt { display: flex; align-items: flex-end; justify-content: center; min-height: 2.5em; text-align: center; }
+.gboard__facts dt { white-space: nowrap; }
 .gboard__facts .countdown { display: inline-flex; align-items: center; gap: 3px; font-size: 0.8rem; letter-spacing: 0; color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
 .gboard__facts .countdown .ico { width: 11px; height: 11px; color: inherit; filter: none; }
-.gboard__facts .is-new dd { color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); }
 /* The rail stays at the top as the board scrolls under it, so a grade is a tap away from anywhere on it. */
 /* It sticks over the sheet's own top padding (14px), so nothing shows above it. */
 .gbands { position: sticky; top: -14px; z-index: 3; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; margin-top: -10px; padding: 16px 0 2px; border-bottom: 1px solid var(--sys-hair); background: linear-gradient(rgba(9, 7, 6, 0.97), rgba(9, 7, 6, 0.92)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
