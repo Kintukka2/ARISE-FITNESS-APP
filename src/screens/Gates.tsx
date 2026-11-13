@@ -26,7 +26,7 @@ import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Chip, Section, Shards, useNow, Voice } from '@/ui/components';
+import { Btn, Shards, useNow, Voice } from '@/ui/components';
 import { SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
@@ -361,7 +361,8 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
 function openGrade() {
   const s = store.get();
   openSheet({
-    title: `Licence: ${s.hunter.regNo || '-- --'}`, system: { icon: <Sigil rank={licensedRank(s)} size={40} />, kind: 'gates' },
+    // Its number is on the licence itself, so the head names the window only.
+    title: 'Licence', system: { icon: <Sigil rank={licensedRank(s)} size={40} />, kind: 'gates' },
     render: () => {
       const s = store.get();
       const mine = licensedRank(s);
@@ -379,11 +380,13 @@ function openGrade() {
               <b class="num">{s.hunter.regNo || '-- --'}</b>
             </span>
           </div>
+          {/* The grade the board answers to; the hunter's own rank only where it differs from it (held by the licence, or Sovereign),
+              and the Association Licence only where there is one to hold. */}
           <dl class="bfacts glicence__facts">
             <div><dt>Association grade</dt><dd>{mine}-Rank</dd></div>
             <div><dt>Gates open</dt><dd>Up to {RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank</dd></div>
-            <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>
-            <div><dt>Association Licence</dt><dd>{issued}</dd></div>
+            {rankOf(s).name !== `${mine}-Rank` && <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>}
+            {(licenceRequired(s) || s.licence.granted) && <div><dt>Association Licence</dt><dd>{issued}</dd></div>}
           </dl>
           {licenceHolding(s) && <p class="hint">Gate grade held at {mine}-Rank.</p>}
           {licenceRequired(s) && licenceHolding(s) && storeReady() && (
@@ -400,7 +403,8 @@ function openGrade() {
 /** Ascension: the level the next run is entered at, what it does, the road to the next, and the marks. Advancement, so gold. */
 function openAscension() {
   openSheet({
-    title: `Ascension: ${store.get().ascension.level}`, system: { icon: <Glyph name="crown" />, kind: 'gold' },
+    // The level is the window's dial, so the head names the window only.
+    title: 'Ascension', system: { icon: <Glyph name="crown" />, kind: 'gold' },
     action: { label: 'How Ascension Works', icon: 'help', onClick: () => void ascensionTour() },
     render: () => <AscensionSheet />,
   });
@@ -431,53 +435,69 @@ function ascensionTour() {
 function AscensionSheet() {
   const s = useSave();
   const a = s.ascension;
-  const rules = ascension.rulesAt(a.level);
-  const choose = (L: number) => store.update((x) => ascension.choose(x, L));
+  const choose = (L: number) => { if (L < 0 || L > a.unlocked || L === a.level) return; sfx.tap(); store.update((x) => ascension.choose(x, L)); };
   const foes = Math.round((ascension.ascensionTune(a.level) - 1) * 100);
+  const pay = Math.round(ASCENSION_PAY * a.level * 100);
   useEffect(() => {
     if (store.update((x) => story.markOnce(x, 'ascension-told'))) setTimeout(() => void ascensionTour(), 450);
   }, []);
+  // The rungs, from the next level down to the board as it stands; past the ruled levels the Beyond stands as one rung.
+  const top = Math.min(a.unlocked, ASCENSION_RULED);
+  const rungs = Array.from({ length: top + 1 }, (_, i) => top - i);
   return (
     <div class="stack ascension">
-      {/* Where the hunter stands, as facts between hairlines: read, not tapped, so no box. */}
-      <dl class="bfacts is-grid ascension__now" data-tour="asc-now">
-        <div><dt>Entering at</dt><dd><span class="status__level">{a.level}</span>{a.level ? <small>{ascension.levelInfo(a.level).name}</small> : null}</dd></div>
-        <div><dt>Highest opened</dt><dd class="num">{a.unlocked}</dd></div>
-        <div><dt>Foe strength</dt><dd>{foes ? <span class="warn">+{foes}%</span> : 'As the board'}</dd></div>
-        <div><dt>Gate pay</dt><dd>{a.level ? <span class="grant">+{Math.round(ASCENSION_PAY * a.level * 100)}%</span> : 'As the board'}</dd></div>
-      </dl>
-      <div data-tour="asc-level">
-        {a.unlocked <= ASCENSION_RULED && (
-          <div class="chips" role="radiogroup" aria-label="Ascension level">
-            {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => choose(L)}>{L}</Chip>)}
-            <span class="chip chip--locked" aria-label={`Ascension ${a.unlocked + 1}, locked`}><Glyph name="lock" />{a.unlocked + 1}</span>
-          </div>
-        )}
-        {a.unlocked > ASCENSION_RULED && (
-          <div class="stepper" role="group" aria-label="Ascension level">
-            <Btn size="sm" disabled={a.level === 0} onClick={() => choose(a.level - 1)}>−</Btn>
-            <b class="num">{a.level}</b>
-            <Btn size="sm" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}>+</Btn>
-            <Btn size="sm" onClick={() => choose(0)}>0</Btn>
-            <Btn size="sm" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
-          </div>
-        )}
-      </div>
-      {rules.length > 0 && (
-        <Section title="Rules in force">
-          <ol class="ascension__rules">{rules.map((r) => <li key={r.level} class="sysbox"><strong>[{r.name}]</strong> {r.rule}</li>)}</ol>
-        </Section>
-      )}
-      {ascension.beyond(a.level) > 0 && (
-        <small class="ascension__proof">Past Level {ASCENSION_RULED}: Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level · +{Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here</small>
-      )}
-      <NextLevel />
+      {/* The dial, after Slay the Spire's Ascension select: the level large in gold, an arrow either side, its name, and what it does. */}
+      <section class="ascdial" data-tour="asc-level" aria-label="Ascension level">
+        <span class="ascdial__crown" aria-hidden="true"><Glyph name="crown" /></span>
+        <div class="ascdial__row">
+          <button type="button" class="ascdial__arrow" aria-label="One level down" disabled={a.level === 0} onClick={() => choose(a.level - 1)}><Glyph name="back" /></button>
+          <b class="ascdial__level num" aria-live="polite">{a.level}</b>
+          <button type="button" class="ascdial__arrow" aria-label="One level up" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}><Glyph name="chevron" /></button>
+        </div>
+        <b class="ascdial__name">{a.level ? ascension.levelInfo(a.level).name : 'The board as it stands'}</b>
+        <span class="ascdial__fx">
+          <span class={foes ? 'warn' : ''}>Foe strength {foes ? `+${foes}%` : 'as the board'}</span>
+          <span class={pay ? 'grant' : ''}>Gate pay {pay ? `+${pay}%` : 'as the board'}</span>
+        </span>
+        <small class="ascdial__high">Highest opened <b class="num">{a.unlocked}</b>{a.unlocked > ASCENSION_RULED && <> · <button type="button" class="ascdial__jump" onClick={() => choose(0)}>0</button> · <button type="button" class="ascdial__jump" onClick={() => choose(a.unlocked)}>Highest</button></>}</small>
+      </section>
+
+      {/* The climb, after Hades' heat gauge: a rung to each level, the next one locked at the top with its road, every rule at or below
+          the level entered at lit as in force; a tap on an open rung enters at it. */}
+      <section class="ascladder" data-tour="asc-now" aria-label="The climb">
+        <span class="label">The climb</span>
+        <ol class="ascladder__rungs">
+          <NextLevel />
+          {a.unlocked > ASCENSION_RULED && (
+            <li class={`ascrung is-beyond ${a.level > ASCENSION_RULED ? 'is-on' : ''}`}>
+              <span class="ascrung__n num"><i>{ASCENSION_RULED + 1}+</i></span>
+              <span class="ascrung__text"><b>[{BEYOND.name}]</b><small>Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level{ascension.beyond(a.level) > 0 ? ` · +${Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here` : ''}</small></span>
+            </li>
+          )}
+          {rungs.map((L) => {
+            const on = L > 0 && L <= a.level;
+            const here = L === Math.min(a.level, ASCENSION_RULED) && a.level <= ASCENSION_RULED;
+            const info = L ? ascension.levelInfo(L) : null;
+            return (
+              <li key={L}>
+                <button type="button" role="radio" aria-checked={here} class={`ascrung ${on ? 'is-on' : ''} ${here ? 'is-here' : ''}`} onClick={() => choose(L)}>
+                  <span class="ascrung__n num"><i>{L}</i></span>
+                  <span class="ascrung__text">
+                    {info ? <><b>[{info.name}]</b><small>{info.rule}</small></> : <><b>The board as it stands</b><small>No rule, no added pay.</small></>}
+                  </span>
+                  {here && <span class="ascrung__tag">Entering</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
       <MarkList />
     </div>
   );
 }
 
-/** The road to the next level: the Gates to prove at the highest one, then the Trial, and the rule the next level adds. */
+/** The next level, locked at the top of the climb: the Gates to prove at the highest one, then the Trial, and the rule it adds. */
 function NextLevel() {
   const s = useSave();
   const a = s.ascension;
@@ -489,32 +509,37 @@ function NextLevel() {
   const trial = ascension.nextTrial(s);
   const info = ascension.levelInfo(next);
   return (
-    <Section title={`To open Ascension ${next}`}>
-      <ol class="ascnext" data-tour="asc-next">
-        <li class={`sysbox ${proved ? 'is-done' : 'is-now'}`}>
-          <span class="ascnext__n num">1</span>
-          <div class="grow">
-            <b>Clear {proofGates(s)} at Ascension {a.unlocked}.</b>
-            <span class="ascnext__pips" aria-hidden="true">{Array.from({ length: need }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''} />)}</span>
-          </div>
-          <span class="num">{got}/{need}</span>
-        </li>
-        <li class={`sysbox ${ready ? 'is-now' : proved ? 'is-wait' : 'is-later'}`}>
-          <span class="ascnext__n num">2</span>
-          <div class="grow">
-            <b>Win the Trial: {trial.trial} of the Chosen in a row.</b>
-            <small>{!proved ? 'Opens when the Gates are cleared.' : ready ? 'Open. Once a day.' : 'Faced today. It opens again tomorrow.'}</small>
-          </div>
-          <span class="num">0/1</span>
-        </li>
-      </ol>
-      <p class="ascnext__adds"><span class="label">Ascension {next} adds</span>{next <= ASCENSION_RULED ? <><strong>[{info.name}]</strong> {info.rule}</> : `Foe strength +${Math.round((BEYOND.growth - 1) * 100)}%`}</p>
-      {ready && <Btn kind="gold" block onClick={() => openBrief(trial)}>Face The Trial</Btn>}
-    </Section>
+    <li class="ascrung is-locked" data-tour="asc-next">
+      <span class="ascrung__n num"><Glyph name="lock" /><i>{next}</i></span>
+      <span class="ascrung__text">
+        <b>{next <= ASCENSION_RULED ? `[${info.name}]` : `Ascension ${next}`}</b>
+        <small>{next <= ASCENSION_RULED ? info.rule : `Foe strength +${Math.round((BEYOND.growth - 1) * 100)}%`}</small>
+        <span class="label ascroad__head">To open Ascension {next}</span>
+        <ol class="ascnext">
+          <li class={proved ? 'is-done' : 'is-now'}>
+            <span class="ascnext__n num">{proved ? <Glyph name="check" /> : 1}</span>
+            <div class="grow">
+              <b>Clear {proofGates(s)} at Ascension {a.unlocked}.</b>
+              <span class="ascnext__pips" aria-hidden="true">{Array.from({ length: need }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''} />)}</span>
+            </div>
+            <span class="num">{got}/{need}</span>
+          </li>
+          <li class={ready ? 'is-now' : proved ? 'is-wait' : 'is-later'}>
+            <span class="ascnext__n num">2</span>
+            <div class="grow">
+              <b>Win the Trial: {trial.trial} of the Chosen in a row.</b>
+              <small>{!proved ? 'Opens when the Gates are cleared.' : ready ? 'Open. Once a day.' : 'Faced today. It opens again tomorrow.'}</small>
+            </div>
+            <span class="num">0/1</span>
+          </li>
+        </ol>
+        {ready && <Btn kind="gold" block onClick={() => openBrief(trial)}>Face The Trial</Btn>}
+      </span>
+    </li>
   );
 }
 
-/** The marks: one for every level opened, each set for good. */
+/** The marks: one for every level opened, each set for good, its sets as diamonds. */
 function MarkList() {
   const s = useSave();
   const waiting = marks.unset(s);
@@ -534,15 +559,17 @@ function MarkList() {
     await sys({ ...system.notify([`${system.tag(m.name)} has been set.`, system.gain(marks.markText(m, n + 1))], 'gold'), typed: false });
   };
   return (
-    <div class="marks" data-tour="asc-marks">
-      <span class="label">Marks{waiting ? ` · ${waiting} to set` : ''}</span>
+    <section class="marks" data-tour="asc-marks" aria-label="Marks">
+      <span class="label">Marks{waiting ? <> · <span class="marks__waiting">{waiting} to set</span></> : ''}</span>
       <ul class="marks__list">
         {MARKS.map((m) => {
           const n = marks.setOn(s, m.id);
           return (
             <li key={m.id} class={n ? 'is-set' : ''}>
               <div class="grow">
-                <span class="marks__name"><b>{m.name}</b><span class="num muted">{n}/{MARK_MAX}</span></span>
+                <span class="marks__name"><b>{m.name}</b>
+                  <span class="marks__pips" role="img" aria-label={`Set ${n} of ${MARK_MAX}`}>{Array.from({ length: MARK_MAX }, (_, i) => <i key={i} class={i < n ? 'is-on' : ''} />)}</span>
+                </span>
                 <small class="muted">{n ? marks.markText(m, n) : `Each: ${marks.markText(m)}`}</small>
               </div>
               {waiting > 0 && marks.canSet(s, m.id) && <Btn kind="gold" size="sm" onClick={() => void set(m)}>Set</Btn>}
@@ -551,7 +578,7 @@ function MarkList() {
         })}
       </ul>
       <small class="ascension__proof">Upgrade limit: Perfect +{ascension.overCap(s)}</small>
-    </div>
+    </section>
   );
 }
 

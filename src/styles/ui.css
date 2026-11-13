@@ -611,6 +611,10 @@ button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
 .syshead { position: relative; display: flex; align-items: stretch; justify-content: center; gap: 8px; }
 .syshead.has-tools { padding-right: 50px; }
 .syshead.has-tools:not(.is-card) { padding-left: 50px; }
+/* Two tools (a help and the close) take twice the room, so the title never runs under them. */
+.syshead.has-tools:has(.syshead__tools > :nth-child(2)) { padding-right: 104px; }
+.syshead.has-tools:not(.is-card):has(.syshead__tools > :nth-child(2)) { justify-content: flex-start; padding-left: 0; }
+.syshead.has-tools:has(.syshead__tools > :nth-child(2)) .syshead__title:not(.is-card) { flex: 1; min-width: 0; padding-left: 12px; padding-right: 12px; font-size: 1.05rem; letter-spacing: 0.16em; }
 .syshead.is-card .syshead__icon { padding: 0; min-width: 0; }
 
 /* A System screen in a sheet: the frame floats a little clear of the screen's edges. */

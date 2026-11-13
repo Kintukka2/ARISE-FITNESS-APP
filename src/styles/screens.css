@@ -2745,16 +2745,63 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .glicence__who .label { font-size: 0.54rem; }
 .glicence__who b { overflow: hidden; font-size: 1.05rem; font-weight: 800; color: #fff; white-space: nowrap; text-overflow: ellipsis; }
 .glicence__who b + .label { margin-top: 6px; }
-.glicence__facts, .ascension__now { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
-.glicence__facts > div:nth-child(odd), .ascension__now > div:nth-child(odd) { border-left: 0; }
-.glicence__facts > div:nth-child(n + 3), .ascension__now > div:nth-child(n + 3) { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
-.glicence__facts dd, .ascension__now dd { font-size: 0.92rem; text-align: center; }
-.ascension__now dd small { display: block; font-size: 0.62rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.ascension__now dd { flex-direction: column; gap: 1px; }
-/* Ascension's road and marks: rows between hairlines; what is set or waits on the hunter keeps its colour, the Set button its box. */
-.ascension .ascnext li { border: 0; border-left: 2px solid transparent; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); background: none; box-shadow: none; }
-.ascension .ascnext li.is-now { border-left-color: var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
-.ascension .ascension__rules li { border: 0; padding: 4px 0; background: none; }
+.glicence__facts { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
+.glicence__facts > div:nth-child(odd) { border-left: 0; }
+.glicence__facts > div:nth-child(n + 3) { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
+.glicence__facts dd { font-size: 0.92rem; text-align: center; }
+/* ------------------------------------------------------------------ Ascension, rebuilt
+   The dial after Slay the Spire's Ascension select, the climb after Hades' heat gauge, the marks as diamonds. */
+.ascension { gap: 18px; }
+.ascdial { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 12px; text-align: center;
+  background: radial-gradient(70% 80% at 50% 40%, rgba(255, 203, 92, 0.16), transparent 70%); }
+.ascdial__crown .ico { width: 22px; height: 22px; color: var(--gold); filter: drop-shadow(0 0 8px var(--gold-glow)); }
+.ascdial__row { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.ascdial__level { min-width: 80px; font-size: 4rem; font-weight: 800; line-height: 1; color: var(--gold); text-shadow: 0 0 24px var(--gold-glow), 0 0 4px rgba(255, 203, 92, 0.8); }
+.ascdial__arrow { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 50%; background: rgba(20, 14, 2, 0.7); color: var(--gold); cursor: pointer; touch-action: manipulation; }
+.ascdial__arrow .ico { width: 18px; height: 18px; }
+.ascdial__arrow:active { background: rgba(255, 203, 92, 0.2); }
+.ascdial__arrow:disabled { opacity: 0.3; cursor: default; }
+.ascdial__arrow:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.ascdial__name { font-size: 0.86rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #fff; }
+.ascdial__fx { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font-size: 0.78rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.ascdial__high { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.ascdial__high b { color: var(--gold); letter-spacing: 0; }
+.ascdial__jump { min-height: 32px; padding: 0 6px; border: 0; background: none; color: var(--gold); font: inherit; text-decoration: underline; cursor: pointer; }
+/* The climb: a rung to each level, highest at the top; a rung in force lit gold, the one entered at marked, the next locked with its road. */
+.ascladder { display: flex; flex-direction: column; gap: 8px; }
+.ascladder__rungs { position: relative; display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.ascladder__rungs::before { content: ''; position: absolute; left: 19px; top: 18px; bottom: 18px; width: 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--sys-ink) 12%, transparent), rgba(255, 203, 92, 0.35)); }
+.ascrung { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px 8px 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+li > .ascrung { border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 7%, transparent); }
+.ascrung__n { position: relative; z-index: 1; display: grid; place-items: center; justify-self: center; width: 30px; height: 30px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); background: rgba(6, 8, 14, 0.95); font-size: 0.8rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.ascrung__n > i { font-style: normal; transform: rotate(-45deg); }
+.ascrung__n { line-height: 1; }
+.ascrung__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ascrung__text > b { font-size: 0.86rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.ascrung__text > small { font-size: 0.74rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.ascrung.is-on .ascrung__n { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 22%, rgba(6, 8, 14, 0.95)); color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.ascrung.is-on .ascrung__text > b { color: var(--gold); }
+.ascrung.is-here { background: linear-gradient(90deg, rgba(255, 203, 92, 0.14), transparent 75%); }
+.ascrung.is-here .ascrung__n { background: var(--gold); color: #1a1203; }
+.ascrung__tag { padding: 2px 8px; border: 1px solid var(--gold); color: var(--gold); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.ascrung:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.ascrung.is-locked, .ascrung.is-beyond { cursor: default; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 7%, transparent); align-items: start; }
+.ascrung.is-locked .ascrung__n { gap: 0; border-style: dashed; border-color: color-mix(in srgb, var(--gold) 60%, transparent); color: var(--gold); }
+.ascrung.is-locked .ascrung__n .ico { position: absolute; top: -9px; right: -9px; width: 14px; height: 14px; padding: 2px; border-radius: 50%; background: rgba(6, 8, 14, 0.95); transform: rotate(-45deg); }
+.ascrung.is-locked .ascrung__text { gap: 4px; }
+.ascrung.is-locked .ascrung__text > b { color: #fff; }
+.ascroad__head { margin-top: 8px; }
+.ascrung .ascnext { margin-top: 2px; }
+.ascrung .ascnext li { padding: 8px 6px; border: 0; border-left: 2px solid transparent; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 7%, transparent); background: none; box-shadow: none; }
+.ascrung .ascnext li.is-now { border-left-color: var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
+.ascrung .ascnext__n .ico { width: 12px; height: 12px; }
+.ascrung .btn { margin-top: 8px; }
+.ascrung.is-beyond.is-on .ascrung__n { border-color: var(--gold); color: var(--gold); }
+/* The marks: a row each between hairlines, its sets as four diamonds, the Set button keeping its box. */
 .ascension .marks__list { gap: 0; }
 .ascension .marks__list li { min-height: 56px; padding: 8px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); border-radius: 0; }
 .ascension .marks__list li.is-set { border-left: 2px solid var(--gold); padding-left: 10px; }
+.marks__pips { display: inline-flex; gap: 5px; margin-left: 2px; }
+.marks__pips i { display: block; width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); }
+.marks__pips i.is-on { border-color: #fff; background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+.marks__waiting { color: var(--gold); }

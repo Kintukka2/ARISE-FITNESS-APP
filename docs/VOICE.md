@@ -279,6 +279,8 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | INVENTORY | What the hunter holds |
 | FORGE | Every blueprint known, a row each saying whether its materials are all held, and every material held. ARISE's own window: the source has no forge. A blueprint's card is `BLUEPRINT: …` |
 | GATES | Every Gate standing open today, a tile each, under the grade tabs |
+| LICENCE | The hunter's licence with the Association: the card, their number on it, the grade the board answers to. Its number is on the card, so the head names the window only (the owner's call) |
+| ASCENSION | The level the Gates are entered at, as a dial, the climb of every level and its rule, the road to the next, and the marks. The level is the dial, so the head names the window only |
 | ARMY | Every Shadow bound, a tile each |
 | SETTINGS, GUIDE | The interface's two windows, set in the System's frame at the owner's call. Their words stay the interface's: plain, free to explain and to name the System |
 | EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
@@ -534,13 +536,23 @@ for advancement. Every quest's name wears its type, and these are the names:
   rows, each with its potion, so a potion is one tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
-- **The licence's window**, `LICENCE: E-048213`, opens on the licence itself, as the Association issues it: the
-  grade's seal in a ring, `Hunter` over the hunter's name and `Licence` over their number, the grade's letter
-  vast and faint behind, the card washed in the grade's colour; under it `Association grade`, `Gates open`,
-  `Rank` and `Association Licence` as facts, two to a row, with no box. Ascension's window opens on its standing
-  the same way (`Entering at` with the level's name under it, `Highest opened`, `Foe strength`, `Gate pay`); its
-  road and its marks are rows between hairlines, a gold rule down the one that waits and the marks set, the Set
-  buttons keeping their boxes.
+- **The licence's window**, `LICENCE` (its number is on the licence, so the head names the window only: the owner's
+  call, after it stood twice), opens on the licence itself, as the Association issues it: the grade's seal in a ring,
+  `Hunter` over the hunter's name and `Licence` over their number, the grade's letter vast and faint behind, the card
+  washed in the grade's colour; under it `Association grade` and `Gates open` as facts, with no box. `Rank` stands
+  beside them only where the hunter's own rank differs from the grade the board answers to (held at D-Rank without the
+  Association Licence where it is sold, or Sovereign, graded S), and `Association Licence` only where there is one to
+  hold: the owner asked what set the two apart, and on most hunters nothing does.
+- **Ascension's window**, `ASCENSION` (the level is its dial, so the head names the window only), rebuilt at the
+  owner's call after Slay the Spire's Ascension select and Hades' heat gauge: the dial, a crown over the level large in
+  gold between two round arrows (`One level down`, `One level up`), the level's name in capitals under it (`The board
+  as it stands` at 0), `Foe strength +53%` in red and `Gate pay +20%` in green, and `Highest opened 3` (past the ruled
+  levels, `0` and `Highest` beside it to jump); then `The climb`, a rung to each level from the next one down to 0 on a
+  line, each a diamond with its level over its rule (`[Thin Rest]` over `A rest heals 50% of what it would.`), lit gold
+  where its rule is in force, the one entered at filled and tagged `Entering`, a tap on an open rung entering at it;
+  the next level locked at the top, a dashed diamond with a lock, its rule, and under `To open Ascension 4` its two
+  steps and **Face The Trial**; past the ruled levels `[Beyond]` as one rung. `Marks` last, `1 to set` in gold, a row
+  each between hairlines, its sets as four diamonds (read aloud `Set 1 of 4`), the Set buttons keeping their boxes.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
   the bracketed name, one line under it, and the count in a hairline box: `5/10`, `0/3`, `Closed`.
   A tile says nothing its window does not; the window holds the goals, the hints and the rewards.

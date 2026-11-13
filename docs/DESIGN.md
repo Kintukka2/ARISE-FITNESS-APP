@@ -1921,6 +1921,16 @@ with what ARISE took from them.
   their number; Ascension's window opens on its standing as facts, and its road and marks lose their boxes. The
   tour still points at the grade (`licence`), the condition (`vitals`), the radar (`bands`) and the Practice Gate
   (`board`).
+- **The licence, without its repeats** (the owner asked what set Association grade apart from Rank). Rank is the
+  hunter's own, earned by level (`RANK_LADDER`); the Association grade is what the board and the Exchange answer to
+  (`licensedRank`): the same, except held at D-Rank where the Association Licence is sold and not bought, and S for a
+  Sovereign. The window shows the grade, and Rank only where the two differ; the Licence's row only where there is
+  one to hold; and its number once, on the card, the head naming the window only.
+- **Ascension, rebuilt** (the owner's call). A dial after Slay the Spire's Ascension select (the level large between
+  two arrows, its name, what it does to foes and to pay), and the climb after Hades' heat gauge: a rung to each
+  level on a line, lit where its rule is in force, a tap entering at it, the next level locked at the top with its
+  road and Face The Trial. The level chips and the separate Rules in force are gone; the marks show their sets as
+  four diamonds. A head with two tools (help and close) now leaves room for both.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

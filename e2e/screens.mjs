@@ -835,6 +835,10 @@ try {
     if (i > 8) throw new Error('THE ASCENSION WALKTHROUGH DID NOT END');
   }
   await sleep(300); await snap('ascension', true);
+  // The dial and the climb at the window's top: a rung to each level, the one entered at marked.
+  if (!(await page.locator('.sheet.is-top .ascdial__level').count())) throw new Error('ASCENSION HAS NO DIAL');
+  if (!(await page.locator('.sheet.is-top .ascrung.is-here').count())) throw new Error('THE CLIMB DOES NOT MARK THE LEVEL ENTERED AT');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(300); await snap('ascension-top');
   // Setting a mark is the System's offer.
   await page.locator('.sheet.is-top .marks .btn').first().click(); await sleep(500); await snap('mark-offer');
   if (!(await page.locator('.syswin.sysframe', { hasText: 'Would you like to set this mark?' }).isVisible())) throw new Error('THE MARK IS NOT OFFERED IN THE SYSTEM’S WINDOW');
