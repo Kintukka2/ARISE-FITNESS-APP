@@ -514,7 +514,8 @@ button.gnode.is-next:active { background: rgba(255, 154, 60, 0.25); }
   border-radius: 6px; box-shadow: 0 0 0 9px rgba(12, 8, 5, 0.55), 0 0 0 10px rgba(255, 154, 60, 0.22); }
 .dmap--compact { --cell: 54px; }
 .arena__map .dmap { --cell: 92px; --maph: max(300px, calc(100dvh - 380px)); }
-.arena__map .dmap .droom.is-fog .ico, .arena__map .dmap .droom.is-cleared .ico { width: 46%; max-width: 24px; }
+.arena__map .dmap .droom .ico { width: 42%; max-width: 26px; }
+.arena__map .dmap .droom.is-fog .ico, .arena__map .dmap .droom.is-cleared .ico { width: 44%; max-width: 26px; }
 .dmap__halls { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .dmap__wall { stroke: rgba(255, 154, 60, 0.26); stroke-width: 3.8; }
 .dmap__floor { stroke: #0c0905; stroke-width: 2.6; }
@@ -696,25 +697,35 @@ button.dmap__floor { cursor: pointer; }
 .boon__mark .ico + .ico { width: 10px; height: 10px; margin-left: -4px; }
 .boon:active .boon__mark, .boon:focus-visible .boon__mark { border-color: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
 .boon__tier { position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); padding: 0 3px; border-radius: 3px; background: var(--panel-solid); font-family: var(--font-num); font-size: 0.56rem; line-height: 1.2; letter-spacing: 0.02em; color: var(--gold); }
-/* A room stepped into is a scene, as the reference games stage an event: its mark large in its kind's light at
-   the top, its name under it, what is there in a line, and what can be done; no box round it, only its light. */
-.nodepanel { --nk: var(--ember); --nk-glow: var(--ember-glow); display: flex; flex-direction: column; gap: 14px; padding: 22px 4px 8px;
-  background: radial-gradient(110% 60% at 50% 0%, color-mix(in srgb, var(--nk) 15%, transparent), transparent 72%); animation: windowIn 300ms var(--ease) both; }
+/* A room stepped into is a scene filling the screen, as the reference games stage an event: its mark vast and faint
+   behind light turning round its emblem, its name under it, then what is there in a line and what can be done at
+   the foot, in the thumb's reach; no box round it, only its light. */
+.nodepanel { --nk: var(--ember); --nk-glow: var(--ember-glow); position: relative; display: flex; flex: 1 0 auto; flex-direction: column; gap: 14px; padding: 8px 4px 8px; overflow: hidden;
+  background: radial-gradient(120% 55% at 50% 28%, color-mix(in srgb, var(--nk) 17%, transparent), transparent 70%); animation: windowIn 300ms var(--ease) both; }
 .nodepanel--rest, .nodepanel--treasure { --nk: var(--verdant); --nk-glow: var(--verdant-glow); }
 .nodepanel--shrine, .nodepanel--font, .nodepanel--vault { --nk: var(--gold); --nk-glow: var(--gold-glow); }
 .nodepanel--trap { --nk: var(--blood); --nk-glow: var(--blood-glow); }
 .nodepanel--event { --nk: var(--event); --nk-glow: var(--event-glow); }
-.nodepanel__head { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
-.nodepanel__emblem { position: relative; display: grid; place-items: center; width: 78px; height: 78px; border: 1px solid color-mix(in srgb, var(--nk) 60%, transparent); border-radius: 50%;
+.nodepanel__head { position: relative; display: flex; flex: 1 1 auto; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 260px; text-align: center; }
+/* Light turning slowly behind the emblem, after the reward rooms of the references. */
+.nodepanel__head::before { content: ''; position: absolute; left: 50%; top: 50%; width: 340px; height: 340px; margin: -200px 0 0 -170px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--nk) 12%, transparent) 0deg 7deg, transparent 7deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%); animation: sceneRays 40s linear infinite; }
+.nodepanel__art { position: absolute; left: 50%; top: 50%; color: var(--nk); opacity: 0.06; transform: translate(-50%, -58%); pointer-events: none; }
+.nodepanel__art .ico { width: min(78vw, 320px); height: min(78vw, 320px); }
+.nodepanel__emblem { position: relative; display: grid; place-items: center; width: 118px; height: 118px; border: 1px solid color-mix(in srgb, var(--nk) 60%, transparent); border-radius: 50%;
   background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--nk) 24%, #07060a), #07060a 72%); color: var(--nk);
   box-shadow: 0 0 30px var(--nk-glow), inset 0 0 18px color-mix(in srgb, var(--nk) 22%, transparent); animation: emblemIn 460ms var(--ease) both; }
-.nodepanel__emblem::after { content: ''; position: absolute; inset: -7px; border: 1px solid color-mix(in srgb, var(--nk) 22%, transparent); border-radius: 50%; }
-.nodepanel__emblem .ico { width: 34px; height: 34px; filter: drop-shadow(0 0 8px var(--nk-glow)); }
-.nodepanel__title { font-size: 1.12rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.nodepanel__emblem::after { content: ''; position: absolute; inset: -9px; border: 1px solid color-mix(in srgb, var(--nk) 24%, transparent); border-radius: 50%; }
+.nodepanel__emblem::before { content: ''; position: absolute; inset: -20px; border: 1px dashed color-mix(in srgb, var(--nk) 16%, transparent); border-radius: 50%; }
+.nodepanel__emblem .ico { width: 54px; height: 54px; filter: drop-shadow(0 0 10px var(--nk-glow)); }
+.nodepanel__title { position: relative; font-size: 1.2rem; letter-spacing: 0.18em; text-transform: uppercase; text-shadow: 0 0 18px var(--nk-glow); }
+@keyframes sceneRays { to { transform: rotate(360deg); } }
 .nodepanel > p { margin: 0; color: var(--ink-2); line-height: 1.5; text-align: center; text-wrap: balance; }
 .nodepanel > p.muted { color: var(--ink-3); font-size: 0.86rem; }
 @keyframes emblemIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .nodepanel__emblem { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .nodepanel__emblem, .nodepanel__head::before { animation: none; } }
+.nodepanel > :not(.nodepanel__head) { position: relative; }
 /* A choice is a row the hunter acts on: what they do over its odds, a bar filled to them, and a chevron. */
 .choice-row { display: grid; grid-template-columns: minmax(0, 1fr) 16px; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--nk, var(--ember)) 45%, transparent);
   border-radius: var(--r-sm); background: rgba(14, 10, 8, 0.82); color: var(--ink); text-align: left; font: inherit; cursor: pointer; touch-action: manipulation; transition: background 140ms var(--ease), border-color 140ms var(--ease); }

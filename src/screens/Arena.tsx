@@ -940,7 +940,7 @@ function RunHud({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<
           <b class="num"><Shard size={13} />{run.purse ?? 0}</b><small>Banked</small>
         </span>
         <span class="runhud__stat" aria-label={`Found: ${found}`}>
-          <b class="num"><Glyph name="bag" />{found}</b><small>Found</small>
+          <b class="num"><Glyph name="roomCache" />{found}</b><small>Found</small>
         </span>
       </div>
       {(run.blessings ?? []).length > 0 && (
@@ -1008,7 +1008,7 @@ function GateClock({ c, more }: { c: ClockState; more: number }) {
       <span class="label">{c.red ? 'Red Gate' : 'Stirring'}</span>
       <span class="gclock__bar">
         <i class="gclock__fill" style={`width:${(done / CLOCK.red) * 100}%`} />
-        <span class="gclock__gate" aria-hidden="true"><Glyph name="gates" /></span>
+        <span class="gclock__gate" aria-hidden="true"><Glyph name="roomEntrance" /></span>
       </span>
       <b class={`gclock__v num ${c.red ? '' : 'is-solo'}`}>+{more}%</b>
       {c.red && <small class="gclock__sub">Sealed</small>}
@@ -1064,6 +1064,8 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
   return (
     <section class={`nodepanel nodepanel--${x.kind}`}>
       <header class="nodepanel__head">
+        {/* The scene's art: the room's mark, vast and faint, behind light turning slowly round its emblem. */}
+        <span class="nodepanel__art" aria-hidden="true"><Glyph name={glyph} /></span>
         <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>
         <b class="nodepanel__title">{ev?.title ?? nodeName(x, run)}</b>
       </header>

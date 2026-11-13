@@ -164,7 +164,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const isDone = done.has(x.id);
           // A room cleared reads as cleared, not as what it held; the rooms the hunter comes back to keep their marks.
           const plain = isDone && !['entrance', 'up', 'down', 'rest', 'boss', 'landmark'].includes(x.kind);
-          const glyph = plain ? 'check' : sealed ? 'lock' : x.kind === 'vault' ? 'unlock' : kind.glyph;
+          const glyph = plain ? 'check' : sealed ? 'lock' : kind.glyph;
           // A shrine seen shows its Path, as the references' doors show the god behind them.
           const path = looks === 'shrine' && !isDone ? shrinePath?.(x) : undefined;
           // A landmark goes by its own name (`Ossuary`); a cache behind a secret by what it is.
@@ -252,7 +252,7 @@ function MapKey({ shown, fogs }: { shown: NodeKind[]; fogs: boolean }) {
       </button>
       {open && (
         <ul class="dmap__key" id="dmap-key" aria-label="Map key">
-          {shown.map((k) => <li key={k}><i class={`gnode--${k}`}><Glyph name={k === 'vault' ? 'lock' : NODE[k].glyph} /></i>{NODE[k].name}</li>)}
+          {shown.map((k) => <li key={k}><i class={`gnode--${k}`}><Glyph name={NODE[k].glyph} /></i>{NODE[k].name}</li>)}
           {fogs && <li><i class="is-fog"><Glyph name="unknown" /></i>Unseen</li>}
         </ul>
       )}

@@ -1894,6 +1894,15 @@ with what ARISE took from them.
   stepped into is a scene: its mark large in a ring lit in its kind's colour, its title, its line, and each
   choice a row with a bar filled to its odds. The Guide says the Gate turns red if it stirs long enough, with
   no count of moves.
+- **The rooms' marks, redrawn** (the owner's call: review and upgrade every mark on the map and in the Gates). Each
+  kind of room has a silhouette of its own that reads at a tile's size, after Slay the Spire's and Darkest
+  Dungeon's rooms, where it borrowed a mark another screen means otherwise: a Fight was a fist, now three claw
+  marks; the Gatekeeper the Trial's crown, now a horned great helm; a rest the HP heart, now a campfire; a cache
+  the bag, now a chest; a shrine a star (a Feat's), now an altar with a rune over it; a trap the warning
+  triangle, now spikes; the entrance a plain arch, now the Gate's arch with its portal standing in it; the vault
+  a padlock, now a strongbox (the padlock stays for a seal); the boss a skull, now a demon's skull, on the board
+  and the brief's objective too. The HUD's `Found` is the chest. The room scenes fill the screen: the mark vast
+  and faint behind light turning round a larger emblem, the line and the choices at the foot.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

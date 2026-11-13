@@ -186,7 +186,7 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
         onClick={() => { sfx.tap(); if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); }}>
         <span class="gaterow__portal ga-portal">
           <i class="ga-portal__swirl" /><i class="ga-portal__core" />
-          {locked ? <Glyph name="lock" /> : <Glyph name={known ? 'skull' : 'unknown'} />}
+          {locked ? <Glyph name="lock" /> : <Glyph name={known ? 'roomBoss' : 'unknown'} />}
           {/* Cleared once: a tick on the portal's corner, the name left as it is. */}
           {cleared && !practice && <span class="gaterow__done" aria-label="Cleared"><Glyph name="check" /></span>}
         </span>
@@ -339,7 +339,7 @@ function gateTile(s: Save, d: Dungeon, quest: boolean, day: string): BTile {
   return {
     key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, call: practice, shut: locked,
     class: `is-gate ${practice ? 'is-practice' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''} ${tag ? `is-${tag.toLowerCase()}` : ''}`,
-    icon: <Glyph name={locked ? 'lock' : known ? 'skull' : 'unknown'} />,
+    icon: <Glyph name={locked ? 'lock' : known ? 'roomBoss' : 'unknown'} />,
     count: tag,
     status: locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?',
     art: (

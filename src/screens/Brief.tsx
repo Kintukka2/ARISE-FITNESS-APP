@@ -725,7 +725,7 @@ function Objectives({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
     <section class="bbox" aria-label="Objectives">
       <span class="label bbox__head">Objectives</span>
       <ul class="blist">
-        <Line cls="is-main" mark={<Glyph name={isTrial(d) ? 'crown' : 'skull'} />}
+        <Line cls="is-main" mark={<Glyph name={isTrial(d) ? 'crown' : 'roomBoss'} />}
           side={isTrial(d) ? <span class="num">{d.trial}</span> : met ? <span class="warn">{met.name}</span> : known ? <span class="warn">{boss.name}</span> : '?'}>
           {isTrial(d) ? 'Defeat the Chosen, one after another' : met ? 'Defeat the Chosen in the boss’s place' : 'Defeat the boss'}
         </Line>

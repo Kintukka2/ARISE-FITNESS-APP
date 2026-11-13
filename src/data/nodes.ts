@@ -13,18 +13,18 @@ export const HIDDEN: ReadonlySet<NodeKind> = new Set<NodeKind>(['trap', 'treasur
 export const HIDDEN_IN_ROOMS: ReadonlySet<NodeKind> = new Set<NodeKind>([...HIDDEN, 'rest']);
 
 export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string }> = {
-  fight: { name: 'Fight', glyph: 'fist', desc: 'Creatures of the Gate. Pays shards, sometimes gear.' },
-  elite: { name: 'Gatekeeper', glyph: 'crown', desc: 'A stronger foe. In a Gate, the vault is behind it.' },
-  rest: { name: 'Rest', glyph: 'heart', desc: 'Heal, Hone or Steady, once. In a Gate, it passes for an Event until you step in, and keeps until you come back to use it.' },
-  treasure: { name: 'Cache', glyph: 'bag', desc: 'Materials one grade below the Gate, now and then a piece found whole. It passes for an Event until you step on it.' },
-  shrine: { name: 'Shrine', glyph: 'star', desc: 'Three blessings of one Path, shown on the plan. Take one for the rest of the Gate.' },
+  fight: { name: 'Fight', glyph: 'roomFight', desc: 'Creatures of the Gate. Pays shards, sometimes gear.' },
+  elite: { name: 'Gatekeeper', glyph: 'roomKeeper', desc: 'A stronger foe. In a Gate, the vault is behind it.' },
+  rest: { name: 'Rest', glyph: 'roomRest', desc: 'Heal, Hone or Steady, once. In a Gate, it passes for an Event until you step in, and keeps until you come back to use it.' },
+  treasure: { name: 'Cache', glyph: 'roomCache', desc: 'Materials one grade below the Gate, now and then a piece found whole. It passes for an Event until you step on it.' },
+  shrine: { name: 'Shrine', glyph: 'roomShrine', desc: 'Three blessings of one Path, shown on the plan. Take one for the rest of the Gate.' },
   font: { name: 'Font', glyph: 'font', desc: 'Raises one blessing you hold a tier. With none to raise, it blesses as a shrine does.' },
-  trap: { name: 'Trap', glyph: 'warn', desc: 'A Perception check that costs HP when failed. It passes for an Event until you step on it.' },
+  trap: { name: 'Trap', glyph: 'roomTrap', desc: 'A Perception check that costs HP when failed. It passes for an Event until you step on it.' },
   landmark: { name: 'Landmark', glyph: 'landmark', desc: 'A named room of the creatures that hold the Gate, one to a floor, seen from the moment you walk in. A choice of its own, with its odds stated.' },
   event: { name: 'Event', glyph: 'event', desc: 'A choice, with its odds stated. A trap, a cache or a rest passes for one until you step in.' },
-  boss: { name: 'Boss', glyph: 'skull', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
-  entrance: { name: 'Entrance', glyph: 'gates', desc: 'The way in, and the way out. Withdraw from here.' },
-  vault: { name: 'Vault', glyph: 'lock', desc: 'Behind the Gatekeeper, reached only through its room, and sealed until it falls. A richer cache than any other.' },
+  boss: { name: 'Boss', glyph: 'roomBoss', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
+  entrance: { name: 'Entrance', glyph: 'roomEntrance', desc: 'The way in, and the way out. Withdraw from here.' },
+  vault: { name: 'Vault', glyph: 'roomVault', desc: 'Behind the Gatekeeper, reached only through its room, and sealed until it falls. A richer cache than any other.' },
   down: { name: 'Stairs Down', glyph: 'stairsDown', desc: 'To the next floor. The boss waits on the last.' },
   up: { name: 'Stairs Up', glyph: 'stairsUp', desc: 'Back to the floor above.' },
 };
