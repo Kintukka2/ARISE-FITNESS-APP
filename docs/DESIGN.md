@@ -2003,6 +2003,11 @@ with what ARISE took from them.
   - **Recalibrated.** 30 of 51 Gate tunings moved, none by more than 7% (C +0.3% on average, B -0.1%, A 0.0%,
     S +0.5%); 30 of 50 Spire blocks, 14 of 20 Spire floors, 8 of 10 Ascension levels and 2 of 10 Trials moved,
     each by under 6%. The typical hunter's clear rates hold within 3 points at every grade (A's middle 73% to 70%).
+  - **Calibration holds what is on target** (the owner's call, asked after this run moved 30 gates by a few
+    points each). A tuning whose clear rate at its old value is within 5 points of its target (`HOLD` in
+    `scripts/calibrate.ts`) keeps that value; only one that has drifted further is bisected again. Most of this
+    run's moves were the noise of the simulated hunters' new gear draws, not a change in difficulty.
+    `npm run calibrate -- --all` still tunes every number afresh.
   - **Campaign**, 120 days, against the commit before:
 
     | | Days to B, A, S, N | Cleared | Carried out | Sets worn on day 112 |
