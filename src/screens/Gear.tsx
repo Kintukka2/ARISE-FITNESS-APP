@@ -509,8 +509,8 @@ export function openEquipment() {
 }
 
 /**
- * The hunter's figure, wearing what is worn: each slot's part of it (the head, the chest, both hands, the
- * legs, the feet, the pendant, a ring on each hand, the sword in one hand and the shield at the other)
+ * The hunter's figure, wearing what is worn: each slot's part of it (the head, the chest, both arms and
+ * hands, the legs, the feet, the pendant, a ring on each hand, the sword in one hand and the shield at the other)
  * filled in the piece's rarity, dashed while the slot is empty; the slot pointed at glows white.
  */
 function Avatar({ s, hot }: { s: Save; hot: SlotKey | null }) {
@@ -534,10 +534,11 @@ function Avatar({ s, hot }: { s: Save; hot: SlotKey | null }) {
         <circle cx="105.5" cy="105" r="2.2" /><rect x="104.3" y="106.5" width="2.4" height="9" />
         <path d="M98 121 H113 L112 124 H99 Z" /><path d="M103 124 H108 L107.2 188 L105.5 196 L103.8 188 Z" /><path class="av__line" d="M105.5 128 V184" />
       </g>
-      <g class="av-base">
+      <g class="av-base"><path d="M65 33 H75 L76 44 H64 Z" /></g>
+      {/* The arms are the hands' part, as gauntlets run up them: behind the chest, so the shoulders sit under it. */}
+      <g {...at('hands')}>
         <path d="M47 48 L40 54 L34 84 L31 110 L38 111 L42 88 L50 64 Z" />
         <path d="M93 48 L100 54 L106 84 L109 110 L102 111 L98 88 L90 64 Z" />
-        <path d="M65 33 H75 L76 44 H64 Z" />
       </g>
       <g {...at('legs')}><path d="M56 102 H69 L68 150 L66 199 H57 L56 150 Z" /><path d="M71 102 H84 L84 150 L83 199 H74 L72 150 Z" /></g>
       <g {...at('feet')}><path d="M56 199 H66 L67 211 H49 Q50 204 56 199 Z" /><path d="M84 199 H74 L73 211 H91 Q90 204 84 199 Z" /></g>
@@ -559,7 +560,7 @@ export function Gains({ parts, class: cls }: { parts: string[]; class?: string }
 const statParts = (it: Item) => gear.coreLines(it).map(([, t]) => t);
 const bonusParts = (b: Record<string, number>) => gear.bonusText(b).split(' · ');
 
-/** A bonus in words, its name and its value apart: `Status chance +26.7` is `Status chance` and `+26.7`. */
+/** A bonus in words, its name and its value apart: `Effect chance +26.7` is `Effect chance` and `+26.7`. */
 const nameAndValue = (t: string): [string, string] => {
   const i = t.lastIndexOf(' ');
   return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, ''];

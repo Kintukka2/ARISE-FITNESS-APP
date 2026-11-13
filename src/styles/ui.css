@@ -475,7 +475,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .art__tag--perfect { color: var(--gold); }
 .art__tag--peak { color: color-mix(in srgb, var(--gold) 70%, transparent); }
 .art__tag--dead { color: var(--blood); }
-.art__worn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; background: rgba(72, 245, 168, 0.85); color: #02160c; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase; }
+.art__worn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; background: rgba(236, 246, 255, 0.92); color: #04101e; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase; }
 
 .vbar { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .vbar .bar { flex: 1; }

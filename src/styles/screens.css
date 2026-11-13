@@ -2131,7 +2131,7 @@ button.dmap__floor { cursor: pointer; }
 .heldrow__q { position: relative; display: block; height: 2px; margin-top: 1px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
 .heldrow__q > i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--gold) 80%, transparent); }
 .itag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid var(--sys-hair); font-size: 0.6rem; font-weight: 700; }
-.itag.is-worn { border-color: var(--verdant); color: var(--verdant); }
+.itag.is-worn { border-color: var(--sys-ink); background: color-mix(in srgb, var(--sys-ink) 12%, transparent); color: #fff; }
 .itag.is-set { border-color: hsl(var(--set-h) 82% 62% / 0.7); color: hsl(var(--set-h) 82% 72%); }
 .itag.is-perfect { border-color: color-mix(in srgb, var(--gold) 70%, transparent); color: var(--gold); }
 .itag.is-dead { border-color: rgba(255, 59, 75, 0.6); color: #ff8a94; }
@@ -2141,14 +2141,14 @@ button.dmap__floor { cursor: pointer; }
 .itemstats li .ico { width: 16px; height: 16px; color: var(--mana); filter: drop-shadow(0 0 4px var(--mana-glow)); }
 .itemstats li small { font-size: 0.72rem; text-shadow: none; }
 .itemstats li.is-lost { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); text-shadow: none; }
-.itemrolls li { display: grid; grid-template-columns: minmax(0, 1fr) 70px auto; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 600; }
+.itemrolls li { display: grid; grid-template-columns: minmax(0, 1fr) 70px 50px; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 600; }
 .itemrolls__name { color: color-mix(in srgb, var(--mana) 72%, white); text-shadow: 0 0 8px var(--mana-glow); }
 .itemrolls__name b { font-weight: 700; color: #fff; }
 .itemrolls__bar { position: relative; display: block; height: 4px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
 .itemrolls__bar > i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--mana) 80%, transparent); animation: spGrow 900ms var(--ease) both; }
 .itemrolls__bar > b { position: absolute; top: -1px; bottom: -1px; right: 0; background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
 .itemrolls__bar.is-full > i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
-.itemrolls li small { font-size: 0.62rem; }
+.itemrolls li small { font-size: 0.62rem; text-align: right; white-space: nowrap; }
 .itemcard__text { margin: 0; font-size: 0.82rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); font-style: italic; }
 .figure__grid line { stroke: color-mix(in srgb, var(--win) 14%, transparent); stroke-width: 0.4; stroke-dasharray: 1 2; }
 .figure__scan { opacity: 0.35; animation: figScan 3.6s linear infinite; }

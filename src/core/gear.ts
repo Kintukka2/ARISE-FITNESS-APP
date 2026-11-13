@@ -334,7 +334,7 @@ export function sumBonuses(...xs: Record<string, number>[]): Record<string, numb
 
 const BONUS_NAMES: Record<string, string> = {
   patk: 'attack', mpow: 'magic', defense: 'defence', resist: 'resistance', maxHp: 'maximum HP', recovery: 'healing between fights',
-  crit: 'crit chance', accuracy: 'accuracy', evasion: 'evasion', initiative: 'initiative', statusChance: 'status chance', statusSave: 'status save',
+  crit: 'crit chance', accuracy: 'accuracy', evasion: 'evasion', initiative: 'initiative', statusChance: 'effect chance', statusSave: 'status save',
 };
 const FRACTION = new Set(['patk', 'mpow', 'defense', 'resist', 'maxHp', 'recovery']);
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
@@ -459,8 +459,8 @@ export function wearLoadout(s: Save, i: number): number {
   return SLOTS.filter((sl) => (before[sl.key] ?? null) !== (s.equipped[sl.key] ?? null)).length;
 }
 
-/** A property's name as the hunter reads it: the data's `Defense` is Defence, and `Critical Chance` is Crit Chance. */
-const ROLL_NAME: Record<string, string> = { Defense: 'Defence', 'Critical Chance': 'Crit Chance' };
+/** A property's name as the hunter reads it: the data's `Defense` is Defence, `Critical Chance` is Crit Chance, `Status Chance` is Effect Chance. */
+const ROLL_NAME: Record<string, string> = { Defense: 'Defence', 'Critical Chance': 'Crit Chance', 'Status Chance': 'Effect Chance', 'Status Potency': 'Effect Potency' };
 export const rollName = (stat: string) => ROLL_NAME[stat] ?? stat;
 
 export function rollText(it: Item): string[] {

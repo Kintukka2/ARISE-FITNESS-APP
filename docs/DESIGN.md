@@ -1960,6 +1960,8 @@ with what ARISE took from them.
   pointed at. Green is kept for what changes: a piece's own stats are white with their glyph in cyan, its
   properties ice, an upgrade's result gold; gains over the piece worn, a paying set and Mana Shards stay
   green. Bonuses side by side are spaced, not dotted. Critical chance is Crit chance everywhere it is read.
+  Then: the arms take the gloves' colour, `Worn` is white, the property bars line up, and Status chance
+  reads Effect chance (Status Potency, Effect Potency); Status save keeps its name.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
