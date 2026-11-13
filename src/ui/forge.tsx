@@ -89,6 +89,7 @@ export function CostGrid({ s, c }: { s: Save; c: forge.Cost }) {
             <MatArt id={x.id} size={34} />
             <small class="costgrid__name">{m?.name}</small>
             <b class="num">{group(x.have)}<span>/{x.need}</span></b>
+            <i class="costgrid__fill" aria-hidden="true"><i style={`width: ${Math.min(100, (x.have / Math.max(1, x.need)) * 100)}%`} /></i>
           </button>
         );
       })}

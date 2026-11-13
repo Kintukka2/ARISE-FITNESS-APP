@@ -213,14 +213,14 @@ try {
   await page.locator('[data-hub="forge"]').click(); await sleep(700);
   if ((await page.locator('.sheet.is-top .bprow').count()) < 5) throw new Error('THE FORGE DOES NOT LIST THE BLUEPRINTS KNOWN');
   await snap('forge'); await snap('forge-full', true);
-  await page.locator('.sheet.is-top .bagtools__only', { hasText: 'Can forge' }).click(); await sleep(300);
+  await page.locator('.sheet.is-top .forgefilter__opt', { hasText: 'Can forge' }).click(); await sleep(300);
   if (!(await page.locator('.sheet.is-top .bprow.is-ready').count())) throw new Error('THE VETERAN CAN FORGE NOTHING');
   await snap('forge-ready');
   await page.locator('.sheet.is-top .bprow.is-ready').first().click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .costgrid__one').count())) throw new Error('A BLUEPRINT SHOWS NO MATERIALS');
   await snap('blueprint'); await snap('blueprint-full', true);
   const held = await page.locator('.sheet.is-top .heldrow').count();
-  await page.locator('.sheet.is-top .recipe > .btn--gold').click(); await sleep(1800);
+  await page.locator('.sheet.is-top .forgebtn').click(); await sleep(1800);
   if ((await page.locator('.sheet.is-top .heldrow').count()) !== held + 1) throw new Error('FORGING PUT NO PIECE IN THE BAG');
   if (!(await page.locator('.sheet.is-top .recipe__reveal .flip.is-open').count())) throw new Error('THE FORGED PIECE WAS NOT TURNED OVER');
   await page.locator('.sheet.is-top .recipe__reveal').scrollIntoViewIfNeeded(); await snap('blueprint-forged');

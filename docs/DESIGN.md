@@ -1975,6 +1975,13 @@ with what ARISE took from them.
   stats, its score and what it gains, Equip, the star, Details), after Genshin Impact's and Honkai: Star Rail's bags,
   so a piece can be read and worn without leaving the bag; Select opens Quick select in red; the Sets view opens on
   the designs found as a ring of the rarities.
+- **The Forge, rebuilt** (the owner's call), after Monster Hunter's smithy and Warframe's Foundry. A hearth heads
+  it (the anvil over its coals, what can be forged now large, Better in gold); the blueprints are rows that show a
+  chip to each thing their recipe asks for, held or short, with `▲ Better` in gold on those rarer than what is worn
+  (`forge.betterForges`) and a Better filter for them. The recipe ends in an altar: its materials fill toward what
+  they need, the range a forged piece can roll stands as a bar with familiarity's floor shaded off and the last
+  piece's quality marked on it, and the hammer throws sparks. The materials are a grid of tiles with a dock that
+  says how many known blueprints ask for one and how many it is short for, and tracks it. No engine changed.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

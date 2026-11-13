@@ -391,7 +391,7 @@ try {
   await snap('forge');
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click();
   await sleep(300);
-  if (!(await visible('.sheet.is-top .matrow:not(.is-none)'))) throw new Error('THE PRACTICE GATE LEFT NO MATERIALS IN THE FORGE');
+  if (!(await visible('.sheet.is-top .mattile:not(.is-none)'))) throw new Error('THE PRACTICE GATE LEFT NO MATERIALS IN THE FORGE');
   await snap('forge-materials');
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Blueprints' }).click();
   await sleep(300);
@@ -400,7 +400,7 @@ try {
   await page.waitForSelector('.sheet.is-top[aria-label^="Blueprint:"]', { timeout: 3000 });
   await sleep(400);
   await snap('forge-blueprint');
-  const forgeBtn = page.locator('.sheet.is-top .recipe > .btn--gold');
+  const forgeBtn = page.locator('.sheet.is-top .forgebtn');
   if (await forgeBtn.isEnabled()) {
     const held = await page.locator('.sheet.is-top .heldrow').count();
     await forgeBtn.click();

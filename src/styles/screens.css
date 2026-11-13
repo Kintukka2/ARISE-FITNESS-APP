@@ -3196,3 +3196,106 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .collect__list li b { font-weight: 800; text-align: right; }
 .collect__list li b small { font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 @media (prefers-reduced-motion: reduce) { .baghead__spread i, .bagpeek, .bagmenu { animation: none; } }
+
+/* ------------------------------------------------------------------ the Forge, rebuilt
+ * After the smithies of Monster Hunter and Warframe's Foundry: a hearth at its head (the fire, what can be
+ * forged now, what of it beats what is worn); the blueprints as rows that show each material their
+ * recipe asks for, held or short; the recipe's altar, its materials filling toward what they need, the range
+ * a forged piece can roll and where the last one landed, sparks when the hammer falls; the materials as a
+ * grid of tiles, with a dock for the one tapped. */
+.forgehearth { position: relative; display: grid; grid-template-columns: 84px auto minmax(0, 1fr); align-items: center; gap: 6px 12px; overflow: hidden; padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--forge) 45%, var(--sys-hair));
+  background: radial-gradient(70% 130% at 12% 100%, rgba(255, 120, 40, 0.26), transparent 70%), linear-gradient(180deg, rgba(20, 8, 2, 0.55), rgba(3, 8, 20, 0.75));
+  box-shadow: inset 0 -22px 30px -22px rgba(255, 120, 40, 0.4); }
+.forgehearth.is-call { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: inset 0 -22px 30px -22px rgba(255, 120, 40, 0.4), 0 0 14px -2px var(--gold-glow); }
+.forgehearth__fire { grid-column: 1; grid-row: 1 / 3; position: relative; display: grid; place-items: center; width: 84px; height: 84px; color: var(--forge); }
+.forgehearth__fire > .ico { position: relative; z-index: 1; width: 46px; height: 46px; filter: drop-shadow(0 0 12px rgba(255, 140, 60, 0.7)); animation: anvilBeat 2.4s ease-in-out infinite; }
+.forgehearth__coals { position: absolute; left: 8px; right: 8px; bottom: 6px; height: 16px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 190, 110, 0.95), rgba(255, 90, 20, 0.55) 45%, transparent 72%); animation: coalPulse 1.8s ease-in-out infinite; }
+.forgehearth__glow { position: absolute; inset: 6px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 140, 60, 0.32), transparent 70%); animation: coalPulse 2.6s ease-in-out infinite; }
+.forgehearth__spark { position: absolute; left: calc(28% + var(--k) * 11%); bottom: 16px; width: 3px; height: 3px; border-radius: 50%; background: #ffd29a; box-shadow: 0 0 6px #ffb36b; opacity: 0; animation: emberRise 2.2s ease-in calc(var(--k) * 0.42s) infinite; }
+@keyframes emberRise { 0% { opacity: 0; transform: none; } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc((var(--k) - 2) * 6px), -60px); } }
+@keyframes coalPulse { 50% { opacity: 0.6; } }
+@keyframes anvilBeat { 0%, 70%, 100% { transform: none; } 76% { transform: translateY(1px) scale(0.97); } }
+.forgehearth__main { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 2px; }
+.forgehearth__main b { font-size: 2.1rem; font-weight: 800; line-height: 1; text-shadow: 0 0 3px rgba(255, 255, 255, 0.5), 0 0 14px rgba(255, 140, 60, 0.6); }
+.forgehearth__main .label { font-size: 0.52rem; }
+.forgehearth__shards { grid-column: 3; grid-row: 1; align-self: start; justify-self: end; font-size: 0.86rem; }
+.forgehearth__facts { grid-column: 2 / -1; grid-row: 2; display: flex; gap: 16px; }
+.forgehearth__facts > span { display: flex; flex-direction: column; gap: 1px; }
+.forgehearth__facts small { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.forgehearth__facts b { font-size: 0.94rem; font-weight: 800; }
+.forgehearth__facts .is-gold b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.forgefilter { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--sys-hair); }
+.forgefilter__opt { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; padding: 0 4px; border: 0; background: rgba(3, 8, 20, 0.45); color: color-mix(in srgb, var(--sys-ink) 75%, transparent); font-family: var(--font-sys); font-size: 0.68rem; font-weight: 600; white-space: nowrap; }
+.forgefilter__opt + .forgefilter__opt { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.forgefilter__opt.is-on { color: #fff; background: color-mix(in srgb, var(--win) 24%, rgba(3, 8, 20, 0.5)); box-shadow: inset 0 -2px 0 var(--win); }
+.forgefilter__opt b { padding: 0 5px; background: var(--gold); color: #1a1200; font-size: 0.6rem; line-height: 1.5; box-shadow: 0 0 6px var(--gold-glow); }
+.bprow { --rc: var(--rank-E); grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding: 8px 8px 8px 7px; border-left: 3px solid color-mix(in srgb, var(--rc) 65%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 10%, transparent), rgba(3, 8, 20, 0.45) 45%); }
+.bprow[data-rarity='D'] { --rc: var(--rank-D); } .bprow[data-rarity='C'] { --rc: var(--rank-C); } .bprow[data-rarity='B'] { --rc: var(--rank-B); }
+.bprow[data-rarity='A'] { --rc: var(--rank-A); } .bprow[data-rarity='S'] { --rc: var(--rank-S); }
+.bprow.is-ready { border-color: color-mix(in srgb, var(--verdant) 40%, var(--sys-hair)); border-left-color: var(--rc); }
+.bprow.is-better { border-color: color-mix(in srgb, var(--gold) 65%, transparent); border-left-color: var(--rc); box-shadow: 0 0 12px -4px var(--gold-glow); }
+.bprow__art { display: grid; }
+.bprow__text b { line-height: 1.2; }
+.bprow__mats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.bprow__mat { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px 1px 1px; border: 1px solid; font-size: 0.6rem; }
+.bprow__mat.is-ok { border-color: color-mix(in srgb, var(--verdant) 40%, transparent); color: var(--verdant); }
+.bprow__mat.is-short { border-color: color-mix(in srgb, var(--blood) 55%, transparent); background: rgba(40, 6, 12, 0.45); color: #ff6b77; }
+.bprow__mat > .ico { width: 10px; height: 10px; }
+.bprow__mat.is-shards { padding-left: 4px; }
+.bprow__mat.is-shards svg { width: 11px; height: 11px; }
+.bprow__mat small { font-size: 0.6rem; font-weight: 700; }
+.bprow__side { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; align-self: stretch; }
+.bprow__better { padding: 1px 6px; background: var(--gold); color: #1a1200; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; box-shadow: 0 0 8px var(--gold-glow); }
+.forgealtar { position: relative; display: flex; flex-direction: column; gap: 10px; overflow: hidden; padding: 12px; border-color: color-mix(in srgb, var(--forge) 40%, var(--sys-hair));
+  background: radial-gradient(90% 60% at 50% 100%, rgba(255, 120, 40, 0.16), transparent 70%), rgba(3, 8, 20, 0.55); }
+.forgealtar.is-ready { border-color: color-mix(in srgb, var(--gold) 55%, transparent); box-shadow: inset 0 -26px 40px -30px rgba(255, 140, 60, 0.55); }
+.forgealtar__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.forgealtar .trackall { margin-top: 0; }
+.costgrid__one { position: relative; }
+.costgrid__fill { display: block; width: 100%; height: 3px; margin-top: 2px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.costgrid__fill > i { display: block; height: 100%; background: var(--blood); box-shadow: 0 0 6px var(--blood-glow); animation: spGrow 800ms var(--ease) both; }
+.costgrid__one.is-ok .costgrid__fill > i { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
+.qrange { display: flex; flex-direction: column; gap: 6px; padding-bottom: 14px; }
+.qrange__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.qrange__head b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); font-size: 0.86rem; }
+.qrange__bar { position: relative; display: block; height: 10px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.6); }
+.qrange__floor { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--sys-ink) 22%, transparent) 0 3px, transparent 3px 6px); }
+.qrange__span { position: absolute; top: 0; bottom: 0; right: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 25%, transparent), color-mix(in srgb, var(--gold) 70%, transparent)); }
+.qrange__tick { position: absolute; top: -2px; bottom: -2px; width: 1px; background: color-mix(in srgb, var(--sys-ink) 28%, transparent); }
+.qrange__mark { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 8px #fff; animation: markDrop 520ms var(--ease) both; }
+@keyframes markDrop { from { opacity: 0; transform: translateY(-10px); } }
+.qrange__mark b { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); font-size: 0.66rem; color: #fff; white-space: nowrap; }
+.qrange > small { font-size: 0.64rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.forgealtar__burst { position: absolute; left: 50%; bottom: 34px; z-index: 3; width: 0; height: 0; pointer-events: none; }
+.forgealtar__burst:not(:empty)::before { content: ''; position: absolute; left: -90px; top: -60px; width: 180px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 220, 160, 0.85), rgba(255, 140, 60, 0.35) 40%, transparent 70%); animation: forgeFlash 600ms ease-out both; }
+@keyframes forgeFlash { from { opacity: 1; transform: scale(0.4); } to { opacity: 0; transform: scale(1.4); } }
+.forgealtar__burst i { --a: calc(var(--k) * 45deg); position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #ffd29a; box-shadow: 0 0 8px #ffb36b; animation: forgeBurst 720ms ease-out both; }
+@keyframes forgeBurst { from { opacity: 1; transform: rotate(var(--a)) translateX(0); } to { opacity: 0; transform: rotate(var(--a)) translateX(96px); } }
+.sysframe .forgebtn { min-height: 52px; font-size: 1rem; }
+.forgealtar.is-ready .forgebtn { animation: forgeReady 2.2s ease-in-out infinite; }
+@keyframes forgeReady { 50% { box-shadow: 0 0 22px var(--gold-glow), inset 0 0 18px rgba(255, 203, 92, 0.18); } }
+.matgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mattile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 8px; color: inherit; font: inherit; text-align: center; transition: border-color 160ms, box-shadow 160ms, transform 120ms; }
+.mattile:active { transform: scale(0.96); }
+.mattile b { font-size: 1.08rem; font-weight: 800; }
+.mattile small { font-size: 0.6rem; line-height: 1.2; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.mattile.is-none { opacity: 0.45; }
+.mattile.is-tracked { border-color: var(--forge); box-shadow: 0 0 10px var(--forge-glow); opacity: 1; }
+.mattile.is-on { border-color: #fff; box-shadow: 0 0 0 1px #fff, 0 0 14px rgba(255, 255, 255, 0.2); opacity: 1; }
+.mattile__track { position: absolute; top: 4px; right: 4px; }
+.matpeek { position: sticky; bottom: 0; z-index: 6; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px 12px; padding: 10px; background: rgba(4, 9, 22, 0.97); box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.6); animation: peekIn 260ms var(--ease) both; }
+.matpeek__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.matpeek__text b { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; }
+.matpeek__text > small { font-size: 0.7rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.matpeek__facts { display: flex; gap: 16px; margin-top: 4px; }
+.matpeek__facts > span { display: flex; flex-direction: column; gap: 1px; }
+.matpeek__facts small { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.matpeek__facts b { font-size: 0.94rem; font-weight: 800; }
+.matpeek__facts .is-short b { color: #ff6b77; }
+.matpeek__acts { grid-column: 1 / -1; display: flex; gap: 6px; }
+.sysframe .matpeek__acts .btn--sm { min-height: 40px; }
+@media (prefers-reduced-motion: reduce) {
+  .forgehearth__fire > .ico, .forgehearth__coals, .forgehearth__glow, .forgehearth__spark, .forgealtar.is-ready .forgebtn, .qrange__mark, .matpeek { animation: none; }
+}
