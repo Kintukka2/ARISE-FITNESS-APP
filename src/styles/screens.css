@@ -1314,47 +1314,75 @@ button.dmap__floor { cursor: pointer; }
 .btile.is-quest .btile__count { color: var(--mana); border-color: rgba(79, 214, 255, 0.6); }
 .btile.is-chosen .btile__count { color: var(--gold); border-color: rgba(255, 203, 92, 0.6); }
 /* GATES: the board. Its counts across the head, a rail of grades, then a band to each grade, a row to each Gate. */
-.gboard { gap: 12px; }
-.gboard__sum .countdown { font-size: 0.9rem; letter-spacing: 0; }
-.gbands { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
-.gband-tab { --rc: var(--sys-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 0; min-height: 46px; padding: 4px 0; border: 1px solid color-mix(in srgb, var(--rc) 35%, transparent); background: rgba(10, 6, 2, 0.55); color: var(--rc); font: inherit; font-size: 0.9rem; font-weight: 800; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); transition: background 160ms, box-shadow 160ms; }
-.gband-tab small { font-size: 0.56rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.gband-tab .ico { width: 15px; height: 15px; }
+.gboard { gap: 14px; }
+/* GATES, rebuilt after the stage lists of Honkai: Star Rail and Solo Leveling: Arise: the day as facts, the grades as
+   a rail of portals, each grade a divider, each Gate a stage card with the boss's power at its right. */
+.gboard__facts dt { display: flex; align-items: flex-end; justify-content: center; min-height: 2.5em; text-align: center; }
+.gboard__facts .countdown { display: inline-flex; align-items: center; gap: 3px; font-size: 0.8rem; letter-spacing: 0; color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.gboard__facts .countdown .ico { width: 11px; height: 11px; color: inherit; filter: none; }
+.gboard__facts .is-new dd { color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); }
+/* The rail stays at the top as the board scrolls under it, so a grade is a tap away from anywhere on it. */
+/* It sticks over the sheet's own top padding (14px), so nothing shows above it. */
+.gbands { position: sticky; top: -14px; z-index: 3; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; margin-top: -10px; padding: 16px 0 2px; border-bottom: 1px solid var(--sys-hair); background: linear-gradient(rgba(9, 7, 6, 0.97), rgba(9, 7, 6, 0.92)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.gband-tab { --rc: var(--sys-ink); position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; min-height: 56px; padding: 4px 0 8px; border: 0; background: none; color: var(--rc); font: inherit; cursor: pointer; touch-action: manipulation; }
+.gband-tab__ring { display: grid; place-items: center; width: 34px; height: 34px; }
+.gband-tab__ring.ga-portal { width: 34px; height: 34px; }
+.gband-tab__ring.ga-portal b { position: relative; font-size: 0.84rem; font-weight: 800; color: var(--rc); text-shadow: 0 0 8px color-mix(in srgb, var(--rc) 60%, transparent); }
+.gband-tab__ring:not(.ga-portal) { border: 1px solid color-mix(in srgb, var(--rc) 40%, transparent); border-radius: 50%; }
+.gband-tab__ring > b { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em; color: var(--rc); }
+.gband-tab .ico { width: 14px; height: 14px; }
+.gband-tab small { font-size: 0.6rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.gband-tab::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: -3px; height: 2px; border-radius: 1px; background: var(--rc); box-shadow: 0 0 8px var(--rc); transform: scaleX(0); transition: transform 200ms var(--ease); }
 .gband-tab[data-rank='E'] { --rc: var(--rank-E); } .gband-tab[data-rank='D'] { --rc: var(--rank-D); } .gband-tab[data-rank='C'] { --rc: var(--rank-C); }
 .gband-tab[data-rank='B'] { --rc: var(--rank-B); } .gband-tab[data-rank='A'] { --rc: var(--rank-A); } .gband-tab[data-rank='S'] { --rc: var(--rank-S); }
 .gband-tab.is-marked { --rc: var(--win); }
-.gband-tab.is-on { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 24%, rgba(10, 6, 2, 0.9)); color: #fff; box-shadow: inset 0 0 12px color-mix(in srgb, var(--rc) 30%, transparent), 0 0 12px color-mix(in srgb, var(--rc) 40%, transparent); }
+.gband-tab:not(.is-on) .ga-portal__swirl { animation: none; opacity: 0.45; }
+.gband-tab:not(.is-on) .ga-portal__core { animation: none; opacity: 0.35; }
+.gband-tab.is-on::after { transform: scaleX(1); }
 .gband-tab.is-on small { color: #fff; }
-.gband-tab.is-empty { opacity: 0.32; }
-/* A grade's band: its portal, its name in its colour and what a clear pays, over its Gates. */
-.gband { display: flex; flex-direction: column; gap: 6px; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--k) * 60ms); }
-.gband__head { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 4px 10px 4px 4px; border-left: 3px solid var(--rc); background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 20%, transparent), transparent 80%); }
-.gband__head .ga-portal--mini { width: 40px; height: 40px; }
-.gband__name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.gband__name > b { font-size: 0.92rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rc); text-shadow: 0 0 10px color-mix(in srgb, var(--rc) 50%, transparent); }
-.gband__name small { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.gband__name small b { color: var(--sys-ink); }
+.gband-tab.is-on .gband-tab__ring:not(.ga-portal) { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 18%, transparent); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 40%, transparent); color: #fff; }
+.gband-tab:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+.gband-tab.is-empty { opacity: 0.3; }
+@media (prefers-reduced-motion: reduce) { .gband-tab::after { transition: none; } }
+/* A grade is a divider: its letter large in its colour, what a clear pays, its count, a rule in its colour. */
+.gband { display: flex; flex-direction: column; gap: 8px; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--k) * 60ms); }
+.gband__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 10px; padding: 2px 2px 6px; border-bottom: 1px solid color-mix(in srgb, var(--rc) 45%, transparent); }
+.gband__rank { font-size: 0.82rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--rc); text-shadow: 0 0 10px color-mix(in srgb, var(--rc) 50%, transparent); }
+.gband__letter { font-size: 1.3rem; letter-spacing: 0; }
+.gband__pay { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.gband__pay b { color: var(--sys-ink); }
 .gband__count { display: inline-flex; align-items: center; gap: 4px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.gband__count b { font-size: 0.92rem; letter-spacing: 0; color: var(--sys-ink); }
+.gband__count b { font-size: 0.86rem; letter-spacing: 0; color: var(--sys-ink); }
 .gband__count .ico { width: 12px; height: 12px; }
 .gband.is-shut .gband__head { opacity: 0.6; }
-.gband.is-shut .ga-portal__swirl, .gband.is-shut .ga-portal__core { animation: none; opacity: 0.35; }
 .glist { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .glist > li { animation: qaIn 380ms var(--ease) both; animation-delay: calc(var(--k, 0) * 60ms + var(--i) * 40ms); }
-/* A Gate's row: its portal, its name over its boss and its marks, the Shadows bound from it, and the way in. */
-.gaterow { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) 12px; align-items: center; gap: 10px; width: 100%; padding: 8px 10px 8px 8px; border-color: color-mix(in srgb, var(--rc) 35%, var(--sys-hair)); background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 12%, rgba(6, 4, 2, 0.6)), rgba(6, 4, 2, 0.55) 65%); color: inherit; font: inherit; text-align: left; transition: border-color 160ms, box-shadow 160ms; }
-.gaterow:hover, .gaterow:focus-visible { border-color: var(--rc); box-shadow: 0 0 14px color-mix(in srgb, var(--rc) 30%, transparent); }
-.gaterow__portal.ga-portal { width: 48px; height: 48px; }
-.gaterow__portal .ga-portal__core { inset: 9px; }
-.gaterow__portal > .ico { position: relative; width: 16px; height: 16px; color: #fff; filter: drop-shadow(0 0 6px var(--rc)); }
-.gaterow__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* A Gate's stage card: its portal, its name over its boss and its marks, the boss's power at the right, the way in.
+   It is what the hunter taps, so it keeps a box: a rank-coloured edge down its left, its light fading to the right. */
+.gaterow { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; min-height: 76px; padding: 10px 12px 10px 10px;
+  border-color: color-mix(in srgb, var(--rc) 30%, var(--sys-hair)); border-left: 3px solid var(--rc);
+  background: radial-gradient(90% 140% at 0% 50%, color-mix(in srgb, var(--rc) 16%, transparent), transparent 60%), rgba(6, 4, 2, 0.6);
+  color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, box-shadow 160ms, background 160ms; }
+.gaterow:hover, .gaterow:focus-visible { border-color: var(--rc); box-shadow: 0 0 16px color-mix(in srgb, var(--rc) 30%, transparent); }
+.gaterow:active { background: radial-gradient(90% 140% at 0% 50%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 70%), rgba(6, 4, 2, 0.7); }
+.gaterow__portal.ga-portal { width: 56px; height: 56px; }
+.gaterow__portal .ga-portal__core { inset: 10px; }
+.gaterow__portal > .ico { position: relative; width: 20px; height: 20px; color: #fff; filter: drop-shadow(0 0 6px var(--rc)); }
+.gaterow__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .gaterow__name { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.gaterow__name b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.82rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.gaterow__name b { display: -webkit-box; overflow: hidden; font-size: 0.9rem; font-weight: 800; line-height: 1.25; color: #fff; text-shadow: var(--sys-glow); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 /* Cleared once: a small tick on the portal's corner; the name keeps its colour. */
-.gaterow__done { position: absolute; right: -2px; bottom: -2px; z-index: 2; display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid color-mix(in srgb, var(--verdant) 70%, transparent); border-radius: 50%; background: rgba(2, 14, 8, 0.92); color: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
-.gaterow__done .ico { width: 10px; height: 10px; }
-.gaterow__body > small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.gaterow__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 1px; }
+.gaterow__done { position: absolute; right: -2px; bottom: -2px; z-index: 2; display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid color-mix(in srgb, var(--verdant) 70%, transparent); border-radius: 50%; background: rgba(2, 14, 8, 0.92); color: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
+.gaterow__done .ico { width: 11px; height: 11px; }
+.gaterow__body > small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* The boss's power, as a stage card states its recommended level: the power mark and the figure in red, `?` until known. */
+.gaterow__might { display: inline-flex; align-items: center; gap: 4px; color: #ff6b74; text-shadow: 0 0 10px rgba(255, 47, 62, 0.4); }
+.gaterow__might .ico { width: 15px; height: 15px; }
+.gaterow__might b { font-size: 1rem; font-weight: 800; }
+.gaterow__might.is-unknown { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); text-shadow: none; }
+/* Its marks: the counts as quiet marks with no box, so they line up row to row; what calls the hunter there keeps a pill. */
+.gaterow__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 1px; }
+.gaterow__tags .gtag.is-shadows, .gaterow__tags .gtag.is-feats, .gaterow__tags .gtag.is-pieces, .gaterow__tags .gtag.is-tracked { padding: 0; border: 0; background: none; box-shadow: none; font-size: 0.66rem; }
 .gtag { --tc: var(--sys-ink); display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--tc) 60%, transparent); background: color-mix(in srgb, var(--tc) 12%, transparent); color: var(--tc); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .gtag.is-quest { --tc: var(--mana); }
 .gtag.is-chosen { --tc: var(--gold); }
