@@ -1869,6 +1869,40 @@ with what ARISE took from them.
   inside: until then the row is `Unidentified` and opens nothing. The blueprint's tile says `Blueprint`, not
   `Blueprint · sometimes`. On the Trial the facts are three, `Your party`, `Last Chosen` and `Chosen`: its
   road is its Chosen, so `To the last` only said `Chosen` again.
+- **No moves before the Gate** (the owner's next call: the hunter never counts the clock out before walking
+  in). The facts are `Party` and `Boss`, each by a power mark (two crossed swords, `?` until the boss is
+  known), and `Floors`, said before anyone has been inside; the Trial's are `Party`, `Last Chosen` and
+  `Chosen`. The rooms wait in Today's map, once identified, and the moves are nowhere on the brief; the Guide
+  no longer says the brief shows the budget. The map's key folds behind `Key` at the window's top right and
+  drops over the plan, so seven kinds of room read as seven lines, not a wrapping band.
+- **No moves inside the Gate either** (the owner's call, at once after). The clock still counts every move and
+  still stirs past the budget, but nothing shows the count: the meter under the hunter's health appears only
+  once the Gate stirs (`Stirring`, a bar toward red and the creatures' share; then `Red Gate`, `Sealed`), and no
+  room's cost is drawn on it or read aloud with it. The Guide says what a move is and what the budget does,
+  with no figure for the budget. Auto, the brief's verdict and calibration read the clock as before, so no
+  tuning moves.
+- **The map, rebuilt** (the owner's call: overhaul the screen and what it opens, freely, after the references,
+  and take the 20 moves out of the Guide). The head is the Gate's title card, as Persona 3 Reload names a floor:
+  the grade's plate, `E-Rank Gate · Floor 1 of 2` over the Gate's name, in place of `Choose your way`. The run
+  strip's box is gone: one HUD row, as Slay the Spire keeps a run in view, the heart and the health bar, then
+  Allies, Banked and Found, each a mark and figure over its word, the blessings under it as Hades lines its
+  boons. The last line of the feed sits under it with its tone's rule down its left. The Gate clock is a band
+  over the plan, and only once the Gate stirs, as Darkest Dungeon's torch sits over its corridor. The plan is
+  cropped to its floor's rooms, every one, found or not, so it fills its frame instead of carrying empty
+  columns, and sits in the middle of the room it has; unseen rooms and cleared rooms lose their words, the
+  mark saying it. Withdraw, the hint and the bag are docked at the foot, the bag in the thumb's reach. A room
+  stepped into is a scene: its mark large in a ring lit in its kind's colour, its title, its line, and each
+  choice a row with a bar filled to its odds. The Guide says the Gate turns red if it stirs long enough, with
+  no count of moves.
+- **The rooms' marks, redrawn** (the owner's call: review and upgrade every mark on the map and in the Gates). Each
+  kind of room has a silhouette of its own that reads at a tile's size, after Slay the Spire's and Darkest
+  Dungeon's rooms, where it borrowed a mark another screen means otherwise: a Fight was a fist, now three claw
+  marks; the Gatekeeper the Trial's crown, now a horned great helm; a rest the HP heart, now a campfire; a cache
+  the bag, now a chest; a shrine a star (a Feat's), now an altar with a rune over it; a trap the warning
+  triangle, now spikes; the entrance a plain arch, now the Gate's arch with its portal standing in it; the vault
+  a padlock, now a strongbox (the padlock stays for a seal); the boss a skull, now a demon's skull, on the board
+  and the brief's objective too. The HUD's `Found` is the chest. The room scenes fill the screen: the mark vast
+  and faint behind light turning round a larger emblem, the line and the choices at the foot.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

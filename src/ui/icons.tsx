@@ -27,6 +27,26 @@ const P: Record<string, string> = {
   swap: 'M7 7h11l-3-3 1.4-1.4L21.8 8l-5.4 5.4L15 12l3-3H7zm10 10H6l3 3-1.4 1.4L2.2 16l5.4-5.4L9 12l-3 3h11z',
   trash: 'M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7z',
   star: 'm12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z',
+  // A Gate's rooms on the plan and in their scenes, after the rooms of Slay the Spire's and Darkest Dungeon's
+  // maps: each a silhouette that reads at a tile's size. Drawn on the 24 grid, a hole wound against its shape.
+  // A beast's three claw marks, raked from the top right.
+  roomFight: 'M9.9 4.2Q12.5 15.3 2.5 19.2L3.4 17.7Q6.3 10.5 9.9 4.2ZM15.1 2.2Q17.7 15.6 7.7 21.8L8.6 20.3Q11.5 10.8 15.1 2.2ZM20.3 4.2Q22.9 15.3 12.9 19.2L13.8 17.7Q16.7 10.5 20.3 4.2Z',
+  // The Gatekeeper: a horned great helm, its visor a T.
+  roomKeeper: 'M5.6 11.5Q5.6 4.6 12 4.6Q18.4 4.6 18.4 11.5L18.4 17Q18.4 20.6 12 21.6Q5.6 20.6 5.6 17ZM6.6 8.4Q2.4 7.6 1.6 2.2Q4.4 4.6 8.4 6.2ZM15.6 6.2Q19.6 4.6 22.4 2.2Q21.6 7.6 17.4 8.4ZM7.6 12.8L11 12.8L11 18.4L13 18.4L13 12.8L16.4 12.8L16.4 10.8L7.6 10.8Z',
+  // The boss: a demon's skull, its eyes slanted, its jaw a row of fangs.
+  roomBoss: 'M12 2.2C17.5 2.2 20.6 6 20.4 10.4C20.3 13.2 18.8 14.8 17.6 15.6L17.4 18.2L16.3 21.6L15 19L13.5 22L12 19.2L10.5 22L9 19L7.7 21.6L6.6 18.2L6.4 15.6C5.2 14.8 3.7 13.2 3.6 10.4C3.4 6 6.5 2.2 12 2.2ZM7 13L10.4 13.6L10.8 10.6L5.8 9.2ZM18.2 9.2L13.2 10.6L13.6 13.6L17 13ZM10.9 16.4L13.1 16.4L12 13.6Z',
+  // A rest: a campfire, its flame over two crossed logs.
+  roomRest: 'M12 2.2C15.6 6.4 17.6 9.6 17.3 12.9C17.1 16 14.8 17.6 12 17.6C9.2 17.6 6.8 15.9 6.8 13C6.8 10.6 8.3 9.2 9.3 7.6C9.6 9.5 10.4 10.6 11.2 11C11.5 8 11.2 5.4 12 2.2ZM3.91 16.7L20.67 20.57L20.09 23.1L3.33 19.23ZM3.33 20.57L20.09 16.7L20.67 19.23L3.91 23.1ZM12.2 10.6C11.2 12.5 10 13.4 10 14.7C10 15.8 10.9 16.5 12.1 16.5C13.2 16.5 14.1 16.1 14.3 15C14.6 13.6 13.8 12.3 12.2 10.6Z',
+  // A cache: a chest, its lid parted from its body, a lock plate at the seam.
+  roomCache: 'M3.4 10L3.4 8.2Q3.4 4.6 7 4.6L17 4.6Q20.6 4.6 20.6 8.2L20.6 10ZM3.4 11.4L20.6 11.4L20.6 19.4Q20.6 20.6 19.4 20.6L4.6 20.6Q3.4 20.6 3.4 19.4ZM9.9 8.6L14.1 8.6L14.1 13.4Q14.1 14.6 12 14.6Q9.9 14.6 9.9 13.4ZM12 10.1Q11.1 10.1 11.1 11Q11.1 11.6 11.6 11.8L11.4 13.2L12.6 13.2L12.4 11.8Q12.9 11.6 12.9 11Q12.9 10.1 12 10.1Z',
+  // A shrine: an altar on two steps, a rune burning over it.
+  roomShrine: 'M3.6 19.2L6.4 19.2L6.4 16.6L17.6 16.6L17.6 19.2L20.4 19.2L20.4 21.6L3.6 21.6ZM12 2.4L16.2 8.6L12 14.8L7.8 8.6ZM2.6 8.6L6.6 7.7L6.6 9.5ZM17.4 9.5L17.4 7.7L21.4 8.6ZM10 8.6L12 11.4L14 8.6L12 5.8Z',
+  // A trap: spikes out of the floor.
+  roomTrap: 'M2.4 19L21.6 19L21.6 21.6L2.4 21.6ZM3.4 19.4L6.3 9L9.2 19.4ZM8.6 19.4L12 3.6L15.4 19.4ZM14.8 19.4L17.7 9L20.6 19.4Z',
+  // The entrance: the Gate's arch with its portal standing in it.
+  roomEntrance: 'M3 21.6L3 11.2C3 6.2 7.1 2.2 12 2.2C16.9 2.2 21 6.2 21 11.2L21 21.6L17.6 21.6L17.6 11.6C17.6 8.3 15.1 5.6 12 5.6C8.9 5.6 6.4 8.3 6.4 11.6L6.4 21.6ZM8.2 14.6A3.8 5.8 0 1 1 15.8 14.6A3.8 5.8 0 1 1 8.2 14.6ZM10.7 15.4A1.3 2.6 0 1 0 13.3 15.4A1.3 2.6 0 1 0 10.7 15.4ZM1.8 20.4L22.2 20.4L22.2 22L1.8 22Z',
+  // The vault: a strongbox, its dial at the middle and a bar at its right.
+  roomVault: 'M5 3.4L19 3.4Q21 3.4 21 5.4L21 17.6Q21 19.6 19 19.6L5 19.6Q3 19.6 3 17.6L3 5.4Q3 3.4 5 3.4ZM5 19L8.4 19L8.4 21.6L5 21.6ZM15.6 19L19 19L19 21.6L15.6 21.6ZM6.2 11.5A4.6 4.6 0 1 0 15.4 11.5A4.6 4.6 0 1 0 6.2 11.5ZM8.2 11.5A2.6 2.6 0 1 1 13.4 11.5A2.6 2.6 0 1 1 8.2 11.5ZM9.8 11.5A1 1 0 1 0 11.8 11.5A1 1 0 1 0 9.8 11.5ZM17.2 14.4L19 14.4L19 8.6L17.2 8.6ZM10.2 6.9L11.4 6.9L11.4 8.5L10.2 8.5Z',
   // A landmark: a standing stone on its plinth, a banner from its top.
   landmark: 'M9 21V7.5L12 3l3 4.5V21zM6 21h12v-1.8H6zM15 5.2l4.6 1.6-4.6 1.6z',
   // A Font: water welling up out of a basin, under a mark that rises.
@@ -47,6 +67,8 @@ const P: Record<string, string> = {
   up: 'm12 7-7 7 1.4 1.4L12 9.8l5.6 5.6L19 14z',
   down: 'm12 17 7-7-1.4-1.4-5.6 5.6-5.6-5.6L5 10z',
   bolt: 'M13 2 4 14h6l-1 8 9-12h-6z',
+  // Power, a party's or a creature's: two swords crossed.
+  power: 'M19.5 4.5L19.0 7.2L10.8 15.4L12.6 17.2L11.1 18.7L9.0 16.6L7.2 18.4L7.8 19.0L6.1 20.8L3.2 17.9L5.0 16.2L5.6 16.8L7.4 15.0L5.3 12.9L6.8 11.4L8.6 13.2L16.8 5.0zM4.5 4.5L7.2 5.0L15.4 13.2L17.2 11.4L18.7 12.9L16.6 15.0L18.4 16.8L19.0 16.2L20.8 17.9L17.9 20.8L16.2 19.0L16.8 18.4L15.0 16.6L12.9 18.7L11.4 17.2L13.2 15.4L5.0 7.2z',
   exit: 'M10 3h9a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-9v-2h9V5h-9zm-1.6 5.4L5.8 11H15v2H5.8l2.6 2.6L7 17l-5-5 5-5z',
   recall: 'M12 4a8 8 0 1 1-7.8 9.8l2-.4A6 6 0 1 0 12 6v3L7 5l5-4z',
   potion: 'M9 2h6v2h-1v4.2l5 8.3A3 3 0 0 1 16.4 21H7.6A3 3 0 0 1 5 16.5l5-8.3V4H9zm-1.6 13h9.2L13.8 10h-3.6z',

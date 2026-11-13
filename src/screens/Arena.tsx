@@ -815,37 +815,39 @@ export function Arena() {
   const clock = run ? raid.clockOf(run) : null;
   // The step underway, or about to be taken; a rest or cache already done still counts as where you stand.
   const here = !run ? 1 : Math.min(depth, raid.pending(d, run) || phase !== 'node' ? run.at + 1 : run.at);
-  const head = phase === 'node' && panel ? nodeName(panel.node, run) : onMap ? 'Choose your way' : room?.label ?? '…';
+  // The Spire's block goes by its floors under the Spire's name; anything else by its own name.
+  const head = phase === 'node' && panel ? nodeName(panel.node, run) : onMap ? (spire.isSpire(d) ? d.name.split(' · ').slice(1).join(' · ') || d.name : d.name) : room?.label ?? '…';
+  // On the map, the head is the Gate's title card, as Persona 3 Reload names a floor as the party steps onto it:
+  // what kind of Gate it is and where in it the hunter stands, small, over its name.
+  const stand = run && m && !m.tower ? raid.standing(d, run) : null;
+  const floors = m && !m.tower ? m.floors.length : 0;
+  // A Trial's name says what it is, so its card says only where in it the hunter stands.
+  const kind = isTrial(d) ? '' : spire.isSpire(d) ? 'The Pale Spire' : `${d.rank}-Rank Gate`;
+  const where = d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : floors > 1 ? `Floor ${(stand?.floor ?? 0) + 1} of ${floors}` : rooms ? '' : `Step ${here} of ${depth}`;
+  // A Red Gate says so in place of what kind of Gate it is.
+  const kicker = [clock?.red ? '' : onMap && phase === 'map' ? kind : d.name, run && ascension.levelOf(run) ? `Ascension ${ascension.levelOf(run)}` : '', where].filter(Boolean).join(' · ');
   return (
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''} ${clock?.red ? 'is-redgate' : ''}`} role="dialog" aria-label={`${d.name}${clock?.red ? ', a Red Gate' : ''}, in progress`}>
-      <header class="arena__head">
-        <div><span class="label">{clock?.red ? <span class="arena__red">Red Gate</span> : d.name}{run && ascension.levelOf(run) ? ` · Ascension ${ascension.levelOf(run)}` : ''}{d.floor ? ` · Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : rooms ? '' : ` · Step ${here} of ${depth}`}</span><b>{head}</b></div>
+      <header class={`arena__head ${onMap && phase === 'map' ? 'is-card' : ''}`}>
+        <RankPlate rank={d.rank} size={34} />
+        <div><span class="label">{clock?.red ? <><span class="arena__red">Red Gate</span>{kicker ? ` · ${kicker}` : ''}</> : kicker}</span><b>{head}</b></div>
         {phase !== 'decide' && <PaceMenu pace={pace} setPace={setPace} auto={auto} toggleAuto={toggleAuto} />}
       </header>
       {onMap && run && m ? (
         <div class="arena__map">
-          <RunStrip s={s} d={d} tell={tell} />
+          <RunHud s={s} d={d} tell={tell} />
           {phase === 'node' && panel
             ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
             : <>
-              {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
+              {feed[0] && <p class={`arena__log feed feed--${feed[0].tone}`} aria-live="polite">{feed[0].text}</p>}
+              {clock && <GateClock c={clock} more={Math.round((raid.mightOf(d, run) - 1) * 100)} />}
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
                 pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)}
-                corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} costs={costsOf(d, run)}
                 stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red}
                 shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name}
                 openings={raid.openings(run)} secrets={(k) => raid.secretsOf(d, run, k)}
                 tollable={raid.tollDoorsOpen(d, run)} onToll={(key) => void askToll(key)}
                 restable={raid.restsFound(d, run)} onRestRoom={restAt} />
-              {m.tower
-                ? raid.canWithdraw(d, run)
-                  ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw From The Rest</Btn>
-                  : <small class="muted center">Tap a step that glows.</small>
-                : raid.canWithdraw(d, run)
-                    ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>Withdraw</Btn>
-                    : raid.sealed(d, run) && raid.standing(d, run)?.id === m.start
-                      ? <small class="warn center">The way out is sealed until the boss falls.</small>
-                      : <small class="muted center">{clock ? 'Tap a room that glows, or a cleared room to walk back to it. Each corridor is a move.' : 'Tap a room that glows, or a cleared room to walk back to it.'}</small>}
             </>}
         </div>
       ) : (
@@ -874,6 +876,21 @@ export function Arena() {
       )}
       {tip && <Tip tip={tip} close={() => setTip(null)} />}
       <footer class="arena__foot">
+        {phase === 'map' && run && m && (
+          // The dock, in the thumb's reach as a phone game keeps its bag: the way out or what to do, and the bag.
+          <div class="mapdock">
+            <div class="mapdock__main">
+              {raid.canWithdraw(d, run)
+                ? <Btn kind="ghost" block onClick={() => end('withdrawn')}>{m.tower ? 'Withdraw From The Rest' : 'Withdraw'}</Btn>
+                : m.tower
+                  ? <small class="mapdock__hint">Tap a step that glows.</small>
+                  : raid.sealed(d, run) && raid.standing(d, run)?.id === m.start
+                    ? <small class="mapdock__hint warn">The way out is sealed until the boss falls.</small>
+                    : <small class="mapdock__hint">{clock ? 'Tap a room that glows, or a cleared room to walk back to it. Each corridor is a move.' : 'Tap a room that glows, or a cleared room to walk back to it.'}</small>}
+            </div>
+            <ItemsMark items={bagFor(s, d, drinkNow)} />
+          </div>
+        )}
         {phase === 'turn' && turn && (
           <div class="turnbar" data-tour="turn">
             <small class="turnbar__hint">{picked === COVER
@@ -897,21 +914,34 @@ export function Arena() {
   );
 }
 
-/** What the run is carrying: the hunter's health, the allies still up, what it has banked, its blessings. */
-function RunStrip({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<ReturnType<typeof dungeonById>>; tell: Tell }) {
+/**
+ * What the run is carrying, as one slim row along the top in the way Slay the Spire keeps its run in view: the
+ * hunter's health, the allies still standing, the shards banked and the things found, each by its mark over its
+ * word; under it, each blessing taken, as Hades lines its boons. No box: it is read, not acted on.
+ */
+function RunHud({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<ReturnType<typeof dungeonById>>; tell: Tell }) {
   const run = s.gates.raid;
   if (!run) return null;
   const party = raid.partyFor(s, d, run);
   const hero = party[0];
   const up = party.slice(1).filter((u) => u.alive()).length;
+  const found = (run.haul ?? []).length + Object.values(run.stash ?? {}).reduce((n, x) => n + x, 0);
+  const hp = Math.round(Math.max(0, hero.hp));
   return (
-    <div class="runstrip">
-      <div class="runstrip__hp"><span class="label">You</span><HpBar cur={Math.round(Math.max(0, hero.hp))} max={hero.maxHp} tone="hp" /></div>
-      {raid.clockOf(run) && <GateClock c={raid.clockOf(run)!} more={Math.round((raid.mightOf(d, run) - 1) * 100)} />}
-      <div class="runstrip__cells">
-        <span><small>Allies</small><b class="num">{up}/{party.length - 1}</b></span>
-        <span><small>Banked</small><b class="num"><Shards n={run.purse ?? 0} /></b></span>
-        <span><small>Found</small><b class="num">{(run.haul ?? []).length + Object.values(run.stash ?? {}).reduce((n, x) => n + x, 0)}</b></span>
+    <div class="runhud">
+      <div class="runhud__row">
+        <span class="runhud__hp" aria-label={`Your HP: ${hp} of ${hero.maxHp}`}>
+          <Glyph name="heart" /><HpBar cur={hp} max={hero.maxHp} tone="hp" />
+        </span>
+        <span class="runhud__stat" aria-label={`Allies standing: ${up} of ${party.length - 1}`}>
+          <b class="num"><Glyph name="roster" />{up}/{party.length - 1}</b><small>Allies</small>
+        </span>
+        <span class="runhud__stat is-shard" aria-label={`Banked: ${run.purse ?? 0} Mana Shards`}>
+          <b class="num"><Shard size={13} />{run.purse ?? 0}</b><small>Banked</small>
+        </span>
+        <span class="runhud__stat" aria-label={`Found: ${found}`}>
+          <b class="num"><Glyph name="roomCache" />{found}</b><small>Found</small>
+        </span>
       </div>
       {(run.blessings ?? []).length > 0 && (
         <div class="boons" aria-label="Blessings">
@@ -920,12 +950,6 @@ function RunStrip({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullabl
       )}
     </div>
   );
-}
-
-/** The moves to every room the hunter can enter or walk back to, on the Gate clock: none for where they stand. */
-function costsOf(d: Dungeon, run: NonNullable<ReturnType<typeof useSave>['gates']['raid']>): Record<string, number> | undefined {
-  if (!run.clock || raid.pending(d, run)) return undefined;
-  return Object.fromEntries(Object.entries(raid.movesFrom(d, run)).filter(([, n]) => n > 0));
 }
 
 /**
@@ -970,28 +994,24 @@ function RedCount({ to }: { to: number }) {
 }
 
 /**
- * The Gate clock, under the hunter's HP: the moves spent against the budget, then the stirring's 20 moves
- * toward red (the bar alone shows how far), with the Gate's mark at the end of the bar, and once it has
- * turned, the Red Gate, sealed.
+ * The Gate clock, a band over the plan, and only once the Gate stirs, as Darkest Dungeon's torch sits over
+ * its corridor: the hunter never sees the budget or the moves spent (the owner's call). Stirring, the
+ * creatures' share and a bar that fills toward red, with the Gate's mark at its end; turned, the Red Gate,
+ * sealed.
  */
 function GateClock({ c, more }: { c: ClockState; more: number }) {
-  const stir = c.over > 0;
-  const n = stir ? CLOCK.red : c.budget;
-  const done = c.red ? CLOCK.red : stir ? c.over : c.moves;
-  const label = c.red ? 'Red Gate' : stir ? 'Stirring' : 'Moves';
-  const value = stir ? `+${more}%` : `${c.moves}/${c.budget}`;
-  // Stirring, the bar itself shows how far red is.
-  const sub = c.red ? 'Sealed' : stir ? null : `${c.left} left`;
+  if (!c.over) return null;
+  const done = c.red ? CLOCK.red : c.over;
   return (
-    <div class={`gclock ${c.red ? 'is-red' : stir ? 'is-stir' : ''}`} role="meter" aria-valuemin={0} aria-valuemax={n} aria-valuenow={done}
-      aria-label={c.red ? `Red Gate. Creatures not yet fought +${more}%. The way out is sealed.` : stir ? `Stirring. Creatures not yet fought +${more}%. Red Gate in ${c.toRed} moves.` : `Moves: ${c.moves} of ${c.budget}`}>
-      <span class="label">{label}</span>
-      <span class="gclock__bar" style={`--n:${n <= 40 ? n : Math.ceil(n / 5)}`}>
-        <i class="gclock__fill" style={`width:${(done / n) * 100}%`} />
-        <span class="gclock__gate" aria-hidden="true"><Glyph name="gates" /></span>
+    <div class={`gclock ${c.red ? 'is-red' : 'is-stir'}`} role="meter" aria-valuemin={0} aria-valuemax={CLOCK.red} aria-valuenow={done}
+      aria-label={c.red ? `Red Gate. Creatures not yet fought +${more}%. The way out is sealed.` : `Stirring. Creatures not yet fought +${more}%.`}>
+      <span class="label">{c.red ? 'Red Gate' : 'Stirring'}</span>
+      <span class="gclock__bar">
+        <i class="gclock__fill" style={`width:${(done / CLOCK.red) * 100}%`} />
+        <span class="gclock__gate" aria-hidden="true"><Glyph name="roomEntrance" /></span>
       </span>
-      <b class={`gclock__v num ${sub ? '' : 'is-solo'}`}>{value}</b>
-      {sub && <small class="gclock__sub num">{sub}</small>}
+      <b class={`gclock__v num ${c.red ? '' : 'is-solo'}`}>+{more}%</b>
+      {c.red && <small class="gclock__sub">Sealed</small>}
     </div>
   );
 }
@@ -1043,7 +1063,12 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
   const glyph = x.kind === 'shrine' && offer ? STAT_ICON[offer.path] ?? kind.glyph : kind.glyph;
   return (
     <section class={`nodepanel nodepanel--${x.kind}`}>
-      <header class="row"><Glyph name={glyph} /><b>{ev?.title ?? nodeName(x, run)}</b></header>
+      <header class="nodepanel__head">
+        {/* The scene's art: the room's mark, vast and faint, behind light turning slowly round its emblem. */}
+        <span class="nodepanel__art" aria-hidden="true"><Glyph name={glyph} /></span>
+        <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>
+        <b class="nodepanel__title">{ev?.title ?? nodeName(x, run)}</b>
+      </header>
       {x.kind === 'rest' && !p.rested && <p>The air is still here. Nothing has come this way in a long time.</p>}
       {asks && run && <RestChoice s={s} run={run} onRest={onRest} />}
       {x.kind === 'rest' && p.rested && <RestDone pick={p.rested.pick} potions={p.rested.potions} run={run} />}
@@ -1076,8 +1101,12 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
           {ev.choices.map((c, i) => {
             const odds = raid.oddsOf(c, hero, ascension.levelOf(run));
             return (
-              <button type="button" key={c.label} class="choice-row" onClick={() => onChoose(i)}>
-                <b>{c.label}</b><small>{odds < 1 ? `Success rate: ${Math.round(odds * 100)}%${c.check ? ` (${c.check.stat})` : ''}` : 'Certain'}</small>
+              <button type="button" key={c.label} class={`choice-row ${odds < 1 ? '' : 'is-certain'}`} onClick={() => onChoose(i)}>
+                <span class="choice-row__text">
+                  <b>{c.label}</b><small>{odds < 1 ? `Success rate: ${Math.round(odds * 100)}%${c.check ? ` (${c.check.stat})` : ''}` : 'Certain'}</small>
+                  <i class="choice-row__odds" style={`--p:${odds}`} aria-hidden="true" />
+                </span>
+                <Glyph name="chevron" />
               </button>
             );
           })}

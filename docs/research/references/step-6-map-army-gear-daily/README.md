@@ -123,6 +123,12 @@ Built as "A map worth reading" in [docs/DESIGN.md](../../../DESIGN.md#a-map-wort
   landmark with the rest.
 - No game shades its plan by distance or danger, so neither does ARISE: the gradient is in what the rooms
   hold, stated in the Guide, and a fight's pips already say how many wait in it.
+- **The screen around the plan**, rebuilt at the owner's call ("The map, rebuilt" in DESIGN.md): the head is
+  a floor's title card, as Persona 3 Reload's `Thebel 16F` names the floor (`map_p3r_tartarus_16f_treasure_objective.jpg`):
+  the grade and the floor small over the Gate's name. The run is one slim row along the top, as Slay the
+  Spire's bar keeps its health, gold and relics (`map_sts_map_legend.jpg`). The plan is cropped to its rooms
+  on a dark grid and its unseen and cleared rooms are marks alone, as Darkest Dungeon draws its rooms
+  (`map_dd_dungeon_map_room_icons_crop_x2.jpg`).
 
 
 ## What ARISE took, for the army
