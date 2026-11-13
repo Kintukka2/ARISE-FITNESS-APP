@@ -395,7 +395,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
       `A step takes alloys of the item’s rarity and Mana Shards: ${UPGRADE_COST.alloy[2]} ${ALLOYS.C.name} at Rare, ${UPGRADE_COST.alloy[5]} ${ALLOYS.S.name} at Legendary.`,
       `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank. Each step past also takes ${forge.EMBER.name}, ${UPGRADE_COST.ember} more for every step already past.`,
-      'Properties apply in the fight as they read: Critical Chance +9% is 9 points of critical chance.',
+      'Properties apply in the fight as they read: Crit Chance +9% is 9 points of crit chance.',
       `Save what you wear as a loadout from the Equipment sheet, ${LOADOUTS} in all, and wear it again in one tap.`,
       'An item stays marked New until you look at it, or leave the Inventory.',
       'Select in the Inventory picks items to recycle together. Worn and starred items cannot be picked.',

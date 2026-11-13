@@ -285,8 +285,8 @@ export function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
           );
         })}
       </div>
-      <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b class="num">2</b><span>{gear.bonusText(set.two)}</span></div>
-      <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b class="num">3</b><span>{gear.bonusText(set.three)}</span></div>
+      <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b class="num">2</b><Gains parts={bonusParts(set.two)} /></div>
+      <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b class="num">3</b><Gains parts={bonusParts(set.three)} /></div>
       {home && <small class="setcard__home"><Glyph name="gates" /> {home.name} · {home.rank}-Rank</small>}
     </div>
   );
@@ -415,7 +415,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
                 const at = r.max > r.min ? (v - r.min) / (r.max - r.min) : 1;
                 return (
                   <li key={r.stat}>
-                    <span class="itemrolls__name">{gear.rollText(it)[k]}</span>
+                    <span class="itemrolls__name">{(([n, v]) => <>{n} <b class="num">{v}</b></>)(nameAndValue(gear.rollText(it)[k]))}</span>
                     <i class={`itemrolls__bar ${at >= 1 ? 'is-full' : ''}`} aria-hidden="true"><i style={`width: ${unit(at) * 100}%`} />{at > 1 && <b style={`width: ${Math.min(1, at - 1) * 100}%`} />}</i>
                     <small class="num muted">{r.min}-{r.max}{r.pct ? '%' : ''}</small>
                   </li>
@@ -485,8 +485,8 @@ function Upgrade({ it }: { it: Item }) {
     <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? <span class="num">Steps taken: {it.up}</span> : <Shards n={cost.shards} />}>
       <div class="sysbox pieceup">
         <span class="pieceup__pair">
-          <span class="pieceup__one"><span class="label">Quality</span><b class="num">{gear.qualityText(it)}<Glyph name="chevron" /><span class="grant">{gear.qualityText(next)}</span></b></span>
-          <span class="pieceup__one"><span class="label">Score</span><b class="num">{Math.round(gear.score(it))}<Glyph name="chevron" /><span class="grant">{Math.round(gear.score(next))}</span></b></span>
+          <span class="pieceup__one"><span class="label">Quality</span><b class="num">{gear.qualityText(it)}<Glyph name="chevron" /><span class="pieceup__to">{gear.qualityText(next)}</span></b></span>
+          <span class="pieceup__one"><span class="label">Score</span><b class="num">{Math.round(gear.score(it))}<Glyph name="chevron" /><span class="pieceup__to">{Math.round(gear.score(next))}</span></b></span>
         </span>
         <CostGrid s={s} c={cost} />
         <Btn kind="gold" disabled={!ok} onClick={() => {
@@ -508,11 +508,56 @@ export function openEquipment() {
   openSheet({ title: 'Equipment', system: { icon: null, kind: 'gear' }, render: () => <Equipment /> });
 }
 
-/** Where each slot meets the figure, in its 100 by 220 frame. */
-const NODES: Record<SlotKey, [number, number]> = {
-  head: [50, 21], chest: [50, 62], hands: [17, 118], legs: [40, 158], feet: [37, 204],
-  weapon: [83, 124], offhand: [17, 100], amulet: [50, 40], ring1: [86, 136], ring2: [14, 136],
-};
+/**
+ * The hunter's figure, wearing what is worn: each slot's part of it (the head, the chest, both hands, the
+ * legs, the feet, the pendant, a ring on each hand, the sword in one hand and the shield at the other)
+ * filled in the piece's rarity, dashed while the slot is empty; the slot pointed at glows white.
+ */
+function Avatar({ s, hot }: { s: Save; hot: SlotKey | null }) {
+  const at = (k: SlotKey, held = false) => {
+    const it = gear.equippedIn(s, k);
+    const r = it ? gear.defOf(it)?.rank : undefined;
+    return { class: `av ${held ? 'av--held' : ''} ${r ? 'is-on' : ''} ${hot === k ? 'is-hot' : ''}`, style: r ? `--rc: var(--rank-${r})` : undefined };
+  };
+  return (
+    <svg viewBox="6 0 128 226" class="avatar">
+      <defs>
+        <linearGradient id="avscan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0" /><stop offset="0.5" stop-color="currentColor" stop-opacity="0.5" /><stop offset="1" stop-color="currentColor" stop-opacity="0" /></linearGradient>
+      </defs>
+      <g class="figure__grid">{[46, 92, 138, 184].map((y) => <line key={y} x1="6" x2="134" y1={y} y2={y} />)}</g>
+      {/* The ground the hunter stands on. */}
+      <ellipse class="avatar__ground" cx="70" cy="212" rx="40" ry="8" />
+      <ellipse class="avatar__ground avatar__ground--in" cx="70" cy="212" rx="27" ry="4.6" />
+      {/* What is held sits behind the hand that holds it. */}
+      <g {...at('offhand', true)}><path d="M9 97 Q20 92 31 97 L30 116 Q26 128 20 134 Q14 128 10 116 Z" /><path class="av__line" d="M20 99 V129 M13 108 H27" /></g>
+      <g {...at('weapon', true)}>
+        <circle cx="105.5" cy="105" r="2.2" /><rect x="104.3" y="106.5" width="2.4" height="9" />
+        <path d="M98 121 H113 L112 124 H99 Z" /><path d="M103 124 H108 L107.2 188 L105.5 196 L103.8 188 Z" /><path class="av__line" d="M105.5 128 V184" />
+      </g>
+      <g class="av-base">
+        <path d="M47 48 L40 54 L34 84 L31 110 L38 111 L42 88 L50 64 Z" />
+        <path d="M93 48 L100 54 L106 84 L109 110 L102 111 L98 88 L90 64 Z" />
+        <path d="M65 33 H75 L76 44 H64 Z" />
+      </g>
+      <g {...at('legs')}><path d="M56 102 H69 L68 150 L66 199 H57 L56 150 Z" /><path d="M71 102 H84 L84 150 L83 199 H74 L72 150 Z" /></g>
+      <g {...at('feet')}><path d="M56 199 H66 L67 211 H49 Q50 204 56 199 Z" /><path d="M84 199 H74 L73 211 H91 Q90 204 84 199 Z" /></g>
+      <g {...at('chest')}><path d="M47 47 Q70 39 93 47 L91 62 L86 76 L84 102 L56 102 L54 76 L49 62 Z" /><path class="av__line" d="M70 50 V98 M58 75 H82" /></g>
+      <g {...at('head')}><ellipse cx="70" cy="21" rx="11" ry="12.5" /><path class="av__line" d="M61 22 H79" /></g>
+      <g {...at('amulet', true)}><path class="av__chain" d="M60 46 Q70 55 80 46" /><path d="M70 52 L74 57 L70 63 L66 57 Z" /></g>
+      <g {...at('hands')}><path d="M30 109 H39 L40 119 Q38.5 124.5 34.5 124.5 Q30.5 124.5 29.3 119.5 Z" /><path d="M110 109 H101 L100 119 Q101.5 124.5 105.5 124.5 Q109.5 124.5 110.7 119.5 Z" /></g>
+      <g {...at('ring2', true)}><circle class="av__ring" cx="36.5" cy="121" r="2" /></g>
+      <g {...at('ring1', true)}><circle class="av__ring" cx="103.5" cy="121" r="2" /></g>
+      <rect x="6" y="0" width="128" height="40" fill="url(#avscan)" class="figure__scan" />
+    </svg>
+  );
+}
+
+/** Bonuses side by side with space between them, no dot: `PER +4.6   AGI +2.3`. */
+export function Gains({ parts, class: cls }: { parts: string[]; class?: string }) {
+  return <span class={`gains ${cls ?? ''}`}>{parts.map((p, i) => <span key={i}>{p}</span>)}</span>;
+}
+const statParts = (it: Item) => gear.coreLines(it).map(([, t]) => t);
+const bonusParts = (b: Record<string, number>) => gear.bonusText(b).split(' · ');
 
 /** A bonus in words, its name and its value apart: `Status chance +26.7` is `Status chance` and `+26.7`. */
 const nameAndValue = (t: string): [string, string] => {
@@ -531,7 +576,7 @@ function Equipment() {
   const props = Object.keys(extra).length ? gear.bonusText(extra).split(' · ').map(nameAndValue) : [];
   const sets = [...gear.setsIn(items)].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const paying = new Set(sets.filter(([, n]) => n >= 2).map(([id]) => id));
-  const lit = new Set(gear.SLOTS.filter((x) => s.equipped[x.key]).map((x) => x.key));
+  const [hot, setHot] = useState<SlotKey | null>(null);
   const slot = (k: SlotKey) => {
     const it = gear.equippedIn(s, k);
     const def = gear.SLOTS.find((x) => x.key === k)!;
@@ -543,6 +588,7 @@ function Equipment() {
     return (
       <button type="button" key={k} class={`pslot is-${def.side} ${it ? 'is-filled' : ''} ${set ? 'is-set' : ''} ${better || offer ? 'is-better' : ''}`} style={set ? `--set-h: ${gear.setHue(set)}` : undefined}
         onClick={() => { sfx.tap(); openSlot(k); }}
+        onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot((h) => (h === k ? null : h))} onFocus={() => setHot(k)} onBlur={() => setHot((h) => (h === k ? null : h))}
         aria-label={`${def.name}: ${d?.name ?? 'empty'}${better ? ', something better is held' : offer ? ', something held fits' : ''}`}>
         <span class="pslot__box">
           {it ? <GearArt item={it} size={56} /> : <span class="pslot__ghost"><Glyph name={def.accepts} /></span>}
@@ -575,29 +621,12 @@ function Equipment() {
         <div class="paperdoll__col">{gear.SLOTS.filter((x) => x.side === 'l').map((x) => slot(x.key))}</div>
         <div class="paperdoll__fig" aria-hidden="true">
           <span class="paperdoll__aura" />
-          <svg viewBox="0 0 100 220" class="figure">
-            <defs>
-              <linearGradient id="figscan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0" /><stop offset="0.5" stop-color="currentColor" stop-opacity="0.5" /><stop offset="1" stop-color="currentColor" stop-opacity="0" /></linearGradient>
-            </defs>
-            <g class="figure__grid">{[40, 80, 120, 160, 200].map((y) => <line key={y} x1="4" x2="96" y1={y} y2={y} />)}</g>
-            <g class="figure__body">
-              <circle cx="50" cy="21" r="11" />
-              <path d="M50 32v8M31 46c6-5 13-6 19-6s13 1 19 6l3 24-4 22-4 18H40l-4-18-4-22z" />
-              <path d="M31 46l-8 30-6 42M69 46l8 30 6 42" />
-              <path d="M41 110l-3 48-2 46M59 110l3 48 2 46M36 204h-7M64 204h7" />
-              <path d="M50 46v60M38 70h24M40 88h20" class="figure__seam" />
-            </g>
-            {(Object.entries(NODES) as [SlotKey, [number, number]][]).map(([k, [x, y]]) => (
-              <g key={k} class={`figure__node ${lit.has(k) ? 'is-lit' : ''}`}><circle cx={x} cy={y} r="3.4" /><circle cx={x} cy={y} r="1.2" /></g>
-            ))}
-            <rect x="0" y="0" width="100" height="36" fill="url(#figscan)" class="figure__scan" />
-          </svg>
-          <span class="paperdoll__base"><i class="paperdoll__ring" /></span>
+          <Avatar s={s} hot={hot} />
         </div>
         <div class="paperdoll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
       </div>
       <div class="gearacts">
-        <Btn kind={ups ? 'gold' : 'ghost'} disabled={!ups} onClick={auto}><Glyph name="up" /> Auto Equip{ups ? ` · ${ups}` : ''}</Btn>
+        <Btn kind={ups ? 'gold' : 'ghost'} disabled={!ups} onClick={auto}><Glyph name="up" /> Auto Equip{ups ? <b class="num gearacts__n">{ups}</b> : null}</Btn>
         <Btn kind="ghost" onClick={() => openInventory()}><Glyph name="bag" /> Inventory <b class="num gearacts__n">{s.items.length}</b></Btn>
       </div>
       <Section title="Stats">
@@ -640,8 +669,8 @@ function SetRow({ id, n }: { id: string; n: number }) {
         <small class="num">{n}/{all}</small>
         <Glyph name="chevron" class="setrow__go" />
       </span>
-      <span class={`setrow__bonus ${n >= 2 ? 'is-on' : ''}`}><b class="num">2</b>{gear.bonusText(set.two)}</span>
-      <span class={`setrow__bonus ${n >= 3 ? 'is-on' : ''}`}><b class="num">3</b>{gear.bonusText(set.three)}</span>
+      <span class={`setrow__bonus ${n >= 2 ? 'is-on' : ''}`}><b class="num">2</b><Gains parts={bonusParts(set.two)} /></span>
+      <span class={`setrow__bonus ${n >= 3 ? 'is-on' : ''}`}><b class="num">3</b><Gains parts={bonusParts(set.three)} /></span>
     </button>
   );
 }
@@ -743,7 +772,7 @@ function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
               <span class="slotworn__text">
                 <b>{d.name}</b>
                 <small>{rarity(d.rank)} {d.slot} · Quality {gear.qualityText(on)}</small>
-                <small class="grant">{gear.coreText(on)}</small>
+                <Gains parts={statParts(on)} class="gains--stats" />
               </span>
               <Glyph name="chevron" class="slotworn__go" />
             </button>
@@ -765,7 +794,7 @@ function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
                     <span class="slotrow__text">
                       <b>{pd.name}{s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}</b>
                       <small>{rarity(pd.rank)} · Quality {gear.qualityText(it)}</small>
-                      <small class="grant">{gear.coreText(it)}</small>
+                      <Gains parts={statParts(it)} class="gains--stats" />
                     </span>
                     <span class="slotrow__score">
                       <b class="num">{Math.round(gear.score(it))}</b>

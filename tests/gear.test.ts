@@ -52,7 +52,7 @@ describe('sets', () => {
 
   it('reads its bonus from the numbers', () => {
     expect(gear.bonusText({ patk: 0.08, mpow: 0.08 })).toBe('Attack and magic +8%');
-    expect(gear.bonusText({ crit: 6, accuracy: 6 })).toBe('Critical chance +6 · Accuracy +6');
+    expect(gear.bonusText({ crit: 6, accuracy: 6 })).toBe('Crit chance +6 · Accuracy +6');
     expect(gear.bonusText({ maxHp: 0.12, resist: 0.1 })).toBe('Maximum HP +12% · Resistance +10%');
   });
 
@@ -234,7 +234,7 @@ describe('properties in a fight', () => {
     const s = holding('CHAMPION_BLADE', 'CHAMPION_BREASTPLATE');
     const [blade, plate] = s.items;
     const b = gear.rollBonuses([blade, plate]);
-    // Critical Chance +4% is 4 points of critical chance; Defence +4% multiplies defence by 1.04.
+    // Crit Chance +4% is 4 points of crit chance; Defence +4% multiplies defence by 1.04.
     expect(b.crit).toBeCloseTo(blade.rolls[0], 5);
     expect(b.defense).toBeCloseTo(plate.rolls[0] / 100, 5);
   });

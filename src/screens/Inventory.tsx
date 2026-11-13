@@ -280,7 +280,7 @@ const FIGHT_HELP: Record<string, string> = {
   Resistance: 'Takes the force out of a magic hit, and wards off debuffs. From VIT and INT.',
   Accuracy: `How often your hits land: your Accuracy against the target’s Evasion, ${HIT.min}-${HIT.max}%. From PER, and a little AGI.`,
   Evasion: 'How often a foe misses you: its Accuracy against your Evasion. From AGI, and a little PER.',
-  'Critical hit': `The chance a hit does ×${CRIT.mult} damage. From AGI and PER, up to ${CRIT.base}%, and ${CRIT.max}% with gear and passives.`,
+  'Crit chance': `The chance a hit does ×${CRIT.mult} damage. From AGI and PER, up to ${CRIT.base}%, and ${CRIT.max}% with gear and passives.`,
   Initiative: 'Who acts first in each round: the highest goes first. From AGI, and a little PER.',
 };
 
@@ -300,7 +300,7 @@ function StatsSheet() {
     ['Attack', `${Math.round(d.patk)}`, FIGHT_HELP.Attack], ['Magic', `${Math.round(d.mpow)}`, FIGHT_HELP.Magic],
     ['Defence', `${Math.round(d.defense)}`, FIGHT_HELP.Defence], ['Resistance', `${Math.round(d.resist)}`, FIGHT_HELP.Resistance],
     ['Accuracy', `${Math.round(d.accuracy)}`, FIGHT_HELP.Accuracy], ['Evasion', `${Math.round(d.evasion)}`, FIGHT_HELP.Evasion],
-    ['Critical hit', `${Math.round(d.crit)}%`, FIGHT_HELP['Critical hit']], ['Initiative', `${Math.round(d.initiative)}`, FIGHT_HELP.Initiative],
+    ['Crit chance', `${Math.round(d.crit)}%`, FIGHT_HELP['Crit chance']], ['Initiative', `${Math.round(d.initiative)}`, FIGHT_HELP.Initiative],
   ];
   return (
     <div class="stack statsheet">

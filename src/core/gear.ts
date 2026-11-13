@@ -281,7 +281,7 @@ export const ROLL_EFFECT: Record<string, { key: string; pct: boolean }> = {
 /**
  * Every worn piece's unique rolls, summed by derived stat, in the units the fight reads: a fraction for a
  * stat it multiplies (attack, defence, maximum HP), points for one it adds to (critical chance, status
- * chance, accuracy). A property written as a percentage of a stat counted in points, as Critical Chance
+ * chance, accuracy). A property written as a percentage of a stat counted in points, as Crit Chance
  * +9.9% is, adds 9.9 points.
  */
 export function rollBonuses(items: Item[]): Record<string, number> {
@@ -334,7 +334,7 @@ export function sumBonuses(...xs: Record<string, number>[]): Record<string, numb
 
 const BONUS_NAMES: Record<string, string> = {
   patk: 'attack', mpow: 'magic', defense: 'defence', resist: 'resistance', maxHp: 'maximum HP', recovery: 'healing between fights',
-  crit: 'critical chance', accuracy: 'accuracy', evasion: 'evasion', initiative: 'initiative', statusChance: 'status chance', statusSave: 'status save',
+  crit: 'crit chance', accuracy: 'accuracy', evasion: 'evasion', initiative: 'initiative', statusChance: 'status chance', statusSave: 'status save',
 };
 const FRACTION = new Set(['patk', 'mpow', 'defense', 'resist', 'maxHp', 'recovery']);
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
@@ -342,7 +342,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 /** Pairs that read as one when they are equal. */
 const PAIRS: [string, string][] = [['patk', 'mpow'], ['defense', 'resist']];
 
-/** A bonus in words, name then value, read from its numbers: "Attack and magic +8%", "Critical chance +6". */
+/** A bonus in words, name then value, read from its numbers: "Attack and magic +8%", "Crit chance +6". */
 export function bonusText(b: Record<string, number>): string {
   const amount = (k: string, v: number) => (FRACTION.has(k) ? `+${Math.round(v * 100)}%` : `+${Math.round(v * 10) / 10}`);
   const left = { ...b };
@@ -459,9 +459,13 @@ export function wearLoadout(s: Save, i: number): number {
   return SLOTS.filter((sl) => (before[sl.key] ?? null) !== (s.equipped[sl.key] ?? null)).length;
 }
 
+/** A property's name as the hunter reads it: the data's `Defense` is Defence, and `Critical Chance` is Crit Chance. */
+const ROLL_NAME: Record<string, string> = { Defense: 'Defence', 'Critical Chance': 'Crit Chance' };
+export const rollName = (stat: string) => ROLL_NAME[stat] ?? stat;
+
 export function rollText(it: Item): string[] {
   const d = defOf(it);
-  return (d?.rolls ?? []).map((r, i) => `${r.stat === 'Defense' ? 'Defence' : r.stat} +${(it.rolls[i] ?? r.min).toFixed(r.pct ? 1 : 0)}${r.pct ? '%' : ''}`);
+  return (d?.rolls ?? []).map((r, i) => `${rollName(r.stat)} +${(it.rolls[i] ?? r.min).toFixed(r.pct ? 1 : 0)}${r.pct ? '%' : ''}`);
 }
 
 /** Each core stat as its own line, name first: `["INT", "INT +5.5"]`. The item card lists them one to a line. */

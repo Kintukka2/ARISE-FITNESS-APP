@@ -188,7 +188,7 @@ function Recipe({ defId }: { defId: string }) {
             <ul class="itemrolls is-range">
               {(d.rolls ?? []).map((r) => (
                 <li key={r.stat}>
-                  <span class="itemrolls__name">{r.stat === 'Defense' ? 'Defence' : r.stat}</span>
+                  <span class="itemrolls__name">{gear.rollName(r.stat)}</span>
                   <b class="num">+{fmt(r.min + (r.max - r.min) * floor)}-{r.max}{r.pct ? '%' : ''}</b>
                 </li>
               ))}

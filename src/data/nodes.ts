@@ -67,7 +67,7 @@ export const OLD_BLESSINGS: Blessing[] = [
   { id: 'edge', name: 'Blessing of the Edge', text: 'Attack and magic +15%', bonus: { patk: 0.15, mpow: 0.15 } },
   { id: 'haste', name: 'Blessing of Haste', text: 'Initiative +12', bonus: { initiative: 12 } },
   { id: 'ward', name: 'Blessing of the Ward', text: 'Defence and resistance +20%', bonus: { defense: 0.2, resist: 0.2 } },
-  { id: 'sight', name: 'Blessing of Sight', text: 'Accuracy +10 · Critical chance +6%', bonus: { accuracy: 10, crit: 6 } },
+  { id: 'sight', name: 'Blessing of Sight', text: 'Accuracy +10 · Crit chance +6%', bonus: { accuracy: 10, crit: 6 } },
 ];
 export const blessingById = (id: string) => OLD_BLESSINGS.find((b) => b.id === id);
 
