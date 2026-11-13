@@ -167,11 +167,11 @@ function Stations({ s }: { s: Save }) {
         {fresh > 0 && <span class="hubst__badge">{fresh} new</span>}
       </button>
       {/* A blueprint that can be forged into something rarer than what is worn waits on the hunter: gold. */}
-      <button type="button" class={`hubst is-forge ${better ? 'is-call' : ''}`} data-hub="forge" aria-label={`Forge: ${better ? `${better} better` : `can forge ${ready}`}`} onClick={() => { sfx.tap(); openForge(); }}>
+      <button type="button" class={`hubst is-forge ${better ? 'is-call' : ''}`} data-hub="forge" aria-label={`Forge: ${better ? `${better} ${better === 1 ? 'upgrade' : 'upgrades'}` : `can forge ${ready}`}`} onClick={() => { sfx.tap(); openForge(); }}>
         <span class="hubst__art"><span class="ia-forge"><i class="ia-forge__glow" /><Glyph name="forge" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /></span></span>
         <b class="hubst__name">Forge</b>
         <small>{ready ? `Can forge: ${ready}` : `Blueprints: ${known}`}</small>
-        {better > 0 && <span class="hubst__badge is-gold">{better} better</span>}
+        {better > 0 && <span class="hubst__badge is-gold">▲ {better}</span>}
       </button>
       <button type="button" class="hubst is-exchange" data-hub="exchange" aria-label="Exchange" onClick={() => { sfx.tap(); openExchange(); }}>
         <span class="hubst__art"><span class="ia-shard"><i class="ia-shard__ring" /><Shard size={34} /></span></span>

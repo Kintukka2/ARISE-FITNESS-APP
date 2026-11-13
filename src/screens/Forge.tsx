@@ -46,14 +46,14 @@ function Forge({ initial }: { initial: View }) {
   return (
     <div class="stack forgeview">
       {/* The hearth, after the smithies of Monster Hunter and the Foundry of Warframe: the fire, what it can make now, and what of that beats what is worn. */}
-      <section class={`forgehearth ${better ? 'is-call' : ''}`} aria-label={`Forge: ${ready} can be forged${better ? `, ${better} better than what is worn` : ''}`}>
+      <section class={`forgehearth ${better ? 'is-call' : ''}`} aria-label={`Forge: ${ready} can be forged${better ? `, ${better} ${better === 1 ? 'is an upgrade' : 'are upgrades'} on what is worn` : ''}`}>
         <span class="forgehearth__fire" aria-hidden="true">
           <i class="forgehearth__coals" /><i class="forgehearth__glow" /><Glyph name="forge" />
           {[0, 1, 2, 3, 4].map((i) => <i key={i} class="forgehearth__spark" style={`--k: ${i}`} />)}
         </span>
         <span class="forgehearth__main"><b class="num">{ready}</b><small class="label">Can forge</small></span>
         <span class="forgehearth__facts">
-          <span class={better ? 'is-gold' : ''}><b class="num">{better}</b><small>Better</small></span>
+          <span class={better ? 'is-gold' : ''}><b class="num">{better}</b><small>{better === 1 ? 'Upgrade' : 'Upgrades'}</small></span>
           <span><b class="num">{known.length}</b><small>Blueprints</small></span>
           <span><b class="num">{kinds}</b><small>Materials</small></span>
         </span>
@@ -72,7 +72,7 @@ function Forge({ initial }: { initial: View }) {
 
 type Only = 'ready' | 'better' | 'sets';
 const SHOW: { key: Only | null; name: string }[] = [
-  { key: null, name: 'All' }, { key: 'ready', name: 'Can forge' }, { key: 'better', name: 'Better' }, { key: 'sets', name: 'Set pieces' },
+  { key: null, name: 'All' }, { key: 'ready', name: 'Can forge' }, { key: 'better', name: 'Upgrades' }, { key: 'sets', name: 'Set pieces' },
 ];
 
 function Blueprints() {
@@ -119,7 +119,8 @@ function Blueprints() {
 /**
  * A blueprint, as the Forge lists it: its art, its name and kind, a chip to each thing its recipe asks for
  * (a tick when enough is held, held over needed in red when not, the shards last), a weapon's familiarity,
- * and `Better` in gold where it is rarer than what is worn where it goes.
+ * and `▲ Upgrade` in gold where it is rarer than what is worn where it goes, as Diablo IV marks a piece that beats
+ * what is worn.
  */
 function BlueprintRow({ d, better }: { d: GearDef; better: boolean }) {
   const s = useSave();
@@ -131,7 +132,7 @@ function BlueprintRow({ d, better }: { d: GearDef; better: boolean }) {
   const rich = s.wallet.shards >= cost.shards;
   return (
     <button type="button" class={`sysbox bprow ${ok ? 'is-ready' : ''} ${better ? 'is-better' : ''}`} data-rarity={d.rank} onClick={() => { sfx.tap(); openBlueprint(d.id); }}
-      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}${ok ? ', can forge' : ', materials missing'}${better ? ', better than what is worn' : ''}`}>
+      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}${ok ? ', can forge' : ', materials missing'}${better ? ', an upgrade on what is worn' : ''}`}>
       <span class="bprow__art"><GearArt defId={d.id} size={48} /></span>
       <span class="bprow__text">
         <b>{d.name}</b>
@@ -147,7 +148,7 @@ function BlueprintRow({ d, better }: { d: GearDef; better: boolean }) {
         </span>
       </span>
       <span class="bprow__side">
-        {better && <span class="bprow__better">▲ Better</span>}
+        {better && <span class="bprow__better">▲ Upgrade</span>}
         {d.slot === 'Weapon' && <Pips n={f} />}
         <Glyph name="chevron" class="bprow__go" />
       </span>

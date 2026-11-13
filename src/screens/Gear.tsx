@@ -46,7 +46,7 @@ const SORTS: { key: Sort; name: string }[] = [
 ];
 type Only = 'better' | 'sets' | 'starred';
 const ONLY: { key: Only; name: string }[] = [
-  { key: 'better', name: 'Better' }, { key: 'sets', name: 'Set pieces' }, { key: 'starred', name: 'Starred' },
+  { key: 'better', name: 'Upgrades' }, { key: 'sets', name: 'Set pieces' }, { key: 'starred', name: 'Starred' },
 ];
 
 /**
@@ -259,7 +259,7 @@ function BagTile({ it, i, picking, picked, locked, on, onTap }: { it: Item; i: n
     <button type="button" class={`bagtile ${picked ? 'is-picked' : ''} ${picking && locked ? 'is-locked' : ''} ${fresh ? 'is-new' : ''} ${on ? 'is-on' : ''} ${worn ? 'is-worn' : ''}`}
       data-rarity={d.rank} style={`--i: ${Math.min(i, 24)}`} aria-pressed={picking ? picked : on}
       onClick={() => { sfx.tap(); onTap(); }}
-      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${worn ? ', worn' : ''}${up ? ', better than what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
+      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${worn ? ', worn' : ''}${up ? ', an upgrade on what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
       <span class="bagtile__art"><GearArt item={it} size={60} plain /></span>
       <span class="bagtile__foot">
         {worn ? <span class="bagtile__worn">Worn</span> : starred ? <Glyph name="star" class="bagtile__fav" /> : <span />}
@@ -751,7 +751,7 @@ function Equipment() {
       <button type="button" key={k} class={`pslot is-${def.side} ${it ? 'is-filled' : ''} ${set ? 'is-set' : ''} ${better || offer ? 'is-better' : ''}`} style={set ? `--set-h: ${gear.setHue(set)}` : undefined}
         onClick={() => { sfx.tap(); openSlot(k); }}
         onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot((h) => (h === k ? null : h))} onFocus={() => setHot(k)} onBlur={() => setHot((h) => (h === k ? null : h))}
-        aria-label={`${def.name}: ${d?.name ?? 'empty'}${better ? ', something better is held' : offer ? ', something held fits' : ''}`}>
+        aria-label={`${def.name}: ${d?.name ?? 'empty'}${better ? ', an upgrade is held' : offer ? ', something held fits' : ''}`}>
         <span class="pslot__box">
           {it ? <GearArt item={it} size={56} /> : <span class="pslot__ghost"><Glyph name={def.accepts} /></span>}
           {better && <span class="pslot__up" aria-hidden="true">▲</span>}

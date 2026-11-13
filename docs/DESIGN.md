@@ -1982,6 +1982,10 @@ with what ARISE took from them.
   they need, the range a forged piece can roll stands as a bar with familiarity's floor shaded off and the last
   piece's quality marked on it, and the hammer throws sparks. The materials are a grid of tiles with a dock that
   says how many known blueprints ask for one and how many it is short for, and tracks it. No engine changed.
+  Then, at the owner's call: fewer boxes (a box is for what the hunter acts on, so the hearth, the kinds, the
+  filters, the stats and the recipe's chips stand unframed and the blueprints are a list), and `Better` named as the
+  genre names it: a piece that beats what is worn is an `Upgrade`, marked ▲, as Diablo IV and Lost Ark mark one
+  (the Forge's filter and hearth, the Item Bag's Show, the Inventory station's `▲ 3`).
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

@@ -433,7 +433,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each rank also lifts every roll when you forge that design: its quality starts ${FAMILIARITY.floor * 100}% further up its range, and so do its properties.`,
       'Familiarity belongs to the design. Forge it again and the new piece is known as well as the old.',
       'Tap a material in a recipe to track it, or tap it in the Forge’s Materials and Track. The anvil marks it, and every Gate on the board that leaves it.',
-      'Better, in the Forge, shows the blueprints you can forge now that are rarer than what you wear where they go.',
+      'A piece rarer than what you wear where it goes is an upgrade, marked ▲. Upgrades, in the Forge and the Item Bag, shows only those.',
       'Track Missing on a blueprint tracks every material it is short of at once. Tapped again, it stops tracking them.',
       'A part is tracked where its families walk. Every clear leaves one of each besides.',
     ],
