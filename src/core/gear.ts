@@ -2,13 +2,14 @@
  * Equipment: ten slots, six rarities. Every piece's core bonus rolls between
  * 75% and 125% of its design, and its unique properties roll inside their
  * ranges. Both are seeded off the item id, so a piece never changes unless it
- * is upgraded. Three-piece sets pay a bonus for two pieces worn, and for all three.
+ * is upgraded. Armour sets of five pay at two pieces worn and at four, the four a blessing besides;
+ * jewellery sets (an amulet and a ring) pay at two (`data/sets.ts`).
  * Each level of Ascension opened lets a piece go one upgrade step past perfect.
  * Pieces are forged from blueprints (`core/forge.ts`); what is worn can be saved as a loadout.
  */
 import { EQUIPMENT, ISSUED } from '@/data/equipment';
 import { OVERCHARGE } from '@/data/ascension';
-import { LOADOUTS, SET_KEEP, setById, SETS, UPGRADE } from '@/data/sets';
+import { LOADOUTS, SET_KEEP, SET_LEAN_MOST, setById, SETS, UPGRADE } from '@/data/sets';
 import type { Attrs, GearDef, Item, Loadout, Rank, Save, SlotKey, Stat } from './types';
 import { STATS } from './types';
 import { dayKey, rng, round2, uid } from './util';
@@ -164,7 +165,7 @@ export const heldOf = (s: Save, set: string) => new Set(s.items.map((i) => defOf
 function worth(s: Save, it: Item) {
   const d = defOf(it);
   const held = d?.set ? heldOf(s, d.set).size : 0;
-  const lean = d && held >= 2 ? RARITY[d.rank].score * SET_KEEP * (held - 1) : 0;
+  const lean = d && held >= 2 ? RARITY[d.rank].score * SET_KEEP * Math.min(held - 1, SET_LEAN_MOST) : 0;
   return (score(it) + lean) * 1000 + Object.values(coreOf(it)).reduce((a, b) => a + (b ?? 0), 0);
 }
 
@@ -314,16 +315,26 @@ export function setsIn(items: Item[]): Map<string, number> {
   return new Map([...seen].map(([k, v]) => [k, v.size]));
 }
 
-/** What the sets among worn pieces pay, summed by derived stat, in the units of `rollBonuses`. */
+/** What the sets among worn pieces pay, summed by derived stat, in the units of `rollBonuses`: every tier reached. */
 export function setBonuses(items: Item[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [id, n] of setsIn(items)) {
-    const set = setById(id);
-    if (!set) continue;
-    for (const b of [n >= 2 ? set.two : {}, n >= 3 ? set.three : {}]) for (const [k, v] of Object.entries(b)) out[k] = (out[k] ?? 0) + v;
+    for (const t of setById(id)?.tiers ?? []) if (n >= t.at) for (const [k, v] of Object.entries(t.bonus)) out[k] = (out[k] ?? 0) + v;
   }
   return out;
 }
+
+/** The blessings the sets among worn pieces grant, by id, at their tier: what an armour set's 4-piece adds to every Gate. */
+export function setBoons(items: Item[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [id, n] of setsIn(items)) {
+    for (const t of setById(id)?.tiers ?? []) if (n >= t.at && t.boon) out[t.boon.id] = Math.max(out[t.boon.id] ?? 0, t.boon.tier);
+  }
+  return out;
+}
+
+/** The pieces a set needs worn for all it pays: its last tier's count. */
+export const setFull = (id: string) => setById(id)?.tiers.at(-1)?.at ?? setPieces(id).length;
 
 /** Bonuses added together, as a hunter carries them into a fight. */
 export function sumBonuses(...xs: Record<string, number>[]): Record<string, number> {

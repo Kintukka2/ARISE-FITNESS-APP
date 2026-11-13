@@ -3393,3 +3393,18 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .qsel__cell.is-on b, .qsel__cell.is-on small { color: #fff; }
 .qsel__cell:disabled { opacity: 0.3; }
 .qsel__cell:focus-visible { outline: 2px solid var(--sys-hair-hot); outline-offset: -2px; }
+
+/* A set's tiers: `2-piece` and its stats; `4-piece`, its stats and the blessing it grants, named and told. A set's
+ * pieces, five to an armour set, side by side. */
+.settiers { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.settiers .setrow__bonus { align-items: start; }
+.settiers__what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.settiers__boon { display: flex; flex-direction: column; gap: 1px; }
+.settiers__boon b { font-size: 0.74rem; font-weight: 700; color: color-mix(in srgb, var(--gold) 70%, var(--sys-ink)); }
+.settiers__boon small { font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.setrow__bonus.is-on .settiers__boon b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.setrow__bonus.is-on .settiers__boon small { color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.setcard__pieces { grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); }
+.setcard .settiers { margin-top: 2px; }
+.setrow__bonus .settiers__boon b, .setbonus .settiers__boon b { display: block; width: auto; height: auto; border: 0; font-size: 0.74rem; line-height: 1.3; text-align: left; }
+.setrow__bonus .settiers__what .gains { line-height: 1.35; }

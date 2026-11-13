@@ -19,6 +19,7 @@ import type { GearDef, Item, Rank, Save, SlotKey, Stat } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
 import { group } from '@/core/util';
 import { setById, SETS, type GearSet } from '@/data/sets';
+import { BOONS, boonText, TIERS } from '@/data/blessings';
 import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
 import { useSave } from '@/store';
@@ -329,14 +330,17 @@ function Codex() {
     <div class="stack codex">
       <Collection />
       {(['C', 'B', 'A', 'S'] as const).map((r) => {
-        const sets = SETS.filter((x) => gear.setPieces(x.id)[0]?.rank === r);
+        const sets = SETS.filter((x) => x.kind === 'armour' && gear.setPieces(x.id)[0]?.rank === r);
         const done = sets.filter((x) => gear.heldOf(s, x.id).size >= gear.setPieces(x.id).length).length;
         return (
-          <Section key={r} title={`${rarity(r)} sets`} right={<span class="num">{done}/{sets.length}</span>}>
+          <Section key={r} title={`${rarity(r)} armour sets`} right={<span class="num">{done}/{sets.length}</span>}>
             <div class="setrows">{sets.map((x) => <CodexRow key={x.id} set={x} />)}</div>
           </Section>
         );
       })}
+      <Section title="Jewellery sets" right={<span class="num">{SETS.filter((x) => x.kind === 'jewellery' && gear.heldOf(s, x.id).size >= gear.setPieces(x.id).length).length}/{SETS.filter((x) => x.kind === 'jewellery').length}</span>}>
+        <div class="setrows">{SETS.filter((x) => x.kind === 'jewellery').map((x) => <CodexRow key={x.id} set={x} />)}</div>
+      </Section>
     </div>
   );
 }
@@ -383,6 +387,31 @@ function Collection() {
   );
 }
 
+/**
+ * What a set pays, a line to each tier: `2-piece` and its stats, `4-piece` and its stats and the blessing it
+ * grants for every Gate (`[Iron Skin] I` over what it does), each lit once that many are worn.
+ */
+export function SetTiers({ set, n }: { set: GearSet; n: number }) {
+  return (
+    <span class="settiers">
+      {set.tiers.map((t) => (
+        <span key={t.at} class={`setrow__bonus ${n >= t.at ? 'is-on' : ''}`}>
+          <b class="pc">{t.at}-piece</b>
+          <span class="settiers__what">
+            {Object.keys(t.bonus).length > 0 && <Gains parts={bonusParts(t.bonus)} />}
+            {t.boon && (
+              <span class="settiers__boon">
+                <b>[{BOONS[t.boon.id]?.name}] {TIERS[t.boon.tier - 1]}</b>
+                <small>{boonText(t.boon.id, t.boon.tier)}</small>
+              </span>
+            )}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** A set as a row of the Sets view: its name, how many held, a square to each piece (held, a blueprint, or still to find), and what two and three pay. It opens the set. */
 function CodexRow({ set }: { set: GearSet }) {
   const s = useSave();
@@ -413,8 +442,7 @@ function CodexRow({ set }: { set: GearSet }) {
           })}
         </span>
         <span class="codexrow__bonus">
-          <span class={`setrow__bonus ${worn >= 2 ? 'is-on' : ''}`}><b class="pc">2-piece</b><Gains parts={bonusParts(set.two)} /></span>
-          <span class={`setrow__bonus ${worn >= 3 ? 'is-on' : ''}`}><b class="pc">3-piece</b><Gains parts={bonusParts(set.three)} /></span>
+          <SetTiers set={set} n={worn} />
         </span>
       </span>
     </button>
@@ -453,8 +481,7 @@ export function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
           );
         })}
       </div>
-      <div class={`setbonus ${worn >= 2 ? 'is-on' : ''}`}><b class="pc">2-piece</b><Gains parts={bonusParts(set.two)} /></div>
-      <div class={`setbonus ${worn >= 3 ? 'is-on' : ''}`}><b class="pc">3-piece</b><Gains parts={bonusParts(set.three)} /></div>
+      <SetTiers set={set} n={worn} />
       {home && <small class="setcard__home"><Glyph name="gates" /> {home.name} · {home.rank}-Rank</small>}
     </div>
   );
@@ -838,8 +865,7 @@ function SetRow({ id, n }: { id: string; n: number }) {
         <small class="num">{n}/{all}</small>
         <Glyph name="chevron" class="setrow__go" />
       </span>
-      <span class={`setrow__bonus ${n >= 2 ? 'is-on' : ''}`}><b class="pc">2-piece</b><Gains parts={bonusParts(set.two)} /></span>
-      <span class={`setrow__bonus ${n >= 3 ? 'is-on' : ''}`}><b class="pc">3-piece</b><Gains parts={bonusParts(set.three)} /></span>
+      <SetTiers set={set} n={n} />
     </button>
   );
 }

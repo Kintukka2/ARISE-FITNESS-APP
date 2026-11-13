@@ -10,7 +10,7 @@ import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { FORMATION, KIN, KIN_ALL, KIN_AT } from '@/data/kin';
-import { bonusText } from '@/core/gear';
+import { bonusText, setPieces } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
@@ -388,9 +388,12 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Every piece rolls its core bonus at 75-125% of its design, plus its own properties.',
       'Auto Equip picks the best of what you hold, and favours a set you hold two or more pieces of.',
       'On the Equipment sheet a slot opens everything you hold that fits it, best first, each with what it gains or loses on what you wear there. A slot marked ▲ in gold is one Auto Equip would change.',
-      `${SETS.length} sets of three pieces, Rare and up.`,
-      'Two pieces of a set worn together pay a bonus, and all three pay another.',
-      'The item’s sheet says what each set pays.',
+      `${SETS.filter((x) => x.kind === 'armour').length} armour sets, Rare and up, of five pieces: one to each of head, chest, hands, legs and feet.`,
+      'Two pieces of an armour set worn together pay a bonus. Four pay another, and a blessing for every Gate, held as a shrine’s would be.',
+      `A set’s blessing is at tier ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'C')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Rare set, ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'A')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Heroic and ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'S')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Legendary. A shrine’s of the same name at a higher tier outranks it.`,
+      'Four leave the fifth armour slot for the best piece of any other set, or wear two of each of two sets for both their bonuses.',
+      `${SETS.filter((x) => x.kind === 'jewellery').length} jewellery sets: an amulet and a ring, paying when both are worn, beside any armour set.`,
+      'Weapons and off-hands belong to no set. The item’s sheet says what each set pays.',
       `An upgrade moves an item’s quality and every property ${UPGRADE.share * 100}% across its design’s range, until it is perfect.`,
       'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
       `A step takes alloys of the item’s rarity and Mana Shards: ${UPGRADE_COST.alloy[2]} ${ALLOYS.C.name} at Rare, ${UPGRADE_COST.alloy[5]} ${ALLOYS.S.name} at Legendary.`,

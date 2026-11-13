@@ -338,8 +338,8 @@ fight was tried and did not narrow it.
     rank-up names the two options, and the Inventory tab counts the rungs still to choose.
   - **Balance:** a hunter on every second option, against the same hunter on every first, lands
     within seven points of the clear rate at C, A and S for every line. They are trades, not upgrades.
-- **Gear sets — built.** All sixteen sets in `data/equipment.ts` have three pieces, so the bonuses
-  are for two and three pieces worn, not two and four. They are defined as data in `data/sets.ts`,
+- **Gear sets — built, then restructured** (see "The sets, restructured" below). At first all sixteen sets
+  had three pieces, so the bonuses were for two and three pieces worn. They are defined as data in `data/sets.ts`,
   in the units the combat engine's gear bonuses already use, and reach the fight through
   `raid.heroSpec`.
   - **Home gates:** each set has a home gate of its grade, named for it. A clear there turned the
@@ -1975,6 +1975,46 @@ with what ARISE took from them.
   stats, its score and what it gains, Equip, the star, Details), after Genshin Impact's and Honkai: Star Rail's bags,
   so a piece can be read and worn without leaving the bag; Select opens Quick select in red; the Sets view opens on
   the designs found as a ring of the rarities.
+- **The sets, restructured** (the owner's call, after the reference games). Every set had three pieces and
+  thirteen of sixteen needed a chest, twelve a head, so only one could ever be worn whole and legs, feet and
+  rings almost never belonged to one. The genre settles on four or five pieces paying at two and four, with a
+  slot left free, and armour apart from accessories: Genshin Impact's five artifacts paying at 2 and 4, Honkai:
+  Star Rail's four relics and two planar ornaments, Solo Leveling: Arise's armour and accessory sets, World of
+  Warcraft's tier sets; Diablo III's six-piece sets became the whole build, which Diablo IV answered by dropping
+  them. So:
+  - **Armour sets** (`kind: 'armour'`): sixteen of five pieces, one to each of head, chest, hands, legs and feet,
+    paying a stat at two pieces (`tiers[0]`) and at four its stats and a blessing (`tiers[1].boon`), at tier I
+    on a Rare or Epic set, II on a Heroic, III on a Legendary. Four leave the fifth slot for the best piece of
+    any other set; two of each of two sets pay both 2-piece. The sets keep their names, homes and bonuses (the
+    old 3-piece is now the 4-piece's stats); 49 new pieces fill their slots, each taking its core and property
+    from a design of its rank and slot.
+  - **The 4-piece blessing** reaches the fight through `raid.heroSpec` as `UnitSpec.boons` (`gear.setBoons`),
+    and `raid.blessed` keeps it beside the run's own, one held both ways at the higher tier. So a set changes
+    how the hunter fights with rules the fight already tests: Warden's Iron Skin, Ravager's Rending Strike,
+    Titan's Juggernaut, Ancient Dragon's Unbreakable.
+  - **Jewellery sets** (`kind: 'jewellery'`): four, an amulet and a ring, paying at two, worn beside any armour
+    set: Oathkeeper (Rare), Emberheart (Epic), Lichbound (Heroic), Monarch (Legendary). Four new pieces; the Ember
+    Sigil, the Phylactery Shard, the Void Collapse Prism and the Sovereign Signet join them.
+  - **Weapons and off-hands** belong to no set: the weapon carries Familiarity. The eleven that were set pieces
+    keep their designs, and the Triune Eye leaves its set.
+  - **Auto Equip** leans toward a set held as before, but counts no more than three other pieces
+    (`SET_LEAN_MOST`), so a fifth piece of a set never outweighs a much rarer piece.
+  - **Matched**, the Secret Quest, asks for an armour set's 4-piece.
+  - **Recalibrated.** 30 of 51 Gate tunings moved, none by more than 7% (C +0.3% on average, B -0.1%, A 0.0%,
+    S +0.5%); 30 of 50 Spire blocks, 14 of 20 Spire floors, 8 of 10 Ascension levels and 2 of 10 Trials moved,
+    each by under 6%. The typical hunter's clear rates hold within 3 points at every grade (A's middle 73% to 70%).
+  - **Campaign**, 120 days, against the commit before:
+
+    | | Days to B, A, S, N | Cleared | Carried out | Sets worn on day 112 |
+    |---|---|---|---|---|
+    | One evening a day, before | 16, 30, 56, 107 | 97% | 8 | Ancient Dragon 3 |
+    | One evening a day, after | 19, 32, 57, 108 | 96% | 10 | Ancient Dragon 4, Monarch 2 |
+    | Three sessions a day, before | 15, 22, 37, 67 | 93% | 27 | Death Sovereign 3 |
+    | Three sessions a day, after | 17, 23, 38, 67 | 95% | 22 | Demon Lord 2, Ancient Dragon 3, Monarch 2 |
+
+    A set's whole pay now asks four pieces, not three, so the middle grades come one to three days later; the
+    end of the climb does not move. Both hunters end wearing a jewellery set beside an armour set, and one
+    mixes two armour sets' 2-piece, which no set could allow before.
 - **The Forge, rebuilt** (the owner's call), after Monster Hunter's smithy and Warframe's Foundry. A hearth heads
   it (the anvil over its coals, what can be forged now large, Better in gold); the blueprints are rows that show a
   chip to each thing their recipe asks for, held or short, with `▲ Better` in gold on those rarer than what is worn

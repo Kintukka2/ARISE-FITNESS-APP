@@ -20,34 +20,52 @@ function holding(...ids: string[]) {
 }
 
 describe('sets', () => {
-  it('every set has three pieces and a home gate of its own grade', () => {
+  it('an armour set is a piece to each armour slot, a jewellery set an amulet and a ring, each with a home gate of its grade', () => {
     for (const set of SETS) {
       const pieces = gear.setPieces(set.id);
-      expect(pieces).toHaveLength(3);
+      const slots = pieces.map((p) => p.slot).sort();
+      if (set.kind === 'armour') {
+        expect(slots, set.id).toEqual(['Chest', 'Feet', 'Hands', 'Head', 'Legs']);
+        expect(set.tiers.map((t) => t.at), set.id).toEqual([2, 4]);
+        expect(set.tiers[1].boon, set.id).toBeTruthy();
+      } else {
+        expect(slots, set.id).toEqual(['Amulet', 'Ring']);
+        expect(set.tiers.map((t) => t.at), set.id).toEqual([2]);
+      }
       const home = dungeonById(set.home)!;
       expect(home).toBeTruthy();
       for (const p of pieces) expect(p.rank).toBe(home.rank);
     }
+    // No weapon and no off-hand belongs to a set.
+    expect(gear.ALL_GEAR.filter((d) => d.set && (d.slot === 'Weapon' || d.slot === 'Off-Hand'))).toEqual([]);
   });
 
-  it('two different pieces pay the first bonus, all three pay both, and the same design twice counts once', () => {
+  it('two different pieces pay the 2-piece, four pay the 4-piece and its blessing, and the same design twice counts once', () => {
     const set = SETS.find((x) => x.id === 'Champion')!;
-    const [a, b, c] = gear.setPieces('Champion').map((d) => d.id);
-    const s = holding(a, a, b, c);
-    const [a1, a2, b1, c1] = s.items;
+    const [a, b, c, d] = gear.setPieces('Champion').map((x) => x.id);
+    const s = holding(a, a, b, c, d);
+    const [a1, a2, b1, c1, d1] = s.items;
     expect(gear.setBonuses([a1, a2])).toEqual({});
-    expect(gear.setBonuses([a1, b1])).toEqual(set.two);
-    expect(gear.setBonuses([a1, b1, c1])).toEqual(gear.sumBonuses(set.two, set.three));
+    expect(gear.setBonuses([a1, b1])).toEqual(set.tiers[0].bonus);
+    expect(gear.setBonuses([a1, b1, c1])).toEqual(set.tiers[0].bonus);
+    expect(gear.setBoons([a1, b1, c1])).toEqual({});
+    expect(gear.setBonuses([a1, b1, c1, d1])).toEqual(gear.sumBonuses(set.tiers[0].bonus, set.tiers[1].bonus));
+    expect(gear.setBoons([a1, b1, c1, d1])).toEqual({ [set.tiers[1].boon!.id]: set.tiers[1].boon!.tier });
   });
 
-  it('a worn set reaches the hunter’s fight', () => {
+  it('a worn set reaches the hunter’s fight: its stats, and its 4-piece blessing, held at the higher tier with a shrine’s', () => {
     const ids = gear.setPieces('Ravager').map((d) => d.id);
     const s = holding(...ids);
     for (const it of s.items) gear.equip(s, it.id);
     const bare = raid.heroSpec(defaults(), now).bonus ?? {};
-    const worn = raid.heroSpec(s, now).bonus ?? {};
+    const spec = raid.heroSpec(s, now);
     const set = SETS.find((x) => x.id === 'Ravager')!;
-    expect((worn.patk ?? 0) - (bare.patk ?? 0)).toBeCloseTo(set.three.patk!, 6);
+    expect(((spec.bonus ?? {}).patk ?? 0) - (bare.patk ?? 0)).toBeCloseTo(set.tiers[1].bonus.patk!, 6);
+    expect(spec.boons).toEqual({ rend: 1 });
+    // A shrine's Rending Strike at tier II outranks the set's tier I; the set's stays beside another blessing.
+    const [withRun] = raid.blessed([spec], { blessings: ['rend', 'iron'], tiers: { rend: 2 } } as never);
+    expect(withRun.boons?.rend).toBe(2);
+    expect(withRun.boons?.iron).toBe(1);
   });
 
   it('reads its bonus from the numbers', () => {
@@ -84,7 +102,8 @@ describe('a set’s home gate', () => {
 
   it('its first clear leaves a blueprint of its set the hunter does not know, and every clear its boss’s trophy', () => {
     const s = typicalHunter(34, 'C', 'home');
-    const pieces = gear.setPieces('Champion').map((d) => d.id);
+    // Champion and the Oathkeeper jewellery are both at home there: a blueprint of either.
+    const pieces = raid.homeSets(dungeonById('DNG-015')!).flatMap((x) => gear.setPieces(x.id)).map((d) => d.id);
     s.blueprints = [pieces[0]];
     const trophy = forge.trophyOfSet('Champion')!;
     expect(trophy).toBe(forge.trophyAt(dungeonById('DNG-015')!));
@@ -102,7 +121,7 @@ describe('a set’s home gate', () => {
     const season = spire.seasonOf('2026-02-04');
     const g = dungeonById('DNG-015')!;
     const d = spire.blockFrom(season, spire.blockOf(30), g);
-    expect(raid.homeSets(d).map((x) => x.id)).toEqual(['Champion']);
+    expect(raid.homeSets(d).map((x) => x.id)).toEqual(['Champion', 'Oathkeeper']);
   });
 });
 

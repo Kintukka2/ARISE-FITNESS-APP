@@ -8,7 +8,8 @@ import { ISSUED } from '@/data/equipment';
 import { FAMILIARITY, FAMILIARITY_MAX } from '@/data/forge';
 import { SHADOW_RANKS } from '@/data/shadows';
 import { BLOCK, SPIRE_TOP } from '@/data/spire';
-import { defOf, power, setPieces, setsIn, SLOTS, worn } from './gear';
+import { defOf, power, setFull, setsIn, SLOTS, worn } from './gear';
+import { setById } from '@/data/sets';
 import { gateRank, STAT_CAP } from './progression';
 import type { Attrs, Save, Stat } from './types';
 import { STATS } from './types';
@@ -50,7 +51,7 @@ export const MISSIONS: Mission[] = [
   },
   { id: 'names_on_board', name: 'Names On The Board', tier: 'minor', did: 'Raid with 10 different hunters.', grant: { PER: 1 }, check: (s) => s.gates.met.length >= 10 },
   { id: 'bestiary', name: 'Bestiary', tier: 'minor', did: 'Defeat creatures of 5 different families.', grant: { INT: 1 }, check: (s) => families(s) >= 5 },
-  { id: 'full_set', name: 'Matched', tier: 'minor', did: 'Equip every piece of a set at once.', grant: { free: 1 }, check: (s) => [...setsIn(worn(s))].some(([id, n]) => n >= setPieces(id).length) },
+  { id: 'full_set', name: 'Matched', tier: 'minor', did: 'Wear an armour set’s 4-piece.', grant: { free: 1 }, check: (s) => [...setsIn(worn(s))].some(([id, n]) => setById(id)?.kind === 'armour' && n >= setFull(id)) },
   { id: 'spire_first', name: 'Up', tier: 'minor', did: 'Clear a block of the Pale Spire.', grant: { AGI: 1 }, check: (s) => s.spire.top >= BLOCK },
   { id: 'every_room', name: 'Every Room', tier: 'minor', did: 'Clear a Gate with every room on a floor cleared.', grant: { PER: 1 }, check: (s) => (s.stats.charted ?? 0) >= 1 },
   { id: 'first_forge', name: 'Made, Not Found', tier: 'minor', did: 'Forge an item.', grant: { STR: 1 }, check: (s) => (s.stats.crafted ?? 0) >= 1 },
