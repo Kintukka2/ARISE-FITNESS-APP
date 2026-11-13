@@ -837,17 +837,23 @@ try {
   await sleep(300); await snap('ascension', true);
   // The dial and the climb at the window's top: a rung to each level, the one entered at marked.
   if (!(await page.locator('.sheet.is-top .ascdial__level').count())) throw new Error('ASCENSION HAS NO DIAL');
-  if (!(await page.locator('.sheet.is-top .ascrung.is-here').count())) throw new Error('THE CLIMB DOES NOT MARK THE LEVEL ENTERED AT');
+  if (!(await page.locator('.sheet.is-top .ascfloor.is-here').count())) throw new Error('THE CLIMB DOES NOT MARK THE LEVEL ENTERED AT');
+  if (!(await page.locator('.sheet.is-top .ascsummit').count())) throw new Error('THE NEXT LEVEL HAS NO CHALLENGE CARD');
+  if (await page.locator('.sheet.is-top .markgrid').count()) throw new Error('THE MARKS STILL SIT AT THE FOOT OF ASCENSION');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(300); await snap('ascension-top');
   // Setting a mark is the System's offer.
   // The marks as seals: a card to each, the one that can take a set glowing; a tap offers it, the seal before and after under the lines.
+  // The marks have their own window, opened from Ascension's Marks card.
+  await page.locator('.sheet.is-top .ascmarks').scrollIntoViewIfNeeded(); await sleep(300); await snap('ascension-foot');
+  await page.locator('.sheet.is-top .ascmarks').click(); await sleep(500);
   if ((await page.locator('.sheet.is-top .markcard').count()) !== 5) throw new Error('THE MARKS ARE NOT A SEAL EACH');
-  await page.locator('.sheet.is-top .markgrid').scrollIntoViewIfNeeded(); await sleep(300); await snap('marks');
+  await snap('marks');
   await page.locator('.sheet.is-top .markcard.is-ready').first().click(); await sleep(500);
   if ((await page.locator('.syswin .markstamp .markseal').count()) !== 2) throw new Error('THE MARK\'S OFFER DOES NOT SHOW ITS SEAL BEFORE AND AFTER');
   await snap('mark-offer');
   if (!(await page.locator('.syswin.sysframe', { hasText: 'Would you like to set this mark?' }).isVisible())) throw new Error('THE MARK IS NOT OFFERED IN THE SYSTEM’S WINDOW');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(400);
+  await close();
   // The proof is done, so the Trial stands open from here: its brief is the System's, and the Association sends no one.
   await page.locator('.sheet.is-top .btn', { hasText: 'Face The Trial' }).click(); await sleep(800);
   await snap('trial-brief', true);

@@ -1936,6 +1936,12 @@ with what ARISE took from them.
   diamonds, what it gives now and what the next set adds; a seal that can take a set is tapped to set it. The System's
   offer to set one carries the seal before and after, and its answer the seal stamped down, the new diamond landing.
   The licence's head holds no icon: the seal is on the card.
+- **The climb as a tower, the marks in their own window** (the owner's calls). The next level stands as a
+  challenge card under the dial: its level locked in a dashed diamond, its rule, its road as two seals on a line, and
+  Face The Trial. The climb is a tower after Hades' heat gauge: battlements, stone walls, a floor to each level opened
+  down to the ground, the floors in force lit from within, `You` bannered on the floor entered at. The marks sat oddly
+  at the foot of Ascension, so they have their own window, `MARKS`, opened from a card under the dial that shows their
+  seals small and the badge while one waits.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

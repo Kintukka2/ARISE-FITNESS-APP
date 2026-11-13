@@ -2760,36 +2760,78 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .ascdial__high { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .ascdial__high b { color: var(--gold); letter-spacing: 0; }
 .ascdial__jump { min-height: 32px; padding: 0 6px; border: 0; background: none; color: var(--gold); font: inherit; text-decoration: underline; cursor: pointer; }
-/* The climb: a rung to each level, highest at the top; a rung in force lit gold, the one entered at marked, the next locked with its road. */
-.ascladder { display: flex; flex-direction: column; gap: 8px; }
-.ascladder__rungs { position: relative; display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-.ascladder__rungs::before { content: ''; position: absolute; left: 19px; top: 18px; bottom: 18px; width: 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--sys-ink) 12%, transparent), rgba(255, 203, 92, 0.35)); }
-.ascrung { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px 8px 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
-li > .ascrung { border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 7%, transparent); }
-.ascrung__n { position: relative; z-index: 1; display: grid; place-items: center; justify-self: center; width: 30px; height: 30px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); background: rgba(6, 8, 14, 0.95); font-size: 0.8rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.ascrung__n > i { font-style: normal; transform: rotate(-45deg); }
-.ascrung__n { line-height: 1; }
-.ascrung__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ascrung__text > b { font-size: 0.86rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
-.ascrung__text > small { font-size: 0.74rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.ascrung.is-on .ascrung__n { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 22%, rgba(6, 8, 14, 0.95)); color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
-.ascrung.is-on .ascrung__text > b { color: var(--gold); }
-.ascrung.is-here { background: linear-gradient(90deg, rgba(255, 203, 92, 0.14), transparent 75%); }
-.ascrung.is-here .ascrung__n { background: var(--gold); color: #1a1203; }
-.ascrung__tag { padding: 2px 8px; border: 1px solid var(--gold); color: var(--gold); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
-.ascrung:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-.ascrung.is-locked, .ascrung.is-beyond { cursor: default; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 7%, transparent); align-items: start; }
-.ascrung.is-locked .ascrung__n { gap: 0; border-style: dashed; border-color: color-mix(in srgb, var(--gold) 60%, transparent); color: var(--gold); }
-.ascrung.is-locked .ascrung__n .ico { position: absolute; top: -9px; right: -9px; width: 14px; height: 14px; padding: 2px; border-radius: 50%; background: rgba(6, 8, 14, 0.95); transform: rotate(-45deg); }
-.ascrung.is-locked .ascrung__text { gap: 4px; }
-.ascrung.is-locked .ascrung__text > b { color: #fff; }
-.ascroad__head { margin-top: 8px; }
-.ascrung .ascnext { margin-top: 2px; }
-.ascrung .ascnext li { padding: 8px 6px; border: 0; border-left: 2px solid transparent; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 7%, transparent); background: none; box-shadow: none; }
-.ascrung .ascnext li.is-now { border-left-color: var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
-.ascrung .ascnext__n .ico { width: 12px; height: 12px; }
-.ascrung .btn { margin-top: 8px; }
-.ascrung.is-beyond.is-on .ascrung__n { border-color: var(--gold); color: var(--gold); }
+/* The summit: the next level's challenge card, its road a track of two seals, Face The Trial once it stands open. */
+.ascsummit { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px 14px; border: 1px dashed color-mix(in srgb, var(--gold) 55%, transparent);
+  background: radial-gradient(100% 120% at 0% 0%, rgba(255, 203, 92, 0.12), transparent 60%), rgba(12, 9, 3, 0.7); }
+.ascsummit.is-ready { border-style: solid; border-color: var(--gold); box-shadow: 0 0 18px rgba(255, 203, 92, 0.2), inset 0 0 22px rgba(255, 203, 92, 0.08); }
+.ascsummit__head { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: center; gap: 14px; }
+.ascsummit__gem { position: relative; display: grid; place-items: center; justify-self: center; width: 42px; height: 42px; transform: rotate(45deg); border: 1px dashed var(--gold); background: rgba(20, 14, 2, 0.9); color: var(--gold); box-shadow: 0 0 14px var(--gold-glow); }
+.ascsummit__gem > i { font-size: 1.15rem; font-weight: 800; font-style: normal; transform: rotate(-45deg); }
+.ascsummit__gem > .ico { position: absolute; top: -10px; right: -10px; width: 16px; height: 16px; padding: 2px; border-radius: 50%; background: rgba(6, 8, 14, 0.95); transform: rotate(-45deg); }
+.ascsummit__title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ascsummit__title .label { font-size: 0.56rem; color: var(--gold); }
+.ascsummit__title b { font-size: 0.98rem; font-weight: 800; color: #fff; }
+.ascsummit__title small { font-size: 0.74rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.ascroad { position: relative; display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ascroad::before { content: ''; position: absolute; left: 17px; top: 20px; bottom: 20px; width: 2px; background: linear-gradient(180deg, var(--verdant), rgba(255, 203, 92, 0.5)); opacity: 0.6; }
+.ascroad > li { position: relative; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 0; }
+.ascroad__seal { position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); border-radius: 50%; background: rgba(6, 8, 14, 0.95); color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.ascroad__seal .ico { width: 16px; height: 16px; }
+.ascroad > li.is-done .ascroad__seal { border-color: var(--verdant); color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); }
+.ascroad > li.is-now .ascroad__seal { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px var(--gold-glow); animation: qaCall 2s ease-in-out infinite; }
+.ascroad > li.is-later { opacity: 0.55; }
+.ascroad__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ascroad__text b { font-size: 0.84rem; font-weight: 600; line-height: 1.3; color: var(--sys-ink); }
+.ascroad__text small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.ascroad__count { font-size: 0.86rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.ascroad > li.is-done .ascroad__count { color: var(--verdant); }
+@media (prefers-reduced-motion: reduce) { .ascroad > li.is-now .ascroad__seal { animation: none; } }
+/* The climb as a tower: stone walls, a floor to each level, the floors in force lit from within, the ground at its foot. */
+.asctower { display: flex; flex-direction: column; gap: 8px; }
+.asctower__floors { position: relative; display: flex; flex-direction: column; margin: 0; padding: 0 10px; list-style: none;
+  border-left: 3px solid rgba(255, 203, 92, 0.22); border-right: 3px solid rgba(255, 203, 92, 0.22);
+  background: repeating-linear-gradient(0deg, transparent 0 22px, rgba(255, 203, 92, 0.03) 22px 23px); }
+.asctower__floors::before { content: ''; position: absolute; left: -3px; right: -3px; top: -9px; height: 9px;
+  background: repeating-linear-gradient(90deg, rgba(255, 203, 92, 0.3) 0 14px, transparent 14px 24px); }
+.ascfloor { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 8px; border: 0; border-bottom: 2px solid rgba(255, 203, 92, 0.1);
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background 160ms var(--ease); }
+.ascfloor__num { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); border-radius: 50% 50% 4px 4px; background: rgba(4, 4, 8, 0.9); font-size: 0.98rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.ascfloor__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ascfloor__body b { font-size: 0.86rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.ascfloor__body small { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+/* A floor in force: its window lit, its name in gold. */
+.ascfloor.is-on { background: linear-gradient(90deg, rgba(255, 203, 92, 0.08), transparent 80%); }
+.ascfloor.is-on .ascfloor__num { border-color: var(--gold); background: radial-gradient(circle at 50% 60%, rgba(255, 203, 92, 0.55), rgba(60, 40, 6, 0.95) 70%); color: #1a1203; box-shadow: 0 0 14px var(--gold-glow); }
+.ascfloor.is-on .ascfloor__body b { color: var(--gold); }
+.ascfloor.is-on .ascfloor__body small { color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+/* The floor entered at: a banner on the tower's wall. */
+.ascfloor.is-here { background: linear-gradient(90deg, rgba(255, 203, 92, 0.18), rgba(255, 203, 92, 0.04) 85%); box-shadow: inset 0 0 0 1px rgba(255, 203, 92, 0.4); }
+.ascfloor__you { position: relative; padding: 4px 10px 4px 12px; background: var(--gold); color: #1a1203; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 6px 50%); }
+.ascfloor.is-ground { min-height: 52px; border-bottom: 0; background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0 6px, transparent 6px 12px); }
+.ascfloor.is-ground .ascfloor__num { border-radius: 4px; }
+.ascfloor.is-beyond { cursor: default; }
+.ascfloor:active { background: rgba(255, 203, 92, 0.12); }
+.ascfloor:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+/* The way to the marks: a seal to each in small, the count set, and the badge while one waits. */
+.ascmarks { display: grid; grid-template-columns: minmax(0, 1fr) auto 14px; grid-template-areas: 'text badge go' 'seals seals go'; align-items: center; gap: 10px 12px; width: 100%; min-height: 64px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  background: rgba(12, 9, 3, 0.7); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.ascmarks.is-call { border-color: var(--gold); box-shadow: 0 0 14px rgba(255, 203, 92, 0.2); }
+.ascmarks:active { background: rgba(255, 203, 92, 0.12); }
+.ascmarks:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.ascmarks__seals { grid-area: seals; display: flex; gap: 6px; }
+.ascmarks__text { grid-area: text; }
+.ascmarks .marks__waiting { grid-area: badge; }
+.ascmarks__go { grid-area: go; }
+.ascmarks__seals .markseal { gap: 0; }
+.ascmarks__seals .markseal__gem { width: 24px; height: 24px; margin: 5px; }
+.ascmarks__seals .markseal__gem::after { inset: -3px; }
+.ascmarks__seals .markseal__gem .ico { width: 12px; height: 12px; }
+.ascmarks__seals .markseal__pips { display: none; }
+.ascmarks__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ascmarks__text > b { font-size: 0.86rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.ascmarks__text small { font-size: 0.64rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.ascmarks__text small b { color: var(--gold); }
+.ascmarks__go { width: 12px; height: 12px; color: var(--gold); }
 /* The marks, after Hades' Mirror of Night and Darkest Dungeon II's Altar of Hope: a seal to each in a grid of two. */
 .marks { display: flex; flex-direction: column; gap: 10px; }
 .marks__head { display: flex; align-items: center; gap: 10px; }

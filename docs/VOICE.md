@@ -280,7 +280,8 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | FORGE | Every blueprint known, a row each saying whether its materials are all held, and every material held. ARISE's own window: the source has no forge. A blueprint's card is `BLUEPRINT: …` |
 | GATES | Every Gate standing open today, a tile each, under the grade tabs |
 | LICENCE | The hunter's licence with the Association: the card, their number on it, the grade the board answers to. Its number is on the card, so the head names the window only (the owner's call) |
-| ASCENSION | The level the Gates are entered at, as a dial, the climb of every level and its rule, the road to the next, and the marks. The level is the dial, so the head names the window only |
+| ASCENSION | The level the Gates are entered at, as a dial, the road to the next level, the climb of every level and its rule, and the way to the marks. The level is the dial, so the head names the window only |
+| MARKS | The marks, a seal to each, set from here; opened from Ascension (the owner's call: the marks have their own window) |
 | ARMY | Every Shadow bound, a tile each |
 | SETTINGS, GUIDE | The interface's two windows, set in the System's frame at the owner's call. Their words stay the interface's: plain, free to explain and to name the System |
 | EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
@@ -547,12 +548,18 @@ for advancement. Every quest's name wears its type, and these are the names:
   owner's call after Slay the Spire's Ascension select and Hades' heat gauge: the dial, a crown over the level large in
   gold between two round arrows (`One level down`, `One level up`), the level's name in capitals under it (`The board
   as it stands` at 0), `Foe strength +53%` in red and `Gate pay +20%` in green, and `Highest opened 3` (past the ruled
-  levels, `0` and `Highest` beside it to jump); then `The climb`, a rung to each level from the next one down to 0 on a
-  line, each a diamond with its level over its rule (`[Thin Rest]` over `A rest heals 50% of what it would.`), lit gold
-  where its rule is in force, the one entered at filled and tagged `Entering`, a tap on an open rung entering at it;
-  the next level locked at the top, a dashed diamond with a lock, its rule, and under `To open Ascension 4` its two
-  steps and **Face The Trial**; past the ruled levels `[Beyond]` as one rung. `Marks` last, rebuilt at the owner's call after Hades'
-  Mirror of Night and Darkest Dungeon II's Altar of Hope: `1 to set` in a gold badge and `Set 2/20` at its head, then a
+  levels, `0` and `Highest` beside it to jump); then the card to the marks (below); then the next level as a challenge card,
+  after the boss challenges of the reference games: its level locked in a dashed diamond with a lock, `To open
+  Ascension 4` over `[Heavy Legs]` and its rule, then its road as a track of two round seals on a line, the Gates proved
+  (a tick in green once done, `3/3`) and the Trial (its crown in gold while it stands open, `0/1`), each over its words,
+  and **Face The Trial**; then `The climb` as a tower after Hades' heat gauge, battlements at its top and stone walls down
+  its sides, a floor to each level opened down to the ground (`0`, `The board as it stands`), each its level in an arched
+  window over its rule (`[Thin Rest]` over `A rest heals 50% of what it would.`), the floors in force lit gold from
+  within, the floor entered at bannered `You`, a tap entering at a floor; past the ruled levels `[Beyond]` as one floor
+  at the top. The marks in a window of their own, `MARKS` (the owner's call: at the foot of
+  Ascension they sat oddly), opened from a card under the dial, `Marks` over `Set 2/20 · Upgrade limit: Perfect +3`, the
+  five seals small under it and `1 to set` in its gold badge while one waits; in it, after Hades' Mirror of Night and
+  Darkest Dungeon II's Altar of Hope, `Each set for good`: `1 to set` in a gold badge and `Set 2/20` at its head, then a
   seal to each mark, two to a row (the last alone across the row): its sigil in a diamond of gold, brighter for every
   set (the Edge's crossed blades, the Bulwark's heart, the Ward's shield, the Legion's Shadows, the Long Stride's
   steps), its sets as four diamonds under it, its name, what it gives now (`Each: Maximum HP +6%` while none is set),
