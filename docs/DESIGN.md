@@ -1875,6 +1875,12 @@ with what ARISE took from them.
   `Chosen`. The rooms wait in Today's map, once identified, and the moves are nowhere on the brief; the Guide
   no longer says the brief shows the budget. The map's key folds behind `Key` at the window's top right and
   drops over the plan, so seven kinds of room read as seven lines, not a wrapping band.
+- **No moves inside the Gate either** (the owner's call, at once after). The clock still counts every move and
+  still stirs past the budget, but nothing shows the count: the meter under the hunter's health appears only
+  once the Gate stirs (`Stirring`, a bar toward red and the creatures' share; then `Red Gate`, `Sealed`), and no
+  room's cost is drawn on it or read aloud with it. The Guide says what a move is and what the budget does,
+  with no figure for the budget. Auto, the brief's verdict and calibration read the clock as before, so no
+  tuning moves.
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

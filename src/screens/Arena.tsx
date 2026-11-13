@@ -831,7 +831,7 @@ export function Arena() {
               {feed[0] && <p class={`feed feed--${feed[0].tone}`}>{feed[0].text}</p>}
               <MapView m={m} path={run.path} at={run.at} options={raid.options(d, run).map((x) => x.id)} onPick={(nid) => void step(nid)}
                 pos={raid.standing(d, run)?.id} rested={run.rested} onWalk={walkTo} seen={m.tower ? undefined : raid.seen(s, d, run)}
-                corner={<ItemsMark items={bagFor(s, d, drinkNow)} />} costs={costsOf(d, run)}
+                corner={<ItemsMark items={bagFor(s, d, drinkNow)} />}
                 stir={clock && clock.over ? Math.min(1, clock.over / CLOCK.red) : 0} red={!!clock?.red}
                 shrinePath={(x) => pathOf(blessings.shrinePath(run, x))?.name}
                 openings={raid.openings(run)} secrets={(k) => raid.secretsOf(d, run, k)}
@@ -922,12 +922,6 @@ function RunStrip({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullabl
   );
 }
 
-/** The moves to every room the hunter can enter or walk back to, on the Gate clock: none for where they stand. */
-function costsOf(d: Dungeon, run: NonNullable<ReturnType<typeof useSave>['gates']['raid']>): Record<string, number> | undefined {
-  if (!run.clock || raid.pending(d, run)) return undefined;
-  return Object.fromEntries(Object.entries(raid.movesFrom(d, run)).filter(([, n]) => n > 0));
-}
-
 /**
  * A Red Gate's share, counted up under its window's lines: slowly to 100, then all at once to the rest,
  * and the window shakes as it lands. A screen reader hears the share whole.
@@ -970,28 +964,23 @@ function RedCount({ to }: { to: number }) {
 }
 
 /**
- * The Gate clock, under the hunter's HP: the moves spent against the budget, then the stirring's 20 moves
- * toward red (the bar alone shows how far), with the Gate's mark at the end of the bar, and once it has
- * turned, the Red Gate, sealed.
+ * The Gate clock, under the hunter's HP, and only once the Gate stirs: the hunter never sees the budget or
+ * the moves spent (the owner's call). Stirring, the creatures' share and a bar that fills toward red, with
+ * the Gate's mark at its end; turned, the Red Gate, sealed.
  */
 function GateClock({ c, more }: { c: ClockState; more: number }) {
-  const stir = c.over > 0;
-  const n = stir ? CLOCK.red : c.budget;
-  const done = c.red ? CLOCK.red : stir ? c.over : c.moves;
-  const label = c.red ? 'Red Gate' : stir ? 'Stirring' : 'Moves';
-  const value = stir ? `+${more}%` : `${c.moves}/${c.budget}`;
-  // Stirring, the bar itself shows how far red is.
-  const sub = c.red ? 'Sealed' : stir ? null : `${c.left} left`;
+  if (!c.over) return null;
+  const done = c.red ? CLOCK.red : c.over;
   return (
-    <div class={`gclock ${c.red ? 'is-red' : stir ? 'is-stir' : ''}`} role="meter" aria-valuemin={0} aria-valuemax={n} aria-valuenow={done}
-      aria-label={c.red ? `Red Gate. Creatures not yet fought +${more}%. The way out is sealed.` : stir ? `Stirring. Creatures not yet fought +${more}%. Red Gate in ${c.toRed} moves.` : `Moves: ${c.moves} of ${c.budget}`}>
-      <span class="label">{label}</span>
-      <span class="gclock__bar" style={`--n:${n <= 40 ? n : Math.ceil(n / 5)}`}>
-        <i class="gclock__fill" style={`width:${(done / n) * 100}%`} />
+    <div class={`gclock ${c.red ? 'is-red' : 'is-stir'}`} role="meter" aria-valuemin={0} aria-valuemax={CLOCK.red} aria-valuenow={done}
+      aria-label={c.red ? `Red Gate. Creatures not yet fought +${more}%. The way out is sealed.` : `Stirring. Creatures not yet fought +${more}%.`}>
+      <span class="label">{c.red ? 'Red Gate' : 'Stirring'}</span>
+      <span class="gclock__bar">
+        <i class="gclock__fill" style={`width:${(done / CLOCK.red) * 100}%`} />
         <span class="gclock__gate" aria-hidden="true"><Glyph name="gates" /></span>
       </span>
-      <b class={`gclock__v num ${sub ? '' : 'is-solo'}`}>{value}</b>
-      {sub && <small class="gclock__sub num">{sub}</small>}
+      <b class={`gclock__v num ${c.red ? '' : 'is-solo'}`}>+{more}%</b>
+      {c.red && <small class="gclock__sub">Sealed</small>}
     </div>
   );
 }

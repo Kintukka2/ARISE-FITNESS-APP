@@ -101,7 +101,7 @@ describe('the Gate clock', () => {
     expect(run.moves).toBe(4);
     const next = road[2];
     expect(raid.movesTo(d, run, next)).toBe(3);
-    // What the plan shows on every room is what a step there would cost.
+    // What every room the hunter can reach would cost is what a step there costs.
     const shown = raid.movesFrom(d, run);
     expect(Object.keys(shown).length).toBeGreaterThan(2);
     for (const [id, n] of Object.entries(shown)) expect(n, id).toBe(raid.movesTo(d, run, id));

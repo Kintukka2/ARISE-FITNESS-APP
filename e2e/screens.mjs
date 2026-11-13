@@ -495,12 +495,11 @@ try {
     await useBtn.click(); await sleep(800);
     if (await page.locator('.dmap .droom.is-fog').count()) throw new Error('A GATE SURVEY LEFT ROOMS IN THE FOG');
     await snap('arena-map-surveyed');
-    // The Gate clock: the meter under the hunter's HP. A room's moves are read aloud with it, never drawn on its tile (the owner's call).
-    if (!(await page.locator('.runstrip .gclock').count())) throw new Error('THE RUN HAS NO CLOCK');
-    if (await page.locator('.dmap .droom__cost').count()) throw new Error('A ROOM TILE STILL DRAWS ITS MOVES');
-    if (!(await page.locator('.dmap button.droom[aria-label*="move"]').count())) throw new Error('NO ROOM SAYS WHAT IT COSTS IN MOVES');
-    if ((await page.locator('.runstrip .gclock__v').innerText()).trim().split('/')[0] !== '2') throw new Error('A ROOM ENTERED AND A WALK BACK DID NOT COST 2 MOVES');
-    await page.locator('.runstrip').screenshot({ path: `${OUT}/arena-clock.png` });
+    // The Gate clock counts, but the hunter never sees the moves (the owner's call): no meter inside the budget,
+    // no room's cost drawn on it or read aloud with it.
+    if (await page.locator('.runstrip .gclock').count()) throw new Error('THE RUN SHOWS ITS MOVES INSIDE THE BUDGET');
+    if (await page.locator('.dmap button.droom[aria-label*="move"]').count()) throw new Error('A ROOM SAYS WHAT IT COSTS IN MOVES');
+    if (await page.evaluate(() => JSON.parse(localStorage.getItem('arise-rpg:save')).gates.raid.moves) !== 2) throw new Error('A ROOM ENTERED AND A WALK BACK DID NOT COST 2 MOVES');
     /** Set the open run's clock (moves past its budget, or as they were), and go back in. Returns the moves it had. */
     const clockTo = async (to) => {
       const was = await page.evaluate((to) => {
@@ -521,6 +520,9 @@ try {
     await snap('arena-stir-window'); await drain();
     await clockTo({ over: 9 });
     if (!(await page.locator('.dmapwrap.is-stir').count())) throw new Error('A STIRRING GATE\'S PLAN DOES NOT STIR');
+    if (!(await page.locator('.runstrip .gclock.is-stir').count())) throw new Error('A STIRRING GATE SHOWS NO CLOCK');
+    if (/\/|left/.test(await page.locator('.runstrip .gclock').innerText())) throw new Error('THE STIRRING CLOCK COUNTS MOVES');
+    await page.locator('.runstrip').screenshot({ path: `${OUT}/arena-clock.png` });
     await snap('arena-map-stirring');
     // One move short of red, one more: the Gate turns red, and the way out seals.
     await clockTo({ over: 19 });

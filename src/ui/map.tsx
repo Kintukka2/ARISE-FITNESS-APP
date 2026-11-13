@@ -3,8 +3,8 @@
  * corridors, the entrance (or stairs up) at the foot and the boss (or stairs down) at the head, every
  * other room in the fog until it is seen. A tower is drawn
  * floor by floor. Read-only in the brief; in the arena, the rooms the hunter can enter glow, and a
- * cleared room can be walked back to. On the Gate clock, every room the hunter can enter or walk to shows
- * what it costs in moves; past the budget the plan stirs, and a Red Gate's plan is red, its entrance sealed.
+ * cleared room can be walked back to. On the Gate clock, past the budget the plan stirs, and a Red Gate's plan
+ * is red, its entrance sealed; what a walk costs in moves is never shown (the owner's call).
  */
 import { across, pairKey, passages, threatOf, tollDoors, unsealed, type GateMap, type MapNode, type Openings } from '@/core/map';
 import { landmarkOf } from '@/data/landmarks';
@@ -36,8 +36,6 @@ interface MapProps {
   /** Set at the plan's top right: the Gate Survey, while one can be used. */
   corner?: ComponentChildren;
   compact?: boolean;
-  /** On the Gate clock: the moves to enter or walk to each room the hunter can, by id. */
-  costs?: Record<string, number>;
   /** On the Gate clock: how far the Gate has stirred, 0 to 1 on the way to red, and whether it has turned. */
   stir?: number;
   red?: boolean;
@@ -68,7 +66,7 @@ export function MapView(p: MapProps) {
 }
 
 /** A dungeon's plan: one floor of it, the hunter's or the one asked for. */
-function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, costs, stir = 0, red = false, shrinePath, openings = {}, secrets, tollable = [], onToll, restable = [], onRestRoom }: MapProps) {
+function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos, rested = [], onWalk, seen, floor, onFloor, corner, compact, stir = 0, red = false, shrinePath, openings = {}, secrets, tollable = [], onToll, restable = [], onRestRoom }: MapProps) {
   const done = new Set([m.start!, ...path.slice(0, at)]);
   const entered = new Set(path);
   const open = unsealed(m, done);
@@ -166,9 +164,6 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           // A landmark goes by its own name (`Ossuary`); a cache behind a secret by what it is.
           const named = x.kind === 'landmark' ? landmarkOf(x.landmark ?? '')?.name : undefined;
           const name = plain ? 'Cleared' : sealed ? 'Sealed' : path ? `Shrine of ${path}` : named ?? (x.secret ? 'Secret' : kind.name);
-          // What it costs to go there, in moves, on the Gate clock.
-          const cost = costs?.[x.id];
-          const moves = cost === undefined ? '' : `, ${cost} ${cost === 1 ? 'move' : 'moves'}`;
           const next = options.includes(x.id);
           const spent = x.kind === 'rest' && rested.includes(x.id);
           const stairs = x.kind === 'up' || x.kind === 'down';
@@ -179,7 +174,6 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
             isDone ? 'is-done' : entered.has(x.id) ? 'is-here' : next ? 'is-next' : 'is-far', plain ? 'is-cleared' : '',
             sealed ? 'is-sealed' : '', spent ? 'is-spent' : '', here?.id === x.id ? 'is-at' : '', road.includes(x.id) ? 'is-road' : '',
           ].filter(Boolean).join(' ');
-          // The moves a room costs are read aloud with it, never drawn on it: the meter and the hint say the clock.
           const body = (
             <>
               {t && t.n > 0 && (
@@ -195,7 +189,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           const cls = `gnode droom gnode--${looks} ${state}`;
           // A rest found and not yet used is tapped to rest there, even where the hunter stands: it asks first.
           if (onRestRoom && restable.includes(x.id)) {
-            return <button type="button" key={x.id} class={`${cls} is-restable`} style={style} data-node={x.id} aria-label={`Rest${moves}: ${kind.desc}`} title="Rest here"
+            return <button type="button" key={x.id} class={`${cls} is-restable`} style={style} data-node={x.id} aria-label={`Rest: ${kind.desc}`} title="Rest here"
               onClick={() => { sfx.tap(); onRestRoom(x.id); }}>{body}</button>;
           }
           // The room a toll door seals is tapped to break the seal: it asks first.
@@ -205,17 +199,17 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
               onClick={() => { sfx.tap(); onToll!(sealedBy.key); }}>{body}</button>;
           }
           if (next && onPick) {
-            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Enter ${name}${who}${moves}: ${kind.desc}`} title={kind.desc}
+            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Enter ${name}${who}: ${kind.desc}`} title={kind.desc}
               onClick={() => { sfx.tap(); onPick(x.id); }}>{body}</button>;
           }
           // Stairs taken once are taken again in one tap, to the floor they lead to.
           const to = stairs && isDone ? across(m, x) : null;
           if (to && onWalk) {
-            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`${name}: to floor ${(to.floor ?? 0) + 1}${moves}`} title={`${name}: to floor ${(to.floor ?? 0) + 1}`}
+            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`${name}: to floor ${(to.floor ?? 0) + 1}`} title={`${name}: to floor ${(to.floor ?? 0) + 1}`}
               onClick={() => { sfx.tap(); onWalk(to.id); }}>{body}</button>;
           }
           if (isDone && onWalk && here?.id !== x.id) {
-            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${plain ? `the cleared ${kind.name}` : name}${moves}`} title={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`}
+            return <button type="button" key={x.id} class={cls} style={style} data-node={x.id} aria-label={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`} title={`Walk back to ${plain ? `the cleared ${kind.name}` : name}`}
               onClick={() => { sfx.tap(); onWalk(x.id); }}>{body}</button>;
           }
           return <span key={x.id} class={cls} style={style} title={`${name}: ${kind.desc}`} aria-label={`${name}${who}`}>{body}</span>;

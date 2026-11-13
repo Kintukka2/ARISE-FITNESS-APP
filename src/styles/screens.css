@@ -640,7 +640,6 @@ button.dmap__floor { cursor: pointer; }
 .gclock .label { grid-row: 1 / 3; width: auto; white-space: nowrap; }
 .gclock.is-stir .label, .gclock.is-red .label { color: var(--blood); }
 .gclock__bar { grid-row: 1 / 3; position: relative; height: 10px; margin-right: 20px; border: 1px solid color-mix(in srgb, var(--gc) 55%, transparent); border-radius: 2px; background: rgba(12, 8, 5, 0.85); }
-.gclock__bar::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--n) - 1px), rgba(4, 6, 15, 0.9) calc(100% / var(--n) - 1px) calc(100% / var(--n))); pointer-events: none; }
 .gclock__fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gc) 70%, #000), var(--gc)); box-shadow: 0 0 8px var(--gc-glow); transition: width 320ms var(--ease); }
 .gclock__gate { position: absolute; top: 50%; right: -20px; display: grid; place-items: center; width: 16px; height: 16px; transform: translateY(-50%); color: color-mix(in srgb, var(--blood) 55%, var(--ink-3)); }
 .gclock__gate .ico { width: 15px; height: 15px; }
