@@ -49,9 +49,12 @@ const ONLY: { key: Only; name: string }[] = [
   { key: 'better', name: 'Better' }, { key: 'sets', name: 'Set pieces' }, { key: 'starred', name: 'Starred' },
 ];
 
-/** INVENTORY: everything held, a square each, or every set and design found. */
+/**
+ * ITEM BAG: everything held, a card each, or every set and design found. Named apart from the Inventory
+ * screen that opens it (the owner's call: two windows called Inventory read as one).
+ */
 export function openInventory(view: View = 'items') {
-  openSheet({ title: 'Inventory', system: { icon: null, kind: 'gear' }, render: () => <Bag initial={view} /> });
+  openSheet({ title: 'Item Bag', system: { icon: null, kind: 'gear' }, render: () => <Bag initial={view} /> });
 }
 
 function Bag({ initial }: { initial: View }) {
@@ -60,24 +63,37 @@ function Bag({ initial }: { initial: View }) {
   // Leaving the bag is looking at it: nothing in it is New after.
   useEffect(() => () => { if ((store.get().newItems ?? []).length) store.update(gear.seeAllItems); }, []);
   const complete = SETS.filter((x) => gear.heldOf(s, x.id).size >= gear.setPieces(x.id).length).length;
-  const fresh = (s.newItems ?? []).length;
   return (
     <div class="stack bag">
-      <div class="baghead">
-        <span class="baghead__icon" aria-hidden="true"><Glyph name="bag" /></span>
-        <span class="baghead__count"><b class="num">{s.items.length}</b><small class="label">Items</small></span>
-        <span class="baghead__facts">
-          <span><small>Worn</small><b class="num">{gear.worn(s).length}</b></span>
-          <span class={fresh ? 'is-new' : ''}><small>New</small><b class="num">{fresh}</b></span>
-          <span><small>Starred</small><b class="num">{s.favourites.length}</b></span>
-        </span>
-        <span class="baghead__shards"><Shards n={s.wallet.shards} /></span>
-      </div>
+      <BagHead />
       <div class="seg bag__views" role="tablist" aria-label="View">
         <button type="button" role="tab" aria-selected={view === 'items'} class={`seg__btn ${view === 'items' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('items'); }}>Items · {s.items.length}</button>
         <button type="button" role="tab" aria-selected={view === 'sets'} class={`seg__btn ${view === 'sets' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('sets'); }}>Sets · {complete}/{SETS.length}</button>
       </div>
       {view === 'items' ? <Items /> : <Codex />}
+    </div>
+  );
+}
+
+/** The bag's head: its sign, how many items, what is worn, new and starred, and what it holds by rarity as one strip. */
+function BagHead() {
+  const s = useSave();
+  const fresh = (s.newItems ?? []).length;
+  const by = (['S', 'A', 'B', 'C', 'D', 'E'] as const).map((r) => [r, s.items.filter((it) => gear.defOf(it)?.rank === r).length] as const).filter(([, n]) => n > 0);
+  return (
+    <div class="baghead">
+      <span class="baghead__icon" aria-hidden="true"><Glyph name="bag" /></span>
+      <span class="baghead__count"><b class="num">{s.items.length}</b><small class="label">Items</small></span>
+      <span class="baghead__facts">
+        <span><small>Worn</small><b class="num">{gear.worn(s).length}</b></span>
+        <span class={fresh ? 'is-new' : ''}><small>New</small><b class="num">{fresh}</b></span>
+        <span><small>Starred</small><b class="num">{s.favourites.length}</b></span>
+      </span>
+      {by.length > 0 && (
+        <span class="baghead__spread" role="img" aria-label={by.map(([r, n]) => `${rarity(r)} ${n}`).join(', ')}>
+          {by.map(([r, n]) => <i key={r} data-rarity={r} style={`flex: ${n}`}><b class="num">{n}</b></i>)}
+        </span>
+      )}
     </div>
   );
 }
@@ -103,6 +119,8 @@ function Items() {
   const [only, setOnly] = useState<Only | null>(null);
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
+  const [menu, setMenu] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
   const count = (k: string) => s.items.filter((it) => gear.defOf(it)?.slot === k).length;
   const match = (it: Item) => {
     const d = gear.defOf(it);
@@ -150,24 +168,36 @@ function Items() {
         ))}
       </div>
       <div class="bagtools">
-        <button type="button" class="sysbox bagtools__sort" aria-label={`Sort: ${SORTS.find((x) => x.key === sort)!.name}. Tap for the next`}
-          onClick={() => { sfx.tap(); setSort(SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key); }}>
-          <Glyph name="swap" /><small>Sort</small><b>{SORTS.find((x) => x.key === sort)!.name}</b>
+        <button type="button" class={`sysbox bagtools__sort ${menu ? 'is-on' : ''}`} aria-expanded={menu} aria-controls="bagmenu"
+          onClick={() => { sfx.tap(); setMenu(!menu); }}>
+          <Glyph name="swap" />
+          <span class="bagtools__what"><small>Sort</small><b>{SORTS.find((x) => x.key === sort)!.name}</b></span>
+          {only && <span class="bagtools__show">{ONLY.find((o) => o.key === only)!.name}</span>}
+          <Glyph name="chevron" class="bagtools__chev" />
         </button>
-        <button type="button" aria-pressed={picking} class={`sysbox bagtools__pick ${picking ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setPicking(!picking); setPicked([]); }}>
+        <button type="button" aria-pressed={picking} class={`sysbox bagtools__pick ${picking ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setPicking(!picking); setPicked([]); setSel(null); }}>
           <Glyph name={picking ? 'close' : 'trash'} /> {picking ? 'Done' : 'Select'}
         </button>
-        <div class="bagtools__filters" role="group" aria-label="Show only">
-          {ONLY.map((o) => (
-            <button type="button" key={o.key} aria-pressed={only === o.key} class={`bagtools__chip ${only === o.key ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setOnly(only === o.key ? null : o.key); }}>
-              {only === o.key && <Glyph name="check" />}{o.name}
-            </button>
-          ))}
-        </div>
       </div>
+      {menu && (
+        <div class="sysbox bagmenu" id="bagmenu">
+          <span class="label">Sort by</span>
+          <div class="bagmenu__opts" role="radiogroup" aria-label="Sort by">
+            {SORTS.map((o) => (
+              <button type="button" key={o.key} role="radio" aria-checked={sort === o.key} class={`bagmenu__opt ${sort === o.key ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setSort(o.key); }}>{o.name}</button>
+            ))}
+          </div>
+          <span class="label">Show</span>
+          <div class="bagmenu__opts" role="radiogroup" aria-label="Show">
+            {[{ key: null, name: 'All' } as { key: Only | null; name: string }, ...ONLY].map((o) => (
+              <button type="button" key={o.name} role="radio" aria-checked={only === o.key} class={`bagmenu__opt ${only === o.key ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setOnly(o.key); }}>{o.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
       {picking && (
         <div class="bagpick">
-          <span class="label">Select</span>
+          <span class="label">Quick select</span>
           {(['E', 'D', 'C', 'B', 'A', 'S'] as const).filter((r) => s.items.some((it) => gear.defOf(it)?.rank === r && loose(s, it))).map((r) => {
             const ids = s.items.filter((it) => gear.defOf(it)?.rank === r && loose(s, it)).map((x) => x.id);
             const on = ids.every((id) => picked.includes(id));
@@ -192,8 +222,14 @@ function Items() {
       {!list.length && <Empty>{s.items.length ? 'Nothing matches.' : 'No items yet.'}</Empty>}
       {list.length > 0 && (
         <div class="baggrid">
-          {list.map((it, i) => <BagTile key={it.id} it={it} i={i} picking={picking} picked={picked.includes(it.id)} locked={!loose(s, it)}
-            onTap={() => (picking ? loose(s, it) && toggle(it.id) : openItem(it.id))} />)}
+          {list.map((it, i) => <BagTile key={it.id} it={it} i={i} picking={picking} picked={picked.includes(it.id)} locked={!loose(s, it)} on={sel === it.id}
+            onTap={() => {
+              if (picking) { if (loose(s, it)) toggle(it.id); return; }
+              // A card tapped is shown in the dock; tapped again, its own card opens.
+              if (sel === it.id) { openItem(it.id); return; }
+              if (gear.isNew(store.get(), it.id)) store.update((x) => gear.seeItem(x, it.id));
+              setSel(it.id);
+            }} />)}
         </div>
       )}
       {picking && (
@@ -203,28 +239,77 @@ function Items() {
         </div>
       )}
       {picking && <small class="muted">Worn and starred items cannot be selected.</small>}
+      {!picking && sel && <Peek id={sel} onClose={() => setSel(null)} />}
     </div>
   );
 }
 
-/** One square of the bag: the piece framed by its rarity, its quality along its foot, and its marks. */
-function BagTile({ it, i, picking, picked, locked, onTap }: { it: Item; i: number; picking: boolean; picked: boolean; locked: boolean; onTap: () => void }) {
+/**
+ * One card of the bag, after Genshin Impact's and Honkai: Star Rail's: the piece on its rarity's ground,
+ * New and the better mark at its top, and along its foot `Worn` or the star, its score and its quality.
+ */
+function BagTile({ it, i, picking, picked, locked, on, onTap }: { it: Item; i: number; picking: boolean; picked: boolean; locked: boolean; on: boolean; onTap: () => void }) {
   const s = useSave();
   const d = gear.defOf(it)!;
   const worn = !!gear.slotOf(s, it);
   const up = gear.beatsWorn(s, it);
   const fresh = gear.isNew(s, it.id);
+  const starred = s.favourites.includes(it.id);
   return (
-    <button type="button" class={`bagtile ${picked ? 'is-picked' : ''} ${picking && locked ? 'is-locked' : ''} ${fresh ? 'is-new' : ''}`} data-rarity={d.rank} style={`--i: ${Math.min(i, 24)}`}
+    <button type="button" class={`bagtile ${picked ? 'is-picked' : ''} ${picking && locked ? 'is-locked' : ''} ${fresh ? 'is-new' : ''} ${on ? 'is-on' : ''} ${worn ? 'is-worn' : ''}`}
+      data-rarity={d.rank} style={`--i: ${Math.min(i, 24)}`} aria-pressed={picking ? picked : on}
       onClick={() => { sfx.tap(); onTap(); }}
-      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${worn ? ', worn' : ''}${up ? ', better than what is worn' : ''}${fresh ? ', new' : ''}`}>
-      <GearArt item={it} size={62} equipped={worn} />
+      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${worn ? ', worn' : ''}${up ? ', better than what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
+      <span class="bagtile__art"><GearArt item={it} size={60} plain /></span>
+      <span class="bagtile__foot">
+        {worn ? <span class="bagtile__worn">Worn</span> : starred ? <Glyph name="star" class="bagtile__fav" /> : <span />}
+        <b class="num">{Math.round(gear.score(it))}</b>
+      </span>
       <span class="bagtile__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></span>
       {fresh && <span class="bagtile__new">New</span>}
-      {s.favourites.includes(it.id) && <Glyph name="star" class="bagtile__fav" />}
       {up && <span class="bagtile__up" aria-hidden="true">▲</span>}
       {picking && <span class="bagtile__check" aria-hidden="true"><Glyph name={locked ? 'lock' : 'check'} /></span>}
     </button>
+  );
+}
+
+/**
+ * The dock: the card tapped, held at the foot of the bag while it is browsed, as Genshin Impact and Honkai:
+ * Star Rail keep the piece picked beside their grids. Its name, rarity and quality, its stats, its score and
+ * what it gains on the piece worn; Equip, the star, and its own card.
+ */
+function Peek({ id, onClose }: { id: string; onClose: () => void }) {
+  const s = useSave();
+  const it = s.items.find((x) => x.id === id);
+  if (!it) return null;
+  const d = gear.defOf(it)!;
+  const worn = gear.slotOf(s, it);
+  const other = gear.counterpart(s, it);
+  const diff = gear.delta(it, other).score;
+  const starred = s.favourites.includes(it.id);
+  return (
+    <div class="sysbox bagpeek" data-rarity={d.rank} role="region" aria-label={d.name}>
+      <button type="button" class="bagpeek__art" aria-label={`${d.name}: open`} onClick={() => { sfx.tap(); openItem(id); }}><GearArt item={it} size={64} plain /></button>
+      <span class="bagpeek__text">
+        <b>{d.name}</b>
+        <small><span class="bagpeek__kind">{rarity(d.rank)} {d.slot}</span> · Quality {gear.qualityText(it)}{worn ? ` · Worn: ${gear.SLOTS.find((x) => x.key === worn)?.name}` : ''}</small>
+        <Gains parts={statParts(it)} class="gains--stats" />
+      </span>
+      <span class="bagpeek__score">
+        <b class="num">{Math.round(gear.score(it))}</b>
+        {other && <small class={`num ${diff > 0 ? 'is-up' : diff < 0 ? 'is-down' : ''}`}>{diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {Math.abs(Math.round(diff))}</small>}
+      </span>
+      <span class="bagpeek__acts">
+        <Btn size="sm" kind="primary" class="grow" sound="success" onClick={() => {
+          store.update((x) => (worn ? gear.unequip(x, worn) : gear.equip(x, it.id)));
+          toast(`${d.name} ${worn ? 'stowed' : 'equipped'}.`, 'xp');
+          void checkAwards();
+        }}>{worn ? 'Unequip' : 'Equip'}</Btn>
+        <IconBtn icon="star" on={starred} label={starred ? 'Unstar' : 'Star: kept from recycling'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
+        <Btn size="sm" kind="ghost" class="bagpeek__more" onClick={() => openItem(id)}>Details <Glyph name="chevron" /></Btn>
+        <button type="button" class="bagpeek__close" aria-label="Close" onClick={() => { sfx.tap(); onClose(); }}><Glyph name="close" /></button>
+      </span>
+    </div>
   );
 }
 
@@ -233,25 +318,9 @@ function BagTile({ it, i, picking, picked, locked, onTap }: { it: Item; i: numbe
 /** Every design found, by rarity, then every set as a row by rarity: how much of it is held, worn and known. */
 function Codex() {
   const s = useSave();
-  const all = [...gear.ALL_GEAR, ...gear.ISSUED];
-  const found = new Set(s.found);
   return (
     <div class="stack codex">
-      <Section title="Designs discovered" right={<span class="num">{s.found.length}/{all.length}</span>}>
-        <ul class="codexgrid">
-          {(['E', 'D', 'C', 'B', 'A', 'S'] as const).map((r) => {
-            const of = gear.ALL_GEAR.filter((x) => x.rank === r);
-            const n = of.filter((x) => found.has(x.id)).length;
-            return (
-              <li key={r} data-rarity={r} aria-label={`${rarity(r)}: ${n} of ${of.length}`}>
-                <span class="codexgrid__name">{rarity(r)}</span>
-                <b class="num">{n}<small>/{of.length}</small></b>
-                <i class="codex__bar"><i style={`width: ${(n / Math.max(1, of.length)) * 100}%`} /></i>
-              </li>
-            );
-          })}
-        </ul>
-      </Section>
+      <Collection />
       {(['C', 'B', 'A', 'S'] as const).map((r) => {
         const sets = SETS.filter((x) => gear.setPieces(x.id)[0]?.rank === r);
         const done = sets.filter((x) => gear.heldOf(s, x.id).size >= gear.setPieces(x.id).length).length;
@@ -262,6 +331,48 @@ function Codex() {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Every design found, as a ring: an arc to each rarity, as long as the designs of it found, round the count,
+ * after the collection rings of the reference games; beside it each rarity, its count and its bar.
+ */
+function Collection() {
+  const s = useSave();
+  const all = [...gear.ALL_GEAR, ...gear.ISSUED];
+  const found = new Set(s.found);
+  const R = 42;
+  const C = 2 * Math.PI * R;
+  let at = 0;
+  const rows = (['E', 'D', 'C', 'B', 'A', 'S'] as const).map((r) => {
+    const of = gear.ALL_GEAR.filter((x) => x.rank === r);
+    return { r, n: of.filter((x) => found.has(x.id)).length, of: of.length };
+  });
+  return (
+    <section class="sysbox collect" aria-label={`Designs discovered: ${s.found.length} of ${all.length}`}>
+      <span class="collect__ring" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r={R} class="collect__track" />
+          {rows.map(({ r, n }) => {
+            const len = (n / Math.max(1, all.length)) * C;
+            const el = <circle key={r} cx="50" cy="50" r={R} class="collect__arc" data-rarity={r} stroke-dasharray={`${len} ${C - len}`} stroke-dashoffset={-at} />;
+            at += len;
+            return el;
+          })}
+        </svg>
+        <span class="collect__hub"><b class="num">{s.found.length}</b><small class="num">/{all.length}</small><small class="label">Designs</small></span>
+      </span>
+      <ul class="collect__list">
+        {rows.map(({ r, n, of }) => (
+          <li key={r} data-rarity={r}>
+            <span>{rarity(r)}</span>
+            <i class="codex__bar"><i style={`width: ${(n / Math.max(1, of)) * 100}%`} /></i>
+            <b class="num">{n}<small>/{of}</small></b>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -678,7 +789,7 @@ function Equipment() {
       </div>
       <div class="gearacts">
         <Btn kind={ups ? 'gold' : 'ghost'} disabled={!ups} onClick={auto}><Glyph name="up" /> Auto Equip{ups ? <b class="num gearacts__n">{ups}</b> : null}</Btn>
-        <Btn kind="ghost" onClick={() => openInventory()}><Glyph name="bag" /> Inventory <b class="num gearacts__n">{s.items.length}</b></Btn>
+        <Btn kind="ghost" onClick={() => openInventory()}><Glyph name="bag" /> Item Bag <b class="num gearacts__n">{s.items.length}</b></Btn>
       </div>
       <Section title="Stats">
         <div class="sysbox gearstats">

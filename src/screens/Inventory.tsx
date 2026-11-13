@@ -156,14 +156,14 @@ function Stations({ s }: { s: Save }) {
   const better = forge.betterForges(s).length;
   return (
     <div class="hubstations">
-      <button type="button" class="hubst" data-hub="inventory" aria-label={`Inventory: ${s.items.length} items${fresh ? `, ${fresh} new` : ''}`} onClick={() => { sfx.tap(); openInventory(); }}>
+      <button type="button" class="hubst" data-hub="inventory" aria-label={`Item Bag: ${s.items.length} items${fresh ? `, ${fresh} new` : ''}`} onClick={() => { sfx.tap(); openInventory(); }}>
         <span class="hubst__art">
           {top.length
             ? <span class="hubst__fan">{top.map((it, i) => <span key={it.id} class="hubst__card" style={`--i: ${i - (top.length - 1) / 2}`}><GearArt item={it} size={36} /></span>)}</span>
             : <Glyph name="bag" />}
         </span>
-        <b class="hubst__name">Inventory</b>
-        <small>Items: {s.items.length}</small>
+        <b class="hubst__name">Item Bag</b>
+        <small>{s.items.length} items</small>
         {fresh > 0 && <span class="hubst__badge">{fresh} new</span>}
       </button>
       {/* A blueprint that can be forged into something rarer than what is worn waits on the hunter: gold. */}

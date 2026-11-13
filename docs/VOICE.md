@@ -278,7 +278,7 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | STATS | The five stats: where each comes from (base, class, gear) and the hunter's numbers in a fight. Its card is the Inventory screen's Stats |
 | SKILLS | Skills, passive and active |
 | EQUIPMENT | What the hunter wears: a square to each of the ten slots around their figure, the score in its hexagon, what it adds, the sets worn, the loadouts. A slot's own window is the card `Equipment: Ring I` |
-| INVENTORY | What the hunter holds |
+| ITEM BAG | What the hunter holds: every piece of gear as a card, and every set and design found. Named apart from the Inventory screen that opens it (the owner's call: two windows named Inventory read as one) |
 | FORGE | Every blueprint known, a row each saying whether its materials are all held, and every material held. ARISE's own window: the source has no forge. A blueprint's card is `BLUEPRINT: …` |
 | GATES | Every Gate standing open today, a tile each, under the grade tabs |
 | LICENCE | The hunter's licence with the Association: the card, their number on it, the grade the board answers to. Its number is on the card, so the head names the window only (the owner's call) |
@@ -536,7 +536,7 @@ for advancement. Every quest's name wears its type, and these are the names:
   better, opening EQUIPMENT; beside it their sigil, name and `Berserker · C-Rank`, HP, MP and FTG as bars, and at its
   foot `Ability Points: 4` in gold (or the rank to claim, or `Status`), opening STATUS. Under it two cards: `Stats`
   with the lead stat (`STR 64`), the five stats' figure and `212 in all`; `Skills` with the class's grade, the sky and
-  `Skill Points: 17` in gold while they have somewhere to go. Then three stations: Inventory (the three best pieces
+  `Skill Points: 17` in gold while they have somewhere to go. Then three stations: the Item Bag (the three best pieces
   fanned, `Items: 28`, a `3 new` badge), the Forge (its anvil, `Can forge: 21`, a gold `3 better` badge while a
   blueprint beats what is worn) and the Exchange (its shard, the restock countdown). Along the foot the licence:
   its seal, `Hunter Licence` over its number and `Gates cleared`, opening the dossier. Gates, after the portals scattered over Solo Leveling: Arise's city: under the hunter's condition, the run
@@ -896,16 +896,26 @@ when it has something to improve (its slots carry a gold ▲), what is worn adds
 `EQUIPMENT: {Slot}`: what is worn there and everything held that could take its place, the names left
 to that window and the item's card, as the reference games leave them to the tooltip.
 
-**Inventory.** A grid of icons under tabs, with the count of what is held, opened from the Inventory
-screen's Inventory station. The tab is named for it.
+**Item Bag.** A grid of icons under tabs, with the count of what is held, opened from the Inventory
+screen's Item Bag station and from Equipment. The window is `ITEM BAG`, the owner's call: the screen that opens it
+is Inventory, and two of one name read as one; `28 items` reads as the bag's own.
 Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`. ARISE holds only gear, so the tabs are
-`All · {count}` and the slots. Each square is the item's icon in its grade's frame, its score, and
-`WORN` when it is worn; the item card holds the rest. Rebuilt at the owner's call: its head one line (the bag's
-sign, `28` large over `Items`, then `Worn 10`, `New 3` in gold, `Starred 2`, and the shards); `Items · 28` and
-`Sets · 0/16`; the kinds as two rows of five, each with its count, and no sideways scroll (the Forge's too); `Sort`
-over its order (`Score`, tapped for the next) beside **Select**, and `Better`, `Set pieces` and `Starred` as one
-row of three under them; `NEW` on a square in gold, a gold ▲ on its corner where it beats what is worn. The Sets
-view: `Designs discovered` as a grid of the six rarities (`Rare` over `12/125` and its bar), then each rarity's
+`All · {count}` and the slots. Rebuilt twice at the owner's call, after Genshin Impact's and Honkai: Star Rail's
+bags: its head one line (the bag's sign, `28` large over `Items`, then `Worn 10`, `New 3` in gold, `Starred 2`)
+over what it holds by rarity as one strip, each rarity a band as long as its count with the count on it;
+`Items · 28` and `Sets · 0/16`; the kinds as two rows of five, each with its count, and no sideways scroll (the
+Forge's too); one toolbar, `Sort` and its order (`Score`) with what is shown beside it when it is not all
+(`Better`), folding open `Sort by` (`Score`, `Rarity`, `Newest`, `Quality`) and `Show` (`All`, `Better`, `Set
+pieces`, `Starred`), and **Select** beside it. Each card is the piece on its rarity's ground, its foot a band in
+the rarity's colour holding `WORN` (white) or the star, and its score; its quality a gold line under it; `NEW`
+in gold at its top and a gold ▲ on its corner where it beats what is worn. A card tapped is held in the dock at
+the bag's foot, as the reference games keep the piece picked beside their grids: its art, its name, `Legendary
+Weapon` in its colour, `Quality 78%`, its stats spaced, its score large and what it gains on the piece worn
+(`▲ 16`), then **Equip**, the star, **Details** and the close; tapped again, or Details, its own card opens.
+Select makes the toolbar's button **Done** and opens `Quick select` in red (a chip to each rarity that has a
+piece to go, `Duplicates`, `Clear`), the dock giving way to the bar that counts what is picked and what it gives
+back, and **Recycle**. The Sets view: `Designs discovered` as a ring, an arc to each rarity as long as the
+designs of it found, round `26` over `/543` and `Designs`, beside each rarity's count and bar; then each rarity's
 sets (`Rare sets` and `1/4` complete) as rows, as Equipment draws a set worn: its mark, its name, `2/3` and
 `Worn 2`, a square to each piece (its art when held, a blueprint's sign when known, its slot when seen, `?` when
 not), and what two and three pay, lit once worn. A row opens the set's own window.
@@ -1115,7 +1125,8 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Weekly Quest | season, weekly contract | The Pale Spire's week, on the Quests screen. Code keeps `season` |
 | Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
 | Health Potion | Field Potion, field potion | The one healing potion: carried in the satchel, drunk on the hunter's turn in a fight, between rooms from the bag, or out of a Gate. There is no Field Potion any more; Ryn may still call one a flask |
-| Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Inventory's bag |
+| Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Item Bag's bag |
+| Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |
 | Event | Unknown, `?` (for a room) | A room holding a choice, or a trap, a cache or a rest passing for one. Its mark is a signpost, in orchid. `?` is only the fog's |
 | Floor | level, depth, storey (in a Gate) | A Gate's floors, `Floor 2/3`, joined by `Stairs Down` and `Stairs Up`. The Pale Spire's numbered floors are the same word: each is a floor of the tower |

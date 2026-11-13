@@ -1969,6 +1969,12 @@ with what ARISE took from them.
   Exchange three stations; the licence a row along the foot. The bag's head is one line; its kinds two rows of five
   (the Forge's too), Sort and Select over the three filters; New and the better mark gold; its Sets view a grid of
   the rarities over a row to each set, opening the set's window. No engine changed.
+- **The Item Bag** (the owner's calls). The bag's window is `ITEM BAG`, named apart from the Inventory screen. Its
+  head carries what it holds by rarity as one strip; Sort and Show fold out of one toolbar button; each card is the
+  piece on its rarity's ground with its score along its foot; a card tapped is held in a dock at the bag's foot (its
+  stats, its score and what it gains, Equip, the star, Details), after Genshin Impact's and Honkai: Star Rail's bags,
+  so a piece can be read and worn without leaving the bag; Select opens Quick select in red; the Sets view opens on
+  the designs found as a ring of the rarities.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

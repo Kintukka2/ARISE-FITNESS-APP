@@ -170,11 +170,20 @@ try {
   await snap('equipment-slot');
   await close(); await close();
   await page.locator('[data-hub="inventory"]').click(); await sleep(900); await snap('inventory-grid');
+  if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: 'Item Bag' }).count())) throw new Error('THE BAG IS NOT NAMED ITEM BAG');
   if ((await page.locator('.sheet.is-top .bagkind').count()) !== 10) throw new Error('THE BAG DOES NOT HAVE A TAB TO EVERY KIND');
   if (await page.locator('.sheet.is-top .bagkinds').evaluate((el) => el.scrollWidth > el.clientWidth + 1)) throw new Error('THE BAG\'S KINDS SCROLL SIDEWAYS');
+  // A card tapped is held in the dock at the bag's foot; tapped again, its own card opens.
+  await page.locator('.bagtile').first().click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .bagpeek').isVisible())) throw new Error('A CARD TAPPED WAS NOT SHOWN IN THE DOCK');
+  await snap('bag-peek');
+  await page.locator('.sheet.is-top .bagtools__sort').click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .bagmenu').isVisible())) throw new Error('SORT AND SHOW DID NOT OPEN');
+  await snap('bag-menu');
+  await page.locator('.sheet.is-top .bagtools__sort').click(); await sleep(200);
   await page.locator('.bagtile').first().click(); await sleep(700); await snap('item');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-2'); await close();
-  await page.locator('.bagtile[aria-label^="Warden"]').first().click(); await sleep(400);
+  await page.locator('.bagtile[aria-label^="Warden"]').first().click(); await sleep(300); await page.locator('.sheet.is-top .bagpeek__more').click(); await sleep(400);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close();
   // Select: the rarity chips pick every piece that can go, and the bar counts what they would pay.
   await page.locator('.bagtools__pick').click(); await sleep(200);

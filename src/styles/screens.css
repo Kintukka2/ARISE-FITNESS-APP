@@ -2006,28 +2006,8 @@ button.dmap__floor { cursor: pointer; }
 .bagpick__chip.is-on { border-color: var(--rank-c, var(--sys-hair-hot)); color: #fff; background: color-mix(in srgb, var(--rank-c, var(--win)) 34%, rgba(3, 8, 20, 0.6)); box-shadow: inset 0 0 0 1px var(--rank-c, var(--sys-hair-hot)), 0 0 12px color-mix(in srgb, var(--rank-c, var(--win)) 45%, transparent); text-shadow: 0 0 6px color-mix(in srgb, var(--rank-c, var(--win)) 70%, transparent); }
 
 /* The grid: a square each, rising in as the bag opens. */
-.baggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 7px; }
-.bagtile { position: relative; display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); animation: bagIn 360ms var(--ease) calc(var(--i) * 14ms) both; }
 @keyframes bagIn { from { opacity: 0; transform: translateY(6px) scale(0.94); } }
-.bagtile:active { transform: scale(0.95); }
-.bagtile.is-new { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 28%, transparent); }
-.baggrid { padding-top: 6px; row-gap: 12px; }
 @media (hover: hover) { .bagtile:hover { border-color: var(--sys-hair-hot); box-shadow: 0 0 12px color-mix(in srgb, var(--win) 25%, transparent); } }
-.bagtile[data-rarity='A'] { border-color: color-mix(in srgb, var(--rank-A) 45%, var(--sys-hair)); }
-.bagtile[data-rarity='S'] { border-color: color-mix(in srgb, var(--rank-S) 55%, var(--sys-hair)); box-shadow: inset 0 0 10px rgba(255, 77, 109, 0.18); }
-.bagtile__q { position: absolute; left: 4px; right: 4px; bottom: 3px; height: 2px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
-.bagtile__q > i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--gold) 80%, transparent); box-shadow: 0 0 4px var(--gold-glow); }
-.bagtile__new { position: absolute; left: 4px; top: -7px; z-index: 3; padding: 1px 5px; background: var(--gold); color: #1a1200; font-family: var(--font-sys); font-size: 0.46rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 0 8px var(--gold-glow); }
-.bagtile__fav { position: absolute; left: 4px; bottom: 7px; z-index: 3; width: 12px; height: 12px; color: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); }
-.bagtile__up { position: absolute; top: -6px; right: -6px; z-index: 3; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--gold); color: #1a1200; font-size: 0.52rem; line-height: 1; box-shadow: 0 0 8px var(--gold-glow); }
-.bagtile__check { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(2, 5, 14, 0.35); }
-.bagtile__check .ico { width: 22px; height: 22px; opacity: 0; transform: scale(0.6); transition: opacity 160ms, transform 160ms; }
-.bag__items.is-picking .bagtile { opacity: 0.9; }
-.bagtile.is-picked { border-color: #ff5a66; box-shadow: 0 0 0 1px #ff5a66, 0 0 14px rgba(255, 47, 62, 0.45); }
-.bagtile.is-picked .bagtile__check { background: rgba(255, 47, 62, 0.28); }
-.bagtile.is-picked .bagtile__check .ico { opacity: 1; transform: none; color: #fff; filter: drop-shadow(0 0 6px rgba(255, 47, 62, 0.8)); }
-.bagtile.is-locked { opacity: 0.35; }
-.bagtile.is-locked .bagtile__check .ico { opacity: 0.8; transform: none; width: 16px; height: 16px; }
 .bagbar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-color: rgba(255, 59, 75, 0.5); background: rgba(14, 4, 8, 0.96); box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.55); font-size: 0.78rem; animation: qaIn 260ms var(--ease) both; }
 
 /* The sets: designs found by rarity, then a card to every set. */
@@ -3094,17 +3074,12 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .baghead__facts small { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .baghead__facts b { font-size: 0.92rem; font-weight: 800; }
 .baghead__facts .is-new b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
-.baghead__shards { font-size: 0.86rem; }
 .bag__items > .bagtools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .bag__items > .bagtools > button { min-height: 40px; }
 .bag__items .bagtools__sort { justify-content: flex-start; gap: 7px !important; }
 .bag__items .bagtools__sort small { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bag__items .bagtools__sort b { font-weight: 700; color: #fff; }
 .bag__items .bagtools__pick { margin-left: 0; box-shadow: none; }
-.bagtools__filters { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--sys-hair); }
-.bagtools .bagtools__chip { justify-content: center; min-height: 36px; padding: 0 6px; border: 0; background: rgba(3, 8, 20, 0.45); font-size: 0.74rem; }
-.bagtools .bagtools__chip + .bagtools__chip { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
-.bagtools .bagtools__chip.is-on { color: #fff; background: color-mix(in srgb, var(--win) 22%, rgba(3, 8, 20, 0.5)); box-shadow: inset 0 -2px 0 var(--win); }
 .codexgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
 .codexgrid li { --rc: var(--rank-E); display: flex; flex-direction: column; gap: 3px; padding: 8px; border: 1px solid color-mix(in srgb, var(--rc) 35%, var(--sys-hair)); background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 10%, transparent), rgba(3, 8, 20, 0.5)); }
 .codexgrid li[data-rarity='D'] { --rc: var(--rank-D); } .codexgrid li[data-rarity='C'] { --rc: var(--rank-C); } .codexgrid li[data-rarity='B'] { --rc: var(--rank-B); }
@@ -3126,3 +3101,98 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .codexrow__piece.is-known { border-style: solid; border-color: color-mix(in srgb, var(--win) 55%, transparent); color: var(--win); }
 .codexrow__piece.is-seen { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .codexrow__bonus { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+
+/* The Item Bag, rebuilt: the head with what it holds by rarity as one strip; one toolbar (Sort and Show
+ * behind one button, Select beside it) over a menu that folds open; the cards after Genshin Impact's and
+ * Honkai: Star Rail's, the piece on its rarity's ground with its score along its foot; the dock holding the
+ * card tapped; the collection as a ring of the rarities. */
+.baghead { grid-template-columns: auto auto minmax(0, 1fr); row-gap: 10px; }
+.baghead__spread { grid-column: 1 / -1; display: flex; gap: 2px; height: 14px; }
+.baghead__spread i { --rc: var(--rank-E); position: relative; display: grid; place-items: center; min-width: 14px; background: color-mix(in srgb, var(--rc) 75%, transparent); box-shadow: 0 0 6px color-mix(in srgb, var(--rc) 45%, transparent); animation: spreadIn 700ms var(--ease) both; }
+@keyframes spreadIn { from { transform: scaleX(0); } }
+.baghead__spread i b { font-size: 0.56rem; font-weight: 800; color: #050912; }
+.baghead__spread i[data-rarity='D'] { --rc: var(--rank-D); } .baghead__spread i[data-rarity='C'] { --rc: var(--rank-C); } .baghead__spread i[data-rarity='B'] { --rc: var(--rank-B); }
+.baghead__spread i[data-rarity='A'] { --rc: var(--rank-A); } .baghead__spread i[data-rarity='S'] { --rc: var(--rank-S); }
+.bag__items .bagkind { height: 42px; border-color: color-mix(in srgb, var(--sys-ink) 16%, transparent); background: rgba(3, 8, 20, 0.35); }
+.bag__items .bagkind.is-on { border-color: var(--sys-hair-hot); }
+.bagtools__sort { min-width: 0; }
+.bagtools__what { display: inline-flex; align-items: baseline; gap: 7px; }
+.bagtools__show { overflow: hidden; padding: 1px 7px; border: 1px solid color-mix(in srgb, var(--win) 60%, transparent); color: var(--win); font-size: 0.66rem; font-weight: 700; text-overflow: ellipsis; }
+.bagtools .bagtools__chev { width: 12px; height: 12px; margin-left: auto; opacity: 0.6; transform: rotate(90deg); transition: transform 180ms var(--ease); }
+.bagtools__sort.is-on .bagtools__chev { transform: rotate(-90deg); }
+.bagmenu { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px; animation: qaIn 220ms var(--ease) both; }
+.bagmenu .label { font-size: 0.56rem; }
+.bagmenu__opts + .label { margin-top: 4px; }
+.bagmenu__opts { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: 1px solid var(--sys-hair); }
+.bagmenu__opt { min-height: 36px; padding: 0 4px; border: 0; background: rgba(3, 8, 20, 0.45); color: color-mix(in srgb, var(--sys-ink) 75%, transparent); font-family: var(--font-sys); font-size: 0.7rem; font-weight: 600; }
+.bagmenu__opt + .bagmenu__opt { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.bagmenu__opt.is-on { color: #fff; background: color-mix(in srgb, var(--win) 24%, rgba(3, 8, 20, 0.5)); box-shadow: inset 0 -2px 0 var(--win); }
+.baggrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 8px; padding-top: 6px; }
+.bagtile { --rc: var(--rank-E); position: relative; display: flex; flex-direction: column; padding: 0; overflow: visible; border: 1px solid color-mix(in srgb, var(--rc) 50%, var(--sys-hair));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 20%, rgba(3, 8, 20, 0.6)) 0%, rgba(3, 8, 20, 0.7) 78%); color: inherit; font: inherit;
+  transition: transform 120ms, border-color 160ms, box-shadow 160ms; animation: bagIn 360ms var(--ease) calc(var(--i) * 14ms) both; }
+@keyframes bagIn { from { opacity: 0; transform: translateY(6px) scale(0.94); } }
+.bagtile[data-rarity='D'] { --rc: var(--rank-D); } .bagtile[data-rarity='C'] { --rc: var(--rank-C); } .bagtile[data-rarity='B'] { --rc: var(--rank-B); }
+.bagtile[data-rarity='A'] { --rc: var(--rank-A); } .bagtile[data-rarity='S'] { --rc: var(--rank-S); }
+.bagtile:active { transform: scale(0.95); }
+.bagtile__art { display: grid; place-items: center; padding: 6px 0 4px; }
+.bagtile__foot { display: flex; align-items: center; justify-content: space-between; gap: 2px; min-height: 18px; padding: 0 5px; background: color-mix(in srgb, var(--rc) 22%, rgba(3, 8, 20, 0.85)); border-top: 1px solid color-mix(in srgb, var(--rc) 45%, transparent); }
+.bagtile__foot b { font-size: 0.74rem; font-weight: 800; }
+.bagtile__worn { padding: 0 4px; background: rgba(236, 246, 255, 0.92); color: #04101e; font-family: var(--font-sys); font-size: 0.44rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1.5; text-transform: uppercase; }
+.bagtile__fav { width: 11px; height: 11px; color: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.bagtile__q { position: relative; display: block; height: 2px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.bagtile__q > i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--gold) 85%, transparent); box-shadow: 0 0 4px var(--gold-glow); }
+.bagtile__new { position: absolute; left: 4px; top: -7px; z-index: 3; padding: 1px 5px; background: var(--gold); color: #1a1200; font-family: var(--font-sys); font-size: 0.46rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 0 8px var(--gold-glow); }
+.bagtile__up { position: absolute; top: -6px; right: -6px; z-index: 3; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--gold); color: #1a1200; font-size: 0.52rem; line-height: 1; box-shadow: 0 0 8px var(--gold-glow); }
+.bagtile.is-new { border-color: color-mix(in srgb, var(--gold) 75%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 26%, transparent); }
+.bagtile.is-on { border-color: #fff; box-shadow: 0 0 0 1px #fff, 0 0 16px color-mix(in srgb, var(--rc) 55%, transparent); transform: translateY(-2px); }
+.bagtile__check { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(2, 5, 14, 0.35); }
+.bagtile__check .ico { width: 22px; height: 22px; opacity: 0; transform: scale(0.6); transition: opacity 160ms, transform 160ms; }
+.bagtile.is-picked { border-color: #ff5a66; box-shadow: 0 0 0 1px #ff5a66, 0 0 14px rgba(255, 47, 62, 0.45); }
+.bagtile.is-picked .bagtile__check { background: rgba(255, 47, 62, 0.28); }
+.bagtile.is-picked .bagtile__check .ico { opacity: 1; transform: none; color: #fff; filter: drop-shadow(0 0 6px rgba(255, 47, 62, 0.8)); }
+.bagtile.is-locked { opacity: 0.35; }
+.bagtile.is-locked .bagtile__check .ico { opacity: 0.8; transform: none; width: 16px; height: 16px; }
+.bagpick { padding: 8px 10px; border: 1px solid rgba(255, 59, 75, 0.35); background: rgba(40, 6, 12, 0.35); }
+.bagpick .label { width: 100%; color: #ff8a94; }
+.bagpeek { --rc: var(--rank-E); position: sticky; bottom: 0; z-index: 6; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 10px; border-color: color-mix(in srgb, var(--rc) 70%, var(--sys-hair));
+  background: radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, var(--rc) 22%, transparent), transparent 70%), rgba(4, 9, 22, 0.97); box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.6), 0 0 18px -6px var(--rc); animation: peekIn 260ms var(--ease) both; }
+@keyframes peekIn { from { opacity: 0; transform: translateY(16px); } }
+.bagpeek[data-rarity='D'] { --rc: var(--rank-D); } .bagpeek[data-rarity='C'] { --rc: var(--rank-C); } .bagpeek[data-rarity='B'] { --rc: var(--rank-B); }
+.bagpeek[data-rarity='A'] { --rc: var(--rank-A); } .bagpeek[data-rarity='S'] { --rc: var(--rank-S); }
+.bagpeek__art { padding: 0; border: 0; background: none; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--rc) 55%, transparent)); }
+.bagpeek__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bagpeek__text b { overflow: hidden; font-size: 0.9rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+.bagpeek__text small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bagpeek__kind { color: var(--rc); font-weight: 700; }
+.bagpeek__score { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.bagpeek__score b { font-size: 1.3rem; font-weight: 800; line-height: 1; text-shadow: 0 0 10px color-mix(in srgb, var(--rc) 60%, transparent); }
+.bagpeek__score small { font-size: 0.72rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bagpeek__score .is-up { color: var(--verdant); text-shadow: 0 0 6px var(--verdant-glow); }
+.bagpeek__score .is-down { color: #ff6b77; }
+.bagpeek__acts { grid-column: 1 / -1; display: flex; align-items: stretch; gap: 6px; }
+.sysframe .bagpeek__acts .btn--sm { min-height: 40px; }
+.sysframe .bagpeek__acts .iconbtn { width: 40px; height: 40px; }
+.bagpeek__more .ico { width: 12px; height: 12px; }
+.bagpeek__close { display: grid; place-items: center; width: 40px; flex: none; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.5); color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bagpeek__close .ico { width: 14px; height: 14px; }
+.collect { display: grid; grid-template-columns: 116px minmax(0, 1fr); align-items: center; gap: 14px; padding: 12px; background: radial-gradient(60% 100% at 15% 50%, color-mix(in srgb, var(--win) 12%, transparent), transparent 70%), rgba(3, 8, 20, 0.5); }
+.collect__ring { position: relative; display: grid; place-items: center; width: 116px; height: 116px; }
+.collect__ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.collect__track { fill: none; stroke: color-mix(in srgb, var(--sys-ink) 10%, transparent); stroke-width: 9; }
+.collect__arc { --rc: var(--rank-E); fill: none; stroke: var(--rc); stroke-width: 9; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--rc) 70%, transparent)); }
+.collect__arc[data-rarity='D'] { --rc: var(--rank-D); } .collect__arc[data-rarity='C'] { --rc: var(--rank-C); } .collect__arc[data-rarity='B'] { --rc: var(--rank-B); }
+.collect__arc[data-rarity='A'] { --rc: var(--rank-A); } .collect__arc[data-rarity='S'] { --rc: var(--rank-S); }
+.collect__hub { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.collect__hub b { font-size: 1.5rem; font-weight: 800; text-shadow: 0 0 3px rgba(255, 255, 255, 0.5), 0 0 12px var(--win-glow); }
+.collect__hub small.num { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.collect__hub .label { margin-top: 4px; font-size: 0.48rem; }
+.collect__list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.collect__list li { --rc: var(--rank-E); display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 0.7rem; }
+.collect__list li[data-rarity='D'] { --rc: var(--rank-D); } .collect__list li[data-rarity='C'] { --rc: var(--rank-C); } .collect__list li[data-rarity='B'] { --rc: var(--rank-B); }
+.collect__list li[data-rarity='A'] { --rc: var(--rank-A); } .collect__list li[data-rarity='S'] { --rc: var(--rank-S); }
+.collect__list li > span { color: var(--rc); font-weight: 700; }
+.collect__list li b { font-weight: 800; text-align: right; }
+.collect__list li b small { font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+@media (prefers-reduced-motion: reduce) { .baghead__spread i, .bagpeek, .bagmenu { animation: none; } }
