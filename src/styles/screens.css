@@ -1253,44 +1253,18 @@ button.dmap__floor { cursor: pointer; }
 /* ------------------------------------------------------------------ the Gates screen's pictures */
 
 /* The run left open: its steps, walked and waiting. */
-.ga-steps { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 9px; }
-.ga-steps > i { display: block; width: 14px; height: 14px; transform: rotate(45deg); border: 1px solid var(--sys-hair-hot); background: rgba(3, 8, 20, 0.45); }
-.ga-steps > i.is-on { border-color: #fff; background: var(--win); box-shadow: 0 0 8px var(--win-glow); }
-.ga-steps > i.is-here { border-color: var(--win); animation: qaCall 1.4s ease-in-out infinite; }
 
 /* The hunter's grade: the rank plate under two slow rings. */
-.ga-emblem { position: relative; display: grid; place-items: center; width: 86px; height: 86px; }
-.ga-emblem .sigil { position: relative; filter: drop-shadow(0 0 10px var(--win-glow)); }
-.ga-emblem__ring { position: absolute; inset: 0; border: 1px dashed color-mix(in srgb, var(--win) 60%, transparent); border-radius: 50%; animation: halo 20s linear infinite; }
-.ga-emblem__ring + .ga-emblem__ring { inset: 10px; border-style: dotted; animation-duration: 12s; animation-direction: reverse; }
 
 /* Condition: the three bars, stacked. */
 .ia-bars--stack { grid-template-columns: minmax(0, 1fr); gap: 9px; width: 100%; }
 
 /* The record: three counts, a hairline box each. */
-.ga-record { display: flex; flex-direction: column; gap: 5px; width: 100%; }
 /* Grade and Record, small under Open Gates: a smaller emblem, the record as three numbers in a row. */
 .btile--compact .btile__art { min-height: 0; padding: 40px 8px 6px; }
-.btile--compact .ga-emblem { width: 58px; height: 58px; }
-.btile--compact .ga-emblem__ring + .ga-emblem__ring { inset: 7px; }
-.btile--compact .ga-record { flex-direction: row; gap: 4px; }
-.btile--compact .ga-record > span { flex: 1; flex-direction: column-reverse; align-items: center; gap: 1px; padding: 5px 2px; }
-.btile--compact .ga-record b { font-size: 0.95rem; }
-.btile--compact .ga-record small { font-size: 0.46rem; letter-spacing: 0.08em; white-space: nowrap; }
 .btile--compact .btile__foot { padding: 6px 8px 7px; }
-.ga-record > span { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 5px 9px; animation: qaIn 520ms var(--ease) both; }
-.ga-record > span:nth-child(2) { animation-delay: 110ms; }
-.ga-record > span:nth-child(3) { animation-delay: 220ms; }
-.ga-record small { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
-.ga-record b { font-size: 0.9rem; font-weight: 600; text-shadow: var(--sys-glow); }
 
 /* Ascension: the level, and the ten rules lit as far as it reaches. */
-.ga-ascend { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.ga-ascend > b { font-size: 2.6rem; font-weight: 700; line-height: 1; color: var(--win); text-shadow: 0 0 16px var(--win-glow); }
-.ga-ascend__rules { display: flex; gap: 5px; }
-.ga-ascend__rules > i { display: block; width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--sys-hair); }
-.ga-ascend__rules > i.is-open { border-color: color-mix(in srgb, var(--win) 75%, transparent); }
-.ga-ascend__rules > i.is-on { border-color: #fff; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
 
 /* A Gate: its grade's portal turning, the rank plate at its heart. */
 .btile.is-gate .btile__hit { min-height: 0; }
@@ -1981,45 +1955,15 @@ button.dmap__floor { cursor: pointer; }
 }
 
 /* The board as one tile: a portal to each grade, with its count of Gates open. */
-.ga-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 /* Open Gates: the centre of the Gates screen. Bigger portals over a slow orange light, a frame that
    glows of its own, and a call along its foot. Orange, the Gates' colour; never gold, which waits. */
-.btile--focus { filter: drop-shadow(0 0 16px var(--ember-glow)); animation: gaFocus 3.6s ease-in-out infinite; }
 @keyframes gaFocus { 50% { filter: drop-shadow(0 0 26px var(--ember-glow)); } }
-.btile--focus .btile__hit { min-height: 290px; }
-.btile--focus .btile__art { padding: 30px 10px 14px; -webkit-mask-image: none; mask-image: none; }
-.btile--focus .btile__foot { padding: 12px 12px 13px; }
-.btile--focus .btile__text strong { font-size: 1.12rem; letter-spacing: 0.24em; }
-.btile--focus .btile__count { font-size: 1.05rem; padding: 6px 12px; }
 /* As big as the row allows: six portals across, from a phone's width to a desktop's. */
-.btile--focus .ga-portal--mini { width: clamp(44px, 11.5vw, 66px); height: clamp(44px, 11.5vw, 66px); }
-.btile--focus .ga-portal--mini > b { font-size: clamp(1rem, 3.2vw, 1.3rem); }
-.btile--focus .ga-board { flex-wrap: nowrap; gap: clamp(8px, 2.4vw, 16px); }
-.btile--focus .ga-board__one small { font-size: 0.82rem; }
-.btile--focus .ga-focus { gap: 20px; }
-.btile--focus .ga-focus__cta { padding: 9px 20px; font-size: 0.78rem; }
-.ga-focus { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
-.ga-focus::before { content: ''; position: absolute; inset: -30% -10% -10%; background: radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255, 154, 60, 0.26), transparent 70%); pointer-events: none; }
-.ga-focus__rays { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; translate: -50% -50%; background: repeating-conic-gradient(from 0deg, rgba(255, 154, 60, 0.08) 0deg 5deg, transparent 5deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 58%); mask-image: radial-gradient(circle, #000 18%, transparent 58%); animation: gaRays 48s linear infinite; pointer-events: none; }
 @keyframes gaRays { to { transform: rotate(360deg); } }
-.ga-focus .ga-board { position: relative; }
-.ga-focus__cta { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border: 1px solid color-mix(in srgb, var(--ember) 70%, transparent); background: linear-gradient(90deg, rgba(255, 154, 60, 0.08), rgba(255, 154, 60, 0.22), rgba(255, 154, 60, 0.08)); color: #ffd9b3; font: 700 0.72rem var(--font-sys); letter-spacing: 0.18em; text-transform: uppercase; text-shadow: 0 0 8px var(--ember-glow); box-shadow: 0 0 14px rgba(255, 154, 60, 0.25) inset; }
-.ga-focus__cta .ico { width: 14px; height: 14px; }
-@media (prefers-reduced-motion: reduce) { .btile--focus, .ga-focus__rays { animation: none; } }
-.ga-board__one { display: flex; flex-direction: column; align-items: center; gap: 4px; animation: qaIn 520ms var(--ease) both; }
-.ga-board__one:nth-child(2) { animation-delay: 70ms; }
-.ga-board__one:nth-child(3) { animation-delay: 140ms; }
-.ga-board__one:nth-child(4) { animation-delay: 210ms; }
-.ga-board__one:nth-child(5) { animation-delay: 280ms; }
-.ga-board__one:nth-child(6) { animation-delay: 350ms; }
 .ga-portal--mini { width: 42px; height: 42px; }
 .ga-portal--mini .ga-portal__core { inset: 8px; }
 /* A grade holding a marked Gate (one of the Chosen, Ryn's job, a Daily Quest): a star on its portal. */
-.ga-board__mark { position: absolute; top: -2px; right: -2px; width: 13px; height: 13px; color: var(--win); filter: drop-shadow(0 0 4px var(--win-glow)); }
 .ga-portal--mini > b { position: relative; font-size: 0.9rem; font-weight: 700; color: var(--rc); text-shadow: 0 0 8px var(--rc); }
-.ga-board__one small { font-size: 0.7rem; font-weight: 600; color: var(--sys-ink); text-shadow: var(--sys-glow); }
-.ga-board__one.is-none { opacity: 0.25; }
-.ga-board__one.is-shut .ga-portal__swirl, .ga-board__one.is-shut .ga-portal__core { animation: none; opacity: 0.35; }
 
 @keyframes saRise { from { opacity: 0; transform: translateY(10px); } }
 
@@ -2707,3 +2651,110 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bmaprow__go { width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .bmapsheet { padding-bottom: 4px; }
 @media (prefers-reduced-motion: reduce) { .bhero__glow { animation: none; } }
+
+/* ------------------------------------------------------------------ the Gates screen, rebuilt
+   After the reference games' home screens: the day's Gates as a radar, after the portals scattered over Solo
+   Leveling: Arise's city; the run left open and the practice Gate as stage cards, the board's own; the hunter's
+   grade and Ascension as two cards, and their record as facts in one row. */
+.gatehome { gap: 14px; }
+.gatehome__practice { margin: 0; }
+/* The run left open: gold while it waits, its steps as diamonds, the way back at its right. */
+.runcard { --rc: var(--win); position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 76px; padding: 10px 12px 10px 10px;
+  border: 1px solid color-mix(in srgb, var(--win) 60%, transparent); border-left: 3px solid var(--win); background: radial-gradient(90% 140% at 0% 50%, color-mix(in srgb, var(--win) 16%, transparent), transparent 60%), rgba(10, 7, 2, 0.8);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--win) 22%, transparent); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; animation: qaCall 2.4s ease-in-out infinite; }
+.runcard:active { background: color-mix(in srgb, var(--win) 18%, rgba(10, 7, 2, 0.85)); }
+.runcard__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.runcard__name { overflow: hidden; font-size: 0.9rem; font-weight: 800; color: #fff; white-space: nowrap; text-overflow: ellipsis; }
+.runcard__steps { display: flex; flex-wrap: wrap; gap: 5px; }
+.runcard__steps > i { display: block; width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); }
+.runcard__steps > i.is-on { border-color: #fff; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+.runcard__steps > i.is-here { border-color: var(--win); animation: qaCall 1.4s ease-in-out infinite; }
+.runcard__body small { font-size: 0.66rem; color: color-mix(in srgb, var(--win) 80%, var(--ink)); }
+.runcard__go { display: inline-flex; align-items: center; gap: 4px; color: var(--win); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 0 10px var(--win-glow); }
+.runcard__go .ico { width: 13px; height: 13px; }
+@media (prefers-reduced-motion: reduce) { .runcard, .runcard__steps > i.is-here { animation: none; } }
+
+/* The radar: rings, a turning sweep, the count at its hub, a portal to each grade round it. */
+.gradar .sysframe__glass { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 12px 14px; }
+.gradar__scope { position: relative; width: min(100%, 320px); aspect-ratio: 1; }
+.gradar__ring { position: absolute; left: 50%; top: 50%; width: 78%; aspect-ratio: 1; border: 1px solid rgba(255, 154, 60, 0.22); border-radius: 50%; transform: translate(-50%, -50%); }
+.gradar__ring:nth-child(2) { width: 52%; border-style: dashed; border-color: rgba(255, 154, 60, 0.16); }
+.gradar__ring:nth-child(3) { width: 98%; border-color: rgba(255, 154, 60, 0.1); }
+.gradar__sweep { position: absolute; inset: 1%; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, rgba(255, 154, 60, 0.32), rgba(255, 154, 60, 0.08) 40deg, transparent 90deg);
+  -webkit-mask: radial-gradient(circle, transparent 15%, #000 16%); mask: radial-gradient(circle, transparent 15%, #000 16%); animation: radarSweep 6s linear infinite; }
+@keyframes radarSweep { to { transform: rotate(360deg); } }
+.gradar__hub { position: absolute; left: 50%; top: 50%; display: flex; flex-direction: column; align-items: center; gap: 1px; width: 34%; transform: translate(-50%, -50%); text-align: center; }
+.gradar__hub > b { font-size: 2.4rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 18px var(--ember-glow); }
+.gradar__hub > small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.gradar__hub .gradar__redraw { margin-top: 4px; letter-spacing: 0.1em; }
+.gradar__redraw b { color: var(--gold); letter-spacing: 0; text-shadow: 0 0 8px var(--gold-glow); }
+.gradar__gate { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 64px; min-height: 64px; padding: 0; border: 0; background: none; color: var(--rc); font: inherit; transform: translate(-50%, -50%); cursor: pointer; touch-action: manipulation; animation: qaIn 520ms var(--ease) both; }
+.gradar__gate .ga-portal--mini { width: 46px; height: 46px; transition: transform 160ms var(--ease); }
+.gradar__gate .ga-portal--mini b { position: relative; font-size: 1rem; font-weight: 800; color: var(--rc); text-shadow: 0 0 10px color-mix(in srgb, var(--rc) 70%, transparent); }
+.gradar__gate:active .ga-portal--mini { transform: scale(0.92); }
+.gradar__gate:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; border-radius: 8px; }
+.gradar__gate > small { font-size: 0.72rem; font-weight: 700; color: var(--sys-ink); text-shadow: var(--sys-glow); }
+.gradar__mark { position: absolute; top: -2px; right: 6px; width: 14px; height: 14px; color: var(--win); filter: drop-shadow(0 0 4px var(--win-glow)); }
+.gradar__lock { position: absolute; top: 30px; right: 10px; width: 16px; height: 16px; padding: 2px; border-radius: 50%; background: rgba(6, 8, 14, 0.92); color: var(--sys-ink); box-shadow: 0 0 0 1px color-mix(in srgb, var(--sys-ink) 35%, transparent); }
+.gradar__gate.is-shut .ga-portal--mini b { opacity: 0.45; }
+.gradar__gate.is-shut .ga-portal__swirl, .gradar__gate.is-shut .ga-portal__core { animation: none; opacity: 0.35; }
+.gradar__gate.is-none { opacity: 0.28; }
+.gradar__all { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; width: 100%; padding: 0 20px; border: 1px solid color-mix(in srgb, var(--ember) 70%, transparent); background: linear-gradient(180deg, rgba(255, 154, 60, 0.2), rgba(255, 154, 60, 0.06)); color: var(--ember); font: inherit; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; text-shadow: 0 0 10px var(--ember-glow); cursor: pointer; touch-action: manipulation; }
+.gradar__all .ico { width: 14px; height: 14px; }
+.gradar__all:active { background: rgba(255, 154, 60, 0.26); }
+.gradar__all:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .gradar__sweep { animation: none; } .gradar__gate { animation: none; } }
+
+/* The hunter: two cards and a row of facts. */
+.ghunter { display: flex; flex-direction: column; gap: 10px; }
+.ghunter__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+.ghcard { --rc: var(--ember); display: grid; grid-template-columns: 46px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 76px; padding: 10px; border: 1px solid color-mix(in srgb, var(--rc) 35%, var(--edge)); border-left: 3px solid var(--rc);
+  background: radial-gradient(100% 140% at 0% 50%, color-mix(in srgb, var(--rc) 14%, transparent), transparent 65%), rgba(6, 8, 14, 0.7); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.ghcard:active { background: color-mix(in srgb, var(--rc) 16%, rgba(6, 8, 14, 0.8)); }
+.ghcard:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+.ghcard__art { position: relative; display: grid; place-items: center; width: 46px; height: 46px; color: var(--rc); }
+.ghcard__art .sigil { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--rc) 60%, transparent)); }
+.ghcard__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ghcard__text .label { font-size: 0.56rem; }
+.ghcard__text > b { font-size: 1rem; font-weight: 800; color: #fff; }
+.ghcard__text > small:not(.label) { overflow: hidden; font-size: 0.66rem; color: var(--ink-3); white-space: nowrap; text-overflow: ellipsis; }
+.ghcard.is-ascension { --rc: var(--gold); }
+.ghcard.is-ascension .ghcard__art .ico { width: 18px; height: 18px; position: absolute; top: 0; }
+.ghcard.is-ascension .ghcard__art b { margin-top: 12px; font-size: 1.5rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
+.ghcard.is-call, .ghcard.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-mix(in srgb, var(--gold) 30%, transparent); }
+.ghcard.is-call .ghcard__text > b { color: var(--gold); }
+.ghrecord { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 14px; align-items: center; width: 100%; min-height: 56px; padding: 6px 8px 6px 2px; border: 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); background: none; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
+.ghrecord > span { display: grid; justify-items: center; gap: 2px; }
+.ghrecord > span + span { border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); }
+.ghrecord small { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.ghrecord b { font-size: 1.02rem; font-weight: 800; color: var(--ink); }
+.ghrecord__go { width: 12px; height: 12px; color: var(--ink-3); }
+.ghrecord:active { background: rgba(255, 255, 255, 0.04); }
+.ghrecord:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+
+/* The licence, as the Association issues it: the grade's seal, the hunter and their number, the letter behind. */
+.glicence__card { --rc: var(--ember); position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 14px; overflow: hidden; padding: 16px 14px;
+  border: 1px solid color-mix(in srgb, var(--rc) 55%, transparent); background: linear-gradient(125deg, color-mix(in srgb, var(--rc) 20%, rgba(6, 8, 14, 0.9)), rgba(6, 8, 14, 0.92) 60%);
+  box-shadow: inset 0 0 30px color-mix(in srgb, var(--rc) 14%, transparent), 0 0 18px color-mix(in srgb, var(--rc) 18%, transparent); }
+.glicence__card::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(125deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 14px 15px); pointer-events: none; }
+.glicence__letter { position: absolute; right: -6px; bottom: -34px; font-size: 9rem; font-weight: 800; line-height: 1; color: color-mix(in srgb, var(--rc) 14%, transparent); pointer-events: none; }
+.glicence__seal { position: relative; display: grid; place-items: center; width: 76px; height: 76px; border: 1px solid color-mix(in srgb, var(--rc) 50%, transparent); border-radius: 50%; }
+.glicence__seal .sigil { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--rc) 60%, transparent)); }
+.glicence__who { position: relative; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.glicence__who .label { font-size: 0.54rem; }
+.glicence__who b { overflow: hidden; font-size: 1.05rem; font-weight: 800; color: #fff; white-space: nowrap; text-overflow: ellipsis; }
+.glicence__who b + .label { margin-top: 6px; }
+.glicence__facts, .ascension__now { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
+.glicence__facts > div:nth-child(odd), .ascension__now > div:nth-child(odd) { border-left: 0; }
+.glicence__facts > div:nth-child(n + 3), .ascension__now > div:nth-child(n + 3) { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
+.glicence__facts dd, .ascension__now dd { font-size: 0.92rem; text-align: center; }
+.ascension__now dd small { display: block; font-size: 0.62rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.ascension__now dd { flex-direction: column; gap: 1px; }
+/* Ascension's road and marks: rows between hairlines; what is set or waits on the hunter keeps its colour, the Set button its box. */
+.ascension .ascnext li { border: 0; border-left: 2px solid transparent; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); background: none; box-shadow: none; }
+.ascension .ascnext li.is-now { border-left-color: var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.1), transparent 70%); }
+.ascension .ascension__rules li { border: 0; padding: 4px 0; background: none; }
+.ascension .marks__list { gap: 0; }
+.ascension .marks__list li { min-height: 56px; padding: 8px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); border-radius: 0; }
+.ascension .marks__list li.is-set { border-left: 2px solid var(--gold); padding-left: 10px; }

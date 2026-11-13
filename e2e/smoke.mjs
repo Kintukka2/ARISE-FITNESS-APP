@@ -311,12 +311,12 @@ try {
   await drain();
 
   // The Gates are home, and the practice gate is first on the board.
-  await page.waitForSelector('.btile.is-gate.is-practice', { timeout: 10000 });
+  await page.waitForSelector('.gatehome__practice .gaterow', { timeout: 10000 });
   await drain();
   await snap('gates');
   // Quests open with the practice gate cleared, not before.
   if (!(await page.locator('[data-nav="quests"].is-locked').isVisible())) throw new Error('THE QUESTS TAB OPENED BEFORE THE PRACTICE GATE');
-  await raidGate('.btile.is-gate.is-practice .btile__hit', 'practice');
+  await raidGate('.gatehome__practice .gaterow', 'practice');
   if (!(await page.locator('.xpbar__label').innerText()).includes('LV 5')) throw new Error('THE PRACTICE GATE DID NOT LAND ON LEVEL 5');
 
   // Spend the points it paid. The level-up's Allocate opens the Status sheet itself; if it was closed, the Status tile does.
@@ -371,8 +371,8 @@ try {
   if (await visible('.sysframe.contracts')) throw new Error('THE DAILY QUESTS ARE STILL ON THE GATES SCREEN');
   const before = await page.locator('.xpbar__label').innerText();
   // Win or lose it pays: a defeat still pays a share. The System fights this one.
-  // The open Gates are one tile; it opens the board.
-  await page.locator('.btile--board .btile__hit').click();
+  // The radar's View All Gates opens the board.
+  await page.locator('.gradar__all').click();
   await sleep(400);
   if (!(await visible('.sheet.is-top .gboard .gaterow'))) throw new Error('THE BOARD TILE DID NOT OPEN THE GATES');
   await snap('board');

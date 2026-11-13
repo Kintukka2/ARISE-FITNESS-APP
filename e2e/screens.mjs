@@ -250,7 +250,11 @@ try {
 
   await nav('gates');
   await snap('gates', true);
-  if (await page.locator('.btile--ascension').count()) throw new Error('THE ASCENSION TILE SHOWED BELOW S-RANK');
+  if (await page.locator('.ghcard.is-ascension').count()) throw new Error('THE ASCENSION CARD SHOWED BELOW S-RANK');
+  // The day's Gates as a radar: a portal to each grade round the count, the record as facts under it.
+  if ((await page.locator('.gradar__gate').count()) !== 6) throw new Error('THE RADAR DOES NOT HOLD A PORTAL TO EACH GRADE');
+  if ((await page.locator('.ghrecord > span').count()) !== 4) throw new Error('THE RECORD IS NOT FOUR FACTS');
+  if (await page.evaluate(() => document.querySelector('.app, body').scrollWidth > window.innerWidth)) throw new Error('THE GATES SCREEN SCROLLS SIDEWAYS');
   // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
   if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
   if ((await page.locator('.vitalstrip .vrow').count()) < 3) throw new Error('THE CONDITION STRIP IS NOT UNDER VALCORDE');
@@ -258,10 +262,16 @@ try {
   if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
   await snap('gates-potion');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
-  await page.locator('.btile--grade .btile__hit').click(); await sleep(400); await snap('grade'); await close();
+  await page.locator('.ghcard.is-licence').click(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .glicence__card').count())) throw new Error('THE GRADE CARD DID NOT OPEN THE LICENCE');
+  await snap('grade'); await close();
+  // A grade's portal opens the board on that grade alone.
+  await page.locator('.gradar__gate:not(.is-none):not(.is-shut)').first().click(); await sleep(600);
+  if ((await page.locator('.sheet.is-top .gband').count()) !== 1) throw new Error('A GRADE ON THE RADAR DID NOT OPEN THE BOARD ON IT');
+  await snap('board-from-radar'); await close();
   // The Pale Spire is a Weekly Quest, not a Gates tile.
   if (await page.locator('.btile--spire').count()) throw new Error('THE PALE SPIRE IS STILL ON THE GATES SCREEN');
-  await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
+  await page.locator('.gradar__all').click(); await sleep(600); await snap('board', true);
   // The board: a band to each grade, a row to each Gate; the rail filters by grade, and to the marked ones.
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
   // The day as facts, the grades as a rail of portals, and each Gate's boss power at its card's right.
@@ -813,10 +823,11 @@ try {
   }
   await close();
   await nav('gates');
-  if (!(await page.locator('.btile--ascension').isVisible())) throw new Error('THE ASCENSION TILE IS MISSING AT S-RANK');
-  if (await page.locator('.gatesgrid', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');
+  if (!(await page.locator('.ghcard.is-ascension').isVisible())) throw new Error('THE ASCENSION CARD IS MISSING AT S-RANK');
+  await page.locator('.ghunter').scrollIntoViewIfNeeded(); await sleep(300); await snap('gates-ascension');
+  if (await page.locator('.gatehome', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');
   // The first open walks the hunter through the sheet, a part at a time.
-  await page.locator('.btile--ascension .btile__hit').click();
+  await page.locator('.ghcard.is-ascension').click();
   await page.waitForSelector('.tour__card--app', { timeout: 5000 });
   for (let i = 1; await page.locator('.tour').isVisible().catch(() => false); i++) {
     await sleep(350); await snap(`ascension-tour-${i}`);

@@ -515,18 +515,32 @@ for advancement. Every quest's name wears its type, and these are the names:
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Defeat [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
-- **Every main screen but Quests is a grid of these tiles** (`ui/bento.tsx`; Quests is a log, above): Inventory (Status, Stats, Skills,
-  Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
-  cleared, the open run, Open Gates, Grade, Record, Ascension; Open Gates is the screen's centre, larger
-  than the rest and lit in orange),
-  and Shadows (the Army and the Orders; the Army is the screen's centre, larger than the rest: the
-  squad's slots over the reserve). A list is one tile that opens its window: Open Gates opens
-  GATES, a band to each grade and a row to each Gate, its portal in its grade's colour; the Army opens ARMY, a roster with a
-  row to every Shadow, where the squad is made. On Gates, the hunter's condition is not a
+- **Inventory is a grid of these tiles** (`ui/bento.tsx`; Quests is a log, above; Shadows is a stage and Gates a radar,
+  each rebuilt at the owner's call): Inventory (Status, Stats, Skills, Equipment, Inventory, the Exchange, the hunter's
+  card). Gates, after the portals scattered over Solo Leveling: Arise's city: under the hunter's condition, the run
+  left open as a stage card in gold (`[Revenant Gatehouse]` over its steps as diamonds and `3/11`, **Go Back In** at
+  its right), the Practice Gate as the board's own stage card until it is cleared, then the day's Gates as a radar in
+  the Gates' orange frame: rings with a sweep turning over them, the count large at the hub over `Open Gates` and
+  `Redraw` with its countdown in gold, and a portal to each grade round it in its colour with its count under it,
+  starred where a marked Gate stands, its letter dimmed with a lock badge beyond the licence and faded where none
+  stands (read aloud `C-Rank: 3 open, one marked`); a tap on a portal opens GATES on that grade alone, and
+  **View All Gates** under the radar opens it whole. Under it the hunter: `Grade` over `C-Rank` and `Gates up to
+  B-Rank.`, its sigil in its grade's colour, and, from Ascension's grade, `Ascension` over the marks to set, `New` or
+  `2/3` beside the level large in gold, gold while something waits; then the record as facts in one row,
+  `Entered`, `Cleared`, `Taken` and `Unbroken`, a chevron at its right, opening the dossier. Shadows (the Army and
+  the Orders; the Army is the screen's centre: the squad's slots over the reserve). The Army opens ARMY, a roster
+  with a row to every Shadow, where the squad is made. On Gates, the hunter's condition is not a
   tile but a strip under Valcorde's line, in the System's frame: the Status sheet's HP, MP and FTG
   rows, each with its potion, so a potion is one tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
-  a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates grid.
+  a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
+- **The licence's window**, `LICENCE: E-048213`, opens on the licence itself, as the Association issues it: the
+  grade's seal in a ring, `Hunter` over the hunter's name and `Licence` over their number, the grade's letter
+  vast and faint behind, the card washed in the grade's colour; under it `Association grade`, `Gates open`,
+  `Rank` and `Association Licence` as facts, two to a row, with no box. Ascension's window opens on its standing
+  the same way (`Entering at` with the level's name under it, `Highest opened`, `Foe strength`, `Gate pay`); its
+  road and its marks are rows between hairlines, a gold rule down the one that waits and the marks set, the Set
+  buttons keeping their boxes.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
   the bracketed name, one line under it, and the count in a hairline box: `5/10`, `0/3`, `Closed`.
   A tile says nothing its window does not; the window holds the goals, the hints and the rewards.

@@ -1912,6 +1912,15 @@ with what ARISE took from them.
   over two lines rather than cut, and at its right the boss's power by the power mark (`?` until known), as a stage
   states its recommended level. Its counts (the Shadows bound, its Feats, the set blueprints, the Forge's anvil)
   lose their boxes; what calls the hunter there (Association, Quest, Chosen, Training, Bounty) keeps its pill.
+- **The Gates screen, rebuilt** (the owner's call: the same way as the board, freely, after the references). Its
+  bento tiles are gone. The day's Gates are a radar, after the portals scattered over Solo Leveling: Arise's city:
+  rings and a turning sweep, the count and the redraw at the hub, a portal to each grade round it; a portal opens
+  the board on its grade alone (`openBoard(band)`), View All Gates opens it whole. The run left open and the Practice
+  Gate are stage cards, the board's own. Grade and Ascension are two cards, Record a row of facts that opens the
+  dossier. The licence's window is the licence itself, a card in the grade's colour with its seal, the hunter and
+  their number; Ascension's window opens on its standing as facts, and its road and marks lose their boxes. The
+  tour still points at the grade (`licence`), the condition (`vitals`), the radar (`bands`) and the Practice Gate
+  (`board`).
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;
