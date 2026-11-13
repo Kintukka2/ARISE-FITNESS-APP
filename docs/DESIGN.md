@@ -1962,6 +1962,13 @@ with what ARISE took from them.
   green. Bonuses side by side are spaced, not dotted. Critical chance is Crit chance everywhere it is read.
   Then: the arms take the gloves' colour, `Worn` is white, the property bars line up, and Status chance
   reads Effect chance (Status Potency, Effect Potency); Status save keeps its name.
+- **The Inventory screen, rebuilt** (the owner's call), after the character screens of Genshin Impact and Honkai:
+  Star Rail and Solo Leveling: Arise's hunter page. The bento tiles are gone, as they went from Gates. The hunter
+  heads it: their figure wearing what is worn (Equipment's own `Avatar`) over its score, opening Equipment, beside
+  their name, condition and points, opening Status. Stats and Skills are two cards; the bag, the Forge and the
+  Exchange three stations; the licence a row along the foot. The bag's head is one line; its kinds two rows of five
+  (the Forge's too), Sort and Select over the three filters; New and the better mark gold; its Sets view a grid of
+  the rarities over a row to each set, opening the set's window. No engine changed.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

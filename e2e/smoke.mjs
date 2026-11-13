@@ -324,7 +324,7 @@ try {
     await nav('inventory');
     await sleep(400);
     await drain();
-    await page.locator('.btile--status .btile__hit').click();
+    await page.locator('[data-hub="status"]').click();
     await sleep(400);
   }
   if (!(await page.locator('.sheet.is-top .status').isVisible())) throw new Error('THE STATUS SHEET DID NOT OPEN');
@@ -383,7 +383,7 @@ try {
   // The first real Gate's first clear left a blueprint and its materials: the Forge forges it.
   await nav('inventory');
   await drain();
-  await page.locator('.btile--forge .btile__hit').click();
+  await page.locator('[data-hub="forge"]').click();
   await sleep(500);
   // A clear leaves a blueprint; a party carried out leaves with nothing, and the Practice Gate's iron is all there is.
   const blueprints = await page.locator('.sheet.is-top .bprow').count();

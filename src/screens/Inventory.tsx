@@ -1,6 +1,8 @@
 /**
- * Inventory: the hunter's page, as a bento grid. Status, the stats, the skills, the equipment, what
- * is held, the Forge, the Exchange and the hunter's record each take a tile, and each tile opens its window.
+ * Inventory: the hunter's page, after the character screens of Genshin Impact and Honkai: Star Rail and
+ * Solo Leveling: Arise's hunter page. The hunter at its head, their figure wearing what is worn beside
+ * their name and condition; the stats and the skills as two cards; the bag, the Forge and the Exchange as
+ * three stations; the licence along the foot. Each opens its window.
  */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -16,7 +18,7 @@ import { licenceHolding, licensedRank } from '@/core/licence';
 import * as shop from '@/core/shop';
 import type { Save, Stat } from '@/core/types';
 import { STATS } from '@/core/types';
-import { compact, group, hhmmss, msUntilMidnight } from '@/core/util';
+import { group, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
@@ -24,15 +26,14 @@ import { useSave } from '@/store';
 import { weekBest } from '@/core/spire';
 import * as system from '@/ui/system';
 import { Btn, Empty, GearArt, HpBar, Section, useNow } from '@/ui/components';
-import { BentoGrid, type Tile } from '@/ui/bento';
-import { Field } from '@/ui/frame';
+import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
 import { ask } from '@/ui/ask';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { openExchange } from './Exchange';
 import { openForge } from './Forge';
-import { openEquipment, openInventory } from './Gear';
+import { Avatar, openEquipment, openInventory } from './Gear';
 import { Constellation, openSkills } from './Skills';
 
 /** The Skills window: kept under its old name for the screens that open it from a class. */
@@ -41,7 +42,17 @@ export const openClass = openSkills;
 export function Inventory() {
   const s = useSave();
   useNow(5000);
-  return <BentoGrid class="invscreen" tiles={tiles(s)} label="Inventory" />;
+  return (
+    <div class="stack hubpage" aria-label="Inventory">
+      <HunterHero s={s} />
+      <div class="hubpair">
+        <StatsCard s={s} />
+        <SkillsCard s={s} />
+      </div>
+      <Stations s={s} />
+      <LicenceRow s={s} />
+    </div>
+  );
 }
 
 /** Skill Points with somewhere to go, in advancement's gold. */
@@ -54,116 +65,136 @@ function RankDue({ to }: { to: string }) {
   return <span class="apdue"><span class="apdue__mark" aria-hidden="true"><Glyph name="up" /></span>{to}: requirements met</span>;
 }
 
-/** Unspent Ability Points on a tile, in advancement's gold: a lit + mark, then the count. */
+/** Unspent Ability Points, in advancement's gold: a lit + mark, then the count. */
 function PointsDue({ n }: { n: number }) {
   return <span class="apdue"><span class="apdue__mark" aria-hidden="true">+</span>Ability Points: <b class="num">{n}</b></span>;
 }
 
-/** The hunter's page: who they are, what they can do, what they wear, what they hold, and their record. */
-function tiles(s: Save): Tile[] {
+/**
+ * The hunter at the head of their page: their figure, wearing what is worn, opening Equipment (its score
+ * under it, a gold ▲ while Auto Equip has something better); beside it who they are and their condition,
+ * opening Status. The frame turns gold while Status waits on them: points to spend, a rank to claim.
+ */
+function HunterHero({ s }: { s: Save }) {
   const r = rankOf(s);
   const shown = r.key === 'N' ? 'N' : licensedRank(s);
   const cls = classById(s.hunter.classId);
   const v = vitals.read(s);
-  const total = statsNow(s);
-  const lead = STATS.reduce((a, b) => (total[b] > total[a] ? b : a));
-  const sp = skilltree.canSpend(s) ? skilltree.points(s) : 0;
-  const ups = gear.upgradeCount(s);
-  // The three best pieces held, fanned out with the best in the middle.
-  const best = s.items.slice().sort((a, b) => gear.score(b) - gear.score(a)).slice(0, 3);
-  const top = best.length === 3 ? [best[1], best[0], best[2]] : best;
   const rc = reclassification(s);
-  const known = (s.blueprints ?? []).length;
-  const ready = forge.FORGEABLE.filter((d) => forge.canForge(s, d)).length;
-  const better = forge.betterForges(s);
-  return [
-    {
-      // Waiting on the hunter (a rank to claim, points to spend): gold, a word in the count, and the light crossing it.
-      key: 'status', kind: 'system', name: 'Status', head: true, wide: true, call: !!rc?.ready || s.hunter.points > 0,
-      count: rc?.ready ? 'Ready' : s.hunter.points ? `${s.hunter.points} ${s.hunter.points === 1 ? 'point' : 'points'}` : `LV ${s.hunter.level}`,
-      status: rc?.ready ? <RankDue to={rc.to.name} /> : s.hunter.points ? <PointsDue n={s.hunter.points} /> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : r.name,
-      art: (
-        <span class="ia-status">
-          <span class="ia-status__who">
-            <Sigil rank={shown} size={44} />
-            <span class="ia-status__name"><b>{s.hunter.name}</b><small>{cls?.name ?? 'Unclassified'} · {r.name}</small></span>
+  const ups = gear.upgradeCount(s);
+  const pts = s.hunter.points;
+  const call = !!rc?.ready || pts > 0;
+  const score = Math.round(gear.power(s));
+  return (
+    <SysFrame kind={call ? 'gold' : 'system'} class={`hhero ${call ? 'is-call' : ''}`} label="Hunter" tour="hero">
+      <div class="hhero__grid">
+        <button type="button" class={`hhero__gear ${ups ? 'is-call' : ''}`} data-hub="equipment"
+          aria-label={`Equipment: score ${score}${ups ? `, Auto Equip ${ups}` : ''}`} onClick={() => { sfx.tap(); openEquipment(); }}>
+          <span class="hhero__aura" aria-hidden="true" />
+          <span class="hhero__fig" aria-hidden="true"><Avatar s={s} hot={null} /></span>
+          <span class="hhero__score">
+            <small class="label">Equipment</small>
+            <b class="num">{score}</b>
+            {ups > 0 && <span class="hhero__up" aria-hidden="true">▲ {ups}</span>}
           </span>
-          <span class="ia-bars">
+        </button>
+        <button type="button" class="hhero__status" data-hub="status" aria-label={`Status: ${s.hunter.name}${pts ? `, ${pts} Ability Points` : ''}`}
+          onClick={() => { sfx.tap(); openStatus(); }}>
+          <span class="hhero__who">
+            <Sigil rank={shown} size={42} />
+            <span class="hhero__name"><b>{s.hunter.name}</b><small>{cls?.name ?? 'Unclassified'} · {r.name}</small></span>
+          </span>
+          <span class="hhero__bars">
             <MiniBar label="HP" cur={v.hp} max={v.hpMax} tone="hp" />
             <MiniBar label="MP" cur={v.mp} max={v.mpMax} tone="mp" />
             <MiniBar label="FTG" cur={v.fatigue} max={vitals.FATIGUE_MAX} tone="ftg" />
           </span>
+          <span class="hhero__foot">
+            {rc?.ready ? <RankDue to={rc.to.name} /> : pts ? <PointsDue n={pts} /> : <span class="label">Status</span>}
+            <Glyph name="chevron" class="hhero__go" />
+          </span>
+        </button>
+      </div>
+    </SysFrame>
+  );
+}
+
+/** The five stats as their figure, the one they lean on, and their sum. It opens Stats. */
+function StatsCard({ s }: { s: Save }) {
+  const total = statsNow(s);
+  const lead = STATS.reduce((a, b) => (total[b] > total[a] ? b : a));
+  return (
+    <button type="button" class="hubcard" data-hub="stats" aria-label={`Stats: ${lead} ${Math.round(total[lead])}`} onClick={() => { sfx.tap(); openStats(); }}>
+      <span class="hubcard__head"><span class="label">Stats</span><b class="num"><Glyph name={STAT_ICON[lead]} />{lead} {Math.round(total[lead])}</b></span>
+      <span class="hubcard__art"><Radar values={total} /></span>
+      <span class="hubcard__foot"><small>{STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all</small><Glyph name="chevron" class="hubcard__go" /></span>
+    </button>
+  );
+}
+
+/** The skill tree's sky, and its points while they have somewhere to go, in gold. It opens Skills. */
+function SkillsCard({ s }: { s: Save }) {
+  const cls = classById(s.hunter.classId);
+  const sp = skilltree.canSpend(s) ? skilltree.points(s) : 0;
+  return (
+    <button type="button" class={`hubcard ${sp ? 'is-call' : ''}`} data-hub="skills" aria-label={`Skills${sp ? `: ${sp} Skill Points` : ''}`} onClick={() => { sfx.tap(); openSkills(); }}>
+      <span class="hubcard__head"><span class="label">Skills</span><b class="num">{cls ? `${cls.rank}-Rank` : '-- --'}</b></span>
+      <span class="hubcard__art"><span class="ia-sky"><Constellation s={s} mini /></span></span>
+      <span class="hubcard__foot">{sp ? <SkillDue n={sp} /> : <small>{cls ? `[Class: ${cls.name}]` : 'Unclassified'}</small>}<Glyph name="chevron" class="hubcard__go" /></span>
+    </button>
+  );
+}
+
+/** What is held, what can be forged and what can be bought: three stations side by side. */
+function Stations({ s }: { s: Save }) {
+  const fresh = (s.newItems ?? []).length;
+  // The three best pieces held, fanned out with the best in the middle.
+  const best = s.items.slice().sort((a, b) => gear.score(b) - gear.score(a)).slice(0, 3);
+  const top = best.length === 3 ? [best[1], best[0], best[2]] : best;
+  const known = (s.blueprints ?? []).length;
+  const ready = forge.FORGEABLE.filter((d) => forge.canForge(s, d)).length;
+  const better = forge.betterForges(s).length;
+  return (
+    <div class="hubstations">
+      <button type="button" class="hubst" data-hub="inventory" aria-label={`Inventory: ${s.items.length} items${fresh ? `, ${fresh} new` : ''}`} onClick={() => { sfx.tap(); openInventory(); }}>
+        <span class="hubst__art">
+          {top.length
+            ? <span class="hubst__fan">{top.map((it, i) => <span key={it.id} class="hubst__card" style={`--i: ${i - (top.length - 1) / 2}`}><GearArt item={it} size={36} /></span>)}</span>
+            : <Glyph name="bag" />}
         </span>
-      ),
-      open: openStatus,
-    },
-    {
-      // Stats reads; Status is where the points are spent, so only Status calls for them.
-      key: 'stats', kind: 'system', name: 'Stats', head: true, icon: <Glyph name={STAT_ICON[lead]} />,
-      count: `${lead} ${Math.round(total[lead])}`,
-      status: `${STATS.map((k) => Math.round(total[k])).reduce((a, b) => a + b, 0)} in all`,
-      art: <Radar values={total} />,
-      open: openStats,
-    },
-    {
-      // Skill Points with a node to take them: gold, as every tile that waits on the hunter.
-      key: 'skills', kind: 'system', name: 'Skills', head: true, icon: <Glyph name="bolt" />, call: sp > 0,
-      count: sp ? `${sp} ${sp === 1 ? 'point' : 'points'}` : cls ? `${cls.rank}-Rank` : '-- --',
-      status: sp ? <SkillDue n={sp} /> : cls ? `[Class: ${cls.name}]` : 'Unclassified',
-      art: <span class="ia-sky"><Constellation s={s} mini /></span>,
-      open: openSkills,
-    },
-    {
-      key: 'equipment', kind: 'gear', name: 'Equipment', head: true, wide: true, icon: <Glyph name="Chest" />, call: ups > 0,
-      count: ups ? `${ups} better` : Math.round(gear.power(s)),
-      status: ups ? <>Auto Equip: <b class="num">{ups}</b></> : setLine(s) ?? `Slots filled: ${gear.worn(s).length}/${gear.SLOTS.length}`,
-      art: (
-        <span class="ia-doll">
-          {gear.SLOTS.map((x) => {
-            const it = gear.equippedIn(s, x.key);
-            return <span key={x.key} class={`ia-doll__slot ${it ? '' : 'is-empty'}`}>{it ? <GearArt item={it} size={36} /> : <Glyph name={x.accepts} />}</span>;
-          })}
-        </span>
-      ),
-      open: openEquipment,
-    },
-    {
-      key: 'inventory', kind: 'gear', name: 'Inventory', head: true, icon: <Glyph name="bag" />,
-      count: (s.newItems ?? []).length ? `${(s.newItems ?? []).length} new` : s.items.length,
-      status: (s.newItems ?? []).length ? <>Items: <b class="num">{s.items.length}</b> · New: <b class="num grant">{(s.newItems ?? []).length}</b></> : `Designs: ${s.found.length}/${gear.ALL_GEAR.length + gear.ISSUED.length}`,
-      art: top.length
-        ? <span class="ia-fan">{top.map((it, i) => <span key={it.id} class="ia-fan__card" style={`--i: ${i - (top.length - 1) / 2}`}><GearArt item={it} size={50} /></span>)}</span>
-        : <span class="ia-shard"><Glyph name="bag" /></span>,
-      open: openInventory,
-    },
-    {
-      // A blueprint that can be forged into something rarer than what is worn waits on the hunter: gold.
-      key: 'forge', kind: 'gear', name: 'Forge', head: true, icon: <Glyph name="forge" />, call: better.length > 0,
-      count: better.length ? `${better.length} better` : ready ? `${ready} ready` : known,
-      status: better.length ? <>Can forge: <b class="num">{ready}</b></> : <>Blueprints: <b class="num">{known}</b>{ready ? <> · Can forge: <b class="num">{ready}</b></> : null}</>,
-      art: <span class="ia-forge"><i class="ia-forge__glow" /><Glyph name="forge" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /></span>,
-      open: () => openForge(),
-    },
-    {
-      key: 'exchange', kind: 'gear', name: 'Exchange', head: true, icon: <Shard size={18} />,
-      count: compact(s.wallet.shards),
-      status: <>New stock in: <b class="num">{hhmmss(msUntilMidnight())}</b></>,
-      art: <span class="ia-shard"><i class="ia-shard__ring" /><Shard size={54} /></span>,
-      open: openExchange,
-    },
-    {
-      key: 'dossier', kind: 'system', name: `Hunter: ${s.hunter.name}`, icon: <Glyph name="book" />,
-      count: s.hunter.regNo || '-- --',
-      status: `Gates cleared: ${s.gates.clears}`,
-      art: (
-        <span class="ia-licence">
-          <span class="ia-licence__head"><small>Hunter Association</small><b>Hunter Licence</b></span>
-          <Sigil rank={shown} size={34} />
-        </span>
-      ),
-      open: openDossier,
-    },
-  ];
+        <b class="hubst__name">Inventory</b>
+        <small>Items: {s.items.length}</small>
+        {fresh > 0 && <span class="hubst__badge">{fresh} new</span>}
+      </button>
+      {/* A blueprint that can be forged into something rarer than what is worn waits on the hunter: gold. */}
+      <button type="button" class={`hubst is-forge ${better ? 'is-call' : ''}`} data-hub="forge" aria-label={`Forge: ${better ? `${better} better` : `can forge ${ready}`}`} onClick={() => { sfx.tap(); openForge(); }}>
+        <span class="hubst__art"><span class="ia-forge"><i class="ia-forge__glow" /><Glyph name="forge" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /><i class="ia-forge__spark" /></span></span>
+        <b class="hubst__name">Forge</b>
+        <small>{ready ? `Can forge: ${ready}` : `Blueprints: ${known}`}</small>
+        {better > 0 && <span class="hubst__badge is-gold">{better} better</span>}
+      </button>
+      <button type="button" class="hubst is-exchange" data-hub="exchange" aria-label="Exchange" onClick={() => { sfx.tap(); openExchange(); }}>
+        <span class="hubst__art"><span class="ia-shard"><i class="ia-shard__ring" /><Shard size={34} /></span></span>
+        <b class="hubst__name">Exchange</b>
+        <small class="hubst__clock" aria-label={`New stock in ${hhmmss(msUntilMidnight())}`}><Glyph name="timer" /><span class="num">{hhmmss(msUntilMidnight())}</span></small>
+      </button>
+    </div>
+  );
+}
+
+/** The hunter's licence along the page's foot: its number and the Gates cleared. It opens the dossier. */
+function LicenceRow({ s }: { s: Save }) {
+  const r = rankOf(s);
+  const shown = r.key === 'N' ? 'N' : licensedRank(s);
+  return (
+    <button type="button" class="hublicence" data-hub="dossier" aria-label={`Hunter: ${s.hunter.name}, licence ${s.hunter.regNo || 'none'}. Open the dossier`}
+      onClick={() => { sfx.tap(); openDossier(); }}>
+      <Sigil rank={shown} size={30} />
+      <span class="hublicence__one"><small class="label">Hunter Licence</small><b class="num">{s.hunter.regNo || '-- --'}</b></span>
+      <span class="hublicence__one"><small class="label">Gates cleared</small><b class="num">{s.gates.clears}</b></span>
+      <Glyph name="chevron" class="hublicence__go" />
+    </button>
+  );
 }
 
 /** Every stat as it fights: Ability Points, class and gear together. */
@@ -227,12 +258,6 @@ function Radar({ values, base, live }: { values: Record<Stat, number>; base?: Re
       })}
     </svg>
   );
-}
-
-/** The fullest set worn, as the Equipment tile names it. */
-function setLine(s: Save): string | null {
-  const on = [...gear.setsIn(gear.worn(s))].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]);
-  return on.length ? `[Set: ${on[0][0]}] ${on[0][1]}/${gear.setPieces(on[0][0]).length}` : null;
 }
 
 /** The Status sheet: the hunter's fields, vitals and stats, and where Ability Points are spent. */

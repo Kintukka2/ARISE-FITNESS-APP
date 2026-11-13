@@ -275,7 +275,7 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | QUEST INFO | One quest: name, brief, goal, rewards |
 | QUEST REWARDS | What a finished quest paid |
 | STATUS | The hunter's sheet |
-| STATS | The five stats: where each comes from (base, class, gear) and the hunter's numbers in a fight. Its tile is the Inventory's Stats |
+| STATS | The five stats: where each comes from (base, class, gear) and the hunter's numbers in a fight. Its card is the Inventory screen's Stats |
 | SKILLS | Skills, passive and active |
 | EQUIPMENT | What the hunter wears: a square to each of the ten slots around their figure, the score in its hexagon, what it adds, the sets worn, the loadouts. A slot's own window is the card `Equipment: Ring I` |
 | INVENTORY | What the hunter holds |
@@ -529,9 +529,17 @@ for advancement. Every quest's name wears its type, and these are the names:
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Defeat [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
-- **Inventory is a grid of these tiles** (`ui/bento.tsx`; Quests is a log, above; Shadows is a stage and Gates a radar,
-  each rebuilt at the owner's call): Inventory (Status, Stats, Skills, Equipment, Inventory, the Exchange, the hunter's
-  card). Gates, after the portals scattered over Solo Leveling: Arise's city: under the hunter's condition, the run
+- **Every main screen is rebuilt at the owner's call** (Quests is a log, above; Shadows a stage; Gates a radar; Inventory
+  the hunter's page). Inventory, after the character screens of Genshin Impact and Honkai: Star Rail and Solo Leveling:
+  Arise's hunter page: the hunter at its head in the System's frame (gold while Status waits on them), their figure
+  wearing what is worn, as Equipment draws it, over `Equipment 387` and a gold `▲ 1` while Auto Equip has something
+  better, opening EQUIPMENT; beside it their sigil, name and `Berserker · C-Rank`, HP, MP and FTG as bars, and at its
+  foot `Ability Points: 4` in gold (or the rank to claim, or `Status`), opening STATUS. Under it two cards: `Stats`
+  with the lead stat (`STR 64`), the five stats' figure and `212 in all`; `Skills` with the class's grade, the sky and
+  `Skill Points: 17` in gold while they have somewhere to go. Then three stations: Inventory (the three best pieces
+  fanned, `Items: 28`, a `3 new` badge), the Forge (its anvil, `Can forge: 21`, a gold `3 better` badge while a
+  blueprint beats what is worn) and the Exchange (its shard, the restock countdown). Along the foot the licence:
+  its seal, `Hunter Licence` over its number and `Gates cleared`, opening the dossier. Gates, after the portals scattered over Solo Leveling: Arise's city: under the hunter's condition, the run
   left open as a stage card in gold (`[Revenant Gatehouse]` over its steps as diamonds and `3/11`, **Go Back In** at
   its right), the Practice Gate as the board's own stage card until it is cleared, then the day's Gates as a radar in
   the Gates' orange frame: rings with a sweep turning over them, the count large at the hub over `Open Gates` and
@@ -820,8 +828,8 @@ ARISE class, the first time: `Class assigned.` / `[Class: Brawler]` / `STR +2`. 
 differently can move a hunter sideways to another line, not only up.
 ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
 
-**Status.** The hunter's sheet, opened from the Inventory screen's Status and Stats tiles, the rank
-plate in the top bar, and a level-up's Allocate.
+**Status.** The hunter's sheet, opened from the head of the Inventory screen (the hunter's name and
+condition), the rank plate in the top bar, and a level-up's Allocate.
 
 ```
                  STATUS                  [dossier]
@@ -889,10 +897,18 @@ when it has something to improve (its slots carry a gold ▲), what is worn adds
 to that window and the item's card, as the reference games leave them to the tooltip.
 
 **Inventory.** A grid of icons under tabs, with the count of what is held, opened from the Inventory
-screen's Inventory tile. The tab is named for it.
+screen's Inventory station. The tab is named for it.
 Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`. ARISE holds only gear, so the tabs are
 `All · {count}` and the slots. Each square is the item's icon in its grade's frame, its score, and
-`WORN` when it is worn; the item card holds the rest.
+`WORN` when it is worn; the item card holds the rest. Rebuilt at the owner's call: its head one line (the bag's
+sign, `28` large over `Items`, then `Worn 10`, `New 3` in gold, `Starred 2`, and the shards); `Items · 28` and
+`Sets · 0/16`; the kinds as two rows of five, each with its count, and no sideways scroll (the Forge's too); `Sort`
+over its order (`Score`, tapped for the next) beside **Select**, and `Better`, `Set pieces` and `Starred` as one
+row of three under them; `NEW` on a square in gold, a gold ▲ on its corner where it beats what is worn. The Sets
+view: `Designs discovered` as a grid of the six rarities (`Rare` over `12/125` and its bar), then each rarity's
+sets (`Rare sets` and `1/4` complete) as rows, as Equipment draws a set worn: its mark, its name, `2/3` and
+`Worn 2`, a square to each piece (its art when held, a blueprint's sign when known, its slot when seen, `?` when
+not), and what two and three pay, lit once worn. A row opens the set's own window.
 
 ## Valcorde
 
