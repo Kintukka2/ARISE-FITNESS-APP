@@ -523,7 +523,7 @@ function MarksCard() {
 
 /** MARKS: a seal to each mark, set from here. Advancement, so gold. */
 function openMarks() {
-  openSheet({ title: 'Marks', system: { icon: <Glyph name="crown" />, kind: 'gold' }, render: () => <MarkList /> });
+  openSheet({ title: 'Marks', system: { icon: null, kind: 'gold' }, render: () => <MarkList /> });
 }
 
 /**

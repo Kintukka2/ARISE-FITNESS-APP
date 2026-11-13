@@ -281,7 +281,7 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | GATES | Every Gate standing open today, a tile each, under the grade tabs |
 | LICENCE | The hunter's licence with the Association: the card, their number on it, the grade the board answers to. Its number is on the card, so the head names the window only (the owner's call) |
 | ASCENSION | The level the Gates are entered at, as a dial, the road to the next level, the climb of every level and its rule, and the way to the marks. The level is the dial, so the head names the window only |
-| MARKS | The marks, a seal to each, set from here; opened from Ascension (the owner's call: the marks have their own window) |
+| MARKS | The marks, a seal to each, set from here; opened from Ascension (the owner's call: the marks have their own window). The seals are its pictures, so the head names the window only, as the Forge's does |
 | ARMY | Every Shadow bound, a tile each |
 | SETTINGS, GUIDE | The interface's two windows, set in the System's frame at the owner's call. Their words stay the interface's: plain, free to explain and to name the System |
 | EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
