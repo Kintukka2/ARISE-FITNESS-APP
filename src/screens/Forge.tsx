@@ -16,14 +16,14 @@ import { group } from '@/core/util';
 import { setById } from '@/data/sets';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Empty, GearArt, RankPlate, Section, SetMark, Shards } from '@/ui/components';
+import { Btn, Empty, GearArt, Section, SetMark, Shards } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { CostGrid, MatArt, TrackMark, bundleText, track } from '@/ui/forge';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { LootCell, useReveal } from '@/ui/loot';
 import { openSheet, sys, toast } from '@/ui/overlays';
 import * as system from '@/ui/system';
-import { openItem, SetCard } from './Gear';
+import { openItem, PieceHero, PieceLink, SetCard } from './Gear';
 
 const rarity = (r: string) => gear.RARITY[r as Rank]?.name ?? r;
 const KINDS = ['Weapon', 'Off-Hand', 'Head', 'Chest', 'Hands', 'Legs', 'Feet', 'Amulet', 'Ring'] as const;
@@ -135,7 +135,7 @@ export function openBlueprint(defId: string) {
   const d = gear.gearDef(defId);
   openSheet({
     title: `Blueprint: ${d?.name ?? 'Unknown'}`,
-    system: { icon: d ? <GearArt defId={defId} size={58} /> : null, kind: 'gear' },
+    system: { icon: null, kind: 'gear' },
     render: () => <Recipe defId={defId} />,
   });
 }
@@ -168,46 +168,34 @@ function Recipe({ defId }: { defId: string }) {
   };
   return (
     <div class="stack itemcard recipe" data-rarity={d.rank}>
-      <section class="sysbox itemhero">
-        <span class="itemhero__art"><GearArt defId={d.id} size={92} /></span>
-        <div class="itemhero__who">
-          <span class="itemhero__kind"><RankPlate rank={d.rank} size={18} />{rarity(d.rank)} {d.slot}</span>
-          <span class="itemhero__tags">
-            <span class="itag is-blueprint"><Glyph name="blueprint" />{known ? 'Blueprint' : 'Blueprint not known'}</span>
-            {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
-          </span>
-          <span class="itemhero__score">
-            <span class="label">Score</span><b class="num" aria-label={`${Math.round(base * qLo)} to ${Math.round(base * gear.Q_HIGH)}`}>{Math.round(base * qLo)}-{Math.round(base * gear.Q_HIGH)}</b>
-          </span>
-        </div>
-      </section>
-      {worn && (
-        <button type="button" class="sysbox itemvs" onClick={() => { sfx.tap(); openItem(worn.id); }}>
-          <span class="label">Worn</span>
-          <GearArt item={worn} size={30} />
-          <span class="itemvs__name">{gear.defOf(worn)?.name}</span>
-          <span class="num">{Math.round(gear.score(worn))}</span>
-        </button>
-      )}
-      <Section title="Stats" right={<span class="num">Quality {Math.round(floor * 100)}-100%</span>}>
+      <PieceHero d={d} art={<GearArt defId={d.id} size={104} />}
+        tags={<>
+          <span class="itag is-blueprint"><Glyph name="blueprint" />{known ? 'Blueprint' : 'Blueprint not known'}</span>
+          {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
+        </>}
+        score={<b class="num" aria-label={`${Math.round(base * qLo)} to ${Math.round(base * gear.Q_HIGH)}`}>{Math.round(base * qLo)}-{Math.round(base * gear.Q_HIGH)}</b>} />
+      {worn && <PieceLink it={worn} label="Worn" />}
+      <section class="sysbox piecepanel">
+        <span class="piecepanel__head"><span class="label">Stats</span><small class="num">Quality {Math.round(floor * 100)}-100%</small></span>
         <ul class="itemstats">
           {STATS.filter((k) => d.core[k]).map((k) => (
             <li key={k}><Glyph name={STAT_ICON[k]} /><span>{k} +{fmt((d.core[k] ?? 0) * qLo)}-{fmt((d.core[k] ?? 0) * gear.Q_HIGH)}</span></li>
           ))}
         </ul>
-      </Section>
-      {(d.rolls ?? []).length > 0 && (
-        <Section title="Properties">
-          <ul class="itemrolls">
-            {(d.rolls ?? []).map((r) => (
-              <li key={r.stat}>
-                <span class="itemrolls__name">{r.stat === 'Defense' ? 'Defence' : r.stat}</span>
-                <small class="num">+{fmt(r.min + (r.max - r.min) * floor)}-{r.max}{r.pct ? '%' : ''}</small>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+        {(d.rolls ?? []).length > 0 && (
+          <>
+            <span class="label">Properties</span>
+            <ul class="itemrolls is-range">
+              {(d.rolls ?? []).map((r) => (
+                <li key={r.stat}>
+                  <span class="itemrolls__name">{r.stat === 'Defense' ? 'Defence' : r.stat}</span>
+                  <b class="num">+{fmt(r.min + (r.max - r.min) * floor)}-{r.max}{r.pct ? '%' : ''}</b>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
       {d.slot === 'Weapon' && <Familiarity defId={d.id} />}
       {set && (
         <Section title={`Set: ${set.id}`}>
@@ -297,7 +285,7 @@ function HeldRow({ it }: { it: Item }) {
         <GearArt item={it} size={40} equipped={worn} />
         <span class="heldrow__text">
           <b class="num">Quality {gear.qualityText(it)}</b>
-          <i class="dollslot__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></i>
+          <i class="heldrow__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></i>
         </span>
       </button>
       {!worn && !starred

@@ -1942,6 +1942,19 @@ with what ARISE took from them.
   down to the ground, the floors in force lit from within, `You` bannered on the floor entered at. The marks sat oddly
   at the foot of Ascension, so they have their own window, `MARKS`, opened from a card under the dial that shows their
   seals small and the badge while one waits.
+- **The gear, rebuilt** (the owner's call), after Destiny 2's and Diablo IV's character screens and Genshin
+  Impact's item pages. Equipment leads with the score in a hexagon and the slots filled as diamonds; the
+  hunter's figure stands larger between two columns of squares, each the piece's art, its quality a gold
+  line under its slot's name, framed in its set's hue while the set pays, a gold ▲ where Auto Equip would
+  change it. What the gear adds (stats, then its properties two to a row in place of a line run on),
+  the sets worn as rows that open a set's window (`SET: {name}`), and the loadouts as rows follow. Every
+  slot opens its own window, `EQUIPMENT: {Slot}`, filled or empty: the piece worn and Unequip, then every
+  piece held that fits, best first, with what it gains or loses on it and Equip, Auto Equip's pick in gold.
+  The item's card and the blueprint's are headed by the piece itself, large with rays turning behind it,
+  its score and its gain in a chip, its quality along the foot; the header loses the icon box that drew
+  the art a second time. Equip, the star and Recycle (now the bin, its offer saying what it gives back)
+  sit together under the comparison, and stats and properties share one box. No engine changed.
+
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

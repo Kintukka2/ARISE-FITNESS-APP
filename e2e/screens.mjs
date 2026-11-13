@@ -146,8 +146,24 @@ try {
   if (await page.locator('.sheet.is-top .st-card').count()) throw new Error('A NEW PATH OPENED WITH A NODE ALREADY CHOSEN');
   await snap('skills-bastion');
   await close();
-  await page.locator('.btile--equipment .btile__hit').click(); await sleep(900); await snap('equipment');
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2'); await close();
+  // Equipment: the score in its hexagon, a square to each of the ten slots around the figure, the sets worn and the loadouts as rows.
+  await page.locator('.btile--equipment .btile__hit').click(); await sleep(900);
+  if ((await page.locator('.sheet.is-top .pslot').count()) !== 10) throw new Error('THE FIGURE DOES NOT HAVE TEN SLOTS');
+  if (!(await page.locator('.sheet.is-top .gearhead__gem').count())) throw new Error('EQUIPMENT SHOWS NO SCORE');
+  if ((await page.locator('.sheet.is-top .loadrow').count()) !== 3) throw new Error('EQUIPMENT DOES NOT SHOW THREE LOADOUTS');
+  await snap('equipment');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2');
+  // A set worn opens its own window.
+  if (await page.locator('.sheet.is-top .setrow').count()) {
+    await page.locator('.sheet.is-top .setrow').first().click(); await sleep(500);
+    if (!(await page.locator('.sheet.is-top .setcard').count())) throw new Error('A SET WORN DID NOT OPEN ITS WINDOW');
+    await snap('equipment-set'); await close();
+  }
+  // A slot opens its own window: what is worn there, and every piece held that fits, with what it gains or loses.
+  await page.locator('.sheet.is-top .pslot', { hasText: 'Ring I' }).first().click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .slotworn').count())) throw new Error('A SLOT WINDOW SHOWS NOTHING WORN');
+  await snap('equipment-slot');
+  await close(); await close();
   await page.locator('.btile--inventory .btile__hit').click(); await sleep(900); await snap('inventory-grid');
   await page.locator('.bagtile').first().click(); await sleep(700); await snap('item');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-2'); await close();
@@ -204,11 +220,12 @@ try {
   await close();
   // A worn weapon's card: its familiarity, and the upgrade's alloys held over needed.
   await page.locator('.btile--equipment .btile__hit').click(); await sleep(700);
-  await page.locator('.sheet.is-top .dollslot', { hasText: 'Weapon' }).click(); await sleep(600);
+  await page.locator('.sheet.is-top .pslot', { hasText: 'Weapon' }).click(); await sleep(600);
+  await page.locator('.sheet.is-top .slotworn__open').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .famcard').count())) throw new Error('THE WORN WEAPON SHOWS NO FAMILIARITY');
   await page.locator('.sheet.is-top .famcard').scrollIntoViewIfNeeded(); await snap('item-weapon');
   if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
-  await close(); await close();
+  await close(); await close(); await close();
   await page.locator('.btile--dossier .btile__hit').click(); await sleep(400); await snap('dossier'); await close();
 
   await nav('quests');

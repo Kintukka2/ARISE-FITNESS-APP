@@ -387,6 +387,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Ten slots, six rarities.',
       'Every piece rolls its core bonus at 75-125% of its design, plus its own properties.',
       'Auto Equip picks the best of what you hold, and favours a set you hold two or more pieces of.',
+      'On the Equipment sheet a slot opens everything you hold that fits it, best first, each with what it gains or loses on what you wear there. A slot marked ▲ in gold is one Auto Equip would change.',
       `${SETS.length} sets of three pieces, Rare and up.`,
       'Two pieces of a set worn together pay a bonus, and all three pay another.',
       'The item’s sheet says what each set pays.',

@@ -1,9 +1,12 @@
 /**
  * The hunter's gear, in the System's frame: the bag (`INVENTORY`), every set and design found (its Sets
- * view), the piece itself (`ITEM: {name}`), and what is worn (`EQUIPMENT`), on a figure, with loadouts.
+ * view), the piece itself (`ITEM: {name}`), and what is worn (`EQUIPMENT`): the hunter's figure with a
+ * square to each slot, each slot's own window (`EQUIPMENT: {Slot}`) to swap what is worn there, a set's
+ * own window (`SET: {name}`), and the loadouts.
  * Pieces are forged at the Forge (`screens/Forge.tsx`) and recycled here for materials. Every number
  * comes from `core/gear.ts` and `core/forge.ts`; the screens only show and ask.
  */
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
@@ -11,8 +14,6 @@ import { ascensionOpen, overCap } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
 import { OVERCHARGE } from '@/data/ascension';
 import { dungeonById } from '@/core/gates';
-import { licensedRank } from '@/core/licence';
-import { rankOf } from '@/core/progression';
 import * as forge from '@/core/forge';
 import type { GearDef, Item, Rank, Save, SlotKey, Stat } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
@@ -25,7 +26,7 @@ import * as system from '@/ui/system';
 import { Btn, Empty, GearArt, IconBtn, RankPlate, Section, SetMark, Shards } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { CostGrid, MatList, bundleText } from '@/ui/forge';
-import { Glyph, STAT_ICON, Sigil } from '@/ui/icons';
+import { Glyph, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys, toast } from '@/ui/overlays';
 import { Familiarity, openBlueprint } from './Forge';
 
@@ -300,9 +301,41 @@ export function openItem(id: string) {
   if (at && gear.isNew(store.get(), id)) store.update((x) => gear.seeItem(x, id));
   const close = openSheet({
     title: `Item: ${named?.name ?? 'Unknown'}`,
-    system: { icon: at ? <GearArt item={at} size={58} /> : null, kind: 'gear' },
+    system: { icon: null, kind: 'gear' },
     render: () => <ItemCard id={id} close={close} />,
   });
+}
+
+/**
+ * A piece shown off at the head of its card: its art large in its rarity's light, its rarity and kind,
+ * its tags, its score and what it gains over the piece it would replace, and a foot (its quality).
+ * The blueprint's card (`screens/Forge.tsx`) is headed the same way.
+ */
+export function PieceHero({ d, art, tags, score, vs, foot }: { d: GearDef; art: ComponentChildren; tags?: ComponentChildren; score: ComponentChildren; vs?: ComponentChildren; foot?: ComponentChildren }) {
+  return (
+    <section class="sysbox piecehero" data-rarity={d.rank}>
+      <span class="piecehero__art">{art}</span>
+      <div class="piecehero__who">
+        <span class="piecehero__kind"><RankPlate rank={d.rank} size={18} />{rarity(d.rank)} {d.slot}</span>
+        {tags && <span class="piecehero__tags">{tags}</span>}
+        <span class="piecehero__score"><span class="label">Score</span><span class="piecehero__n">{score}{vs}</span></span>
+      </div>
+      {foot && <div class="piecehero__foot">{foot}</div>}
+    </section>
+  );
+}
+
+/** Another piece, as a row that opens its card: the worn piece a piece is set against. */
+export function PieceLink({ it, label }: { it: Item; label: string }) {
+  const d = gear.defOf(it);
+  return (
+    <button type="button" class="sysbox piecelink" data-rarity={d?.rank} onClick={() => { sfx.tap(); openItem(it.id); }}>
+      <GearArt item={it} size={38} />
+      <span class="piecelink__text"><span class="label">{label}</span><span class="piecelink__name">{d?.name}</span></span>
+      <b class="num">{Math.round(gear.score(it))}</b>
+      <Glyph name="chevron" class="piecelink__go" />
+    </button>
+  );
 }
 
 function ItemCard({ id, close }: { id: string; close: () => void }) {
@@ -315,37 +348,49 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
   const diff = gear.delta(it, other);
   const tag = gear.rollTag(it);
   const set = d.set ? setById(d.set) : undefined;
+  const starred = s.favourites.includes(it.id);
+  const recycle = async () => {
+    const back = forge.salvage(it);
+    const ok = await sys(system.offer([
+      'Would you like to recycle this item?',
+      `${system.tag(d.name, 'Item')} Quality ${gear.qualityText(it)}`,
+      system.gain(bundleText(back)),
+      system.red('A recycled item cannot be recovered.'),
+    ], 'gear', 'Recycle', 'Cancel'));
+    if (ok !== true) return;
+    const got = store.update((x) => forge.recycle(x, it.id));
+    if (!got) return;
+    sfx.success();
+    toast(`${d.name} recycled · ${bundleText(got)}`, 'good');
+    close();
+  };
   return (
     <div class="stack itemcard" data-rarity={d.rank}>
-      <section class="sysbox itemhero">
-        <span class="itemhero__art"><GearArt item={it} size={92} /></span>
-        <div class="itemhero__who">
-          <span class="itemhero__kind"><RankPlate rank={d.rank} size={18} />{rarity(d.rank)} {d.slot}</span>
-          <span class="itemhero__tags">
-            {worn && <span class="itag is-worn">Worn · {gear.SLOTS.find((x) => x.key === worn)?.name}</span>}
-            {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
-            {tag === 'perfect' && <span class="itag is-perfect">✦ Perfect{it.over ? ` +${it.over}` : ''}</span>}
-            {tag === 'peak' && <span class="itag is-perfect">✧ Perfect quality</span>}
-            {tag === 'dead' && <span class="itag is-dead">✕ Lowest roll</span>}
-            {it.master && <span class="itag is-master">Masterwork</span>}
-            {d.issued && <span class="itag">Issued</span>}
-          </span>
-          <span class="itemhero__score">
-            <span class="label">Score</span><b class="num">{Math.round(gear.score(it))}</b>
-            {other && <span class={`itemhero__vs num ${diff.score > 0 ? 'is-up' : diff.score < 0 ? 'is-down' : ''}`}>{diff.score > 0 ? '▲' : diff.score < 0 ? '▼' : '='} {Math.abs(Math.round(diff.score))}</span>}
-          </span>
-        </div>
-      </section>
-      {other && (
-        <button type="button" class="sysbox itemvs" onClick={() => { sfx.tap(); openItem(other.id); }}>
-          <span class="label">Compared with</span>
-          <GearArt item={other} size={30} />
-          <span class="itemvs__name">{gear.defOf(other)?.name}</span>
-          <span class="num">{Math.round(gear.score(other))}</span>
-        </button>
-      )}
-      {!d.issued && <QualityMeter it={it} />}
-      <Section title="Stats">
+      <PieceHero d={d} art={<GearArt item={it} size={104} />}
+        tags={<>
+          {worn && <span class="itag is-worn">Worn · {gear.SLOTS.find((x) => x.key === worn)?.name}</span>}
+          {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
+          {tag === 'perfect' && <span class="itag is-perfect">✦ Perfect{it.over ? ` +${it.over}` : ''}</span>}
+          {tag === 'peak' && <span class="itag is-perfect">✧ Perfect quality</span>}
+          {tag === 'dead' && <span class="itag is-dead">✕ Lowest roll</span>}
+          {it.master && <span class="itag is-master">Masterwork</span>}
+          {d.issued && <span class="itag">Issued</span>}
+        </>}
+        score={<b class="num">{Math.round(gear.score(it))}</b>}
+        vs={other && <span class={`piecehero__vs num ${diff.score > 0 ? 'is-up' : diff.score < 0 ? 'is-down' : ''}`}>{diff.score > 0 ? '▲' : diff.score < 0 ? '▼' : '='} {Math.abs(Math.round(diff.score))}</span>}
+        foot={!d.issued && <QualityLine it={it} />} />
+      {other && <PieceLink it={other} label="Compared with" />}
+      <div class="pieceacts">
+        <Btn kind="primary" class="grow" sound="success" onClick={() => {
+          store.update((x) => (worn ? gear.unequip(x, worn) : gear.equip(x, it.id)));
+          toast(`${d.name} ${worn ? 'stowed' : 'equipped'}.`, 'xp');
+          void checkAwards();
+        }}>{worn ? 'Unequip' : 'Equip'}</Btn>
+        <IconBtn icon="star" on={starred} label={starred ? 'Unstar' : 'Star: kept from recycling'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
+        {!worn && !starred && <IconBtn icon="trash" label="Recycle" onClick={() => void recycle()} />}
+      </div>
+      <section class="sysbox piecepanel">
+        <span class="label">Stats</span>
         <ul class="itemstats">
           {gear.coreLines(it).map(([k, t]) => {
             const v = diff.core[k];
@@ -361,99 +406,70 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
             <li key={`x${k}`} class="is-lost"><Glyph name={STAT_ICON[k]} /><span>{k} +0</span><small class="num is-down">▼ {signed(diff.core[k]!)}</small></li>
           ))}
         </ul>
-      </Section>
-      {(d.rolls ?? []).length > 0 && (
-        <Section title="Properties">
-          <ul class="itemrolls">
-            {(d.rolls ?? []).map((r, k) => {
-              const v = it.rolls[k] ?? r.min;
-              const at = r.max > r.min ? (v - r.min) / (r.max - r.min) : 1;
-              return (
-                <li key={r.stat}>
-                  <span class="itemrolls__name">{gear.rollText(it)[k]}</span>
-                  <i class={`itemrolls__bar ${at >= 1 ? 'is-full' : ''}`} aria-hidden="true"><i style={`width: ${unit(at) * 100}%`} />{at > 1 && <b style={`width: ${Math.min(1, at - 1) * 100}%`} />}</i>
-                  <small class="num muted">{r.min}-{r.max}{r.pct ? '%' : ''}</small>
-                </li>
-              );
-            })}
-          </ul>
-        </Section>
-      )}
-      {d.desc && <p class="itemcard__text">{d.desc}</p>}
-      {it.master && <p class="itemcard__text hint">Masterwork of {walkerOf(it.master, d.rank).name}.</p>}
+        {(d.rolls ?? []).length > 0 && (
+          <>
+            <span class="label">Properties</span>
+            <ul class="itemrolls">
+              {(d.rolls ?? []).map((r, k) => {
+                const v = it.rolls[k] ?? r.min;
+                const at = r.max > r.min ? (v - r.min) / (r.max - r.min) : 1;
+                return (
+                  <li key={r.stat}>
+                    <span class="itemrolls__name">{gear.rollText(it)[k]}</span>
+                    <i class={`itemrolls__bar ${at >= 1 ? 'is-full' : ''}`} aria-hidden="true"><i style={`width: ${unit(at) * 100}%`} />{at > 1 && <b style={`width: ${Math.min(1, at - 1) * 100}%`} />}</i>
+                    <small class="num muted">{r.min}-{r.max}{r.pct ? '%' : ''}</small>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+        {d.desc && <p class="itemcard__text">{d.desc}</p>}
+        {it.master && <p class="itemcard__text hint">Masterwork of {walkerOf(it.master, d.rank).name}.</p>}
+      </section>
+      {!d.issued && <Upgrade it={it} />}
+      {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {set && (
         <Section title={`Set: ${set.id}`} right={<span class="num">{gear.heldOf(s, set.id).size}/{gear.setPieces(set.id).length}{gear.setsIn(gear.worn(s)).get(set.id) ? ` · Worn ${gear.setsIn(gear.worn(s)).get(set.id)}` : ''}</span>}>
           <SetCard set={set} compact />
         </Section>
       )}
-      {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
-      {!d.issued && <Upgrade it={it} />}
       {!d.issued && forge.knows(s, d.id) && (
-        <button type="button" class="sysbox itemvs itemcard__forge" onClick={() => { sfx.tap(); openBlueprint(d.id); }}>
-          <span class="label">Blueprint</span>
-          <Glyph name="forge" />
-          <span class="itemvs__name">Forge another</span>
-          <Glyph name="chevron" />
+        <button type="button" class="sysbox piecelink piecelink--forge" onClick={() => { sfx.tap(); openBlueprint(d.id); }}>
+          <span class="piecelink__icon"><Glyph name="forge" /></span>
+          <span class="piecelink__text"><span class="label">Blueprint</span><span class="piecelink__name">Forge another</span></span>
+          <Glyph name="chevron" class="piecelink__go" />
         </button>
-      )}
-      <div class="row itemacts">
-        <Btn kind="primary" class="grow" sound="success" onClick={() => {
-          store.update((x) => (worn ? gear.unequip(x, worn) : gear.equip(x, it.id)));
-          toast(`${d.name} ${worn ? 'stowed' : 'equipped'}.`, 'xp');
-          void checkAwards();
-        }}>{worn ? 'Unequip' : 'Equip'}</Btn>
-        <IconBtn icon="star" on={s.favourites.includes(it.id)} label={s.favourites.includes(it.id) ? 'Unstar' : 'Star: kept from recycling'} onClick={() => store.update((x) => gear.toggleFav(x, it.id))} />
-      </div>
-      {!worn && !s.favourites.includes(it.id) && (
-        <div class="itemcard__recycle">
-          <span class="label">Recycle</span>
-          <MatList b={forge.salvage(it)} gain />
-          <Btn kind="ghost" size="sm" onClick={async () => {
-            const back = forge.salvage(it);
-            const ok = await sys(system.offer([
-              'Would you like to recycle this item?',
-              `${system.tag(d.name, 'Item')} Quality ${gear.qualityText(it)}`,
-              system.gain(bundleText(back)),
-              system.red('A recycled item cannot be recovered.'),
-            ], 'gear', 'Recycle', 'Cancel'));
-            if (ok !== true) return;
-            const got = store.update((x) => forge.recycle(x, it.id));
-            if (!got) return;
-            sfx.success();
-            toast(`${d.name} recycled · ${bundleText(got)}`, 'good');
-            close();
-          }}><Glyph name="trash" /> Recycle</Btn>
-        </div>
       )}
     </div>
   );
 }
 
-/** A piece's quality: where it rolled between its design's worst and best, the steps still to its best, and any past it. */
-function QualityMeter({ it }: { it: Item }) {
+/** A piece's quality, at the foot of its card: where it rolled between its design's worst and best, the steps still to its best, and any past it. */
+function QualityLine({ it }: { it: Item }) {
   const s = useSave();
   const q = gear.quality(it);
   const left = gear.stepsToPerfect(it);
   const cap = overCap(s);
   return (
-    <div class="sysbox itemq">
+    <span class="pieceq">
       <span class="label">Quality</span>
       <b class="num">{q}%</b>
-      <i class="itemq__bar" aria-hidden="true">
+      <i class="pieceq__bar" aria-hidden="true">
         <i style={`width: ${q}%`} />
-        {[25, 50, 75].map((m) => <span key={m} class="itemq__tick" style={`left: ${m}%`} />)}
+        {[25, 50, 75].map((m) => <span key={m} class="pieceq__tick" style={`left: ${m}%`} />)}
       </i>
       <small class="num">{left ? `Steps to perfect: ${left}` : it.over ? `Perfect +${it.over}` : 'Perfect'}</small>
       {cap > 0 && !left && (
-        <span class="itemq__over" aria-label={`Past perfect: ${it.over ?? 0} of ${cap}`}>
+        <span class="pieceq__over" aria-label={`Past perfect: ${it.over ?? 0} of ${cap}`}>
           {Array.from({ length: cap }, (_, i) => <i key={i} class={i < (it.over ?? 0) ? 'is-on' : ''} />)}
         </span>
       )}
-    </div>
+    </span>
   );
 }
 
-/** The next upgrade step on a piece: what it raises, and the alloys and shards it takes. */
+/** The next upgrade step on a piece: what it raises, before and after side by side, and the alloys and shards it takes. */
 function Upgrade({ it }: { it: Item }) {
   const s = useSave();
   const cap = overCap(s);
@@ -467,9 +483,11 @@ function Upgrade({ it }: { it: Item }) {
   const ok = forge.affords(s, cost);
   return (
     <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? <span class="num">Steps taken: {it.up}</span> : <Shards n={cost.shards} />}>
-      <div class="sysbox upgrade2">
-        <span class="upgrade2__row"><span class="label">Quality</span><b class="num">{gear.qualityText(it)} → <span class="grant">{gear.qualityText(next)}</span></b></span>
-        <span class="upgrade2__row"><span class="label">Score</span><b class="num">{Math.round(gear.score(it))} → <span class="grant">{Math.round(gear.score(next))}</span></b></span>
+      <div class="sysbox pieceup">
+        <span class="pieceup__pair">
+          <span class="pieceup__one"><span class="label">Quality</span><b class="num">{gear.qualityText(it)}<Glyph name="chevron" /><span class="grant">{gear.qualityText(next)}</span></b></span>
+          <span class="pieceup__one"><span class="label">Score</span><b class="num">{Math.round(gear.score(it))}<Glyph name="chevron" /><span class="grant">{Math.round(gear.score(next))}</span></b></span>
+        </span>
         <CostGrid s={s} c={cost} />
         <Btn kind="gold" disabled={!ok} onClick={() => {
           if (!store.update((x) => forge.upgrade(x, it.id, cap))) return;
@@ -485,7 +503,7 @@ function Upgrade({ it }: { it: Item }) {
 
 // ------------------------------------------------------------------ what is worn
 
-/** EQUIPMENT: what is worn, on a figure, what it adds, the sets it completes, and the loadouts. */
+/** EQUIPMENT: what is worn, on the hunter's figure, what it adds, the sets it makes, and the loadouts. */
 export function openEquipment() {
   openSheet({ title: 'Equipment', system: { icon: null, kind: 'gear' }, render: () => <Equipment /> });
 }
@@ -496,46 +514,67 @@ const NODES: Record<SlotKey, [number, number]> = {
   weapon: [83, 124], offhand: [17, 100], amulet: [50, 40], ring1: [86, 136], ring2: [14, 136],
 };
 
+/** A bonus in words, its name and its value apart: `Status chance +26.7` is `Status chance` and `+26.7`. */
+const nameAndValue = (t: string): [string, string] => {
+  const i = t.lastIndexOf(' ');
+  return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, ''];
+};
+
 function Equipment() {
   const s = useSave();
   const ups = gear.upgradeCount(s);
+  const plan = gear.autoPlan(s);
   const offers = gear.offers(s);
-  const r = rankOf(s);
   const items = gear.worn(s);
   const core = gear.boosted({ STR: 0, VIT: 0, AGI: 0, INT: 0, PER: 0 }, items, {}, 999);
   const extra = gear.sumBonuses(gear.rollBonuses(items), gear.setBonuses(items));
+  const props = Object.keys(extra).length ? gear.bonusText(extra).split(' · ').map(nameAndValue) : [];
+  const sets = [...gear.setsIn(items)].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const paying = new Set(sets.filter(([, n]) => n >= 2).map(([id]) => id));
   const lit = new Set(gear.SLOTS.filter((x) => s.equipped[x.key]).map((x) => x.key));
-  const active = new Map([...gear.setsIn(items)].filter(([, n]) => n >= 2));
   const slot = (k: SlotKey) => {
     const it = gear.equippedIn(s, k);
     const def = gear.SLOTS.find((x) => x.key === k)!;
     const d = it ? gear.defOf(it) : undefined;
-    const set = d?.set && active.has(d.set) ? d.set : null;
+    const set = d?.set && paying.has(d.set) ? d.set : null;
+    // Something held would serve here better: Auto Equip would change this slot.
+    const better = !!it && !!plan[k];
+    const offer = !it && offers.includes(k);
     return (
-      <button type="button" key={k} class={`sysbox dollslot is-${def.side} ${it ? 'is-filled' : ''} ${set ? 'is-set' : ''}`} style={set ? `--set-h: ${gear.setHue(set)}` : undefined}
-        onClick={() => { sfx.tap(); if (it) openItem(it.id); else openSlot(k); }} aria-label={it ? `${def.name}: ${d?.name}` : `${def.name}: empty`}>
-        {it ? <GearArt item={it} size={40} /> : <span class="dollslot__ghost"><Glyph name={def.accepts} /></span>}
-        <span class="dollslot__text">
-          <small>{def.name}</small>
-          <b>{d?.name ?? '-- --'}</b>
-          {it && !d?.issued && <i class="dollslot__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></i>}
+      <button type="button" key={k} class={`pslot is-${def.side} ${it ? 'is-filled' : ''} ${set ? 'is-set' : ''} ${better || offer ? 'is-better' : ''}`} style={set ? `--set-h: ${gear.setHue(set)}` : undefined}
+        onClick={() => { sfx.tap(); openSlot(k); }}
+        aria-label={`${def.name}: ${d?.name ?? 'empty'}${better ? ', something better is held' : offer ? ', something held fits' : ''}`}>
+        <span class="pslot__box">
+          {it ? <GearArt item={it} size={56} /> : <span class="pslot__ghost"><Glyph name={def.accepts} /></span>}
+          {better && <span class="pslot__up" aria-hidden="true">▲</span>}
+          {offer && <span class="badge badge--gold pslot__plus" aria-hidden="true">+</span>}
         </span>
-        {!it && offers.includes(k) && <span class="badge badge--gold">+</span>}
+        <small class="pslot__name">{def.name}</small>
+        <i class="pslot__q" aria-hidden="true">{it && !d?.issued && <i style={`width: ${gear.quality(it)}%`} />}</i>
       </button>
     );
   };
+  const auto = () => {
+    const n = store.update(gear.autoEquip);
+    sfx.success();
+    buzz([16, 26, 22]);
+    toast(`${n} slot${n === 1 ? '' : 's'} improved.`, 'good');
+    void checkAwards();
+  };
   return (
-    <div class="stack equip2">
-      <section class="sysbox equipsum">
-        <span class="equipsum__power"><span class="label">Equipment score</span><b class="num">{Math.round(gear.power(s))}</b><small class="num">Slots: {items.length}/{gear.SLOTS.length}</small></span>
-        <span class="equipsum__core">
-          {STATS.map((k) => <span key={k} class={core[k] ? '' : 'is-none'}><Glyph name={STAT_ICON[k]} /><small>{k}</small><b class="num">+{Math.round(core[k])}</b></span>)}
+    <div class="stack armory">
+      <section class="sysbox gearhead">
+        <span class="gearhead__gem"><b class="num">{Math.round(gear.power(s))}</b></span>
+        <span class="gearhead__what">
+          <span class="label">Equipment score</span>
+          <span class="gearhead__pips" aria-hidden="true">{gear.SLOTS.map((x) => <i key={x.key} class={s.equipped[x.key] ? 'is-on' : ''} />)}</span>
+          <small class="num">Slots: {items.length}/{gear.SLOTS.length}</small>
         </span>
-        {Object.keys(extra).length > 0 && <small class="equipsum__extra grant">{gear.bonusText(extra)}</small>}
       </section>
-      <div class="doll">
-        <div class="doll__col">{gear.SLOTS.filter((x) => x.side === 'l').map((x) => slot(x.key))}</div>
-        <div class="doll__figure" aria-hidden="true">
+      <div class="paperdoll">
+        <div class="paperdoll__col">{gear.SLOTS.filter((x) => x.side === 'l').map((x) => slot(x.key))}</div>
+        <div class="paperdoll__fig" aria-hidden="true">
+          <span class="paperdoll__aura" />
           <svg viewBox="0 0 100 220" class="figure">
             <defs>
               <linearGradient id="figscan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0" /><stop offset="0.5" stop-color="currentColor" stop-opacity="0.5" /><stop offset="1" stop-color="currentColor" stop-opacity="0" /></linearGradient>
@@ -549,28 +588,72 @@ function Equipment() {
               <path d="M50 46v60M38 70h24M40 88h20" class="figure__seam" />
             </g>
             {(Object.entries(NODES) as [SlotKey, [number, number]][]).map(([k, [x, y]]) => (
-              <g key={k} class={`figure__node ${lit.has(k) ? 'is-lit' : ''}`}><circle cx={x} cy={y} r="4.5" /><circle cx={x} cy={y} r="1.6" /></g>
+              <g key={k} class={`figure__node ${lit.has(k) ? 'is-lit' : ''}`}><circle cx={x} cy={y} r="3.4" /><circle cx={x} cy={y} r="1.2" /></g>
             ))}
             <rect x="0" y="0" width="100" height="36" fill="url(#figscan)" class="figure__scan" />
           </svg>
-          <span class="doll__sigil"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={24} /></span>
+          <span class="paperdoll__base"><i class="paperdoll__ring" /></span>
         </div>
-        <div class="doll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
+        <div class="paperdoll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
       </div>
-      <Btn kind={ups ? 'primary' : undefined} block disabled={!ups} onClick={() => { const n = store.update(gear.autoEquip); sfx.success(); buzz([16, 26, 22]); toast(`${n} slot${n === 1 ? '' : 's'} improved.`, 'good'); void checkAwards(); }}>
-        Auto Equip{ups ? ` · ${ups}` : ''}
-      </Btn>
-      <Loadouts />
-      {active.size > 0 && (
-        <Section title="Sets worn">
-          <div class="codex__sets">{[...active.keys()].map((id) => <SetCard key={id} set={setById(id)!} />)}</div>
+      <div class="gearacts">
+        <Btn kind={ups ? 'gold' : 'ghost'} disabled={!ups} onClick={auto}><Glyph name="up" /> Auto Equip{ups ? ` · ${ups}` : ''}</Btn>
+        <Btn kind="ghost" onClick={() => openInventory()}><Glyph name="bag" /> Inventory <b class="num gearacts__n">{s.items.length}</b></Btn>
+      </div>
+      <Section title="Stats">
+        <div class="sysbox gearstats">
+          <span class="gearstats__core">
+            {STATS.map((k) => <span key={k} class={core[k] ? '' : 'is-none'}><Glyph name={STAT_ICON[k]} /><small>{k}</small><b class="num">+{Math.round(core[k])}</b></span>)}
+          </span>
+          {props.length > 0 && (
+            <>
+              <span class="label">Properties</span>
+              <ul class="gearstats__props">
+                {props.map(([k, v]) => <li key={k}><small>{k}</small><b class="num">{v}</b></li>)}
+              </ul>
+            </>
+          )}
+        </div>
+      </Section>
+      {sets.length > 0 && (
+        <Section title="Sets worn" right={<span class="num">Paying: {paying.size}</span>}>
+          <div class="setrows">{sets.map(([id, n]) => <SetRow key={id} id={id} n={n} />)}</div>
         </Section>
       )}
+      <Loadouts />
     </div>
   );
 }
 
-/** The loadouts: what was worn, saved, and worn again in one tap. */
+/** A set worn, as a row: its mark and name, a pip to each piece worn, and what two and three pay, lit once worn. It opens the set. */
+function SetRow({ id, n }: { id: string; n: number }) {
+  const set = setById(id);
+  if (!set) return null;
+  const all = gear.setPieces(id).length;
+  return (
+    <button type="button" class={`sysbox setrow ${n >= 2 ? 'is-on' : ''}`} style={`--set-h: ${gear.setHue(id)}`} onClick={() => { sfx.tap(); openSet(id); }}
+      aria-label={`Set ${id}: ${n} of ${all} worn`}>
+      <span class="setrow__head">
+        <SetMark id={id} />
+        <b>{id}</b>
+        <span class="setrow__pips" aria-hidden="true">{Array.from({ length: all }, (_, i) => <i key={i} class={i < n ? 'is-on' : ''} />)}</span>
+        <small class="num">{n}/{all}</small>
+        <Glyph name="chevron" class="setrow__go" />
+      </span>
+      <span class={`setrow__bonus ${n >= 2 ? 'is-on' : ''}`}><b class="num">2</b>{gear.bonusText(set.two)}</span>
+      <span class={`setrow__bonus ${n >= 3 ? 'is-on' : ''}`}><b class="num">3</b>{gear.bonusText(set.three)}</span>
+    </button>
+  );
+}
+
+/** SET: one set on its own: its pieces held, worn, known or still to find, what it pays, and its home Gate. */
+function openSet(id: string) {
+  const set = setById(id);
+  if (!set) return;
+  openSheet({ title: `Set: ${id}`, system: { icon: null, kind: 'gear' }, render: () => <SetCard set={set} compact /> });
+}
+
+/** The loadouts: what was worn, saved, and worn again in one tap, a row to each. */
 function Loadouts() {
   const s = useSave();
   const marks = ['I', 'II', 'III'];
@@ -589,73 +672,113 @@ function Loadouts() {
   };
   return (
     <Section title="Loadouts">
-      <div class="loadouts">
+      <ul class="loadrows">
         {Array.from({ length: gear.LOADOUTS }, (_, i) => {
           const l = s.loadouts?.[i] ?? null;
           const on = gear.wearing(s, l);
           const held = l ? gear.loadoutHeld(s, l) : null;
           const score = held ? Object.values(held.held).reduce((n, x) => n + gear.score(x!), 0) : 0;
           return (
-            <div key={i} class={`sysbox loadout ${l ? '' : 'is-empty'} ${on ? 'is-on' : ''}`}>
-              <span class="loadout__head" aria-label={`Loadout ${marks[i]}`}><b>{marks[i]}</b>{on && <span class="loadout__on">Worn</span>}</span>
-              {l && held ? (
-                <>
-                  <span class="loadout__pips" aria-hidden="true">{gear.SLOTS.map((sl) => <i key={sl.key} class={held.held[sl.key] ? 'is-on' : l.slots[sl.key] ? 'is-gone' : ''} />)}</span>
-                  <small class="num">Score {Math.round(score)}{held.missing ? ` · Missing: ${held.missing}` : ''}</small>
-                  <span class={`loadout__acts ${on ? 'is-one' : ''}`}>
-                    {!on && <Btn size="sm" kind="primary" onClick={() => wear(i)}>Wear</Btn>}
-                    <Btn size="sm" onClick={() => void save(i)}>Save</Btn>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <small class="muted">-- --</small>
-                  <Btn size="sm" onClick={() => void save(i)}>Save Worn</Btn>
-                </>
-              )}
-            </div>
+            <li key={i} class={`sysbox loadrow ${l ? '' : 'is-empty'} ${on ? 'is-on' : ''}`}>
+              <span class="loadrow__mark" aria-hidden="true"><b>{marks[i]}</b></span>
+              <span class="loadrow__body">
+                <span class="loadrow__name">Loadout {marks[i]}{on && <span class="loadrow__on">Worn</span>}</span>
+                {l && held ? (
+                  <>
+                    <span class="loadrow__pips" aria-hidden="true">{gear.SLOTS.map((sl) => <i key={sl.key} class={held.held[sl.key] ? 'is-on' : l.slots[sl.key] ? 'is-gone' : ''} />)}</span>
+                    <small class="num">Score {Math.round(score)}{held.missing ? ` · Missing: ${held.missing}` : ''}</small>
+                  </>
+                ) : <small class="muted">-- --</small>}
+              </span>
+              <span class="loadrow__acts">
+                {l && !on && <Btn size="sm" kind="primary" onClick={() => wear(i)}>Wear</Btn>}
+                <Btn size="sm" kind="ghost" onClick={() => void save(i)}>{l ? 'Save' : 'Save Worn'}</Btn>
+              </span>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </Section>
   );
 }
 
-/** EQUIPMENT: one empty slot, and everything held that fits it, best first. */
+/**
+ * EQUIPMENT: one slot. What is worn there, then everything held that fits it, best first, each with what
+ * it gains or loses on the piece worn and its Equip; Auto Equip's own pick for the slot in gold.
+ */
 function openSlot(k: SlotKey) {
   const slot = gear.SLOTS.find((x) => x.key === k)!;
   const close = openSheet({
-    title: `Equipment: ${slot.name}`, system: { icon: <Glyph name={slot.accepts} />, kind: 'gear' }, render: () => <SlotPicker k={k} close={() => close()} />,
+    title: `Equipment: ${slot.name}`, system: { icon: null, kind: 'gear' }, render: () => <SlotWindow k={k} close={() => close()} />,
   });
 }
 
-function SlotPicker({ k, close }: { k: SlotKey; close: () => void }) {
+function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
   const s = useSave();
   const slot = gear.SLOTS.find((x) => x.key === k)!;
-  const list = s.items.filter((it) => gear.defOf(it)?.slot === slot.accepts && !gear.slotOf(s, it)).sort((a, b) => gear.score(b) - gear.score(a));
-  if (!list.length) return <Empty>Items held: 0</Empty>;
+  const on = gear.equippedIn(s, k);
+  const d = on ? gear.defOf(on) : undefined;
+  const pick = gear.autoPlan(s)[k];
+  // Everything held that fits, but what is worn here. A ring worn in the other ring slot moves across.
+  const list = s.items.filter((it) => gear.defOf(it)?.slot === slot.accepts && it.id !== on?.id).sort((a, b) => gear.score(b) - gear.score(a));
+  const wear = (it: Item) => {
+    store.update((x) => gear.equip(x, it.id, k));
+    sfx.success();
+    buzz([12, 22]);
+    toast(`${gear.defOf(it)?.name} equipped.`, 'xp');
+    close();
+    void checkAwards();
+  };
   return (
-    <div class="stack stack--tight">
-      {list.map((it) => (
-        <PieceRow key={it.id} it={it} onClick={() => { store.update((x) => gear.equip(x, it.id, k)); sfx.success(); toast(`${gear.defOf(it)?.name} equipped.`, 'xp'); close(); void checkAwards(); }} />
-      ))}
+    <div class="stack slotwin">
+      <section class={`sysbox slotworn ${on ? '' : 'is-empty'}`} data-rarity={d?.rank}>
+        <span class="slotworn__head">
+          <span class="label">Worn</span>
+          {on && d && <Btn size="sm" kind="ghost" onClick={() => { store.update((x) => gear.unequip(x, k)); toast(`${d.name} stowed.`, 'xp'); close(); }}>Unequip</Btn>}
+        </span>
+        {on && d ? (
+          <>
+            <button type="button" class="slotworn__open" onClick={() => { sfx.tap(); openItem(on.id); }} aria-label={`${d.name}: open`}>
+              <GearArt item={on} size={64} />
+              <span class="slotworn__text">
+                <b>{d.name}</b>
+                <small>{rarity(d.rank)} {d.slot} · Quality {gear.qualityText(on)}</small>
+                <small class="grant">{gear.coreText(on)}</small>
+              </span>
+              <Glyph name="chevron" class="slotworn__go" />
+            </button>
+          </>
+        ) : <span class="slotworn__none"><span class="pslot__ghost"><Glyph name={slot.accepts} /></span>-- --</span>}
+      </section>
+      <Section title="Held" right={<span class="num">{list.length}</span>}>
+        {list.length ? (
+          <ul class="slotpick">
+            {list.map((it) => {
+              const pd = gear.defOf(it)!;
+              const diff = on ? gear.delta(it, on).score : 0;
+              const elsewhere = gear.slotOf(s, it);
+              return (
+                <li key={it.id} class={`sysbox slotrow ${pick === it.id ? 'is-pick' : ''}`} data-rarity={pd.rank}>
+                  <button type="button" class="slotrow__open" onClick={() => { sfx.tap(); openItem(it.id); }}
+                    aria-label={`${pd.name}, score ${Math.round(gear.score(it))}${on ? `, ${diff >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(diff))}` : ''}: open`}>
+                    <GearArt item={it} size={48} equipped={!!elsewhere} />
+                    <span class="slotrow__text">
+                      <b>{pd.name}{s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}</b>
+                      <small>{rarity(pd.rank)} · Quality {gear.qualityText(it)}</small>
+                      <small class="grant">{gear.coreText(it)}</small>
+                    </span>
+                    <span class="slotrow__score">
+                      <b class="num">{Math.round(gear.score(it))}</b>
+                      {on && <small class={`num ${diff > 0 ? 'is-up' : diff < 0 ? 'is-down' : ''}`}>{diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {Math.abs(Math.round(diff))}</small>}
+                    </span>
+                  </button>
+                  <Btn size="sm" kind={pick === it.id ? 'gold' : 'primary'} onClick={() => wear(it)}>Equip</Btn>
+                </li>
+              );
+            })}
+          </ul>
+        ) : <Empty>Items held: 0</Empty>}
+      </Section>
     </div>
-  );
-}
-
-/** A piece as a row: its art, name, what it gives, and its rarity, slot and score. */
-function PieceRow({ it, onClick }: { it: Item; onClick: () => void }) {
-  const s = useSave();
-  const d = gear.defOf(it)!;
-  return (
-    <button type="button" class="sysbox piecerow" data-rarity={d.rank} onClick={() => { sfx.tap(); onClick(); }}>
-      <GearArt item={it} size={44} />
-      <span class="piecerow__text">
-        <b>{d.name}{s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}</b>
-        <small>{gear.coreText(it)}</small>
-        <small class="muted">{rarity(d.rank)} · Score {Math.round(gear.score(it))} · Quality {gear.qualityText(it)}{d.set ? ` · ${d.set}` : ''}</small>
-      </span>
-      {gear.beatsWorn(s, it) && <span class="piecerow__up" aria-label="Better than what is worn">▲</span>}
-    </button>
   );
 }
