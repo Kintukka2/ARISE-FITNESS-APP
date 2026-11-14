@@ -799,31 +799,43 @@ bought, so its button names both acts: **Buy and Drink**. A Google Play purchase
 the Licence) uses Google Play's own confirmation, not this window. After a purchase the System
 reports it: `You have acquired` / `[Item: {name}].` / its stats in green.
 
-**Exchange.** The shop the purchase window opens from.
+**Exchange.** The shop the purchase window opens from, rebuilt at the owner's call after the shops of
+Genshin Impact and Honkai: Star Rail.
 
 ```
                  EXCHANGE                    [close]
-MANA SHARDS: {balance}       NEW STOCK IN: {countdown}
-POTIONS                              Always in stock
-[icon]  {Name}
-        {What it gives, green}
-        {Card text}                         ◆ {price}
-FOR THE GATES                        Always in stock
-[icon]  Gate Survey
-        Charts every room of a Gate's map
-        Used from a Gate's brief, or inside it. Held: {n}   ◆ {price}
-BLUEPRINTS                             Left: {n}/{m}
-[icon]  {Name} ▲
-        Blueprint · {Rarity} {Slot} · {Set}
-        {Stats} · {Properties}               ◆ {price}
+[shard]  {balance}                      NEW STOCK IN
+         MANA SHARDS                      {countdown}
+BLUEPRINTS ─────────────────────────── Left: {n}/{m}
+Most blueprints are at your grade.
+[card] [card]
+POTIONS ──────────────────────────── Always in stock
+[card] [card]
+FOR THE GATES ────────────────────── Always in stock
+[card] [card]
+
+card:   [picture on its ground]  ▲
+        {Name}
+        {What it gives}  /  {Rarity} {Slot} · {Set}
+        {Note}  /  {Stats and properties, spaced}
+                                        ◆ {price}
 ```
-The shelf sells blueprints, not gear: gear is forged. ▲ marks a blueprint rarer than what is worn
-where it goes. A blueprint already known shows `Known` where its price would be.
-Source: a list of rows, each in its own box: the item's icon in a box, its name, its price at the
-foot of the row (`Knight Killer` / `2,800,000G`). The whole row is the button: tapping it opens the
-purchase window, or the Not possible window when the balance is short. A row that cannot be bought
-(`Bought`, `Satchel full`, `Full`) shows why where its price would be. The balance and the
-restock sit in boxes of their own at the top.
+The shelf sells blueprints, not gear: gear is forged, so the daily shelf comes first. A blueprint's
+card stands on its rarity's colour; ▲ in gold marks one rarer than what is worn where it goes. A
+blueprint already known shows `Known` where its price would be. The head stands unframed, as the
+Forge's hearth does: the shard in its diamond, the balance large in green, and the restock at its
+right. A section's head is its label, a hairline and what stands at its right. The whole card is
+the button: tapping it opens the purchase window, or the Not possible window when the balance is
+short, its price red. A card that cannot be bought (`Bought`, `Satchel full`, `Bag full`) shows why
+where its price would be. A card's note is short, `Satchel: 1/3`, `Held: 2`, `Bag: 0/3`; the Guide
+says where each is used.
+
+**The hunter's card.** `HUNTER: {name}`, opened from the Inventory screen's licence row and the Gates
+screen's record. It opens on the licence as the Licence window draws it, its grade's seal and letter, `LICENCE`
+over the number and `AWAKENED` over the day, the name left to the title; then `RANK` and `GUILD` as facts;
+`In force` (`ABILITY POINTS` / `3 each level · 5 each rank`, `CLASS` / `STR +5`); `Record`, a figure to each
+line of the record three to a row, its name under it in capitals and what qualifies it under that
+(`61` / `GATES CLEARED` / `12 distinct`); then `Log` and its count, a line to each entry.
 
 **Change.** A skill, a class or a Shadow moving up.
 

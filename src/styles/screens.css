@@ -3537,3 +3537,67 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .st-pathhead { padding: 10px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); background: none; }
 .st-pathhead__icon { transform: rotate(45deg); width: 28px; height: 28px; margin: 0 4px; background: color-mix(in srgb, var(--mana) 14%, transparent); }
 .st-pathhead__icon .ico { transform: rotate(-45deg); }
+
+/* ------------------------------------------------------------------ the Exchange, rebuilt */
+
+/* The head, unframed as the Forge's hearth is: the shard glowing, the balance large, the restock at its right. */
+.exhead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 4px 2px 12px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+.exhead__gem { position: relative; display: grid; place-items: center; width: 54px; height: 54px; color: var(--verdant); }
+.exhead__gem::before { content: ''; position: absolute; inset: 6px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background: radial-gradient(color-mix(in srgb, var(--verdant) 26%, transparent), transparent 70%); box-shadow: 0 0 18px var(--verdant-glow); animation: exGem 3.2s ease-in-out infinite; }
+.exhead__gem > svg { position: relative; filter: drop-shadow(0 0 8px var(--verdant-glow)); }
+@keyframes exGem { 50% { box-shadow: 0 0 28px var(--verdant-glow); } }
+.exhead__purse { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.exhead__purse b { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--verdant); text-shadow: 0 0 14px var(--verdant-glow); }
+.exhead__purse small, .exhead__clock small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.exhead__clock { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.exhead__clock b { font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--sys-ink); }
+
+/* A section: its head (label, hairline, what stands at its right), then its cards two to a row. */
+.exsec { display: flex; flex-direction: column; gap: 8px; }
+.exsec__head { display: flex; align-items: center; gap: 10px; }
+.exsec__head .label { flex: none; font-size: 0.6rem; color: var(--win); }
+.exsec__head > i { flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 40%, transparent), transparent); }
+.exsec__head small { flex: none; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.exsec__head small b { color: var(--sys-ink); }
+.exsec__note { margin: -2px 0 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.shopgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+/* A card: its picture on its ground, its name, what it gives, a note, and the price along its foot. */
+.shopcard { --rc: var(--win); position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--rc) 34%, var(--edge)); background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 10%, rgba(4, 10, 24, 0.9)), rgba(4, 10, 24, 0.9) 60%); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, box-shadow 160ms, transform 120ms; }
+.shopcard:hover, .shopcard:focus-visible { border-color: var(--rc); box-shadow: 0 0 14px color-mix(in srgb, var(--rc) 30%, transparent); }
+.shopcard:active { transform: scale(0.98); }
+.shopcard[data-rarity='E'] { --rc: var(--rank-E); } .shopcard[data-rarity='D'] { --rc: var(--rank-D); } .shopcard[data-rarity='C'] { --rc: var(--rank-C); }
+.shopcard[data-rarity='B'] { --rc: var(--rank-B); } .shopcard[data-rarity='A'] { --rc: var(--rank-A); } .shopcard[data-rarity='S'] { --rc: var(--rank-S); }
+.shopcard__art { position: relative; display: grid; place-items: center; height: 76px; background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 70%); }
+.shopcard.is-bp .shopcard__art { background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 40%, transparent), color-mix(in srgb, var(--rc) 8%, transparent) 75%); border-bottom: 1px solid color-mix(in srgb, var(--rc) 40%, transparent); }
+.shopcard__up { position: absolute; top: 6px; right: 7px; font-size: 0.74rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.shopcard__text { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 8px 10px 6px; min-width: 0; }
+.shopcard__text b { font-size: 0.82rem; font-weight: 700; line-height: 1.25; color: #fff; text-shadow: var(--sys-glow); }
+.shopcard__gives { font-size: 0.7rem; line-height: 1.3; color: var(--verdant); }
+.shopcard.is-bp .shopcard__gives { color: color-mix(in srgb, var(--rc) 70%, #fff); }
+.shopcard__note { display: flex; flex-direction: column; gap: 2px; font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.shopcard__stats { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.shopcard__stats i { font-style: normal; white-space: nowrap; }
+.shopcard__price { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 6px 10px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: rgba(0, 0, 0, 0.25); font-size: 0.86rem; font-weight: 700; }
+.shopcard.is-short .shopcard__price .shards { color: var(--sysred); }
+.shopcard__off { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.shopcard.is-off { opacity: 0.6; cursor: default; }
+.shopcard.is-off .shopcard__art { filter: saturate(0.4); }
+.shopcard .potion, .shopcard .shopsurvey { width: 52px; height: 52px; }
+.shopcard .potion .ico, .shopcard .shopsurvey .ico { width: 34px; height: 34px; filter: drop-shadow(0 0 8px currentColor); }
+
+/* HUNTER: the dossier. The licence card heads it, as the Licence window draws it; then what is in force
+   as facts; the record as figures three to a row, a hairline between rows; the log as lines. */
+.dossier__facts { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dossier__facts > div:nth-child(odd) { border-left: 0; }
+.dossier__facts dd { font-size: 0.9rem; text-align: center; }
+.dossier__facts > div:only-child { grid-column: 1 / -1; }
+.dsec { display: flex; flex-direction: column; gap: 8px; }
+.drecord { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.drecord__one { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 6px 10px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.drecord__one b { font-size: 1.15rem; font-weight: 800; line-height: 1.1; color: #fff; text-shadow: var(--sys-glow); overflow-wrap: anywhere; }
+.drecord__one small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1.3; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.drecord__one i { font-style: normal; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.dossier__log { gap: 0; }
+.dossier__log li { padding: 8px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; }
+.shopcard__note .hint { font-size: 0.64rem; font-weight: 600; color: color-mix(in srgb, var(--gold) 80%, transparent); }

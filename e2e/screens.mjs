@@ -255,7 +255,11 @@ try {
   await page.locator('.sheet.is-top .famcard').scrollIntoViewIfNeeded(); await snap('item-weapon');
   if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
   await close(); await close(); await close();
-  await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier'); await close();
+  await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier');
+  // The dossier opens on the licence card; its record is figures, not boxed fields.
+  if (!(await page.locator('.sheet.is-top .dossier__card').count())) throw new Error('THE DOSSIER HAS NO LICENCE CARD');
+  if ((await page.locator('.sheet.is-top .drecord__one').count()) < 10 || await page.locator('.sheet.is-top .dossier .sysfield').count()) throw new Error('THE DOSSIER RECORD IS NOT FIGURES');
+  await close();
 
   await nav('quests');
   await sleep(800);
@@ -800,6 +804,10 @@ try {
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true);
   // The shelf is blueprints now: a row each, marked as one.
   if ((await page.locator('.sheet.is-top .shopbp').count()) < 1) throw new Error('THE EXCHANGE SHELF HOLDS NO BLUEPRINTS');
+  // The shop is cards two to a row under an unframed head; the shelf comes first, each blueprint on its rarity.
+  if (!(await page.locator('.sheet.is-top .exhead__purse').count())) throw new Error('THE EXCHANGE HAS NO BALANCE AT ITS HEAD');
+  if (await page.locator('.sheet.is-top .shoprow, .sheet.is-top .exchange .sysfield').count()) throw new Error('THE EXCHANGE STILL HAS ITS OLD ROWS');
+  if (!(await page.locator('.sheet.is-top .exsec').first().locator('.shopcard.is-bp').count())) throw new Error('THE BLUEPRINT SHELF DOES NOT COME FIRST');
   await page.locator('.sheet.is-top .shopbp').first().scrollIntoViewIfNeeded(); await sleep(300); await snap('exchange-blueprints');
   await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);

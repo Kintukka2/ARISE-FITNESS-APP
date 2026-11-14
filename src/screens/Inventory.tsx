@@ -4,6 +4,7 @@
  * their name and condition; the stats and the skills as two cards; the bag, the Forge and the Exchange as
  * three stations; the licence along the foot. Each opens its window.
  */
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
@@ -25,7 +26,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { weekBest } from '@/core/spire';
 import * as system from '@/ui/system';
-import { Btn, Empty, GearArt, HpBar, Section, useNow } from '@/ui/components';
+import { Btn, Empty, GearArt, HpBar, useNow } from '@/ui/components';
 import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
@@ -513,42 +514,65 @@ export function openDossier() {
     render: () => {
       const s = store.get();
       const felled = Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
+      const mine = rankOf(s).key === 'N' ? 'N' : licensedRank(s);
+      // The lifetime record, a figure to each, the most telling first; what qualifies a figure goes under it.
+      const record: [string, ComponentChildren, string?][] = [
+        ['Gates cleared', group(s.gates.clears), `${s.gates.cleared.length} distinct`],
+        ['Best run unbroken', s.gates.bestUnbroken],
+        ['Bosses faced', s.gates.bosses.length],
+        ['Withdrawn', s.gates.withdrawn],
+        ['Carried out', s.gates.fails],
+        ['Cleared above grade', s.stats.reachClears],
+        ['Daily Quests', group(s.stats.contracts), `${s.stats.contractDays} full days`],
+        ['Ascension', s.ascension.best ? `Level ${s.ascension.best}` : '-- --'],
+        ['The Pale Spire', s.spire.top ? `Floor ${s.spire.top}` : '-- --', weekBest(s) ? `This week ${weekBest(s)}` : undefined],
+        ['Creatures defeated', group(felled)],
+        ['Shadows bound', s.shadows.army.length, `Extractions ${s.stats.extractionsWon}/${s.stats.extractions}`],
+        ['XP earned', group(s.stats.xpTotal)],
+        ['Mana Shards earned', group(s.wallet.earned)],
+      ];
       return (
         <div class="stack dossier">
-          <div class="sysfields">
-            <Field k="Licence" v={<span class="num">{s.hunter.regNo || '-- --'}</span>} />
-            <Field k="Awakened" v={new Date(s.createdAt).toLocaleDateString()} />
-            <Field k="Rank" v={rankOf(s).name} />
-            <Field k="Guild" v="-- --" />
+          {/* The licence as the Association issues it, as the Licence window draws it: the grade's seal, the number, when the hunter woke. */}
+          <div class="glicence__card dossier__card" style={`--rc: var(--rank-${mine === 'N' ? 'S' : mine})`}>
+            <span class="glicence__letter" aria-hidden="true">{mine}</span>
+            <span class="glicence__seal"><Sigil rank={mine} size={58} /></span>
+            <span class="glicence__who">
+              <small class="label">Licence</small>
+              <b class="num">{s.hunter.regNo || '-- --'}</b>
+              <small class="label">Awakened</small>
+              <b>{new Date(s.createdAt).toLocaleDateString()}</b>
+            </span>
           </div>
-          <Section title="In force">
-            <div class="sysfields">
-              <Field k="Ability Points" v={`${POINTS_PER_LEVEL} each level · ${RANK_UP_POINTS} each rank`} wide />
-              {Object.entries(classBonus(s)).map(([k, v]) => <Field key={k} k="Class" v={<span class="grant">{k} +{v}</span>} />)}
+          <dl class="bfacts dossier__facts">
+            <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>
+            <div><dt>Guild</dt><dd>-- --</dd></div>
+          </dl>
+          <section class="dsec">
+            <header class="exsec__head"><span class="label">In force</span><i aria-hidden="true" /></header>
+            <dl class="bfacts dossier__facts">
+              <div><dt>Ability Points</dt><dd>{POINTS_PER_LEVEL} each level · {RANK_UP_POINTS} each rank</dd></div>
+              {Object.entries(classBonus(s)).map(([k, v]) => <div key={k}><dt>Class</dt><dd class="grant">{k} +{v}</dd></div>)}
+            </dl>
+          </section>
+          <section class="dsec">
+            <header class="exsec__head"><span class="label">Record</span><i aria-hidden="true" /></header>
+            <div class="drecord">
+              {record.map(([k, v, sub]) => (
+                <div key={k} class="drecord__one">
+                  <b class="num">{v}</b>
+                  <small>{k}</small>
+                  {sub && <i>{sub}</i>}
+                </div>
+              ))}
             </div>
-          </Section>
-          <Section title="Record">
-            <div class="sysfields">
-              <Field k="Gates cleared" v={`${s.gates.clears} · ${s.gates.cleared.length} distinct`} />
-              <Field k="Best run unbroken" v={s.gates.bestUnbroken} />
-              <Field k="Withdrawn" v={s.gates.withdrawn} />
-              <Field k="Carried out" v={s.gates.fails} />
-              <Field k="Cleared above grade" v={s.stats.reachClears} />
-              <Field k="Bosses faced" v={s.gates.bosses.length} />
-              <Field k="Daily Quests" v={`${s.stats.contracts} · ${s.stats.contractDays} full days`} />
-              <Field k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best}` : '-- --'} />
-              <Field k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top}${weekBest(s) ? ` · this week ${weekBest(s)}` : ''}` : '-- --'} wide />
-              <Field k="Creatures defeated" v={group(felled)} />
-              <Field k="Shadows bound" v={`${s.shadows.army.length} · ${s.stats.extractionsWon}/${s.stats.extractions}`} />
-              <Field k="XP earned" v={group(s.stats.xpTotal)} />
-              <Field k="Mana Shards earned" v={group(s.wallet.earned)} />
-            </div>
-          </Section>
-          <Section title="Log" right={`${s.log.length}`}>
+          </section>
+          <section class="dsec">
+            <header class="exsec__head"><span class="label">Log</span><i aria-hidden="true" /><small class="num">{s.log.length}</small></header>
             {s.log.length
-              ? <ul class="syslog">{s.log.slice(0, 40).map((e, i) => <li key={i} class="sysbox"><span class="num">{e.day}</span><span>{e.name}</span><span class="num grant">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul>
+              ? <ul class="syslog dossier__log">{s.log.slice(0, 40).map((e, i) => <li key={i}><span class="num">{e.day}</span><span>{e.name}</span><span class="num grant">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul>
               : <Empty>Nothing logged yet.</Empty>}
-          </Section>
+          </section>
         </div>
       );
     },

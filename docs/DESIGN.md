@@ -2047,6 +2047,13 @@ with what ARISE took from them.
   taken it. STATS sets where each stat comes from as a table (Base, Class, Skills, Gear, Total), its columns lined up
   from stat to stat as the owner asked of the property bars, and the fight's numbers as a list with their `?` at
   the right. Skills' head is unframed, the points large; the Path's head stands between hairlines. No engine changed.
+- **The Exchange and the dossier, rebuilt** (the same call). The Exchange is a shop of cards two to a row, after
+  Genshin Impact's and Honkai: Star Rail's: an unframed head (the shard in its diamond, the balance large in green, the
+  restock at its right), then the day's blueprint shelf first, each card on its rarity's colour with `▲` in gold where
+  it beats what is worn, then the potions and what the Gates take. A card's price is red while the shards fall short;
+  one that cannot be bought says why where its price would be. The hunter's dossier opens on the licence card, as the
+  Licence window draws it (number and the day they woke, the name already in its title), then what is in force, the
+  record as figures three to a row, and the log as lines. No engine changed.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
