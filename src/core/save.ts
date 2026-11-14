@@ -40,6 +40,7 @@ export function defaults(): Save {
     items: [],
     equipped: {},
     favourites: [],
+    codex: [],
     found: [],
     newItems: [],
     loadouts: [],

@@ -12,6 +12,8 @@
  * Each reads the brief before a run, and climbs Ascension as far as the
  * assessment says it will hold.
  */
+import * as engr from '@/core/engravings';
+import { AUTO_ENGRAVE } from '@/data/engravings';
 import * as asc from '@/core/ascension';
 import { isTrial } from '@/core/trial';
 import { contractsOpen, issue } from '@/core/contracts';
@@ -62,10 +64,13 @@ interface Tally {
   sealed: number; feats: number; drops: number;
   /** Of those, bosses felled while Broken, and runs under a Seal that pays a blueprint (Dry, Never Alone). */
   bossDrops: number; sealEmber: number;
+  /** Engraved pieces found, powers cut into worn pieces from the Codex, and the Ember that took. */
+  engravedFound: number; engraved: number; engraveEmber: number;
 }
 const TALLY: Tally = {
   runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0,
   upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0, sealed: 0, feats: 0, drops: 0, bossDrops: 0, sealEmber: 0,
+  engravedFound: 0, engraved: 0, engraveEmber: 0,
 };
 
 const rk = (d: GearDef | undefined) => RANKS.indexOf((d?.rank ?? 'E') as Rank);
@@ -117,6 +122,18 @@ function smith(s: Save, t: Tally) {
   // What is not worn goes back to the Forge.
   const loose = s.items.filter((it) => !gear.slotOf(s, it)).map((it) => it.id);
   t.recycled += forge.recycleSome(s, loose).count;
+  // Then the System's engraving for each kind, from what the Codex holds, cut into the first worn piece of
+  // that kind whenever the live one is not it and the Ember is there: before any step past perfect.
+  for (const g of engr.GROUPS) {
+    const want = AUTO_ENGRAVE[g.key].find((id) => engr.known(s, id));
+    if (!want || engr.liveItems(s)[g.key]?.engr === want) continue;
+    const sl = gear.SLOTS.find((x) => g.slots.includes(x.accepts) && gear.equippedIn(s, x.key));
+    const it = sl ? gear.equippedIn(s, sl.key) : null;
+    if (!it || engr.blocked(s, it.id, want)) continue;
+    t.engraveEmber += engr.cost(it);
+    engr.engrave(s, it.id, want);
+    t.engraved++;
+  }
   // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows;
   // never with the alloy a slot waiting to be forged needs.
   const keep = (r: string) => (waiting.has(r) ? forge.RECIPE.alloy[RANKS.indexOf(r as Rank)] : 0);
@@ -250,6 +267,7 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
     t.sealEmber += seals.filter((id) => id !== 'wardens' || !!run.tally?.keeper).reduce((n, id) => n + sealEmber(id, d.rank), 0);
   }
   t.found += res.loot.length;
+  t.engravedFound += res.loot.filter((it) => it.engr).length;
   // Every reach it has the mana for, up to the last, while the Shadow lingers.
   for (const l of res.lingering) while (raid.reachesLeft(l) > 0 && vitals.read(s, now).mp >= raid.reachCost(l)) raid.extract(s, l, r(), now);
   shadows.promoteAll(s);
@@ -319,6 +337,7 @@ function campaign(p: Profile) {
   console.log(`  shards     ${t.shardsIn} earned, ${t.shardsOut} spent (${t.bought} blueprints bought, ${t.upgrades} upgrade steps), ${s.wallet.shards} left`);
   console.log(`  forge      ${s.blueprints.length} blueprints known (${t.blueprints} from Gates), ${t.forged} forged, ${t.rerolls} forged again, ${t.recycled} recycled, ${t.found} found whole`);
   console.log(`  extras     ${t.sealed} runs under Seals, ${t.feats} Feats met for the first time, ${t.drops} condition drops (${t.bossDrops} bosses felled while Broken), ${t.sealEmber} Ember from Seals`);
+  console.log(`  engravings ${t.engravedFound} engraved pieces found, ${engr.codex(s).length}/${engr.ENGRAVINGS.length} in the Codex, ${t.engraved} cut for ${t.engraveEmber} Ember; live: ${engr.live(s).map((id) => engr.engravingById(id)!.name).join(', ') || 'none'}`);
   console.log(`  materials  ${Object.entries(s.materials).filter(([, n]) => n).map(([k, n]) => `${forge.materialById(k)?.name ?? k} ${n}`).join(', ')}`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);

@@ -188,6 +188,34 @@ try {
   if (!(await page.locator('.sheet.is-top .slotworn').count())) throw new Error('A SLOT WINDOW SHOWS NOTHING WORN');
   await snap('equipment-slot');
   await close(); await close();
+  // Engravings: a Codex and an engraved weapon worn. Equipment lists the live engraving to each kind, the
+  // piece's card shows its engraving and opens the Codex for its kind, and the Codex lists all sixteen.
+  await page.evaluate(() => {
+    const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k));
+    x.codex = ['undead', 'goblinoid', 'insectoid', 'plant'];
+    const w = x.items.find((i) => i.id === x.equipped.weapon); if (w) w.engr = 'undead';
+    x.materials = { ...x.materials, ember: 300 };
+    localStorage.setItem(k, JSON.stringify(x));
+  });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('inventory'); await sleep(600); await drain();
+  await page.locator('[data-hub="equipment"]').click(); await sleep(800);
+  if (!(await page.locator('.sheet.is-top .englive__one.is-on', { hasText: 'Withering Strike' }).count())) throw new Error('EQUIPMENT DOES NOT SHOW THE LIVE ENGRAVING');
+  if ((await page.locator('.sheet.is-top .englive__one').count()) !== 3) throw new Error('EQUIPMENT DOES NOT SHOW A KIND OF ENGRAVING TO EACH KIND OF GEAR');
+  await page.locator('.sheet.is-top .englive').scrollIntoViewIfNeeded(); await sleep(300); await snap('equipment-engravings');
+  await page.locator('.sheet.is-top .englive__one.is-on').first().click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .engblock', { hasText: '[Engraving: Withering Strike]' }).count())) throw new Error('AN ENGRAVED PIECE DOES NOT SHOW ITS ENGRAVING');
+  await page.locator('.sheet.is-top .engblock').scrollIntoViewIfNeeded(); await sleep(200); await snap('item-engraving');
+  await page.locator('.sheet.is-top .engblock .btn').click(); await sleep(600);
+  if ((await page.locator('.sheet.is-top .codexrow').count()) !== 5) throw new Error('THE CODEX OPENED FOR A WEAPON DOES NOT LIST ONLY THE WEAPON ENGRAVINGS');
+  if (!(await page.locator('.sheet.is-top .codexrow.is-kept .btn', { hasText: 'Engrave' }).count())) throw new Error('A POWER KEPT CANNOT BE CUT INTO THE PIECE');
+  await snap('codex-engrave');
+  await close(); await close();
+  await page.locator('.sheet.is-top .linkish', { hasText: 'Codex' }).click(); await sleep(600);
+  if ((await page.locator('.sheet.is-top .codexrow').count()) !== 16) throw new Error('THE CODEX DOES NOT LIST ALL SIXTEEN ENGRAVINGS');
+  if ((await page.locator('.sheet.is-top .codexrow.is-kept').count()) !== 4) throw new Error('THE CODEX DOES NOT LIGHT WHAT IS KEPT');
+  await snap('codex');
+  await close(); await close();
   await page.locator('[data-hub="inventory"]').click(); await sleep(900); await snap('inventory-grid');
   if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: 'Item Bag' }).count())) throw new Error('THE BAG IS NOT NAMED ITEM BAG');
   if ((await page.locator('.sheet.is-top .bagkind').count()) !== 10) throw new Error('THE BAG DOES NOT HAVE A TAB TO EVERY KIND');

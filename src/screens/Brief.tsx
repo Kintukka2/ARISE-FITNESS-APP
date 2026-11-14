@@ -6,6 +6,9 @@
  * Seals pressed in place, the enemies as portraits, the party lined up, the Feats and Today's map in a row. The
  * way in is docked at its foot. A creature's card, the map and the bag open over it.
  */
+import { leftBy } from '@/core/engravings';
+import { ENGRAVED } from '@/data/engravings';
+import { EngraveMark } from '@/ui/engrave';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -373,6 +376,7 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
   const tracked = new Set(practice ? [] : s.tracked ?? []);
   const mats = practice ? [ALLOYS.E.id] : forge.sourcesOf(d, level);
   const ember = emberOf(taken, d);
+  const engraving = leftBy(d);
   const tile = (key: string, cls: string, art: ComponentChildren, name: ComponentChildren, n?: ComponentChildren, label?: string) => (
     <li key={key} class={`breward ${cls}`} aria-label={label}>
       <span class="breward__art">{art}{n != null && <b class="breward__n num">{n}</b>}</span>
@@ -392,6 +396,9 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {mats.map((id) => tile(id, `is-mat ${tracked.has(id) ? 'is-tracked' : ''}`, <><MatArt id={id} size={30} />{tracked.has(id) && <TrackMark class="breward__track" />}</>, forge.materialById(id)?.name ?? id))}
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
           practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint', '×1')}
+        {/* The engraving the boss, and the Gatekeeper, can leave on a piece found whole, at their odds. */}
+        {!practice && !trial && engraving.boss && tile('engr-boss', 'is-engrave', <EngraveMark e={engraving.boss} size={30} />, `${engraving.boss.name} · Boss`, `${Math.round(ENGRAVED.boss * 100)}%`, `Engraving: ${engraving.boss.name}, left by the boss at ${Math.round(ENGRAVED.boss * 100)}%`)}
+        {!practice && !trial && engraving.keeper && engraving.keeper.id !== engraving.boss?.id && tile('engr-keeper', 'is-engrave', <EngraveMark e={engraving.keeper} size={30} />, `${engraving.keeper.name} · Gatekeeper`, `${Math.round(ENGRAVED.keeper * 100)}%`, `Engraving: ${engraving.keeper.name}, left by the Gatekeeper at ${Math.round(ENGRAVED.keeper * 100)}%`)}
       </ul>
     </section>
   );

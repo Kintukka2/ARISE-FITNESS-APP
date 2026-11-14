@@ -847,6 +847,25 @@ qualified them said nothing the hunter needs); `Health` and `Fatigue` as bars, `
 `Materials`, each its art on its rarity's ground, `+6` in green under it and its name under that; `Feats`
 unboxed; then the System's alerts, the finds and the buttons as before.
 
+**Engravings.** The System's, in the gear's cyan. A piece's card carries its engraving under its stats: the
+power's mark (its family's sign in a cut diamond), `Live`, `Dormant` or `Engraving` over `[Engraving: Name]`
+and its rule; `Another armour piece worn holds the live engraving.` while dormant, `Not in the Codex.` while its
+power is not kept; with no engraving, `No engraving.`; and **Engrave** (or **Engrave Anew**) while the Codex
+holds a power of its kind. Equipment's `Engravings` row, `Codex 4/16` at its right, sets a line to each kind:
+`WEAPON` over the live power and its rule, or `-- --`. The `CODEX` window opens on `Kept` and the count large
+beside the Ascendant Ember held; then a section to each kind, `Live: Withering Strike` at its head, a row to each
+power: lit while kept, dark with `Left by Orc bosses and Gatekeepers.` while not, `Auto never plays it` beside
+one that rides on Guard, Cover, a potion or a throw. Opened from a piece, it shows `Engrave` and the piece, its
+`Price`, and only its kind, each power kept with **Engrave**. The offer: `Would you like to engrave this item?` /
+`[Item: Ancient Dragon Talon]` / `[Engraving: Dirty Trick]` and its rule / in red, `It replaces [Engraving:
+Withering Strike], which is kept in the Codex.` / `Price: 120 Ascendant Ember · Held: 260`, **Cancel** and
+**Engrave**; short, the Not possible window, `Not enough Ascendant Ember. (40/120)`. Done: `[Engraving: Dirty
+Trick] has been cut into [Item: Ancient Dragon Talon].` and its rule. Recycling an engraved piece whose power is
+not kept says so in its offer, `[Engraving: Warcry] is kept in the Codex.`, and a toast after. The brief's
+rewards add a tile to the boss's engraving, `Engulf · Boss` with `8%` on its mark (and the Gatekeeper's, `· Gatekeeper`
+and `12%`); a find on a run's results carries the rune on its art and the engraving's name over its own; an
+engraved card in the Item Bag carries the rune in its corner, grey while dormant.
+
 **The hunter's card.** `HUNTER: {name}`, opened from the Inventory screen's licence row and the Gates
 screen's record, its head holding no seal. It opens on the licence as the Licence window draws it, its grade's
 seal and crest, `LICENCE` over the number and `AWAKENED` over the day, the name left to the title and the
@@ -1184,6 +1203,8 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
 | Health Potion | Field Potion, field potion | The one healing potion: carried in the satchel, drunk on the hunter's turn in a fight, between rooms from the bag, or out of a Gate. There is no Field Potion any more; Ryn may still call one a flask |
 | Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Item Bag's bag |
+| Engraving | aspect, rune, enchantment, legendary power | A power cut into a piece that changes a rule of the fight, one to each family of creature: `[Engraving: Withering Strike]`. A worn piece's is `Live`, or `Dormant` while another piece of its kind holds the live one. To cut one into a piece is to engrave it: **Engrave**, **Engrave Anew**, `Would you like to engrave this item?` |
+| Codex | collection, library, archive | Where an engraving is kept for good once its piece is recycled: `CODEX`, `Kept 4/16`, `[Engraving: Warcry] kept in the Codex.` A power not kept reads `Left by Orc bosses and Gatekeepers.` |
 | Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |
 | Event | Unknown, `?` (for a room) | A room holding a choice, or a trap, a cache or a rest passing for one. Its mark is a signpost, in orchid. `?` is only the fog's |

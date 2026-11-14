@@ -3851,3 +3851,76 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .rankcrest .rc-f--lit { fill: color-mix(in srgb, currentColor 34%, #050a14); }
 .glicence__crest { color: var(--rc); opacity: 0.32; }
 .licence__crest { color: var(--rc); opacity: 0.22; }
+
+/* ------------------------------------------------------------------ Engravings and the Codex */
+
+/* A power's mark: its family's sign in a cut diamond, in the gear's cyan; dark while it is not kept. */
+.engmark { --ec: var(--win); position: relative; display: inline-grid; place-items: center; flex: none; width: var(--s); height: var(--s); color: var(--ec); }
+.engmark::before { content: ''; position: absolute; inset: 14%; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--ec) 70%, transparent); background: radial-gradient(color-mix(in srgb, var(--ec) 30%, transparent), color-mix(in srgb, var(--ec) 8%, rgba(4, 10, 24, 0.9)) 80%); box-shadow: 0 0 12px color-mix(in srgb, var(--ec) 30%, transparent); }
+.engmark > * { position: relative; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ec) 70%, transparent)); }
+.engmark.is-dim { --ec: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
+.engmark.is-dim > * { filter: none; opacity: 0.5; }
+.engmark.is-empty::before { border-style: dashed; background: none; box-shadow: none; }
+.engmark.is-empty .ico { width: 40%; height: 40%; opacity: 0.4; }
+/* The rune a piece carries on its card in the Item Bag while it is engraved. */
+.engbadge { position: absolute; top: 4px; left: 5px; z-index: 2; display: grid; place-items: center; width: 16px; height: 16px; color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.engbadge .ico { width: 14px; height: 14px; }
+.engbadge.is-dormant { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); filter: none; }
+.haul__engr { position: absolute; left: -4px; bottom: -4px; z-index: 3; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--win); background: rgb(4, 10, 24); color: var(--win); box-shadow: 0 0 10px var(--win-glow); }
+.haul__engr .ico { width: 14px; height: 14px; }
+.haul__engrname { display: block; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
+.breward.is-engrave .breward__art { color: var(--win); }
+
+/* A piece's engraving on its card: its mark, the state, the bracketed name and its rule; Engrave under it. */
+.engblock { display: flex; flex-direction: column; gap: 10px; padding: 12px 2px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.engblock__power { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 12px; }
+.engblock__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.engblock__state { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--win); }
+.engblock.is-dormant .engblock__state { color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.engblock__text b { font-size: 0.9rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.engblock__text small { font-size: 0.76rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.engblock__text small.hint { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.engblock__none { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.78rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.engblock__none .ico { width: 14px; height: 14px; }
+
+/* Equipment's engravings: a cell to each kind, its mark, its kind over the live power and its rule. */
+.englive { display: flex; flex-direction: column; }
+.englive__one { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; padding: 9px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.englive__one:last-child { border-bottom: 0; }
+.englive__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.englive__text small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.englive__text b { font-size: 0.86rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.englive__one.is-on .englive__text b { color: #fff; }
+.englive__text i { font-style: normal; font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+
+/* CODEX: what is kept and the Ember held, unframed; a section to each kind, its live engraving at its head,
+   a row to each power, lit while kept, dark with where it is found while not. */
+.codexhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 2px 2px 12px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.codexhead__n { display: flex; flex-direction: column; gap: 3px; }
+.codexhead__n b { font-size: 2rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.codexhead__n b small { font-size: 1rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.codexhead small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.codexhead__ember { display: inline-flex; align-items: center; gap: 8px; color: var(--ember); }
+.codexhead__ember .ico { width: 18px; height: 18px; }
+.codexhead__ember > span { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.codexhead__ember b { font-size: 1.05rem; color: var(--ember); }
+.codexfor { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.codexfor span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.codexfor small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.codexfor b { font-size: 0.9rem; color: #fff; }
+.codexfor__cost { align-items: flex-end; }
+.codexfor__cost b { color: var(--ember); }
+.codexgroup { display: flex; flex-direction: column; gap: 4px; }
+.codexgroup .exsec__head small b { color: #fff; }
+.codexlist { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.codexrow { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 9px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 9%, transparent); }
+.codexrow:last-child { border-bottom: 0; }
+.codexrow__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.codexrow__text b { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 0.86rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.codexrow__text small { font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.codexrow.is-kept .codexrow__text b { color: #fff; }
+.codexrow.is-kept .codexrow__text small { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.codexrow__where { font-style: italic; }
+.codexrow__hands { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+.codexrow.is-live .engmark::before { box-shadow: 0 0 0 1px var(--win), 0 0 16px var(--win-glow); }
+.codexrow__on { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--win); }

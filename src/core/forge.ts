@@ -283,6 +283,8 @@ export function recycle(s: Save, itemId: string): Bundle | null {
   const it = s.items.find((i) => i.id === itemId);
   if (!it || !defOf(it) || Object.values(s.equipped).includes(itemId)) return null;
   const got = salvage(it);
+  // An engraved piece leaves its power in the Codex, for good.
+  if (it.engr && !(s.codex ?? []).includes(it.engr)) s.codex = [...(s.codex ?? []), it.engr];
   s.items = s.items.filter((i) => i.id !== itemId);
   s.favourites = s.favourites.filter((f) => f !== itemId);
   s.newItems = (s.newItems ?? []).filter((f) => f !== itemId);

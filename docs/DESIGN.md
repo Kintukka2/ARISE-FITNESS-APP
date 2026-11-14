@@ -1247,7 +1247,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    2. **Kin and Formation** (built, below): two Shadows of one family deployed share its boon and three a
       stronger one; each distinct role deployed adds a small aura for the side; Auto Deploy scores whole
       squads, not raw power.
-   3. **Engravings and a Codex:** named bosses and Gatekeepers leave engraved pieces at stated odds;
+   3. **Engravings and a Codex** (built, below): named bosses and Gatekeepers leave engraved pieces at stated odds;
       recycling one keeps its power in a Codex for good; setting a power from the Codex onto a piece costs
       Ember, which makes it step 7's sink too. Three worn: weapon, armour, jewellery.
    4. **The Daily Rift:** one Gate a day from the date's seed, the same on every phone.
@@ -2121,6 +2121,67 @@ with what ARISE took from them.
   presses Auto Deploy already had over the campaign; the other half is this change. The three-session
   hunter's campaigns differ by as much as 8 days at A between two runs of `main`, and both this change's
   runs fall inside that spread, nearer its fast end.
+
+### Engravings and a Codex — built
+
+The third of step 6's four parts: the research's second idea for loot
+([arpg-loot-endgame.md](research/arpg-loot-endgame.md), "Engravings: powers that rewrite a rule, kept in a
+Codex"), in the shape the owner set: named bosses and Gatekeepers leave them, recycling keeps one for good,
+cutting one from the Codex costs Ember, three worn. The references are under "Gear" in
+[step 6's README](research/references/step-6-map-army-gear-daily/README.md#gear): Diablo III's Kanai's Cube
+(extract once, keep for good, a slot to each kind of gear) and Diablo IV's Codex of Power (every power listed
+with where it is found), and the one-line wording of a rule.
+
+- **Sixteen engravings, one to each family** (`data/engravings.ts`), each a rule and none a percentage on a
+  stat, so they cannot become Diablo III's set multipliers. The kind follows the part the family leaves: the
+  bone families cut weapons (Warcry, Siegebreaker, Withering Strike, Dirty Trick, Flask Thrower), the hide
+  families armour (Pack Hide, Dragonscale, Shapeshift, Tidewater, Carapace), the core families jewellery
+  (Hellbrand, Overcharge, Engulf, Bulwark Core, Unseen, Overgrowth). Five ride on Guard, Cover, a potion or
+  a throw, which Auto never orders (`hands`), so they pay hand play only; the rest play in every fight. Each is
+  hooked where a blessing of its kind already is (`engraved` in `core/combat.ts`), and none changes what a foe
+  does: the Weakened and Chilled they inflict change how hard and how soon, never the action or the target a
+  foe showed, so the intent test holds.
+- **Where they come from.** A clear's boss leaves a piece found whole with its family's engraving 8% of the
+  time, and its Gatekeeper, if it fell, 12% (`ENGRAVED`), on a design of the Gate's grade and the engraving's
+  kind. The Spire's blocks leave them as Gates do; a Trial, which leaves a masterwork, and the Practice Gate
+  leave none. They are drawn from `${run.seed}|engrave`, apart from every other draw a run makes, so nothing
+  else a run leaves moved. The brief names the boss's and the Gatekeeper's engraving and its odds.
+- **Live, one to each kind.** A worn piece's engraving is live; the first engraved piece of each kind in slot
+  order holds it, and another is dormant (`engravings.live`, `dormant`). They reach the fight as passives by
+  name through `raid.heroSpec`, and an open run keeps the hero it walked in with.
+- **The Codex** (`s.codex`). Recycling an engraved piece keeps its power for good (`forge.recycle`). A power
+  kept is cut into any piece of its kind for Ascendant Ember by the piece's rarity, 15 at E to 120 at S
+  (`ENGRAVE_EMBER`); what it replaces is kept too, so nothing found is lost. This is step 7's first sink:
+  until now Ember bought only steps past perfect, which shards and the upgrade limit held back first.
+- **Screens.** Equipment's `Engravings` row, a line to each kind and `Codex 4/16`; the `CODEX` window, a
+  section to each kind with its live power and a row to every power, kept or not, with where it is found;
+  the engraving on a piece's card, live or dormant, with **Engrave**; the rune on an engraved card in the
+  Item Bag and on a find on the results; the brief's tiles. `CODEX` joins the System's window titles.
+- **Calibration.** `typicalHunter` carries none, so no Gate, Spire block or floor moved. `keptUpHunter`
+  carries the System's three (`autoEngrave`: Withering Strike, Carapace, Overgrowth, the first of
+  `AUTO_ENGRAVE` for each kind, never one that needs hands), so Ascension and the Trials moved harder:
+  Ascension at every level, +2.0% to +8.1% (level 1 1.49 → 1.54, level 6 1.60 → 1.73, level 10 1.73 → 1.84);
+  the Trials at 9 of 10, +2.6% to +10.7% (Ascension 0 1.21 → 1.34, Ascension 3 held). The balance report's
+  days to each rank do not move.
+- **Campaign**, which now recycles what it does not wear into the Codex and cuts the System's choice for
+  each kind into the first worn piece of it whenever the Ember is there, before any step past perfect. Over
+  120 days, against `main`'s last campaign:
+
+  | | Days to B, A, S, N | Cleared | Carried out | Engraved pieces found | Codex | Cut, for Ember | Ember on day 120 |
+  |---|---|---|---|---|---|---|---|
+  | One evening a day, `main` | 19, 32, 57, 108 | 96% | 10 | | | | about 1,667 |
+  | This change | 18, 30, 56, 107 | 97% | 8 | 28 | 7/16 | 12, for 1,035 | 885 |
+  | Three sessions a day, `main` | 17, 23, 38, 67 | 95% | 22 | | | | about 2,185 |
+  | This change | 15, 23, 37, 66 | 93% | 27 | 35 | 6/16 | 11, for 1,080 | 2,101 |
+
+  Both hunters end with Dragonscale, Withering Strike and Unseen live: the Codex holds what the families
+  they meet most leave, so the System's first choice for armour and jewellery (Carapace, Overgrowth) is
+  seldom kept, and the campaign cuts the best it has. The engravings bring each hunter a day or two nearer
+  every rank, inside the spread between two runs of `main`. The one-evening hunter spends more than half
+  its Ember on engraving and ends the campaign with half what it held before; the three-session hunter
+  spends as much and ends with nearly as much as before, since it walks 413 runs to the other's 281 and opens
+  25 Ascension levels to its 9, and the Seals it takes pay Ember faster than it can be spent. Ember is now spent, but a hunter who plays
+  three sessions a day still banks it: step 7 is still needed.
 
 ## What stays out
 

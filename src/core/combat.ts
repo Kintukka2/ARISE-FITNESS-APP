@@ -14,6 +14,7 @@
 import { ABILITIES, CLASS_PASSIVES, CLASS_SKILLS, PASSIVES } from '@/data/abilities';
 import { boonById, boonValue, GRUDGE_MAX } from '@/data/blessings';
 import { EDGE, TREE_PASSIVES, TREE_SKILLS } from '@/data/tree';
+import { ENGRAVE, ENGRAVE_PASSIVES, engravingById, engraveStyle, type EngravingId } from '@/data/engravings';
 import { at as byGrade, TRICK, TRICKS, type TrickId } from '@/data/tricks';
 import type { Ability, Attrs, Order, Tactic } from './types';
 import { clamp, type Rand } from './util';
@@ -139,7 +140,7 @@ export const thrownBy = (use: string) => (use.startsWith('Throw:') ? throwable(u
 /** Cover, the hunter's fourth action: what is aimed at the ally covered comes at the hunter, guarding. */
 export const COVER = 'Cover';
 const abilityMap = new Map<string, Ability>([...ABILITIES, ...CLASS_SKILLS, ...TREE_SKILLS].map((a) => [a.name, a]));
-const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES];
+const ALL_PASSIVES = [...PASSIVES, ...CLASS_PASSIVES, ...TREE_PASSIVES, ...ENGRAVE_PASSIVES];
 const passiveMap = new Map<string, string>(ALL_PASSIVES.map((p) => [p.name, p.style]));
 export const ability = (n: string) => abilityMap.get(n);
 export const passiveStyle = (n: string) => passiveMap.get(n);
@@ -236,6 +237,8 @@ export class Unit {
     this.names = sp.passives ?? [];
     this.styles = this.names.map((n) => passiveStyle(n) ?? '');
     this.imm = sp.imm ?? []; this.res = sp.res ?? [];
+    // Dragonscale: no burn and no poison take.
+    if (this.has(engraveStyle('dragonkin'))) this.imm = [...new Set([...this.imm, 'Burning', 'Poisoned'])];
     this.atkMult = sp.atkMult ?? 1;
     const d = applyBonuses(derive(sp.base), sp.bonus ?? {});
     if (this.has('identity')) {
@@ -367,6 +370,7 @@ function edgeOf(u: Unit, t: Unit, crit: boolean, plain: boolean): number {
 
 /** A unit's chance to land a critical hit on `t`, as a percentage: what its blessings make certain, or its own. */
 function critOf(u: Unit, t: Unit): number {
+  if (engraved(u, 'goblinoid') && (t.status.Rooted || t.status.Stunned)) return 100;
   if (u.boon('killshot') && t.hp < t.maxHp * u.bv('killshot')) return 100;
   if (u.gaze && u.gaze === t.uid) return 100;
   if (u.boon('cuts') && (u.cuts + 1) % u.bv('cuts') === 0) return 100;
@@ -585,9 +589,10 @@ function enrage(t: Unit, log: Ev[]) {
 }
 
 /** A hit landed on a creature winding up or channelling takes a pip off; the last breaks it. Mutates. */
-function chip(t: Unit, log: Ev[]) {
+function chip(t: Unit, log: Ev[], by?: Unit) {
   if (!t.wind || !t.alive()) return;
-  t.wind.pips -= 1;
+  // Siegebreaker: the hunter's hits take more off.
+  t.wind.pips = Math.max(0, t.wind.pips - 1 - (by && engraved(by, 'giantkin') ? ENGRAVE.siege : 0));
   log.push({ t: 'pip', v: t.uid, left: t.wind.pips });
   if (t.wind.pips > 0) return;
   t.wind = undefined;
@@ -624,6 +629,19 @@ function trick(u: Unit, foes: Unit[], friends: Unit[], log: Ev[]) {
 
 const BOON_NAME = (id: string) => boonById(id)?.name ?? id;
 
+/** Whether a unit carries an engraving, and the engraving's name for the log. */
+const engraved = (u: Unit, id: EngravingId) => u.has(engraveStyle(id));
+const ENGRAVE_NAME = (id: EngravingId) => engravingById(id)?.name ?? id;
+/** The unit's Shadows on its side, standing. */
+const shadowsOf = (u: Unit) => (u.kin ?? []).filter((f) => f !== u && f.tag === 'shadow' && f.alive());
+
+/** What an engraving adds when a status lands from `u` on `t`: Hellbrand curses what it burns. Mutates. */
+function branded(u: Unit, t: Unit, st: string, turns: number, log: Ev[]) {
+  if (st !== 'Burning' || t === u || !engraved(u, 'demon') || !t.alive() || t.imm.includes('Cursed')) return;
+  t.status.Cursed = Math.max(t.status.Cursed ?? 0, turns);
+  log.push({ t: 'status', v: t.uid, s: 'Cursed' });
+}
+
 /** The turns past its own a debuff `u` inflicts lasts: Lingering Curse's and Lingering Dark's, and Deep Cuts' on a wound. */
 function longer(u: Unit, st: string): number {
   const s = STATUS[st];
@@ -644,6 +662,7 @@ function inflict(u: Unit, t: Unit, st: string, turns: number, log: Ev[]) {
   }
   t.status[st] = Math.max(t.status[st] ?? 0, turns + longer(u, st));
   log.push({ t: 'status', v: t.uid, s: st });
+  branded(u, t, st, t.status[st], log);
 }
 
 /** A blessing's heal: a share of the unit's maximum HP, said under the blessing's name. Mutates. */
@@ -659,6 +678,9 @@ function downed(u: Unit, t: Unit, foes: Unit[], log: Ev[], onKill: (killer: Unit
   log.push({ t: 'down', v: t.uid });
   if (u.has('momentum') && u.mom < EDGE.momentum.max) u.mom += 1;
   onKill(u, t);
+  // Warcry rallies the hunter's Shadows; Engulf mends them.
+  if (engraved(u, 'orc')) for (const f of shadowsOf(u)) inflict(u, f, 'Rallied', ENGRAVE.warcry, log);
+  if (engraved(u, 'slime')) for (const f of shadowsOf(u)) mend(f, ENGRAVE.engulf, ENGRAVE_NAME('slime'), log);
   if (!u.boon('feast') && !u.boon('rush') && !u.boon('after') && !u.boon('gale') && !u.boon('contagion') && !u.boon('gaze')) return;
   const live = foes.filter((f) => f.alive() && f !== t);
   mend(u, u.bv('feast'), 'feast', log);
@@ -691,7 +713,7 @@ function extra(u: Unit, t: Unit, dmg: number, id: string, foes: Unit[], log: Ev[
   t.hurtBy.add(u);
   survive(t, log);
   enrage(t, log);
-  chip(t, log);
+  chip(t, log, u);
   log.push({ t: 'hit', a: u.uid, v: t.uid, ab: BOON_NAME(id), dmg, crit: false, hp: Math.max(0, Math.round(t.hp)) });
   if (!t.alive()) downed(u, t, foes, log, onKill);
 }
@@ -733,6 +755,9 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     // Shield Wall mends every ally; Forewarned marks whatever is coming at the hunter.
     if (u.boon('wall')) for (const f of friends) if (f !== u) mend(f, u.bv('wall'), 'wall', log);
     if (u.boon('forewarn')) for (const f of foes) if (f.alive() && f.intent?.at === u.uid) inflict(u, f, 'Marked', u.bv('forewarn'), log);
+    // Pack Hide weakens what is coming; Bulwark Core guards the Shadows too.
+    if (engraved(u, 'beast')) for (const f of foes) if (f.alive() && f.intent?.at === u.uid) inflict(u, f, 'Weakened', ENGRAVE.pack, log);
+    if (engraved(u, 'construct')) for (const f of shadowsOf(u)) { f.status.Guarded = STATUS.Guarded.turns; log.push({ t: 'status', v: f.uid, s: 'Guarded' }); }
     return;
   }
   const ward = o?.use === COVER ? friends.find((f) => f.uid === o.at && f !== u && f.alive()) : undefined;
@@ -752,6 +777,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     }
     log.push({ t: 'cover', a: u.uid, v: ward.uid, n });
     mend(ward, u.bv('warden'), 'warden', log);
+    if (engraved(u, 'chimera')) inflict(u, ward, 'Veiled', ENGRAVE.shift, log);
     return;
   }
   const thrown = o ? thrownBy(o.use) : undefined;
@@ -765,7 +791,10 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       // Ritual Flask: what is thrown lasts longer.
       t.status[thrown.status] = STATUS[thrown.status].turns + u.bv('ritual');
       log.push({ t: 'status', v: t.uid, s: thrown.status });
+      branded(u, t, thrown.status, t.status[thrown.status], log);
     }
+    // Flask Thrower: what is thrown lands as a hit too.
+    if (engraved(u, 'humanoid')) for (const t of hit) extra(u, t, strikeOf(u, t, ENGRAVE.flask), ENGRAVE_NAME('humanoid'), foes, log, onKill);
     return;
   }
   if (o?.use === 'Potion' && ctx.potions > 0) {
@@ -773,6 +802,11 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     const was = u.hp;
     u.hp = Math.min(u.maxHp, u.hp + u.maxHp * POTION_HEAL);
     log.push({ t: 'heal', a: u.uid, amt: Math.round(u.hp - was), hp: Math.round(u.hp) });
+    // Tidewater: the potion washes the debuffs off, and veils.
+    if (engraved(u, 'aquatic')) {
+      for (const st of Object.keys(u.status)) if (STATUS[st] && !STATUS[st].good && !STATUS[st].skip) { delete u.status[st]; log.push({ t: 'expire', v: u.uid, s: st }); }
+      inflict(u, u, 'Veiled', ENGRAVE.tide, log);
+    }
     return;
   }
   const a = (o && ordered(u, o)) ?? intended(u) ?? choose(u, r);
@@ -873,6 +907,12 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       log.push({ t: 'passive', u: t.uid, p: t.named('arcane'), k: 'ward' });
       dmg = half;
     }
+    // Carapace: the first hit the hunter takes in a fight deals nothing.
+    if (engraved(t, 'insectoid') && !t.spent.has('carapace') && dmg > 0) {
+      t.spent.add('carapace');
+      log.push({ t: 'passive', u: t.uid, p: ENGRAVE_NAME('insectoid'), k: 'ward' });
+      dmg = 0;
+    }
     const was = t.alive();
     // Red Harvest: a Bleeding foe this hit leaves below its mark goes down with it.
     if (u.boon('harvest') && t.status.Bleeding && t.hp - dmg > 0 && t.hp - dmg < t.maxHp * u.bv('harvest')) dmg = Math.ceil(t.hp);
@@ -884,7 +924,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     last = dmg;
     survive(t, log);
     enrage(t, log);
-    chip(t, log);
+    chip(t, log, u);
     if (u.does('bloodlust') && u.lust < TRICK.bloodlust.max) u.lust += 1;
     if (u.has('escalation') && u.esc < 2) u.esc += 1;
     if (u.has('vamp')) drawn += took * EDGE.vamp;
@@ -919,7 +959,11 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       }
       t.status[st] = STATUS[st].turns + longer(u, st) + (u.does('virulent') && !STATUS[st].skip ? TRICK.virulent.turns : 0);
       log.push({ t: 'status', v: t.uid, s: st });
+      branded(u, t, st, t.status[st], log);
     }
+    // What the hunter's engravings leave on a foe they hit: Withering Strike weakens, Overcharge chills.
+    if (a.name === STRIKE.name && engraved(u, 'undead')) inflict(u, t, 'Weakened', ENGRAVE.wither, log);
+    if (crit && engraved(u, 'elemental')) inflict(u, t, 'Chilled', ENGRAVE.overcharge, log);
     // What the hunter's blessings leave on a foe they hit.
     if (u.boons !== NONE) {
       if (a.name === STRIKE.name && u.boon('rend')) inflict(u, t, 'Bleeding', u.bv('rend'), log);
@@ -994,6 +1038,8 @@ function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Un
   if (u.rising && u.alive()) { u.rising = false; heal(TRICK.undying.heal, TRICKS.undying.name); }
   if (u.does('regrowth') && u.alive()) heal(byGrade(TRICK.regrowth.heal, u.grade), TRICKS.regrowth.name);
   if (u.boon('breath') && u.alive()) heal(u.bv('breath'), BOON_NAME('breath'));
+  // Overgrowth: the hunter's Shadows mend at the round's end.
+  if (u.tag === 'shadow' && u.alive() && (u.kin ?? []).some((k) => k.alive() && engraved(k, 'plant'))) heal(ENGRAVE.overgrowth, ENGRAVE_NAME('plant'));
   // The hunter's blessings reach the foes they fight: Doom on the Cursed, Black Sun on every debuff.
   const h = u.against;
   if (h && u.alive()) {
@@ -1042,6 +1088,8 @@ function hazard(u: Unit, foes: Unit[], r: Rand, log: Ev[]) {
 
 function openSide(side: Unit[], log: Ev[]) {
   for (const u of side) { u.kin = side; u.esc = 0; u.mom = 0; u.spent = new Set(); u.aura = { ini: 0, acc: 0 }; u.rush = false; u.grudge = 0; u.cuts = 0; u.gaze = undefined; u.ironUsed = false; }
+  // Unseen: the hunter starts the fight Veiled.
+  for (const u of side) if (u.alive() && engraved(u, 'aberration')) inflict(u, u, 'Veiled', ENGRAVE.unseen, log);
   // Bannerman: the side starts the fight Rallied.
   const banner = side.find((u) => u.alive() && u.boon('banner'));
   if (banner) for (const f of side) inflict(banner, f, 'Rallied', banner.bv('banner'), log);

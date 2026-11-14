@@ -6,6 +6,8 @@
  * Pieces are forged at the Forge (`screens/Forge.tsx`) and recycled here for materials. Every number
  * comes from `core/gear.ts` and `core/forge.ts`; the screens only show and ask.
  */
+import * as engr from '@/core/engravings';
+import { EngraveMark, EngravedBadge, EngravingBlock, openCodex } from '@/ui/engrave';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -267,7 +269,7 @@ function BagTile({ it, i, picking, picked, locked, on, onTap }: { it: Item; i: n
     <button type="button" class={`bagtile ${picked ? 'is-picked' : ''} ${picking && locked ? 'is-locked' : ''} ${fresh ? 'is-new' : ''} ${on ? 'is-on' : ''} ${worn ? 'is-worn' : ''}`}
       data-rarity={d.rank} style={`--i: ${Math.min(i, 24)}`} aria-pressed={picking ? picked : on}
       onClick={() => { sfx.tap(); onTap(); }}
-      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${worn ? ', worn' : ''}${up ? ', an upgrade on what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
+      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${it.engr ? `, engraved: ${engr.engravingById(it.engr)?.name}` : ''}${worn ? ', worn' : ''}${up ? ', an upgrade on what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
       <span class="bagtile__art"><GearArt item={it} size={60} plain /></span>
       <span class="bagtile__foot">
         {worn ? <span class="bagtile__worn">Worn</span> : starred ? <Glyph name="star" class="bagtile__fav" /> : <span />}
@@ -276,6 +278,7 @@ function BagTile({ it, i, picking, picked, locked, on, onTap }: { it: Item; i: n
       <span class="bagtile__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></span>
       {fresh && <span class="bagtile__new">New</span>}
       {up && <span class="bagtile__up" aria-hidden="true">▲</span>}
+      {it.engr && <EngravedBadge dormant={engr.dormant(s, it)} />}
       {picking && <span class="bagtile__check" aria-hidden="true"><Glyph name={locked ? 'lock' : 'check'} /></span>}
     </button>
   );
@@ -546,10 +549,12 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
   const starred = s.favourites.includes(it.id);
   const recycle = async () => {
     const back = forge.salvage(it);
+    const kept = it.engr && !engr.known(store.get(), it.engr) ? engr.engravingById(it.engr) : undefined;
     const ok = await sys(system.offer([
       'Would you like to recycle this item?',
       `${system.tag(d.name, 'Item')} Quality ${gear.qualityText(it)}`,
       system.gain(bundleText(back)),
+      ...(kept ? [`${system.tag(kept.name, 'Engraving')} is kept in the Codex.`] : []),
       system.red('A recycled item cannot be recovered.'),
     ], 'gear', 'Recycle', 'Cancel'));
     if (ok !== true) return;
@@ -557,6 +562,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
     if (!got) return;
     sfx.success();
     toast(`${d.name} recycled · ${bundleText(got)}`, 'good');
+    if (kept) toast(`[Engraving: ${kept.name}] kept in the Codex.`, 'good');
     close();
   };
   return (
@@ -622,6 +628,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
         {d.desc && <p class="itemcard__text">{d.desc}</p>}
         {it.master && <p class="itemcard__text hint">Masterwork of {walkerOf(it.master, d.rank).name}.</p>}
       </section>
+      <EngravingBlock it={it} />
       {!d.issued && <Upgrade it={it} />}
       {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {set && (
@@ -840,6 +847,7 @@ function Equipment() {
           )}
         </div>
       </Section>
+      <Engravings />
       {sets.length > 0 && (
         <Section title="Sets worn" right={<span class="num">Paying: {paying.size}</span>}>
           <div class="setrows">{sets.map(([id, n]) => <SetRow key={id} id={id} n={n} />)}</div>
@@ -878,6 +886,33 @@ function openSet(id: string) {
 }
 
 /** The loadouts: what was worn, saved, and worn again in one tap, a row to each. */
+/**
+ * The engravings live on what is worn, one to each kind of gear, as Kanai's Cube sets its three slots
+ * under the box: each kind's mark and name over the live engraving and its rule, or `-- --`; and the Codex,
+ * counted, a tap away.
+ */
+function Engravings() {
+  const s = useSave();
+  const live = engr.liveItems(s);
+  const kept = engr.codex(s).length;
+  if (!kept && !Object.keys(live).length) return null;
+  return (
+    <Section title="Engravings" right={<button type="button" class="linkish" onClick={() => openCodex()}>Codex {kept}/{engr.ENGRAVINGS.length}</button>}>
+      <div class="englive">
+        {engr.GROUPS.map((g) => {
+          const e = engr.engravingById(live[g.key]?.engr);
+          return (
+            <button key={g.key} type="button" class={`englive__one ${e ? 'is-on' : ''}`} onClick={() => { sfx.tap(); if (live[g.key]) openItem(live[g.key]!.id); else openCodex(); }}>
+              {e ? <EngraveMark e={e} size={34} /> : <span class="engmark is-empty" style="--s: 34px"><Glyph name="engrave" /></span>}
+              <span class="englive__text"><small>{g.name}</small><b>{e ? e.name : '-- --'}</b>{e && <i>{e.text}</i>}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
 function Loadouts() {
   const s = useSave();
   const marks = ['I', 'II', 'III'];

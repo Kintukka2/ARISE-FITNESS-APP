@@ -140,6 +140,17 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   Calibration's `keptUpHunter` fields a squad drawn from its grade's gates, no creature twice, and plays
   whatever Kin it makes. Change a boon, an aura, `KIN_AT`, `WORTH` or how Auto Deploy weighs, and you must
   recalibrate and rerun the campaign.
+- Engravings (`data/engravings.ts`, `core/engravings.ts`) reach the fight only through `raid.heroSpec`, as
+  passives by name (`engravings.live`: a worn piece's engraving, the first of each kind in slot order), and
+  the fight reads them by style (`engraved` in `core/combat.ts`). An open run keeps the hero it walked in
+  with. A clear's boss and Gatekeeper leave engraved pieces in `raid.finish` (`engravedDrops`), drawn from
+  `${run.seed}|engrave` apart from every other draw so nothing else a run leaves moves. Recycling keeps a
+  power in `s.codex` (`forge.recycle`); `engravings.engrave` cuts one from it for Ember. The engravings that
+  need the hunter's hands (`hands`) ride on Guard, Cover, a potion or a throw, which Auto never orders.
+  Calibration's `typicalHunter` carries none, so no Gate moves; `keptUpHunter` carries the System's three
+  (`autoEngrave`, `AUTO_ENGRAVE`), so Ascension and the Trials do. Change an engraving, its numbers, the
+  System's choice or what the hunters carry and you must recalibrate; change the odds or the Ember they cost
+  and rerun the campaign, which engraves as `smith` in `scripts/campaign.ts` does.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach
