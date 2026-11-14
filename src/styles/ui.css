@@ -475,7 +475,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .art__tag--perfect { color: var(--gold); }
 .art__tag--peak { color: color-mix(in srgb, var(--gold) 70%, transparent); }
 .art__tag--dead { color: var(--blood); }
-.art__worn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; background: rgba(72, 245, 168, 0.85); color: #02160c; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase; }
+.art__worn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; background: rgba(236, 246, 255, 0.92); color: #04101e; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase; }
 
 .vbar { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .vbar .bar { flex: 1; }
@@ -611,6 +611,10 @@ button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
 .syshead { position: relative; display: flex; align-items: stretch; justify-content: center; gap: 8px; }
 .syshead.has-tools { padding-right: 50px; }
 .syshead.has-tools:not(.is-card) { padding-left: 50px; }
+/* Two tools (a help and the close) take twice the room, so the title never runs under them. */
+.syshead.has-tools:has(.syshead__tools > :nth-child(2)) { padding-right: 104px; }
+.syshead.has-tools:not(.is-card):has(.syshead__tools > :nth-child(2)) { justify-content: flex-start; padding-left: 0; }
+.syshead.has-tools:has(.syshead__tools > :nth-child(2)) .syshead__title:not(.is-card) { flex: 1; min-width: 0; padding-left: 12px; padding-right: 12px; font-size: 1.05rem; letter-spacing: 0.16em; }
 .syshead.is-card .syshead__icon { padding: 0; min-width: 0; }
 
 /* A System screen in a sheet: the frame floats a little clear of the screen's edges. */

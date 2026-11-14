@@ -17,7 +17,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   UI work. Regenerate the fixture with `npm run fixture` if the save shape changed.
 - `npm run calibrate`, then `npm run balance` — after any change to combat, enemies, abilities,
   classes, the skill tree, gear, the party, the map or the Ability or Skill Points a hunter earns.
-  Commit the rewritten `src/data/gatetune.ts`. Calibration ends by printing every tuning it moved, old →
+  Commit the rewritten `src/data/gatetune.ts`. A tuning whose clear rate is still within 5 points of its target
+  is held as it stands (`HOLD`); `npm run calibrate -- --all` tunes every number afresh. Calibration ends by printing every tuning it moved, old →
   new (`npm run tunediff` prints the same for the working tree against the last commit, or between any
   two commits). Give the user that report every time you recalibrate, and put its summary in the commit
   message and the PR: which tunings moved, by how much, harder or easier, and which stayed put. Never

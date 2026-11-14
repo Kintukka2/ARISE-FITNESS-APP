@@ -94,7 +94,7 @@ const ARCANA = path('INT', [
 
 const SIGHT = path('PER', [
   { id: 'spotter', name: 'Spotter', v: [3, 4, 5], text: (v) => `Your first hit on each foe inflicts Marked for ${turns(v)}.` },
-  { id: 'deadshot', name: 'Dead Shot', v: [20, 30, 40], text: (v) => `Critical chance +${v}% against a Marked foe.` },
+  { id: 'deadshot', name: 'Dead Shot', v: [20, 30, 40], text: (v) => `Crit chance +${v}% against a Marked foe.` },
   { id: 'read', name: 'Read the Blow', v: [0.15, 0.25, 0.35], text: (v) => `Damage +${pct(v)}% against a foe whose next action is aimed at you.` },
   { id: 'killshot', name: 'Killing Shot', v: [0.25, 0.3, 0.35], text: (v) => `Hits on a foe below ${pct(v)}% HP are critical.` },
   { id: 'weak', name: 'Weak Point', v: [0.25, 0.4, 0.55], text: (v) => `Damage +${pct(v)}% against a foe Charging or Channelling.` },

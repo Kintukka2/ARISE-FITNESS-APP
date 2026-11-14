@@ -338,8 +338,8 @@ fight was tried and did not narrow it.
     rank-up names the two options, and the Inventory tab counts the rungs still to choose.
   - **Balance:** a hunter on every second option, against the same hunter on every first, lands
     within seven points of the clear rate at C, A and S for every line. They are trades, not upgrades.
-- **Gear sets — built.** All sixteen sets in `data/equipment.ts` have three pieces, so the bonuses
-  are for two and three pieces worn, not two and four. They are defined as data in `data/sets.ts`,
+- **Gear sets — built, then restructured** (see "The sets, restructured" below). At first all sixteen sets
+  had three pieces, so the bonuses were for two and three pieces worn. They are defined as data in `data/sets.ts`,
   in the units the combat engine's gear bonuses already use, and reach the fight through
   `raid.heroSpec`.
   - **Home gates:** each set has a home gate of its grade, named for it. A clear there turned the
@@ -1912,6 +1912,126 @@ with what ARISE took from them.
   over two lines rather than cut, and at its right the boss's power by the power mark (`?` until known), as a stage
   states its recommended level. Its counts (the Shadows bound, its Feats, the set blueprints, the Forge's anvil)
   lose their boxes; what calls the hunter there (Association, Quest, Chosen, Training, Bounty) keeps its pill.
+- **The Gates screen, rebuilt** (the owner's call: the same way as the board, freely, after the references). Its
+  bento tiles are gone. The day's Gates are a radar, after the portals scattered over Solo Leveling: Arise's city:
+  rings and a turning sweep, the count and the redraw at the hub, a portal to each grade round it; a portal opens
+  the board on its grade alone (`openBoard(band)`), View All Gates opens it whole. The run left open and the Practice
+  Gate are stage cards, the board's own. Grade and Ascension are two cards, Record a row of facts that opens the
+  dossier. The licence's window is the licence itself, a card in the grade's colour with its seal, the hunter and
+  their number; Ascension's window opens on its standing as facts, and its road and marks lose their boxes. The
+  tour still points at the grade (`licence`), the condition (`vitals`), the radar (`bands`) and the Practice Gate
+  (`board`).
+- **The licence, without its repeats** (the owner asked what set Association grade apart from Rank). Rank is the
+  hunter's own, earned by level (`RANK_LADDER`); the Association grade is what the board and the Exchange answer to
+  (`licensedRank`): the same, except held at D-Rank where the Association Licence is sold and not bought, and S for a
+  Sovereign. The window shows the grade, and Rank only where the two differ; the Licence's row only where there is
+  one to hold; and its number once, on the card, the head naming the window only.
+- **Ascension, rebuilt** (the owner's call). A dial after Slay the Spire's Ascension select (the level large between
+  two arrows, its name, what it does to foes and to pay), and the climb after Hades' heat gauge: a rung to each
+  level on a line, lit where its rule is in force, a tap entering at it, the next level locked at the top with its
+  road and Face The Trial. The level chips and the separate Rules in force are gone; the marks show their sets as
+  four diamonds. A head with two tools (help and close) now leaves room for both.
+- **The marks as seals** (the owner's call, after Hades' Mirror of Night and Darkest Dungeon II's Altar of Hope). A
+  seal to each mark, two to a row: its sigil in a diamond of gold that brightens with every set, its sets as four
+  diamonds, what it gives now and what the next set adds; a seal that can take a set is tapped to set it. The System's
+  offer to set one carries the seal before and after, and its answer the seal stamped down, the new diamond landing.
+  The licence's head holds no icon: the seal is on the card.
+- **The climb as a tower, the marks in their own window** (the owner's calls). The next level stands as a
+  challenge card under the dial: its level locked in a dashed diamond, its rule, its road as two seals on a line, and
+  Face The Trial. The climb is a tower after Hades' heat gauge: battlements, stone walls, a floor to each level opened
+  down to the ground, the floors in force lit from within, `You` bannered on the floor entered at. The marks sat oddly
+  at the foot of Ascension, so they have their own window, `MARKS`, opened from a card under the dial that shows their
+  seals small and the badge while one waits.
+- **The gear, rebuilt** (the owner's call), after Destiny 2's and Diablo IV's character screens and Genshin
+  Impact's item pages. Equipment leads with the score in a hexagon and the slots filled as diamonds; the
+  hunter's figure stands larger between two columns of squares, each the piece's art, its quality a gold
+  line under its slot's name, framed in its set's hue while the set pays, a gold ▲ where Auto Equip would
+  change it. What the gear adds (stats, then its properties two to a row in place of a line run on),
+  the sets worn as rows that open a set's window (`SET: {name}`), and the loadouts as rows follow. Every
+  slot opens its own window, `EQUIPMENT: {Slot}`, filled or empty: the piece worn and Unequip, then every
+  piece held that fits, best first, with what it gains or loses on it and Equip, Auto Equip's pick in gold.
+  The item's card and the blueprint's are headed by the piece itself, large with rays turning behind it,
+  its score and its gain in a chip, its quality along the foot; the header loses the icon box that drew
+  the art a second time. Equip, the star and Recycle (now the bin, its offer saying what it gives back)
+  sit together under the comparison, and stats and properties share one box. No engine changed.
+- **The gear, second pass** (the owner's calls). The figure wears what is worn in place of its dots: each
+  slot's part (head, chest, hands, legs, feet, the pendant, a ring on each hand, a sword in one hand and a
+  shield at the other) filled in its piece's rarity, dashed while empty, outlined white while its slot is
+  pointed at. Green is kept for what changes: a piece's own stats are white with their glyph in cyan, its
+  properties ice, an upgrade's result gold; gains over the piece worn, a paying set and Mana Shards stay
+  green. Bonuses side by side are spaced, not dotted. Critical chance is Crit chance everywhere it is read.
+  Then: the arms take the gloves' colour, `Worn` is white, the property bars line up, and Status chance
+  reads Effect chance (Status Potency, Effect Potency); Status save keeps its name.
+- **The Inventory screen, rebuilt** (the owner's call), after the character screens of Genshin Impact and Honkai:
+  Star Rail and Solo Leveling: Arise's hunter page. The bento tiles are gone, as they went from Gates. The hunter
+  heads it: their figure wearing what is worn (Equipment's own `Avatar`) over its score, opening Equipment, beside
+  their name, condition and points, opening Status. Stats and Skills are two cards; the bag, the Forge and the
+  Exchange three stations; the licence a row along the foot. The bag's head is one line; its kinds two rows of five
+  (the Forge's too), Sort and Select over the three filters; New and the better mark gold; its Sets view a grid of
+  the rarities over a row to each set, opening the set's window. No engine changed.
+- **The Item Bag** (the owner's calls). The bag's window is `ITEM BAG`, named apart from the Inventory screen. Its
+  head carries what it holds by rarity as one strip; Sort and Show fold out of one toolbar button; each card is the
+  piece on its rarity's ground with its score along its foot; a card tapped is held in a dock at the bag's foot (its
+  stats, its score and what it gains, Equip, the star, Details), after Genshin Impact's and Honkai: Star Rail's bags,
+  so a piece can be read and worn without leaving the bag; Select opens Quick select in red; the Sets view opens on
+  the designs found as a ring of the rarities.
+- **The sets, restructured** (the owner's call, after the reference games). Every set had three pieces and
+  thirteen of sixteen needed a chest, twelve a head, so only one could ever be worn whole and legs, feet and
+  rings almost never belonged to one. The genre settles on four or five pieces paying at two and four, with a
+  slot left free, and armour apart from accessories: Genshin Impact's five artifacts paying at 2 and 4, Honkai:
+  Star Rail's four relics and two planar ornaments, Solo Leveling: Arise's armour and accessory sets, World of
+  Warcraft's tier sets; Diablo III's six-piece sets became the whole build, which Diablo IV answered by dropping
+  them. So:
+  - **Armour sets** (`kind: 'armour'`): sixteen of five pieces, one to each of head, chest, hands, legs and feet,
+    paying a stat at two pieces (`tiers[0]`) and at four its stats and a blessing (`tiers[1].boon`), at tier I
+    on a Rare or Epic set, II on a Heroic, III on a Legendary. Four leave the fifth slot for the best piece of
+    any other set; two of each of two sets pay both 2-piece. The sets keep their names, homes and bonuses (the
+    old 3-piece is now the 4-piece's stats); 49 new pieces fill their slots, each taking its core and property
+    from a design of its rank and slot.
+  - **The 4-piece blessing** reaches the fight through `raid.heroSpec` as `UnitSpec.boons` (`gear.setBoons`),
+    and `raid.blessed` keeps it beside the run's own, one held both ways at the higher tier. So a set changes
+    how the hunter fights with rules the fight already tests: Warden's Iron Skin, Ravager's Rending Strike,
+    Titan's Juggernaut, Ancient Dragon's Unbreakable.
+  - **Jewellery sets** (`kind: 'jewellery'`): four, an amulet and a ring, paying at two, worn beside any armour
+    set: Oathkeeper (Rare), Emberheart (Epic), Lichbound (Heroic), Monarch (Legendary). Four new pieces; the Ember
+    Sigil, the Phylactery Shard, the Void Collapse Prism and the Sovereign Signet join them.
+  - **Weapons and off-hands** belong to no set: the weapon carries Familiarity. The eleven that were set pieces
+    keep their designs, and the Triune Eye leaves its set.
+  - **Auto Equip** leans toward a set held as before, but counts no more than three other pieces
+    (`SET_LEAN_MOST`), so a fifth piece of a set never outweighs a much rarer piece.
+  - **Matched**, the Secret Quest, asks for an armour set's 4-piece.
+  - **Recalibrated.** 30 of 51 Gate tunings moved, none by more than 7% (C +0.3% on average, B -0.1%, A 0.0%,
+    S +0.5%); 30 of 50 Spire blocks, 14 of 20 Spire floors, 8 of 10 Ascension levels and 2 of 10 Trials moved,
+    each by under 6%. The typical hunter's clear rates hold within 3 points at every grade (A's middle 73% to 70%).
+  - **Calibration holds what is on target** (the owner's call, asked after this run moved 30 gates by a few
+    points each). A tuning whose clear rate at its old value is within 5 points of its target (`HOLD` in
+    `scripts/calibrate.ts`) keeps that value; only one that has drifted further is bisected again. Most of this
+    run's moves were the noise of the simulated hunters' new gear draws, not a change in difficulty.
+    `npm run calibrate -- --all` still tunes every number afresh.
+  - **Campaign**, 120 days, against the commit before:
+
+    | | Days to B, A, S, N | Cleared | Carried out | Sets worn on day 112 |
+    |---|---|---|---|---|
+    | One evening a day, before | 16, 30, 56, 107 | 97% | 8 | Ancient Dragon 3 |
+    | One evening a day, after | 19, 32, 57, 108 | 96% | 10 | Ancient Dragon 4, Monarch 2 |
+    | Three sessions a day, before | 15, 22, 37, 67 | 93% | 27 | Death Sovereign 3 |
+    | Three sessions a day, after | 17, 23, 38, 67 | 95% | 22 | Demon Lord 2, Ancient Dragon 3, Monarch 2 |
+
+    A set's whole pay now asks four pieces, not three, so the middle grades come one to three days later; the
+    end of the climb does not move. Both hunters end wearing a jewellery set beside an armour set, and one
+    mixes two armour sets' 2-piece, which no set could allow before.
+- **The Forge, rebuilt** (the owner's call), after Monster Hunter's smithy and Warframe's Foundry. A hearth heads
+  it (the anvil over its coals, what can be forged now large, Better in gold); the blueprints are rows that show a
+  chip to each thing their recipe asks for, held or short, with `▲ Better` in gold on those rarer than what is worn
+  (`forge.betterForges`) and a Better filter for them. The recipe ends in an altar: its materials fill toward what
+  they need, the range a forged piece can roll stands as a bar with familiarity's floor shaded off and the last
+  piece's quality marked on it, and the hammer throws sparks. The materials are a grid of tiles with a dock that
+  says how many known blueprints ask for one and how many it is short for, and tracks it. No engine changed.
+  Then, at the owner's call: fewer boxes (a box is for what the hunter acts on, so the hearth, the kinds, the
+  filters, the stats and the recipe's chips stand unframed and the blueprints are a list), and `Better` named as the
+  genre names it: a piece that beats what is worn is an `Upgrade`, marked ▲, as Diablo IV and Lost Ark mark one
+  (the Forge's filter and hearth, the Item Bag's Show, the Inventory station's `▲ 3`).
+
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
   could bind one twice, a free Kin no player can have. It plays whatever Kin and Formation that squad makes;

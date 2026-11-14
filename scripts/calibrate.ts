@@ -4,7 +4,12 @@
  * so a hunter of the level of the block's middle floor does too, and write
  * src/data/gatetune.ts.
  *
- *   npm run calibrate
+ * A tuning whose clear rate already sits within `HOLD` of its target is held as
+ * it stands (the owner's call): only what has drifted further is tuned again, so a
+ * change elsewhere does not move every number by the noise of new gear draws.
+ *
+ *   npm run calibrate            hold what is on target, tune what has drifted
+ *   npm run calibrate -- --all   tune every number afresh
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { ALL_DUNGEONS, HOLLOW_THRONE } from '@/core/gates';
@@ -28,6 +33,38 @@ const before = parseTune(readFileSync(TUNE_FILE, 'utf8'));
 const TARGET = 0.75;
 const HUNTERS = 12;
 const RUNS = 10;
+/** How far a clear rate may sit from its target, either way, before its tuning is moved: 5 points. */
+const HOLD = 0.05;
+/** `--all` tunes every number afresh, holding none. */
+const FULL = process.argv.includes('--all');
+let held = 0, tuned = 0;
+
+// The tunings as they stand, to hold the ones still on target.
+const OLD_GATE = { ...GATE_TUNE };
+const OLD_BLOCK = { ...BLOCK_TUNE };
+const OLD_SPIRE = [...SPIRE_TUNE];
+const OLD_ASCENSION = [...ASCENSION_TUNE];
+const OLD_TRIAL = [...TRIAL_TUNE];
+
+/**
+ * Set one tuning. One that clears within `HOLD` of its target at its old value keeps it; otherwise it is
+ * bisected between `lo` and `hi` until it clears its target. Says whether it was held.
+ */
+function tune(old: number | undefined, set: (v: number) => void, rate: () => number, target: number, lo: number, hi: number): boolean {
+  if (old !== undefined && !FULL) {
+    set(old);
+    if (Math.abs(rate() - target) <= HOLD) { held++; return true; }
+  }
+  for (let i = 0; i < 10; i++) {
+    const mid = Math.sqrt(lo * hi);
+    set(mid);
+    if (rate() > target) lo = mid; else hi = mid;
+  }
+  set(Math.round(Math.sqrt(lo * hi) * 100) / 100);
+  tuned++;
+  return false;
+}
+const how = (kept: boolean) => (kept ? 'held' : 'tuned');
 
 function rate(d: Dungeon, level: number) {
   let c = 0, n = 0;
@@ -43,15 +80,9 @@ function rate(d: Dungeon, level: number) {
 const out: Record<string, number> = {};
 for (const d of [...ALL_DUNGEONS, HOLLOW_THRONE]) {
   const level = d === HOLLOW_THRONE ? 92 : LEVELS[d.rank as Rank][1];
-  let lo = 0.3, hi = 3;
-  for (let i = 0; i < 10; i++) {
-    const mid = Math.sqrt(lo * hi);
-    GATE_TUNE[d.id] = mid;
-    if (rate(d, level) > (d === HOLLOW_THRONE ? 0.5 : TARGET)) lo = mid; else hi = mid;
-  }
-  out[d.id] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
-  GATE_TUNE[d.id] = out[d.id];
-  console.log(d.id, d.rank, out[d.id], (rate(d, level) * 100).toFixed(0) + '%', d.name);
+  const kept = tune(OLD_GATE[d.id], (v) => { GATE_TUNE[d.id] = v; }, () => rate(d, level), d === HOLLOW_THRONE ? 0.5 : TARGET, 0.3, 3);
+  out[d.id] = GATE_TUNE[d.id];
+  console.log(d.id, d.rank, out[d.id], (rate(d, level) * 100).toFixed(0) + '%', how(kept), d.name);
 }
 /** A block of the Spire, tried by hunters of the level it is built for, each in a different week. */
 function spireRate(b: number, level: number, shape?: Dungeon) {
@@ -68,17 +99,6 @@ function spireRate(b: number, level: number, shape?: Dungeon) {
   return c / n;
 }
 
-function bisect(set: (v: number) => void, rate: () => number) {
-  let lo = 0.2, hi = 5;
-  for (let i = 0; i < 10; i++) {
-    const mid = Math.sqrt(lo * hi);
-    set(mid);
-    if (rate() > TARGET) lo = mid; else hi = mid;
-  }
-  const v = Math.round(Math.sqrt(lo * hi) * 100) / 100;
-  set(v);
-  return v;
-}
 
 // The gates are done; the Spire comes second, in two passes. First each gate's creatures, as a block
 // at the middle of their grade, with no level scaling at all.
@@ -86,14 +106,14 @@ SPIRE_TUNE.length = 0;
 for (const k of Object.keys(BLOCK_TUNE)) delete BLOCK_TUNE[k];
 for (const g of ALL_DUNGEONS) {
   const b = blockOf(LEVELS[g.rank as Rank][1]);
-  bisect((v) => { BLOCK_TUNE[g.id] = v; }, () => spireRate(b, builtFor(b), g));
-  console.log('BLOCK', g.id, g.rank, BLOCK_TUNE[g.id], (spireRate(b, builtFor(b), g) * 100).toFixed(0) + '%', g.name);
+  const kept = tune(OLD_BLOCK[g.id], (v) => { BLOCK_TUNE[g.id] = v; }, () => spireRate(b, builtFor(b), g), TARGET, 0.2, 5);
+  console.log('BLOCK', g.id, g.rank, BLOCK_TUNE[g.id], (spireRate(b, builtFor(b), g) * 100).toFixed(0) + '%', how(kept), g.name);
 }
 // Then every block up to the top floor, across the weeks, for the level its floors are built for.
 for (let b = 0; b < SPIRE_TOP / BLOCK; b++) {
   const level = builtFor(b);
-  bisect((v) => { SPIRE_TUNE[b] = v; }, () => spireRate(b, level));
-  console.log('SPIRE', `floors ${b * BLOCK + 1}-${(b + 1) * BLOCK}`, `level ${level}`, SPIRE_TUNE[b], (spireRate(b, level) * 100).toFixed(0) + '%');
+  const kept = tune(OLD_SPIRE[b], (v) => { SPIRE_TUNE[b] = v; }, () => spireRate(b, level), TARGET, 0.2, 5);
+  console.log('SPIRE', `floors ${b * BLOCK + 1}-${(b + 1) * BLOCK}`, `level ${level}`, SPIRE_TUNE[b], (spireRate(b, level) * 100).toFixed(0) + '%', how(kept));
 }
 
 // Ascension last: each level, so a hunter who keeps up, in the middle of a grade that proves levels, clears its target.
@@ -116,14 +136,8 @@ function ascensionRate(level: number) {
 ASCENSION_TUNE.length = 0;
 console.log('ASCENSION level 0, kept-up hunter', (ascensionRate(0) * 100).toFixed(0) + '%');
 for (let L = 1; L <= ASCENSION_RULED; L++) {
-  let lo = 0.5, hi = 8;
-  for (let i = 0; i < 10; i++) {
-    const mid = Math.sqrt(lo * hi);
-    ASCENSION_TUNE[L - 1] = mid;
-    if (ascensionRate(L) > ASCENSION_TARGET(L)) lo = mid; else hi = mid;
-  }
-  ASCENSION_TUNE[L - 1] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
-  console.log('ASCENSION level', L, ASCENSION_TUNE[L - 1], (ascensionRate(L) * 100).toFixed(0) + '%', 'target', (ASCENSION_TARGET(L) * 100).toFixed(0) + '%');
+  const kept = tune(OLD_ASCENSION[L - 1], (v) => { ASCENSION_TUNE[L - 1] = v; }, () => ascensionRate(L), ASCENSION_TARGET(L), 0.5, 8);
+  console.log('ASCENSION level', L, ASCENSION_TUNE[L - 1], (ascensionRate(L) * 100).toFixed(0) + '%', 'target', (ASCENSION_TARGET(L) * 100).toFixed(0) + '%', how(kept));
 }
 
 // The Trial at each level it proves, so a hunter who keeps up wins it about half the time.
@@ -142,14 +156,8 @@ function trialRate(level: number) {
 }
 TRIAL_TUNE.length = 0;
 for (let L = 0; L < ASCENSION_RULED; L++) {
-  let lo = 0.1, hi = 6;
-  for (let i = 0; i < 10; i++) {
-    const mid = Math.sqrt(lo * hi);
-    TRIAL_TUNE[L] = mid;
-    if (trialRate(L) > TRIAL_TARGET) lo = mid; else hi = mid;
-  }
-  TRIAL_TUNE[L] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
-  console.log('TRIAL proving', L, TRIAL_TUNE[L], (trialRate(L) * 100).toFixed(0) + '%');
+  const kept = tune(OLD_TRIAL[L], (v) => { TRIAL_TUNE[L] = v; }, () => trialRate(L), TRIAL_TARGET, 0.1, 6);
+  console.log('TRIAL proving', L, TRIAL_TUNE[L], (trialRate(L) * 100).toFixed(0) + '%', how(kept));
 }
 
 const body = Object.entries(out).map(([k, v]) => `  '${k}': ${v},`).join('\n');
@@ -163,4 +171,5 @@ writeFileSync(TUNE_FILE,
   + `// The Trial at each level from 0 up: tuned so a hunter who keeps up wins it about half the time.\n`
   + `export const TRIAL_TUNE: number[] = [${TRIAL_TUNE.join(', ')}];\n`);
 
+console.log(`\n${FULL ? 'Every tuning tuned afresh (--all).' : `Held ${held} of ${held + tuned} tunings: their clear rates sat within ${Math.round(HOLD * 100)} points of target. Tuned ${tuned}.`}`);
 console.log('\n' + describeTune(before, parseTune(readFileSync(TUNE_FILE, 'utf8')), 'before', 'after'));

@@ -101,9 +101,14 @@ try {
 
   await nav('inventory');
   await sleep(900);
+  // The hunter's page: the hunter at its head (their figure opening Equipment, their name opening Status), Stats and
+  // Skills as cards, three stations, the licence along the foot. No bento tile is left on it.
+  if (await page.locator('.btile').count()) throw new Error('A BENTO TILE IS STILL ON THE INVENTORY SCREEN');
+  if (!(await page.locator('.hhero .avatar').count())) throw new Error('THE HUNTER HAS NO FIGURE AT THE HEAD OF THE INVENTORY');
+  if ((await page.locator('.hubst').count()) !== 3) throw new Error('THE INVENTORY DOES NOT HAVE THREE STATIONS');
   await snap('inventory');
   await snap('inventory-full', true);
-  await page.locator('.btile--status .btile__hit').click(); await sleep(400); await snap('status', true);
+  await page.locator('[data-hub="status"]').click(); await sleep(400); await snap('status', true);
   // A potion held is drunk before one is bought, and its offer can be told not to ask again.
   if (!(await page.locator('.sheet.is-top .pip.is-held').count())) throw new Error('THE HELD POTION DOES NOT SHOW');
   await page.locator('.sheet.is-top .pip.is-held').first().click(); await sleep(400);
@@ -111,7 +116,7 @@ try {
   await page.locator('.syswin .dontask').click(); await sleep(150); await snap('drink-offer');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
-  await page.locator('.btile--stats .btile__hit').click(); await sleep(400); await snap('stats', true);
+  await page.locator('[data-hub="stats"]').click(); await sleep(400); await snap('stats', true);
   // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
   if (await page.locator('.sheet.is-top .btn', { hasText: 'Allocate' }).count()) throw new Error('THE STATS SHEET STILL ALLOCATES');
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
@@ -123,8 +128,8 @@ try {
   await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
   await close();
   // The skill tree: the tile calls while a point has somewhere to go, and a point spent is reported on its card.
-  if (!(await page.locator('.btile--skills.is-call').count())) throw new Error('THE SKILLS TILE DOES NOT CALL FOR ITS POINTS');
-  await page.locator('.btile--skills .btile__hit').click(); await sleep(700); await snap('skills'); await snap('skills-full', true);
+  if (!(await page.locator('[data-hub="skills"].is-call').count())) throw new Error('THE SKILLS TILE DOES NOT CALL FOR ITS POINTS');
+  await page.locator('[data-hub="skills"]').click(); await sleep(700); await snap('skills'); await snap('skills-full', true);
   const can = page.locator('.sheet.is-top .st-node.is-open, .sheet.is-top .st-node.is-can').first();
   await can.scrollIntoViewIfNeeded(); await can.click(); await sleep(250);
   await page.locator('.sheet.is-top .st-card .btn', { hasText: /^(Learn|Level Up)$/ }).click(); await sleep(450);
@@ -146,23 +151,50 @@ try {
   if (await page.locator('.sheet.is-top .st-card').count()) throw new Error('A NEW PATH OPENED WITH A NODE ALREADY CHOSEN');
   await snap('skills-bastion');
   await close();
-  await page.locator('.btile--equipment .btile__hit').click(); await sleep(900); await snap('equipment');
-  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2'); await close();
-  await page.locator('.btile--inventory .btile__hit').click(); await sleep(900); await snap('inventory-grid');
+  // Equipment: the score in its hexagon, a square to each of the ten slots around the figure, the sets worn and the loadouts as rows.
+  await page.locator('[data-hub="equipment"]').click(); await sleep(900);
+  if ((await page.locator('.sheet.is-top .pslot').count()) !== 10) throw new Error('THE FIGURE DOES NOT HAVE TEN SLOTS');
+  if (!(await page.locator('.sheet.is-top .gearhead__gem').count())) throw new Error('EQUIPMENT SHOWS NO SCORE');
+  if ((await page.locator('.sheet.is-top .loadrow').count()) !== 3) throw new Error('EQUIPMENT DOES NOT SHOW THREE LOADOUTS');
+  await snap('equipment');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2');
+  // A set worn opens its own window.
+  if (await page.locator('.sheet.is-top .setrow').count()) {
+    await page.locator('.sheet.is-top .setrow').first().click(); await sleep(500);
+    if (!(await page.locator('.sheet.is-top .setcard').count())) throw new Error('A SET WORN DID NOT OPEN ITS WINDOW');
+    await snap('equipment-set'); await close();
+  }
+  // A slot opens its own window: what is worn there, and every piece held that fits, with what it gains or loses.
+  await page.locator('.sheet.is-top .pslot', { hasText: 'Ring I' }).first().click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .slotworn').count())) throw new Error('A SLOT WINDOW SHOWS NOTHING WORN');
+  await snap('equipment-slot');
+  await close(); await close();
+  await page.locator('[data-hub="inventory"]').click(); await sleep(900); await snap('inventory-grid');
+  if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: 'Item Bag' }).count())) throw new Error('THE BAG IS NOT NAMED ITEM BAG');
+  if ((await page.locator('.sheet.is-top .bagkind').count()) !== 10) throw new Error('THE BAG DOES NOT HAVE A TAB TO EVERY KIND');
+  if (await page.locator('.sheet.is-top .bagkinds').evaluate((el) => el.scrollWidth > el.clientWidth + 1)) throw new Error('THE BAG\'S KINDS SCROLL SIDEWAYS');
+  // A card tapped is held in the dock at the bag's foot; tapped again, its own card opens.
+  await page.locator('.bagtile').first().click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .bagpeek').isVisible())) throw new Error('A CARD TAPPED WAS NOT SHOWN IN THE DOCK');
+  await snap('bag-peek');
+  await page.locator('.sheet.is-top .bagtools__sort').click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .bagmenu').isVisible())) throw new Error('SORT AND SHOW DID NOT OPEN');
+  await snap('bag-menu');
+  await page.locator('.sheet.is-top .bagtools__sort').click(); await sleep(200);
   await page.locator('.bagtile').first().click(); await sleep(700); await snap('item');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-2'); await close();
-  await page.locator('.bagtile[aria-label^="Warden"]').first().click(); await sleep(400);
+  await page.locator('.bagtile[aria-label^="Warden"]').first().click(); await sleep(300); await page.locator('.sheet.is-top .bagpeek__more').click(); await sleep(400);
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('item-set'); await close();
   // Select: the rarity chips pick every piece that can go, and the bar counts what they would pay.
   await page.locator('.bagtools__pick').click(); await sleep(200);
   // A rarity chip picked shows it, in its colour with a tick; tapped again, it unpicks its pieces.
-  const chip = page.locator('.bagpick__chip[data-rarity]').first();
+  const chip = page.locator('.qsel__cell[data-rarity]:not([disabled])').first();
   await chip.click(); await sleep(300);
-  if (!(await page.locator('.bagpick__chip[data-rarity].is-on').count())) throw new Error('A PICKED RARITY CHIP DOES NOT SHOW IT');
+  if (!(await page.locator('.qsel__cell[data-rarity].is-on').count())) throw new Error('A PICKED RARITY CHIP DOES NOT SHOW IT');
   const picked = await page.locator('.baggrid .bagtile.is-picked').count();
   await snap('inventory-select');
   await chip.click(); await sleep(300);
-  if (await page.locator('.bagpick__chip[data-rarity].is-on').count()) throw new Error('TAPPING A PICKED CHIP AGAIN DID NOT UNPICK IT');
+  if (await page.locator('.qsel__cell[data-rarity].is-on').count()) throw new Error('TAPPING A PICKED CHIP AGAIN DID NOT UNPICK IT');
   if (picked && (await page.locator('.baggrid .bagtile.is-picked').count())) throw new Error('THE UNPICKED CHIP LEFT ITS PIECES PICKED');
   // What the picked pieces would give back is counted in materials, not shards.
   await chip.click(); await sleep(300);
@@ -172,19 +204,25 @@ try {
   await page.locator('.bagtools__pick').click(); await sleep(200);
   if (await page.locator('.bagtile__dupe').count()) throw new Error('A FUSION MARK IS STILL ON THE BAG');
   await page.locator('.bag__views .seg__btn', { hasText: 'Sets' }).click(); await sleep(700); await snap('inventory-sets');
+  if (!(await page.locator('.sheet.is-top .codexrow').count())) throw new Error('THE SETS VIEW HAS NO ROWS');
+  // A 4-piece's blessing is named on one line, never squeezed into a box a letter wide.
+  if (await page.locator('.sheet.is-top .settiers__boon b').evaluateAll((els) => els.some((e) => e.getBoundingClientRect().height > 30))) throw new Error('A SET BLESSING NAME IS SQUEEZED');
+  await page.locator('.sheet.is-top .codexrow').first().click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .setcard').count())) throw new Error('A SET ROW DID NOT OPEN ITS WINDOW');
+  await close(); await sleep(250);
   await close();
   // The Forge: every blueprint known, a row each; a recipe's materials held over needed; forging turns a new piece over.
-  await page.locator('.btile--forge .btile__hit').click(); await sleep(700);
+  await page.locator('[data-hub="forge"]').click(); await sleep(700);
   if ((await page.locator('.sheet.is-top .bprow').count()) < 5) throw new Error('THE FORGE DOES NOT LIST THE BLUEPRINTS KNOWN');
   await snap('forge'); await snap('forge-full', true);
-  await page.locator('.sheet.is-top .bagtools__only', { hasText: 'Can forge' }).click(); await sleep(300);
+  await page.locator('.sheet.is-top .forgefilter__opt', { hasText: 'Can forge' }).click(); await sleep(300);
   if (!(await page.locator('.sheet.is-top .bprow.is-ready').count())) throw new Error('THE VETERAN CAN FORGE NOTHING');
   await snap('forge-ready');
   await page.locator('.sheet.is-top .bprow.is-ready').first().click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .costgrid__one').count())) throw new Error('A BLUEPRINT SHOWS NO MATERIALS');
   await snap('blueprint'); await snap('blueprint-full', true);
   const held = await page.locator('.sheet.is-top .heldrow').count();
-  await page.locator('.sheet.is-top .recipe > .btn--gold').click(); await sleep(1800);
+  await page.locator('.sheet.is-top .forgebtn').click(); await sleep(1800);
   if ((await page.locator('.sheet.is-top .heldrow').count()) !== held + 1) throw new Error('FORGING PUT NO PIECE IN THE BAG');
   if (!(await page.locator('.sheet.is-top .recipe__reveal .flip.is-open').count())) throw new Error('THE FORGED PIECE WAS NOT TURNED OVER');
   await page.locator('.sheet.is-top .recipe__reveal').scrollIntoViewIfNeeded(); await snap('blueprint-forged');
@@ -203,13 +241,14 @@ try {
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click(); await sleep(400); await snap('forge-materials', true);
   await close();
   // A worn weapon's card: its familiarity, and the upgrade's alloys held over needed.
-  await page.locator('.btile--equipment .btile__hit').click(); await sleep(700);
-  await page.locator('.sheet.is-top .dollslot', { hasText: 'Weapon' }).click(); await sleep(600);
+  await page.locator('[data-hub="equipment"]').click(); await sleep(700);
+  await page.locator('.sheet.is-top .pslot', { hasText: 'Weapon' }).click(); await sleep(600);
+  await page.locator('.sheet.is-top .slotworn__open').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .famcard').count())) throw new Error('THE WORN WEAPON SHOWS NO FAMILIARITY');
   await page.locator('.sheet.is-top .famcard').scrollIntoViewIfNeeded(); await snap('item-weapon');
   if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
-  await close(); await close();
-  await page.locator('.btile--dossier .btile__hit').click(); await sleep(400); await snap('dossier'); await close();
+  await close(); await close(); await close();
+  await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier'); await close();
 
   await nav('quests');
   await sleep(800);
@@ -250,7 +289,11 @@ try {
 
   await nav('gates');
   await snap('gates', true);
-  if (await page.locator('.btile--ascension').count()) throw new Error('THE ASCENSION TILE SHOWED BELOW S-RANK');
+  if (await page.locator('.ghcard.is-ascension').count()) throw new Error('THE ASCENSION CARD SHOWED BELOW S-RANK');
+  // The day's Gates as a radar: a portal to each grade round the count, the record as facts under it.
+  if ((await page.locator('.gradar__gate').count()) !== 6) throw new Error('THE RADAR DOES NOT HOLD A PORTAL TO EACH GRADE');
+  if ((await page.locator('.ghrecord > span').count()) !== 4) throw new Error('THE RECORD IS NOT FOUR FACTS');
+  if (await page.evaluate(() => document.querySelector('.app, body').scrollWidth > window.innerWidth)) throw new Error('THE GATES SCREEN SCROLLS SIDEWAYS');
   // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
   if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
   if ((await page.locator('.vitalstrip .vrow').count()) < 3) throw new Error('THE CONDITION STRIP IS NOT UNDER VALCORDE');
@@ -258,10 +301,16 @@ try {
   if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
   await snap('gates-potion');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
-  await page.locator('.btile--grade .btile__hit').click(); await sleep(400); await snap('grade'); await close();
+  await page.locator('.ghcard.is-licence').click(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .glicence__card').count())) throw new Error('THE GRADE CARD DID NOT OPEN THE LICENCE');
+  await snap('grade'); await close();
+  // A grade's portal opens the board on that grade alone.
+  await page.locator('.gradar__gate:not(.is-none):not(.is-shut)').first().click(); await sleep(600);
+  if ((await page.locator('.sheet.is-top .gband').count()) !== 1) throw new Error('A GRADE ON THE RADAR DID NOT OPEN THE BOARD ON IT');
+  await snap('board-from-radar'); await close();
   // The Pale Spire is a Weekly Quest, not a Gates tile.
   if (await page.locator('.btile--spire').count()) throw new Error('THE PALE SPIRE IS STILL ON THE GATES SCREEN');
-  await page.locator('.btile--board .btile__hit').click(); await sleep(600); await snap('board', true);
+  await page.locator('.gradar__all').click(); await sleep(600); await snap('board', true);
   // The board: a band to each grade, a row to each Gate; the rail filters by grade, and to the marked ones.
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
   // The day as facts, the grades as a rail of portals, and each Gate's boss power at its card's right.
@@ -769,7 +818,7 @@ try {
   }
   // A whole build, as the sky draws it.
   await nav('inventory');
-  await page.locator('.btile--skills .btile__hit').click(); await sleep(700); await snap('asc-skills'); await close(); await sleep(250);
+  await page.locator('[data-hub="skills"]').click(); await sleep(700); await snap('asc-skills'); await close(); await sleep(250);
   // Igris, Ascendant at the top with two stars and the Essence for a third: the Awakening panel and its hold.
   await nav('shadows');
   await sleep(600); await snap('asc-shadows', true);
@@ -813,10 +862,11 @@ try {
   }
   await close();
   await nav('gates');
-  if (!(await page.locator('.btile--ascension').isVisible())) throw new Error('THE ASCENSION TILE IS MISSING AT S-RANK');
-  if (await page.locator('.gatesgrid', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');
+  if (!(await page.locator('.ghcard.is-ascension').isVisible())) throw new Error('THE ASCENSION CARD IS MISSING AT S-RANK');
+  await page.locator('.ghunter').scrollIntoViewIfNeeded(); await sleep(300); await snap('gates-ascension');
+  if (await page.locator('.gatehome', { hasText: /To open Ascension|Face The Trial|opens again tomorrow|Chosen in the world/ }).count()) throw new Error('THE TRIAL OR THE CHOSEN IS ON THE GATES SCREEN ITSELF');
   // The first open walks the hunter through the sheet, a part at a time.
-  await page.locator('.btile--ascension .btile__hit').click();
+  await page.locator('.ghcard.is-ascension').click();
   await page.waitForSelector('.tour__card--app', { timeout: 5000 });
   for (let i = 1; await page.locator('.tour').isVisible().catch(() => false); i++) {
     await sleep(350); await snap(`ascension-tour-${i}`);
@@ -824,10 +874,25 @@ try {
     if (i > 8) throw new Error('THE ASCENSION WALKTHROUGH DID NOT END');
   }
   await sleep(300); await snap('ascension', true);
+  // The dial and the climb at the window's top: a rung to each level, the one entered at marked.
+  if (!(await page.locator('.sheet.is-top .ascdial__level').count())) throw new Error('ASCENSION HAS NO DIAL');
+  if (!(await page.locator('.sheet.is-top .ascfloor.is-here').count())) throw new Error('THE CLIMB DOES NOT MARK THE LEVEL ENTERED AT');
+  if (!(await page.locator('.sheet.is-top .ascsummit').count())) throw new Error('THE NEXT LEVEL HAS NO CHALLENGE CARD');
+  if (await page.locator('.sheet.is-top .markgrid').count()) throw new Error('THE MARKS STILL SIT AT THE FOOT OF ASCENSION');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(300); await snap('ascension-top');
   // Setting a mark is the System's offer.
-  await page.locator('.sheet.is-top .marks .btn').first().click(); await sleep(500); await snap('mark-offer');
+  // The marks as seals: a card to each, the one that can take a set glowing; a tap offers it, the seal before and after under the lines.
+  // The marks have their own window, opened from Ascension's Marks card.
+  await page.locator('.sheet.is-top .ascmarks').scrollIntoViewIfNeeded(); await sleep(300); await snap('ascension-foot');
+  await page.locator('.sheet.is-top .ascmarks').click(); await sleep(500);
+  if ((await page.locator('.sheet.is-top .markcard').count()) !== 5) throw new Error('THE MARKS ARE NOT A SEAL EACH');
+  await snap('marks');
+  await page.locator('.sheet.is-top .markcard.is-ready').first().click(); await sleep(500);
+  if ((await page.locator('.syswin .markstamp .markseal').count()) !== 2) throw new Error('THE MARK\'S OFFER DOES NOT SHOW ITS SEAL BEFORE AND AFTER');
+  await snap('mark-offer');
   if (!(await page.locator('.syswin.sysframe', { hasText: 'Would you like to set this mark?' }).isVisible())) throw new Error('THE MARK IS NOT OFFERED IN THE SYSTEM’S WINDOW');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(400);
+  await close();
   // The proof is done, so the Trial stands open from here: its brief is the System's, and the Association sends no one.
   await page.locator('.sheet.is-top .btn', { hasText: 'Face The Trial' }).click(); await sleep(800);
   await snap('trial-brief', true);

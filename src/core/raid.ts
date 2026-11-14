@@ -19,7 +19,7 @@ import { tricksOf, type TrickId } from '@/data/tricks';
 import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, pairKey, passages, reach, sight, systemPick, systemRoad, systemWalk, type Chamber, type GateMap, type MapNode, type Openings } from './map';
 import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
-import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setPieces, sumBonuses, worn as wornItems } from './gear';
+import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setBoons, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
 import { BOOST_CAP, GATE_XP, grantXP, kitFor, practiceAward, type XpResult } from './progression';
 import * as tree from './skilltree';
@@ -70,7 +70,9 @@ export function heroSpec(s: Save, now = Date.now(), level = 0): UnitSpec {
   // The skill tree: the skills taken in at their levels, every passive learned, and its fight bonuses;
   // and what the worn weapon's familiarity adds.
   const b = tree.buildOf(s);
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: b.passives, bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero' };
+  // An armour set's 4-piece grants a blessing for every Gate, as a shrine's would.
+  const boons = setBoons(items);
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: b.passives, bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero', ...(Object.keys(boons).length ? { boons } : {}) };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
@@ -306,7 +308,10 @@ export function blessed(specs: UnitSpec[], run: Carried): UnitSpec[] {
     const at = tree.skillAt(n, Math.min(n.max, to));
     return to > n.max ? { ...at, mult: Math.round((at.mult + (to - n.max) * HONE_PAST) * 100) / 100 } : at;
   });
-  return [{ ...hero, bonus, own, boons: blessings.boonsOf(run) }, ...rest];
+  // The run's blessings join what the hunter's sets grant; one held both ways counts at the higher tier.
+  const boons = { ...(hero.boons ?? {}) };
+  for (const [id, tier] of Object.entries(blessings.boonsOf(run))) boons[id] = Math.max(boons[id] ?? 0, tier);
+  return [{ ...hero, bonus, own, boons }, ...rest];
 }
 
 /** The level of each skill the hunter has equipped, by name: what a run walks in with. */

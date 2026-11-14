@@ -311,12 +311,12 @@ try {
   await drain();
 
   // The Gates are home, and the practice gate is first on the board.
-  await page.waitForSelector('.btile.is-gate.is-practice', { timeout: 10000 });
+  await page.waitForSelector('.gatehome__practice .gaterow', { timeout: 10000 });
   await drain();
   await snap('gates');
   // Quests open with the practice gate cleared, not before.
   if (!(await page.locator('[data-nav="quests"].is-locked').isVisible())) throw new Error('THE QUESTS TAB OPENED BEFORE THE PRACTICE GATE');
-  await raidGate('.btile.is-gate.is-practice .btile__hit', 'practice');
+  await raidGate('.gatehome__practice .gaterow', 'practice');
   if (!(await page.locator('.xpbar__label').innerText()).includes('LV 5')) throw new Error('THE PRACTICE GATE DID NOT LAND ON LEVEL 5');
 
   // Spend the points it paid. The level-up's Allocate opens the Status sheet itself; if it was closed, the Status tile does.
@@ -324,7 +324,7 @@ try {
     await nav('inventory');
     await sleep(400);
     await drain();
-    await page.locator('.btile--status .btile__hit').click();
+    await page.locator('[data-hub="status"]').click();
     await sleep(400);
   }
   if (!(await page.locator('.sheet.is-top .status').isVisible())) throw new Error('THE STATUS SHEET DID NOT OPEN');
@@ -371,8 +371,8 @@ try {
   if (await visible('.sysframe.contracts')) throw new Error('THE DAILY QUESTS ARE STILL ON THE GATES SCREEN');
   const before = await page.locator('.xpbar__label').innerText();
   // Win or lose it pays: a defeat still pays a share. The System fights this one.
-  // The open Gates are one tile; it opens the board.
-  await page.locator('.btile--board .btile__hit').click();
+  // The radar's View All Gates opens the board.
+  await page.locator('.gradar__all').click();
   await sleep(400);
   if (!(await visible('.sheet.is-top .gboard .gaterow'))) throw new Error('THE BOARD TILE DID NOT OPEN THE GATES');
   await snap('board');
@@ -383,7 +383,7 @@ try {
   // The first real Gate's first clear left a blueprint and its materials: the Forge forges it.
   await nav('inventory');
   await drain();
-  await page.locator('.btile--forge .btile__hit').click();
+  await page.locator('[data-hub="forge"]').click();
   await sleep(500);
   // A clear leaves a blueprint; a party carried out leaves with nothing, and the Practice Gate's iron is all there is.
   const blueprints = await page.locator('.sheet.is-top .bprow').count();
@@ -391,7 +391,7 @@ try {
   await snap('forge');
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click();
   await sleep(300);
-  if (!(await visible('.sheet.is-top .matrow:not(.is-none)'))) throw new Error('THE PRACTICE GATE LEFT NO MATERIALS IN THE FORGE');
+  if (!(await visible('.sheet.is-top .mattile:not(.is-none)'))) throw new Error('THE PRACTICE GATE LEFT NO MATERIALS IN THE FORGE');
   await snap('forge-materials');
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Blueprints' }).click();
   await sleep(300);
@@ -400,7 +400,7 @@ try {
   await page.waitForSelector('.sheet.is-top[aria-label^="Blueprint:"]', { timeout: 3000 });
   await sleep(400);
   await snap('forge-blueprint');
-  const forgeBtn = page.locator('.sheet.is-top .recipe > .btn--gold');
+  const forgeBtn = page.locator('.sheet.is-top .forgebtn');
   if (await forgeBtn.isEnabled()) {
     const held = await page.locator('.sheet.is-top .heldrow').count();
     await forgeBtn.click();

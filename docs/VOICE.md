@@ -95,15 +95,17 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | A System notice set into a screen (a Shadow has joined your army) | The System | `screens/Shadows.tsx` |
 | Potion chips ("Full", "Rested") and the activity log | The interface | `core/shop.ts`, `core/raid.ts` |
 | The Status sheet, Skills, Inventory, the Forge, the Exchange, item, blueprint and Shadow cards | The System | `screens/Inventory.tsx`, `screens/Gear.tsx`, `screens/Forge.tsx`, `screens/Shadows.tsx`, `screens/Exchange.tsx` |
-| The Inventory: its counts (`Items`, `New`, `Designs`, `Mana Shards`), Items and Sets, a tab to every kind, `Sort: Score`, the filters (`Better`, `Set pieces`, `Starred`), `Select` and its bar (`3 selected` and what they would give back as material chips, `Iron Scrap +6`, Recycle); a square to every item, `New` until it has been seen | The System; the tabs, the filters and the bar's count are the interface's labels inside its frame | `screens/Gear.tsx` |
+| The Inventory: its counts (`Items`, `New`, `Designs`, `Mana Shards`), Items and Sets, a tab to every kind, `Sort: Score`, the filters (`Upgrades`, `Set pieces`, `Starred`), `Select` and its bar (`3 selected` and what they would give back as material chips, `Iron Scrap +6`, Recycle); a square to every item, `New` until it has been seen | The System; the tabs, the filters and the bar's count are the interface's labels inside its frame | `screens/Gear.tsx` |
 | The Sets view: `Designs discovered` by rarity, and a card to every set, its pieces held, known as blueprints (the blueprint mark, opening the recipe), seen or `-- --`, what 2 and 3 worn pay, and its home Gate | The System | `SetCard` in `screens/Gear.tsx` |
-| An item's card: its rarity and kind, its tags (`Worn · Weapon`, its set, `✦ Perfect`, `Masterwork`), Score and what it gains over the piece it would replace (`▲ 27`), `Compared with`, Quality and its bar, each stat with its difference, each property with a bar from its design's worst to its best and the range (`9-13%`), its set, a weapon's `Familiarity` (its pips, `Familiarity points: 150/260`, `Attack and magic +4% · Forged quality from 16%`), Upgrade (Quality and Score before and after, and its materials as tiles held over needed), `Blueprint · Forge another`, Equip, the star, and Recycle with what it gives back | The System; differences are drawn as ▲ and ▼ with their signed values, gains in green and losses in red; a material tile is green with enough and red without | `ItemCard` in `screens/Gear.tsx` |
+| An item's card, headed by the piece itself after Diablo IV's and Genshin Impact's item pages: its art large in its rarity's light with rays turning behind it, its rarity and kind, its tags (`Worn · Weapon`, its set, `✦ Perfect`, `Masterwork`), `Score` large and what it gains over the piece it would replace in a chip (`▲ 27`), its Quality and bar along the card's foot (`Steps to perfect: 9`); then `Compared with` over the worn piece's name and score; Equip, the star and the bin (Recycle, its offer saying what it gives back) in one row; `Stats` and `Properties` in one box, each stat with its difference, each property with a bar from its design's worst to its best and the range (`9-13%`), the card text under them; Upgrade (Quality and Score, each before and after in a box of its own, and its materials as tiles held over needed); a weapon's `Familiarity` (its pips, `Familiarity points: 150/260`, `Attack and magic +4% · Forged quality from 16%`); its set; `Blueprint` over `Forge another` | The System; differences are drawn as ▲ and ▼ with their signed values, gains in green and losses in red; a material tile is green with enough and red without | `ItemCard` in `screens/Gear.tsx` |
 | Recycling offered: `Would you like to recycle this item?` (or `these items?` and `Items: 3`), the item and its quality, what it gives back (`Mana Silver +5 · Mana Core +2`), `A recycled item cannot be recovered.` in red | The System's Offer | `screens/Gear.tsx`, `screens/Forge.tsx` |
-| `FORGE`: its counts (`Blueprints`, `Can forge`, `Materials`, `Mana Shards`), `Blueprints · 26` and `Materials`, a tab to every kind, the filters `Can forge` and `Set pieces`; a band to each rarity, and a row to each blueprint: its art, its name, `Epic Amulet · Held: 1`, and `All materials held` in green or `Materials missing` in red; a weapon's familiarity as pips | The System | `screens/Forge.tsx` |
-| A blueprint's card, `BLUEPRINT: {name}`: its rarity and kind, the `Blueprint` tag, `Score 30-50` (read aloud as `30 to 50`), `Worn` and the piece it would replace, `Stats` (`Quality 16-100%`, each stat as a range, `PER +1.5-2.5`), `Properties` as ranges, a weapon's Familiarity, its set, `Required materials` with the shards, `Track Missing · 2` under them while any is short (`Stop Tracking` once all those are tracked), the Forge button (`Forge · 63`, or why it cannot: `Materials missing`, `Mana Shards 40/63`), the piece just forged turned over with `Quality 87%`, and `Held`: every piece of the design with its quality and Recycle | The System | `Recipe` in `screens/Forge.tsx` |
-| The Materials view: `Alloys`, `Parts`, `Trophies` (`2/14`) and `Ascension`, a row to each material: its art, its name, its line, how many are held; a row tapped is tracked, and carries the anvil. Tracking toasts `Tracking: Runesteel`, and `No longer tracking: Runesteel` | The System; a material's line is the Association's plain description | `screens/Forge.tsx`, `data/forge.ts` |
+| `FORGE`, rebuilt at the owner's call after Monster Hunter's smithy and Warframe's Foundry: the hearth at its head (the anvil over its coals, embers rising, `21` large over `Can forge`, then `Upgrades` in gold while any is (`Upgrade` for one), `Blueprints`, `Materials`, and the shards), its frame gold while a blueprint beats what is worn; `Blueprints · 26` and `Materials · 8`; a tab to every kind, two rows of five; `All`, `Can forge`, `Upgrades` (its count in gold, `▲ 3`) and `Set pieces` as one row of four; a band to each rarity, `3/5` of it can be forged, and a row to each blueprint: its art, its name, `Epic Amulet · Held: 1`, a chip to each thing its recipe asks for (the material's art and a tick in green when enough is held, `2/16` in red when not, the shards last), a weapon's familiarity as pips, and `▲ Upgrade` in gold where it is rarer than what is worn where it goes, as Diablo IV marks a piece that beats what is worn; those first, then what can be forged. Cleaned at the owner's call (too many boxes): the hearth, the kinds, the filters and the stats stand unframed, the blueprints are a list with a hairline between rows, and a recipe's chips are its materials' art and a tick or `0/24`, with no box round them | The System | `screens/Forge.tsx` |
+| A blueprint's card, `BLUEPRINT: {name}`, headed as an item's card is (its art large, no icon box beside the header): its rarity and kind, the `Blueprint` tag, `Score 30-50` (read aloud as `30 to 50`), `Worn` and the piece it would replace, `Stats` (`Quality 16-100%`, each stat as a range, `PER +1.5-2.5`), `Properties` as ranges, a weapon's Familiarity, its set, then the altar, in the forge's glow: `Required materials` with the shards, a tile to each, held over needed, filling toward what it needs (green when full, red while short), `Track Missing · 2` under them while any is short (`Stop Tracking` once all those are tracked), `Quality` and `16-100%` over a bar from 0 to 100 (the floor familiarity holds shaded off, `Familiarity holds every roll at 16% or better.`) where the piece just forged lands as a white mark with its quality, the piece turned over with `Quality 87%`, sparks thrown when the hammer falls, and the Forge button (`Forge · 63`, breathing gold while it can, or why it cannot: `Materials missing`, `Mana Shards 40/63`); then and `Held`: every piece of the design with its quality and Recycle | The System | `Recipe` in `screens/Forge.tsx` |
+| The Materials view: `Alloys` (`4/6` held), `Parts`, `Trophies` (`2/14`) and `Ascension`, a tile to each material, three to a row: its art, how many are held large, its name; the anvil on one tracked. A tile tapped is held in the dock at the view's foot: its art, its name, its line, `Held`, `Blueprints` (how many known ask for it) and `Short for` in red, and **Track** (or **Stop Tracking**). Tracking toasts `Tracking: Runesteel`, and `No longer tracking: Runesteel` | The System; a material's line is the Association's plain description | `screens/Forge.tsx`, `data/forge.ts` |
 | What a run left, on its results: `Materials` as chips (`Iron Scrap +10 · Monster Bone +4`); the blueprints turned over first among the finds, each marked `Blueprint`; on a clear, `Feats` with `2/3`, the Gate's three as on the brief, each `First time: Blueprint +1` in green, `Met` or `Not met`; Notifications for the Seals the run walked in with, `[Seals] Swollen, Dry. Their pay is in what the run left.` (`Carried out: nothing is paid.`), and for the conditions met, `[Special drops] 2 creatures defeated the way their condition asks.`; and a Notification for the weapon carried in, `[Ancient Dragon Talon] Familiarity 2` and `Familiarity points +8`, or `Familiarity: 2 → 3` when a rank is reached, its pips at the side | The System, as alerts and loot | `Results` in `screens/Arena.tsx` |
-| The Equipment sheet: `Equipment score`, what is worn adds stat by stat and its properties and sets in a line, the figure with a slot to either side, Auto Equip, Loadouts (`Loadout I`, `Worn`, Wear, Save, `Save Worn`, `Missing: 1`) and the sets worn | The System | `Equipment` in `screens/Gear.tsx` |
+| The Equipment sheet, after Destiny 2's and Diablo IV's character screens: the score in a hexagon beside `Equipment score`, a diamond to each slot filled and `Slots: 10/10`; the hunter's figure wearing what is worn, each slot's part of it (the head, the chest, the arms and hands, the legs, the feet, the pendant, a ring on each hand, the sword in one hand and the shield at the other) filled in its piece's rarity and dashed while the slot is empty, the part of the slot pointed at outlined white; a square to each slot either side (`HEAD`, `RING I`), each the piece's art with its score, its quality as a gold line under its name, framed in its set's hue while the set pays, and a gold ▲ where Auto Equip would change it (`+` where an empty slot has something held that fits); Auto Equip (gold, its count in a box of its own, `Auto Equip 1`) beside `Inventory 28`; `Stats` (what is worn adds to each stat, in white, then its `Properties` two to a row in ice, `EFFECT CHANCE +26.7`); `Sets worn` (`Paying: 1`), a row to each set with a piece worn: its mark, its name, a diamond to each piece and `2/3`, and what two and three pay, lit once worn; and `Loadouts`, a row to each (`Loadout I` in its hexagon, `Worn`, a pip to each slot, `Score 387`, `Missing: 1`, Wear, Save, `Save Worn`) | The System | `Equipment` in `screens/Gear.tsx` |
+| A slot's window, `EQUIPMENT: {Slot}`: `Worn` and Unequip over the piece worn there (its art, its name, `Epic Ring · Quality 82%`, its stats in white, spaced), then `Held` and its count, a row to every piece held that fits, best first: its art (`WORN` on a ring worn in the other ring slot), its name, `Rare · Quality 66%`, its stats, its score and what it gains or loses on the piece worn (`▼ 20` in red), and Equip; Auto Equip's own pick for the slot framed in gold, its Equip gold. A row opens the piece's card | The System | `SlotWindow` in `screens/Gear.tsx` |
+| A set's window, `SET: {name}`, opened from a set worn: its pieces held, worn, known as blueprints or still to find (five to an armour set, two to a jewellery set), what it pays (`2-piece` and its stats; `4-piece`, its stats, and `[Iron Skin] I` in gold over what the blessing does), and its home Gate | The System | `openSet` in `screens/Gear.tsx` |
 
 Ascension rule text belongs to the interface (the Gates screen, the Guide). When the System announces
 a new level it names the level and what it opened, never the rule.
@@ -273,12 +275,15 @@ The header is one of a closed set. Anything not on this list is a NOTIFICATION.
 | QUEST INFO | One quest: name, brief, goal, rewards |
 | QUEST REWARDS | What a finished quest paid |
 | STATUS | The hunter's sheet |
-| STATS | The five stats: where each comes from (base, class, gear) and the hunter's numbers in a fight. Its tile is the Inventory's Stats |
+| STATS | The five stats: where each comes from (base, class, gear) and the hunter's numbers in a fight. Its card is the Inventory screen's Stats |
 | SKILLS | Skills, passive and active |
-| EQUIPMENT | What the hunter wears: a slot to each of the ten around them, the score, the sets worn |
-| INVENTORY | What the hunter holds |
+| EQUIPMENT | What the hunter wears: a square to each of the ten slots around their figure, the score in its hexagon, what it adds, the sets worn, the loadouts. A slot's own window is the card `Equipment: Ring I` |
+| ITEM BAG | What the hunter holds: every piece of gear as a card, and every set and design found. Named apart from the Inventory screen that opens it (the owner's call: two windows named Inventory read as one) |
 | FORGE | Every blueprint known, a row each saying whether its materials are all held, and every material held. ARISE's own window: the source has no forge. A blueprint's card is `BLUEPRINT: …` |
 | GATES | Every Gate standing open today, a tile each, under the grade tabs |
+| LICENCE | The hunter's licence with the Association: the card, their number on it, the grade the board answers to. Its number is on the card, so the head names the window only (the owner's call) |
+| ASCENSION | The level the Gates are entered at, as a dial, the road to the next level, the climb of every level and its rule, and the way to the marks. The level is the dial, so the head names the window only |
+| MARKS | The marks, a seal to each, set from here; opened from Ascension (the owner's call: the marks have their own window). The seals are its pictures, so the head names the window only, as the Forge's does |
 | ARMY | Every Shadow bound, a tile each |
 | SETTINGS, GUIDE | The interface's two windows, set in the System's frame at the owner's call. Their words stay the interface's: plain, free to explain and to name the System |
 | EXCHANGE | The shop: the balance, the potions and the day's stock. ARISE's own name for it, not the source's "Shop", so the place has one name everywhere |
@@ -297,13 +302,22 @@ for advancement, orange for Gates. The text inside follows these:
 
 - **A name** sits in brackets and stands out. An enemy or boss name is red.
 - **A gain or an effect's value** is green: `+25`, `ALL ABILITIES +40%`.
+- **In the gear's windows green is kept for what changes** (the owner's call: a window where every
+  figure was green read as one colour and meant nothing). A piece's own stats, and what the gear worn
+  adds to each stat, are white, each beside its stat's glyph in the System's cyan; its properties are
+  ice, the System's cyan washed toward white (`PER +4.6` white, `Crit Chance +9.8%` ice); green is a
+  gain over the piece worn (`▲ 16`, `▲ +0.9`), a set's bonus while it pays, and Mana Shards, the
+  currency; an upgrade's result is gold, as advancement is (`78% › 88%`). A property's bar runs cyan,
+  gold once it is at its best, the bars of a piece's properties in one column whatever their ranges.
+  Bonuses side by side are spaced, not dotted: `PER +4.6   AGI +2.3`. `Worn`, on a piece's art and
+  among its tags, is white: it says where a piece is, not that anything was gained.
 - **Unspent Ability Points** are gold wherever a tile shows them, with a lit `+` mark: gold is
   advancement, the "there is something for you here" colour. They stop being gold once spent.
 - **A tile waiting on the hunter is gold, and only then.** On every screen, a tile with something to
   do or something new (points to spend, a skill to choose, a rank or a promotion to claim, a Trial
   open, a mark to set, a Shadow just bound, a squad slot empty, better gear to put on, a run left
   open) turns its frame gold whatever its kind, lights its count gold with a word (`3 new`,
-  `4 points`, `Ready`, `Open`, `1 ready`, `3 better`), and a light crosses it (`call` in
+  `4 points`, `Ready`, `Open`, `1 ready`, `3 upgrades`), and a light crosses it (`call` in
   `ui/bento.tsx`). Otherwise a tile keeps its screen's colour: Skills, Reclassification, the Trial,
   the Chosen and Ascension are not gold at rest, though the windows they open are advancement's.
   Ryn's card turns gold the same way when a job is done. The breathing frame (`hot`) is kept for
@@ -515,18 +529,63 @@ for advancement. Every quest's name wears its type, and these are the names:
 | The Chosen walking today | `[Chosen: The Iron Penitent]` | `Defeat [The Iron Penitent] in Revenant Gatehouse.`, the foe in red |
 | Every Secret Quest | `[Secret Quests]` | Each one done, ticked: its name, `Goal: {goal}` and its reward under it, its tier at the side. The rest are one row, `?` / `Sealed: {n}` |
 
-- **Every main screen but Quests is a grid of these tiles** (`ui/bento.tsx`; Quests is a log, above): Inventory (Status, Stats, Skills,
-  Equipment, Inventory, the Exchange, the hunter's card), Gates (the Practice Gate until it is
-  cleared, the open run, Open Gates, Grade, Record, Ascension; Open Gates is the screen's centre, larger
-  than the rest and lit in orange),
-  and Shadows (the Army and the Orders; the Army is the screen's centre, larger than the rest: the
-  squad's slots over the reserve). A list is one tile that opens its window: Open Gates opens
-  GATES, a band to each grade and a row to each Gate, its portal in its grade's colour; the Army opens ARMY, a roster with a
-  row to every Shadow, where the squad is made. On Gates, the hunter's condition is not a
+- **Every main screen is rebuilt at the owner's call** (Quests is a log, above; Shadows a stage; Gates a radar; Inventory
+  the hunter's page). Inventory, after the character screens of Genshin Impact and Honkai: Star Rail and Solo Leveling:
+  Arise's hunter page: the hunter at its head in the System's frame (gold while Status waits on them), their figure
+  wearing what is worn, as Equipment draws it, over `Equipment 387` and a gold `▲ 1` while Auto Equip has something
+  better, opening EQUIPMENT; beside it their sigil, name and `Berserker · C-Rank`, HP, MP and FTG as bars, and at its
+  foot `Ability Points: 4` in gold (or the rank to claim, or `Status`), opening STATUS. Under it two cards: `Stats`
+  with the lead stat (`STR 64`), the five stats' figure and `212 in all`; `Skills` with the class's grade, the sky and
+  `Skill Points: 17` in gold while they have somewhere to go. Then three stations: the Item Bag (the three best pieces
+  fanned, `Items: 28`, a `3 new` badge), the Forge (its anvil, `Can forge: 21`, a gold `▲ 3` badge while a
+  blueprint beats what is worn) and the Exchange (its shard, the restock countdown). Along the foot the licence:
+  its seal, `Hunter Licence` over its number and `Gates cleared`, opening the dossier. Gates, after the portals scattered over Solo Leveling: Arise's city: under the hunter's condition, the run
+  left open as a stage card in gold (`[Revenant Gatehouse]` over its steps as diamonds and `3/11`, **Go Back In** at
+  its right), the Practice Gate as the board's own stage card until it is cleared, then the day's Gates as a radar in
+  the Gates' orange frame: rings with a sweep turning over them, the count large at the hub over `Open Gates` and
+  `Redraw` with its countdown in gold, and a portal to each grade round it in its colour with its count under it,
+  starred where a marked Gate stands, its letter dimmed with a lock badge beyond the licence and faded where none
+  stands (read aloud `C-Rank: 3 open, one marked`); a tap on a portal opens GATES on that grade alone, and
+  **View All Gates** under the radar opens it whole. Under it the hunter: `Grade` over `C-Rank` and `Gates up to
+  B-Rank.`, its sigil in its grade's colour, and, from Ascension's grade, `Ascension` over the marks to set, `New` or
+  `2/3` beside the level large in gold, gold while something waits; then the record as facts in one row,
+  `Entered`, `Cleared`, `Taken` and `Unbroken`, a chevron at its right, opening the dossier. Shadows (the Army and
+  the Orders; the Army is the screen's centre: the squad's slots over the reserve). The Army opens ARMY, a roster
+  with a row to every Shadow, where the squad is made. On Gates, the hunter's condition is not a
   tile but a strip under Valcorde's line, in the System's frame: the Status sheet's HP, MP and FTG
   rows, each with its potion, so a potion is one tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
-  a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates grid.
+  a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
+- **The licence's window**, `LICENCE` (its number and its seal are on the licence, so the head names the window only
+  and holds no icon: the owner's calls, after both stood twice), opens on the licence itself, as the Association issues it: the grade's seal in a ring,
+  `Hunter` over the hunter's name and `Licence` over their number, the grade's letter vast and faint behind, the card
+  washed in the grade's colour; under it `Association grade` and `Gates open` as facts, with no box. `Rank` stands
+  beside them only where the hunter's own rank differs from the grade the board answers to (held at D-Rank without the
+  Association Licence where it is sold, or Sovereign, graded S), and `Association Licence` only where there is one to
+  hold: the owner asked what set the two apart, and on most hunters nothing does.
+- **Ascension's window**, `ASCENSION` (the level is its dial, so the head names the window only), rebuilt at the
+  owner's call after Slay the Spire's Ascension select and Hades' heat gauge: the dial, a crown over the level large in
+  gold between two round arrows (`One level down`, `One level up`), the level's name in capitals under it (`The board
+  as it stands` at 0), `Foe strength +53%` in red and `Gate pay +20%` in green, and `Highest opened 3` (past the ruled
+  levels, `0` and `Highest` beside it to jump); then the card to the marks (below); then the next level as a challenge card,
+  after the boss challenges of the reference games: its level locked in a dashed diamond with a lock, `To open
+  Ascension 4` over `[Heavy Legs]` and its rule, then its road as a track of two round seals on a line, the Gates proved
+  (a tick in green once done, `3/3`) and the Trial (its crown in gold while it stands open, `0/1`), each over its words,
+  and **Face The Trial**; then `The climb` as a tower after Hades' heat gauge, battlements at its top and stone walls down
+  its sides, a floor to each level opened down to the ground (`0`, `The board as it stands`), each its level in an arched
+  window over its rule (`[Thin Rest]` over `A rest heals 50% of what it would.`), the floors in force lit gold from
+  within, the floor entered at bannered `You`, a tap entering at a floor; past the ruled levels `[Beyond]` as one floor
+  at the top. The marks in a window of their own, `MARKS` (the owner's call: at the foot of
+  Ascension they sat oddly), opened from a card under the dial, `Marks` over `Set 2/20 · Upgrade limit: Perfect +3`, the
+  five seals small under it and `1 to set` in its gold badge while one waits; in it, after Hades' Mirror of Night and
+  Darkest Dungeon II's Altar of Hope, `Each set for good`: `1 to set` in a gold badge and `Set 2/20` at its head, then a
+  seal to each mark, two to a row (the last alone across the row): its sigil in a diamond of gold, brighter for every
+  set (the Edge's crossed blades, the Bulwark's heart, the Ward's shield, the Legion's Shadows, the Long Stride's
+  steps), its sets as four diamonds under it, its name, what it gives now (`Each: Maximum HP +6%` while none is set),
+  `Next: Attack and magic +8%` under it, and `Set` at its foot while a set waits, the whole seal tapped to set it (read
+  aloud `Mark of the Edge, set 1 of 4: set it`). The offer to set one, `Would you like to set this mark?`, carries
+  the seal before and after under its lines, the new diamond lit; its answer, `[Mark of the Edge] has been set.`, the
+  seal as it now stands, stamped down, the new diamond landing.
 - **A tile is the System's frame without a header.** It holds a picture of where the quest stands,
   the bracketed name, one line under it, and the count in a hairline box: `5/10`, `0/3`, `Closed`.
   A tile says nothing its window does not; the window holds the goals, the hints and the rewards.
@@ -695,15 +754,16 @@ RARITY: {rarity}                         QUALITY: {quality}
 SCORE: {score}                           SET: {set, or -- --}
 {Card text.}
 [STR icon]  STR +3
-[+]         Status Chance +4%
+[+]         Effect Chance +4%
 {Upgrade, the set and its bonuses, Equip, Recycle}
 ```
 Source: `ITEM: Castle Door Key` / `ACQUISITION DIFFICULTY A-rank` / `CATEGORY Key`, a plain
 description, then green stat lines with icons (`AGI +20`, `PER +20`, `Physical Damage -20%`).
 The rank is the acquisition difficulty and the slot is the category. Each stat takes a line of its
 own, in green, with its stat's icon; a property takes a plus. ARISE adds rarity, quality, score and
-set as fields, because a hunter compares pieces by them. The item's icon fills the icon box, framed
-by its grade. The same card holds a Shadow (`Shadow: {name}`, its rank plate in the icon box).
+set as fields, because a hunter compares pieces by them. The item's art heads the card, large and
+framed by its grade, so the header has no icon box beside it (the gear overhaul: the art twice read as
+clutter). The same card holds a Shadow (`Shadow: {name}`, its rank plate in the icon box).
 
 **Purchase.** The Exchange and potions.
 
@@ -768,8 +828,8 @@ ARISE class, the first time: `Class assigned.` / `[Class: Brawler]` / `STR +2`. 
 differently can move a hunter sideways to another line, not only up.
 ARISE Shadow: `[{shadow}] has been promoted.` / `Bound Rank → Sworn Rank`.
 
-**Status.** The hunter's sheet, opened from the Inventory screen's Status and Stats tiles, the rank
-plate in the top bar, and a level-up's Allocate.
+**Status.** The hunter's sheet, opened from the head of the Inventory screen (the hunter's name and
+condition), the rank plate in the top bar, and a level-up's Allocate.
 
 ```
                  STATUS                  [dossier]
@@ -826,17 +886,41 @@ point has somewhere to go) and `Reset`, with its price once the free one is spen
 as a purchase does: `Assign every Skill Point?`, `Reset the skill tree?` / `Skill Points returned: 13`
 / `Price: …`.
 
-**Equipment.** The ten slots in hairline boxes, five down each side of the hunter's figure, each with
-its slot set small above the item's name (`HEAD` / Warden Helm), or `-- --` when it is empty. Fields
-above them give `EQUIPMENT SCORE:` and `SLOTS FILLED:`; `Auto Equip` is lit when it has something to
-improve; each set worn is a box of its own: `[Set: Warden] 2/3`, its bonus in green. A slot opens the
-item's card, or `EQUIPMENT: {Slot}` with what could fill it.
+**Equipment.** The ten slots as squares, five down each side of the hunter's figure, each the piece's
+art with its slot set small under it (`HEAD`), or a dashed square with the slot's sign when it is
+empty; a line runs in from each toward the figure, which wears what is worn: each slot's part of it
+lit in its piece's rarity (a sword in one hand, a shield at the other, a ring on each hand, the pendant).
+Above them the score in its hexagon and the slots filled as diamonds; under them Auto Equip, lit gold
+when it has something to improve (its slots carry a gold ▲), what is worn adds, each set worn as a row
+(`Warden`, `2/5`, its bonuses lit once worn), and the loadouts as rows. Every slot opens
+`EQUIPMENT: {Slot}`: what is worn there and everything held that could take its place, the names left
+to that window and the item's card, as the reference games leave them to the tooltip.
 
-**Inventory.** A grid of icons under tabs, with the count of what is held, opened from the Inventory
-screen's Inventory tile. The tab is named for it.
+**Item Bag.** A grid of icons under tabs, with the count of what is held, opened from the Inventory
+screen's Item Bag station and from Equipment. The window is `ITEM BAG`, the owner's call: the screen that opens it
+is Inventory, and two of one name read as one; `28 items` reads as the bag's own.
 Source: tabs `All`, `Equip`, `Actives`, `Ingred.`, `Quest`. ARISE holds only gear, so the tabs are
-`All · {count}` and the slots. Each square is the item's icon in its grade's frame, its score, and
-`WORN` when it is worn; the item card holds the rest.
+`All · {count}` and the slots. Rebuilt twice at the owner's call, after Genshin Impact's and Honkai: Star Rail's
+bags: its head one line (the bag's sign, `28` large over `Items`, then `Worn 10`, `New 3` in gold, `Starred 2`)
+over what it holds by rarity as one strip, each rarity a band as long as its count with the count on it;
+`Items · 28` and `Sets · 0/16`; the kinds as two rows of five, each with its count, and no sideways scroll (the
+Forge's too); one toolbar, `Sort` and its order (`Score`) with what is shown beside it when it is not all
+(`Upgrades`), folding open `Sort by` (`Score`, `Rarity`, `Newest`, `Quality`) and `Show` (`All`, `Upgrades`, `Set
+pieces`, `Starred`), and **Select** beside it. Each card is the piece on its rarity's ground, its foot a band in
+the rarity's colour holding `WORN` (white) or the star, and its score; its quality a gold line under it; `NEW`
+in gold at its top and a gold ▲ on its corner where it beats what is worn. A card tapped is held in the dock at
+the bag's foot, as the reference games keep the piece picked beside their grids: its art, its name, `Legendary
+Weapon` in its colour, `Quality 78%`, its stats spaced, its score large and what it gains on the piece worn
+(`▲ 16`), then **Equip**, the star, **Details** and the close; tapped again, or Details, its own card opens.
+Select makes the toolbar's button **Done** and opens `Quick select` in red, `Clear` at its right while anything is picked, over one row of seven equal cells (the owner's call: chips of every width spilled onto a second row): a cell to each rarity, its letter in its colour over how many of it can go (`C` over `6`, read aloud `Rare: 6`), and `2×` for the duplicates; a cell with nothing to take dimmed, a cell picked filled in its colour, the dock giving way to the bar that counts what is picked and what it gives
+back, and **Recycle**. The Sets view: `Designs discovered` as a ring, an arc to each rarity as long as the
+designs of it found, round `26` over `/543` and `Designs`, beside each rarity's count and bar; then each rarity's
+sets (`Rare armour sets` and `1/4` complete, then `Jewellery sets`) as rows, as Equipment draws a set worn: its mark, its name, `2/5` and
+`Worn 2`, a square to each piece (its art when held, a blueprint's sign when known, its slot when seen, `?` when
+not), and what it pays under `2-piece` and `4-piece` (an armour set's 4-piece naming its blessing, `[Iron Skin] I`, over what it does), lit once worn. A row opens the set's own window.
+Cleaned at the owner's call (too many boxes, awkward spacing): the head, the kinds, the toolbar, the collection
+and the set rows stand unframed, the set rows a list with a hairline between them; the cards, the dock, Quick
+select's chips and the recycle bar keep their edges, being what is tapped.
 
 ## Valcorde
 
@@ -1043,7 +1127,8 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Weekly Quest | season, weekly contract | The Pale Spire's week, on the Quests screen. Code keeps `season` |
 | Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
 | Health Potion | Field Potion, field potion | The one healing potion: carried in the satchel, drunk on the hunter's turn in a fight, between rooms from the bag, or out of a Gate. There is no Field Potion any more; Ryn may still call one a flask |
-| Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Inventory's bag |
+| Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Item Bag's bag |
+| Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |
 | Event | Unknown, `?` (for a room) | A room holding a choice, or a trap, a cache or a rest passing for one. Its mark is a signpost, in orchid. `?` is only the fog's |
 | Floor | level, depth, storey (in a Gate) | A Gate's floors, `Floor 2/3`, joined by `Stairs Down` and `Stairs Up`. The Pale Spire's numbered floors are the same word: each is a floor of the tower |
@@ -1069,6 +1154,11 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Familiarity | affinity, mastery, proficiency, weapon XP | What a weapon's design grows by the creatures defeated while it is carried: `Familiarity 3`, `Familiarity points: 150/260`. It belongs to the design, never the piece |
 | found whole | dropped, looted | A piece a run left as a piece, not as a blueprint: rare. "A piece found whole" |
 | Loadout | build, preset, outfit | What was worn, saved: `Loadout I`, `Loadout II`, `Loadout III` |
+| 2-piece, 4-piece | (2), (4) in a box, set of 2 | What a set pays for that many of its pieces worn, as Genshin Impact and World of Warcraft write it: `2-piece` over `Defence +10%`, `4-piece` over `Maximum HP +12%` and `[Iron Skin] I`. The labels stand before the bonus, unboxed |
+| Armour set, jewellery set | set (alone, where the kind matters), artifact, relic | An armour set is five pieces, one to each armour slot, paying at two and four; a jewellery set an amulet and a ring, paying at two. `Rare armour sets`, `Jewellery sets` head the Sets view |
+| Effect chance | status chance, stat chance | The chance a hit inflicts its status, the owner's word: `Effect chance +26.7`, `Effect Chance +10.4%` on a piece (the data's `Status Potency` reads Effect Potency). Not stat chance: a stat is STR, VIT, AGI, INT or PER. Its counterpart keeps its name: `Status save` |
+| Upgrade (a piece) | better, recommended | A piece rarer than what is worn where it goes, marked ▲ in gold, as Diablo IV and Lost Ark mark one: `▲ Upgrade` on a blueprint, `Upgrades` to show only those, `3 Upgrades` in the Forge's hearth, `▲ 3` on its station. Never `3 better`: a number wants a noun. The step that raises a piece's quality keeps its name too, `Upgrade · 120`, as Diablo IV's blacksmith keeps both |
+| Crit chance | critical chance, critical hit chance | The chance a hit is critical, the owner's word: `Crit chance +6`, `Crit Chance +9.8%` on a piece, `Crit chance` on Stats. A hit that is critical keeps its name: `Critical hits inflict Bleeding`, `(Critical)` |
 | New | unseen, fresh | An item in the bag the hunter has not looked at yet |
 | Shadow Essence | essence, shards, souls | Spent on a Shadow's promotion. In System text always in full, as Mana Shards is; a label may say "Essence" where the line already names it |
 | defeat | fell (in any form: fells, felled, felling), kill, slay | What the party does to a creature, a Gatekeeper, a boss or one of the Chosen, in every line a player reads: `Defeat the boss`, `Defeat 3 Orc creatures.`, `Defeat it while Stunned: Monster Bone +2.`, `Creatures defeated`, `Defeats it` in the action wheel's hub. The owner's call; `tests/voice.test.ts` fails on any fell in a string, a template or markup. A key the save holds (`felled`, the Daily Quest kind `fell`) keeps its name |

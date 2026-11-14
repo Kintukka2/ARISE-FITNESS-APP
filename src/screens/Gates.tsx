@@ -26,9 +26,8 @@ import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Chip, RankPlate, Section, Shards, useNow, Voice } from '@/ui/components';
-import { BentoGrid, type Tile as BTile } from '@/ui/bento';
-import { Field, SysFrame } from '@/ui/frame';
+import { Btn, Shards, useNow, Voice } from '@/ui/components';
+import { SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
 import { openSheet, sys, toast, tour } from '@/ui/overlays';
@@ -63,12 +62,126 @@ export function Gates() {
     if (contracts.contractsOpen(store.get()) && store.get().contracts.day !== day) store.update((x) => { contracts.issue(x, day); });
   }, [day, contracts.contractsOpen(s)]);
 
+  const gates = board(s, day);
+  const practice = gates.find(isPractice);
+  const run = s.gates.raid;
+  const open = run ? dungeonById(run.dungeonId) : null;
   return (
-    <div class="stack">
+    <div class="stack gatehome">
       <Voice>{coachLine(s)}</Voice>
       <Condition />
-      <BentoGrid class="gatesgrid" tiles={topTiles(s)} label="Gates" />
+      {/* A run left open is one tap from where it stopped; its brief, from the board, holds Abandon. */}
+      {open && run && <RunCard d={open} steps={raid.stepsOf(raid.mapOf(open, run))} at={run.at} />}
+      {/* The practice Gate stands first, until it is cleared: Valcorde's tour points at it. */}
+      {practice && <ul class="glist gatehome__practice" data-tour="board"><GateRow s={s} d={practice} mark={markOf(s, practice, false, day)} i={0} /></ul>}
+      <GateRadar s={s} gates={gates} />
+      <HunterRow s={s} />
     </div>
+  );
+}
+
+/** The run left open, gold while it waits: its Gate's portal, its name, how far in, and the way back. */
+function RunCard({ d, steps, at }: { d: Dungeon; steps: number; at: number }) {
+  return (
+    <button type="button" class="runcard" style={`--rc: var(--rank-${d.rank})`} aria-label={`${d.name}, ${at} of ${steps}: Go Back In`}
+      onClick={() => { sfx.gate(); arena.set(d.id); }}>
+      <span class="gaterow__portal ga-portal"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><Glyph name="roomEntrance" /></span>
+      <span class="runcard__body">
+        <b class="runcard__name">[{d.name}]</b>
+        <span class="runcard__steps" aria-hidden="true">{Array.from({ length: steps }, (_, i) => <i key={i} class={i < at ? 'is-on' : i === at ? 'is-here' : ''} />)}</span>
+        <small class="num">{at}/{steps}</small>
+      </span>
+      <span class="runcard__go">Go Back In<Glyph name="chevron" /></span>
+    </button>
+  );
+}
+
+/**
+ * The day's Gates as a radar, after the portals scattered over Solo Leveling: Arise's city: a sweep turning over
+ * its rings, the count open at its hub with the redraw under it, and a portal to each grade round it, its count
+ * beside it, starred where a marked Gate stands and locked beyond the licence. A portal opens the board on its
+ * grade; View All Gates opens it whole.
+ */
+function GateRadar({ s, gates }: { s: Save; gates: Dungeon[] }) {
+  const day = dayKey();
+  const named = contracts.named(s, day);
+  return (
+    <SysFrame kind="gates" class="gradar" tour="bands" label="Open Gates">
+      <div class="gradar__scope">
+        <i class="gradar__ring" /><i class="gradar__ring" /><i class="gradar__ring" />
+        <i class="gradar__sweep" aria-hidden="true" />
+        <span class="gradar__hub">
+          <b class="num">{gates.length}</b>
+          <small>Open Gates</small>
+          <small class="gradar__redraw">Redraw <b class="num">{hhmmss(msUntilMidnight())}</b></small>
+        </span>
+        {RANKS.map((r, i) => {
+          const here = gates.filter((d) => d.rank === r);
+          const shut = here.length > 0 && here.every((d) => entryBlock(s, d) === 'licence');
+          const marked = here.some((d) => markOf(s, d, named.has(d.id), day) && !isPractice(d));
+          const a = ((-90 + i * 60) * Math.PI) / 180;
+          const pos = `left: ${50 + Math.cos(a) * 39}%; top: ${50 + Math.sin(a) * 39}%; --rc: var(--rank-${r})`;
+          return (
+            <button type="button" key={r} class={`gradar__gate ${here.length ? '' : 'is-none'} ${shut ? 'is-shut' : ''}`} style={pos}
+              aria-label={`${r}-Rank: ${here.length} open${shut ? ', beyond your licence' : ''}${marked ? ', one marked' : ''}`}
+              onClick={() => { sfx.tap(); if (!here.length) toast(`No ${r}-Rank Gate opened today.`, 'warn'); else openBoard(r); }}>
+              <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b></span>
+              {marked && <Glyph name="star" class="gradar__mark" />}
+              {shut && <Glyph name="lock" class="gradar__lock" />}
+              <small class="num">{here.length}</small>
+            </button>
+          );
+        })}
+      </div>
+      <button type="button" class="gradar__all" onClick={() => { sfx.tap(); openBoard('all'); }}>View All Gates<Glyph name="chevron" /></button>
+    </SysFrame>
+  );
+}
+
+/**
+ * The hunter under the radar: their grade with the Association and, from Ascension's grade, their Ascension, as
+ * two cards; their record as facts in one row that opens the dossier.
+ */
+function HunterRow({ s }: { s: Save }) {
+  const mine = licensedRank(s);
+  const holding = licenceHolding(s);
+  const a = s.ascension;
+  const unset = marks.unset(s);
+  const told = story.seen(s, 'ascension-told');
+  const entered = s.gates.clears + s.gates.fails + s.gates.withdrawn;
+  return (
+    <section class="ghunter" aria-label="Hunter">
+      <div class="ghunter__cards">
+        <button type="button" class={`ghcard is-licence ${holding && licenceRequired(s) && storeReady() ? 'is-hot' : ''}`} data-tour="licence" style={`--rc: var(--rank-${mine})`}
+          onClick={() => { sfx.tap(); openGrade(); }}>
+          <span class="ghcard__art"><Sigil rank={mine} size={36} /></span>
+          <span class="ghcard__text">
+            <small class="label">Grade</small>
+            <b>{mine}-Rank</b>
+            <small>{holding ? `Held at ${mine}-Rank.` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank.`}</small>
+          </span>
+        </button>
+        {ascension.ascensionOpen(s) && (
+          // Gold only while something waits: a mark to set, or the card not yet opened.
+          <button type="button" class={`ghcard is-ascension ${unset > 0 || !told ? 'is-call' : ''}`} onClick={() => { sfx.tap(); openAscension(); }}>
+            <span class="ghcard__art"><Glyph name="crown" /><b class="num">{a.level}</b></span>
+            <span class="ghcard__text">
+              <small class="label">Ascension</small>
+              <b>{unset > 0 ? `${unset} ${unset === 1 ? 'mark' : 'marks'}` : !told ? 'New' : `${a.level}/${a.unlocked}`}</b>
+              <small>{a.level ? ascension.levelInfo(a.level).name : 'The board as it stands.'}</small>
+            </span>
+          </button>
+        )}
+      </div>
+      <button type="button" class="ghrecord" aria-label={`Record: entered ${entered}, cleared ${s.gates.clears}, taken ${s.gates.cleared.filter((id) => id !== 'DNG-000').length}. Open the dossier`}
+        onClick={() => { sfx.tap(); openDossier(); }}>
+        <span><small>Entered</small><b class="num">{entered}</b></span>
+        <span><small>Cleared</small><b class="num">{s.gates.clears}</b></span>
+        <span><small>Taken</small><b class="num">{s.gates.cleared.filter((id) => id !== 'DNG-000').length}</b></span>
+        <span><small>Unbroken</small><b class="num">{s.gates.bestUnbroken}</b></span>
+        <Glyph name="chevron" class="ghrecord__go" />
+      </button>
+    </section>
   );
 }
 
@@ -88,7 +201,8 @@ let boardBand: Band = 'all';
  * GATES: every Gate standing open today. Its counts across the head, a rail to filter by grade or to
  * the marked ones, then each grade as a band: what a clear there pays, and a row to each of its Gates.
  */
-function openBoard() {
+function openBoard(band?: Band) {
+  if (band) boardBand = band;
   openSheet({ title: 'Gates', system: { icon: null, kind: 'gates' }, render: () => <BoardSheet /> });
 }
 
@@ -243,144 +357,36 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
   );
 }
 
-/** The board as one tile: a portal to each grade, the count of its Gates open, dimmed where the licence stops, starred where one is marked. */
-function boardTile(s: Save, gates: Dungeon[]): BTile {
-  const day = dayKey();
-  const named = contracts.named(s, day);
-  return {
-    // The screen's centre: the way into everything else on it. It stands out by its size, its light and its call.
-    key: 'board', kind: 'gates', name: 'Open Gates', head: true, wide: true, tour: 'bands', icon: <Glyph name="gates" />, class: 'btile--focus',
-    count: gates.length,
-    status: <>Redraw: <b class="num">{hhmmss(msUntilMidnight())}</b></>,
-    art: (
-      <span class="ga-focus">
-        <i class="ga-focus__rays" />
-        <span class="ga-board">
-          {RANKS.map((r) => {
-            const here = gates.filter((d) => d.rank === r);
-            const open = here.some((d) => entryBlock(s, d) !== 'licence');
-            const marked = here.some((d) => markOf(s, d, named.has(d.id), day) && !isPractice(d));
-            return (
-              <span key={r} class={`ga-board__one ${here.length ? '' : 'is-none'} ${open ? '' : 'is-shut'}`} style={`--rc: var(--rank-${r})`}>
-                <span class="ga-portal ga-portal--mini"><i class="ga-portal__swirl" /><i class="ga-portal__core" /><b>{r}</b>{marked && <Glyph name="star" class="ga-board__mark" />}</span>
-                <small class="num">{here.length}</small>
-              </span>
-            );
-          })}
-        </span>
-        <span class="ga-focus__cta">View All Gates <Glyph name="chevron" /></span>
-      </span>
-    ),
-    open: openBoard,
-  };
-}
-
-/** What stands above the board: the run left open, the hunter's grade, their record and Ascension. The Pale Spire is a Weekly Quest, on the Quests screen. */
-function topTiles(s: Save): BTile[] {
-  const out: BTile[] = [];
-  const day = dayKey();
-  const gates = board(s, day);
-  // The practice Gate stands on the screen, first, until it is cleared: Valcorde's tour points at it.
-  const practice = gates.find(isPractice);
-  if (practice) out.push({ ...gateTile(s, practice, false, day), tour: 'board' });
-  const run = s.gates.raid;
-  const open = run && dungeonById(run.dungeonId);
-  if (open && run) {
-    const steps = raid.stepsOf(raid.mapOf(open, run));
-    out.push({
-      key: 'run', kind: 'gates', name: open.name, wide: true, call: true, icon: <Glyph name="gates" />,
-      count: `${run.at}/${steps}`, status: 'Go Back In',
-      art: <span class="ga-steps">{Array.from({ length: steps }, (_, i) => <i key={i} class={i < run.at ? 'is-on' : i === run.at ? 'is-here' : ''} />)}</span>,
-      // A run left open is one tap from where it stopped; its brief, from the board, holds Abandon.
-      open: () => { sfx.gate(); arena.set(open.id); },
-    });
-  }
-  out.push(boardTile(s, gates));
-  const mine = licensedRank(s);
-  const holding = licenceHolding(s);
-  out.push({
-    // Grade and Record stand under Open Gates, small, so it stays the screen's centre.
-    key: 'grade', kind: 'gates', name: 'Grade', head: true, tour: 'licence', icon: <Glyph name="cert" />, hot: holding && licenceRequired(s) && storeReady(), class: 'btile--compact',
-    count: `${mine}-Rank`,
-    status: holding ? `Held at ${mine}-Rank.` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank.`,
-    art: <span class="ga-emblem"><i class="ga-emblem__ring" /><i class="ga-emblem__ring" /><Sigil rank={mine} size={34} /></span>,
-    open: openGrade,
-  });
-  const entered = s.gates.clears + s.gates.fails + s.gates.withdrawn;
-  out.push({
-    key: 'record', kind: 'gates', name: 'Record', head: true, icon: <Glyph name="chart" />, class: 'btile--compact',
-    status: `Best run unbroken: ${s.gates.bestUnbroken}`,
-    art: (
-      <span class="ga-record">
-        <span class="sysbox"><small>Entered</small><b class="num">{entered}</b></span>
-        <span class="sysbox"><small>Cleared</small><b class="num">{s.gates.clears}</b></span>
-        <span class="sysbox"><small>Taken</small><b class="num">{s.gates.cleared.filter((id) => id !== 'DNG-000').length}</b></span>
-      </span>
-    ),
-    open: openDossier,
-  });
-  const a = s.ascension;
-  // From Ascension's grade, before its first level opens too: the tile holds the road to it.
-  if (ascension.ascensionOpen(s)) {
-    out.push({
-      // Gold only while something waits: a mark to set, or the tile not yet opened.
-      key: 'ascension', kind: 'system', name: `Ascension ${a.level}`, icon: <Glyph name="crown" />, call: marks.unset(s) > 0 || !story.seen(s, 'ascension-told'),
-      count: marks.unset(s) > 0 ? `${marks.unset(s)} ${marks.unset(s) === 1 ? 'mark' : 'marks'}` : !story.seen(s, 'ascension-told') ? 'New' : `${a.level}/${a.unlocked}`,
-      status: a.level ? ascension.levelInfo(a.level).name : 'The board as it stands.',
-      art: (
-        <span class="ga-ascend">
-          <b class="num">{a.level}</b>
-          <span class="ga-ascend__rules">{Array.from({ length: ASCENSION_RULED }, (_, i) => <i key={i} class={i < Math.min(a.level, ASCENSION_RULED) ? 'is-on' : i < a.unlocked ? 'is-open' : ''} />)}</span>
-        </span>
-      ),
-      open: openAscension,
-    });
-  }
-  // Tiles go two to a row: an odd one out takes the row's whole width.
-  const halves = out.filter((t) => !t.wide);
-  if (halves.length % 2) halves[halves.length - 1].wide = true;
-  return out;
-}
-
-/** A Gate on the board: its grade's portal, its name, and what stands at its end. */
-function gateTile(s: Save, d: Dungeon, quest: boolean, day: string): BTile {
-  const locked = entryBlock(s, d) === 'licence';
-  const known = bossKnown(s, d);
-  const boss = enemyById(d.boss);
-  const practice = isPractice(d);
-  const tag = markOf(s, d, quest, day);
-  return {
-    key: `gate-${d.id}`, kind: 'gates', name: d.name, wide: practice, call: practice, shut: locked,
-    class: `is-gate ${practice ? 'is-practice' : ''} ${s.gates.cleared.includes(d.id) ? 'is-cleared' : ''} ${d.id === 'DNG-HOLLOW' ? 'is-monarch' : ''} ${tag ? `is-${tag.toLowerCase()}` : ''}`,
-    icon: <Glyph name={locked ? 'lock' : known ? 'roomBoss' : 'unknown'} />,
-    count: tag,
-    status: locked ? `Licence: ${d.rank}-Rank` : known ? <>Boss: <span class="warn">{boss?.name}</span></> : 'Boss: ?',
-    art: (
-      <span class="ga-portal" style={`--rc: var(--rank-${d.rank})`}>
-        <i class="ga-portal__swirl" /><i class="ga-portal__core" />
-        <RankPlate rank={d.rank} size={40} />
-      </span>
-    ),
-    open: () => { if (locked) toast(`Your licence does not cover ${d.rank}-Rank yet.`, 'warn'); else openBrief(d); },
-  };
-}
-
 /** The hunter's grade with the Association: what it opens, and the licence that lifts the hold, where there is one to buy. */
 function openGrade() {
-  const s = store.get();
   openSheet({
-    title: `Licence: ${s.hunter.regNo || '-- --'}`, system: { icon: <Sigil rank={licensedRank(s)} size={40} />, kind: 'gates' },
+    // Its number and its seal are on the licence itself, so the head names the window only and holds no icon (the owner's call).
+    title: 'Licence', system: { icon: null, kind: 'gates' },
     render: () => {
       const s = store.get();
       const mine = licensedRank(s);
+      const issued = licenceRequired(s) ? (s.licence.granted ? 'Issued' : '-- --') : 'Issued';
       return (
-        <div class="stack">
-          <div class="sysfields">
-            <Field k="Association grade" v={`${mine}-Rank`} />
-            <Field k="Gates open" v={`Up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank`} />
-            <Field k="Rank" v={rankOf(s).name} />
-            <Field k="Association Licence" v={licenceRequired(s) ? (s.licence.granted ? 'Issued' : '-- --') : 'Issued'} />
+        <div class="stack glicence">
+          {/* The licence itself, as the Association issues it: the grade's seal, the hunter, their number, the grade's letter behind. */}
+          <div class="glicence__card" style={`--rc: var(--rank-${mine})`}>
+            <span class="glicence__letter" aria-hidden="true">{mine}</span>
+            <span class="glicence__seal"><Sigil rank={mine} size={58} /></span>
+            <span class="glicence__who">
+              <small class="label">Hunter</small>
+              <b>{s.hunter.name}</b>
+              <small class="label">Licence</small>
+              <b class="num">{s.hunter.regNo || '-- --'}</b>
+            </span>
           </div>
+          {/* The grade the board answers to; the hunter's own rank only where it differs from it (held by the licence, or Sovereign),
+              and the Association Licence only where there is one to hold. */}
+          <dl class="bfacts glicence__facts">
+            <div><dt>Association grade</dt><dd>{mine}-Rank</dd></div>
+            <div><dt>Gates open</dt><dd>Up to {RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank</dd></div>
+            {rankOf(s).name !== `${mine}-Rank` && <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>}
+            {(licenceRequired(s) || s.licence.granted) && <div><dt>Association Licence</dt><dd>{issued}</dd></div>}
+          </dl>
           {licenceHolding(s) && <p class="hint">Gate grade held at {mine}-Rank.</p>}
           {licenceRequired(s) && licenceHolding(s) && storeReady() && (
             <Btn kind="primary" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
@@ -396,7 +402,8 @@ function openGrade() {
 /** Ascension: the level the next run is entered at, what it does, the road to the next, and the marks. Advancement, so gold. */
 function openAscension() {
   openSheet({
-    title: `Ascension: ${store.get().ascension.level}`, system: { icon: <Glyph name="crown" />, kind: 'gold' },
+    // The level is the window's dial, so the head names the window only.
+    title: 'Ascension', system: { icon: <Glyph name="crown" />, kind: 'gold' },
     action: { label: 'How Ascension Works', icon: 'help', onClick: () => void ascensionTour() },
     render: () => <AscensionSheet />,
   });
@@ -427,52 +434,103 @@ function ascensionTour() {
 function AscensionSheet() {
   const s = useSave();
   const a = s.ascension;
-  const rules = ascension.rulesAt(a.level);
-  const choose = (L: number) => store.update((x) => ascension.choose(x, L));
+  const choose = (L: number) => { if (L < 0 || L > a.unlocked || L === a.level) return; sfx.tap(); store.update((x) => ascension.choose(x, L)); };
   const foes = Math.round((ascension.ascensionTune(a.level) - 1) * 100);
+  const pay = Math.round(ASCENSION_PAY * a.level * 100);
   useEffect(() => {
     if (store.update((x) => story.markOnce(x, 'ascension-told'))) setTimeout(() => void ascensionTour(), 450);
   }, []);
+  // The rungs, from the next level down to the board as it stands; past the ruled levels the Beyond stands as one rung.
+  const top = Math.min(a.unlocked, ASCENSION_RULED);
+  const rungs = Array.from({ length: top + 1 }, (_, i) => top - i);
   return (
     <div class="stack ascension">
-      <div class="sysfields" data-tour="asc-now">
-        <Field k="Entering at" v={<><span class="status__level">{a.level}</span>{a.level ? ` · ${ascension.levelInfo(a.level).name}` : ''}</>} />
-        <Field k="Highest opened" v={a.unlocked} />
-        <Field k="Foe strength" v={foes ? <span class="warn">+{foes}%</span> : 'As the board'} />
-        <Field k="Gate pay" v={a.level ? <span class="grant">+{Math.round(ASCENSION_PAY * a.level * 100)}%</span> : 'As the board'} />
-      </div>
-      <div data-tour="asc-level">
-        {a.unlocked <= ASCENSION_RULED && (
-          <div class="chips" role="radiogroup" aria-label="Ascension level">
-            {Array.from({ length: a.unlocked + 1 }, (_, L) => <Chip key={L} on={a.level === L} onClick={() => choose(L)}>{L}</Chip>)}
-            <span class="chip chip--locked" aria-label={`Ascension ${a.unlocked + 1}, locked`}><Glyph name="lock" />{a.unlocked + 1}</span>
-          </div>
-        )}
-        {a.unlocked > ASCENSION_RULED && (
-          <div class="stepper" role="group" aria-label="Ascension level">
-            <Btn size="sm" disabled={a.level === 0} onClick={() => choose(a.level - 1)}>−</Btn>
-            <b class="num">{a.level}</b>
-            <Btn size="sm" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}>+</Btn>
-            <Btn size="sm" onClick={() => choose(0)}>0</Btn>
-            <Btn size="sm" onClick={() => choose(a.unlocked)}>Highest · {a.unlocked}</Btn>
-          </div>
-        )}
-      </div>
-      {rules.length > 0 && (
-        <Section title="Rules in force">
-          <ol class="ascension__rules">{rules.map((r) => <li key={r.level} class="sysbox"><strong>[{r.name}]</strong> {r.rule}</li>)}</ol>
-        </Section>
-      )}
-      {ascension.beyond(a.level) > 0 && (
-        <small class="ascension__proof">Past Level {ASCENSION_RULED}: Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level · +{Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here</small>
-      )}
+      {/* The dial, after Slay the Spire's Ascension select: the level large in gold, an arrow either side, its name, and what it does. */}
+      <section class="ascdial" data-tour="asc-level" aria-label="Ascension level">
+        <span class="ascdial__crown" aria-hidden="true"><Glyph name="crown" /></span>
+        <div class="ascdial__row">
+          <button type="button" class="ascdial__arrow" aria-label="One level down" disabled={a.level === 0} onClick={() => choose(a.level - 1)}><Glyph name="back" /></button>
+          <b class="ascdial__level num" aria-live="polite">{a.level}</b>
+          <button type="button" class="ascdial__arrow" aria-label="One level up" disabled={a.level >= a.unlocked} onClick={() => choose(a.level + 1)}><Glyph name="chevron" /></button>
+        </div>
+        <b class="ascdial__name">{a.level ? ascension.levelInfo(a.level).name : 'The board as it stands'}</b>
+        <span class="ascdial__fx">
+          <span class={foes ? 'warn' : ''}>Foe strength {foes ? `+${foes}%` : 'as the board'}</span>
+          <span class={pay ? 'grant' : ''}>Gate pay {pay ? `+${pay}%` : 'as the board'}</span>
+        </span>
+        <small class="ascdial__high">Highest opened <b class="num">{a.unlocked}</b>{a.unlocked > ASCENSION_RULED && <> · <button type="button" class="ascdial__jump" onClick={() => choose(0)}>0</button> · <button type="button" class="ascdial__jump" onClick={() => choose(a.unlocked)}>Highest</button></>}</small>
+      </section>
+
+      {/* The marks have a window of their own; the way to it stands under the dial, gold while one waits to be set. */}
+      <MarksCard />
+
+      {/* The next level, the summit: its challenge card, as a boss challenge is set before it is faced. */}
       <NextLevel />
-      <MarkList />
+
+      {/* The climb as a tower, after Hades' heat gauge rising floor by floor: a floor to each level opened, the ground at its
+          foot, every floor whose rule is in force lit from within, the one entered at bannered; a tap enters at a floor. */}
+      <section class="asctower" data-tour="asc-now" aria-label="The climb">
+        <span class="label">The climb</span>
+        <ol class="asctower__floors" role="radiogroup" aria-label="Ascension level">
+          {a.unlocked > ASCENSION_RULED && (
+            <li class={`ascfloor is-beyond ${a.level > ASCENSION_RULED ? 'is-on is-here' : ''}`}>
+              <span class="ascfloor__num num">{ASCENSION_RULED + 1}+</span>
+              <span class="ascfloor__body"><b>[{BEYOND.name}]</b><small>Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level{ascension.beyond(a.level) > 0 ? ` · +${Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here` : ''}</small></span>
+              {a.level > ASCENSION_RULED && <span class="ascfloor__you">You</span>}
+            </li>
+          )}
+          {rungs.map((L) => {
+            const on = L > 0 && L <= a.level;
+            const here = L === Math.min(a.level, ASCENSION_RULED) && a.level <= ASCENSION_RULED;
+            const info = L ? ascension.levelInfo(L) : null;
+            return (
+              <li key={L}>
+                <button type="button" role="radio" aria-checked={here} class={`ascfloor ${on ? 'is-on' : ''} ${here ? 'is-here' : ''} ${L === 0 ? 'is-ground' : ''}`}
+                  aria-label={`${L ? `Ascension ${L}, ${info!.name}` : 'The board as it stands'}${here ? ', entering' : ''}`} onClick={() => choose(L)}>
+                  <span class="ascfloor__num num">{L}</span>
+                  <span class="ascfloor__body">
+                    {info ? <><b>[{info.name}]</b><small>{info.rule}</small></> : <><b>The board as it stands</b><small>No rule, no added pay.</small></>}
+                  </span>
+                  {here && <span class="ascfloor__you">You</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
     </div>
   );
 }
 
-/** The road to the next level: the Gates to prove at the highest one, then the Trial, and the rule the next level adds. */
+/** The marks, from Ascension: a seal to each in small, how many are set of all, and how many wait; a tap opens their window. */
+function MarksCard() {
+  const s = useSave();
+  const waiting = marks.unset(s);
+  const setAll = MARKS.reduce((k, m) => k + marks.setOn(s, m.id), 0);
+  return (
+    <button type="button" class={`ascmarks ${waiting ? 'is-call' : ''}`} data-tour="asc-marks" aria-label={`Marks: set ${setAll} of ${marks.MARKS_MOST}${waiting ? `, ${waiting} to set` : ''}`}
+      onClick={() => { sfx.tap(); openMarks(); }}>
+      <span class="ascmarks__seals" aria-hidden="true">{MARKS.map((m) => <MarkSeal key={m.id} m={m} n={marks.setOn(s, m.id)} />)}</span>
+      <span class="ascmarks__text">
+        <b>Marks</b>
+        <small>Set <b class="num">{setAll}</b>/{marks.MARKS_MOST} · Upgrade limit: Perfect +{ascension.overCap(s)}</small>
+      </span>
+      {waiting > 0 && <span class="marks__waiting">{waiting} to set</span>}
+      <Glyph name="chevron" class="ascmarks__go" />
+    </button>
+  );
+}
+
+/** MARKS: a seal to each mark, set from here. Advancement, so gold. */
+function openMarks() {
+  openSheet({ title: 'Marks', system: { icon: null, kind: 'gold' }, render: () => <MarkList /> });
+}
+
+/**
+ * The next level as the summit's challenge card, after the boss challenges of the reference games: its level locked in a
+ * dashed diamond, its name and rule, then the road as a track of two seals, the Gates proved at the highest level and
+ * the Trial, each lit when done, and Face The Trial once it stands open.
+ */
 function NextLevel() {
   const s = useSave();
   const a = s.ascension;
@@ -484,69 +542,115 @@ function NextLevel() {
   const trial = ascension.nextTrial(s);
   const info = ascension.levelInfo(next);
   return (
-    <Section title={`To open Ascension ${next}`}>
-      <ol class="ascnext" data-tour="asc-next">
-        <li class={`sysbox ${proved ? 'is-done' : 'is-now'}`}>
-          <span class="ascnext__n num">1</span>
-          <div class="grow">
+    <section class={`ascsummit ${ready ? 'is-ready' : ''}`} data-tour="asc-next" aria-label={`To open Ascension ${next}`}>
+      <header class="ascsummit__head">
+        <span class="ascsummit__gem num"><i>{next}</i><Glyph name="lock" /></span>
+        <span class="ascsummit__title">
+          <span class="label">To open Ascension {next}</span>
+          <b>{next <= ASCENSION_RULED ? `[${info.name}]` : `[${BEYOND.name}]`}</b>
+          <small>{next <= ASCENSION_RULED ? info.rule : `Foe strength +${Math.round((BEYOND.growth - 1) * 100)}%`}</small>
+        </span>
+      </header>
+      <ol class="ascroad">
+        <li class={proved ? 'is-done' : 'is-now'}>
+          <span class="ascroad__seal">{proved ? <Glyph name="check" /> : <Glyph name="gates" />}</span>
+          <span class="ascroad__text">
             <b>Clear {proofGates(s)} at Ascension {a.unlocked}.</b>
             <span class="ascnext__pips" aria-hidden="true">{Array.from({ length: need }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''} />)}</span>
-          </div>
-          <span class="num">{got}/{need}</span>
+          </span>
+          <span class="num ascroad__count">{got}/{need}</span>
         </li>
-        <li class={`sysbox ${ready ? 'is-now' : proved ? 'is-wait' : 'is-later'}`}>
-          <span class="ascnext__n num">2</span>
-          <div class="grow">
+        <li class={ready ? 'is-now' : proved ? 'is-wait' : 'is-later'}>
+          <span class="ascroad__seal"><Glyph name="crown" /></span>
+          <span class="ascroad__text">
             <b>Win the Trial: {trial.trial} of the Chosen in a row.</b>
             <small>{!proved ? 'Opens when the Gates are cleared.' : ready ? 'Open. Once a day.' : 'Faced today. It opens again tomorrow.'}</small>
-          </div>
-          <span class="num">0/1</span>
+          </span>
+          <span class="num ascroad__count">0/1</span>
         </li>
       </ol>
-      <p class="ascnext__adds"><span class="label">Ascension {next} adds</span>{next <= ASCENSION_RULED ? <><strong>[{info.name}]</strong> {info.rule}</> : `Foe strength +${Math.round((BEYOND.growth - 1) * 100)}%`}</p>
       {ready && <Btn kind="gold" block onClick={() => openBrief(trial)}>Face The Trial</Btn>}
-    </Section>
+    </section>
   );
 }
 
-/** The marks: one for every level opened, each set for good. */
+/** Each mark's sigil: the Edge's crossed blades, the Bulwark's heart, the Ward's shield, the Legion's Shadows, the Long Stride's steps. */
+const MARK_GLYPH: Record<string, string> = { edge: 'power', bulwark: 'heart', ward: 'shield', legion: 'shadows', stride: 'steps' };
+
+/** A mark's seal: its sigil in a diamond of gold, brighter for every set, its sets as four diamonds under it, the one just set lit. */
+function MarkSeal({ m, n, lit }: { m: Mark; n: number; lit?: number }) {
+  return (
+    <span class={`markseal ${n ? 'is-set' : ''} ${n >= MARK_MAX ? 'is-full' : ''}`} style={`--sets: ${n / MARK_MAX}`} aria-hidden="true">
+      <span class="markseal__gem"><Glyph name={MARK_GLYPH[m.id] ?? 'crown'} /></span>
+      <span class="markseal__pips">{Array.from({ length: MARK_MAX }, (_, i) => <i key={i} class={`${i < n ? 'is-on' : ''} ${lit === i ? 'is-new' : ''}`} />)}</span>
+    </span>
+  );
+}
+
+/**
+ * The marks, after Hades' Mirror of Night and Darkest Dungeon II's Altar of Hope: a seal to each in a grid of two, its
+ * sigil in gold, its sets as diamonds, what it gives now and what the next set adds. A seal that can take a set glows
+ * and is tapped to set it; one at its most burns brightest. How many are set of all, and how many wait, at its head.
+ */
 function MarkList() {
   const s = useSave();
   const waiting = marks.unset(s);
-  // The System's offer, as a purchase is: the mark, what it adds, where it stands, and that it is for good.
+  const setAll = MARKS.reduce((k, m) => k + marks.setOn(s, m.id), 0);
+  // The System's offer, as a purchase is: the mark, what it adds, where it stands, and that it is for good;
+  // the seal before and after under its lines.
   const set = async (m: Mark) => {
+    sfx.tap();
     const n = marks.setOn(store.get(), m.id);
-    const ok = await sys(system.offer([
-      'Would you like to set this mark?',
-      system.tag(m.name),
-      system.gain(marks.markText(m)),
-      `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)} · Marks to set: ${marks.unset(store.get())}`,
-      system.red('A mark cannot be moved once set.'),
-    ], 'gold', 'Set', 'Cancel'));
+    const ok = await sys({
+      ...system.offer([
+        'Would you like to set this mark?',
+        system.tag(m.name),
+        system.gain(marks.markText(m)),
+        `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)} · Marks to set: ${marks.unset(store.get())}`,
+        system.red('A mark cannot be moved once set.'),
+      ], 'gold', 'Set', 'Cancel'),
+      body: () => <div class="markstamp"><MarkSeal m={m} n={n} /><Glyph name="chevron" class="markstamp__to" /><MarkSeal m={m} n={n + 1} lit={n} /></div>,
+    });
     if (ok !== true || !store.update((x) => marks.setMark(x, m.id))) return;
     sfx.success();
     buzz([14, 30, 22]);
-    await sys({ ...system.notify([`${system.tag(m.name)} has been set.`, system.gain(marks.markText(m, n + 1))], 'gold'), typed: false });
+    await sys({
+      ...system.notify([`${system.tag(m.name)} has been set.`, system.gain(marks.markText(m, n + 1))], 'gold'), typed: false,
+      body: () => <div class="markstamp is-set"><MarkSeal m={m} n={n + 1} lit={n} /></div>,
+    });
   };
   return (
-    <div class="marks" data-tour="asc-marks">
-      <span class="label">Marks{waiting ? ` · ${waiting} to set` : ''}</span>
-      <ul class="marks__list">
+    <section class="marks" aria-label="Marks">
+      <header class="marks__head">
+        <span class="label">Each set for good</span>
+        {waiting > 0 && <span class="marks__waiting">{waiting} to set</span>}
+        <small class="marks__count">Set <b class="num">{setAll}</b>/{marks.MARKS_MOST}</small>
+      </header>
+      <ul class="markgrid">
         {MARKS.map((m) => {
           const n = marks.setOn(s, m.id);
+          const ready = waiting > 0 && marks.canSet(s, m.id);
+          const body = (
+            <>
+              <MarkSeal m={m} n={n} />
+              <b class="markcard__name">{m.name}</b>
+              <small class="markcard__now">{n ? marks.markText(m, n) : `Each: ${marks.markText(m)}`}</small>
+              {n > 0 && n < MARK_MAX && <small class="markcard__next">Next: {marks.markText(m, n + 1)}</small>}
+              {ready && <span class="markcard__cta">Set</span>}
+            </>
+          );
+          const cls = `markcard ${n ? 'is-set' : ''} ${n >= MARK_MAX ? 'is-full' : ''} ${ready ? 'is-ready' : ''}`;
           return (
-            <li key={m.id} class={n ? 'is-set' : ''}>
-              <div class="grow">
-                <span class="marks__name"><b>{m.name}</b><span class="num muted">{n}/{MARK_MAX}</span></span>
-                <small class="muted">{n ? marks.markText(m, n) : `Each: ${marks.markText(m)}`}</small>
-              </div>
-              {waiting > 0 && marks.canSet(s, m.id) && <Btn kind="gold" size="sm" onClick={() => void set(m)}>Set</Btn>}
+            <li key={m.id}>
+              {ready
+                ? <button type="button" class={cls} aria-label={`${m.name}, set ${n} of ${MARK_MAX}: set it`} onClick={() => void set(m)}>{body}</button>
+                : <div class={cls} aria-label={`${m.name}, set ${n} of ${MARK_MAX}`}>{body}</div>}
             </li>
           );
         })}
       </ul>
       <small class="ascension__proof">Upgrade limit: Perfect +{ascension.overCap(s)}</small>
-    </div>
+    </section>
   );
 }
 

@@ -10,7 +10,7 @@ import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
 import { FORMATION, KIN, KIN_ALL, KIN_AT } from '@/data/kin';
-import { bonusText } from '@/core/gear';
+import { bonusText, setPieces } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
@@ -387,17 +387,22 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Ten slots, six rarities.',
       'Every piece rolls its core bonus at 75-125% of its design, plus its own properties.',
       'Auto Equip picks the best of what you hold, and favours a set you hold two or more pieces of.',
-      `${SETS.length} sets of three pieces, Rare and up.`,
-      'Two pieces of a set worn together pay a bonus, and all three pay another.',
-      'The item’s sheet says what each set pays.',
+      'On the Equipment sheet a slot opens everything you hold that fits it, best first, each with what it gains or loses on what you wear there. A slot marked ▲ in gold is one Auto Equip would change.',
+      `${SETS.filter((x) => x.kind === 'armour').length} armour sets, Rare and up, of five pieces: one to each of head, chest, hands, legs and feet.`,
+      'Two pieces of an armour set worn together pay a bonus. Four pay another, and a blessing for every Gate, held as a shrine’s would be.',
+      `A set’s blessing is at tier ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'C')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Rare set, ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'A')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Heroic and ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'S')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Legendary. A shrine’s of the same name at a higher tier outranks it.`,
+      'Four leave the fifth armour slot for the best piece of any other set, or wear two of each of two sets for both their bonuses.',
+      `${SETS.filter((x) => x.kind === 'jewellery').length} jewellery sets: an amulet and a ring, paying when both are worn, beside any armour set.`,
+      'Weapons and off-hands belong to no set. The item’s sheet says what each set pays.',
       `An upgrade moves an item’s quality and every property ${UPGRADE.share * 100}% across its design’s range, until it is perfect.`,
       'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
       `A step takes alloys of the item’s rarity and Mana Shards: ${UPGRADE_COST.alloy[2]} ${ALLOYS.C.name} at Rare, ${UPGRADE_COST.alloy[5]} ${ALLOYS.S.name} at Legendary.`,
       `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank. Each step past also takes ${forge.EMBER.name}, ${UPGRADE_COST.ember} more for every step already past.`,
-      'Properties apply in the fight as they read: Critical Chance +9% is 9 points of critical chance.',
+      'Properties apply in the fight as they read: Crit Chance +9% is 9 points of crit chance.',
       `Save what you wear as a loadout from the Equipment sheet, ${LOADOUTS} in all, and wear it again in one tap.`,
-      'An item stays marked New until you look at it, or leave the Inventory.',
-      'Select in the Inventory picks items to recycle together. Worn and starred items cannot be picked.',
+      'An item stays marked New until you look at it, or leave the Item Bag.',
+      'Select in the Item Bag picks items to recycle together. Worn and starred items cannot be picked.',
+      'In the Item Bag, a card tapped is shown at its foot, to equip or star there; tapped again, or Details, opens its own card.',
       'A rarity tapped in Select picks all of it, and tapped again unpicks it.',
       `The Exchange redraws ${BLUEPRINT_SHELF} blueprints at midnight, mostly at your grade.`,
       `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}.`,
@@ -430,7 +435,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each rank adds Attack and magic +${FAMILIARITY.bonus * 100}% while it is worn.`,
       `Each rank also lifts every roll when you forge that design: its quality starts ${FAMILIARITY.floor * 100}% further up its range, and so do its properties.`,
       'Familiarity belongs to the design. Forge it again and the new piece is known as well as the old.',
-      'Tap a material in a recipe, or in the Forge’s Materials, to track it. The anvil marks it, and every Gate on the board that leaves it.',
+      'Tap a material in a recipe to track it, or tap it in the Forge’s Materials and Track. The anvil marks it, and every Gate on the board that leaves it.',
+      'A piece rarer than what you wear where it goes is an upgrade, marked ▲. Upgrades, in the Forge and the Item Bag, shows only those.',
       'Track Missing on a blueprint tracks every material it is short of at once. Tapped again, it stops tracking them.',
       'A part is tracked where its families walk. Every clear leaves one of each besides.',
     ],
