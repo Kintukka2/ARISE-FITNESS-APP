@@ -4033,17 +4033,9 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 @keyframes riftFlicker { 0%, 100% { opacity: 0.9; } 8% { opacity: 0.45; } 11% { opacity: 1; } 47% { opacity: 0.7; } 52% { opacity: 1; } }
 @keyframes riftMote { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-9px); } }
 
-/* Its modifiers, one a line: the wax seal, the name, the rule. */
-.riftmods { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-.riftmods li { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); animation: qaIn 320ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
-.riftmods li:last-child { border-bottom: 0; }
-.riftmods li > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.riftmods b { font-size: 0.86rem; font-weight: 700; color: #fff; }
-.riftmods small { font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 76%, transparent); }
-
-/* The days walked: a bar to each, today's at the right and ringed, a gap for a day not walked. */
+/* The days played: a bar to each, today's at the right and ringed, a gap for a day not played; its rating over each. */
 .rifthist { margin: 0; }
-.rifthist__bars { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; gap: 3px; height: 64px; margin: 0; padding: 0; list-style: none; }
+.rifthist__bars { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; gap: 3px; height: 76px; margin: 0; padding: 0; list-style: none; }
 .rifthist__bars li { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; min-width: 0; }
 .rifthist__bars li > i { --bc: color-mix(in srgb, var(--sys-ink) 45%, transparent); display: block; width: 100%; max-width: 14px; height: calc(var(--h) * 44px); min-height: 0; border-top: 2px solid var(--bc); background: linear-gradient(color-mix(in srgb, var(--bc) 55%, transparent), color-mix(in srgb, var(--bc) 12%, transparent)); transform-origin: bottom; animation: riftBar 520ms var(--ease) both; animation-delay: calc(var(--i) * 25ms); }
 .rifthist__bars li.is-cleared > i { --bc: var(--verdant); }
@@ -4055,30 +4047,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .rifthist__bars li.is-today > i { box-shadow: 0 0 0 1px color-mix(in srgb, var(--win) 70%, transparent), 0 0 10px var(--win-glow); }
 @keyframes riftBar { from { transform: scaleY(0); } to { transform: none; } }
 
-/* The score on the results, worked a line at a time, the total under a rule; a new best in gold. */
-.rscore { display: flex; flex-direction: column; gap: 6px; }
-.rscore__lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; font-family: var(--font-sys); }
-.rscore__lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 2px; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 86%, transparent); animation: qaIn 360ms var(--ease) both; animation-delay: calc(200ms + var(--i) * 110ms); }
-.rscore__lines li b { color: #fff; font-weight: 700; }
-.rscore__lines li.is-none { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
-.rscore__lines li.is-none b { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); font-weight: 500; }
-.rscore__total { display: flex; align-items: baseline; justify-content: space-between; padding: 8px 2px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); }
-.rscore__total b { font-size: 1.6rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 12px color-mix(in srgb, var(--sys-ink) 30%, transparent); }
-.rscore.is-best .rscore__total b { color: var(--gold); text-shadow: 0 0 14px var(--gold-glow); }
-.rscore__new { color: var(--gold) !important; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; animation: qaIn 420ms var(--ease) 1300ms both; }
-
-/* The Rift on the Quests log: its tear, the date and grade over the Gate, its seals, the attempt or the score. */
-.qsec--rift .sysframe__glass { padding: 12px 12px 10px; }
-.qrift { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px; padding: 4px 0 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
-.qrift__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.qrift__date { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
-.qrift__name { font-size: 0.98rem; font-style: italic; font-weight: 800; line-height: 1.2; color: #fff; }
-.qrift__mods { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; }
-.qrift__mod { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
-.qrift__side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.qrift__side small { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.qrift__side b { font-size: 1.3rem; font-weight: 800; line-height: 1; color: #fff; }
-.qrift.is-done .qrift__side b { color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); }
 /* QUEST INFO for the Rift. */
 .qriftinfo__lead { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .qriftinfo__lead small { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
@@ -4091,13 +4059,94 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 
 /* The brief: the Rift's tag, its modifiers without pay, and how it is scored. */
 .gtag.is-rift { --tc: var(--ember); }
-.bseals.is-rift .bseal { cursor: default; }
 .brift__lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-.brift__lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.brift__lines li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 5px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
 .brift__lines li:last-child { border-bottom: 0; }
 .brift__lines b { color: #fff; font-weight: 700; }
 .brift__note { display: block; margin-top: 6px; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 @media (prefers-reduced-motion: reduce) {
-  .rifttear__halo, .rifttear__glow, .rifttear__mote, .rifthist__bars li > i, .riftmods li, .rscore__lines li, .rscore__new { animation: none; }
+  .rifttear__halo, .rifttear__glow, .rifttear__mote, .rifthist__bars li > i { animation: none; }
   .rifttear__mote { opacity: 0.6; }
 }
+
+/* A seal's sign, embossed where the keyhole was. */
+.sealart__sign { fill: rgba(0, 0, 0, 0.5); }
+.sealart.is-on .sealart__sign { fill: rgba(40, 0, 4, 0.62); }
+
+/* A run's modifiers, a row to each: its seal with its sign, its name over its rule. */
+.modrows { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.modrow { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); animation: qaIn 320ms var(--ease) both; animation-delay: calc(var(--i) * 80ms); }
+.modrow:last-child { border-bottom: 0; }
+.modrow .sealart { filter: drop-shadow(0 0 6px rgba(255, 47, 62, 0.4)); }
+.modrow__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.modrow__text b { font-size: 0.88rem; font-weight: 800; color: #ff8a92; letter-spacing: 0.01em; }
+.modrow__text small { font-size: 0.78rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 84%, transparent); }
+.modrows.is-compact .modrow { gap: 10px; padding: 6px 0; }
+.modrows.is-compact .modrow__text b { font-size: 0.8rem; }
+.modrows.is-compact .modrow__text small { font-size: 0.72rem; }
+.brmods .modrows { margin-top: 2px; }
+
+/* A rating: its letter in a cut plate, in its grade's colour. */
+.ratingmark { --rr: var(--rank-E); position: relative; display: inline-grid; place-items: center; flex: none; width: var(--s); height: var(--s); }
+.ratingmark svg { position: absolute; inset: 0; overflow: visible; }
+.ratingmark__plate { fill: color-mix(in srgb, var(--rr) 16%, rgb(6, 10, 20)); stroke: var(--rr); stroke-width: 1.6; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--rr) 60%, transparent)); }
+.ratingmark__inner { fill: none; stroke: color-mix(in srgb, var(--rr) 45%, transparent); stroke-width: 0.8; }
+.ratingmark b { position: relative; font-family: var(--font-sys); font-size: calc(var(--s) * 0.5); font-weight: 900; font-style: italic; line-height: 1; color: #fff; text-shadow: 0 0 calc(var(--s) * 0.16) var(--rr), 0 0 2px var(--rr); }
+.ratingmark.is-stamp { animation: ratingStamp 620ms var(--ease) 900ms both; }
+@keyframes ratingStamp { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 60% { opacity: 1; transform: scale(0.92) rotate(2deg); } 100% { transform: none; } }
+
+/* The Rift on Quests: the tear beside the day and the Gate, the rating once played, its modifiers, the way in, the fortnight. */
+.qsec--rift .sysframe__glass { padding: 12px 12px 10px; }
+.qrift { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 2px 0 8px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.qrift__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.qrift__date { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
+.qrift__name { font-size: 1.02rem; font-style: italic; font-weight: 800; line-height: 1.2; color: #fff; }
+.qrift__state { font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.qrift__state b { color: #fff; }
+.qrift.is-done .qrift__state { color: var(--verdant); }
+.qsec--rift .modrows { margin: 4px 0 8px; }
+.qsec--rift > .sysframe__glass > .btn { margin-bottom: 10px; }
+.qrift__hist { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.rifthist__bars li > em { min-height: 1em; font-family: var(--font-sys); font-size: 0.56rem; font-style: italic; font-weight: 900; line-height: 1; color: var(--rr, transparent); text-shadow: 0 0 6px var(--rr, transparent); }
+.qriftinfo__fig .ratingmark { margin: 2px 0; }
+
+/* A Rift's results: the title over the tear, the rating stamped by the score, the score a row at a time, the pay. */
+.riftres { --rr: var(--rank-E); display: flex; flex-direction: column; gap: 14px; }
+.riftres__title { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; text-align: center; }
+.riftres__tear { position: absolute; top: -22px; left: 50%; z-index: 0; transform: translateX(-50%); opacity: 0.18; filter: blur(1px); pointer-events: none; }
+.riftres__title > *:not(.riftres__tear) { position: relative; z-index: 1; }
+.riftres__title .label { color: var(--ember); }
+.riftres__title h2 { margin: 2px 0 0; font-family: var(--font-sys); font-size: 1.9rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--verdant); text-shadow: 0 0 18px var(--verdant-glow); animation: rtitleIn 700ms var(--ease) both; }
+.arena--results.is-defeated .riftres__title h2 { color: var(--blood); text-shadow: 0 0 18px var(--blood-glow); }
+.arena--results.is-withdrawn .riftres__title h2 { color: var(--sys-ink); text-shadow: none; }
+.riftres__gate { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; font-size: 0.86rem; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.riftres__gate b { margin-right: 4px; font-style: italic; font-weight: 800; color: #fff; }
+.riftres__title p { margin: 2px 0 0; font-size: 0.78rem; }
+.riftres__hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 18px; padding: 14px 16px; border-top: 1px solid color-mix(in srgb, var(--rr) 40%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--rr) 40%, transparent); background: radial-gradient(ellipse 140px 100px at 60px 50%, color-mix(in srgb, var(--rr) 22%, transparent), transparent 75%), linear-gradient(90deg, color-mix(in srgb, var(--rr) 8%, transparent), transparent); }
+.riftres__score { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.riftres__score small { font-family: var(--font-sys); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.riftres__score > b { font-size: 2.4rem; font-weight: 800; line-height: 1; color: #fff; }
+.riftres.is-best .riftres__score > b { color: var(--gold); text-shadow: 0 0 16px var(--gold-glow); }
+.riftres__score i { font-style: normal; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.riftres__score i b { color: #fff; }
+.riftres__new { width: max-content; margin-top: 4px; padding: 2px 8px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); color: var(--gold) !important; font-family: var(--font-sys); font-size: 0.6rem !important; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; animation: qaIn 420ms var(--ease) 1500ms both; }
+.riftres__lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.riftres__lines li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 64px; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 9%, transparent); font-size: 0.82rem; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); animation: rowIn 380ms var(--ease) both; animation-delay: calc(250ms + var(--i) * 120ms); }
+.riftres__lines li:last-child { border-bottom: 0; }
+.riftres__mark { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid color-mix(in srgb, var(--ember) 45%, transparent); background: color-mix(in srgb, var(--ember) 10%, rgba(4, 8, 18, 0.9)); color: var(--ember); }
+.riftres__mark .ico { width: 16px; height: 16px; }
+.riftres__count { font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.riftres__lines li > b { text-align: right; font-weight: 800; color: #fff; }
+.riftres__lines li.is-none { color: color-mix(in srgb, var(--sys-ink) 38%, transparent); }
+.riftres__lines li.is-none .riftres__mark { border-color: color-mix(in srgb, var(--sys-ink) 16%, transparent); background: none; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.riftres__lines li.is-none > b { font-weight: 500; color: color-mix(in srgb, var(--sys-ink) 38%, transparent); }
+.riftres__pay { grid-template-columns: none; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; margin-top: 2px; }
+.riftres__ember { display: inline-flex; align-items: center; gap: 6px; color: var(--ember); }
+@keyframes rowIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes rtitleIn { from { opacity: 0; letter-spacing: 0.3em; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .modrow, .ratingmark.is-stamp, .riftres__lines li, .riftres__new, .riftres__title h2 { animation: none; }
+}
+
+.brift__lines .riftres__mark { width: 26px; height: 26px; }
+.brift__lines .riftres__mark .ico { width: 14px; height: 14px; }

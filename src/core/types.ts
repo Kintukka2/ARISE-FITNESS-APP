@@ -254,6 +254,8 @@ export interface RiftDay {
   /** Its modifiers: the Seals' rules it played. */
   mods: SealId[];
   score: number;
+  /** The score's rating against the Rift's full marks (`rift.ratingOf`). */
+  rating?: Rank;
   /** How it ended, or `open` while the run is underway. */
   outcome: 'cleared' | 'withdrawn' | 'defeated' | 'open';
 }

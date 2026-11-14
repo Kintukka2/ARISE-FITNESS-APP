@@ -2239,6 +2239,25 @@ Shattered Pixel Dungeon's local history for the days walked.
   days walked, the month as bars, the time left and **Brief: Daily Rift**. The brief: `C-Rank Daily Rift:`, `Once today`,
   the modifiers fixed with no Ember on them, the Rift bonus, and the score's rules. The results: `Rift Cleared`, and the
   score worked out a line at a time after Isaac's, the total counted up, gold for a new best.
+- **Screens, the owner's second pass**, after Solo Leveling: Arise's results, Helldivers 2's summary, Devil May
+  Cry 5's rank, Risk of Rain 2's and Deep Rock Galactic's worked points, and Slay the Spire's and Monster Train 2's
+  modifier lists (references under "The Rift: results, grades and modifiers" in
+  [step 6's README](research/references/step-6-map-army-gear-daily/README.md#the-rift-results-grades-and-modifiers)):
+  - **Modifiers, a row to each**: its seal embossed with its own sign (`SEAL_GLYPH` in `ui/seals.tsx`: a heart for
+    Swollen, a campfire for Lightless, a hunter for Short-Handed, the Gatekeeper's helm for Wardens Wake, a potion
+    for Dry, a boss's skull for Never Alone, a crown for Heavier Air), its name, and its rule beside them, on the
+    brief, on Quests and in its Quest Info. The rules no longer sit together under a row of seals, where none could
+    be told from another. The board's Seals take their signs too.
+  - **A rating**, a letter E to S, the score against the Rift's full marks (`rift.fullMarks`: every fight on the
+    System's road, the Gatekeeper, the boss, every Feat and every HP; pace apart), S from full marks down to E below
+    40% (`RIFT_RATINGS`). Rated against its own Rift, a short Rift can earn an S as surely as a long one. Kept with
+    the day (`RiftDay.rating`).
+  - **The results**, rebuilt: the title over the tear with the Gate and its modifiers' seals; the rating stamped beside
+    the score counted up, a new best in gold; a row to each part of the score with its mark, count and points; XP,
+    shards and Ember.
+  - **The Quests card**: the rating once played, the modifiers' rows, **Brief: Daily Rift** while it stands open, and
+    the fortnight's bars with their ratings. Its Quest Info drops `Days walked` for `Today`, `Best` and `Average`.
+  - The brief's reward tiles lose `· Boss` and `· once`.
 - **Not built: a replay code.** A Rift's seed is its id, so a run is the date, the grade, the party as it walked in and
   its orders: a short code could let another phone replay and verify a score offline. The research calls it a stretch.
 - **Calibration**: none moves. A Rift takes its Gate's tuning (`GATE_TUNE` of its shape) and is walked under its

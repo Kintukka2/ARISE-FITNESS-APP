@@ -7,7 +7,7 @@
  */
 import { DUNGEONS } from '@/data/dungeons';
 import { GATE_TUNE } from '@/data/gatetune';
-import { RIFT_KEPT, RIFT_NAME, RIFT_OPENS, RIFT_PAR, RIFT_THEME, SCORE } from '@/data/rift';
+import { RIFT_KEPT, RIFT_NAME, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, RIFT_THEME, SCORE } from '@/data/rift';
 import type { SealId } from '@/data/seals';
 import { licensedRank } from './licence';
 import type { Outcome } from './raid';
@@ -69,7 +69,7 @@ export function enter(s: Save, d: Dungeon, mods: readonly SealId[]) {
 export type ScoreKey = 'fight' | 'keeper' | 'boss' | 'feat' | 'pace' | 'health';
 /** A line of the score: how many, and the points they make. */
 export interface ScoreLine { key: ScoreKey; n: number; pts: number }
-export interface RiftScore { lines: ScoreLine[]; total: number }
+export interface RiftScore { lines: ScoreLine[]; total: number; full?: number; rating?: Rank }
 
 /** What a run did, as the score reads it. */
 export interface RiftRun {
@@ -83,7 +83,19 @@ export interface RiftRun {
   rounds: number;
   /** The hunter's HP left at the end, as a share. */
   hp: number;
+  /** The run's full marks, for its rating (`fullMarks`). Unset, no rating. */
+  full?: number;
 }
+
+/**
+ * A Rift's full marks: every fight on the System's road, its Gatekeeper if it has one, the boss, each of its
+ * Feats, and every HP left. Pace is apart: a run that beats par, or wins rooms off the road, goes past them.
+ */
+export const fullMarks = (o: { fights: number; keeper: boolean; feats: number }) =>
+  o.fights * SCORE.fight + (o.keeper ? SCORE.keeper : 0) + SCORE.boss + o.feats * SCORE.feat + SCORE.health;
+
+/** A score's rating against full marks: the highest whose share it reaches. */
+export const ratingOf = (score: number, full: number): Rank => (RIFT_RATINGS.find(([, at]) => score >= at * Math.max(1, full)) ?? RIFT_RATINGS[RIFT_RATINGS.length - 1])[0];
 
 /** The score, a line at a time: the way gone, the Gatekeeper and the boss; on a clear, Feats, pace and health. */
 export function scoreOf(r: RiftRun): RiftScore {
@@ -98,7 +110,8 @@ export function scoreOf(r: RiftRun): RiftScore {
     { key: 'pace', n: under, pts: under * SCORE.pace },
     { key: 'health', n: Math.round(hp * 100), pts: Math.round(hp * SCORE.health) },
   ];
-  return { lines, total: lines.reduce((n, x) => n + x.pts, 0) };
+  const total = lines.reduce((n, x) => n + x.pts, 0);
+  return { lines, total, ...(r.full ? { full: r.full, rating: ratingOf(total, r.full) } : {}) };
 }
 
 /** What the Rift's end wrote: the score, the best before it, and whether it beat it. */
@@ -110,7 +123,7 @@ export function settle(s: Save, d: Dungeon, outcome: Outcome, score: RiftScore):
   const day = riftDay(d);
   const list = days(s);
   const at = list.find((x) => x.day === day) ?? { day, grade: d.rank as Rank, shape: d.shape ?? d.id, mods: [], score: 0, outcome: 'open' as const };
-  const entry: RiftDay = { ...at, score: score.total, outcome };
+  const entry: RiftDay = { ...at, score: score.total, outcome, ...(score.rating ? { rating: score.rating } : {}) };
   s.rift = { days: [entry, ...list.filter((x) => x.day !== day)].slice(0, RIFT_KEPT), best: Math.max(was, score.total) };
   return { ...score, best: was, newBest: score.total > was };
 }

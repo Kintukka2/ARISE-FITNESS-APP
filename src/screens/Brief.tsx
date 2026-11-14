@@ -57,7 +57,7 @@ import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
 import { Keyed } from '@/ui/keyed';
-import { SealArt } from '@/ui/seals';
+import { ModRows, SealArt } from '@/ui/seals';
 import { drinkFlow } from './Inventory';
 
 /**
@@ -300,7 +300,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Facts d={d} level={level} taken={taken} />
       <Objectives d={d} level={level} taken={taken} />
       <RewardTiles d={d} level={level} taken={taken} />
-      {offer.length > 0 && <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} rifted={rifted} />}
+      {offer.length > 0 && (rifted
+        ? <section class="bbox brmods" aria-label="Modifiers"><span class="label bbox__head">Modifiers</span><ModRows mods={offer} /></section>
+        : <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} />)}
       {rifted && <RiftScoring />}
       <EnemyRow d={d} level={level} />
       <Lineup d={d} level={level} taken={taken} />
@@ -312,7 +314,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         {block === 'open' ? open?.id === d.id
           ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
           : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
-          : block === 'spent' ? <Btn block disabled>{rifted ? 'You have walked today’s Rift. Another opens at midnight.' : 'You have faced the Trial today. It opens again tomorrow.'}</Btn>
+          : block === 'spent' ? <Btn block disabled>{rifted ? 'You have played today’s Rift. Another opens at midnight.' : 'You have faced the Trial today. It opens again tomorrow.'}</Btn>
           : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
             : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
               : (
@@ -392,7 +394,7 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
       <ul class="brewards">
         {tile('xp', 'is-xp', <span class="breward__xp">XP</span>, practice ? `Gate clear · Level ${PRACTICE_LEVEL}` : 'Gate clear', `+${xp}`, `Gate clear: XP +${xp}`)}
         {!practice && tile('shards', 'is-shard', <Shard size={26} />, 'Gate clear', `+${sh}`, `Gate clear: Mana Shards +${sh}`)}
-        {first && tile('bounty', 'is-bounty', <Shard size={26} />, 'Bounty · once', `+${sh * 2}`, `Bounty: XP +${xp}, Mana Shards +${sh * 2}, one-time reward`)}
+        {first && tile('bounty', 'is-bounty', <Shard size={26} />, 'Bounty', `+${sh * 2}`, `Bounty: XP +${xp}, Mana Shards +${sh * 2}, one-time reward`)}
         {trial && tile('victory', 'is-victory', <Glyph name="crown" />, `Ascension ${s.ascension.unlocked + 1} opens`)}
         {tower && tile('week', 'is-victory', <Glyph name="spire" />, `Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`, undefined, 'This week: a new best')}
         {rifted && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Rift bonus', `+${RIFT_EMBER[d.rank as Rank]}`, `Rift bonus: Ember +${RIFT_EMBER[d.rank as Rank]}`)}
@@ -401,8 +403,8 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
           practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint', '×1')}
         {/* The engraving the boss, and the Gatekeeper, can leave on a piece found whole, at their odds. */}
-        {!practice && !trial && engraving.boss && tile('engr-boss', 'is-engrave', <Runestone e={engraving.boss} size={32} />, `${engraving.boss.name} · Boss`, `${Math.round(ENGRAVED.boss * 100)}%`, `Engraving: ${engraving.boss.name}, left by the boss at ${Math.round(ENGRAVED.boss * 100)}%`)}
-        {!practice && !trial && engraving.keeper && engraving.keeper.id !== engraving.boss?.id && tile('engr-keeper', 'is-engrave', <Runestone e={engraving.keeper} size={32} />, `${engraving.keeper.name} · Gatekeeper`, `${Math.round(ENGRAVED.keeper * 100)}%`, `Engraving: ${engraving.keeper.name}, left by the Gatekeeper at ${Math.round(ENGRAVED.keeper * 100)}%`)}
+        {!practice && !trial && engraving.boss && tile('engr-boss', 'is-engrave', <Runestone e={engraving.boss} size={32} />, engraving.boss.name, `${Math.round(ENGRAVED.boss * 100)}%`, `Engraving: ${engraving.boss.name}, left by the boss at ${Math.round(ENGRAVED.boss * 100)}%`)}
+        {!practice && !trial && engraving.keeper && engraving.keeper.id !== engraving.boss?.id && tile('engr-keeper', 'is-engrave', <Runestone e={engraving.keeper} size={32} />, engraving.keeper.name, `${Math.round(ENGRAVED.keeper * 100)}%`, `Engraving: ${engraving.keeper.name}, left by the Gatekeeper at ${Math.round(ENGRAVED.keeper * 100)}%`)}
       </ul>
     </section>
   );
@@ -413,7 +415,7 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
  * tap and lit red, its name under it; what the one last touched does and pays, under them; and the Ember they
  * add on the right. The head's ring answers as each is pressed. A run open on the Gate keeps its own, fixed.
  */
-function SealStrip({ d, offer, taken, fixed, rifted }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean; rifted?: boolean }) {
+function SealStrip({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean }) {
   const [shown, setShown] = useState<SealId | null>(null);
   const [pressed, setPressed] = useState<{ id: SealId; on: boolean } | null>(null);
   const ember = emberOf(taken, d);
@@ -427,10 +429,10 @@ function SealStrip({ d, offer, taken, fixed, rifted }: { d: Dungeon; offer: Seal
   };
   const x = shown ? SEALS[shown] : null;
   return (
-    <section class={`bseals ${taken.length ? 'is-on' : ''} ${rifted ? 'is-rift' : ''}`} aria-label={rifted ? 'Modifiers' : 'Seals'} data-tour="seals">
+    <section class={`bseals ${taken.length ? 'is-on' : ''}`} aria-label="Seals" data-tour="seals">
       <span class="bseals__head">
-        <span class="label">{rifted ? 'Modifiers' : 'Seals'}</span>
-        {!rifted && <span class="bseals__ember"><MatArt id={EMBER.id} size={16} /><b class="num emb" key={ember}>+{ember}</b><small>Ember on a clear</small></span>}
+        <span class="label">Seals</span>
+        <span class="bseals__ember"><MatArt id={EMBER.id} size={16} /><b class="num emb" key={ember}>+{ember}</b><small>Ember on a clear</small></span>
       </span>
       <ul class="bseals__set">
         {offer.map((id, i) => {
@@ -441,9 +443,9 @@ function SealStrip({ d, offer, taken, fixed, rifted }: { d: Dungeon; offer: Seal
               <button type="button" role="switch" aria-checked={on} aria-disabled={fixed}
                 class={`bseal ${on ? 'is-on' : ''} ${shown === id ? 'is-shown' : ''} ${just ? (pressed!.on ? 'is-stamped' : 'is-lifted') : ''}`}
                 onClick={() => toggle(id)}>
-                <span class="bseal__wax"><SealArt size={42} class={on ? 'is-on' : ''} />{just && pressed!.on && <i class="sealcard__ripple" />}</span>
+                <span class="bseal__wax"><SealArt id={id} size={42} class={on ? 'is-on' : ''} />{just && pressed!.on && <i class="sealcard__ripple" />}</span>
                 <b>{SEALS[id].name}</b>
-                {!rifted && <small class="emb">+{sealEmber(id, d.rank)}</small>}
+                <small class="emb">+{sealEmber(id, d.rank)}</small>
               </button>
             </li>
           );
@@ -451,7 +453,7 @@ function SealStrip({ d, offer, taken, fixed, rifted }: { d: Dungeon; offer: Seal
       </ul>
       <p class="bseals__rule">
         {x ? <><b>{x.name}:</b> {x.rule}{x.note ? <span class="muted"> {x.note}</span> : null}</>
-          : rifted ? offer.map((id) => SEALS[id].rule).join('. ') + '.' : fixed ? 'Fixed for this run.' : SEAL_LINE}
+          : fixed ? 'Fixed for this run.' : SEAL_LINE}
       </p>
     </section>
   );
@@ -464,19 +466,20 @@ function SealStrip({ d, offer, taken, fixed, rifted }: { d: Dungeon; offer: Seal
 function RiftScoring() {
   const s = useSave();
   const best = rift.best(s);
-  const lines: [string, string][] = [
-    ['Each fight won', `${SCORE.fight}`],
-    ['Gatekeeper defeated', `${SCORE.keeper}`],
-    ['Boss defeated', `${SCORE.boss}`],
-    ['Each Feat met', `${SCORE.feat}`],
-    [`Each round under par (${RIFT_PAR} a fight)`, `${SCORE.pace}`],
-    ['HP left at the end', `up to ${SCORE.health}`],
+  // Each line by the mark the results give it.
+  const lines: [string, string, string][] = [
+    ['crossed', 'Each fight won', `${SCORE.fight}`],
+    ['roomKeeper', 'Gatekeeper defeated', `${SCORE.keeper}`],
+    ['roomBoss', 'Boss defeated', `${SCORE.boss}`],
+    ['star', 'Each Feat met', `${SCORE.feat}`],
+    ['timer', `Each round under par (${RIFT_PAR} a fight)`, `${SCORE.pace}`],
+    ['heart', 'HP left at the end', `up to ${SCORE.health}`],
   ];
   return (
     <section class="bbox brift" aria-label="Score">
       <span class="label bbox__head">Score{best > 0 && <small> · Best <b class="num">{group(best)}</b></small>}</span>
       <ul class="brift__lines">
-        {lines.map(([k, v]) => <li key={k}><span>{k}</span><b class="num">{v}</b></li>)}
+        {lines.map(([g, k, v]) => <li key={k}><span class="riftres__mark"><Glyph name={g} /></span><span>{k}</span><b class="num">{v}</b></li>)}
       </ul>
       <small class="brift__note">Feats, pace and HP left count on a clear.</small>
     </section>

@@ -98,9 +98,9 @@ async function autoToResults() {
   if (await page.locator('.arena--results .rpay__one i').count()) throw new Error('THE RESULTS STILL QUALIFY THEIR XP OR SHARDS');
   // The outcome stands on one line, and the line under it never repeats it (measured once the title has drawn in).
   await page.waitForTimeout(800);
-  const head = await page.locator('.arena--results .rhead h2').evaluate((el) => ({ over: el.scrollWidth - el.clientWidth, h: el.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(el).lineHeight) || 0, t: el.textContent }));
+  const head = await page.locator('.arena--results :is(.rhead, .riftres__title) h2').evaluate((el) => ({ over: el.scrollWidth - el.clientWidth, h: el.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(el).lineHeight) || 0, t: el.textContent }));
   if (head.over > 1 || (head.lh && head.h > head.lh * 1.6)) throw new Error(`THE RESULTS' TITLE DOES NOT FIT ONE LINE (${head.t})`);
-  const sub = (await page.locator('.arena--results .rhead p').allInnerTexts()).join(' ');
+  const sub = (await page.locator('.arena--results :is(.rhead, .riftres__title) p').allInnerTexts()).join(' ');
   if (sub && head.t && sub.toLowerCase().includes(head.t.toLowerCase().split(' ').slice(0, 2).join(' '))) throw new Error(`THE RESULTS' LINE REPEATS ITS TITLE (${sub})`);
 }
 
@@ -751,29 +751,34 @@ try {
   // Auto to its score worked out on the results, after which it is walked for the day.
   await nav('quests'); await sleep(700);
   if (!(await page.locator('#quest-rift').count())) throw new Error('THE DAILY RIFT IS NOT ON QUESTS');
-  if ((await page.locator('.qrift__mod').count()) !== 2) throw new Error('THE RIFT DOES NOT SHOW TWO MODIFIERS');
+  if ((await page.locator('.qsec--rift .modrow').count()) !== 2) throw new Error('THE RIFT DOES NOT SHOW TWO MODIFIERS');
+  if ((await page.locator('.qsec--rift .modrow .sealart__sign').count()) !== 2) throw new Error('A MODIFIER\'S SEAL HAS NO SIGN');
   if ((await page.locator('.qsec--rift .rifthist__bars li').count()) !== 14) throw new Error('THE RIFT DOES NOT SHOW A FORTNIGHT');
   await page.locator('.qsec--rift').scrollIntoViewIfNeeded(); await sleep(400); await snap('quests-rift');
   await page.locator('#quest-rift').click(); await sleep(800); await snap('quest-rift');
+  if (await page.locator('.sheet.is-top', { hasText: 'Days walked' }).count()) throw new Error('THE RIFT STILL SAYS DAYS WALKED');
   await page.locator('.sheet.is-top .btn', { hasText: 'Brief: Daily Rift' }).click(); await sleep(1000);
-  if ((await page.locator('.sheet.is-top .bseals.is-rift .bseal').count()) !== 2) throw new Error('THE RIFT BRIEF DOES NOT FIX ITS MODIFIERS');
+  await page.locator('.sheet.is-top .brmods').scrollIntoViewIfNeeded().catch(() => {});
+  if ((await page.locator('.sheet.is-top .brmods .modrow').count()) !== 2) throw new Error('THE RIFT BRIEF DOES NOT SHOW ITS MODIFIERS A ROW TO EACH');
+  if (await page.locator('.sheet.is-top .breward__name', { hasText: /· Boss|· once/ }).count()) throw new Error('THE BRIEF STILL QUALIFIES A REWARD WITH · BOSS OR · ONCE');
   if (!(await page.locator('.sheet.is-top .brift').count())) throw new Error('THE RIFT BRIEF DOES NOT SAY HOW IT IS SCORED');
   if (await page.locator('.sheet.is-top .gtag', { hasText: 'Never cleared' }).count()) throw new Error('THE RIFT BRIEF CALLS IT NEVER CLEARED');
   await snap('rift-brief', true);
-  await page.locator('.sheet.is-top .bseals.is-rift').scrollIntoViewIfNeeded(); await sleep(400); await snap('rift-brief-terms');
+  await page.locator('.sheet.is-top .brmods').scrollIntoViewIfNeeded(); await sleep(400); await snap('rift-brief-terms');
   if (await page.locator('text=Enter The Rift').isVisible()) {
     await page.locator('text=Enter The Rift').click(); await sleep(600); await drain();
     await page.waitForSelector('.arena', { timeout: 10000 });
     await autoToResults(); await sleep(2600);
-    if (!(await page.locator('.arena--results .rscore').count())) throw new Error('THE RIFT RESULTS HAVE NO SCORE');
-    if ((await page.locator('.arena--results .rscore__lines li').count()) !== 6) throw new Error('THE RIFT SCORE IS NOT WORKED A LINE AT A TIME');
+    if (!(await page.locator('.arena--results .riftres .ratingmark').count())) throw new Error('THE RIFT RESULTS HAVE NO RATING');
+    if ((await page.locator('.arena--results .riftres__lines li').count()) < 5) throw new Error('THE RIFT SCORE IS NOT WORKED A ROW AT A TIME');
+    await snap('rift-results-top');
     await snap('rift-results', true);
     await revealLoot();
     await page.locator('text=Leave The Gate').click(); await drain();
     await nav('quests'); await sleep(700);
     if (!(await page.locator('.qrift.is-done').count())) throw new Error('A RIFT WALKED DOES NOT SHOW ITS SCORE ON QUESTS');
     await page.locator('.qsec--rift').scrollIntoViewIfNeeded(); await sleep(300); await snap('quests-rift-done');
-  } else { await close(); await close(); }
+  } else await close();
 
   await nav('shadows');
   await snap('shadows', true);

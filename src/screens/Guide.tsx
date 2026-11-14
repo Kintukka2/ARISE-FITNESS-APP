@@ -1,6 +1,6 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
 import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
-import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, SCORE } from '@/data/rift';
+import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
@@ -469,6 +469,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `A clear pays the Gate’s clear and Ascendant Ember by grade: ${RANKS.map((r) => `${r} ${RIFT_EMBER[r]}`).join(', ')}.`,
       'It counts as the Gate it takes the shape of: for its first clear, its Feats, Ryn’s jobs and the proof Ascension asks.',
       `Its score: ${SCORE.fight} for each fight won, ${SCORE.keeper} for the Gatekeeper, ${SCORE.boss} for the boss. On a clear, ${SCORE.feat} for each Feat met, ${SCORE.pace} for each round under par (${RIFT_PAR} rounds to each fight won), and up to ${SCORE.health} for the HP you have left.`,
+      `A score is rated against the Rift’s full marks, every fight on the System’s road, the Gatekeeper, the boss, every Feat and every HP: ${RIFT_RATINGS.map(([r, at]) => `${r} from ${Math.round(at * 100)}%`).join(', ')}.`,
+      'Pace, and fights won off the road, can carry a score past full marks.',
       `Your last ${RIFT_KEPT} days and your best score are kept on this device.`,
     ],
   },

@@ -9,7 +9,7 @@ import type { Dungeon, Rank, Save } from '@/core/types';
 import { RANKS } from '@/core/types';
 import { dayKey } from '@/core/util';
 import { EMBER } from '@/data/forge';
-import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, SCORE } from '@/data/rift';
+import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
 import { typicalHunter } from '../scripts/hunters';
 
 const now = Date.parse('2026-03-04T12:00:00');
@@ -152,6 +152,22 @@ describe('the Daily Rift', () => {
     expect(res.rift!.newBest).toBe(true);
     expect(rift.attempt(s, day)).toMatchObject({ outcome: 'cleared', score: res.rift!.total, grade: 'C', shape: d.shape });
     expect(rift.best(s)).toBe(res.rift!.total);
+  });
+
+  it('rates a score against its full marks: S at full marks, then A, B, C, D and E as it falls short', () => {
+    const full = rift.fullMarks({ fights: 6, keeper: true, feats: 3 });
+    expect(full).toBe(6 * SCORE.fight + SCORE.keeper + SCORE.boss + 3 * SCORE.feat + SCORE.health);
+    for (const [r, at] of RIFT_RATINGS) expect(rift.ratingOf(Math.ceil(at * full), full)).toBe(r);
+    expect(rift.ratingOf(full * 1.2, full)).toBe('S');
+    expect(rift.ratingOf(0, full)).toBe('E');
+    // The score carries its rating, and the day's history keeps it.
+    const scored = rift.scoreOf({ won: 7, keeper: true, cleared: true, feats: 3, rounds: 20, hp: 1, full });
+    expect(scored.rating).toBe('S');
+    const s = hunter('E', 'rating');
+    const d = rift.riftFor(s, day);
+    rift.enter(s, d, []);
+    rift.settle(s, d, 'cleared', scored);
+    expect(rift.attempt(s, day)?.rating).toBe('S');
   });
 
   it('keeps a month of days, newest first, and the best of them', () => {

@@ -34,6 +34,13 @@ export const SCORE = {
   health: 400,
 } as const;
 
+/**
+ * A score's rating, by its share of the Rift's full marks (`rift.fullMarks`: every fight on the System's road,
+ * the Gatekeeper, the boss, every Feat and every HP left, pace apart): the highest whose share it reaches.
+ * Pace and the rooms off the road can carry a run past full marks.
+ */
+export const RIFT_RATINGS: [Rank, number][] = [['S', 1], ['A', 0.85], ['B', 0.7], ['C', 0.55], ['D', 0.4], ['E', 0]];
+
 /** Par: this many rounds to every fight won. */
 export const RIFT_PAR = 4;
 

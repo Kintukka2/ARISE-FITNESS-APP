@@ -1348,6 +1348,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // A Rift is scored as it ends, a line at a time, and the day's attempt is written with it.
   const scored = rifted ? rift.settle(s, d, outcome, rift.scoreOf({
     won: run.won, keeper: !!run.tally?.keeper, cleared, feats: met.length, rounds: run.tally?.rounds ?? 0, hp: v.hp / Math.max(1, v.hpMax),
+    full: rift.fullMarks({ fights: road.filter((id) => m.byId[id]?.kind === 'fight').length, keeper: !!d.elite, feats: asked.length }),
   })) : null;
   s.gates.raid = null;
   s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}: ${outcome}`, xp: xp?.gained ?? 0 });
