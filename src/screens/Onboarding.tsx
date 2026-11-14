@@ -4,6 +4,7 @@
  *   2. The cut: the Arrival (ui/arrival.ts) takes the office away, and the System speaks for the
  *      first time.
  */
+import { RankCrest } from '@/ui/rankcrest';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { regNo } from '@/core/gates';
@@ -45,6 +46,8 @@ function Coach({ lines, onDone, onLine, hot }: { lines: string[]; onDone: () => 
 function Licence({ name, reg, lifted }: { name?: string; reg?: string; lifted?: boolean }) {
   return (
     <div class={`licence reveal ${lifted ? 'is-lifted' : ''}`}>
+      {/* The grade's letter behind, as the Licence window's card carries it. */}
+      <RankCrest rank="E" class="licence__crest" />
       <header>
         <div><span class="label">Hunter Association</span><b>Hunter Licence</b></div>
         <Sigil rank="E" size={40} />
@@ -78,7 +81,8 @@ export function Awakening() {
         <Coach hot lines={[...ASSESSMENT, NAME_PROMPT]}
           onLine={(i) => { if (i === 2) { setShowCard(true); sfx.ping(); flash(); } }}
           onDone={() => setStep('name')} />
-        {showCard && <Licence />}
+        {/* The name fills in on the licence as it is typed. */}
+        {showCard && <Licence name={name.trim().toUpperCase()} />}
         {step === 'name' && (
           <form class="card stack reveal" onSubmit={(e) => {
             e.preventDefault();

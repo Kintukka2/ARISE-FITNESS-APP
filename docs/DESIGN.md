@@ -2031,6 +2031,62 @@ with what ARISE took from them.
   filters, the stats and the recipe's chips stand unframed and the blueprints are a list), and `Better` named as the
   genre names it: a piece that beats what is worn is an `Upgrade`, marked ▲, as Diablo IV and Lost Ark mark one
   (the Forge's filter and hearth, the Item Bag's Show, the Inventory station's `▲ 3`).
+- **The Quests screen, rebuilt** (the owner's call: every screen not yet overhauled, before the plan goes on).
+  After Honkai: Star Rail's Daily Training and Solo Leveling: Arise's missions. The rail of rings holds under the
+  top bar as the log scrolls and underlines the quest in view, as the board's rail of grades does. The Daily
+  Quests are the log's hero: the count large beside the time left, a track with a diamond to each quest and the
+  completion bonus as a star at its end, what each quest and the bonus pay said once, then a line to each quest
+  with its ring. Every other quest is a row inside its section with no box of its own, a hairline between them, and
+  a picture drawn from where it stands: the rank above over the rank held with the climb between, the Trial's road
+  (a diamond to each Gate to prove, a line to the crown), the Pale Spire's storeys lit to the week's best, a
+  mosaic of the Secret Quests lit as they are done. Pay is plain gains, not chips. Ryn's card holds his job
+  unframed until it is done, when the row is the report as before. No engine changed.
+- **Status, Stats and Skills, rebuilt** (the same call). STATUS is drawn as the manhwa draws its window, with no
+  box round a field: the level large in a hexagon beside NAME, CLASS and RANK as lines, the climb to the next rank
+  as a bar, the vitals between hairlines, and the stats two to a row with a thin bar each for how far its points have
+  taken it. STATS sets where each stat comes from as a table (Base, Class, Skills, Gear, Total), its columns lined up
+  from stat to stat as the owner asked of the property bars, and the fight's numbers as a list with their `?` at
+  the right. Skills' head is unframed, the points large; the Path's head stands between hairlines. No engine changed.
+- **The Exchange and the dossier, rebuilt** (the same call). The Exchange is a shop of cards two to a row, after
+  Genshin Impact's and Honkai: Star Rail's: an unframed head (the shard in its diamond, the balance large in green, the
+  restock at its right), then the day's blueprint shelf first, each card on its rarity's colour with `▲` in gold where
+  it beats what is worn, then the potions and what the Gates take. A card's price is red while the shards fall short;
+  one that cannot be bought says why where its price would be. The hunter's dossier opens on the licence card, as the
+  Licence window draws it (number and the day they woke, the name already in its title), then what is in force, the
+  record as figures three to a row, and the log as lines. No engine changed.
+- **A run's results and the fight, redrawn** (the same call). The results open on a title card, after the victory
+  screens of Hades and Slay the Spire: the Gate's plate and name small, the outcome large in its colour with a rule
+  drawn out under it. What the run paid stands large and unframed (XP and shards side by side), the hunter's health
+  and fatigue as bars, the materials as a row of rewards on their rarities' grounds as Genshin Impact's domains lay
+  them, and the feats unboxed. In the fight, the field is a stage: the party's side lit cool and the foes' warm, a seam
+  between them; every card carries its mark at its left (a creature's family, the hunter's grade, a Shadow's or a
+  hunter's sign, a boss's in gold), its side's colour down its edge and a fuller HP bar. The action wheel, intents and
+  tips are as they were. No engine changed, and nothing a fight reads moved.
+- **Settings, the Guide and the licence at the desk** (the same call, the last of the screens). The Guide is a codex,
+  after Hades' Codex: a box that finds a word in every line (each line that holds it listed under its topic, the
+  word lit), an index of the seventeen topics with a mark and a count of lines each, and a topic's page with the way
+  back at its head; every line still reads its numbers from the engine. Settings opens on the Guide as a card, its
+  sections under heads with hairlines, the save's storage as a light (`Persistent` green, `Best-effort` gold), Export
+  and Import side by side and Erase standing apart. At the Association's desk the licence is drawn as the Licence
+  window draws it, the grade's colour and crest behind, and the name fills in on it as it is typed. No engine
+  changed.
+- **A second pass, at the owner's call** (fewer boxes, less said twice). The Exchange is rebuilt as the shops of
+  Genshin Impact, Honkai: Star Rail and Solo Leveling: Arise lay theirs out: the purse across the top, three counters
+  as tabs (Blueprints, Potions, For the Gates), tiles three to a row with their price along their foot and what stops
+  a purchase stamped across them, and a dock that holds the good tapped with **Buy**. Every good is drawn as itself
+  (`ui/shopart.tsx`), in place of a recoloured glyph. The hunter's card shows the grade once (on the licence, not in
+  the head and a Rank line too), and its `In force` section is gone: what a level and a rank pay is the level-up's to
+  say. A floor of the Spire cleared reads `Floor 30 Cleared` on one line with nothing under it, and no outcome's line
+  repeats its title. Status drops its Skills button and says nothing a + already says: the points and Auto-Allocate
+  head a row to each stat; Stats shows a stat's line only when its row is tapped and says once that the fight's
+  numbers explain themselves; Skills' points stand gold without a mark.
+- **A crest to each rank** (the owner's call), in place of the grade's letter behind the licence (the Licence window,
+  the hunter's card and the desk's licence): the hunter's arms rising with the rank (`ui/rankcrest.tsx`), each rank's
+  the one below with something won, at the owner's call, so the climb reads at a glance: a dagger at E, the dagger on a
+  round buckler at D, a longsword on a heater shield at C, two swords crossed behind the shield at B, the crossed arms
+  winged at A, the winged arms crowned in rays of light at S, and for the Sovereign a spiked crown over an open eye,
+  great wings and swords pointing down in a ring of light. Its pieces are solid and the crest is faded as one picture,
+  so a piece in front hides what stands behind it. A run's XP and shards stand as figures alone.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

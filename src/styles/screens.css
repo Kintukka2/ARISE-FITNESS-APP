@@ -1029,88 +1029,141 @@ button.dmap__floor { cursor: pointer; }
 
 /* ------------------------------------------------------------------ the Quests screen: a log */
 
-/* The rail: a ring to every quest that stands, filled as far as it stands; gold while it waits, green once done. */
-.qrail .sysframe__glass { padding: 10px 8px; }
-.qrail__rings { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; }
-.qrail__one { --qc: var(--mana); display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 2px 0; border: 0; background: none; color: inherit; font: inherit; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--i) * 60ms); }
+/* The rail: a ring to every quest that stands, filled as far as it stands; gold while it waits, green
+   once done. It holds under the top bar as the log scrolls, the quest in view underlined, as the
+   board's rail of grades does. */
+.qrail { position: sticky; top: calc(var(--topbar-h) + var(--safe-t)); z-index: 4; margin: -4px -14px 0; padding: 8px 8px 4px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); background: linear-gradient(rgba(4, 8, 20, 0.97), rgba(4, 8, 20, 0.9)); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.qrail__rings { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2px; }
+.qrail__one { --qc: var(--mana); position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 2px 0 7px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--i) * 60ms); }
 .qrail__one.is-gates { --qc: var(--ember); }
 .qrail__one.is-coach { --qc: var(--coach); }
 .qrail__ring > .portrait { position: relative; border-radius: 50%; }
 .qrail__one.is-call { --qc: var(--gold); }
 .qrail__one.is-done { --qc: var(--verdant); }
-.qrail__ring { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; color: var(--qc); }
+.qrail__ring { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--qc); }
 .qrail__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--qc) 70%, transparent)); }
 .qrail__svg circle { fill: none; stroke-width: 3.5; }
 .qrail__track { stroke: rgba(255, 255, 255, 0.1); }
 .qrail__arc { stroke: var(--qc); stroke-linecap: round; animation: saFill 900ms var(--ease) both; }
-.qrail__ring > .ico { position: relative; width: 17px; height: 17px; filter: drop-shadow(0 0 5px var(--qc)); }
+.qrail__ring > .ico { position: relative; width: 15px; height: 15px; filter: drop-shadow(0 0 5px var(--qc)); }
 .qrail__one.is-call .qrail__ring { animation: btileCount 1.5s ease-in-out infinite; }
-.qrail__one b { font-size: 0.7rem; font-weight: 700; color: var(--sys-ink); white-space: nowrap; }
+.qrail__one b { font-size: 0.68rem; font-weight: 700; color: var(--sys-ink); white-space: nowrap; }
 .qrail__one.is-call b { color: var(--gold); }
 .qrail__one small { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qrail__one::after { content: ''; position: absolute; left: 26%; right: 26%; bottom: -5px; height: 2px; border-radius: 1px; background: var(--qc); box-shadow: 0 0 8px var(--qc); transform: scaleX(0); transition: transform 200ms var(--ease); }
+.qrail__one.is-on::after { transform: scaleX(1); }
+.qrail__one.is-on small { color: #fff; }
 
-/* A section of the log: its label, then its quests. */
-.qsec .sysframe__glass { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
-.qsec__label { font-size: 0.56rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+/* A section of the log: its head (a label, a hairline, what stands at its right), then its quests,
+   a hairline between them. Only the section is framed: a row is not a box of its own. */
+.qsec .sysframe__glass { display: flex; flex-direction: column; padding: 10px 12px 2px; }
+.qsec__head { display: flex; align-items: center; gap: 10px; padding-bottom: 2px; }
+.qsec__head .label { flex: none; font-size: 0.6rem; color: var(--win); }
+.qsec__head > i { flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 40%, transparent), transparent); }
+.qsec__head small { flex: none; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.qsec__head small b { color: var(--sys-ink); }
 
-/* A quest's row: its picture, its name and count, where it stands, a bar, and what it pays. */
-.qrow { display: grid; grid-template-columns: 40px minmax(0, 1fr) 12px; align-items: center; gap: 10px; width: 100%; padding: 9px 10px 9px 8px; border-color: color-mix(in srgb, var(--win) 35%, var(--sys-hair)); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 10%, rgba(3, 8, 20, 0.6)), rgba(3, 8, 20, 0.5) 70%); color: inherit; font: inherit; text-align: left; transition: border-color 160ms, box-shadow 160ms; }
-.qrow:hover, .qrow:focus-visible { border-color: var(--win); box-shadow: 0 0 14px color-mix(in srgb, var(--win) 28%, transparent); }
-.qrow__art { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, var(--win) 45%, var(--sys-hair)); background: color-mix(in srgb, var(--win) 12%, transparent); color: var(--win); }
-.qrow__art > .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 6px var(--win-glow)); }
-.qrow__ranks { display: grid; place-items: center; gap: 1px; }
-.qrow__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.qrow__top { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
-.qrow__top b { flex: 1; min-width: 0; font-size: 0.82rem; line-height: 1.25; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
-.qrow__count { flex: none; padding: 1px 6px; border: 1px solid var(--sys-hair); font-size: 0.72rem; font-weight: 700; color: var(--sys-ink); }
-.qrow__sub { font-size: 0.68rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* A quest's row: its picture, its name and count, where it stands, what the picture adds, a bar, and its pay. */
+.qrow { --qa: var(--win); position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 12px; align-items: center; gap: 12px; width: calc(100% + 24px); margin: 0 -12px; padding: 12px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background 160ms; }
+.qsec__head + .qrow { border-top: 0; }
+.qrow:hover, .qrow:focus-visible { background: color-mix(in srgb, var(--win) 7%, transparent); }
+.qrow:active { background: color-mix(in srgb, var(--win) 12%, transparent); }
+.qrow__art { position: relative; display: grid; place-items: center; width: 44px; min-height: 44px; color: var(--qa); }
+.qrow__art > .ico { position: relative; width: 20px; height: 20px; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--qa) 70%, transparent)); }
+/* A glyph stands in a diamond of its colour. */
+.qrow--trial .qrow__art::before, .qrow--chosen .qrow__art::before, .qrow--secret .qrow__art::before { content: ''; position: absolute; left: 8px; top: 50%; width: 28px; height: 28px; margin-top: -14px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--qa) 60%, transparent); background: color-mix(in srgb, var(--qa) 13%, transparent); box-shadow: 0 0 12px color-mix(in srgb, var(--qa) 22%, transparent); }
+.qrow--chosen { --qa: var(--sysred); }
+.qrow__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.qrow__top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.qrow__top b { flex: 1; min-width: 0; font-size: 0.86rem; line-height: 1.25; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.qrow__count { flex: none; font-size: 0.8rem; font-weight: 700; color: var(--sys-ink); }
+.qrow__sub { font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
 .qrow__sub b { color: var(--sys-ink); }
-.qbar { display: block; height: 4px; background: rgba(255, 255, 255, 0.08); }
+.qbar { display: block; height: 3px; margin-top: 1px; background: rgba(255, 255, 255, 0.08); }
 .qbar > i { display: block; height: 100%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); animation: qbarIn 900ms var(--ease) both; transform-origin: left; }
 @keyframes qbarIn { from { transform: scaleX(0); } }
-.qrow__pay { display: flex; flex-wrap: wrap; gap: 4px; }
-.qpay { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.5); font-size: 0.58rem; font-weight: 600; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+/* What it pays: plain gains, the name dim and the figure green, with space between them. */
+.qrow__pay { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.qpay { font-size: 0.66rem; font-weight: 600; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .qpay .grant { font-weight: 700; }
-.qrow__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-/* Waiting on the hunter: gold, as a rank to claim always is. */
-.qrow.is-call { border-color: var(--gold); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 16%, rgba(3, 8, 20, 0.6)), rgba(3, 8, 20, 0.5) 70%); box-shadow: 0 0 14px var(--gold-glow); }
-.qrow.is-call .qrow__count { border-color: var(--gold); color: #1a1205; background: var(--gold); }
-.qrow.is-call .qrow__art { border-color: var(--gold); color: var(--gold); }
+.qrow__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+/* Waiting on the hunter: gold, as a rank to claim always is, a bar of it down the row's edge. */
+.qrow.is-call { --qa: var(--gold); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 13%, transparent), transparent 80%); }
+.qrow.is-call::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.qrow.is-call .qrow__count { padding: 1px 8px; background: var(--gold); color: #1a1205; box-shadow: 0 0 10px var(--gold-glow); }
 .qrow.is-call .qbar > i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
 .qrow.is-done .qbar > i { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
 /* A ring's jump lands on its quest, and lights it a moment. */
 .qrow.is-pinged, .qdaily.is-pinged { animation: qPing 1.2s var(--ease); }
-@keyframes qPing { 20% { box-shadow: 0 0 0 2px var(--win), 0 0 22px var(--win-glow); } }
+@keyframes qPing { 20% { background: color-mix(in srgb, var(--win) 16%, transparent); } }
 
-/* The Daily Quests: their head and countdown, a line to each with its bar, count and pay, then the bonus. */
-.qdaily { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
-.qdaily__head { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 12px; align-items: center; gap: 10px; padding: 0 2px 4px 0; }
-.qdaily__name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.qdaily__name > b { font-size: 0.86rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
-.qdaily__name small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.qdaily__name small b { color: var(--sys-ink); }
-.qdaily__one { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; animation: qaIn 420ms var(--ease) both; animation-delay: calc(120ms + var(--i) * 120ms); }
-.qdaily__mark { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.qdaily__mark .ico { width: 11px; height: 11px; }
-.qdaily__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.qdaily__body > b { font-size: 0.78rem; font-weight: 600; line-height: 1.3; color: var(--sys-ink); }
-.qdaily__side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.qdaily__side > .num { font-size: 0.78rem; font-weight: 700; }
-.qdaily__side .qline__pay { gap: 6px; font-size: 0.6rem; }
-.qdaily__one.is-done { border-color: color-mix(in srgb, var(--verdant) 50%, transparent); }
-.qdaily__one.is-done .qdaily__mark { border-color: var(--verdant); color: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
-.qdaily__one.is-done .qdaily__body > b { color: var(--verdant); }
-.qdaily__one.is-done .qbar > i { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
-.qdaily__bonus { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px dashed color-mix(in srgb, var(--gold) 45%, transparent); font-size: 0.72rem; font-weight: 600; color: color-mix(in srgb, var(--gold) 80%, var(--sys-ink)); }
-.qdaily__bonus > span:nth-child(2) { flex: 1; }
-.qdaily__bonus .qline__ring { width: 24px; height: 24px; }
-.qdaily__bonus .qline__arc { stroke: var(--gold); }
-.qdaily__bonus .qline__pay { font-size: 0.62rem; }
-/* All done: the block folds to its head, ticked, `Complete` in green where the count stood. */
-.qdaily.is-done .qdaily__head { padding-bottom: 0; }
-.qdaily.is-done .qrow__art { border-color: var(--verdant); background: color-mix(in srgb, var(--verdant) 12%, transparent); color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); }
-.qdaily__complete { border-color: var(--verdant); color: var(--verdant); background: color-mix(in srgb, var(--verdant) 12%, transparent); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.64rem; box-shadow: 0 0 8px var(--verdant-glow); animation: qaIn 420ms var(--ease) both; }
+/* The next rank: the rank above, the rank held below it, and the climb between filled as far as the level stands. */
+.qrank { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.qrank__path { position: relative; width: 2px; height: 14px; background: rgba(255, 255, 255, 0.12); }
+.qrank__path > i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--p) * 100%); background: var(--qa); box-shadow: 0 0 6px color-mix(in srgb, var(--qa) 70%, transparent); }
+.qrank > :last-child { opacity: 0.6; }
 
+/* The Trial's road: a diamond to each Gate to prove, then a line to the crown. */
+.qroad { display: flex; align-items: center; gap: 7px; margin: 1px 0 2px 1px; }
+.qroad__gate { flex: none; width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 40%, transparent); background: rgba(3, 8, 20, 0.45); }
+.qroad__gate.is-on { border-color: #fff; background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.qroad__line { flex: 1; max-width: 90px; height: 1px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--sys-ink) 40%, transparent) 0 4px, transparent 4px 7px); }
+.qroad__line.is-on { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+.qroad__crown { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid color-mix(in srgb, var(--sys-ink) 40%, transparent); border-radius: 50%; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qroad__crown .ico { width: 12px; height: 12px; }
+.qroad.is-ready .qroad__crown { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); animation: btileCount 1.5s ease-in-out infinite; }
+
+/* The Pale Spire's storeys, widening to the ground, lit from it to the week's best. */
+.qtower { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; }
+.qtower__tip { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 9px solid color-mix(in srgb, var(--qa) 55%, transparent); }
+.qtower > i:not(.qtower__tip) { width: calc(14px + var(--s) * 2.6px); height: 5px; border: 1px solid color-mix(in srgb, var(--qa) 38%, transparent); background: rgba(20, 10, 4, 0.55); }
+.qtower > i.is-on { border-color: var(--qa); background: linear-gradient(var(--qa), color-mix(in srgb, var(--qa) 55%, #000)); box-shadow: 0 0 8px color-mix(in srgb, var(--qa) 55%, transparent); }
+
+/* The Secret Quests: a cell to each, a run of cells to each tier, lit once done. */
+.qmosaic { display: flex; flex-wrap: wrap; gap: 4px 9px; margin: 2px 0; }
+.qmosaic__tier { display: flex; flex-wrap: wrap; gap: 2px; }
+.qmosaic i { width: 7px; height: 7px; border: 1px solid color-mix(in srgb, var(--sys-ink) 20%, transparent); }
+.qmosaic i.is-on { border-color: var(--win); background: var(--win); box-shadow: 0 0 5px var(--win-glow); }
+
+/* The Daily Quests, the log's hero: the count large and the time left, a track to the bonus, what they
+   pay, then a line to each. */
+.qsec--daily .sysframe__glass { padding: 12px 12px 4px; }
+.qdaily { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.qdaily__head { display: flex; align-items: center; gap: 12px; }
+.qdaily__big { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.qdaily__big > b { font-size: 2.2rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.qdaily__big > b small { margin-left: 2px; font-size: 1.1rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.qdaily__big .label { font-size: 0.6rem; color: var(--win); }
+.qdaily__clock { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.qdaily__clock small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qdaily__clock b { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em; color: var(--sys-ink); }
+.qdaily__complete { padding: 3px 10px; border: 1px solid var(--verdant); background: color-mix(in srgb, var(--verdant) 14%, transparent); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); animation: qaIn 420ms var(--ease) both; }
+/* The track: a diamond to each quest, the bonus a star at its end; lit green as they are done. */
+.qtrack { position: relative; display: flex; align-items: center; justify-content: space-between; height: 34px; }
+.qtrack__rail { position: absolute; left: 11px; right: 16px; top: 50%; height: 2px; margin-top: -1px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--sys-ink) 34%, transparent) 0 5px, transparent 5px 9px); }
+.qtrack__rail > i { display: block; width: calc(var(--fill) * 100%); height: 100%; background: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); transition: width 600ms var(--ease); }
+.qtrack__node { position: relative; display: grid; place-items: center; width: 22px; height: 22px; }
+.qtrack__node::before { content: ''; position: absolute; inset: 3px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 45%, transparent); background: rgb(5, 10, 22); }
+.qtrack__node b { position: relative; font-size: 0.6rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.qtrack__node.is-on::before { border-color: var(--verdant); background: color-mix(in srgb, var(--verdant) 34%, rgb(5, 10, 22)); box-shadow: 0 0 10px var(--verdant-glow); }
+.qtrack__node.is-on b { color: #fff; }
+.qtrack__star { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border: 1px dashed color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 50%; background: rgb(5, 10, 22); color: color-mix(in srgb, var(--gold) 75%, transparent); }
+.qtrack__star .ico { width: 15px; height: 15px; }
+.qtrack__star.is-on { border: 1px solid var(--verdant); background: var(--verdant); color: #04140c; box-shadow: 0 0 16px var(--verdant-glow); animation: btileCount 2.4s ease-in-out infinite; }
+/* What they pay, once: each quest, and the bonus. */
+.qdaily__bonus { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 5px 12px; padding-bottom: 2px; }
+.qdaily__bonus > span:not(.qline__pay) { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qdaily__bonus .qline__pay { justify-self: stretch; flex-wrap: wrap; justify-content: flex-end; gap: 2px 10px; font-size: 0.7rem; white-space: normal; }
+.qdaily__bonus .qline__pay > span { white-space: nowrap; }
+/* A line to each quest: its ring, its order and bar, its count. */
+.qdaily__one { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: 0 -12px; padding: 10px 12px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); animation: qaIn 420ms var(--ease) both; animation-delay: calc(120ms + var(--i) * 120ms); }
+.qdaily__one .qline__ring { width: 26px; height: 26px; }
+.qdaily__body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.qdaily__body > b { font-size: 0.8rem; font-weight: 600; line-height: 1.3; color: var(--sys-ink); }
+.qdaily__n { font-size: 0.8rem; font-weight: 700; color: var(--sys-ink); }
+.qdaily__one.is-done .qline__arc { stroke: var(--verdant); filter: drop-shadow(0 0 3px var(--verdant-glow)); }
+.qdaily__one.is-done .qdaily__body > b, .qdaily__one.is-done .qdaily__n { color: var(--verdant); }
+.qdaily.is-done { gap: 8px; padding-bottom: 8px; }
 
 @keyframes qaIn { from { opacity: 0; transform: translateY(-12px) scale(0.97); } }
 
@@ -3408,3 +3461,393 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .setcard .settiers { margin-top: 2px; }
 .setrow__bonus .settiers__boon b, .setbonus .settiers__boon b { display: block; width: auto; height: auto; border: 0; font-size: 0.74rem; line-height: 1.3; text-align: left; }
 .setrow__bonus .settiers__what .gains { line-height: 1.35; }
+
+/* ------------------------------------------------------------------ Status, Stats and Skills, rebuilt */
+
+/* STATUS: the source's window, its fields as plain lines. The level stands large in a hexagon beside
+   NAME, CLASS and RANK; the climb to the next rank under them; the vitals and the stats as rows with
+   hairlines between them, after the manhwa's own window, which draws no boxes. */
+.sthead { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 16px; padding: 4px 2px 0; }
+.sthead__lv { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 84px; height: 94px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, color-mix(in srgb, var(--win) 34%, rgb(6, 14, 30)), rgb(4, 10, 22) 70%); }
+.sthead__lv::before { content: ''; position: absolute; inset: 1.5px; clip-path: inherit; background: linear-gradient(160deg, rgb(8, 20, 40), rgb(3, 8, 18)); z-index: 0; }
+.sthead__lv > * { position: relative; }
+.sthead__lv small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.sthead__lv b { font-size: 2.1rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.sthead__fields { display: flex; flex-direction: column; gap: 0; margin: 0; }
+.sthead__fields > div { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: baseline; gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.sthead__fields > div:last-child { border-bottom: 0; }
+.sthead__fields dt { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.sthead__fields dt::after { content: ':'; }
+.sthead__fields dd { margin: 0; min-width: 0; font-size: 0.96rem; font-weight: 600; color: #fff; text-shadow: var(--sys-glow); overflow-wrap: anywhere; }
+.sthead__fields dd.status__rank { display: flex; align-items: center; gap: 6px; }
+.stclimb { display: flex; flex-direction: column; gap: 6px; }
+.stclimb > small { font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.stclimb__bar { display: block; height: 3px; background: rgba(255, 255, 255, 0.08); }
+.stclimb__bar > i { display: block; height: 100%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+/* The vitals without their box: a hairline above and below. */
+.status .vitals { gap: 12px; padding: 12px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-radius: 0; background: none; }
+/* The stats, two to a row, a hairline between rows; each a button that spends, its bar the base toward the points' limit. */
+.status .attrs { gap: 0 18px; }
+.status .attr { flex-wrap: wrap; min-height: 58px; padding: 10px 2px 12px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; }
+.status .attr > .ico { color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.status .attr__k { color: #fff; }
+.status .attr__v { color: #fff; text-shadow: var(--sys-glow); }
+.attr__bar { position: absolute; left: 2px; right: 2px; bottom: 5px; height: 2px; background: rgba(255, 255, 255, 0.07); }
+.attr__bar > i { display: block; height: 100%; background: color-mix(in srgb, var(--win) 75%, transparent); }
+.status .attr--points { align-items: flex-end; border-style: none; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.status .attr--points .label { font-size: 0.56rem; }
+.status .attr--points.is-hot { color: var(--gold); }
+.status .attr--points.is-hot b { color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
+.status .attrs__alloc { padding-top: 10px; }
+
+/* STATS: the radar, then a table of where each stat comes from, its columns lined up, then the fight's
+   numbers as a list two to a row. */
+.stattable { display: flex; flex-direction: column; }
+.stattable__head, .stattable__row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, 33px) 38px; align-items: center; column-gap: 3px; }
+.stattable__head { padding: 0 2px 6px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); }
+.stattable__head span { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; text-align: right; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.stattable__head span:first-child { text-align: left; }
+.stattable__row { row-gap: 2px; padding: 10px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.stattable__row > .num { text-align: right; font-size: 0.84rem; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.stattable__row > .num.is-up { color: #fff; }
+.stattable__row > .num.is-none { color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.stattable__name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.stattable__name .ico { flex: none; width: 16px; height: 16px; color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.stattable__name b { font-size: 0.84rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stattable__total { text-align: right; font-size: 1.05rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.stattable__desc { grid-column: 1 / -1; padding-left: 24px; font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.statsheet .sysfields { gap: 0 18px; }
+.statsheet .sysfield { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 11px 24px 11px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; }
+.statsheet .sysfield > span { white-space: nowrap; }
+.statsheet .sysfield > b { font-size: 1rem; color: #fff; white-space: nowrap; }
+.statsheet .sysfield__help { top: 50%; right: 2px; translate: 0 -50%; border-radius: 50%; }
+.statsheet .sysfield.is-open { flex-wrap: wrap; border-color: var(--win); background: color-mix(in srgb, var(--win) 7%, transparent); }
+.statsheet .sysfield.is-open .sysfield__help { top: 14px; translate: 0 0; }
+.statsheet .sysfield__why { flex-basis: 100%; }
+
+/* SKILLS: the head unframed, the class at its left and the points large at its right, gold while a point
+   has somewhere to go; the Path's head between hairlines. */
+.st-head { align-items: center; padding: 2px 2px 0; }
+.st-head__class, .st-head__pts { padding: 0; border: 0; background: none; }
+.st-head__class strong { font-size: 1.02rem; color: #fff; }
+.st-head__pts b { font-size: 2rem; color: #fff; text-shadow: var(--sys-glow); }
+.st-head__pts.is-due { box-shadow: none; }
+.st-head__pts.is-due b { color: var(--gold); text-shadow: 0 0 14px var(--gold-glow); }
+.st-head__pts .apdue__mark { left: auto; right: calc(100% + 8px); top: auto; bottom: 6px; translate: none; box-shadow: 0 0 8px var(--gold-glow); }
+.st-pathhead { padding: 10px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); background: none; }
+.st-pathhead__icon { transform: rotate(45deg); width: 28px; height: 28px; margin: 0 4px; background: color-mix(in srgb, var(--mana) 14%, transparent); }
+.st-pathhead__icon .ico { transform: rotate(-45deg); }
+
+/* ------------------------------------------------------------------ the Exchange, rebuilt */
+
+/* The head, unframed as the Forge's hearth is: the shard glowing, the balance large, the restock at its right. */
+.exhead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 4px 2px 12px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+.exhead__gem { position: relative; display: grid; place-items: center; width: 54px; height: 54px; color: var(--verdant); }
+.exhead__gem::before { content: ''; position: absolute; inset: 6px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background: radial-gradient(color-mix(in srgb, var(--verdant) 26%, transparent), transparent 70%); box-shadow: 0 0 18px var(--verdant-glow); animation: exGem 3.2s ease-in-out infinite; }
+.exhead__gem > svg { position: relative; filter: drop-shadow(0 0 8px var(--verdant-glow)); }
+@keyframes exGem { 50% { box-shadow: 0 0 28px var(--verdant-glow); } }
+.exhead__purse { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.exhead__purse b { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--verdant); text-shadow: 0 0 14px var(--verdant-glow); }
+.exhead__purse small, .exhead__clock small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.exhead__clock { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.exhead__clock b { font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--sys-ink); }
+
+/* A section: its head (label, hairline, what stands at its right), then its cards two to a row. */
+.exsec { display: flex; flex-direction: column; gap: 8px; }
+.exsec__head { display: flex; align-items: center; gap: 10px; }
+.exsec__head .label { flex: none; font-size: 0.6rem; color: var(--win); }
+.exsec__head > i { flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 40%, transparent), transparent); }
+.exsec__head small { flex: none; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.exsec__head small b { color: var(--sys-ink); }
+.exsec__note { margin: -2px 0 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.shopgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+/* A card: its picture on its ground, its name, what it gives, a note, and the price along its foot. */
+.shopcard { --rc: var(--win); position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--rc) 34%, var(--edge)); background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 10%, rgba(4, 10, 24, 0.9)), rgba(4, 10, 24, 0.9) 60%); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, box-shadow 160ms, transform 120ms; }
+.shopcard:hover, .shopcard:focus-visible { border-color: var(--rc); box-shadow: 0 0 14px color-mix(in srgb, var(--rc) 30%, transparent); }
+.shopcard:active { transform: scale(0.98); }
+.shopcard[data-rarity='E'] { --rc: var(--rank-E); } .shopcard[data-rarity='D'] { --rc: var(--rank-D); } .shopcard[data-rarity='C'] { --rc: var(--rank-C); }
+.shopcard[data-rarity='B'] { --rc: var(--rank-B); } .shopcard[data-rarity='A'] { --rc: var(--rank-A); } .shopcard[data-rarity='S'] { --rc: var(--rank-S); }
+.shopcard__art { position: relative; display: grid; place-items: center; height: 76px; background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 70%); }
+.shopcard.is-bp .shopcard__art { background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 40%, transparent), color-mix(in srgb, var(--rc) 8%, transparent) 75%); border-bottom: 1px solid color-mix(in srgb, var(--rc) 40%, transparent); }
+.shopcard__up { position: absolute; top: 6px; right: 7px; font-size: 0.74rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.shopcard__text { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 8px 10px 6px; min-width: 0; }
+.shopcard__text b { font-size: 0.82rem; font-weight: 700; line-height: 1.25; color: #fff; text-shadow: var(--sys-glow); }
+.shopcard__gives { font-size: 0.7rem; line-height: 1.3; color: var(--verdant); }
+.shopcard.is-bp .shopcard__gives { color: color-mix(in srgb, var(--rc) 70%, #fff); }
+.shopcard__note { display: flex; flex-direction: column; gap: 2px; font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.shopcard__stats { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.shopcard__stats i { font-style: normal; white-space: nowrap; }
+.shopcard__price { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 6px 10px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: rgba(0, 0, 0, 0.25); font-size: 0.86rem; font-weight: 700; }
+.shopcard.is-short .shopcard__price .shards { color: var(--sysred); }
+.shopcard__off { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.shopcard.is-off { opacity: 0.6; cursor: default; }
+.shopcard.is-off .shopcard__art { filter: saturate(0.4); }
+.shopcard .potion, .shopcard .shopsurvey { width: 52px; height: 52px; }
+.shopcard .potion .ico, .shopcard .shopsurvey .ico { width: 34px; height: 34px; filter: drop-shadow(0 0 8px currentColor); }
+
+/* HUNTER: the dossier. The licence card heads it, as the Licence window draws it; then what is in force
+   as facts; the record as figures three to a row, a hairline between rows; the log as lines. */
+.dossier__facts { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dossier__facts > div:nth-child(odd) { border-left: 0; }
+.dossier__facts dd { font-size: 0.9rem; text-align: center; }
+.dossier__facts > div:only-child { grid-column: 1 / -1; }
+.dsec { display: flex; flex-direction: column; gap: 8px; }
+.drecord { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.drecord__one { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 6px 10px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.drecord__one b { font-size: 1.15rem; font-weight: 800; line-height: 1.1; color: #fff; text-shadow: var(--sys-glow); overflow-wrap: anywhere; }
+.drecord__one small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1.3; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.drecord__one i { font-style: normal; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.dossier__log { gap: 0; }
+.dossier__log li { padding: 8px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; }
+.shopcard__note .hint { font-size: 0.64rem; font-weight: 600; color: color-mix(in srgb, var(--gold) 80%, transparent); }
+
+/* ------------------------------------------------------------------ a run's results, rebuilt */
+
+/* The outcome as a title card: the Gate's plate and name small, the outcome large in its colour, a rule
+   drawn out under it from the centre, then what it means. */
+.rhead { align-items: center; gap: 6px; padding: 10px 0 4px; text-align: center; }
+.rhead__gate { display: inline-flex; align-items: center; gap: 8px; }
+.rhead__gate .label { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.arena--results .rhead h2 { margin: 2px 0 0; font-size: 2rem; letter-spacing: 0.1em; line-height: 1.05; animation: rheadIn 600ms var(--ease) both; }
+.arena--results.is-withdrawn .rhead h2 { color: var(--ember); text-shadow: 0 0 18px color-mix(in srgb, var(--ember) 50%, transparent); }
+.arena--results.is-defeated .rhead h2 { text-shadow: 0 0 18px rgba(255, 47, 62, 0.5); }
+.rhead__rule { display: block; width: min(260px, 80%); height: 2px; background: linear-gradient(90deg, transparent, currentColor, transparent); color: var(--verdant); box-shadow: 0 0 10px currentColor; transform-origin: center; animation: rheadRule 700ms 200ms var(--ease) both; }
+.arena--results.is-withdrawn .rhead__rule { color: var(--ember); }
+.arena--results.is-defeated .rhead__rule { color: var(--sysred); }
+.rhead p { max-width: 34ch; margin: 2px auto 0; font-size: 0.84rem; line-height: 1.45; }
+@keyframes rheadIn { from { opacity: 0; letter-spacing: 0.4em; } }
+@keyframes rheadRule { from { transform: scaleX(0); opacity: 0; } }
+
+/* What it paid: XP and shards large, side by side, a hairline between them. */
+.rpay { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+.rpay__one { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; text-align: center; }
+.rpay__one + .rpay__one { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.rpay__one small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.rpay__one > b { font-size: 1.8rem; font-weight: 800; line-height: 1.1; text-shadow: 0 0 14px var(--verdant-glow); }
+.rpay__one > b .shards { font-size: inherit; color: var(--verdant); }
+.rpay__one i { font-style: normal; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+/* The hunter's condition after it: health and fatigue as bars, and what comes back with time. */
+.rcond { display: flex; flex-direction: column; gap: 8px; }
+.rcond__row { display: grid; grid-template-columns: 18px 64px minmax(0, 1fr); align-items: center; gap: 8px; }
+.rcond__row .ico { width: 16px; height: 16px; color: var(--ink-2); }
+.rcond__row .label { font-size: 0.58rem; }
+.rcond > small { align-self: flex-end; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+
+/* A section of the results: its head (label, hairline, a count), then what it holds, unframed. */
+.rsec { display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; }
+/* The materials as a row of rewards, after the reward rows of Genshin Impact's domains: each its art on
+   its rarity's ground, the count under it in green, its name under that. */
+.rmats { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 8px; }
+.rmat { --rc: var(--rank-E); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 70px; text-align: center; animation: qaIn 420ms var(--ease) both; }
+.rmat[data-rarity='D'] { --rc: var(--rank-D); } .rmat[data-rarity='C'] { --rc: var(--rank-C); } .rmat[data-rarity='B'] { --rc: var(--rank-B); }
+.rmat[data-rarity='A'] { --rc: var(--rank-A); } .rmat[data-rarity='S'] { --rc: var(--rank-S); }
+.rmat__art { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid color-mix(in srgb, var(--rc) 55%, transparent); background: radial-gradient(color-mix(in srgb, var(--rc) 30%, transparent), color-mix(in srgb, var(--rc) 8%, rgba(4, 10, 24, 0.9)) 75%); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 20%, transparent); }
+.rmat > b { font-size: 0.86rem; font-weight: 800; }
+.rmat small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.62rem; line-height: 1.25; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+/* The feats without their box: a hairline between them. */
+.arena__results .bfeats .bfeat { border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; }
+.arena__results { --win: var(--mana); --win-glow: var(--mana-glow); }
+
+/* ------------------------------------------------------------------ the fight, redrawn */
+
+/* The field as a stage: the party's side lit cool and the foes' warm, a seam of light between them. */
+.arena__field { position: relative; column-gap: 14px; background: radial-gradient(ellipse 60% 80% at 22% 30%, rgba(79, 214, 255, 0.07), transparent 70%), radial-gradient(ellipse 60% 80% at 78% 30%, rgba(255, 77, 109, 0.07), transparent 70%); }
+.arena__field::before { content: ''; position: absolute; left: 50%; top: 14px; bottom: 14px; width: 1px; background: linear-gradient(transparent, rgba(255, 255, 255, 0.14) 20%, rgba(255, 255, 255, 0.14) 80%, transparent); pointer-events: none; }
+/* A card: its mark at its left, the name and HP over a fuller bar; its side's colour down its edge. */
+.unit { --uc: var(--mana); padding: 7px 9px 8px 40px; border-color: color-mix(in srgb, var(--uc) 34%, transparent); border-radius: 3px; background: linear-gradient(90deg, color-mix(in srgb, var(--uc) 12%, rgba(6, 12, 26, 0.9)), rgba(6, 12, 26, 0.86) 55%); }
+.unit::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--uc); box-shadow: 0 0 8px var(--uc); opacity: 0.8; }
+.unit--hero { --uc: var(--mana); border-color: color-mix(in srgb, var(--mana) 70%, transparent); }
+.unit--ally { --uc: #9fd4ff; }
+.unit--shadow { --uc: #9b6bff; border-color: rgba(155, 107, 255, 0.45); }
+.unit--foe { --uc: var(--blood); border-color: rgba(255, 77, 109, 0.32); background: linear-gradient(90deg, rgba(255, 77, 109, 0.1), rgba(6, 12, 26, 0.86) 55%); }
+.unit__mark { position: absolute; left: 9px; top: 8px; display: grid; place-items: center; width: 24px; height: 24px; color: var(--uc); }
+.unit__mark::before { content: ''; position: absolute; inset: 2px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--uc) 55%, transparent); background: color-mix(in srgb, var(--uc) 14%, rgba(4, 8, 18, 0.9)); }
+.unit__mark > * { position: relative; }
+.unit__mark .ico { width: 13px; height: 13px; filter: drop-shadow(0 0 4px var(--uc)); }
+.unit__mark.is-boss::before { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.unit__name { font-weight: 700; }
+.unit__hp { font-weight: 700; color: #fff; }
+.unit .bar { height: 5px; margin-top: 5px; }
+.unit.is-hurt { border-color: color-mix(in srgb, var(--gold) 70%, transparent); }
+.unit.is-hurt .unit__hp { color: var(--gold); }
+.unit.is-down::before { opacity: 0.2; }
+.arena__field { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.arena__side, .unit { min-width: 0; }
+.unit { padding-left: 33px; }
+.unit__mark { left: 6px; width: 22px; height: 22px; }
+.unit__name { font-size: 0.8rem; }
+
+/* ------------------------------------------------------------------ the Guide and Settings, rebuilt */
+
+/* GUIDE: a codex. A box to find a word in; an index of topics, a row to each with its mark and how many
+   lines it holds; a topic's page with the way back at its head; a search's lines under their topics. */
+.guide__find { display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); background: rgba(3, 8, 20, 0.6); }
+.guide__find .ico { flex: none; width: 16px; height: 16px; color: var(--win); }
+.guide__find input { flex: 1; min-width: 0; height: 42px; border: 0; background: none; color: #fff; font: inherit; font-size: 0.9rem; outline: none; }
+.guide__find:focus-within { border-color: var(--win); box-shadow: 0 0 12px var(--win-glow); }
+.guide__topics { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.guide__topic { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background 160ms; }
+.guide__topic:hover, .guide__topic:focus-visible { background: color-mix(in srgb, var(--win) 7%, transparent); }
+.guide__topic b { font-size: 0.9rem; font-weight: 600; color: #fff; }
+.guide__topic small, .guide__pagehead small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.guide__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.guide__mark { position: relative; display: grid; place-items: center; width: 30px; height: 30px; color: var(--win); }
+.guide__mark::before { content: ''; position: absolute; inset: 5px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--win) 50%, transparent); background: color-mix(in srgb, var(--win) 10%, transparent); }
+.guide__mark .ico { position: relative; width: 14px; height: 14px; filter: drop-shadow(0 0 4px var(--win-glow)); }
+.guide__page { display: flex; flex-direction: column; gap: 10px; }
+.guide__back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: none; color: var(--win); font: inherit; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.guide__back .ico { width: 14px; height: 14px; }
+.guide__pagehead { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--win) 40%, transparent); }
+.guide__pagehead b { font-size: 1.02rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.guide .guide__list { gap: 0; padding: 0; list-style: none; }
+.guide .guide__list li { position: relative; padding: 9px 2px 9px 18px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.86rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
+.guide .guide__list li::before { content: ''; position: absolute; left: 3px; top: 16px; width: 5px; height: 5px; transform: rotate(45deg); background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+.guide mark { padding: 0 1px; background: color-mix(in srgb, var(--gold) 30%, transparent); color: #fff; }
+
+/* SETTINGS: the Guide as a card, then sections under heads with hairlines, the save's storage as a light. */
+.setguide { display: grid; grid-template-columns: 40px minmax(0, 1fr) 12px; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 14%, rgba(3, 8, 20, 0.7)), rgba(3, 8, 20, 0.6) 70%); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.setguide:hover, .setguide:focus-visible { border-color: var(--win); box-shadow: 0 0 14px var(--win-glow); }
+.setguide__mark { display: grid; place-items: center; width: 40px; height: 40px; color: var(--win); }
+.setguide__mark .ico { width: 22px; height: 22px; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.setguide__text { display: flex; flex-direction: column; gap: 2px; }
+.setguide__text b { font-size: 0.94rem; color: #fff; }
+.setguide__text small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.setguide__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.setsec { display: flex; flex-direction: column; gap: 8px; }
+.setsave { display: flex; flex-direction: column; gap: 6px; margin: 0; font-size: 0.8rem; line-height: 1.45; }
+.setsave__store { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sys-ink); }
+.setsave__store i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.setsave__store.is-safe { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); color: var(--verdant); }
+.setsave__store.is-safe i { background: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
+.setsave__store.is-risk { border-color: color-mix(in srgb, var(--gold) 55%, transparent); color: var(--gold); }
+.setsave__store.is-risk i { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.setsave__btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+/* ONBOARDING: the licence drawn as the Licence window draws it, the grade's colour and letter behind it. */
+.licence { --rc: var(--rank-E); position: relative; overflow: hidden; border-color: color-mix(in srgb, var(--rc) 45%, var(--edge)); border-radius: 3px; background: linear-gradient(135deg, color-mix(in srgb, var(--rc) 16%, rgba(10, 22, 46, 0.95)), rgba(6, 12, 28, 0.95) 65%); }
+.licence::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(125deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 14px 15px); pointer-events: none; }
+.licence > header, .licence > dl { position: relative; z-index: 1; }
+.licence__letter { position: absolute; right: -6px; bottom: -28px; font-size: 8.5rem; font-weight: 900; line-height: 1; color: color-mix(in srgb, var(--rc) 14%, transparent); pointer-events: none; }
+.licence dd { color: #fff; text-shadow: var(--sys-glow); transition: color 200ms; }
+.licence__letter { right: auto; left: -10px; bottom: -34px; color: color-mix(in srgb, var(--rc) 9%, transparent); }
+/* The outcome on one line, whatever its length: the size gives way before it wraps. */
+.arena--results .rhead h2 { max-width: 100%; font-size: clamp(1.25rem, 7.2vw, 2rem); letter-spacing: 0.08em; white-space: nowrap; }
+
+/* ------------------------------------------------------------------ the Exchange, after the reference shops */
+
+/* The purse across the top: the shard and the balance large, the restock at its right. */
+.exbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px 12px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.exbar__purse { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+.exbar__purse > svg { align-self: center; filter: drop-shadow(0 0 8px var(--verdant-glow)); }
+.exbar__purse b { font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--verdant); text-shadow: 0 0 12px var(--verdant-glow); }
+.exbar__purse small, .exbar__clock small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.exbar__clock { display: inline-flex; align-items: center; gap: 7px; }
+.exbar__clock .ico { width: 15px; height: 15px; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.exbar__clock > span { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.exbar__clock b { font-size: 0.92rem; font-weight: 700; letter-spacing: 0.04em; color: var(--sys-ink); }
+
+/* The counters as tabs across the top, each its mark, its name and how many it holds; the one open underlined. */
+.extabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.extab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 2px 10px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); font: inherit; cursor: pointer; touch-action: manipulation; transition: color 160ms; }
+.extab .ico { width: 18px; height: 18px; }
+.extab > span { font-size: 0.72rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.extab small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.extab__up { font-size: 0.62rem; color: var(--gold); text-shadow: 0 0 6px var(--gold-glow); }
+.extab::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 2px; background: var(--win); box-shadow: 0 0 8px var(--win-glow); transform: scaleX(0); transition: transform 200ms var(--ease); }
+.extab.is-on { color: #fff; }
+.extab.is-on .ico { color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.extab.is-on::after { transform: scaleX(1); }
+.exmeta { display: flex; justify-content: space-between; gap: 10px; margin: -4px 2px 0; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.exmeta b { color: var(--sys-ink); }
+
+/* The counter: tiles three to a row, each its picture on its ground, its name and its price. */
+.exgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.extile { --rc: var(--win); position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--rc) 30%, var(--edge)); background: rgba(4, 10, 24, 0.92); color: inherit; font: inherit; text-align: center; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, box-shadow 160ms, transform 120ms; animation: qaIn 360ms var(--ease) both; }
+.extile[data-rarity='E'] { --rc: var(--rank-E); } .extile[data-rarity='D'] { --rc: var(--rank-D); } .extile[data-rarity='C'] { --rc: var(--rank-C); }
+.extile[data-rarity='B'] { --rc: var(--rank-B); } .extile[data-rarity='A'] { --rc: var(--rank-A); } .extile[data-rarity='S'] { --rc: var(--rank-S); }
+.extile:active { transform: scale(0.97); }
+.extile.is-on { border-color: var(--rc); box-shadow: 0 0 0 1px var(--rc), 0 0 16px color-mix(in srgb, var(--rc) 40%, transparent); }
+.extile__art { position: relative; display: grid; place-items: center; aspect-ratio: 1 / 0.92; background: radial-gradient(ellipse at 50% 62%, color-mix(in srgb, var(--rc) 24%, transparent), transparent 72%); }
+/* A blueprint stands on its rarity's colour over a drafting grid. */
+.extile.is-bp .extile__art, .exdock[data-rarity] .exdock__art { background:
+  radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 42%, transparent), color-mix(in srgb, var(--rc) 10%, transparent) 78%),
+  repeating-linear-gradient(0deg, color-mix(in srgb, var(--rc) 16%, transparent) 0 1px, transparent 1px 10px),
+  repeating-linear-gradient(90deg, color-mix(in srgb, var(--rc) 16%, transparent) 0 1px, transparent 1px 10px); }
+.extile__held { position: absolute; left: 5px; bottom: 4px; padding: 0 5px; border-radius: 2px; background: rgba(0, 0, 0, 0.55); font-size: 0.62rem; font-weight: 700; color: #fff; }
+.extile__up { position: absolute; top: 4px; right: 6px; font-size: 0.72rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.extile__stamp { position: absolute; left: -6px; right: -6px; top: 50%; padding: 2px 0; transform: translateY(-50%) rotate(-8deg); background: rgba(6, 10, 20, 0.85); border-top: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); font-size: 0.58rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.extile.is-off .extile__art > :first-child { opacity: 0.4; filter: saturate(0.3); }
+.extile__name { display: -webkit-box; min-height: 2.5em; margin: 6px 6px 4px; overflow: hidden; font-size: 0.7rem; font-weight: 700; line-height: 1.25; color: #fff; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.extile__price { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 5px 4px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.8rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.extile.is-short .extile__price .shards { color: var(--sysred); }
+
+/* The good held: a dock at the counter's foot, its picture, its words, and Buy with its price. */
+.exdock { --rc: var(--win); position: sticky; bottom: 0; z-index: 6; display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; grid-template-areas: 'art text x' 'buy buy buy'; align-items: start; gap: 10px 12px; margin: 0 -2px; padding: 12px; border: 1px solid color-mix(in srgb, var(--rc) 60%, var(--sys-hair)); background: linear-gradient(180deg, rgba(8, 16, 34, 0.98), rgba(4, 10, 24, 0.98)); box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--rc) 22%, transparent); animation: qaIn 260ms var(--ease) both; }
+.exdock[data-rarity='E'] { --rc: var(--rank-E); } .exdock[data-rarity='D'] { --rc: var(--rank-D); } .exdock[data-rarity='C'] { --rc: var(--rank-C); }
+.exdock[data-rarity='B'] { --rc: var(--rank-B); } .exdock[data-rarity='A'] { --rc: var(--rank-A); } .exdock[data-rarity='S'] { --rc: var(--rank-S); }
+.exdock__art { grid-area: art; display: grid; place-items: center; width: 72px; height: 72px; background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 72%); }
+.exdock__text { grid-area: text; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.exdock__text b { font-size: 0.98rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.exdock__kind { font-size: 0.68rem; font-weight: 700; color: color-mix(in srgb, var(--rc) 75%, #fff); }
+.exdock__gives { font-size: 0.78rem; color: var(--verdant); }
+.exdock__note { display: flex; flex-direction: column; gap: 2px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.exdock__note .hint { font-size: 0.66rem; color: color-mix(in srgb, var(--gold) 85%, transparent); }
+.exdock__x { grid-area: x; }
+.exdock__buy { grid-area: buy; }
+.exdock__buy .shards { margin-left: 6px; }
+.exdock__buy.is-short .shards { color: var(--sysred); }
+.shopart { overflow: visible; }
+.exbar { justify-content: flex-start; align-items: baseline; gap: 10px; }
+.exbar__what { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.extab { padding-bottom: 9px; }
+.extab__up { position: absolute; top: 6px; right: 8px; }
+.exmeta { align-items: center; margin-top: -2px; }
+.exmeta__clock { display: inline-flex; align-items: center; gap: 6px; }
+.exmeta__clock .ico { width: 13px; height: 13px; }
+
+/* ------------------------------------------------------------------ Status, Stats and Skills, decluttered */
+
+/* STATUS: the points at the head of the stats, then a row to each stat: its mark, its key, a bar toward
+   the points' limit, its base, its value, and a + while a point can go there. */
+.status .attrs { display: flex; flex-direction: column; gap: 0; }
+.attrs__head { display: flex; align-items: center; gap: 10px; padding: 4px 2px 8px; }
+.attrs__head .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.attrs__head > b { flex: 1; font-size: 1.3rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.attrs__head.is-hot .label, .attrs__head.is-hot > b { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.status .attr { display: grid; grid-template-columns: 20px 36px minmax(0, 1fr) 38px 36px 28px; align-items: center; gap: 8px; min-height: 48px; padding: 6px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; flex-wrap: nowrap; }
+.status .attr__bar { position: static; height: 3px; background: rgba(255, 255, 255, 0.08); }
+.status .attr__base { text-align: right; font-size: 0.72rem; }
+.status .attr__v { margin: 0; text-align: right; font-size: 1.15rem; }
+.status .attr__plus { width: 26px; height: 26px; }
+.status .attr__plus.is-none { background: none; box-shadow: none; }
+/* The potions on the vitals are buttons, but light ones: a tint, no frame. */
+.status .pip { min-height: 30px; border: 0; background: color-mix(in srgb, currentColor 12%, transparent); }
+
+/* STATS: a stat's row is one line; its line under it shows when it is tapped. The fight's numbers say once
+   that they explain themselves, in place of a ? on each. */
+.stattable__row { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms; }
+.stattable__row.is-open { background: color-mix(in srgb, var(--win) 6%, transparent); }
+.statsheet .sysfield__help { display: none; }
+.statsheet .sysfield { padding-right: 2px; }
+.statsheet .exsec__head small { font-size: 0.64rem; }
+
+/* SKILLS: the points gold on their own, no mark beside them; the slots lighter. */
+.st-slot { border-color: color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.35); }
+/* The framed sheet's older two-row stat cell gives way to the row: every part on one line, in its own column. */
+.sysframe .status .attr:not(.attr--points) { grid-template-columns: 20px 38px minmax(0, 1fr) 40px 36px 28px; grid-template-rows: auto; column-gap: 8px; padding: 6px 2px; border-radius: 0; background: none; }
+.sysframe .status .attr:not(.attr--points) > * { grid-row: 1; grid-column: auto; }
+.sysframe .status .attr__base { line-height: 1; }
+
+/* The rank's crest behind the licence, where its letter stood: line work in the rank's colour, faint. */
+.glicence__crest, .licence__crest { position: absolute; z-index: 0; width: 132px; height: 132px; color: color-mix(in srgb, var(--rc) 30%, transparent); pointer-events: none; }
+.glicence__crest { right: -10px; top: 50%; transform: translateY(-50%) rotate(-8deg); }
+.licence__crest { right: -14px; bottom: -22px; transform: rotate(-8deg); color: color-mix(in srgb, var(--rc) 20%, transparent); }
+.glicence__card > :not(.glicence__crest) { position: relative; z-index: 1; }
+.rankcrest { overflow: visible; }
+/* A crest's pieces are solid and the crest is faded as one picture, so a piece in front hides what stands
+   behind it; the licence reads over it. */
+.rankcrest .rc-f { fill: color-mix(in srgb, currentColor 16%, #050a14); }
+.rankcrest .rc-f--lit { fill: color-mix(in srgb, currentColor 34%, #050a14); }
+.glicence__crest { color: var(--rc); opacity: 0.32; }
+.licence__crest { color: var(--rc); opacity: 0.22; }

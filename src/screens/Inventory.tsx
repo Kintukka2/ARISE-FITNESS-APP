@@ -4,13 +4,15 @@
  * their name and condition; the stats and the skills as two cards; the bag, the Forge and the Exchange as
  * three stations; the licence along the foot. Each opens its window.
  */
+import { RankCrest } from '@/ui/rankcrest';
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { classById } from '@/data/classes';
 import * as gear from '@/core/gear';
 import * as forge from '@/core/forge';
 import { reclassification } from '@/core/quests';
-import { ATTRS, autoAllocate, BOOST_CAP, classBonus, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, spendPoint, STAT_CAP } from '@/core/progression';
+import { ATTRS, autoAllocate, BOOST_CAP, classBonus, rankOf, spendPoint, STAT_CAP } from '@/core/progression';
 import * as skilltree from '@/core/skilltree';
 import { CRIT, HIT, Unit } from '@/core/combat';
 import { heroSpec } from '@/core/raid';
@@ -25,7 +27,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { weekBest } from '@/core/spire';
 import * as system from '@/ui/system';
-import { Btn, Empty, GearArt, HpBar, Section, useNow } from '@/ui/components';
+import { Btn, Empty, GearArt, HpBar, useNow } from '@/ui/components';
 import { Field, SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
@@ -273,14 +275,20 @@ function StatusSheet() {
   const rc = reclassification(s);
   return (
     <div class="stack status">
-      <div class="sysfields">
-        <Field k="Name" v={s.hunter.name} />
-        <Field k="Level" v={<span class="status__level">{s.hunter.level}</span>} />
-        <Field k="Class" v={<button type="button" class="linkish" onClick={openSkills}>{cls?.name ?? 'Unclassified'}</button>} />
-        <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
+      {/* The source's window: its fields as plain lines under the header, the level large in its own hexagon. */}
+      <header class="sthead">
+        <span class="sthead__lv"><small>Level</small><b class="num status__level">{s.hunter.level}</b></span>
+        <dl class="sthead__fields">
+          <div><dt>Name</dt><dd>{s.hunter.name}</dd></div>
+          <div><dt>Class</dt><dd><button type="button" class="linkish" onClick={openSkills}>{cls?.name ?? 'Unclassified'}</button></dd></div>
+          <div><dt>Rank</dt><dd class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={18} />{r.name}</dd></div>
+        </dl>
+      </header>
+      <div class={`stclimb ${rc?.ready ? 'is-ready' : ''}`}>
+        <small>{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}</small>
+        {rc && !rc.ready && <i class="stclimb__bar" aria-hidden="true"><i style={`width: ${Math.round(rc.share * 100)}%`} /></i>}
+        {licenceHolding(s) && <small class="muted">Gate grade: {licensedRank(s)}-Rank without the Association Licence.</small>}
       </div>
-      <small class="muted">{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}{licenceHolding(s) ? ` Gate grade: ${licensedRank(s)}-Rank without the Association Licence.` : ''}</small>
-      {skilltree.canSpend(s) && <Btn kind="gold" block onClick={openSkills}>Skills · Skill Points: {skilltree.points(s)}</Btn>}
       <VitalsBlock />
       <Attributes />
     </div>
@@ -311,6 +319,8 @@ const FIGHT_HELP: Record<string, string> = {
 
 function StatsSheet() {
   const s = useSave();
+  // A stat's line shows when its row is tapped, so the table reads as one figure a stat.
+  const [why, setWhy] = useState<Stat | null>(null);
   useNow(5000);
   const bonus = classBonus(s);
   const fromTree = skilltree.treeAttrs(s);
@@ -339,25 +349,31 @@ function StatsSheet() {
         )}
         <small class="muted">Tap a stat for its value</small>
       </div>
-      <ul class="statrows">
+      {/* Where each stat comes from, as a table: the columns line up from stat to stat. */}
+      <div class="stattable" role="table" aria-label="Where each stat comes from">
+        <div class="stattable__head" role="row">
+          <span role="columnheader">Stat</span><span role="columnheader">Base</span><span role="columnheader">Class</span>
+          <span role="columnheader">Skills</span><span role="columnheader">Gear</span><span role="columnheader">Total</span>
+        </div>
         {STAT_ORDER.map((k) => {
           const a = ATTRS.find((x) => x.key === k)!;
           const cls = bonus[k] ?? 0;
           const learned = fromTree[k] ?? 0;
           const kit = Math.round(total[k] - s.hunter.attrs[k] - cls - learned);
+          const add = (n: number) => <span role="cell" class={`num ${n > 0 ? 'is-up' : 'is-none'}`}>{n > 0 ? `+${n}` : '--'}</span>;
           return (
-            <li key={k} class="sysbox statrow">
-              <span class="statrow__icon" aria-hidden="true"><Glyph name={STAT_ICON[k]} /></span>
-              <span class="statrow__body">
-                <span class="statrow__head"><b>{a.name}</b><b class="num">{Math.round(total[k])}</b></span>
-                <small>{[`Base ${s.hunter.attrs[k]}`, cls ? `Class +${cls}` : '', learned ? `Skills +${learned}` : '', kit > 0 ? `Gear +${kit}` : ''].filter(Boolean).join(' · ')}</small>
-                <small class="muted">{a.desc}</small>
-              </span>
-            </li>
+            <div key={k} class={`stattable__row ${why === k ? 'is-open' : ''}`} role="row" tabIndex={0} aria-expanded={why === k}
+              onClick={() => setWhy(why === k ? null : k)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWhy(why === k ? null : k); } }}>
+              <span class="stattable__name" role="cell"><Glyph name={STAT_ICON[k]} /><b>{a.name}</b></span>
+              <span role="cell" class="num">{s.hunter.attrs[k]}</span>
+              {add(cls)}{add(learned)}{add(kit)}
+              <b role="cell" class="num stattable__total">{Math.round(total[k])}</b>
+              {why === k && <small class="stattable__desc">{a.desc}</small>}
+            </div>
           );
         })}
-      </ul>
-      <span class="label">In a fight</span>
+      </div>
+      <header class="exsec__head"><span class="label">In a fight</span><i aria-hidden="true" /><small>Tap one for what it does</small></header>
       <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
     </div>
@@ -464,24 +480,23 @@ function Attributes() {
   };
   return (
     <div class="attrs" data-tour="attrs">
+      {/* The points at the head, gold while there are any, with Auto-Allocate beside them; then a row to each stat. */}
+      <div class={`attrs__head ${s.hunter.points ? 'is-hot' : ''}`}>
+        <span class="label">Ability Points</span>
+        <b class="num">{s.hunter.points}</b>
+        {s.hunter.points > 0 && <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate</Btn>}
+      </div>
       {order.map((k) => (
         <button type="button" key={k} class="attr" onClick={() => spend(k)} aria-label={`${k} ${Math.round(total[k])}${s.hunter.points ? ', spend a point' : ''}`}>
           <Glyph name={STAT_ICON[k]} />
           <span class="attr__k">{k}</span>
-          {total[k] !== s.hunter.attrs[k] && <small class="attr__base num">({s.hunter.attrs[k]})</small>}
+          {/* How far its points have taken it toward their limit. */}
+          <i class="attr__bar" aria-hidden="true"><i style={`width: ${Math.round(Math.min(1, s.hunter.attrs[k] / STAT_CAP) * 100)}%`} /></i>
+          <small class="attr__base num">{total[k] !== s.hunter.attrs[k] ? `(${s.hunter.attrs[k]})` : ''}</small>
           <b class="attr__v num">{Math.round(total[k])}</b>
-          {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP && <span class="attr__plus"><Glyph name="plus" /></span>}
+          {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP ? <span class="attr__plus"><Glyph name="plus" /></span> : <span class="attr__plus is-none" />}
         </button>
       ))}
-      <div class={`attr attr--points ${s.hunter.points ? 'is-hot' : ''}`}>
-        <span class="label">Ability Points</span><b class="num">{s.hunter.points}</b>
-      </div>
-      {s.hunter.points > 0 && (
-        <div class="attrs__alloc">
-          <small class="muted">Tap a stat to spend an Ability Point.</small>
-          <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate · {s.hunter.points}</Btn>
-        </div>
-      )}
     </div>
   );
 }
@@ -495,46 +510,59 @@ function Attributes() {
 export function openDossier() {
   const s = store.get();
   openSheet({
-    title: `Hunter: ${s.hunter.name}`, system: { icon: <Sigil rank={rankOf(s).key === 'N' ? 'N' : licensedRank(s)} size={40} /> },
+    // The grade is on the licence itself, so the head names the hunter and holds no seal (the owner's call: C-Rank once, not three times).
+    title: `Hunter: ${s.hunter.name}`, system: { icon: null },
     render: () => {
       const s = store.get();
       const felled = Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
+      const mine = rankOf(s).key === 'N' ? 'N' : licensedRank(s);
+      // The lifetime record, a figure to each, the most telling first; what qualifies a figure goes under it.
+      const record: [string, ComponentChildren, string?][] = [
+        ['Gates cleared', group(s.gates.clears), `${s.gates.cleared.length} distinct`],
+        ['Best run unbroken', s.gates.bestUnbroken],
+        ['Bosses faced', s.gates.bosses.length],
+        ['Withdrawn', s.gates.withdrawn],
+        ['Carried out', s.gates.fails],
+        ['Cleared above grade', s.stats.reachClears],
+        ['Daily Quests', group(s.stats.contracts), `${s.stats.contractDays} full days`],
+        ['Ascension', s.ascension.best ? `Level ${s.ascension.best}` : '-- --'],
+        ['The Pale Spire', s.spire.top ? `Floor ${s.spire.top}` : '-- --', weekBest(s) ? `This week ${weekBest(s)}` : undefined],
+        ['Creatures defeated', group(felled)],
+        ['Shadows bound', s.shadows.army.length, `Extractions ${s.stats.extractionsWon}/${s.stats.extractions}`],
+        ['XP earned', group(s.stats.xpTotal)],
+        ['Mana Shards earned', group(s.wallet.earned)],
+      ];
       return (
         <div class="stack dossier">
-          <div class="sysfields">
-            <Field k="Licence" v={<span class="num">{s.hunter.regNo || '-- --'}</span>} />
-            <Field k="Awakened" v={new Date(s.createdAt).toLocaleDateString()} />
-            <Field k="Rank" v={rankOf(s).name} />
-            <Field k="Guild" v="-- --" />
+          {/* The licence as the Association issues it, as the Licence window draws it: the grade's seal, the number, when the hunter woke. */}
+          <div class="glicence__card dossier__card" style={`--rc: var(--rank-${mine === 'N' ? 'S' : mine})`}>
+            <RankCrest rank={mine} class="glicence__crest" />
+            <span class="glicence__seal"><Sigil rank={mine} size={58} /></span>
+            <span class="glicence__who">
+              <small class="label">Licence</small>
+              <b class="num">{s.hunter.regNo || '-- --'}</b>
+              <small class="label">Awakened</small>
+              <b>{new Date(s.createdAt).toLocaleDateString()}</b>
+            </span>
           </div>
-          <Section title="In force">
-            <div class="sysfields">
-              <Field k="Ability Points" v={`${POINTS_PER_LEVEL} each level · ${RANK_UP_POINTS} each rank`} wide />
-              {Object.entries(classBonus(s)).map(([k, v]) => <Field key={k} k="Class" v={<span class="grant">{k} +{v}</span>} />)}
+          <section class="dsec">
+            <header class="exsec__head"><span class="label">Record</span><i aria-hidden="true" /></header>
+            <div class="drecord">
+              {record.map(([k, v, sub]) => (
+                <div key={k} class="drecord__one">
+                  <b class="num">{v}</b>
+                  <small>{k}</small>
+                  {sub && <i>{sub}</i>}
+                </div>
+              ))}
             </div>
-          </Section>
-          <Section title="Record">
-            <div class="sysfields">
-              <Field k="Gates cleared" v={`${s.gates.clears} · ${s.gates.cleared.length} distinct`} />
-              <Field k="Best run unbroken" v={s.gates.bestUnbroken} />
-              <Field k="Withdrawn" v={s.gates.withdrawn} />
-              <Field k="Carried out" v={s.gates.fails} />
-              <Field k="Cleared above grade" v={s.stats.reachClears} />
-              <Field k="Bosses faced" v={s.gates.bosses.length} />
-              <Field k="Daily Quests" v={`${s.stats.contracts} · ${s.stats.contractDays} full days`} />
-              <Field k="Ascension" v={s.ascension.best ? `Level ${s.ascension.best}` : '-- --'} />
-              <Field k="The Pale Spire" v={s.spire.top ? `Floor ${s.spire.top}${weekBest(s) ? ` · this week ${weekBest(s)}` : ''}` : '-- --'} wide />
-              <Field k="Creatures defeated" v={group(felled)} />
-              <Field k="Shadows bound" v={`${s.shadows.army.length} · ${s.stats.extractionsWon}/${s.stats.extractions}`} />
-              <Field k="XP earned" v={group(s.stats.xpTotal)} />
-              <Field k="Mana Shards earned" v={group(s.wallet.earned)} />
-            </div>
-          </Section>
-          <Section title="Log" right={`${s.log.length}`}>
+          </section>
+          <section class="dsec">
+            <header class="exsec__head"><span class="label">Log</span><i aria-hidden="true" /><small class="num">{s.log.length}</small></header>
             {s.log.length
-              ? <ul class="syslog">{s.log.slice(0, 40).map((e, i) => <li key={i} class="sysbox"><span class="num">{e.day}</span><span>{e.name}</span><span class="num grant">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul>
+              ? <ul class="syslog dossier__log">{s.log.slice(0, 40).map((e, i) => <li key={i}><span class="num">{e.day}</span><span>{e.name}</span><span class="num grant">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul>
               : <Empty>Nothing logged yet.</Empty>}
-          </Section>
+          </section>
         </div>
       );
     },

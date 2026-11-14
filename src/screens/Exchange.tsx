@@ -11,10 +11,11 @@ import * as store from '@/store';
 import * as system from '@/ui/system';
 import { useSave } from '@/store';
 import type { ComponentChildren } from 'preact';
+import { useState } from 'preact/hooks';
+import { ShopArt, type ShopArtId } from '@/ui/shopart';
 import { Btn, GearArt, Section, Shards, useNow } from '@/ui/components';
-import { Field } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
-import { Glyph, THROW_GLYPH } from '@/ui/icons';
+import { Glyph, Shard } from '@/ui/icons';
 import { ask } from '@/ui/ask';
 import { openSheet, sys, toast } from '@/ui/overlays';
 import { drinkFlow } from './Inventory';
@@ -37,28 +38,78 @@ export function openExchange() {
 /** Not enough Mana Shards for it: the System's refusal, with the count. */
 const short = (price: number) => sys(system.refuse([`Not enough Mana Shards. (${store.get().wallet.shards}/${price})`], 'gear'));
 
-/**
- * One row of the shop, as the source lays it out: the icon in its own box, the name, what it gives,
- * and the price at the foot of the row. The whole row is the button; it asks before it buys.
- */
-function ShopRow({ icon, name, gives, note, price, off, onBuy }: {
-  icon: ComponentChildren; name: ComponentChildren; gives?: string; note?: ComponentChildren; price: number;
-  /** Why it cannot be bought now ("Bought", "Full"), shown where the price would be. */
+type Tab = 'bp' | 'potions' | 'gates';
+
+/** The shop's three counters, as the reference shops set their tabs across the top: each its mark, its name and what it holds. */
+const TABS: { key: Tab; name: string; glyph: string }[] = [
+  { key: 'bp', name: 'Blueprints', glyph: 'blueprint' },
+  { key: 'potions', name: 'Potions', glyph: 'potion' },
+  { key: 'gates', name: 'For the Gates', glyph: 'gates' },
+];
+
+/** One good on a counter: its picture, its name and kind, what it gives, what is held, its price, and why it cannot be bought now. */
+interface Good {
+  key: string;
+  tab: Tab;
+  art: ComponentChildren;
+  name: string;
+  /** A blueprint's rarity, for its ground. */
+  rank?: string;
+  /** Its kind under its name on the card: `Rare Chest · Champion`, `Carried`, `Thrown in a fight`. */
+  kind: string;
+  gives: string;
+  note?: ComponentChildren;
+  /** How many are held, as a badge on the tile. */
+  held?: number;
+  price: number;
   off?: string | null;
-  onBuy: () => void;
-}) {
-  const s = useSave();
+  /** Rarer than what is worn where it goes. */
+  up?: boolean;
+  buy: () => void;
+}
+
+/**
+ * A good on its counter, as the reference shops tile theirs: its picture on its ground (a blueprint on
+ * its rarity's colour over a drafting grid), how many are held in its corner, ▲ in gold where it beats
+ * what is worn, its name under it, and its price along its foot, red while the shards fall short. One
+ * that cannot be bought is stamped with why. A tap holds it in the dock at the counter's foot.
+ */
+function GoodTile({ g, on, short: isShort, onPick }: { g: Good; on: boolean; short: boolean; onPick: () => void }) {
   return (
-    <button type="button" class={`shoprow ${off ? 'is-off' : ''} ${!off && s.wallet.shards < price ? 'is-short' : ''}`} disabled={!!off}
-      onClick={() => { sfx.tap(); onBuy(); }}>
-      <span class="shoprow__icon">{icon}</span>
-      <span class="shoprow__text">
-        <b>{name}</b>
-        {gives && <small class="grant">{gives}</small>}
-        {note && <small class="muted">{note}</small>}
+    <button type="button" role="option" aria-selected={on} class={`extile ${on ? 'is-on' : ''} ${g.off ? 'is-off' : ''} ${isShort ? 'is-short' : ''} ${g.rank ? 'is-bp' : ''}`}
+      data-rarity={g.rank} aria-label={`${g.name}, ${g.off ?? `${g.price} Mana Shards`}`} onClick={() => { sfx.tap(); onPick(); }}>
+      <span class="extile__art">
+        {g.art}
+        {!!g.held && <span class="extile__held num">×{g.held}</span>}
+        {g.up && <span class="extile__up" title="Rarer than what you are wearing">▲</span>}
+        {g.off && <span class="extile__stamp">{g.off}</span>}
       </span>
-      <span class="shoprow__price">{off ?? <Shards n={price} />}</span>
+      <span class="extile__name">{g.name}</span>
+      <span class="extile__price">{g.off ? '--' : <Shards n={g.price} />}</span>
     </button>
+  );
+}
+
+/**
+ * The good held in the dock, as the reference shops open a good before it is bought: its picture, its
+ * name and kind, what it gives and what is held, and **Buy** with the price on it. Buy asks first, as
+ * every purchase does.
+ */
+function GoodDock({ g, short: isShort, onClose }: { g: Good; short: boolean; onClose: () => void }) {
+  return (
+    <div class="exdock" data-rarity={g.rank} role="region" aria-label={g.name}>
+      <span class="exdock__art">{g.art}</span>
+      <span class="exdock__text">
+        <b>{g.name}</b>
+        <small class="exdock__kind">{g.kind}</small>
+        <small class="exdock__gives">{g.gives}</small>
+        {g.note && <small class="exdock__note">{g.note}</small>}
+      </span>
+      <button type="button" class="iconbtn exdock__x" aria-label="Close" onClick={() => { sfx.tap(); onClose(); }}><Glyph name="close" /></button>
+      <Btn kind={g.off || isShort ? undefined : 'primary'} block class={`exdock__buy ${isShort && !g.off ? 'is-short' : ''}`} disabled={!!g.off} onClick={g.buy}>
+        {g.off ?? <>Buy <Shards n={g.price} /></>}
+      </Btn>
+    </div>
   );
 }
 
@@ -136,13 +187,60 @@ function Exchange() {
     buzz([14, 30, 22]);
     toast(`${SURVEY.name} · Held: ${shop.held(store.get(), 'survey')}`, 'xp');
   };
+  const [tab, setTab] = useState<Tab>('bp');
+  const [pick, setPick] = useState<string | null>(null);
+  const goods: Good[] = [
+    ...offers.map((o): Good => {
+      const d = gear.gearDef(o.defId)!;
+      const props = [...STATS.filter((k) => d.core[k]), ...(d.rolls ?? []).map((r) => gear.rollName(r.stat))];
+      return {
+        key: `bp-${o.index}`, tab: 'bp', rank: d.rank, name: d.name,
+        art: <span class="shopbp"><GearArt defId={o.defId} size={50} plain /><Glyph name="blueprint" class="shopbp__mark" /></span>,
+        kind: `${gear.RARITY[d.rank].name} ${d.slot}${d.set ? ` · ${d.set}` : ''}`,
+        gives: 'Blueprint',
+        note: <>
+          <span class="shopcard__stats">{props.map((x) => <i key={x}>{x}</i>)}</span>
+          {o.reach > 0 && <span class="hint">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span>}
+        </>,
+        price: o.price, off: o.sold ? 'Bought' : o.known ? 'Known' : null,
+        up: !o.sold && !o.known && rarerThanWorn(s, o.defId), buy: () => void buy(o),
+      };
+    }),
+    ...shop.POTIONS.map((p): Good => {
+      const carried = shop.CARRIED.includes(p.id);
+      return {
+        key: p.id, tab: 'potions', name: p.name, art: <ShopArt id={p.id as ShopArtId} size={58} />,
+        kind: carried ? (p.id === 'hp' ? 'Carried in your satchel' : 'Carried') : 'Drunk at once', gives: p.effect,
+        note: carried ? (p.id === 'hp' ? `Satchel: ${shop.held(s, 'hp')}/${shop.satchelMax(s)}` : `Held: ${shop.held(s, p.id)}`) : p.desc,
+        held: carried ? shop.held(s, p.id) : 0, price: p.price,
+        off: carried ? (p.id === 'hp' && shop.satchelRoom(s) <= 0 ? 'Satchel full' : null) : shop.potionIdle(s, p.id),
+        buy: carried ? () => void buyCarried(p.id) : () => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); },
+      };
+    }),
+    {
+      key: 'survey', tab: 'gates', name: SURVEY.name, art: <ShopArt id="survey" size={58} />, kind: 'Used from a Gate’s brief, or inside it',
+      gives: 'Charts every room of a Gate’s map', note: `Held: ${shop.held(s, 'survey')}`, held: shop.held(s, 'survey'),
+      price: SURVEY.price, buy: () => void buySurvey(),
+    },
+    ...shop.THROW_KIT.map((t): Good => {
+      const k = throwable(t.id)!;
+      return {
+        key: t.id, tab: 'gates', name: k.name, art: <ShopArt id={t.id as ShopArtId} size={58} />, kind: 'Thrown in a fight',
+        gives: `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`, note: `Bag: ${shop.held(s, t.id)}/${shop.THROW_MAX}`,
+        held: shop.held(s, t.id), price: t.price, off: shop.throwRoom(s, t.id) <= 0 ? 'Bag full' : null, buy: () => void buyThrow(t.id),
+      };
+    }),
+  ];
+  const shown = goods.filter((g) => g.tab === tab);
+  const sel = shown.find((g) => g.key === pick) ?? null;
+  const ups = goods.filter((g) => g.up).length;
   return (
     <div class="stack exchange">
-      <div class="sysfields">
-        <Field k="Mana Shards" v={<Shards n={s.wallet.shards} />} />
-        <Field k="New stock in" v={<span class="num">{hhmmss(msUntilMidnight())}</span>} />
-      </div>
-      <p class="muted">Most blueprints are at your grade.</p>
+      {/* The purse across the top, as the reference shops keep the currency in sight: the shards held, large. */}
+      <header class="exbar">
+        <span class="exbar__purse" aria-label={`${group(s.wallet.shards)} Mana Shards`}><Shard size={20} /><b class="num">{group(s.wallet.shards)}</b></span>
+        <small class="exbar__what">Mana Shards</small>
+      </header>
 
       {storeReady() && (
         <Section title="Buy shards" right="Google Play">
@@ -157,53 +255,28 @@ function Exchange() {
         </Section>
       )}
 
-      <Section title="Potions" right="Always in stock">
-        <div class="shoplist">
-          {shop.POTIONS.map((p) => shop.CARRIED.includes(p.id)
-            // Carried: bought to drink later, in a fight, in a Gate or out of one.
-            ? <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
-              gives={p.effect} note={p.id === 'hp' ? `Carried in your satchel. Satchel: ${shop.held(s, 'hp')}/${shop.satchelMax(s)}` : `Carried. Held: ${shop.held(s, p.id)}`}
-              price={p.price} off={p.id === 'hp' && shop.satchelRoom(s) <= 0 ? 'Satchel full' : null} onBuy={() => void buyCarried(p.id)} />
-            : <ShopRow key={p.id} icon={<span class={`potion potion--${p.id}`}><Glyph name="potion" /></span>} name={p.name}
-              gives={p.effect} note={p.desc} price={p.price} off={shop.potionIdle(s, p.id)}
-              onBuy={() => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); }} />)}
-        </div>
-      </Section>
-
-      <Section title="For the Gates" right="Always in stock">
-        <div class="shoplist">
-          <ShopRow icon={<span class="shopsurvey"><Glyph name="gates" /></span>} name={SURVEY.name}
-            gives="Charts every room of a Gate’s map"
-            note={`Used from a Gate’s brief, or inside it. Held: ${shop.held(s, 'survey')}`}
-            price={SURVEY.price} onBuy={() => void buySurvey()} />
-          {shop.THROW_KIT.map((t) => {
-            const k = throwable(t.id)!;
-            return (
-              <ShopRow key={t.id} icon={<span class="shopsurvey"><Glyph name={THROW_GLYPH[t.id]} /></span>} name={k.name}
-                gives={`${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`}
-                note={`Thrown in a fight. Bag: ${shop.held(s, t.id)}/${shop.THROW_MAX}`}
-                price={t.price} off={shop.throwRoom(s, t.id) <= 0 ? 'Bag full' : null} onBuy={() => void buyThrow(t.id)} />
-            );
-          })}
-        </div>
-      </Section>
-
-      <Section title="Blueprints" right={`Left: ${left}/${offers.length}`}>
-        <div class="shoplist">
-          {offers.map((o) => {
-            const d = gear.gearDef(o.defId)!;
-            const rarer = !o.sold && !o.known && rarerThanWorn(s, o.defId);
-            return (
-              <ShopRow key={o.index} icon={<span class="shopbp"><GearArt defId={o.defId} size={52} /><Glyph name="blueprint" class="shopbp__mark" /></span>}
-                name={<>{d.name}{rarer && <span class="up" title="Rarer than what you are wearing"> ▲</span>}</>}
-                gives={`Blueprint · ${gear.RARITY[d.rank].name} ${d.slot}${d.set ? ` · ${d.set}` : ''}`}
-                note={<>{STATS.filter((k) => d.core[k]).map((k) => k).join(' · ')}{(d.rolls ?? []).length ? ` · ${(d.rolls ?? []).map((r) => (r.stat === 'Defense' ? 'Defence' : r.stat)).join(' · ')}` : ''}{o.reach > 0 && <><br /><span class="hint">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span></>}</>}
-                price={o.price} off={o.sold ? 'Bought' : o.known ? 'Known' : null} onBuy={() => void buy(o)} />
-            );
-          })}
-          {!left && <p class="muted center">Sold out until midnight.</p>}
-        </div>
-      </Section>
+      <div class="extabs" role="tablist" aria-label="Counters">
+        {TABS.map((t) => {
+          return (
+            <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} class={`extab ${tab === t.key ? 'is-on' : ''}`}
+              onClick={() => { sfx.tap(); setTab(t.key); setPick(null); }}>
+              <Glyph name={t.glyph} />
+              <span>{t.name}</span>
+              {t.key === 'bp' && ups > 0 && <b class="extab__up num" aria-label={`${ups} upgrades`}>▲ {ups}</b>}
+            </button>
+          );
+        })}
+      </div>
+      <p class="exmeta">
+        {tab === 'bp'
+          ? <><span class="exmeta__clock"><Glyph name="timer" />New stock in <b class="num">{hhmmss(msUntilMidnight())}</b></span><span>Left: <b class="num">{left}/{offers.length}</b></span></>
+          : <span>Always in stock.</span>}
+      </p>
+      <div class="exgrid" role="listbox" aria-label={TABS.find((t) => t.key === tab)!.name}>
+        {shown.map((g) => <GoodTile key={g.key} g={g} on={sel?.key === g.key} short={s.wallet.shards < g.price} onPick={() => setPick(pick === g.key ? null : g.key)} />)}
+      </div>
+      {tab === 'bp' && !left && <p class="muted center">Sold out until midnight.</p>}
+      {sel && <GoodDock g={sel} short={s.wallet.shards < sel.price} onClose={() => setPick(null)} />}
     </div>
   );
 }

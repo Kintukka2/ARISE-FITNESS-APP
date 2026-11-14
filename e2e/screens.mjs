@@ -92,6 +92,16 @@ async function autoToResults() {
     await sleep(800);
   }
   await page.waitForSelector('.arena--results');
+  // The results open on their title card, and what the run paid stands unframed: no tile is left.
+  if (!(await page.locator('.arena--results .rhead__rule').count()) || await page.locator('.arena--results .tile').count()) throw new Error('THE RESULTS DO NOT OPEN ON THEIR TITLE CARD');
+  // XP and shards stand as figures alone.
+  if (await page.locator('.arena--results .rpay__one i').count()) throw new Error('THE RESULTS STILL QUALIFY THEIR XP OR SHARDS');
+  // The outcome stands on one line, and the line under it never repeats it (measured once the title has drawn in).
+  await page.waitForTimeout(800);
+  const head = await page.locator('.arena--results .rhead h2').evaluate((el) => ({ over: el.scrollWidth - el.clientWidth, h: el.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(el).lineHeight) || 0, t: el.textContent }));
+  if (head.over > 1 || (head.lh && head.h > head.lh * 1.6)) throw new Error(`THE RESULTS' TITLE DOES NOT FIT ONE LINE (${head.t})`);
+  const sub = (await page.locator('.arena--results .rhead p').allInnerTexts()).join(' ');
+  if (sub && head.t && sub.toLowerCase().includes(head.t.toLowerCase().split(' ').slice(0, 2).join(' '))) throw new Error(`THE RESULTS' LINE REPEATS ITS TITLE (${sub})`);
 }
 
 try {
@@ -109,6 +119,9 @@ try {
   await snap('inventory');
   await snap('inventory-full', true);
   await page.locator('[data-hub="status"]').click(); await sleep(400); await snap('status', true);
+  // STATUS is the source's window: its fields as plain lines beside the level, no box round each.
+  if (!(await page.locator('.sheet.is-top .sthead__lv').count())) throw new Error('THE STATUS SHEET HAS NO LEVEL AT ITS HEAD');
+  if (await page.locator('.sheet.is-top .status .sysfield').count()) throw new Error('THE STATUS SHEET STILL BOXES ITS FIELDS');
   // A potion held is drunk before one is bought, and its offer can be told not to ask again.
   if (!(await page.locator('.sheet.is-top .pip.is-held').count())) throw new Error('THE HELD POTION DOES NOT SHOW');
   await page.locator('.sheet.is-top .pip.is-held').first().click(); await sleep(400);
@@ -117,6 +130,12 @@ try {
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
   await page.locator('[data-hub="stats"]').click(); await sleep(400); await snap('stats', true);
+  // Where each stat comes from is a table: a row to each stat, its columns lined up.
+  if ((await page.locator('.sheet.is-top .stattable__row').count()) !== 5) throw new Error('THE STATS TABLE DOES NOT ROW EVERY STAT');
+  // A stat's line shows only when its row is tapped.
+  if (await page.locator('.sheet.is-top .stattable__desc').count()) throw new Error('THE STATS TABLE SHOWS EVERY LINE AT ONCE');
+  const cols = await page.locator('.sheet.is-top .stattable__row').evaluateAll((rows) => rows.map((r) => Math.round(r.querySelector('.stattable__total').getBoundingClientRect().right)));
+  if (new Set(cols).size !== 1) throw new Error(`THE STATS TABLE'S TOTALS DO NOT LINE UP (${cols.join(', ')})`);
   // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
   if (await page.locator('.sheet.is-top .btn', { hasText: 'Allocate' }).count()) throw new Error('THE STATS SHEET STILL ALLOCATES');
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
@@ -248,7 +267,16 @@ try {
   await page.locator('.sheet.is-top .famcard').scrollIntoViewIfNeeded(); await snap('item-weapon');
   if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
   await close(); await close(); await close();
-  await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier'); await close();
+  await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier');
+  // The dossier opens on the licence card; its record is figures, not boxed fields. The grade is on the licence
+  // once, not in the head too, and nothing tells what each level and rank pay.
+  if (!(await page.locator('.sheet.is-top .dossier__card').count())) throw new Error('THE DOSSIER HAS NO LICENCE CARD');
+  if ((await page.locator('.sheet.is-top .sigil').count()) !== 1) throw new Error('THE DOSSIER SHOWS THE GRADE MORE THAN ONCE');
+  // Behind the licence stands the rank's crest, not its letter.
+  if (!(await page.locator('.sheet.is-top .dossier__card .rankcrest').count()) || await page.locator('.sheet.is-top .glicence__letter').count()) throw new Error('THE LICENCE HAS NO CREST BEHIND IT');
+  if (await page.locator('.sheet.is-top .dossier', { hasText: 'In force' }).count()) throw new Error('THE DOSSIER STILL HAS ITS IN FORCE SECTION');
+  if ((await page.locator('.sheet.is-top .drecord__one').count()) < 10 || await page.locator('.sheet.is-top .dossier .sysfield').count()) throw new Error('THE DOSSIER RECORD IS NOT FIGURES');
+  await close();
 
   await nav('quests');
   await sleep(800);
@@ -263,8 +291,20 @@ try {
   if (!(await page.locator('.qrail__one.is-coach').first().count())) throw new Error('RYN’S JOB HAS NO RING ON THE RAIL');
   if (!(await page.locator('.assoccard .assoccard__row').count())) throw new Error('RYN’S CARD IS NOT SHAPED AS THE LOG’S ROWS');
   if ((await page.locator('.qdaily__one').count()) !== 3) throw new Error('THE LOG DOES NOT LIST THE DAY’S THREE');
+  // The Daily Quests head the log: a diamond to each on the track and a star for the bonus.
+  if ((await page.locator('.qtrack__node').count()) !== 3 || !(await page.locator('.qtrack__star').count())) throw new Error('THE DAILY QUESTS HAVE NO TRACK TO THEIR BONUS');
+  // A row is no box of its own, and its picture is drawn from where the quest stands.
+  if (await page.locator('.qrow.sysbox, .qdaily__one.sysbox').count()) throw new Error('A QUEST ROW IS STILL BOXED');
+  for (const sel of ['.qrow--rank .qrank', '.qrow--spire .qtower', '.qrow--secret .qmosaic']) {
+    if (!(await page.locator(sel).count())) throw new Error(`A QUEST ROW HAS NO PICTURE: ${sel}`);
+  }
   await page.locator('.qrail__one', { hasText: 'Secret' }).click(); await sleep(700);
   if (!(await page.locator('#quest-secret').isVisible())) throw new Error('A RING DID NOT JUMP TO ITS QUEST');
+  // The rail holds under the top bar as the log scrolls, and marks the quest in view.
+  const railTop = await page.locator('.qrail').evaluate((el) => el.getBoundingClientRect().top);
+  const barBottom = await page.locator('.topbar').evaluate((el) => el.getBoundingClientRect().bottom);
+  if (Math.abs(railTop - barBottom) > 2) throw new Error(`THE QUEST RAIL DID NOT HOLD UNDER THE TOP BAR (${railTop} against ${barBottom})`);
+  if (!(await page.locator('.qrail__one.is-on').count())) throw new Error('THE QUEST RAIL MARKS NO QUEST IN VIEW');
   await snap('quests-jump'); await page.evaluate(() => window.scrollTo(0, 0)); await sleep(300);
   for (const k of ['rank', 'spire', 'secret']) {
     await page.locator(`.qrow--${k}`).click(); await sleep(450);
@@ -434,6 +474,10 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
+  // Every card on the field carries its mark, and neither side runs past the screen's edge.
+  if ((await page.locator('.arena__field .unit').count()) !== (await page.locator('.arena__field .unit__mark').count())) throw new Error('A FIGHT CARD HAS NO MARK');
+  const fieldOver = await page.locator('.arena__field').evaluate((el) => el.scrollWidth - el.clientWidth);
+  if (fieldOver > 1) throw new Error(`THE FIGHT FIELD RUNS ${fieldOver}px PAST THE SCREEN`);
   // Without Foresight a foe's card names its move and never its damage or its chance to hit, nor whom it goes at.
   if (await page.locator('.arena__side--foes .intent__hit').count()) throw new Error('A FOE SHOWS ITS DAMAGE WITHOUT FORESIGHT');
   if (await page.locator('.arena__side--foes .intent__foot, .arena__side--foes .intent__break').count()) throw new Error('A FOE CARD STILL CARRIES ITS FOOT OR ITS PIPS');
@@ -781,11 +825,34 @@ try {
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true);
   // The shelf is blueprints now: a row each, marked as one.
   if ((await page.locator('.sheet.is-top .shopbp').count()) < 1) throw new Error('THE EXCHANGE SHELF HOLDS NO BLUEPRINTS');
-  await page.locator('.sheet.is-top .shopbp').first().scrollIntoViewIfNeeded(); await sleep(300); await snap('exchange-blueprints');
+  // The shop as the reference shops lay theirs out: the purse across the top, three counters as tabs, the
+  // blueprint shelf open first as tiles three to a row; a tile tapped is held in a dock with Buy.
+  if (!(await page.locator('.sheet.is-top .exbar__purse').count())) throw new Error('THE EXCHANGE HAS NO PURSE AT ITS HEAD');
+  if (await page.locator('.sheet.is-top .shoprow, .sheet.is-top .shopcard, .sheet.is-top .exchange .sysfield').count()) throw new Error('THE EXCHANGE STILL HAS ITS OLD ROWS');
+  if ((await page.locator('.sheet.is-top .extab').count()) !== 3 || !(await page.locator('.sheet.is-top .extab.is-on', { hasText: 'Blueprints' }).count())) throw new Error('THE EXCHANGE DOES NOT OPEN ON ITS BLUEPRINT COUNTER');
+  if (!(await page.locator('.sheet.is-top .extile.is-bp').count())) throw new Error('THE BLUEPRINT COUNTER HOLDS NO TILES');
+  if (await page.locator('.sheet.is-top .exdock').count()) throw new Error('THE EXCHANGE OPENED WITH A GOOD HELD');
+  await page.locator('.sheet.is-top .extile').first().click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .exdock .exdock__buy').count())) throw new Error('A TILE TAPPED HELD NOTHING IN THE DOCK');
+  await snap('exchange-blueprints');
+  // Every good of the other counters is drawn as itself, not a glyph.
+  await page.locator('.sheet.is-top .extab', { hasText: 'Potions' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A POTION IS NOT DRAWN');
+  await page.locator('.sheet.is-top .extile').first().click(); await sleep(300); await snap('exchange-potions');
+  await page.locator('.sheet.is-top .extab', { hasText: 'For the Gates' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A GOOD FOR THE GATES IS NOT DRAWN');
+  await snap('exchange-gates');
   await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
+  // Settings opens on the Guide as a card, and the save's storage shows as a light.
+  if (!(await page.locator('.sheet.is-top .setguide').count()) || !(await page.locator('.sheet.is-top .setsave__store').count())) throw new Error('SETTINGS LOST ITS GUIDE CARD OR ITS STORAGE LIGHT');
   await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);
-  await page.locator('.sheet.is-top .fold__head').first().click(); await sleep(300); await snap('guide');
+  // The Guide is a codex: an index of topics, a page to each, and a box that finds a word in every line.
+  await page.locator('.sheet.is-top .guide__topic').first().click(); await sleep(300); await snap('guide');
+  if (!(await page.locator('.sheet.is-top .guide__page .guide__list li').count())) throw new Error('A GUIDE TOPIC DID NOT OPEN ITS PAGE');
+  await page.locator('.sheet.is-top .guide__find input').fill('fatigue'); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .guide mark').count())) throw new Error('THE GUIDE FOUND NOTHING FOR A WORD IT HOLDS');
+  await snap('guide-find');
 
   // ---------------------------------------------------------------- the ascended hunter: S-Rank, three levels open
   page = await phone(ascended);

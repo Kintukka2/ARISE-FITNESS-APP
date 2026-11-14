@@ -858,6 +858,12 @@ button.sysalert { width: 100%; text-align: left; cursor: pointer; }
 .assoccard__pay { display: flex; flex-wrap: wrap; gap: 4px; }
 .assocpay { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--coach) 35%, transparent); background: rgba(4, 10, 24, 0.5); font-size: 0.66rem; font-weight: 600; color: var(--coach-ink); }
 .assocpay b { color: var(--verdant); }
+/* While the job is under way the card holds it unframed: his face, the job, his line, a bar and the pay as plain gains. */
+.assoccard__row:not(.is-report) { padding: 2px 0 0; border: 0; background: none; }
+.assoccard__row:not(.is-report) .assoccard__face { border-radius: 50%; }
+.assoccard__row:not(.is-report) .assoccard__count { padding: 0; border: 0; font-size: 0.82rem; }
+.assoccard__pay { gap: 2px 14px; }
+.assocpay { padding: 0; border: 0; background: none; font-size: 0.68rem; color: color-mix(in srgb, var(--coach-ink) 75%, transparent); }
 /* A job done waits on the hunter: the row is the report, its border gold, his face lit, the job ticked,
    and a strip along its foot naming the report and its pay, a light crossing it. */
 .assoccard.is-done { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 40%, transparent), 0 0 22px var(--gold-glow); }

@@ -504,9 +504,8 @@ function SkillsSheet() {
   return (
     <div class={`skilltree stack ${shut ? 'is-shut' : ''}`}>
       <div class="st-head">
-        <span class="sysbox st-head__class">{cls ? <><strong>[Class: {cls.name}]</strong><small>{cls.lead} +{cls.bonus}</small></> : <><strong>Unclassified</strong><small>Skills open at D-Rank.</small></>}</span>
-        <span class={`sysbox st-head__pts ${due ? 'is-due' : ''}`}>
-          {due && <span class="apdue__mark" aria-hidden="true">+</span>}
+        <span class="st-head__class">{cls ? <><strong>[Class: {cls.name}]</strong><small>{cls.lead} +{cls.bonus}</small></> : <><strong>Unclassified</strong><small>Skills open at D-Rank.</small></>}</span>
+        <span class={`st-head__pts ${due ? 'is-due' : ''}`}>
           <small>Skill Points</small><b class="num">{pts}</b>
         </span>
       </div>

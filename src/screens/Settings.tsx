@@ -5,7 +5,7 @@ import { defaults, parse } from '@/core/save';
 import { askNotifications, remindersAvailable, syncReminders } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Section } from '@/ui/components';
+import { Btn } from '@/ui/components';
 import { askName } from '@/ui/ask';
 import { confirm, openSheet, sys, toast } from '@/ui/overlays';
 import { Glyph } from '@/ui/icons';
@@ -30,20 +30,31 @@ function Settings() {
   const [durable, setDurable] = useState<boolean | null>(null);
   useEffect(() => { void store.durable().then(setDurable); }, []);
   const set = (fn: (x: typeof s) => void) => store.update(fn);
+  const Head = ({ label, right }: { label: string; right?: string }) => (
+    <header class="exsec__head"><span class="label">{label}</span><i aria-hidden="true" />{right && <small>{right}</small>}</header>
+  );
   return (
-    <div class="stack">
-      <Btn kind="ghost" block onClick={openGuide}><Glyph name="help" /> How Arise Works</Btn>
-      <Section title="Sound and display">
+    <div class="stack settings">
+      {/* The Guide first, as a card: every rule, with its numbers read from the engine. */}
+      <button type="button" class="setguide" onClick={() => { sfx.tap(); openGuide(); }}>
+        <span class="setguide__mark"><Glyph name="book" /></span>
+        <span class="setguide__text"><b>How Arise Works</b><small>The Guide: every rule, with its numbers.</small></span>
+        <Glyph name="chevron" class="setguide__go" />
+      </button>
+
+      <section class="setsec">
+        <Head label="Sound and display" />
         <div class="toggles">
           <Toggle label="Sound" on={s.settings.sound} onChange={(v) => set((x) => { x.settings.sound = v; })} />
           <Toggle label="Music" note="Plays quietly and changes with the screen." on={s.settings.music} onChange={(v) => { set((x) => { x.settings.music = v; }); music.refresh(); }} />
           <Toggle label="Haptics" on={s.settings.haptics} onChange={(v) => set((x) => { x.settings.haptics = v; })} />
           <Toggle label="Fast story text" note="System windows appear at once instead of typing out." on={s.settings.fastText} onChange={(v) => set((x) => { x.settings.fastText = v; })} />
         </div>
-      </Section>
+      </section>
 
       {remindersAvailable() && (
-        <Section title="Reminder">
+        <section class="setsec">
+          <Head label="Reminder" />
           <div class="toggles">
             <Toggle label="Tell me when I am rested" note="One notification when fatigue reaches 0 or the Gate lockout ends." on={s.settings.reminders.on} onChange={async (v) => {
               if (v && !(await askNotifications())) { sfx.alarm(); toast('Notifications are blocked for Arise. Allow them in Android settings.', 'warn'); return; }
@@ -52,25 +63,30 @@ function Settings() {
             }} />
           </div>
           <small class="muted">Scheduled on this phone by the app. Nothing is sent anywhere.</small>
-        </Section>
+        </section>
       )}
 
       {(s.settings.skipAsk ?? []).length > 0 && (
-        <Section title="Purchases" right={`Not asked: ${s.settings.skipAsk.length}`}>
+        <section class="setsec">
+          <Head label="Purchases" right={`Not asked: ${s.settings.skipAsk.length}`} />
           <ul class="asklist">{s.settings.skipAsk.map((k) => <li key={k}>{askName(k)}</li>)}</ul>
           <Btn kind="ghost" block onClick={() => { set((x) => { x.settings.skipAsk = []; }); toast('Every purchase asks first again.', 'good'); }}>Ask Before Every Purchase</Btn>
-        </Section>
+        </section>
       )}
 
-      <Section title="Your save">
-        <p class="muted">Everything lives on this device. Save storage: <b>{durable === null ? 'unknown' : durable ? 'persistent' : 'best-effort'}</b>{durable === false ? '. The browser may clear it under storage pressure, so export now and then.' : '.'}</p>
-        <div class="stack stack--tight">
-          <Btn kind="ghost" block onClick={exportSave}>Export Save</Btn>
-          <Btn kind="ghost" block onClick={importSave}>Import Save</Btn>
-          {store.backup() && <Btn kind="ghost" block onClick={restoreBackup}>Restore Previous Save</Btn>}
-          <Btn kind="danger" block onClick={erase}>Erase Everything</Btn>
+      <section class="setsec">
+        <Head label="Your save" />
+        <p class="setsave">
+          <span class={`setsave__store ${durable ? 'is-safe' : durable === false ? 'is-risk' : ''}`}><i aria-hidden="true" />{durable === null ? 'Unknown' : durable ? 'Persistent' : 'Best-effort'}</span>
+          <span class="muted">Everything lives on this device.{durable === false ? ' The browser may clear it under storage pressure, so export now and then.' : ''}</span>
+        </p>
+        <div class="setsave__btns">
+          <Btn kind="ghost" onClick={exportSave}>Export Save</Btn>
+          <Btn kind="ghost" onClick={importSave}>Import Save</Btn>
         </div>
-      </Section>
+        {store.backup() && <Btn kind="ghost" block onClick={restoreBackup}>Restore Previous Save</Btn>}
+      </section>
+      <Btn kind="danger" block onClick={erase}>Erase Everything</Btn>
       <small class="muted center">Arise v{__APP_VERSION__} · Instructor Ryn Valcorde · all data stored on this device</small>
     </div>
   );
