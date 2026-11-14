@@ -3731,3 +3731,110 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .licence__letter { position: absolute; right: -6px; bottom: -28px; font-size: 8.5rem; font-weight: 900; line-height: 1; color: color-mix(in srgb, var(--rc) 14%, transparent); pointer-events: none; }
 .licence dd { color: #fff; text-shadow: var(--sys-glow); transition: color 200ms; }
 .licence__letter { right: auto; left: -10px; bottom: -34px; color: color-mix(in srgb, var(--rc) 9%, transparent); }
+/* The outcome on one line, whatever its length: the size gives way before it wraps. */
+.arena--results .rhead h2 { max-width: 100%; font-size: clamp(1.25rem, 7.2vw, 2rem); letter-spacing: 0.08em; white-space: nowrap; }
+
+/* ------------------------------------------------------------------ the Exchange, after the reference shops */
+
+/* The purse across the top: the shard and the balance large, the restock at its right. */
+.exbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px 12px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.exbar__purse { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+.exbar__purse > svg { align-self: center; filter: drop-shadow(0 0 8px var(--verdant-glow)); }
+.exbar__purse b { font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--verdant); text-shadow: 0 0 12px var(--verdant-glow); }
+.exbar__purse small, .exbar__clock small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.exbar__clock { display: inline-flex; align-items: center; gap: 7px; }
+.exbar__clock .ico { width: 15px; height: 15px; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.exbar__clock > span { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.exbar__clock b { font-size: 0.92rem; font-weight: 700; letter-spacing: 0.04em; color: var(--sys-ink); }
+
+/* The counters as tabs across the top, each its mark, its name and how many it holds; the one open underlined. */
+.extabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.extab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 2px 10px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); font: inherit; cursor: pointer; touch-action: manipulation; transition: color 160ms; }
+.extab .ico { width: 18px; height: 18px; }
+.extab > span { font-size: 0.72rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.extab small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.extab__up { font-size: 0.62rem; color: var(--gold); text-shadow: 0 0 6px var(--gold-glow); }
+.extab::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 2px; background: var(--win); box-shadow: 0 0 8px var(--win-glow); transform: scaleX(0); transition: transform 200ms var(--ease); }
+.extab.is-on { color: #fff; }
+.extab.is-on .ico { color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.extab.is-on::after { transform: scaleX(1); }
+.exmeta { display: flex; justify-content: space-between; gap: 10px; margin: -4px 2px 0; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.exmeta b { color: var(--sys-ink); }
+
+/* The counter: tiles three to a row, each its picture on its ground, its name and its price. */
+.exgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.extile { --rc: var(--win); position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--rc) 30%, var(--edge)); background: rgba(4, 10, 24, 0.92); color: inherit; font: inherit; text-align: center; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, box-shadow 160ms, transform 120ms; animation: qaIn 360ms var(--ease) both; }
+.extile[data-rarity='E'] { --rc: var(--rank-E); } .extile[data-rarity='D'] { --rc: var(--rank-D); } .extile[data-rarity='C'] { --rc: var(--rank-C); }
+.extile[data-rarity='B'] { --rc: var(--rank-B); } .extile[data-rarity='A'] { --rc: var(--rank-A); } .extile[data-rarity='S'] { --rc: var(--rank-S); }
+.extile:active { transform: scale(0.97); }
+.extile.is-on { border-color: var(--rc); box-shadow: 0 0 0 1px var(--rc), 0 0 16px color-mix(in srgb, var(--rc) 40%, transparent); }
+.extile__art { position: relative; display: grid; place-items: center; aspect-ratio: 1 / 0.92; background: radial-gradient(ellipse at 50% 62%, color-mix(in srgb, var(--rc) 24%, transparent), transparent 72%); }
+/* A blueprint stands on its rarity's colour over a drafting grid. */
+.extile.is-bp .extile__art, .exdock[data-rarity] .exdock__art { background:
+  radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 42%, transparent), color-mix(in srgb, var(--rc) 10%, transparent) 78%),
+  repeating-linear-gradient(0deg, color-mix(in srgb, var(--rc) 16%, transparent) 0 1px, transparent 1px 10px),
+  repeating-linear-gradient(90deg, color-mix(in srgb, var(--rc) 16%, transparent) 0 1px, transparent 1px 10px); }
+.extile__held { position: absolute; left: 5px; bottom: 4px; padding: 0 5px; border-radius: 2px; background: rgba(0, 0, 0, 0.55); font-size: 0.62rem; font-weight: 700; color: #fff; }
+.extile__up { position: absolute; top: 4px; right: 6px; font-size: 0.72rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.extile__stamp { position: absolute; left: -6px; right: -6px; top: 50%; padding: 2px 0; transform: translateY(-50%) rotate(-8deg); background: rgba(6, 10, 20, 0.85); border-top: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); font-size: 0.58rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.extile.is-off .extile__art > :first-child { opacity: 0.4; filter: saturate(0.3); }
+.extile__name { display: -webkit-box; min-height: 2.5em; margin: 6px 6px 4px; overflow: hidden; font-size: 0.7rem; font-weight: 700; line-height: 1.25; color: #fff; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.extile__price { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 5px 4px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.8rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.extile.is-short .extile__price .shards { color: var(--sysred); }
+
+/* The good held: a dock at the counter's foot, its picture, its words, and Buy with its price. */
+.exdock { --rc: var(--win); position: sticky; bottom: 0; z-index: 6; display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; grid-template-areas: 'art text x' 'buy buy buy'; align-items: start; gap: 10px 12px; margin: 0 -2px; padding: 12px; border: 1px solid color-mix(in srgb, var(--rc) 60%, var(--sys-hair)); background: linear-gradient(180deg, rgba(8, 16, 34, 0.98), rgba(4, 10, 24, 0.98)); box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--rc) 22%, transparent); animation: qaIn 260ms var(--ease) both; }
+.exdock[data-rarity='E'] { --rc: var(--rank-E); } .exdock[data-rarity='D'] { --rc: var(--rank-D); } .exdock[data-rarity='C'] { --rc: var(--rank-C); }
+.exdock[data-rarity='B'] { --rc: var(--rank-B); } .exdock[data-rarity='A'] { --rc: var(--rank-A); } .exdock[data-rarity='S'] { --rc: var(--rank-S); }
+.exdock__art { grid-area: art; display: grid; place-items: center; width: 72px; height: 72px; background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 72%); }
+.exdock__text { grid-area: text; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.exdock__text b { font-size: 0.98rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.exdock__kind { font-size: 0.68rem; font-weight: 700; color: color-mix(in srgb, var(--rc) 75%, #fff); }
+.exdock__gives { font-size: 0.78rem; color: var(--verdant); }
+.exdock__note { display: flex; flex-direction: column; gap: 2px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.exdock__note .hint { font-size: 0.66rem; color: color-mix(in srgb, var(--gold) 85%, transparent); }
+.exdock__x { grid-area: x; }
+.exdock__buy { grid-area: buy; }
+.exdock__buy .shards { margin-left: 6px; }
+.exdock__buy.is-short .shards { color: var(--sysred); }
+.shopart { overflow: visible; }
+.exbar { justify-content: flex-start; align-items: baseline; gap: 10px; }
+.exbar__what { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.extab { padding-bottom: 9px; }
+.extab__up { position: absolute; top: 6px; right: 8px; }
+.exmeta { align-items: center; margin-top: -2px; }
+.exmeta__clock { display: inline-flex; align-items: center; gap: 6px; }
+.exmeta__clock .ico { width: 13px; height: 13px; }
+
+/* ------------------------------------------------------------------ Status, Stats and Skills, decluttered */
+
+/* STATUS: the points at the head of the stats, then a row to each stat: its mark, its key, a bar toward
+   the points' limit, its base, its value, and a + while a point can go there. */
+.status .attrs { display: flex; flex-direction: column; gap: 0; }
+.attrs__head { display: flex; align-items: center; gap: 10px; padding: 4px 2px 8px; }
+.attrs__head .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.attrs__head > b { flex: 1; font-size: 1.3rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.attrs__head.is-hot .label, .attrs__head.is-hot > b { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.status .attr { display: grid; grid-template-columns: 20px 36px minmax(0, 1fr) 38px 36px 28px; align-items: center; gap: 8px; min-height: 48px; padding: 6px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; flex-wrap: nowrap; }
+.status .attr__bar { position: static; height: 3px; background: rgba(255, 255, 255, 0.08); }
+.status .attr__base { text-align: right; font-size: 0.72rem; }
+.status .attr__v { margin: 0; text-align: right; font-size: 1.15rem; }
+.status .attr__plus { width: 26px; height: 26px; }
+.status .attr__plus.is-none { background: none; box-shadow: none; }
+/* The potions on the vitals are buttons, but light ones: a tint, no frame. */
+.status .pip { min-height: 30px; border: 0; background: color-mix(in srgb, currentColor 12%, transparent); }
+
+/* STATS: a stat's row is one line; its line under it shows when it is tapped. The fight's numbers say once
+   that they explain themselves, in place of a ? on each. */
+.stattable__row { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms; }
+.stattable__row.is-open { background: color-mix(in srgb, var(--win) 6%, transparent); }
+.statsheet .sysfield__help { display: none; }
+.statsheet .sysfield { padding-right: 2px; }
+.statsheet .exsec__head small { font-size: 0.64rem; }
+
+/* SKILLS: the points gold on their own, no mark beside them; the slots lighter. */
+.st-slot { border-color: color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.35); }
+/* The framed sheet's older two-row stat cell gives way to the row: every part on one line, in its own column. */
+.sysframe .status .attr:not(.attr--points) { grid-template-columns: 20px 38px minmax(0, 1fr) 40px 36px 28px; grid-template-rows: auto; column-gap: 8px; padding: 6px 2px; border-radius: 0; background: none; }
+.sysframe .status .attr:not(.attr--points) > * { grid-row: 1; grid-column: auto; }
+.sysframe .status .attr__base { line-height: 1; }

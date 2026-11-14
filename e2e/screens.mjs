@@ -94,6 +94,12 @@ async function autoToResults() {
   await page.waitForSelector('.arena--results');
   // The results open on their title card, and what the run paid stands unframed: no tile is left.
   if (!(await page.locator('.arena--results .rhead__rule').count()) || await page.locator('.arena--results .tile').count()) throw new Error('THE RESULTS DO NOT OPEN ON THEIR TITLE CARD');
+  // The outcome stands on one line, and the line under it never repeats it (measured once the title has drawn in).
+  await page.waitForTimeout(800);
+  const head = await page.locator('.arena--results .rhead h2').evaluate((el) => ({ over: el.scrollWidth - el.clientWidth, h: el.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(el).lineHeight) || 0, t: el.textContent }));
+  if (head.over > 1 || (head.lh && head.h > head.lh * 1.6)) throw new Error(`THE RESULTS' TITLE DOES NOT FIT ONE LINE (${head.t})`);
+  const sub = (await page.locator('.arena--results .rhead p').allInnerTexts()).join(' ');
+  if (sub && head.t && sub.toLowerCase().includes(head.t.toLowerCase().split(' ').slice(0, 2).join(' '))) throw new Error(`THE RESULTS' LINE REPEATS ITS TITLE (${sub})`);
 }
 
 try {
@@ -124,6 +130,8 @@ try {
   await page.locator('[data-hub="stats"]').click(); await sleep(400); await snap('stats', true);
   // Where each stat comes from is a table: a row to each stat, its columns lined up.
   if ((await page.locator('.sheet.is-top .stattable__row').count()) !== 5) throw new Error('THE STATS TABLE DOES NOT ROW EVERY STAT');
+  // A stat's line shows only when its row is tapped.
+  if (await page.locator('.sheet.is-top .stattable__desc').count()) throw new Error('THE STATS TABLE SHOWS EVERY LINE AT ONCE');
   const cols = await page.locator('.sheet.is-top .stattable__row').evaluateAll((rows) => rows.map((r) => Math.round(r.querySelector('.stattable__total').getBoundingClientRect().right)));
   if (new Set(cols).size !== 1) throw new Error(`THE STATS TABLE'S TOTALS DO NOT LINE UP (${cols.join(', ')})`);
   // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
@@ -258,8 +266,11 @@ try {
   if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
   await close(); await close(); await close();
   await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier');
-  // The dossier opens on the licence card; its record is figures, not boxed fields.
+  // The dossier opens on the licence card; its record is figures, not boxed fields. The grade is on the licence
+  // once, not in the head too, and nothing tells what each level and rank pay.
   if (!(await page.locator('.sheet.is-top .dossier__card').count())) throw new Error('THE DOSSIER HAS NO LICENCE CARD');
+  if ((await page.locator('.sheet.is-top .sigil').count()) !== 1) throw new Error('THE DOSSIER SHOWS THE GRADE MORE THAN ONCE');
+  if (await page.locator('.sheet.is-top .dossier', { hasText: 'In force' }).count()) throw new Error('THE DOSSIER STILL HAS ITS IN FORCE SECTION');
   if ((await page.locator('.sheet.is-top .drecord__one').count()) < 10 || await page.locator('.sheet.is-top .dossier .sysfield').count()) throw new Error('THE DOSSIER RECORD IS NOT FIGURES');
   await close();
 
@@ -810,11 +821,23 @@ try {
   await page.locator('.topbar__purse').click(); await sleep(400); await snap('exchange', true);
   // The shelf is blueprints now: a row each, marked as one.
   if ((await page.locator('.sheet.is-top .shopbp').count()) < 1) throw new Error('THE EXCHANGE SHELF HOLDS NO BLUEPRINTS');
-  // The shop is cards two to a row under an unframed head; the shelf comes first, each blueprint on its rarity.
-  if (!(await page.locator('.sheet.is-top .exhead__purse').count())) throw new Error('THE EXCHANGE HAS NO BALANCE AT ITS HEAD');
-  if (await page.locator('.sheet.is-top .shoprow, .sheet.is-top .exchange .sysfield').count()) throw new Error('THE EXCHANGE STILL HAS ITS OLD ROWS');
-  if (!(await page.locator('.sheet.is-top .exsec').first().locator('.shopcard.is-bp').count())) throw new Error('THE BLUEPRINT SHELF DOES NOT COME FIRST');
-  await page.locator('.sheet.is-top .shopbp').first().scrollIntoViewIfNeeded(); await sleep(300); await snap('exchange-blueprints');
+  // The shop as the reference shops lay theirs out: the purse across the top, three counters as tabs, the
+  // blueprint shelf open first as tiles three to a row; a tile tapped is held in a dock with Buy.
+  if (!(await page.locator('.sheet.is-top .exbar__purse').count())) throw new Error('THE EXCHANGE HAS NO PURSE AT ITS HEAD');
+  if (await page.locator('.sheet.is-top .shoprow, .sheet.is-top .shopcard, .sheet.is-top .exchange .sysfield').count()) throw new Error('THE EXCHANGE STILL HAS ITS OLD ROWS');
+  if ((await page.locator('.sheet.is-top .extab').count()) !== 3 || !(await page.locator('.sheet.is-top .extab.is-on', { hasText: 'Blueprints' }).count())) throw new Error('THE EXCHANGE DOES NOT OPEN ON ITS BLUEPRINT COUNTER');
+  if (!(await page.locator('.sheet.is-top .extile.is-bp').count())) throw new Error('THE BLUEPRINT COUNTER HOLDS NO TILES');
+  if (await page.locator('.sheet.is-top .exdock').count()) throw new Error('THE EXCHANGE OPENED WITH A GOOD HELD');
+  await page.locator('.sheet.is-top .extile').first().click(); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .exdock .exdock__buy').count())) throw new Error('A TILE TAPPED HELD NOTHING IN THE DOCK');
+  await snap('exchange-blueprints');
+  // Every good of the other counters is drawn as itself, not a glyph.
+  await page.locator('.sheet.is-top .extab', { hasText: 'Potions' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A POTION IS NOT DRAWN');
+  await page.locator('.sheet.is-top .extile').first().click(); await sleep(300); await snap('exchange-potions');
+  await page.locator('.sheet.is-top .extab', { hasText: 'For the Gates' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A GOOD FOR THE GATES IS NOT DRAWN');
+  await snap('exchange-gates');
   await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
   // Settings opens on the Guide as a card, and the save's storage shows as a light.

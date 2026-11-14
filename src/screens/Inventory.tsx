@@ -11,7 +11,7 @@ import { classById } from '@/data/classes';
 import * as gear from '@/core/gear';
 import * as forge from '@/core/forge';
 import { reclassification } from '@/core/quests';
-import { ATTRS, autoAllocate, BOOST_CAP, classBonus, POINTS_PER_LEVEL, rankOf, RANK_UP_POINTS, spendPoint, STAT_CAP } from '@/core/progression';
+import { ATTRS, autoAllocate, BOOST_CAP, classBonus, rankOf, spendPoint, STAT_CAP } from '@/core/progression';
 import * as skilltree from '@/core/skilltree';
 import { CRIT, HIT, Unit } from '@/core/combat';
 import { heroSpec } from '@/core/raid';
@@ -288,7 +288,6 @@ function StatusSheet() {
         {rc && !rc.ready && <i class="stclimb__bar" aria-hidden="true"><i style={`width: ${Math.round(rc.share * 100)}%`} /></i>}
         {licenceHolding(s) && <small class="muted">Gate grade: {licensedRank(s)}-Rank without the Association Licence.</small>}
       </div>
-      {skilltree.canSpend(s) && <Btn kind="gold" block onClick={openSkills}>Skills · Skill Points: {skilltree.points(s)}</Btn>}
       <VitalsBlock />
       <Attributes />
     </div>
@@ -319,6 +318,8 @@ const FIGHT_HELP: Record<string, string> = {
 
 function StatsSheet() {
   const s = useSave();
+  // A stat's line shows when its row is tapped, so the table reads as one figure a stat.
+  const [why, setWhy] = useState<Stat | null>(null);
   useNow(5000);
   const bonus = classBonus(s);
   const fromTree = skilltree.treeAttrs(s);
@@ -360,17 +361,18 @@ function StatsSheet() {
           const kit = Math.round(total[k] - s.hunter.attrs[k] - cls - learned);
           const add = (n: number) => <span role="cell" class={`num ${n > 0 ? 'is-up' : 'is-none'}`}>{n > 0 ? `+${n}` : '--'}</span>;
           return (
-            <div key={k} class="stattable__row" role="row">
+            <div key={k} class={`stattable__row ${why === k ? 'is-open' : ''}`} role="row" tabIndex={0} aria-expanded={why === k}
+              onClick={() => setWhy(why === k ? null : k)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWhy(why === k ? null : k); } }}>
               <span class="stattable__name" role="cell"><Glyph name={STAT_ICON[k]} /><b>{a.name}</b></span>
               <span role="cell" class="num">{s.hunter.attrs[k]}</span>
               {add(cls)}{add(learned)}{add(kit)}
               <b role="cell" class="num stattable__total">{Math.round(total[k])}</b>
-              <small class="stattable__desc">{a.desc}</small>
+              {why === k && <small class="stattable__desc">{a.desc}</small>}
             </div>
           );
         })}
       </div>
-      <span class="label">In a fight</span>
+      <header class="exsec__head"><span class="label">In a fight</span><i aria-hidden="true" /><small>Tap one for what it does</small></header>
       <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
     </div>
@@ -477,26 +479,23 @@ function Attributes() {
   };
   return (
     <div class="attrs" data-tour="attrs">
+      {/* The points at the head, gold while there are any, with Auto-Allocate beside them; then a row to each stat. */}
+      <div class={`attrs__head ${s.hunter.points ? 'is-hot' : ''}`}>
+        <span class="label">Ability Points</span>
+        <b class="num">{s.hunter.points}</b>
+        {s.hunter.points > 0 && <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate</Btn>}
+      </div>
       {order.map((k) => (
         <button type="button" key={k} class="attr" onClick={() => spend(k)} aria-label={`${k} ${Math.round(total[k])}${s.hunter.points ? ', spend a point' : ''}`}>
           <Glyph name={STAT_ICON[k]} />
           <span class="attr__k">{k}</span>
-          {total[k] !== s.hunter.attrs[k] && <small class="attr__base num">({s.hunter.attrs[k]})</small>}
-          <b class="attr__v num">{Math.round(total[k])}</b>
-          {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP && <span class="attr__plus"><Glyph name="plus" /></span>}
           {/* How far its points have taken it toward their limit. */}
           <i class="attr__bar" aria-hidden="true"><i style={`width: ${Math.round(Math.min(1, s.hunter.attrs[k] / STAT_CAP) * 100)}%`} /></i>
+          <small class="attr__base num">{total[k] !== s.hunter.attrs[k] ? `(${s.hunter.attrs[k]})` : ''}</small>
+          <b class="attr__v num">{Math.round(total[k])}</b>
+          {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP ? <span class="attr__plus"><Glyph name="plus" /></span> : <span class="attr__plus is-none" />}
         </button>
       ))}
-      <div class={`attr attr--points ${s.hunter.points ? 'is-hot' : ''}`}>
-        <span class="label">Ability Points</span><b class="num">{s.hunter.points}</b>
-      </div>
-      {s.hunter.points > 0 && (
-        <div class="attrs__alloc">
-          <small class="muted">Tap a stat to spend an Ability Point.</small>
-          <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate · {s.hunter.points}</Btn>
-        </div>
-      )}
     </div>
   );
 }
@@ -510,7 +509,8 @@ function Attributes() {
 export function openDossier() {
   const s = store.get();
   openSheet({
-    title: `Hunter: ${s.hunter.name}`, system: { icon: <Sigil rank={rankOf(s).key === 'N' ? 'N' : licensedRank(s)} size={40} /> },
+    // The grade is on the licence itself, so the head names the hunter and holds no seal (the owner's call: C-Rank once, not three times).
+    title: `Hunter: ${s.hunter.name}`, system: { icon: null },
     render: () => {
       const s = store.get();
       const felled = Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
@@ -544,17 +544,6 @@ export function openDossier() {
               <b>{new Date(s.createdAt).toLocaleDateString()}</b>
             </span>
           </div>
-          <dl class="bfacts dossier__facts">
-            <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>
-            <div><dt>Guild</dt><dd>-- --</dd></div>
-          </dl>
-          <section class="dsec">
-            <header class="exsec__head"><span class="label">In force</span><i aria-hidden="true" /></header>
-            <dl class="bfacts dossier__facts">
-              <div><dt>Ability Points</dt><dd>{POINTS_PER_LEVEL} each level · {RANK_UP_POINTS} each rank</dd></div>
-              {Object.entries(classBonus(s)).map(([k, v]) => <div key={k}><dt>Class</dt><dd class="grant">{k} +{v}</dd></div>)}
-            </dl>
-          </section>
           <section class="dsec">
             <header class="exsec__head"><span class="label">Record</span><i aria-hidden="true" /></header>
             <div class="drecord">

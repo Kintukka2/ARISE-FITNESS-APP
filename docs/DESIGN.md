@@ -2070,6 +2070,16 @@ with what ARISE took from them.
   and Import side by side and Erase standing apart. At the Association's desk the licence is drawn as the Licence
   window draws it, the grade's colour and letter behind, and the name fills in on it as it is typed. No engine
   changed.
+- **A second pass, at the owner's call** (fewer boxes, less said twice). The Exchange is rebuilt as the shops of
+  Genshin Impact, Honkai: Star Rail and Solo Leveling: Arise lay theirs out: the purse across the top, three counters
+  as tabs (Blueprints, Potions, For the Gates), tiles three to a row with their price along their foot and what stops
+  a purchase stamped across them, and a dock that holds the good tapped with **Buy**. Every good is drawn as itself
+  (`ui/shopart.tsx`), in place of a recoloured glyph. The hunter's card shows the grade once (on the licence, not in
+  the head and a Rank line too), and its `In force` section is gone: what a level and a rank pay is the level-up's to
+  say. A floor of the Spire cleared reads `Floor 30 Cleared` on one line with nothing under it, and no outcome's line
+  repeats its title. Status drops its Skills button and says nothing a + already says: the points and Auto-Allocate
+  head a row to each stat; Stats shows a stat's line only when its row is tapped and says once that the fight's
+  numbers explain themselves; Skills' points stand gold without a mark.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

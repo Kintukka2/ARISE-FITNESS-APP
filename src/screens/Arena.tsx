@@ -30,7 +30,6 @@ import * as blessings from '@/core/blessings';
 import { pathOf } from '@/data/tree';
 import { BoonCard, BoonChip } from '@/ui/boons';
 import { boonById, TIERS } from '@/data/blessings';
-import { BLOCK } from '@/data/spire';
 import * as ascension from '@/core/ascension';
 import { isTrial } from '@/core/trial';
 import { OVERCHARGE } from '@/data/ascension';
@@ -1477,8 +1476,19 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const climb = next && !entryBlock(s, next) ? next : null;
   const v = vitals.read(s);
   const trial = isTrial(d);
-  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Taken` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Cleared` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
+  // The line under the title says what the title does not: it never repeats the outcome (the owner's call).
+  const line: string | null = r.outcome === 'cleared'
+    ? isPractice(d) ? 'The Practice Gate is closed.'
+      : r.spire ? (r.spire.best ? null : 'The week closed while you were inside, so it does not count this week.')
+        : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
+          : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
+    : r.outcome === 'withdrawn'
+      ? d.floor ? `From the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.`
+        : r.rooms ? `${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Step ${r.steps} of ${r.depth}. The Gate is still open.`
+      : trial ? 'The Trial opens again tomorrow. Proven Gates stay proven.'
+        : `You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`;
   // What the Daily Quests paid is shown once, on their own lines below, so the tiles do not repeat it.
   const xpSub = r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared';
   const shardSub = [r.bounty > 0 ? `First-clear bounty +${r.bounty}` : r.banked > 0 ? `Banked +${r.banked}` : ''].filter(Boolean);
@@ -1492,13 +1502,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <span class="rhead__gate"><RankPlate rank={d.rank} size={22} /><span class="label">{d.name}</span></span>
           <h2>{title}</h2>
           <i class="rhead__rule" aria-hidden="true" />
-          <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'The Practice Gate is closed.'
-            : r.spire ? r.spire.best ? `Floor ${r.spire.floor} cleared: your best this week. The next ${BLOCK} floors are open.` : `Floor ${r.spire.floor} cleared. The week closed while you were inside, so it does not count this week.`
-              : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
-              : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
-            : r.outcome === 'withdrawn' ? d.floor ? `Withdrawn from the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.` : r.rooms ? `Withdrawn with ${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Withdrawn at step ${r.steps} of ${r.depth}. The Gate is still open.`
-              : trial ? 'You were carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
-              : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
+          {line && <p class="muted">{line}</p>}
         </header>
         {/* What the run paid, large and unframed, then the hunter's condition as bars. */}
         <div class="rpay">
