@@ -7,7 +7,7 @@
  * comes from `core/gear.ts` and `core/forge.ts`; the screens only show and ask.
  */
 import * as engr from '@/core/engravings';
-import { EngraveMark, EngravedBadge, EngravingBlock, openCodex } from '@/ui/engrave';
+import { AttunedTriad, EngravedBadge, EngravingBlock, openCodex } from '@/ui/engrave';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -278,7 +278,7 @@ function BagTile({ it, i, picking, picked, locked, on, onTap }: { it: Item; i: n
       <span class="bagtile__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></span>
       {fresh && <span class="bagtile__new">New</span>}
       {up && <span class="bagtile__up" aria-hidden="true">▲</span>}
-      {it.engr && <EngravedBadge dormant={engr.dormant(s, it)} />}
+      {engr.engravingById(it.engr) && <EngravedBadge e={engr.engravingById(it.engr)!} dormant={engr.dormant(s, it)} />}
       {picking && <span class="bagtile__check" aria-hidden="true"><Glyph name={locked ? 'lock' : 'check'} /></span>}
     </button>
   );
@@ -887,9 +887,9 @@ function openSet(id: string) {
 
 /** The loadouts: what was worn, saved, and worn again in one tap, a row to each. */
 /**
- * The engravings live on what is worn, one to each kind of gear, as Kanai's Cube sets its three slots
- * under the box: each kind's mark and name over the live engraving and its rule, or `-- --`; and the Codex,
- * counted, a tap away.
+ * The engravings attuned from what is worn, one to each kind of gear, as Hollow Knight sets the charms worn
+ * above the rest: three sockets, each holding its kind's attuned engraving or its empty stone, a tap from
+ * the Codex open on it; and the Codex, counted.
  */
 function Engravings() {
   const s = useSave();
@@ -897,18 +897,8 @@ function Engravings() {
   const kept = engr.codex(s).length;
   if (!kept && !Object.keys(live).length) return null;
   return (
-    <Section title="Engravings" right={<button type="button" class="linkish" onClick={() => openCodex()}>Codex {kept}/{engr.ENGRAVINGS.length}</button>}>
-      <div class="englive">
-        {engr.GROUPS.map((g) => {
-          const e = engr.engravingById(live[g.key]?.engr);
-          return (
-            <button key={g.key} type="button" class={`englive__one ${e ? 'is-on' : ''}`} onClick={() => { sfx.tap(); if (live[g.key]) openItem(live[g.key]!.id); else openCodex(); }}>
-              {e ? <EngraveMark e={e} size={34} /> : <span class="engmark is-empty" style="--s: 34px"><Glyph name="engrave" /></span>}
-              <span class="englive__text"><small>{g.name}</small><b>{e ? e.name : '-- --'}</b>{e && <i>{e.text}</i>}</span>
-            </button>
-          );
-        })}
-      </div>
+    <Section title="Engravings" right={<button type="button" class="linkish" onClick={() => { sfx.tap(); openCodex(); }}>Codex {kept}/{engr.ENGRAVINGS.length}</button>}>
+      <AttunedTriad onPick={(g, id) => { sfx.tap(); openCodex(undefined, id ?? g); }} />
     </Section>
   );
 }

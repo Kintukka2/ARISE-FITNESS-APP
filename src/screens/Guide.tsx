@@ -450,7 +450,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `An engraving is a power cut into a piece: it changes a rule of the fight. There are ${ENGRAVINGS.length}, one to each family of creature.`,
       `A Gate's boss leaves a piece found whole with its family's engraving ${Math.round(ENGRAVED.boss * 100)}% of the time it is defeated in a clear, and its Gatekeeper ${Math.round(ENGRAVED.keeper * 100)}%. The brief names which.`,
       `Engravings come in three kinds: ${GROUPS.map((g) => `${g.name.toLowerCase()} on ${g.slots.map((x) => x.toLowerCase()).join(', ')}`).join('; ')}. The families that leave bone cut weapons, hide armour, and a core jewellery.`,
-      'A worn piece’s engraving is live, one to each kind. A second engraved piece of a kind worn is dormant.',
+      'A worn piece’s engraving is attuned, one to each kind. A second engraved piece of a kind worn is dormant.',
       'Recycling an engraved piece keeps its power in the Codex for good.',
       `From the Codex, engrave any piece of the power’s kind for Ascendant Ember: ${RANKS.map((r) => `${r} ${ENGRAVE_EMBER[r]}`).join(', ')}, by the piece’s rarity. What it replaces is kept in the Codex.`,
       'Some engravings ride on Guard, Cover, a potion or a throw, which Auto never orders: only your own hands play them.',

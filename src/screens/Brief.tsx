@@ -8,7 +8,7 @@
  */
 import { leftBy } from '@/core/engravings';
 import { ENGRAVED } from '@/data/engravings';
-import { EngraveMark } from '@/ui/engrave';
+import { Runestone } from '@/ui/runes';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -397,8 +397,8 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
           practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint', '×1')}
         {/* The engraving the boss, and the Gatekeeper, can leave on a piece found whole, at their odds. */}
-        {!practice && !trial && engraving.boss && tile('engr-boss', 'is-engrave', <EngraveMark e={engraving.boss} size={30} />, `${engraving.boss.name} · Boss`, `${Math.round(ENGRAVED.boss * 100)}%`, `Engraving: ${engraving.boss.name}, left by the boss at ${Math.round(ENGRAVED.boss * 100)}%`)}
-        {!practice && !trial && engraving.keeper && engraving.keeper.id !== engraving.boss?.id && tile('engr-keeper', 'is-engrave', <EngraveMark e={engraving.keeper} size={30} />, `${engraving.keeper.name} · Gatekeeper`, `${Math.round(ENGRAVED.keeper * 100)}%`, `Engraving: ${engraving.keeper.name}, left by the Gatekeeper at ${Math.round(ENGRAVED.keeper * 100)}%`)}
+        {!practice && !trial && engraving.boss && tile('engr-boss', 'is-engrave', <Runestone e={engraving.boss} size={32} />, `${engraving.boss.name} · Boss`, `${Math.round(ENGRAVED.boss * 100)}%`, `Engraving: ${engraving.boss.name}, left by the boss at ${Math.round(ENGRAVED.boss * 100)}%`)}
+        {!practice && !trial && engraving.keeper && engraving.keeper.id !== engraving.boss?.id && tile('engr-keeper', 'is-engrave', <Runestone e={engraving.keeper} size={32} />, `${engraving.keeper.name} · Gatekeeper`, `${Math.round(ENGRAVED.keeper * 100)}%`, `Engraving: ${engraving.keeper.name}, left by the Gatekeeper at ${Math.round(ENGRAVED.keeper * 100)}%`)}
       </ul>
     </section>
   );

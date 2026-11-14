@@ -847,24 +847,32 @@ qualified them said nothing the hunter needs); `Health` and `Fatigue` as bars, `
 `Materials`, each its art on its rarity's ground, `+6` in green under it and its name under that; `Feats`
 unboxed; then the System's alerts, the finds and the buttons as before.
 
-**Engravings.** The System's, in the gear's cyan. A piece's card carries its engraving under its stats: the
-power's mark (its family's sign in a cut diamond), `Live`, `Dormant` or `Engraving` over `[Engraving: Name]`
-and its rule; `Another armour piece worn holds the live engraving.` while dormant, `Not in the Codex.` while its
-power is not kept; with no engraving, `No engraving.`; and **Engrave** (or **Engrave Anew**) while the Codex
-holds a power of its kind. Equipment's `Engravings` row, `Codex 4/16` at its right, sets a line to each kind:
-`WEAPON` over the live power and its rule, or `-- --`. The `CODEX` window opens on `Kept` and the count large
-beside the Ascendant Ember held; then a section to each kind, `Live: Withering Strike` at its head, a row to each
-power: lit while kept, dark with `Left by Orc bosses and Gatekeepers.` while not, `Auto never plays it` beside
-one that rides on Guard, Cover, a potion or a throw. Opened from a piece, it shows `Engrave` and the piece, its
-`Price`, and only its kind, each power kept with **Engrave**. The offer: `Would you like to engrave this item?` /
-`[Item: Ancient Dragon Talon]` / `[Engraving: Dirty Trick]` and its rule / in red, `It replaces [Engraving:
-Withering Strike], which is kept in the Codex.` / `Price: 120 Ascendant Ember · Held: 260`, **Cancel** and
-**Engrave**; short, the Not possible window, `Not enough Ascendant Ember. (40/120)`. Done: `[Engraving: Dirty
-Trick] has been cut into [Item: Ancient Dragon Talon].` and its rule. Recycling an engraved piece whose power is
-not kept says so in its offer, `[Engraving: Warcry] is kept in the Codex.`, and a toast after. The brief's
-rewards add a tile to the boss's engraving, `Engulf · Boss` with `8%` on its mark (and the Gatekeeper's, `· Gatekeeper`
-and `12%`); a find on a run's results carries the rune on its art and the engraving's name over its own; an
-engraved card in the Item Bag carries the rune in its corner, grey while dormant.
+**Engravings.** The System's, in the gear's cyan. Each engraving has a mark of its own (`ui/runes.tsx`): a
+carved stone shaped by its kind with one glyph cut into it, lit in the engraving's own colour once kept, grey with
+its glyph a dark groove while not, an aura about it while attuned. That colour is the mark's alone, as a rarity's
+is a piece's art: no line of text takes it. A worn piece's engraving is `Attuned`, never `Live` (the owner's call:
+the word was awkward), or `Dormant` while another piece of its kind holds the attuned one. A piece's card carries
+its engraving under its stats: its stone, `Attuned`, `Dormant` or `Engraved` (a piece not worn) over `[Engraving:
+Name]` and its rule; `Another armour piece worn holds the attuned engraving.` while dormant, `Not in the Codex.`
+while its power is not kept; with no engraving, `No engraving.`; and **Engrave** (or **Engrave Anew**) while the
+Codex holds a power of its kind. Equipment's `Engravings`, `Codex 4/16` at its right, sets the three attuned: a
+socket to each kind, `WEAPON` over the engraving's name, or `None` beside an empty stone. The `CODEX` window opens
+on `Kept` and the count large beside the Ascendant Ember held; then `ATTUNED` and the three sockets; then the
+engraving chosen, read large: `ATTUNED · WEAPON` (or `KEPT`, `NOT KEPT`), its name, its rule, the piece it is
+attuned from, `Left by Orc bosses and Gatekeepers.` while not kept, `Auto never plays it` for one that rides on
+Guard, Cover, a potion or a throw. Under it a tab to each kind, `Weapon 2/5`, and the kind's stones, each named,
+`Attuned` under the one in play and nothing under the rest: the stone says whether it is kept. Opened from a piece,
+it heads with `Engrave` and the piece, the engraving it holds and its `Price`, shows only its kind, and the
+engraving chosen carries **Engrave** and its Ember; the one already on the piece reads `Engraved`. The offer:
+`Would you like to engrave this item?` / `[Item: Ancient Dragon Talon]` / `[Engraving: Dirty Trick]` and its rule /
+in red, `It replaces [Engraving: Withering Strike], which is kept in the Codex.` / `Price: 120 Ascendant Ember ·
+Held: 260`, **Cancel** and **Engrave**; short, the Not possible window, `Not enough Ascendant Ember. (40/120)`.
+Done: `[Engraving: Dirty Trick] has been cut into [Item: Ancient Dragon Talon].` and its rule. Recycling an
+engraved piece whose power is not kept says so in its offer, `[Engraving: Warcry] is kept in the Codex.`, and a
+toast after. The brief's rewards add a tile to the boss's engraving, `Engulf · Boss` with `8%` on its stone (and
+the Gatekeeper's, `· Gatekeeper` and `12%`); a find on a run's results carries the engraving's glyph on its art
+and its name over the piece's own; an engraved tile in the Item Bag carries the glyph in its corner, dim while
+dormant.
 
 **The hunter's card.** `HUNTER: {name}`, opened from the Inventory screen's licence row and the Gates
 screen's record, its head holding no seal. It opens on the licence as the Licence window draws it, its grade's
@@ -1203,7 +1211,8 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Association Quest | job, contract, task | One of Ryn's jobs for the Association. He calls each a job; the screens call the line Association Quests |
 | Health Potion | Field Potion, field potion | The one healing potion: carried in the satchel, drunk on the hunter's turn in a fight, between rooms from the bag, or out of a Gate. There is no Field Potion any more; Ryn may still call one a flask |
 | Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Item Bag's bag |
-| Engraving | aspect, rune, enchantment, legendary power | A power cut into a piece that changes a rule of the fight, one to each family of creature: `[Engraving: Withering Strike]`. A worn piece's is `Live`, or `Dormant` while another piece of its kind holds the live one. To cut one into a piece is to engrave it: **Engrave**, **Engrave Anew**, `Would you like to engrave this item?` |
+| Engraving | aspect, rune, enchantment, legendary power | A power cut into a piece that changes a rule of the fight, one to each family of creature: `[Engraving: Withering Strike]`. A worn piece's is `Attuned`, or `Dormant` while another piece of its kind holds the attuned one. To cut one into a piece is to engrave it: **Engrave**, **Engrave Anew**, `Would you like to engrave this item?` |
+| Attuned | live, active | An engraving in play from a piece worn, one to each kind of gear: `ATTUNED`, `ATTUNED · WEAPON`. Its opposite is `Dormant`. |
 | Codex | collection, library, archive | Where an engraving is kept for good once its piece is recycled: `CODEX`, `Kept 4/16`, `[Engraving: Warcry] kept in the Codex.` A power not kept reads `Left by Orc bosses and Gatekeepers.` |
 | Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |

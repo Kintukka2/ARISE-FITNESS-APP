@@ -9,6 +9,7 @@
  * Legendary all of it, floating. The styles are `.haul__item`, `.aura` and `.lootflash` in screens.css.
  */
 import { engravingById } from '@/data/engravings';
+import { RUNE, RuneGlyph } from './runes';
 import { useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
@@ -105,7 +106,7 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
         </span>
         {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={56} /> : <GearArt defId={loot.defId} size={56} />) : <span class="flip__back">?</span>}
         {state === 'open' && bp && <span class="haul__bp" aria-hidden="true"><Glyph name="blueprint" /></span>}
-        {state === 'open' && engraving && <span class="haul__engr" aria-hidden="true"><Glyph name="engrave" /></span>}
+        {state === 'open' && engraving && <span class="haul__engr" style={`--rh: ${RUNE[engraving.id].hue}`} aria-hidden="true"><RuneGlyph e={engraving} size={14} /></span>}
       </span>
       <small>{state === 'open' ? <>{bp && <b class="haul__bpname">Blueprint</b>}{engraving && <b class="haul__engrname">{engraving.name}</b>}{def?.name}</> : ''}</small>
     </button>

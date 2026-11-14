@@ -2146,17 +2146,35 @@ with where it is found), and the one-line wording of a rule.
   kind. The Spire's blocks leave them as Gates do; a Trial, which leaves a masterwork, and the Practice Gate
   leave none. They are drawn from `${run.seed}|engrave`, apart from every other draw a run makes, so nothing
   else a run leaves moved. The brief names the boss's and the Gatekeeper's engraving and its odds.
-- **Live, one to each kind.** A worn piece's engraving is live; the first engraved piece of each kind in slot
-  order holds it, and another is dormant (`engravings.live`, `dormant`). They reach the fight as passives by
-  name through `raid.heroSpec`, and an open run keeps the hero it walked in with.
+- **Attuned, one to each kind.** A worn piece's engraving is attuned; the first engraved piece of each kind in
+  slot order holds it, and another is dormant (`engravings.live`, `dormant`). They reach the fight as passives
+  by name through `raid.heroSpec`, and an open run keeps the hero it walked in with. The word was `Live` until
+  the owner found it awkward; `Attuned` is Baldur's Gate's word for a magic item bound to its wearer, a few
+  at a time, which is what three sockets are.
 - **The Codex** (`s.codex`). Recycling an engraved piece keeps its power for good (`forge.recycle`). A power
   kept is cut into any piece of its kind for Ascendant Ember by the piece's rarity, 15 at E to 120 at S
   (`ENGRAVE_EMBER`); what it replaces is kept too, so nothing found is lost. This is step 7's first sink:
   until now Ember bought only steps past perfect, which shards and the upgrade limit held back first.
-- **Screens.** Equipment's `Engravings` row, a line to each kind and `Codex 4/16`; the `CODEX` window, a
-  section to each kind with its live power and a row to every power, kept or not, with where it is found;
-  the engraving on a piece's card, live or dormant, with **Engrave**; the rune on an engraved card in the
-  Item Bag and on a find on the results; the brief's tiles. `CODEX` joins the System's window titles.
+- **Screens**, rebuilt at the owner's call after Hollow Knight's charms, Baldur's Gate 3's spells and The
+  Witcher 3's runestones (references under "Engravings: the marks and the Codex" in
+  [step 6's README](research/references/step-6-map-army-gear-daily/README.md#engravings-the-marks-and-the-codex)):
+  - **Marks of their own** (`ui/runes.tsx`), not the families' signs: each engraving a carved stone with one
+    glyph cut into it, the stone's shape its kind (a shard for a weapon, a slab for armour, a cut gem for
+    jewellery) and the glyph its rule (a blade wilting at its tip, a closed eye), lit in a colour of its own
+    once kept. The colour is the mark's alone; no text takes it. A power not kept is a grey stone with its
+    glyph a dark groove; an attuned one has an aura about it and motes rising from it.
+  - **The three attuned**, a round socket to each kind joined by a faint line, on Equipment and at the head
+    of the `CODEX`, as Hollow Knight sets the charms worn over the charms found. A socket opens the Codex on
+    its engraving.
+  - **The `CODEX`**: `Kept 4/16` and the Ember; the three attuned; the engraving chosen read large, its stone
+    cut in again stroke by stroke in a turning circle of its colour, with how it stands and its kind, its
+    rule, the piece it is attuned from or where it is found; a tab to each kind with how many are kept; and
+    the kind's stones in a grid, the one chosen raised over a pool of its colour. Opened for a piece, it
+    heads with the piece, what it holds and its price, shows only its kind, and the engraving chosen carries
+    **Engrave** and its Ember.
+  - The engraving on a piece's card with its stone and aura, `Attuned`, `Dormant` or `Engraved` (on a piece
+    not worn), opening the Codex on it; the glyph on an engraved tile in the Item Bag and on a find on the
+    results; the stones on the brief's tiles. `CODEX` joins the System's window titles.
 - **Calibration.** `typicalHunter` carries none, so no Gate, Spire block or floor moved. `keptUpHunter`
   carries the System's three (`autoEngrave`: Withering Strike, Carapace, Overgrowth, the first of
   `AUTO_ENGRAVE` for each kind, never one that needs hands), so Ascension and the Trials moved harder:
