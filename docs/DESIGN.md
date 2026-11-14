@@ -2031,6 +2031,16 @@ with what ARISE took from them.
   filters, the stats and the recipe's chips stand unframed and the blueprints are a list), and `Better` named as the
   genre names it: a piece that beats what is worn is an `Upgrade`, marked ▲, as Diablo IV and Lost Ark mark one
   (the Forge's filter and hearth, the Item Bag's Show, the Inventory station's `▲ 3`).
+- **The Quests screen, rebuilt** (the owner's call: every screen not yet overhauled, before the plan goes on).
+  After Honkai: Star Rail's Daily Training and Solo Leveling: Arise's missions. The rail of rings holds under the
+  top bar as the log scrolls and underlines the quest in view, as the board's rail of grades does. The Daily
+  Quests are the log's hero: the count large beside the time left, a track with a diamond to each quest and the
+  completion bonus as a star at its end, what each quest and the bonus pay said once, then a line to each quest
+  with its ring. Every other quest is a row inside its section with no box of its own, a hairline between them, and
+  a picture drawn from where it stands: the rank above over the rank held with the climb between, the Trial's road
+  (a diamond to each Gate to prove, a line to the crown), the Pale Spire's storeys lit to the week's best, a
+  mosaic of the Secret Quests lit as they are done. Pay is plain gains, not chips. Ryn's card holds his job
+  unframed until it is done, when the row is the report as before. No engine changed.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

@@ -1029,88 +1029,141 @@ button.dmap__floor { cursor: pointer; }
 
 /* ------------------------------------------------------------------ the Quests screen: a log */
 
-/* The rail: a ring to every quest that stands, filled as far as it stands; gold while it waits, green once done. */
-.qrail .sysframe__glass { padding: 10px 8px; }
-.qrail__rings { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; }
-.qrail__one { --qc: var(--mana); display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 2px 0; border: 0; background: none; color: inherit; font: inherit; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--i) * 60ms); }
+/* The rail: a ring to every quest that stands, filled as far as it stands; gold while it waits, green
+   once done. It holds under the top bar as the log scrolls, the quest in view underlined, as the
+   board's rail of grades does. */
+.qrail { position: sticky; top: calc(var(--topbar-h) + var(--safe-t)); z-index: 4; margin: -4px -14px 0; padding: 8px 8px 4px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); background: linear-gradient(rgba(4, 8, 20, 0.97), rgba(4, 8, 20, 0.9)); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.qrail__rings { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2px; }
+.qrail__one { --qc: var(--mana); position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 2px 0 7px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; animation: qaIn 420ms var(--ease) both; animation-delay: calc(var(--i) * 60ms); }
 .qrail__one.is-gates { --qc: var(--ember); }
 .qrail__one.is-coach { --qc: var(--coach); }
 .qrail__ring > .portrait { position: relative; border-radius: 50%; }
 .qrail__one.is-call { --qc: var(--gold); }
 .qrail__one.is-done { --qc: var(--verdant); }
-.qrail__ring { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; color: var(--qc); }
+.qrail__ring { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--qc); }
 .qrail__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--qc) 70%, transparent)); }
 .qrail__svg circle { fill: none; stroke-width: 3.5; }
 .qrail__track { stroke: rgba(255, 255, 255, 0.1); }
 .qrail__arc { stroke: var(--qc); stroke-linecap: round; animation: saFill 900ms var(--ease) both; }
-.qrail__ring > .ico { position: relative; width: 17px; height: 17px; filter: drop-shadow(0 0 5px var(--qc)); }
+.qrail__ring > .ico { position: relative; width: 15px; height: 15px; filter: drop-shadow(0 0 5px var(--qc)); }
 .qrail__one.is-call .qrail__ring { animation: btileCount 1.5s ease-in-out infinite; }
-.qrail__one b { font-size: 0.7rem; font-weight: 700; color: var(--sys-ink); white-space: nowrap; }
+.qrail__one b { font-size: 0.68rem; font-weight: 700; color: var(--sys-ink); white-space: nowrap; }
 .qrail__one.is-call b { color: var(--gold); }
 .qrail__one small { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qrail__one::after { content: ''; position: absolute; left: 26%; right: 26%; bottom: -5px; height: 2px; border-radius: 1px; background: var(--qc); box-shadow: 0 0 8px var(--qc); transform: scaleX(0); transition: transform 200ms var(--ease); }
+.qrail__one.is-on::after { transform: scaleX(1); }
+.qrail__one.is-on small { color: #fff; }
 
-/* A section of the log: its label, then its quests. */
-.qsec .sysframe__glass { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
-.qsec__label { font-size: 0.56rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+/* A section of the log: its head (a label, a hairline, what stands at its right), then its quests,
+   a hairline between them. Only the section is framed: a row is not a box of its own. */
+.qsec .sysframe__glass { display: flex; flex-direction: column; padding: 10px 12px 2px; }
+.qsec__head { display: flex; align-items: center; gap: 10px; padding-bottom: 2px; }
+.qsec__head .label { flex: none; font-size: 0.6rem; color: var(--win); }
+.qsec__head > i { flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 40%, transparent), transparent); }
+.qsec__head small { flex: none; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.qsec__head small b { color: var(--sys-ink); }
 
-/* A quest's row: its picture, its name and count, where it stands, a bar, and what it pays. */
-.qrow { display: grid; grid-template-columns: 40px minmax(0, 1fr) 12px; align-items: center; gap: 10px; width: 100%; padding: 9px 10px 9px 8px; border-color: color-mix(in srgb, var(--win) 35%, var(--sys-hair)); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 10%, rgba(3, 8, 20, 0.6)), rgba(3, 8, 20, 0.5) 70%); color: inherit; font: inherit; text-align: left; transition: border-color 160ms, box-shadow 160ms; }
-.qrow:hover, .qrow:focus-visible { border-color: var(--win); box-shadow: 0 0 14px color-mix(in srgb, var(--win) 28%, transparent); }
-.qrow__art { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, var(--win) 45%, var(--sys-hair)); background: color-mix(in srgb, var(--win) 12%, transparent); color: var(--win); }
-.qrow__art > .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 6px var(--win-glow)); }
-.qrow__ranks { display: grid; place-items: center; gap: 1px; }
-.qrow__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.qrow__top { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
-.qrow__top b { flex: 1; min-width: 0; font-size: 0.82rem; line-height: 1.25; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
-.qrow__count { flex: none; padding: 1px 6px; border: 1px solid var(--sys-hair); font-size: 0.72rem; font-weight: 700; color: var(--sys-ink); }
-.qrow__sub { font-size: 0.68rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* A quest's row: its picture, its name and count, where it stands, what the picture adds, a bar, and its pay. */
+.qrow { --qa: var(--win); position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 12px; align-items: center; gap: 12px; width: calc(100% + 24px); margin: 0 -12px; padding: 12px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background 160ms; }
+.qsec__head + .qrow { border-top: 0; }
+.qrow:hover, .qrow:focus-visible { background: color-mix(in srgb, var(--win) 7%, transparent); }
+.qrow:active { background: color-mix(in srgb, var(--win) 12%, transparent); }
+.qrow__art { position: relative; display: grid; place-items: center; width: 44px; min-height: 44px; color: var(--qa); }
+.qrow__art > .ico { position: relative; width: 20px; height: 20px; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--qa) 70%, transparent)); }
+/* A glyph stands in a diamond of its colour. */
+.qrow--trial .qrow__art::before, .qrow--chosen .qrow__art::before, .qrow--secret .qrow__art::before { content: ''; position: absolute; left: 8px; top: 50%; width: 28px; height: 28px; margin-top: -14px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--qa) 60%, transparent); background: color-mix(in srgb, var(--qa) 13%, transparent); box-shadow: 0 0 12px color-mix(in srgb, var(--qa) 22%, transparent); }
+.qrow--chosen { --qa: var(--sysred); }
+.qrow__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.qrow__top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.qrow__top b { flex: 1; min-width: 0; font-size: 0.86rem; line-height: 1.25; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.qrow__count { flex: none; font-size: 0.8rem; font-weight: 700; color: var(--sys-ink); }
+.qrow__sub { font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
 .qrow__sub b { color: var(--sys-ink); }
-.qbar { display: block; height: 4px; background: rgba(255, 255, 255, 0.08); }
+.qbar { display: block; height: 3px; margin-top: 1px; background: rgba(255, 255, 255, 0.08); }
 .qbar > i { display: block; height: 100%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); animation: qbarIn 900ms var(--ease) both; transform-origin: left; }
 @keyframes qbarIn { from { transform: scaleX(0); } }
-.qrow__pay { display: flex; flex-wrap: wrap; gap: 4px; }
-.qpay { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.5); font-size: 0.58rem; font-weight: 600; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+/* What it pays: plain gains, the name dim and the figure green, with space between them. */
+.qrow__pay { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.qpay { font-size: 0.66rem; font-weight: 600; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .qpay .grant { font-weight: 700; }
-.qrow__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-/* Waiting on the hunter: gold, as a rank to claim always is. */
-.qrow.is-call { border-color: var(--gold); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 16%, rgba(3, 8, 20, 0.6)), rgba(3, 8, 20, 0.5) 70%); box-shadow: 0 0 14px var(--gold-glow); }
-.qrow.is-call .qrow__count { border-color: var(--gold); color: #1a1205; background: var(--gold); }
-.qrow.is-call .qrow__art { border-color: var(--gold); color: var(--gold); }
+.qrow__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+/* Waiting on the hunter: gold, as a rank to claim always is, a bar of it down the row's edge. */
+.qrow.is-call { --qa: var(--gold); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 13%, transparent), transparent 80%); }
+.qrow.is-call::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.qrow.is-call .qrow__count { padding: 1px 8px; background: var(--gold); color: #1a1205; box-shadow: 0 0 10px var(--gold-glow); }
 .qrow.is-call .qbar > i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
 .qrow.is-done .qbar > i { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
 /* A ring's jump lands on its quest, and lights it a moment. */
 .qrow.is-pinged, .qdaily.is-pinged { animation: qPing 1.2s var(--ease); }
-@keyframes qPing { 20% { box-shadow: 0 0 0 2px var(--win), 0 0 22px var(--win-glow); } }
+@keyframes qPing { 20% { background: color-mix(in srgb, var(--win) 16%, transparent); } }
 
-/* The Daily Quests: their head and countdown, a line to each with its bar, count and pay, then the bonus. */
-.qdaily { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
-.qdaily__head { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 12px; align-items: center; gap: 10px; padding: 0 2px 4px 0; }
-.qdaily__name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.qdaily__name > b { font-size: 0.86rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
-.qdaily__name small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.qdaily__name small b { color: var(--sys-ink); }
-.qdaily__one { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; animation: qaIn 420ms var(--ease) both; animation-delay: calc(120ms + var(--i) * 120ms); }
-.qdaily__mark { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.qdaily__mark .ico { width: 11px; height: 11px; }
-.qdaily__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.qdaily__body > b { font-size: 0.78rem; font-weight: 600; line-height: 1.3; color: var(--sys-ink); }
-.qdaily__side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.qdaily__side > .num { font-size: 0.78rem; font-weight: 700; }
-.qdaily__side .qline__pay { gap: 6px; font-size: 0.6rem; }
-.qdaily__one.is-done { border-color: color-mix(in srgb, var(--verdant) 50%, transparent); }
-.qdaily__one.is-done .qdaily__mark { border-color: var(--verdant); color: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
-.qdaily__one.is-done .qdaily__body > b { color: var(--verdant); }
-.qdaily__one.is-done .qbar > i { background: var(--verdant); box-shadow: 0 0 6px var(--verdant-glow); }
-.qdaily__bonus { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px dashed color-mix(in srgb, var(--gold) 45%, transparent); font-size: 0.72rem; font-weight: 600; color: color-mix(in srgb, var(--gold) 80%, var(--sys-ink)); }
-.qdaily__bonus > span:nth-child(2) { flex: 1; }
-.qdaily__bonus .qline__ring { width: 24px; height: 24px; }
-.qdaily__bonus .qline__arc { stroke: var(--gold); }
-.qdaily__bonus .qline__pay { font-size: 0.62rem; }
-/* All done: the block folds to its head, ticked, `Complete` in green where the count stood. */
-.qdaily.is-done .qdaily__head { padding-bottom: 0; }
-.qdaily.is-done .qrow__art { border-color: var(--verdant); background: color-mix(in srgb, var(--verdant) 12%, transparent); color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); }
-.qdaily__complete { border-color: var(--verdant); color: var(--verdant); background: color-mix(in srgb, var(--verdant) 12%, transparent); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.64rem; box-shadow: 0 0 8px var(--verdant-glow); animation: qaIn 420ms var(--ease) both; }
+/* The next rank: the rank above, the rank held below it, and the climb between filled as far as the level stands. */
+.qrank { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.qrank__path { position: relative; width: 2px; height: 14px; background: rgba(255, 255, 255, 0.12); }
+.qrank__path > i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--p) * 100%); background: var(--qa); box-shadow: 0 0 6px color-mix(in srgb, var(--qa) 70%, transparent); }
+.qrank > :last-child { opacity: 0.6; }
 
+/* The Trial's road: a diamond to each Gate to prove, then a line to the crown. */
+.qroad { display: flex; align-items: center; gap: 7px; margin: 1px 0 2px 1px; }
+.qroad__gate { flex: none; width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 40%, transparent); background: rgba(3, 8, 20, 0.45); }
+.qroad__gate.is-on { border-color: #fff; background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.qroad__line { flex: 1; max-width: 90px; height: 1px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--sys-ink) 40%, transparent) 0 4px, transparent 4px 7px); }
+.qroad__line.is-on { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+.qroad__crown { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid color-mix(in srgb, var(--sys-ink) 40%, transparent); border-radius: 50%; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qroad__crown .ico { width: 12px; height: 12px; }
+.qroad.is-ready .qroad__crown { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); animation: btileCount 1.5s ease-in-out infinite; }
+
+/* The Pale Spire's storeys, widening to the ground, lit from it to the week's best. */
+.qtower { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; }
+.qtower__tip { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 9px solid color-mix(in srgb, var(--qa) 55%, transparent); }
+.qtower > i:not(.qtower__tip) { width: calc(14px + var(--s) * 2.6px); height: 5px; border: 1px solid color-mix(in srgb, var(--qa) 38%, transparent); background: rgba(20, 10, 4, 0.55); }
+.qtower > i.is-on { border-color: var(--qa); background: linear-gradient(var(--qa), color-mix(in srgb, var(--qa) 55%, #000)); box-shadow: 0 0 8px color-mix(in srgb, var(--qa) 55%, transparent); }
+
+/* The Secret Quests: a cell to each, a run of cells to each tier, lit once done. */
+.qmosaic { display: flex; flex-wrap: wrap; gap: 4px 9px; margin: 2px 0; }
+.qmosaic__tier { display: flex; flex-wrap: wrap; gap: 2px; }
+.qmosaic i { width: 7px; height: 7px; border: 1px solid color-mix(in srgb, var(--sys-ink) 20%, transparent); }
+.qmosaic i.is-on { border-color: var(--win); background: var(--win); box-shadow: 0 0 5px var(--win-glow); }
+
+/* The Daily Quests, the log's hero: the count large and the time left, a track to the bonus, what they
+   pay, then a line to each. */
+.qsec--daily .sysframe__glass { padding: 12px 12px 4px; }
+.qdaily { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.qdaily__head { display: flex; align-items: center; gap: 12px; }
+.qdaily__big { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.qdaily__big > b { font-size: 2.2rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.qdaily__big > b small { margin-left: 2px; font-size: 1.1rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.qdaily__big .label { font-size: 0.6rem; color: var(--win); }
+.qdaily__clock { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.qdaily__clock small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qdaily__clock b { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em; color: var(--sys-ink); }
+.qdaily__complete { padding: 3px 10px; border: 1px solid var(--verdant); background: color-mix(in srgb, var(--verdant) 14%, transparent); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--verdant); box-shadow: 0 0 10px var(--verdant-glow); animation: qaIn 420ms var(--ease) both; }
+/* The track: a diamond to each quest, the bonus a star at its end; lit green as they are done. */
+.qtrack { position: relative; display: flex; align-items: center; justify-content: space-between; height: 34px; }
+.qtrack__rail { position: absolute; left: 11px; right: 16px; top: 50%; height: 2px; margin-top: -1px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--sys-ink) 34%, transparent) 0 5px, transparent 5px 9px); }
+.qtrack__rail > i { display: block; width: calc(var(--fill) * 100%); height: 100%; background: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); transition: width 600ms var(--ease); }
+.qtrack__node { position: relative; display: grid; place-items: center; width: 22px; height: 22px; }
+.qtrack__node::before { content: ''; position: absolute; inset: 3px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 45%, transparent); background: rgb(5, 10, 22); }
+.qtrack__node b { position: relative; font-size: 0.6rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.qtrack__node.is-on::before { border-color: var(--verdant); background: color-mix(in srgb, var(--verdant) 34%, rgb(5, 10, 22)); box-shadow: 0 0 10px var(--verdant-glow); }
+.qtrack__node.is-on b { color: #fff; }
+.qtrack__star { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border: 1px dashed color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 50%; background: rgb(5, 10, 22); color: color-mix(in srgb, var(--gold) 75%, transparent); }
+.qtrack__star .ico { width: 15px; height: 15px; }
+.qtrack__star.is-on { border: 1px solid var(--verdant); background: var(--verdant); color: #04140c; box-shadow: 0 0 16px var(--verdant-glow); animation: btileCount 2.4s ease-in-out infinite; }
+/* What they pay, once: each quest, and the bonus. */
+.qdaily__bonus { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 5px 12px; padding-bottom: 2px; }
+.qdaily__bonus > span:not(.qline__pay) { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qdaily__bonus .qline__pay { justify-self: stretch; flex-wrap: wrap; justify-content: flex-end; gap: 2px 10px; font-size: 0.7rem; white-space: normal; }
+.qdaily__bonus .qline__pay > span { white-space: nowrap; }
+/* A line to each quest: its ring, its order and bar, its count. */
+.qdaily__one { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: 0 -12px; padding: 10px 12px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); animation: qaIn 420ms var(--ease) both; animation-delay: calc(120ms + var(--i) * 120ms); }
+.qdaily__one .qline__ring { width: 26px; height: 26px; }
+.qdaily__body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.qdaily__body > b { font-size: 0.8rem; font-weight: 600; line-height: 1.3; color: var(--sys-ink); }
+.qdaily__n { font-size: 0.8rem; font-weight: 700; color: var(--sys-ink); }
+.qdaily__one.is-done .qline__arc { stroke: var(--verdant); filter: drop-shadow(0 0 3px var(--verdant-glow)); }
+.qdaily__one.is-done .qdaily__body > b, .qdaily__one.is-done .qdaily__n { color: var(--verdant); }
+.qdaily.is-done { gap: 8px; padding-bottom: 8px; }
 
 @keyframes qaIn { from { opacity: 0; transform: translateY(-12px) scale(0.97); } }
 

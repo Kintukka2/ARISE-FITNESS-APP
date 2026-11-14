@@ -77,7 +77,7 @@ Every surface a player reads has one speaker. A new surface gets a row here befo
 | A block of the Pale Spire taken, on its results: **Climb On · Floors 86-90** over **Leave The Gate**; the range is the next block's, as the Spire's head writes it | The interface | `Results` in `screens/Arena.tsx` |
 | Leaving with a Shadow still lingering: `A Shadow Lingers` | The interface, as the unrevealed loot's reminder is | `screens/Arena.tsx` |
 | A purchase or a use offered: `Would you like to purchase?` / `Would you like to drink?` / `Would you like to use?`, and under it **Do not ask again** | The System's Offer; the toggle is the interface's control, and Settings lists what it skips | `ui/ask.tsx`, `screens/Settings.tsx` |
-| Ryn's Association Quests: his card at the top of the Quests screen (the log's first section, shaped as its rows: `Association Quest · No. 6` and `Ryn Valcorde` over his face, the job and its count, his line held to two lines until tapped, a bar, and the pay as chips; once done, the row is the report, gold, with a strip along its foot: **Report To Ryn**, then the pay, `XP +675 · Fatigue Potion`, and the job ticked), his windows when he hands a job over and pays for one, the alert on a run's results (shaped as the System's alerts, in his blue, his corner brackets and his face) | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
+| Ryn's Association Quests: his card at the top of the Quests screen (the log's first section, shaped as its rows: `Association Quest · No. 6` and `Ryn Valcorde` over his face, the job and its count, his line held to two lines until tapped, a bar, and the pay as plain gains, the job unframed; once done, the row is the report, gold, with a strip along its foot: **Report To Ryn**, then the pay, `XP +675 · Fatigue Potion`, and the job ticked), his windows when he hands a job over and pays for one, the alert on a run's results (shaped as the System's alerts, in his blue, his corner brackets and his face) | Valcorde, on his channel. The job's goal and its pay on the card and the strip are the interface's labels inside it | `ui/assoc.tsx`, `data/narrative.ts` (`ASSOC_FIRST`, `ASSOC_BRIEF`, `ASSOC_PAID`) |
 | The board's `Association` chip, and the brief's `Association Quest:` hint | The interface | `screens/Gates.tsx`, `screens/Brief.tsx` |
 | The `?` on a Stats sheet field, and the line it opens on what the number does and where it comes from | The interface, inside the System's frame, as a hint is; one line each, its numbers read from the engine (`CRIT`, `HIT`). The `?` sits in the top right corner of every such box; the whole box is the button, and the line shows only once it is tapped, never on hover | `FIGHT_HELP` in `screens/Inventory.tsx`, `Field` in `ui/frame.tsx` |
 | The action wheel. Shut, it is one round button, `Actions`, with the picked action's glyph and a tick round it for each slot. Open, a slot to each skill slot the rank holds (an empty slot dashed), then the throwable readied (`Ember Flask`, or `Throw` with none), `Potion`, `Guard`, `Cover` and `Strike`, each with its glyph and name (every skill its own, `SKILL_GLYPH`; Guard's in blue, Potion's in green, the rest in the Gates' ember), an item's count held in a badge at its glyph's top right, and under them, always in the same place, a green dot when the skill defeats the foe aimed at more surely than a Strike would (a ring for may). The hub says everything there is to say about the slot shown, and nothing sits under the wheel: the name, `Lv.2 · Ready` or `Ready in 2`, `Damage 386-522` over `Hit 95%` on the foe aimed at (`No damage` for a curse or a support) and `Inflicts Staggered` for what a skill inflicts, Guard's `Damage taken -50%` over `Aimed at you: 2` (with Foresight `Incoming 7-9` over `Guarded 3-4`; `Damage taken -50%` alone with nothing coming), Potion's `HP +25%`, Cover's ally over `Nothing aimed at them` or `Aimed at them: 2` (with Foresight `On Jaemin Nam 8-11` over `On you 3-4`), a throw's verb and reach over its status's line (`Burn up to 3 foes` over `Burning: HP -7% each rd`; `Stun one foe`, `Root one foe`), then `Defeats it` or `May defeat it` in green where it does, and last, in small capitals, how to use it: `Tap again to use`, or `Let go to use` while a finger drags over it, or why it cannot be used (`Ready in 2`, `None held`, `HP full`, `None left`, `Sealed: Dry`) in red. Two ways to use a slot, and nothing is used on a first tap: press the shut button (or anywhere on the open wheel), drag onto a slot and the hub shows it, and let go on it; or tap a slot, and tap it again. Let go anywhere but a slot, and nothing is used. With Cover picked, every ally standing outlined in the defence's blue, to be tapped, and the hint `Your turn. Covering Jaemin Nam; tap an ally to change.`; the ally covered wears `Covered` in blue until the hunter's next turn. A Strike is never marked. Ranges, never the roll, each read aloud with `to`; a hub line read aloud in full (`each round`) | The interface, as the turn bar is | `ActWheel` in `screens/Arena.tsx`, `finishers` and `Turn.aims` in `core/combat.ts` |
@@ -510,14 +510,24 @@ that there is none.
 **The Quests screen.** One page, a log: Ryn's card, then a rail of rings, one to each quest that
 stands, labelled `Ryn` (his face in it, in his blue: his job, `Report` once it is done), `Daily`, `Rank`, `Trial`, `Chosen`, `Weekly` and `Secret` under its count, a ring
 filled as far as its quest stands, gold while it waits on the hunter and green once done; a ring
-jumps to its quest. Then the quests in System frames: the Daily Quests, a line to each with its bar,
-its count and its pay, and `Completion bonus` with the day's bonus (once all are done, the block
-folds to its head, `Complete` in green where its count stood); `Advancement` (Reclassification,
-the Trial, the Chosen); `Weekly` (the Pale Spire, its frame orange); `Record` (the Secret Quests, the
-latest done and each tier's count). A quest's row carries its bracketed name and count, one line of
-where it stands (`Reach Level 35 · XP needed: 7,073`), a bar, and its pay as chips (`Ability Points
-+5`, `Reward tier: B-Rank`, `Masterwork: Legendary Off-Hand`). A row waiting on the hunter (a rank to
-claim, the Trial open) is gold. Tapping a row opens the quest's QUEST INFO window in a sheet, gold
+jumps to its quest. The rail holds under the top bar as the log scrolls and underlines the quest in
+view. Then the quests in System frames. The Daily Quests come first, the log's hero: the count large
+(`0/3`, `Daily Quests` under it) beside `New Daily Quests in` and the time; a track with a diamond to
+each quest, numbered, and a star at its end for the completion bonus, lit green as they are done;
+`Each quest` and `Completion bonus` with what they pay, said once; then a line to each quest with its
+ring, its order, a bar for a count above one, and its count. Once all are done the block folds to its
+head and the lit track, `Complete` in green where the time stood. Then `Advancement` (Reclassification,
+the Trial, the Chosen); `Weekly` (the Pale Spire, its frame orange, `New week in:` at its head);
+`Record` (the Secret Quests, `Sealed:` at its head). A section's head is its label, a hairline and what
+stands at its right; its quests are rows with no box of their own, a hairline between them. A row
+carries a picture drawn from where its quest stands (the rank above over the rank held, the climb
+between filled; the Trial's road, a diamond to each Gate to prove and a line to the crown; the Pale
+Spire's storeys lit to the week's best; the Chosen's crown in red; a cell to each Secret Quest, lit
+once done), its bracketed name and count, one line of where it stands (`Reach Level 35 · XP needed:
+7,073`), a bar, and its pay as plain gains with space between them (`Ability Points +5`, `Reward
+tier: B-Rank`, `Masterwork: Legendary Off-Hand`). A row waiting on the hunter (a rank to claim, the
+Trial open) is gold, a gold edge down its side and its count on gold. Tapping a row opens the quest's
+QUEST INFO window in a sheet, gold
 for advancement. Every quest's name wears its type, and these are the names:
 
 | Quest | Name | Goals |

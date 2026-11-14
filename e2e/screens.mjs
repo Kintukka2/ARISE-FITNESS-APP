@@ -263,8 +263,20 @@ try {
   if (!(await page.locator('.qrail__one.is-coach').first().count())) throw new Error('RYN’S JOB HAS NO RING ON THE RAIL');
   if (!(await page.locator('.assoccard .assoccard__row').count())) throw new Error('RYN’S CARD IS NOT SHAPED AS THE LOG’S ROWS');
   if ((await page.locator('.qdaily__one').count()) !== 3) throw new Error('THE LOG DOES NOT LIST THE DAY’S THREE');
+  // The Daily Quests head the log: a diamond to each on the track and a star for the bonus.
+  if ((await page.locator('.qtrack__node').count()) !== 3 || !(await page.locator('.qtrack__star').count())) throw new Error('THE DAILY QUESTS HAVE NO TRACK TO THEIR BONUS');
+  // A row is no box of its own, and its picture is drawn from where the quest stands.
+  if (await page.locator('.qrow.sysbox, .qdaily__one.sysbox').count()) throw new Error('A QUEST ROW IS STILL BOXED');
+  for (const sel of ['.qrow--rank .qrank', '.qrow--spire .qtower', '.qrow--secret .qmosaic']) {
+    if (!(await page.locator(sel).count())) throw new Error(`A QUEST ROW HAS NO PICTURE: ${sel}`);
+  }
   await page.locator('.qrail__one', { hasText: 'Secret' }).click(); await sleep(700);
   if (!(await page.locator('#quest-secret').isVisible())) throw new Error('A RING DID NOT JUMP TO ITS QUEST');
+  // The rail holds under the top bar as the log scrolls, and marks the quest in view.
+  const railTop = await page.locator('.qrail').evaluate((el) => el.getBoundingClientRect().top);
+  const barBottom = await page.locator('.topbar').evaluate((el) => el.getBoundingClientRect().bottom);
+  if (Math.abs(railTop - barBottom) > 2) throw new Error(`THE QUEST RAIL DID NOT HOLD UNDER THE TOP BAR (${railTop} against ${barBottom})`);
+  if (!(await page.locator('.qrail__one.is-on').count())) throw new Error('THE QUEST RAIL MARKS NO QUEST IN VIEW');
   await snap('quests-jump'); await page.evaluate(() => window.scrollTo(0, 0)); await sleep(300);
   for (const k of ['rank', 'spire', 'secret']) {
     await page.locator(`.qrow--${k}`).click(); await sleep(450);

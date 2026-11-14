@@ -1,7 +1,8 @@
 /**
  * Quests: everything the System has set the hunter, as a log on one page. Ryn's job first; then a rail
- * of rings, one to each quest, that jumps to it; then the quests in their frames: the day's, the
- * climbs, the week's and the record, a row to each with its bar and what it pays. A row opens its
+ * of rings, one to each quest, held under the top bar, that jumps to it and marks the one in view; then
+ * the quests in their frames: the day's as the hero, with its track to the bonus; the climbs, the week's
+ * and the record, a row to each with its picture, its bar and what it pays. A row opens its
  * QUEST INFO window in a sheet. Nothing here pays: each quest is settled where it always was (Daily Quests in `raid.finish`,
  * a rank in `grantXP`, the Spire's week in `spire.settle`, a Trial and the Chosen in `raid.finish`).
  * This screen only says where each one stands.
@@ -10,7 +11,7 @@ import { claimRank, playBeats } from '@/app/flow';
 import * as association from '@/core/association';
 import { AssocCard, firstJob } from '@/ui/assoc';
 import type { ComponentChildren, FunctionComponent } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as ascension from '@/core/ascension';
 import * as contracts from '@/core/contracts';
@@ -43,6 +44,9 @@ import { openBrief } from './Gates';
 const openQuest = (Body: FunctionComponent<{ close: () => void }>, kind: FrameKind = 'system') =>
   openSheet({ title: 'Quest Info', system: { kind }, render: (close) => <Body close={close} /> });
 
+/** The Pale Spire's storeys on its row, lit from the ground to the week's best. */
+const STOREYS = 6;
+
 /** One quest on the log, as the rail rings it: how far it stands, and whether it waits on the hunter. */
 interface Entry {
   key: 'assoc' | 'daily' | 'rank' | 'spire' | 'trial' | 'chosen' | 'secret';
@@ -74,6 +78,8 @@ export function Quests() {
   const daily = dailyEntry(s, day), rank = rankEntry(s), spireE = spireEntry(s, day), trial = trialEntry(s, day), chosen = chosenEntry(s, day), secret = secretEntry(s);
   // A rank waiting to be claimed leads the climbs.
   const entries = [job, daily, rank, trial, chosen, spireE, secret].filter((e): e is Entry => !!e);
+  const week = msUntilWeek();
+  const sealed = MISSIONS.length - heldOf(s).length;
   return (
     <div class="stack qlog">
       <AssocCard />
@@ -81,7 +87,7 @@ export function Quests() {
       {daily && <DailySection s={s} day={day} />}
       {(rank || trial || chosen) && (
         <SysFrame class="qsec" label="Advancement">
-          <span class="label qsec__label">Advancement</span>
+          <QHead label="Advancement" />
           {rank && <RankRow s={s} />}
           {trial && <TrialRow s={s} day={day} />}
           {chosen && <ChosenRow s={s} day={day} />}
@@ -89,15 +95,26 @@ export function Quests() {
       )}
       {spireE && (
         <SysFrame class="qsec" kind="gates" label="Weekly Quest">
-          <span class="label qsec__label">Weekly</span>
+          <QHead label="Weekly" meta={<>New week in: <b class="num">{Math.floor(week / 864e5) ? `${Math.floor(week / 864e5)}d ` : ''}{hhmmss(week % 864e5)}</b></>} />
           <SpireRow s={s} day={day} />
         </SysFrame>
       )}
       <SysFrame class="qsec" label="Secret Quests">
-        <span class="label qsec__label">Record</span>
+        <QHead label="Record" meta={<>Sealed: <b class="num">{sealed}</b></>} />
         <SecretRow s={s} />
       </SysFrame>
     </div>
+  );
+}
+
+/** A section's head: its label, a hairline, and what stands at its right. */
+function QHead({ label, meta }: { label: string; meta?: ComponentChildren }) {
+  return (
+    <header class="qsec__head">
+      <span class="label">{label}</span>
+      <i aria-hidden="true" />
+      {meta && <small>{meta}</small>}
+    </header>
   );
 }
 
@@ -108,6 +125,29 @@ export function Quests() {
  * hunter and green once done. A ring jumps to its quest, and lights it.
  */
 function QuestRail({ entries }: { entries: Entry[] }) {
+  const keys = entries.map((e) => e.key);
+  const [on, setOn] = useState<string>(keys[0] ?? '');
+  // The rail holds under the top bar as the log scrolls, and marks the quest in view.
+  useEffect(() => {
+    let raf = 0;
+    const spy = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const rail = document.querySelector('.qrail');
+        const line = (rail?.getBoundingClientRect().bottom ?? 0) + 40;
+        const end = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+        let pick = keys[0] ?? '';
+        for (const k of keys) {
+          const el = document.getElementById(`quest-${k}`);
+          if (el && el.getBoundingClientRect().top <= line) pick = k;
+        }
+        setOn(end ? keys[keys.length - 1] : pick);
+      });
+    };
+    spy();
+    window.addEventListener('scroll', spy, { passive: true });
+    return () => { window.removeEventListener('scroll', spy); cancelAnimationFrame(raf); };
+  }, [keys.join()]);
   const jump = (key: string) => {
     sfx.tap();
     const el = document.getElementById(`quest-${key}`);
@@ -119,11 +159,11 @@ function QuestRail({ entries }: { entries: Entry[] }) {
   };
   const C = 2 * Math.PI * 21;
   return (
-    <SysFrame class="qrail" label="Quest log">
+    <nav class="qrail" aria-label="Quest log">
       <div class="qrail__rings" style={`--n: ${entries.length}`}>
         {entries.map((e, i) => (
-          <button key={e.key} type="button" class={`qrail__one is-${e.kind} ${e.coach ? 'is-coach' : ''} ${e.call ? 'is-call' : ''} ${e.done ? 'is-done' : ''}`} style={`--i: ${i}`}
-            aria-label={`${e.label}: ${e.count}`} onClick={() => jump(e.key)}>
+          <button key={e.key} type="button" class={`qrail__one is-${e.kind} ${e.coach ? 'is-coach' : ''} ${e.call ? 'is-call' : ''} ${e.done ? 'is-done' : ''} ${on === e.key ? 'is-on' : ''}`} style={`--i: ${i}`}
+            aria-label={`${e.label}: ${e.count}`} aria-current={on === e.key ? 'true' : undefined} onClick={() => jump(e.key)}>
             <span class="qrail__ring">
               <svg class="qrail__svg" viewBox="0 0 50 50" aria-hidden="true">
                 <circle class="qrail__track" cx="25" cy="25" r="21" />
@@ -136,21 +176,26 @@ function QuestRail({ entries }: { entries: Entry[] }) {
           </button>
         ))}
       </div>
-    </SysFrame>
+    </nav>
   );
 }
 
-/** A quest's row: its picture, its bracketed name and count, where it stands, a bar, and what it pays. It opens its window. */
-function QuestRow({ id, art, name, sub, p, count, call, done, pay, onOpen }: {
+/**
+ * A quest's row: its picture, its bracketed name and count, where it stands, what the picture adds
+ * (the Trial's road, the Secret Quests' mosaic), a bar, and what it pays as plain gains. No box of its
+ * own: the section holds it, a hairline between rows, and the whole row opens its window.
+ */
+function QuestRow({ id, art, name, sub, p, count, call, done, pay, extra, onOpen }: {
   id: Entry['key']; art: ComponentChildren; name: string; sub: ComponentChildren; p: number | null; count: ComponentChildren;
-  call?: boolean; done?: boolean; pay: ComponentChildren[]; onOpen: () => void;
+  call?: boolean; done?: boolean; pay: ComponentChildren[]; extra?: ComponentChildren; onOpen: () => void;
 }) {
   return (
-    <button type="button" id={`quest-${id}`} class={`sysbox qrow qrow--${id} ${call ? 'is-call' : ''} ${done ? 'is-done' : ''}`} onClick={() => { sfx.tap(); onOpen(); }}>
+    <button type="button" id={`quest-${id}`} class={`qrow qrow--${id} ${call ? 'is-call' : ''} ${done ? 'is-done' : ''}`} onClick={() => { sfx.tap(); onOpen(); }}>
       <span class="qrow__art" aria-hidden="true">{art}</span>
       <span class="qrow__body">
         <span class="qrow__top"><b>[{name}]</b><span class="qrow__count num">{count}</span></span>
         <small class="qrow__sub">{sub}</small>
+        {extra}
         {p !== null && <i class="qbar" aria-hidden="true"><i style={`width: ${Math.round(Math.max(0, Math.min(1, p)) * 100)}%`} /></i>}
         {pay.length > 0 && <span class="qrow__pay">{pay.map((x, i) => <span key={i} class="qpay">{x}</span>)}</span>}
       </span>
@@ -180,44 +225,56 @@ function dailyEntry(s: Save, day: string): Entry | null {
 }
 
 /**
- * The day's Daily Quests: their head, the time left, and a line to each, with its bar, its count and
- * what it pays; then the completion bonus. Once all are done the block folds to its head, `Complete`
- * where the count stood. The whole block opens their window.
+ * The day's Daily Quests, the log's hero, after Honkai: Star Rail's Daily Training and Solo Leveling:
+ * Arise's missions: the count large with the time left beside it; a track with a diamond to each quest
+ * and the completion bonus as a star at its end, lit as they are done; what each quest and the bonus
+ * pay, once; then a line to each quest with its ring, its bar and its count. Once all are done the
+ * block folds to its head and the lit track, `Complete` where the time stood. The whole block opens
+ * their window.
  */
 function DailySection({ s, day }: { s: Save; day: string }) {
   const c = contracts.today(s, day);
   const pay = contracts.payOf(c.grade);
   const bonus = contracts.bonusOf(c.grade);
+  const n = c.list.length;
   const done = c.list.filter((k) => k.done).length;
-  const all = done === c.list.length;
+  const all = done === n;
+  // The track runs from the first diamond to the star: it reaches each diamond as that many are done, and the star with the last.
+  const fill = all ? 1 : done ? (done - 1) / n : 0;
   return (
-    <SysFrame class="qsec qsec--daily" label="Daily Quests">
+    <SysFrame class={`qsec qsec--daily ${all ? 'is-done' : ''}`} label="Daily Quests">
       <button type="button" id="quest-daily" class={`qdaily ${all ? 'is-done' : ''}`} onClick={() => { sfx.tap(); openQuest(DailyBody); }}>
         <span class="qdaily__head">
-          <span class="qrow__art"><Glyph name={all ? 'check' : 'quest'} /></span>
-          <span class="qdaily__name"><b>[Daily Quests]</b><small>New Daily Quests in: <b class="num">{hhmmss(msUntilMidnight())}</b></small></span>
+          <span class="qdaily__big">
+            <b class="num">{done}<small>/{n}</small></b>
+            <span class="label">Daily Quests</span>
+          </span>
           {all
-            ? <span class="qrow__count qdaily__complete" aria-label={`Complete: ${done} of ${c.list.length}`}>Complete</span>
-            : <span class="qrow__count num">{done}/{c.list.length}</span>}
+            ? <span class="qdaily__complete" aria-label={`Complete: ${done} of ${n}`}>Complete</span>
+            : <span class="qdaily__clock"><small>New Daily Quests in</small><b class="num">{hhmmss(msUntilMidnight())}</b></span>}
           <Glyph name="chevron" class="qrow__go" />
         </span>
-        {!all && c.list.map((k, i) => (
-          <span key={k.kind} class={`sysbox qdaily__one ${k.done ? 'is-done' : ''}`} style={`--i: ${i}`}>
-            <span class="qdaily__mark">{k.done && <Glyph name="check" />}</span>
-            <span class="qdaily__body">
-              <b>{contracts.contractText(k, c.grade)}</b>
-              <i class="qbar" aria-hidden="true"><i style={`width: ${Math.round(Math.min(1, k.got / Math.max(1, k.need)) * 100)}%`} /></i>
-            </span>
-            <span class="qdaily__side"><span class="num">{Math.min(k.got, k.need)}/{k.need}</span><Pay {...pay} /></span>
-          </span>
-        ))}
+        <span class={`qtrack ${all ? 'is-all' : ''}`} style={`--fill: ${fill}`} aria-hidden="true">
+          <i class="qtrack__rail"><i /></i>
+          {c.list.map((_, i) => <i key={i} class={`qtrack__node ${i < done ? 'is-on' : ''}`} style={`--i: ${i}`}><b class="num">{i + 1}</b></i>)}
+          <span class={`qtrack__star ${all ? 'is-on' : ''}`}><Glyph name="star" /></span>
+        </span>
         {!all && (
           <span class="qdaily__bonus">
-            <Ring p={done / Math.max(1, c.list.length)} mark="star" />
-            <span>Completion bonus</span>
-            <Pay {...bonus} />
+            <span>Each quest</span><Pay {...pay} />
+            <span>Completion bonus</span><Pay {...bonus} />
           </span>
         )}
+        {!all && c.list.map((k, i) => (
+          <span key={k.kind} class={`qdaily__one ${k.done ? 'is-done' : ''}`} style={`--i: ${i}`}>
+            <Ring p={Math.min(1, k.got / Math.max(1, k.need))} done={k.done} />
+            <span class="qdaily__body">
+              <b>{contracts.contractText(k, c.grade)}</b>
+              {k.need > 1 && !k.done && <i class="qbar" aria-hidden="true"><i style={`width: ${Math.round(Math.min(1, k.got / Math.max(1, k.need)) * 100)}%`} /></i>}
+            </span>
+            <span class="qdaily__n num">{Math.min(k.got, k.need)}/{k.need}</span>
+          </span>
+        ))}
       </button>
     </SysFrame>
   );
@@ -253,7 +310,13 @@ function RankRow({ s }: { s: Save }) {
   if (q.ascension) pay.push(<span class="grant">Ascension</span>);
   return (
     <QuestRow id="rank" name={`Reclassification: ${q.to.name}`} call={q.ready} count={q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`}
-      art={<span class="qrow__ranks"><Sigil rank={q.from.key} size={22} /><Sigil rank={q.to.key} size={22} /></span>}
+      art={(
+        <span class="qrank" style={`--p: ${q.share}`}>
+          <Sigil rank={q.to.key} size={28} />
+          <i class="qrank__path"><i /></i>
+          <Sigil rank={q.from.key} size={20} />
+        </span>
+      )}
       sub={q.ready ? 'Requirements met.' : <>Reach Level {q.to.min} · XP needed: <b class="num">{group(q.left)}</b></>}
       p={q.share} pay={pay} onOpen={() => openQuest(RankBody, 'gold')} />
   );
@@ -320,12 +383,17 @@ function SpireRow({ s, day }: { s: Save; day: string }) {
   const goal = spire.tierGoal(s, day);
   const pay = spire.seasonTier(goal)!;
   const b = spire.blockOf(spire.nextSpire(s, day).floor ?? 1);
-  const left = msUntilWeek();
-  const days = Math.floor(left / 864e5);
+  // The Spire's storeys, lit from the ground to the week's best on the way to the floor that raises its tier.
+  const lit = Math.round(Math.min(1, best / Math.max(1, goal)) * STOREYS);
   return (
     <QuestRow id="spire" name={`Weekly Quest: ${SPIRE_NAME}`} count={`${best}/${goal}`}
-      art={<Glyph name="spire" />}
-      sub={<>Clear Floor {goal} · Floors {spire.firstFloor(b)}-{spire.lastFloor(b)} next · New week in: <b class="num">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</b></>}
+      art={(
+        <span class="qtower">
+          <i class="qtower__tip" />
+          {Array.from({ length: STOREYS }, (_, i) => <i key={i} style={`--s: ${i}`} class={STOREYS - i <= lit ? 'is-on' : ''} />)}
+        </span>
+      )}
+      sub={<>Clear Floor {goal} · Floors {spire.firstFloor(b)}-{spire.lastFloor(b)} next</>}
       p={best / Math.max(1, goal)}
       pay={[<>Reward tier: {pay.tier}</>, <>Mana Shards <b class="grant num">+{group(pay.shards)}</b></>, <>{RARITY[pay.rank].name} gear <b class="grant num">+1</b></>]}
       onOpen={() => openQuest(SpireBody, 'gates')} />
@@ -390,7 +458,14 @@ function TrialRow({ s, day }: { s: Save; day: string }) {
     <QuestRow id="trial" name={`Trial: Ascension ${a.unlocked + 1}`} call={ready} count={ready ? 'Open' : `${got}/${need}`}
       art={<Glyph name="cert" />}
       sub={ready ? 'The Trial is open.' : proved ? 'Faced today.' : <>Gates proved: {got}/{need} · Then {rounds} of the Chosen</>}
-      p={got / Math.max(1, need)} pay={pay} onOpen={() => openQuest(TrialBody, 'gold')} />
+      extra={(
+        <span class={`qroad ${ready ? 'is-ready' : ''}`} aria-hidden="true">
+          {Array.from({ length: need }, (_, i) => <i key={i} class={`qroad__gate ${i < got ? 'is-on' : ''}`} />)}
+          <i class={`qroad__line ${proved ? 'is-on' : ''}`} />
+          <span class="qroad__crown"><Glyph name="crown" /></span>
+        </span>
+      )}
+      p={null} pay={pay} onOpen={() => openQuest(TrialBody, 'gold')} />
   );
 }
 
@@ -495,11 +570,22 @@ function SecretRow({ s }: { s: Save }) {
   const sealed = MISSIONS.length - held.length;
   const tiers = Object.keys(TIER_NAMES) as MissionTier[];
   const last = held[0];
+  const got = new Set(held.map((m) => m.id));
   return (
     <QuestRow id="secret" name="Secret Quests" count={`${held.length}/${MISSIONS.length}`} done={!sealed}
       art={<Glyph name="eye" />}
-      sub={last ? <>Latest: {last.name} · Sealed: {sealed}</> : `Sealed: ${sealed}`}
-      p={held.length / MISSIONS.length}
+      sub={last ? <>Latest: {last.name}</> : 'None done yet.'}
+      extra={(
+        // A cell to each Secret Quest, a run of cells to each tier: lit once done, sealed ones dark. Nothing names them.
+        <span class="qmosaic" aria-hidden="true">
+          {tiers.map((t) => (
+            <span key={t} class={`qmosaic__tier is-${t}`}>
+              {MISSIONS.filter((m) => m.tier === t).map((m) => <i key={m.id} class={got.has(m.id) ? 'is-on' : ''} />)}
+            </span>
+          ))}
+        </span>
+      )}
+      p={null}
       pay={tiers.map((k) => <>{TIER_NAMES[k]} <b class="num">{held.filter((m) => m.tier === k).length}/{MISSIONS.filter((m) => m.tier === k).length}</b></>)}
       onOpen={() => openQuest(SecretBody)} />
   );
