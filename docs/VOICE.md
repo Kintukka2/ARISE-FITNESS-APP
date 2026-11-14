@@ -830,6 +830,12 @@ short, its price red. A card that cannot be bought (`Bought`, `Satchel full`, `B
 where its price would be. A card's note is short, `Satchel: 1/3`, `Held: 2`, `Bag: 0/3`; the Guide
 says where each is used.
 
+**The Guide.** A codex: `Find in the Guide` heads it; under it an index, a row to each topic with its
+mark and how many lines it holds; a topic opened is its page, `All topics` at its head to go back. A search
+lists every line that holds the words under its topic, the words lit, or `Nothing in the Guide holds those
+words.` **Settings** opens on `How Arise Works` / `The Guide: every rule, with its numbers.`; its storage
+reads `Persistent` or `Best-effort` as a light over the line it has always had.
+
 **A run's results.** A title card: the Gate's plate and name small (`E-Rank` plate, `Rustwater Drain`), the
 outcome large in its colour (`Gate Cleared` green, `Withdrawn` orange, `Carried Out` red) with a rule under
 it, then the line it has always had. Then `XP` and `Shards` large side by side, each with what qualifies it

@@ -817,8 +817,15 @@ try {
   await page.locator('.sheet.is-top .shopbp').first().scrollIntoViewIfNeeded(); await sleep(300); await snap('exchange-blueprints');
   await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
+  // Settings opens on the Guide as a card, and the save's storage shows as a light.
+  if (!(await page.locator('.sheet.is-top .setguide').count()) || !(await page.locator('.sheet.is-top .setsave__store').count())) throw new Error('SETTINGS LOST ITS GUIDE CARD OR ITS STORAGE LIGHT');
   await page.locator('.sheet.is-top >> text=How Arise Works').click(); await sleep(400);
-  await page.locator('.sheet.is-top .fold__head').first().click(); await sleep(300); await snap('guide');
+  // The Guide is a codex: an index of topics, a page to each, and a box that finds a word in every line.
+  await page.locator('.sheet.is-top .guide__topic').first().click(); await sleep(300); await snap('guide');
+  if (!(await page.locator('.sheet.is-top .guide__page .guide__list li').count())) throw new Error('A GUIDE TOPIC DID NOT OPEN ITS PAGE');
+  await page.locator('.sheet.is-top .guide__find input').fill('fatigue'); await sleep(300);
+  if (!(await page.locator('.sheet.is-top .guide mark').count())) throw new Error('THE GUIDE FOUND NOTHING FOR A WORD IT HOLDS');
+  await snap('guide-find');
 
   // ---------------------------------------------------------------- the ascended hunter: S-Rank, three levels open
   page = await phone(ascended);

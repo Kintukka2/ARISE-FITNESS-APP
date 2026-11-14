@@ -3677,3 +3677,57 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .unit { padding-left: 33px; }
 .unit__mark { left: 6px; width: 22px; height: 22px; }
 .unit__name { font-size: 0.8rem; }
+
+/* ------------------------------------------------------------------ the Guide and Settings, rebuilt */
+
+/* GUIDE: a codex. A box to find a word in; an index of topics, a row to each with its mark and how many
+   lines it holds; a topic's page with the way back at its head; a search's lines under their topics. */
+.guide__find { display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); background: rgba(3, 8, 20, 0.6); }
+.guide__find .ico { flex: none; width: 16px; height: 16px; color: var(--win); }
+.guide__find input { flex: 1; min-width: 0; height: 42px; border: 0; background: none; color: #fff; font: inherit; font-size: 0.9rem; outline: none; }
+.guide__find:focus-within { border-color: var(--win); box-shadow: 0 0 12px var(--win-glow); }
+.guide__topics { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.guide__topic { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background 160ms; }
+.guide__topic:hover, .guide__topic:focus-visible { background: color-mix(in srgb, var(--win) 7%, transparent); }
+.guide__topic b { font-size: 0.9rem; font-weight: 600; color: #fff; }
+.guide__topic small, .guide__pagehead small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.guide__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.guide__mark { position: relative; display: grid; place-items: center; width: 30px; height: 30px; color: var(--win); }
+.guide__mark::before { content: ''; position: absolute; inset: 5px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--win) 50%, transparent); background: color-mix(in srgb, var(--win) 10%, transparent); }
+.guide__mark .ico { position: relative; width: 14px; height: 14px; filter: drop-shadow(0 0 4px var(--win-glow)); }
+.guide__page { display: flex; flex-direction: column; gap: 10px; }
+.guide__back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: none; color: var(--win); font: inherit; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.guide__back .ico { width: 14px; height: 14px; }
+.guide__pagehead { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--win) 40%, transparent); }
+.guide__pagehead b { font-size: 1.02rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.guide .guide__list { gap: 0; padding: 0; list-style: none; }
+.guide .guide__list li { position: relative; padding: 9px 2px 9px 18px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.86rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
+.guide .guide__list li::before { content: ''; position: absolute; left: 3px; top: 16px; width: 5px; height: 5px; transform: rotate(45deg); background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+.guide mark { padding: 0 1px; background: color-mix(in srgb, var(--gold) 30%, transparent); color: #fff; }
+
+/* SETTINGS: the Guide as a card, then sections under heads with hairlines, the save's storage as a light. */
+.setguide { display: grid; grid-template-columns: 40px minmax(0, 1fr) 12px; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 14%, rgba(3, 8, 20, 0.7)), rgba(3, 8, 20, 0.6) 70%); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.setguide:hover, .setguide:focus-visible { border-color: var(--win); box-shadow: 0 0 14px var(--win-glow); }
+.setguide__mark { display: grid; place-items: center; width: 40px; height: 40px; color: var(--win); }
+.setguide__mark .ico { width: 22px; height: 22px; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.setguide__text { display: flex; flex-direction: column; gap: 2px; }
+.setguide__text b { font-size: 0.94rem; color: #fff; }
+.setguide__text small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.setguide__go { width: 12px; height: 12px; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.setsec { display: flex; flex-direction: column; gap: 8px; }
+.setsave { display: flex; flex-direction: column; gap: 6px; margin: 0; font-size: 0.8rem; line-height: 1.45; }
+.setsave__store { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sys-ink); }
+.setsave__store i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.setsave__store.is-safe { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); color: var(--verdant); }
+.setsave__store.is-safe i { background: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
+.setsave__store.is-risk { border-color: color-mix(in srgb, var(--gold) 55%, transparent); color: var(--gold); }
+.setsave__store.is-risk i { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.setsave__btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+/* ONBOARDING: the licence drawn as the Licence window draws it, the grade's colour and letter behind it. */
+.licence { --rc: var(--rank-E); position: relative; overflow: hidden; border-color: color-mix(in srgb, var(--rc) 45%, var(--edge)); border-radius: 3px; background: linear-gradient(135deg, color-mix(in srgb, var(--rc) 16%, rgba(10, 22, 46, 0.95)), rgba(6, 12, 28, 0.95) 65%); }
+.licence::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(125deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 14px 15px); pointer-events: none; }
+.licence > header, .licence > dl { position: relative; z-index: 1; }
+.licence__letter { position: absolute; right: -6px; bottom: -28px; font-size: 8.5rem; font-weight: 900; line-height: 1; color: color-mix(in srgb, var(--rc) 14%, transparent); pointer-events: none; }
+.licence dd { color: #fff; text-shadow: var(--sys-glow); transition: color 200ms; }
+.licence__letter { right: auto; left: -10px; bottom: -34px; color: color-mix(in srgb, var(--rc) 9%, transparent); }

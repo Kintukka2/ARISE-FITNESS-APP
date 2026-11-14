@@ -2062,6 +2062,14 @@ with what ARISE took from them.
   between them; every card carries its mark at its left (a creature's family, the hunter's grade, a Shadow's or a
   hunter's sign, a boss's in gold), its side's colour down its edge and a fuller HP bar. The action wheel, intents and
   tips are as they were. No engine changed, and nothing a fight reads moved.
+- **Settings, the Guide and the licence at the desk** (the same call, the last of the screens). The Guide is a codex,
+  after Hades' Codex: a box that finds a word in every line (each line that holds it listed under its topic, the
+  word lit), an index of the seventeen topics with a mark and a count of lines each, and a topic's page with the way
+  back at its head; every line still reads its numbers from the engine. Settings opens on the Guide as a card, its
+  sections under heads with hairlines, the save's storage as a light (`Persistent` green, `Best-effort` gold), Export
+  and Import side by side and Erase standing apart. At the Association's desk the licence is drawn as the Licence
+  window draws it, the grade's colour and letter behind, and the name fills in on it as it is typed. No engine
+  changed.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

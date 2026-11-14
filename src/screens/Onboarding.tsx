@@ -45,6 +45,8 @@ function Coach({ lines, onDone, onLine, hot }: { lines: string[]; onDone: () => 
 function Licence({ name, reg, lifted }: { name?: string; reg?: string; lifted?: boolean }) {
   return (
     <div class={`licence reveal ${lifted ? 'is-lifted' : ''}`}>
+      {/* The grade's letter behind, as the Licence window's card carries it. */}
+      <span class="licence__letter" aria-hidden="true">E</span>
       <header>
         <div><span class="label">Hunter Association</span><b>Hunter Licence</b></div>
         <Sigil rank="E" size={40} />
@@ -78,7 +80,8 @@ export function Awakening() {
         <Coach hot lines={[...ASSESSMENT, NAME_PROMPT]}
           onLine={(i) => { if (i === 2) { setShowCard(true); sfx.ping(); flash(); } }}
           onDone={() => setStep('name')} />
-        {showCard && <Licence />}
+        {/* The name fills in on the licence as it is typed. */}
+        {showCard && <Licence name={name.trim().toUpperCase()} />}
         {step === 'name' && (
           <form class="card stack reveal" onSubmit={(e) => {
             e.preventDefault();

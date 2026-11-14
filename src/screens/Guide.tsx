@@ -34,7 +34,9 @@ import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION } from '@/data/drops'
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
 import { ASSOC, SURVEY } from '@/data/association';
 import { BLOCK, SEASON_PAY, SPIRE_FLOORS, SPIRE_GROWTH, SPIRE_NAME, SPIRE_OPENS, SPIRE_TOP } from '@/data/spire';
-import { Fold } from '@/ui/components';
+import { useState } from 'preact/hooks';
+import { sfx } from '@/audio/audio';
+import { Glyph } from '@/ui/icons';
 import { openSheet } from '@/ui/overlays';
 
 /**
@@ -451,17 +453,70 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   },
 ];
 
+/** Each topic's mark in the index. */
+const TOPIC_GLYPH: Record<string, string> = {
+  'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
+  Gates: 'gates', 'Seals, Feats and special drops': 'lock', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
+  Ascension: 'cert', 'Health, mana and fatigue': 'heart', Shadows: 'shadows', 'Kin and Formation': 'roster',
+  'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
+};
+
+/**
+ * The Guide as a codex, after Hades' Codex: a box to find a word in, an index of the topics, a row to
+ * each with its mark and how many lines it holds, and a topic's page once one is opened, with the way
+ * back to the index at its head. A search lists every line that holds the words, under its topic.
+ */
+function GuideBody() {
+  const [q, setQ] = useState('');
+  const [at, setAt] = useState<string | null>(null);
+  const query = q.trim().toLowerCase();
+  const found = query ? TOPICS.map((t) => ({ t, lines: t.lines.filter((l) => l.toLowerCase().includes(query)) })).filter((x) => x.lines.length) : [];
+  const topic = at ? TOPICS.find((t) => t.title === at) : undefined;
+  const mark = (line: string) => {
+    if (!query) return line;
+    const i = line.toLowerCase().indexOf(query);
+    return i < 0 ? line : <>{line.slice(0, i)}<mark>{line.slice(i, i + query.length)}</mark>{line.slice(i + query.length)}</>;
+  };
+  return (
+    <div class="stack guide">
+      <label class="guide__find">
+        <Glyph name="eye" />
+        <input type="search" placeholder="Find in the Guide" value={q} aria-label="Find in the Guide"
+          onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
+      </label>
+      {query ? (
+        found.length
+          ? found.map(({ t, lines }) => (
+            <section key={t.title} class="guide__page">
+              <header class="guide__pagehead"><span class="guide__mark"><Glyph name={TOPIC_GLYPH[t.title] ?? 'book'} /></span><b>{t.title}</b><small class="num">{lines.length}</small></header>
+              <ul class="guide__list">{lines.map((l) => <li key={l}>{mark(l)}</li>)}</ul>
+            </section>
+          ))
+          : <p class="muted center">Nothing in the Guide holds those words.</p>
+      ) : topic ? (
+        <section class="guide__page">
+          <button type="button" class="guide__back" onClick={() => { sfx.tap(); setAt(null); }}><Glyph name="back" /> All topics</button>
+          <header class="guide__pagehead"><span class="guide__mark"><Glyph name={TOPIC_GLYPH[topic.title] ?? 'book'} /></span><b>{topic.title}</b><small class="num">{topic.lines.length}</small></header>
+          <ul class="guide__list">{topic.lines.map((l) => <li key={l}>{l}</li>)}</ul>
+        </section>
+      ) : (
+        <ul class="guide__topics">
+          {TOPICS.map((t) => (
+            <li key={t.title}>
+              <button type="button" class="guide__topic" onClick={() => { sfx.tap(); setAt(t.title); }}>
+                <span class="guide__mark"><Glyph name={TOPIC_GLYPH[t.title] ?? 'book'} /></span>
+                <b>{t.title}</b>
+                <small class="num">{t.lines.length}</small>
+                <Glyph name="chevron" class="guide__go" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function openGuide() {
-  openSheet({
-    title: 'Guide', system: { icon: null },
-    render: () => (
-      <div class="stack">
-        {TOPICS.map((t) => (
-          <Fold key={t.title} title={t.title}>
-            <ul class="guide__list">{t.lines.map((l) => <li key={l}>{l}</li>)}</ul>
-          </Fold>
-        ))}
-      </div>
-    ),
-  });
+  openSheet({ title: 'Guide', system: { icon: null }, render: () => <GuideBody /> });
 }
