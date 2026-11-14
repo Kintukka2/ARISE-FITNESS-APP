@@ -46,6 +46,8 @@ export interface Item {
   over?: number;
   /** A masterwork: the Ascension level of the Chosen that left it. */
   master?: number;
+  /** Its engraving: a power cut into it, by its family's id (`data/engravings.ts`). */
+  engr?: string;
 }
 
 // ------------------------------------------------------------------ combat data
@@ -340,6 +342,8 @@ export interface Save {
   items: Item[];
   equipped: Partial<Record<SlotKey, string>>;
   favourites: string[];
+  /** The Codex: every engraving kept for good, by recycling an engraved piece. */
+  codex: string[];
   /** Every design id ever held. */
   found: string[];
   /** Items come into the bag since the hunter last looked: marked New until they have been. */

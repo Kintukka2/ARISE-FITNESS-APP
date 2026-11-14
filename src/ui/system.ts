@@ -10,7 +10,7 @@ import type { Effect } from '@/data/nodes';
 import type { Action, Kind, WinOpts } from './overlays';
 
 /** The only headers a System window may carry. Cards carry their own name instead. */
-export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Stats', 'Skills', 'Equipment', 'Item Bag', 'Forge', 'Exchange', 'Gates', 'Licence', 'Ascension', 'Marks', 'Army', 'Settings', 'Guide'] as const;
+export const HEADERS = ['Notification', 'Quest Info', 'Quest Rewards', 'Status', 'Stats', 'Skills', 'Equipment', 'Item Bag', 'Forge', 'Exchange', 'Gates', 'Licence', 'Ascension', 'Marks', 'Codex', 'Army', 'Settings', 'Guide'] as const;
 export type Header = (typeof HEADERS)[number];
 
 /**

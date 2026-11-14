@@ -8,6 +8,8 @@ const P: Record<string, string> = {
   shadowsBack: 'M8.5 4.3a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4zM2.3 19.5a6.2 6.2 0 0 1 12.4 0z',
   // The System's quest mark: its hexagon, with the circled window's "!" cut through it (the cut runs the other way round).
   quest: 'M12 1.8 21 7v10l-9 5.2L3 17V7zm-1.3 4.8.5 7.8h1.6l.5-7.8zM12 16a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 1 0 0-2.8z',
+  // An engraving: a cut rune, a diamond with a diamond cut out of it and its mark at the heart.
+  engrave: 'M12 1.8 21.2 12 12 22.2 2.8 12zM12 6.8 7.4 12l4.6 5.2 4.6-5.2zM12 10.4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2z',
   lock: 'M12 2a5 5 0 0 1 5 5v2h1.5A1.5 1.5 0 0 1 20 10.5v9A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5v-9A1.5 1.5 0 0 1 5.5 9H7V7a5 5 0 0 1 5-5zm0 2.4A2.6 2.6 0 0 0 9.4 7v2h5.2V7A2.6 2.6 0 0 0 12 4.4z',
   unlock: 'M12 2a5 5 0 0 1 5 5h-2.4A2.6 2.6 0 0 0 9.4 7v2h9.1A1.5 1.5 0 0 1 20 10.5v9A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5v-9A1.5 1.5 0 0 1 5.5 9H7V7a5 5 0 0 1 5-5z',
   // tools

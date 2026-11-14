@@ -3851,3 +3851,168 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .rankcrest .rc-f--lit { fill: color-mix(in srgb, currentColor 34%, #050a14); }
 .glicence__crest { color: var(--rc); opacity: 0.32; }
 .licence__crest { color: var(--rc); opacity: 0.22; }
+
+/* ------------------------------------------------------------------ Engravings and the Codex */
+
+/* An engraving's mark (ui/runes.tsx): a carved stone of its kind, its glyph lit in its own colour. */
+.rune { --rh: var(--win); position: relative; display: inline-grid; place-items: center; flex: none; width: var(--s); height: var(--s); isolation: isolate; }
+.rune > svg { position: relative; z-index: 1; overflow: visible; }
+.rune__shade { fill: rgba(0, 0, 0, 0.5); }
+.rune__body { fill: color-mix(in srgb, var(--rh) 8%, #0b0f17); stroke: color-mix(in srgb, var(--rh) 34%, #2a3343); stroke-width: 0.8; }
+.rune__face { fill: color-mix(in srgb, var(--rh) 13%, #1c2330); }
+.rune__facets { fill: none; stroke: rgba(255, 255, 255, 0.08); stroke-width: 0.55; }
+.rune__fleck { fill: rgba(255, 255, 255, 0.08); }
+.rune__fleck.is-dark { fill: rgba(0, 0, 0, 0.4); }
+.rune__groove { fill: none; stroke: rgba(0, 0, 0, 0.8); stroke-width: 3.1; stroke-linecap: round; stroke-linejoin: round; }
+.rune__cut { fill: none; stroke: var(--rh); stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1px var(--rh)) drop-shadow(0 0 2.6px color-mix(in srgb, var(--rh) 80%, transparent)); }
+.rune__core { fill: none; stroke: color-mix(in srgb, var(--rh) 30%, #fff); stroke-width: 0.7; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
+.rune.is-big .rune__cut { stroke-width: 1.9; }
+/* Sealed: a power not kept. The stone is grey and the glyph only a groove, its shape there to be read. */
+.rune.is-sealed { --rh: #7d8798; }
+.rune.is-sealed .rune__body { fill: #0c1018; stroke: rgba(150, 165, 190, 0.22); }
+.rune.is-sealed .rune__face { fill: #171c26; }
+.rune.is-sealed .rune__cut { stroke: rgba(160, 178, 205, 0.3); filter: none; }
+.rune.is-sealed .rune__core { display: none; }
+/* Dormant: kept and worn, but another piece of its kind holds the attuned one. */
+.rune.is-dormant .rune__cut { stroke: color-mix(in srgb, var(--rh) 42%, #3a4252); filter: none; }
+.rune.is-dormant .rune__core { display: none; }
+/* Attuned: in play. An aura about the stone, its edge lit, motes rising. */
+.rune.is-attuned .rune__body { stroke: color-mix(in srgb, var(--rh) 75%, #fff); stroke-width: 0.9; }
+.rune.is-attuned::before { content: ''; position: absolute; z-index: 0; inset: -24%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--rh) 42%, transparent), color-mix(in srgb, var(--rh) 14%, transparent) 58%, transparent); animation: runeAura 3.4s ease-in-out infinite; }
+.rune__motes { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.rune__motes i { position: absolute; bottom: 24%; left: 30%; width: 3px; height: 3px; border-radius: 50%; background: color-mix(in srgb, var(--rh) 60%, #fff); box-shadow: 0 0 6px var(--rh); opacity: 0; animation: runeMote 3s linear infinite; }
+.rune__motes i:nth-child(2) { left: 62%; animation-delay: 0.8s; animation-duration: 3.6s; }
+.rune__motes i:nth-child(3) { left: 46%; animation-delay: 1.7s; }
+.rune__motes i:nth-child(4) { left: 74%; animation-delay: 2.4s; animation-duration: 2.6s; width: 2px; height: 2px; }
+/* Cut in stroke by stroke as it is chosen. */
+.rune.is-drawn .rune__cut { stroke-dasharray: 100; animation: runeCut 1000ms var(--ease) both; }
+.rune.is-drawn .rune__core { animation: runeCore 1300ms ease both; }
+.rune.is-drawn > svg { animation: runeLift 520ms var(--ease) both; }
+.rune.is-empty .rune__hollow { fill: rgba(255, 255, 255, 0.02); stroke: color-mix(in srgb, var(--sys-ink) 34%, transparent); stroke-width: 0.9; stroke-dasharray: 2.6 2.2; }
+@keyframes runeAura { 0%, 100% { opacity: 0.7; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes runeMote { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(calc(var(--s) * -0.62)); } }
+@keyframes runeCut { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes runeCore { 0%, 55% { opacity: 0; } 100% { opacity: 0.9; } }
+@keyframes runeLift { from { transform: scale(0.86); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.runeglyph { flex: none; fill: none; stroke: var(--rh); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px var(--rh)); }
+.runeglyph.is-dim { stroke: color-mix(in srgb, var(--rh) 40%, #4a5262); filter: none; }
+/* The circle behind a mark being read. */
+.arcring { color: var(--rh, var(--win)); overflow: visible; }
+.arcring circle, .arcring line, .arcring path { fill: none; stroke: currentColor; stroke-width: 0.45; opacity: 0.55; }
+.arcring .is-faint { opacity: 0.22; }
+.arcring__inner path:not(.is-faint) { fill: currentColor; stroke: none; opacity: 0.5; }
+.arcring__outer { transform-origin: 50px 50px; animation: arcSpin 90s linear infinite; }
+.arcring__inner { transform-origin: 50px 50px; animation: arcSpin 60s linear infinite reverse; }
+@keyframes arcSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .rune.is-attuned::before, .rune__motes i, .rune.is-drawn .rune__cut, .rune.is-drawn .rune__core, .rune.is-drawn > svg, .arcring__outer, .arcring__inner { animation: none; }
+  .rune__motes { display: none; }
+}
+
+/* A piece's tile in the Item Bag carries its engraving's glyph in its corner, dim while dormant. */
+.engbadge { position: absolute; top: 4px; left: 5px; z-index: 2; display: grid; place-items: center; width: 16px; height: 16px; }
+/* A find on a run's results: the glyph on the art, the engraving's name over the piece's. */
+.haul__engr { --rh: var(--win); position: absolute; left: -4px; bottom: -4px; z-index: 3; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid color-mix(in srgb, var(--rh) 70%, transparent); background: rgb(4, 10, 24); box-shadow: 0 0 10px color-mix(in srgb, var(--rh) 45%, transparent); }
+.haul__engrname { display: block; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
+
+/* A piece's engraving on its card: its stone with the aura of its colour behind it, how it stands, its name and rule. */
+.engblock { --rh: var(--win); position: relative; display: flex; flex-direction: column; gap: 10px; padding: 12px 2px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.engblock__power::before { content: ''; position: absolute; top: 50%; left: -12px; width: 84px; height: 84px; margin-top: -42px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--rh) 26%, transparent), color-mix(in srgb, var(--rh) 8%, transparent) 60%, transparent); pointer-events: none; }
+.engblock.is-dormant .engblock__power::before, .engblock.is-kept .engblock__power::before { opacity: 0.45; }
+.engblock__power { position: relative; display: grid; grid-template-columns: 60px minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.engblock__power .rune { justify-self: center; transition: transform 220ms var(--ease); }
+.engblock__power:active .rune { transform: scale(0.94); }
+.engblock__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.engblock__state { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--win); }
+.engblock.is-dormant .engblock__state, .engblock.is-kept .engblock__state { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.engblock__text b { font-size: 0.9rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.engblock__text small { font-size: 0.76rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.engblock__text small.hint { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.engblock__none { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 0.78rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+
+/* The three attuned: a round socket to each kind, joined by a faint line, each holding its stone. */
+.triad { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.triad::before { content: ''; position: absolute; top: 31px; left: 16%; right: 16%; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--win) 45%, transparent) 20%, color-mix(in srgb, var(--win) 45%, transparent) 80%, transparent); }
+.triad__sock { --rh: var(--win); position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 0 2px 2px; border: 0; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.triad__well { position: relative; display: grid; place-items: center; width: 62px; height: 62px; margin-bottom: 4px; transition: transform 220ms var(--ease); }
+.triad__well::before { content: ''; position: absolute; inset: 3px; border: 1px solid color-mix(in srgb, var(--sys-ink) 18%, transparent); border-radius: 50%; background: radial-gradient(closest-side, rgb(3, 8, 20), rgba(6, 14, 30, 0.85)); }
+.triad__sock.is-on .triad__well::before { border-color: color-mix(in srgb, var(--rh) 55%, transparent); box-shadow: 0 0 16px color-mix(in srgb, var(--rh) 24%, transparent), inset 0 0 14px color-mix(in srgb, var(--rh) 22%, transparent); }
+.triad__sock.is-chosen .triad__well::before { border-color: var(--rh); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rh) 40%, transparent), 0 0 18px color-mix(in srgb, var(--rh) 34%, transparent), inset 0 0 14px color-mix(in srgb, var(--rh) 26%, transparent); }
+.triad__sock:active .triad__well { transform: scale(0.94); }
+.triad__sock small { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.triad__sock b { max-width: 100%; font-size: 0.78rem; font-weight: 700; line-height: 1.2; text-wrap: balance; color: #fff; }
+.triad__sock:not(.is-on) b { font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+
+/* CODEX: the count kept and the Ember, the three attuned, the engraving chosen read large, the kinds, the stones. */
+.cx { gap: 14px; }
+.cx-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 0 2px 10px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.cx-head > span { display: flex; flex-direction: column; gap: 3px; }
+.cx-head small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.cx-head__n b { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.cx-head__n b small { font-size: 0.95rem; letter-spacing: 0; text-transform: none; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.cx-head__ember { flex-direction: row !important; align-items: center; gap: 8px !important; }
+.cx-head__ember > span { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.cx-head__ember b { font-size: 1.05rem; color: var(--ember); }
+.cx-attuned { display: flex; flex-direction: column; gap: 8px; }
+.cx-for { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.cx-for > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cx-for small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.cx-for b { font-size: 0.9rem; color: #fff; }
+.cx-for i { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-style: normal; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.cx-for__cost { align-items: flex-end; }
+.cx-for__cost b { color: var(--ember); }
+/* The engraving chosen: its stone cut anew in a turning circle, the aura of its colour behind. */
+.cx-ins { --rh: var(--win); position: relative; display: grid; grid-template-columns: 124px minmax(0, 1fr); grid-template-areas: 'art text' 'act act'; align-items: center; gap: 4px 12px; margin: 0 -4px; padding: 8px 6px 12px; overflow: hidden; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); background: radial-gradient(ellipse 120px 110px at 66px 50%, color-mix(in srgb, var(--rh) 20%, transparent), transparent 75%), linear-gradient(180deg, transparent, rgba(3, 8, 20, 0.45)); }
+.cx-ins.is-sealed { --rh: #7d8798; }
+.cx-ins__art { grid-area: art; position: relative; display: grid; place-items: center; width: 124px; height: 124px; }
+.cx-ins__ring { position: absolute; inset: 0; display: grid; place-items: center; animation: insRing 800ms var(--ease) both; }
+.cx-ins__ring svg { width: 100%; height: 100%; }
+.cx-ins.is-sealed .cx-ins__ring { opacity: 0.4; }
+.cx-ins__text { grid-area: text; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; animation: insText 460ms var(--ease) both; }
+.cx-ins__state { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--win); }
+.cx-ins.is-kept .cx-ins__state { color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.cx-ins.is-sealed .cx-ins__state { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.cx-ins__name { font-size: 1.15rem; font-style: italic; font-weight: 800; line-height: 1.15; color: #fff; text-shadow: var(--sys-glow); }
+.cx-ins.is-sealed .cx-ins__name { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); text-shadow: none; }
+.cx-ins__text p { margin: 0; font-size: 0.8rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 86%, transparent); }
+.cx-ins.is-sealed .cx-ins__text p { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.cx-ins__on { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.cx-ins__where { font-size: 0.7rem; font-style: italic; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.cx-ins__hands { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.cx-ins__act { grid-area: act; margin-top: 6px; }
+.cx-ins__price { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-family: var(--font-num); color: var(--ember); }
+.cx-ins__done { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
+.cx-ins__done .ico { width: 14px; height: 14px; }
+@keyframes insText { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes insRing { from { opacity: 0; transform: scale(0.8) rotate(-40deg); } to { opacity: 1; transform: none; } }
+/* The kinds, underlined, each with how many of its engravings are kept. */
+.cx-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+.cx-tab { position: relative; display: flex; align-items: baseline; justify-content: center; gap: 6px; min-height: 42px; padding: 0 4px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-family: var(--font-sys); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; touch-action: manipulation; }
+.cx-tab small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.cx-tab.is-on { color: #fff; }
+.cx-tab.is-on small { color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.cx-tab.is-on::after { content: ''; position: absolute; left: 14%; right: 14%; bottom: -1px; height: 2px; background: var(--win); box-shadow: 0 0 8px var(--win-glow); }
+/* The stones of a kind: lit once kept, the one chosen raised over a pool of its colour. */
+.cx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 2px; margin: -6px 0 0; padding: 0; list-style: none; }
+.cx-cell { --rh: var(--win); position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; height: 100%; padding: 10px 4px 9px; border: 0; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.cx-cell::before { content: ''; position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse 58% 50% at 50% 36%, color-mix(in srgb, var(--rh) 24%, transparent), transparent 78%); transition: opacity 260ms ease; }
+.cx-cell::after { content: ''; position: absolute; left: 32%; right: 32%; bottom: 0; height: 2px; background: var(--rh); box-shadow: 0 0 8px var(--rh); transform: scaleX(0); transition: transform 260ms var(--ease); }
+.cx-cell.is-sel::before { opacity: 1; }
+.cx-cell.is-sel::after { transform: none; }
+.cx-cell.is-sealed { --rh: #8592a6; }
+.cx-cell .rune { transition: transform 260ms var(--ease); }
+.cx-cell.is-sel .rune { transform: translateY(-3px) scale(1.06); }
+.cx-cell:active .rune { transform: scale(0.92); }
+@media (hover: hover) { .cx-cell:hover .rune { transform: translateY(-3px) scale(1.06); } }
+.cx-cell b { position: relative; font-size: 0.74rem; font-weight: 700; line-height: 1.2; text-wrap: balance; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.cx-cell.is-sealed b { font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 42%, transparent); }
+.cx-cell.is-sel b { color: #fff; }
+.cx-cell small { position: relative; min-height: 0.8em; font-size: 0.52rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.cx-cell.is-attuned small { color: var(--win); }
+@media (max-width: 359px) {
+  .cx-ins { grid-template-columns: 104px minmax(0, 1fr); background: radial-gradient(ellipse 100px 96px at 56px 50%, color-mix(in srgb, var(--rh) 20%, transparent), transparent 75%); }
+  .cx-ins__art { width: 104px; height: 104px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-ins__ring, .cx-ins__text { animation: none; }
+}

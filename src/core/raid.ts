@@ -7,6 +7,8 @@
  * step, so closing the app can neither dodge a loss nor reroll a turn. What the
  * run finds is banked on it and paid out once, in `finish`.
  */
+import * as engravings from './engravings';
+import { engravingById } from '@/data/engravings';
 import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
@@ -72,7 +74,9 @@ export function heroSpec(s: Save, now = Date.now(), level = 0): UnitSpec {
   const b = tree.buildOf(s);
   // An armour set's 4-piece grants a blessing for every Gate, as a shrine's would.
   const boons = setBoons(items);
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: b.passives, bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero', ...(Object.keys(boons).length ? { boons } : {}) };
+  // The engravings live on what is worn, one to each kind, ride in as passives by name.
+  const engr = engravings.live(s).map((id) => engravingById(id)!.name);
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: [...b.passives, ...engr], bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero', ...(Object.keys(boons).length ? { boons } : {}) };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
@@ -1232,6 +1236,14 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   }
   forge.give(s, mats);
   const loot = lootIds.map((id, i) => grant(s, id, `${run.seed}|${i}`) ?? make(id)).filter(Boolean);
+  // A clear's boss and Gatekeeper leave a piece found whole with their family's engraving, at stated odds,
+  // drawn apart from everything else the run leaves.
+  if (cleared && kept && !practice) {
+    for (const [k, x] of engravings.engravedDrops(d, run.seed, !!run.tally?.keeper).entries()) {
+      const it = grant(s, x.defId, `${run.seed}|engrave|${k}`);
+      if (it) { it.engr = x.engr; loot.push(it); }
+    }
+  }
   // The weapon carried in grows familiar with every creature the party felled, however the run ended.
   const familiarity = practice ? null : forge.grow(s, run.weapon, run.felled.length);
 

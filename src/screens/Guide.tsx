@@ -1,4 +1,5 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
+import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
@@ -444,6 +445,19 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
+    title: 'Engravings and the Codex',
+    lines: [
+      `An engraving is a power cut into a piece: it changes a rule of the fight. There are ${ENGRAVINGS.length}, one to each family of creature.`,
+      `A Gate's boss leaves a piece found whole with its family's engraving ${Math.round(ENGRAVED.boss * 100)}% of the time it is defeated in a clear, and its Gatekeeper ${Math.round(ENGRAVED.keeper * 100)}%. The brief names which.`,
+      `Engravings come in three kinds: ${GROUPS.map((g) => `${g.name.toLowerCase()} on ${g.slots.map((x) => x.toLowerCase()).join(', ')}`).join('; ')}. The families that leave bone cut weapons, hide armour, and a core jewellery.`,
+      'A worn piece’s engraving is attuned, one to each kind. A second engraved piece of a kind worn is dormant.',
+      'Recycling an engraved piece keeps its power in the Codex for good.',
+      `From the Codex, engrave any piece of the power’s kind for Ascendant Ember: ${RANKS.map((r) => `${r} ${ENGRAVE_EMBER[r]}`).join(', ')}, by the piece’s rarity. What it replaces is kept in the Codex.`,
+      'Some engravings ride on Guard, Cover, a potion or a throw, which Auto never orders: only your own hands play them.',
+      ...ENGRAVINGS.map((e) => `${e.name} (${e.family}, ${GROUPS.find((g) => g.key === e.group)!.name.toLowerCase()}): ${e.text}`),
+    ],
+  },
+  {
     title: 'Your data',
     lines: [
       'Everything is stored on this device. Nothing is sent anywhere.',
@@ -457,7 +471,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 const TOPIC_GLYPH: Record<string, string> = {
   'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
   Gates: 'gates', 'Seals, Feats and special drops': 'lock', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
-  Ascension: 'cert', 'Health, mana and fatigue': 'heart', Shadows: 'shadows', 'Kin and Formation': 'roster',
+  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Shadows: 'shadows', 'Kin and Formation': 'roster',
   'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
 };
 

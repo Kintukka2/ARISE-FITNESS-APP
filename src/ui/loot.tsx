@@ -8,6 +8,8 @@
  * a glow from Uncommon, a pulse from Rare, turning rays from Epic, orbiting sparks from Heroic, and at
  * Legendary all of it, floating. The styles are `.haul__item`, `.aura` and `.lootflash` in screens.css.
  */
+import { engravingById } from '@/data/engravings';
+import { RUNE, RuneGlyph } from './runes';
 import { useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
@@ -87,7 +89,9 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
   const rank = def?.rank ?? 'E';
   const sparks = state === 'open' ? SPARKS[rank] ?? 0 : 0;
   const bp = 'blueprint' in loot && !!loot.blueprint;
-  const name = `${bp ? 'Blueprint: ' : ''}${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}`.trim();
+  // A piece found engraved shows its engraving's name over its own, and the rune on its art.
+  const engraving = 'item' in loot ? engravingById(loot.item.engr) : undefined;
+  const name = `${bp ? 'Blueprint: ' : ''}${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}${engraving ? `, engraved: ${engraving.name}` : ''}`.trim();
   return (
     <button type="button" class={`haul__item flip is-${state} ${state === 'open' && onOpen ? 'is-link' : ''} ${bp ? 'is-blueprint' : ''}`} style={`--i:${i}`} data-rarity={rank}
       aria-label={state === 'open' ? (onOpen ? `${name}, open its card` : name) : 'Reveal this item'}
@@ -102,8 +106,9 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
         </span>
         {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={56} /> : <GearArt defId={loot.defId} size={56} />) : <span class="flip__back">?</span>}
         {state === 'open' && bp && <span class="haul__bp" aria-hidden="true"><Glyph name="blueprint" /></span>}
+        {state === 'open' && engraving && <span class="haul__engr" style={`--rh: ${RUNE[engraving.id].hue}`} aria-hidden="true"><RuneGlyph e={engraving} size={14} /></span>}
       </span>
-      <small>{state === 'open' ? <>{bp && <b class="haul__bpname">Blueprint</b>}{def?.name}</> : ''}</small>
+      <small>{state === 'open' ? <>{bp && <b class="haul__bpname">Blueprint</b>}{engraving && <b class="haul__engrname">{engraving.name}</b>}{def?.name}</> : ''}</small>
     </button>
   );
 }

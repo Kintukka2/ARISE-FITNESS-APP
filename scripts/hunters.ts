@@ -6,6 +6,7 @@ import { ALL_DUNGEONS } from '@/core/gates';
 import * as shadows from '@/core/shadows';
 import { autoAllocate, POINTS_PER_LEVEL, RANK_LADDER, RANK_UP_POINTS, rankFor, syncClass } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
+import { autoEngrave } from '@/core/engravings';
 import type { Rank } from '@/core/types';
 import { RANKS, STATS } from '@/core/types';
 import { rng } from '@/core/util';
@@ -51,7 +52,8 @@ function familiar(s: ReturnType<typeof defaults>, rank: number) {
 /**
  * A hunter who keeps up, as `npm run campaign` finds one: a typical hunter whose worn gear has been
  * upgraded to perfect, whose weapon they know to its last rank of Familiarity, with a full squad of
- * Vanguard Shadows taken from their grade's gates, no creature twice, as extraction allows. Their Kin
+ * Vanguard Shadows taken from their grade's gates, no creature twice, as extraction allows, and the
+ * System's three engravings (`autoEngrave`), one to each kind of gear. Their Kin
  * and Formation are whatever those Shadows make: a squad built for its Kin is an edge the hunter earns,
  * as one past perfect is. Not past perfect: that is the edge a hunter with materials to spare buys.
  * Calibration sets the marks.
@@ -63,6 +65,8 @@ export function keptUpHunter(level: number, gearRank: Rank, seed: string) {
     for (let k = 0; k < 20; k++) s.items[i] = upgradeStep(s.items[i]) ?? s.items[i];
   }
   familiar(s, FAMILIARITY.at.length);
+  // Every engraving found and kept, and the System's three cut into what is worn, one to each kind.
+  autoEngrave(s);
   const r = rng(seed + '|shadows');
   // One Shadow of a creature at most, as extraction allows: a second is Essence.
   const mobs = [...new Set(ALL_DUNGEONS.filter((d) => d.rank === gearRank).flatMap((d) => d.mobs))];

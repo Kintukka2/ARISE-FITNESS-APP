@@ -188,6 +188,44 @@ try {
   if (!(await page.locator('.sheet.is-top .slotworn').count())) throw new Error('A SLOT WINDOW SHOWS NOTHING WORN');
   await snap('equipment-slot');
   await close(); await close();
+  // Engravings: a Codex and an engraved weapon worn. Equipment sets the attuned engraving in a socket to each
+  // kind, a socket opens the Codex on it, the Codex reads the one chosen and lists each kind's stones, and the
+  // piece's card shows its engraving and opens the Codex for its kind with Engrave.
+  await page.evaluate(() => {
+    const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k));
+    x.codex = ['undead', 'goblinoid', 'insectoid', 'plant'];
+    const w = x.items.find((i) => i.id === x.equipped.weapon); if (w) w.engr = 'undead';
+    x.materials = { ...x.materials, ember: 300 };
+    localStorage.setItem(k, JSON.stringify(x));
+  });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('inventory'); await sleep(600); await drain();
+  await page.locator('[data-hub="equipment"]').click(); await sleep(800);
+  if (!(await page.locator('.sheet.is-top .triad__sock.is-on', { hasText: 'Withering Strike' }).count())) throw new Error('EQUIPMENT DOES NOT SHOW THE ATTUNED ENGRAVING');
+  if ((await page.locator('.sheet.is-top .triad__sock').count()) !== 3) throw new Error('EQUIPMENT DOES NOT SHOW A SOCKET TO EACH KIND OF GEAR');
+  if (await page.locator('.sheet.is-top', { hasText: /\bLive\b/ }).count()) throw new Error('EQUIPMENT STILL SAYS LIVE');
+  await page.locator('.sheet.is-top .triad').scrollIntoViewIfNeeded(); await sleep(300); await snap('equipment-engravings');
+  await page.locator('.sheet.is-top .triad__sock.is-on').first().click(); await sleep(1300);
+  if (!(await page.locator('.sheet.is-top .cx-ins.is-attuned', { hasText: 'Withering Strike' }).count())) throw new Error('A SOCKET DOES NOT OPEN THE CODEX ON ITS ENGRAVING');
+  if ((await page.locator('.sheet.is-top .cx-cell').count()) !== 5) throw new Error('THE CODEX DOES NOT LIST THE WEAPON ENGRAVINGS');
+  if ((await page.locator('.sheet.is-top .cx-tab').count()) !== 3) throw new Error('THE CODEX DOES NOT HAVE A TAB TO EACH KIND');
+  if ((await page.locator('.sheet.is-top .cx-cell:not(.is-sealed)').count()) !== 2) throw new Error('THE CODEX DOES NOT LIGHT WHAT IS KEPT');
+  await snap('codex');
+  await page.locator('.sheet.is-top .cx-tab', { hasText: 'Jewellery' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .cx-cell').count()) !== 6) throw new Error('THE CODEX DOES NOT LIST THE JEWELLERY ENGRAVINGS');
+  await page.locator('.sheet.is-top .cx-cell', { hasText: 'Unseen' }).click(); await sleep(1300);
+  if (!(await page.locator('.sheet.is-top .cx-ins.is-sealed', { hasText: 'Left by Aberration bosses and Gatekeepers.' }).count())) throw new Error('A POWER NOT KEPT DOES NOT SAY WHERE IT IS FOUND');
+  await snap('codex-sealed');
+  await close();
+  await page.locator('.sheet.is-top .pslot', { hasText: 'Weapon' }).first().click(); await sleep(600);
+  await page.locator('.sheet.is-top .slotworn__open').click(); await sleep(700);
+  if (!(await page.locator('.sheet.is-top .engblock.is-attuned', { hasText: '[Engraving: Withering Strike]' }).count())) throw new Error('AN ENGRAVED PIECE DOES NOT SHOW ITS ENGRAVING');
+  await page.locator('.sheet.is-top .engblock').scrollIntoViewIfNeeded(); await sleep(200); await snap('item-engraving');
+  await page.locator('.sheet.is-top .engblock .btn').click(); await sleep(1300);
+  if ((await page.locator('.sheet.is-top .cx-cell').count()) !== 5 || await page.locator('.sheet.is-top .cx-tab').count()) throw new Error('THE CODEX OPENED FOR A WEAPON DOES NOT LIST ONLY THE WEAPON ENGRAVINGS');
+  if (!(await page.locator('.sheet.is-top .cx-ins .btn', { hasText: 'Engrave' }).count())) throw new Error('A POWER KEPT CANNOT BE CUT INTO THE PIECE');
+  await snap('codex-engrave');
+  await close(); await close(); await close(); await close();
   await page.locator('[data-hub="inventory"]').click(); await sleep(900); await snap('inventory-grid');
   if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: 'Item Bag' }).count())) throw new Error('THE BAG IS NOT NAMED ITEM BAG');
   if ((await page.locator('.sheet.is-top .bagkind').count()) !== 10) throw new Error('THE BAG DOES NOT HAVE A TAB TO EVERY KIND');

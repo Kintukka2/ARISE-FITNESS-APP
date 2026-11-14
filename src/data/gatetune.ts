@@ -110,6 +110,6 @@ export const BLOCK_TUNE: Record<string, number> = {
 };
 export const SPIRE_TUNE: number[] = [1, 0.91, 0.97, 1.16, 0.77, 0.95, 1.13, 0.93, 0.98, 1.01, 0.92, 1.04, 1.06, 1.15, 0.9, 0.95, 1, 1.04, 1.04, 1.05];
 // Ascension: how much stronger every foe is at each level from 1 up, so a hunter who keeps up clears its target.
-export const ASCENSION_TUNE: number[] = [1.49, 1.52, 1.46, 1.52, 1.56, 1.6, 1.66, 1.61, 1.66, 1.73];
+export const ASCENSION_TUNE: number[] = [1.54, 1.55, 1.56, 1.6, 1.67, 1.73, 1.75, 1.74, 1.78, 1.84];
 // The Trial at each level from 0 up: tuned so a hunter who keeps up wins it about half the time.
-export const TRIAL_TUNE: number[] = [1.21, 0.73, 0.64, 0.63, 0.56, 0.42, 0.38, 0.35, 0.33, 0.31];
+export const TRIAL_TUNE: number[] = [1.34, 0.8, 0.69, 0.63, 0.59, 0.44, 0.39, 0.37, 0.35, 0.32];
