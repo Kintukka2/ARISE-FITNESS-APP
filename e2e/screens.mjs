@@ -746,6 +746,35 @@ try {
     await page.locator('text=Leave The Gate').click(); await drain();
   } else await close();
 
+  // The Daily Rift, from its section on Quests: the day's Gate with its two modifiers and the fortnight under it;
+  // its Quest Info; its brief with the modifiers fixed and the score's rules; and, if the hunter is fit, a run on
+  // Auto to its score worked out on the results, after which it is walked for the day.
+  await nav('quests'); await sleep(700);
+  if (!(await page.locator('#quest-rift').count())) throw new Error('THE DAILY RIFT IS NOT ON QUESTS');
+  if ((await page.locator('.qrift__mod').count()) !== 2) throw new Error('THE RIFT DOES NOT SHOW TWO MODIFIERS');
+  if ((await page.locator('.qsec--rift .rifthist__bars li').count()) !== 14) throw new Error('THE RIFT DOES NOT SHOW A FORTNIGHT');
+  await page.locator('.qsec--rift').scrollIntoViewIfNeeded(); await sleep(400); await snap('quests-rift');
+  await page.locator('#quest-rift').click(); await sleep(800); await snap('quest-rift');
+  await page.locator('.sheet.is-top .btn', { hasText: 'Brief: Daily Rift' }).click(); await sleep(1000);
+  if ((await page.locator('.sheet.is-top .bseals.is-rift .bseal').count()) !== 2) throw new Error('THE RIFT BRIEF DOES NOT FIX ITS MODIFIERS');
+  if (!(await page.locator('.sheet.is-top .brift').count())) throw new Error('THE RIFT BRIEF DOES NOT SAY HOW IT IS SCORED');
+  if (await page.locator('.sheet.is-top .gtag', { hasText: 'Never cleared' }).count()) throw new Error('THE RIFT BRIEF CALLS IT NEVER CLEARED');
+  await snap('rift-brief', true);
+  await page.locator('.sheet.is-top .bseals.is-rift').scrollIntoViewIfNeeded(); await sleep(400); await snap('rift-brief-terms');
+  if (await page.locator('text=Enter The Rift').isVisible()) {
+    await page.locator('text=Enter The Rift').click(); await sleep(600); await drain();
+    await page.waitForSelector('.arena', { timeout: 10000 });
+    await autoToResults(); await sleep(2600);
+    if (!(await page.locator('.arena--results .rscore').count())) throw new Error('THE RIFT RESULTS HAVE NO SCORE');
+    if ((await page.locator('.arena--results .rscore__lines li').count()) !== 6) throw new Error('THE RIFT SCORE IS NOT WORKED A LINE AT A TIME');
+    await snap('rift-results', true);
+    await revealLoot();
+    await page.locator('text=Leave The Gate').click(); await drain();
+    await nav('quests'); await sleep(700);
+    if (!(await page.locator('.qrift.is-done').count())) throw new Error('A RIFT WALKED DOES NOT SHOW ITS SCORE ON QUESTS');
+    await page.locator('.qsec--rift').scrollIntoViewIfNeeded(); await sleep(300); await snap('quests-rift-done');
+  } else { await close(); await close(); }
+
   await nav('shadows');
   await snap('shadows', true);
   await sleep(600);

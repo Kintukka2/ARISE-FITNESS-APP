@@ -3,12 +3,14 @@
  * it. Each reads only the run's own list (`run.seals`), as every Ascension rule reads `run.ascension`, so a
  * Seal taken never reaches a run already open. Pay is settled with the rest of the run in `raid.finish`.
  */
+import { RIFT_MODIFIERS } from '@/data/rift';
 import { SEAL, SEAL_IDS, SEALS_FROM, SEALS_PER_GATE, type SealId } from '@/data/seals';
 import { ASCENSION_RULED } from '@/data/ascension';
 import * as asc from './ascension';
 import { isPractice, rankIdx } from './gates';
 import { licensedRank } from './licence';
 import { build, mapSeed } from './map';
+import { isRift, riftDay } from './rift';
 import * as spire from './spire';
 import { isTrial } from './trial';
 import type { Dungeon, OpenRaid, Save } from './types';
@@ -16,7 +18,7 @@ import { dayKey, rng } from './util';
 
 /** Whether the board offers this hunter Seals on this Gate: a board Gate, from `SEALS_FROM`. */
 export function sealable(s: Save, d: Dungeon): boolean {
-  return !isPractice(d) && !isTrial(d) && !spire.isSpire(d) && rankIdx(licensedRank(s)) >= rankIdx(SEALS_FROM);
+  return !isPractice(d) && !isTrial(d) && !spire.isSpire(d) && !isRift(d) && rankIdx(licensedRank(s)) >= rankIdx(SEALS_FROM);
 }
 
 /**
@@ -44,6 +46,39 @@ export function offered(s: Save, d: Dungeon, day = dayKey()): SealId[] {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.slice(0, SEALS_PER_GATE).sort((a, b) => SEAL_IDS.indexOf(a) - SEAL_IDS.indexOf(b));
+}
+
+const shuffled = <T,>(xs: T[], r: () => number) => {
+  const pool = [...xs];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+};
+
+const riftMods = new Map<string, SealId[]>();
+/**
+ * A Rift's modifiers: `RIFT_MODIFIERS` of the Seals' rules, drawn from its id alone among those that change
+ * something on its map, so they are the same on every phone. Never Heavier Air, which reads Ascension, the
+ * one thing each hunter brings to it of their own choosing.
+ */
+export function riftSeals(d: Dungeon): SealId[] {
+  const had = riftMods.get(d.id);
+  if (had) return had;
+  const m = build(d, mapSeed(d, riftDay(d)));
+  const fits: Record<SealId, boolean> = {
+    swollen: true,
+    lightless: m.nodes.some((x) => x.kind === 'rest'),
+    shorthanded: true,
+    wardens: !!d.elite,
+    dry: true,
+    alone: d.mobs.length > 0,
+    heavier: false,
+  };
+  const out = shuffled(SEAL_IDS.filter((id) => fits[id]), rng(`arise|rift|mods|${d.id}`)).slice(0, RIFT_MODIFIERS).sort((a, b) => SEAL_IDS.indexOf(a) - SEAL_IDS.indexOf(b));
+  riftMods.set(d.id, out);
+  return out;
 }
 
 /** The Seals a run walked in with. */

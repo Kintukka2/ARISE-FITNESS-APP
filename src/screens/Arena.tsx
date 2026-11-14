@@ -24,6 +24,8 @@ import { group } from '@/core/util';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
 import { licensedRank } from '@/core/licence';
 import * as spire from '@/core/spire';
+import { isRift } from '@/core/rift';
+import { RiftScore } from '@/ui/rift';
 import { chamberOf, isFight, type MapNode } from '@/core/map';
 import { HONE_LEVELS, NODE } from '@/data/nodes';
 import * as blessings from '@/core/blessings';
@@ -1476,16 +1478,18 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const climb = next && !entryBlock(s, next) ? next : null;
   const v = vitals.read(s);
   const trial = isTrial(d);
-  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Cleared` : trial ? 'Trial Won' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
+  const rifted = isRift(d);
+  const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Cleared` : trial ? 'Trial Won' : rifted ? 'Rift Cleared' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
   // The line under the title says what the title does not: it never repeats the outcome (the owner's call).
   const line: string | null = r.outcome === 'cleared'
     ? isPractice(d) ? 'The Practice Gate is closed.'
       : r.spire ? (r.spire.best ? null : 'The week closed while you were inside, so it does not count this week.')
         : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
-          : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
+          : rifted ? 'Another Rift opens at midnight.'
+            : `${d.name} is closed. A new ${d.rank}-Rank Gate has opened on the board.`
     : r.outcome === 'withdrawn'
-      ? d.floor ? `From the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.`
+      ? rifted ? 'Another Rift opens at midnight.' : d.floor ? `From the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.`
         : r.rooms ? `${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Step ${r.steps} of ${r.depth}. The Gate is still open.`
       : trial ? 'The Trial opens again tomorrow. Proven Gates stay proven.'
         : `You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`;
@@ -1507,6 +1511,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <div class="rpay__one"><small>XP</small><b class="num grant">+{group(r.xp?.gained ?? 0)}</b></div>
           <div class="rpay__one"><small>Shards</small><b><Shards n={r.shards + r.bounty + deal.shards} /></b></div>
         </div>
+        {r.rift && <RiftScore r={r.rift} />}
         <div class="rcond">
           <span class="rcond__row"><Glyph name="hp" /><span class="label">Health</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" /></span>
           <span class="rcond__row"><Glyph name="bolt" /><span class="label">Fatigue</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold'} /></span>

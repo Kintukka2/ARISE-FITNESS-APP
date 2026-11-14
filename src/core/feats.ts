@@ -39,6 +39,7 @@ export function count(t: RunTally, ch: ChamberResult, elite: boolean): RunTally 
     ...(t.bossRounds !== undefined || (ch.boss && ch.won) ? { bossRounds: ch.boss && ch.won ? ch.rounds : t.bossRounds } : {}),
     ...(t.bossBroken || broken ? { bossBroken: true } : {}),
     ...(t.keeper || (elite && ch.won) ? { keeper: true } : {}),
+    rounds: (t.rounds ?? 0) + ch.rounds,
   };
 }
 

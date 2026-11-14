@@ -20,7 +20,7 @@ import { SETS } from '@/data/sets';
 import { tricksOf, type TrickId } from '@/data/tricks';
 import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, pairKey, passages, reach, sight, systemPick, systemRoad, systemWalk, type Chamber, type GateMap, type MapNode, type Openings } from './map';
-import { enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
+import { dungeonById, enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setBoons, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
 import { BOOST_CAP, GATE_XP, grantXP, kitFor, practiceAward, type XpResult } from './progression';
@@ -34,6 +34,8 @@ import * as walkers from './walkers';
 import * as shadows from './shadows';
 import * as spire from './spire';
 import { isTrial } from './trial';
+import * as rift from './rift';
+import { RIFT_EMBER } from '@/data/rift';
 import * as association from './association';
 import * as clock from './clock';
 import * as sealing from './seals';
@@ -386,14 +388,18 @@ export function systemChoice(x: MapNode, run?: blessings.Held): number {
 /** Enter a gate: build the party as it walks in, charge fatigue, open the run. Mutates. */
 export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly SealId[] = []): OpenRaid {
   const day = dayKey(now);
-  // Only Seals the Gate offers today are taken; with none asked for, the offer need not be drawn.
-  const offer = seals.length ? sealing.offered(s, d, day) : [];
-  const taken = seals.filter((id) => offer.includes(id));
+  // Only Seals the Gate offers today are taken; with none asked for, the offer need not be drawn. A Rift
+  // takes its own modifiers, whatever is asked.
+  const rifted = rift.isRift(d);
+  const offer = !rifted && seals.length ? sealing.offered(s, d, day) : [];
+  const taken = rifted ? sealing.riftSeals(d) : seals.filter((id) => offer.includes(id));
   const fatigue = vitals.read(s, now).fatigue;
   // The practice gate is played as it is, and a Trial at the level it proves, whatever the hunter has chosen.
   const level = asc.entryLevel(s, d, isPractice(d));
   if (isTrial(d)) asc.enterTrial(s, day);
-  if (!s.gates.entered.includes(d.id)) s.gates.entered.push(d.id);
+  if (!rifted && !s.gates.entered.includes(d.id)) s.gates.entered.push(d.id);
+  // A Rift's one attempt is made as the hunter walks in.
+  if (rifted) rift.enter(s, d, taken);
   // The party walks in as the brief assessed it: at the fatigue it walked in with. The Gate's own is
   // charged after, for the runs to come, so the fight is the one the projection and calibration played.
   const specs = partySpecs(s, d, day, undefined, now, level, taken);
@@ -409,7 +415,8 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
   // The throwable readied is the one its fights throw, whatever is readied while it is open.
   const toss = shop.readied(s);
   s.gates.raid = {
-    dungeonId: d.id, seed: `${d.id}|${now}`, day, at: 0,
+    // A Rift's seed is its id, so its fights roll the same on every phone.
+    dungeonId: d.id, seed: rifted ? d.id : `${d.id}|${now}`, day, at: 0,
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
@@ -1088,6 +1095,8 @@ export interface RaidResult {
   heroMax: number;
   /** The Seals the run walked in with, whose pay is in `mats` and `blueprints`. */
   seals: SealId[];
+  /** A Rift's score, worked a line at a time, with the best before it. */
+  rift?: rift.RiftResult;
   /** The Gate's Feats, those the clear met, and those met here for the first time, which paid. */
   feats: { asked: FeatId[]; met: FeatId[]; fresh: FeatId[] };
   /** Creatures felled the way their condition asks, kept by the run. */
@@ -1190,12 +1199,17 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // A block of the Spire is fought and paid as a gate. It has no first clear, and is never sealed:
   // the week's best floor moves on past it instead. A Trial is the same: it is not on the board.
   const tower = spire.isSpire(d) || isTrial(d);
+  // A Rift is its Gate for a day: fought and paid as one, and counted as the Gate it takes the shape of (`home`)
+  // for a first clear, its Feats, Ryn's jobs and the boss seen. It keeps no tally of that Gate's map, and
+  // never seals it on the board.
+  const rifted = rift.isRift(d);
+  const home = rifted ? dungeonById(d.shape ?? '') ?? d : d;
   const kept = outcome !== 'defeated';
   // Ascension pays more for the gate itself, at the level the run was entered at.
   const level = asc.levelOf(run);
   const pay = asc.payShare(level);
   const share = outcome === 'cleared' ? 1 : outcome === 'withdrawn' ? withdrawShare(run.at, depth) : FAIL_SHARE;
-  const firstClear = outcome === 'cleared' && !tower && !s.gates.cleared.includes(d.id);
+  const firstClear = outcome === 'cleared' && !tower && !s.gates.cleared.includes(home.id);
   const banked = kept && !practice ? shop.earn(s, run.purse ?? 0) : 0;
   const shards = (practice ? 0 : shop.earn(s, shop.gateShards(d.rank, share * pay))) + banked;
   const bounty = firstClear && !practice ? shop.earn(s, shop.gateShards(d.rank, 2 * pay)) : 0;
@@ -1223,8 +1237,9 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const asked = feats.featsOf(d);
   // A run opened before Feats were counted has no tally, and is judged on none.
   const met = cleared && !practice && !tower && run.tally ? feats.judge(asked, run.tally, !m.tower && chartedFloors(m, explored(m, run)) === m.floors.length) : [];
-  const fresh = feats.settle(s, d, met);
-  const extra: Extras = { seals: sealing.of(run), drops: run.drops ?? [], feats: fresh.length };
+  const fresh = feats.settle(s, home, met);
+  // A Rift's modifiers are its terms, not Seals taken: it pays its own Ember instead.
+  const extra: Extras = { seals: rifted ? [] : sealing.of(run), drops: run.drops ?? [], feats: fresh.length };
   const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m), extra) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
   let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
   let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};
@@ -1234,6 +1249,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     lootIds = [rings[Math.floor(rng('arise|practice|' + s.hunter.name)() * rings.length)].id, ...(kept ? run.haul ?? [] : [])];
     mats = forge.addUp(mats, { [forge.alloyId('E')]: 8, [forge.partId('hide')]: 2 });
   }
+  if (rifted && cleared) mats = forge.addUp(mats, { [forge.EMBER.id]: RIFT_EMBER[d.rank as Rank] ?? 0 });
   forge.give(s, mats);
   const loot = lootIds.map((id, i) => grant(s, id, `${run.seed}|${i}`) ?? make(id)).filter(Boolean);
   // A clear's boss and Gatekeeper leave a piece found whole with their family's engraving, at stated odds,
@@ -1270,7 +1286,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const ready: RaidResult['ready'] = [];
   const grew: RaidResult['grew'] = [];
   if (!practice) {
-    if (!tower) {
+    if (!tower && !rifted) {
       const tally = (s.gates.runs[d.id] ??= { fought: 0, cleared: 0 });
       tally.fought++;
       if (outcome === 'cleared') tally.cleared++;
@@ -1312,9 +1328,9 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     }
   }
   // A Chosen in the boss's place is not the gate's own boss: meeting it shows nothing of that one.
-  if (run.bossFaced && !tower && !run.chosen && !s.gates.bosses.includes(d.id)) s.gates.bosses.push(d.id);
+  if (run.bossFaced && !tower && !run.chosen && !s.gates.bosses.includes(home.id)) s.gates.bosses.push(home.id);
   const climb = spire.isSpire(d) && outcome === 'cleared' ? spire.climbed(s, d, now) : null;
-  const job = practice ? null : association.count(s, d, run, outcome);
+  const job = practice ? null : association.count(s, home, run, outcome);
   const ascended = outcome === 'cleared' && !practice ? asc.prove(s, d, run) : null;
   if (ascended) walkers.send(s, ascended);
   const chosen = outcome === 'cleared' ? walkers.fell(s, d, run, pay) : null;
@@ -1324,11 +1340,15 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     mats = forge.addUp(mats, ember);
   }
   if (outcome === 'cleared' && !tower) {
-    if (!s.gates.cleared.includes(d.id)) s.gates.cleared.push(d.id);
-    seal(s, d, dayKey(now));
+    if (!s.gates.cleared.includes(home.id)) s.gates.cleared.push(home.id);
+    if (!rifted) seal(s, d, dayKey(now));
   }
   if (outcome === 'defeated' && !practice) vitals.wipe(s, now);
   const v = vitals.read(s, now);
+  // A Rift is scored as it ends, a line at a time, and the day's attempt is written with it.
+  const scored = rifted ? rift.settle(s, d, outcome, rift.scoreOf({
+    won: run.won, keeper: !!run.tally?.keeper, cleared, feats: met.length, rounds: run.tally?.rounds ?? 0, hp: v.hp / Math.max(1, v.hpMax),
+  })) : null;
   s.gates.raid = null;
   s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}: ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, LOG_MAX);
@@ -1337,6 +1357,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
     seals: extra.seals.slice(), feats: { asked, met, fresh }, drops: kept ? extra.drops.length : 0,
+    ...(scored ? { rift: scored } : {}),
   };
 }
 

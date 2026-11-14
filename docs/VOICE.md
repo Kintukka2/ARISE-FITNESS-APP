@@ -874,6 +874,29 @@ the Gatekeeper's, `· Gatekeeper` and `12%`); a find on a run's results carries 
 and its name over the piece's own; an engraved tile in the Item Bag carries the glyph in its corner, dim while
 dormant.
 
+**The Daily Rift.** On Quests, in the Gates' orange, under the Daily Quests: `Daily Rift` with `Closes in: 13:01:48` at its
+right; the Rift's tear, a ring of the Gates' orange split by a bolt of white light, flickering; `SAT 14 NOV · C-RANK` over
+the Gate it opens on, `[Beastmaster Pits]`, and its modifiers by their wax seals, a name each (`Wardens Wake`, `Dry`);
+at its right `Attempt` over `1`, `Underway` while the run is open, then how it ended over the score (`Cleared` over
+`1,891` in green; `Carried out`, `Withdrawn`); under it the fortnight, a bar to each day as tall as its score against the
+best of them, green for a clear, red for one carried out, grey walked out of, a dashed gap for a day not walked (a missed
+day costs nothing, so it is never counted against the hunter: no streak), each day's number under it, today's ringed.
+Its rail ring reads `0/1` until it is walked, then the score. Its Quest Info: `[Daily Rift: Beastmaster Pits]`, the tear,
+`SAT 14 NOV · C-RANK · ONE ATTEMPT`, the goal `Clear the Rift.`, the reward `Ascendant Ember +5`, `Modifiers` and a line
+to each, the seal, the name over its rule (`No Health Potion, and nothing healed after a fight`); `Today`, `Best` and
+`Days walked`, the month as bars, numbered every seventh day back from today; `Closes in:` and **Brief: Daily Rift**, or,
+walked, `You have walked today's Rift. Another opens at midnight.` The brief: `C-Rank Daily Rift:` over the Gate's name,
+`Once today` among its chips in place of `Cleared`; the Rift bonus among the rewards, Ember's art, `Rift bonus`, `+5`, and
+the bounty while the Gate it takes the shape of has never been cleared; `Modifiers` in place of `Seals`, both pressed and fixed with no Ember on them, their rules under them; then
+`Score`, `· Best 4,545` beside it, a line to each part and its points (`Each fight won` `100`, `Gatekeeper defeated` `300`,
+`Boss defeated` `600`, `Each Feat met` `200`, `Each round under par (4 a fight)` `15`, `HP left at the end` `up to 400`) and
+`Feats, pace and HP left count on a clear.`; **Enter The Rift**. The results: `Rift Cleared` over `Another Rift opens at
+midnight.`; then `Rift Score`, after Isaac's and Dead Cells' worked scores, `New best` at its right in gold (else `Best
+4,545`), a line to each part as it lands (`6 fights won` `+600`, `Gatekeeper defeated` `0` dim, `Boss defeated` `+600`,
+`1 Feat met` `+200`, `15 rounds under par` `+225`, `HP left: 67%` `+266`), and `Total` over the figure counting up, gold
+for a new best. A creature is defeated there as everywhere. The modifiers are the Seals' own rules and names: a Rift's are
+never called Seals, since they pay nothing and nobody chose them.
+
 **The hunter's card.** `HUNTER: {name}`, opened from the Inventory screen's licence row and the Gates
 screen's record, its head holding no seal. It opens on the licence as the Licence window draws it, its grade's
 seal and crest, `LICENCE` over the number and `AWAKENED` over the day, the name left to the title and the
@@ -1213,6 +1236,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Item Bag's bag |
 | Engraving | aspect, rune, enchantment, legendary power | A power cut into a piece that changes a rule of the fight, one to each family of creature: `[Engraving: Withering Strike]`. A worn piece's is `Attuned`, or `Dormant` while another piece of its kind holds the attuned one. To cut one into a piece is to engrave it: **Engrave**, **Engrave Anew**, `Would you like to engrave this item?` |
 | Attuned | live, active | An engraving in play from a piece worn, one to each kind of gear: `ATTUNED`, `ATTUNED · WEAPON`. Its opposite is `Dormant`. |
+| Daily Rift | daily challenge, daily run, daily dungeon | One Gate a day, drawn from the date, the same for every hunter of a grade, walked once: `Daily Rift`, `Rift Cleared`, `Rift Score`, **Enter The Rift**. Its rules are `Modifiers`, never Seals. |
 | Codex | collection, library, archive | Where an engraving is kept for good once its piece is recycled: `CODEX`, `Kept 4/16`, `[Engraving: Warcry] kept in the Codex.` A power not kept reads `Left by Orc bosses and Gatekeepers.` |
 | Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |

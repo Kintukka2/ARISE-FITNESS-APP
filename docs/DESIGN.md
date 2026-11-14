@@ -1250,7 +1250,7 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    3. **Engravings and a Codex** (built, below): named bosses and Gatekeepers leave engraved pieces at stated odds;
       recycling one keeps its power in a Codex for good; setting a power from the Codex onto a piece costs
       Ember, which makes it step 7's sink too. Three worn: weapon, armour, jewellery.
-   4. **The Daily Rift:** one Gate a day from the date's seed, the same on every phone.
+   4. **The Daily Rift** (built, below): one Gate a day from the date's seed, the same on every phone.
 7. **Something for Ember to buy.** Seals pay Ascendant Ember, and all it buys today is steps past perfect,
    which the upgrade limit and shards hold back before Ember ever does: both campaign hunters ended their
    120 days holding more Ember than the Seals had paid them (1,667 and 2,185; "Seals, Feats and special
@@ -2200,6 +2200,65 @@ with where it is found), and the one-line wording of a rule.
   spends as much and ends with nearly as much as before, since it walks 413 runs to the other's 281 and opens
   25 Ascension levels to its 9, and the Seals it takes pay Ember faster than it can be spent. Ember is now spent, but a hunter who plays
   three sessions a day still banks it: step 7 is still needed.
+
+### The Daily Rift — built
+
+The last of step 6's four parts: the research's sixth idea for a phone ([mobile.md](research/mobile.md), "The Daily
+Rift: one seed for every phone"), from Shattered Pixel Dungeon's offline daily, Slay the Spire's and Wildfrost's dailies
+and Balatro's seeds. The references are under "Daily" in
+[step 6's README](research/references/step-6-map-army-gear-daily/README.md#daily): Slay the Spire's Daily Climb and
+Monster Train's Daily Challenge for the window, Isaac's and Dead Cells' worked scores for the results, Wordle's bars and
+Shattered Pixel Dungeon's local history for the days walked.
+
+- **One Gate a day, the same on every phone** (`core/rift.ts`). A day's Rift is a Gate of the hunter's grade drawn from the
+  date alone (`RFT-<day>-<grade>`), resolved by `gates.dungeonById` as a block of the Spire is: the Gate it takes the
+  shape of, its map, its two modifiers and its seed (the id, so its fights roll the same) read nothing of the hunter but
+  the grade. It opens after `RIFT_OPENS` Gates cleared, on Quests, and closes at midnight.
+- **Two modifiers**, two of the Seals' rules drawn from its id among those that change something on its map
+  (`seals.riftSeals`), never Heavier Air. They ride on `run.seals`, so every rule and the brief's projection play them,
+  but they pay no Seal's Ember: the Rift is not sealed by choice.
+- **One attempt.** Written as the hunter walks in (`rift.enter`); carried out, withdrawn or cleared, the day's attempt
+  is spent.
+- **At the Ascension chosen, and counted as its Gate.** The campaign shaped this. The one-evening hunter's evening holds
+  two or three runs, and a Rift every day takes one of them from the board. Built first at no Ascension (the same for
+  every hunter in every rule), counting as no Gate, that hunter opened no Ascension at all by day 120 (proof wants Gates
+  cleared at the level being proved; 9 before) and did not reach Sovereign (day 107 before). Walked at the Ascension
+  chosen, it opened 6 and reached Sovereign on day 118, but reported 17 of Ryn's jobs against 42, and met 48 Feats for
+  the first time against 72. So each hunter walks it at the Ascension they have chosen, as any Gate, and it counts as
+  the Gate it takes the shape of (`home` in `raid.finish`): its first clear, its Feats met for the first time, Ryn's
+  jobs, the boss seen and Ascension's proof. The score is still compared against oneself first, as the research asks.
+- **What it pays**: its Gate's clear, as any Gate, and Ascendant Ember by grade (`RIFT_EMBER`, 2 at E to 13 at S).
+- **The score** (`rift.scoreOf`), worked a line at a time: 100 for each fight won, 300 for the Gatekeeper, 600 for the boss;
+  on a clear, 200 for each Feat met, 15 for each round under par (4 rounds to every fight won), and up to 400 for the HP
+  left. The rounds are counted into the run's tally as each fight is recorded (`RunTally.rounds`).
+- **The history**: the last `RIFT_KEPT` days and the best score, on the phone (`s.rift`). A missed day is only a gap:
+  no streak, since the decent versions never punish a missed day.
+- **Screens.** On Quests, under the Daily Quests and in the Gates' orange: the Rift's tear, the date and grade over the
+  Gate, its modifiers by their wax seals, the attempt or the score, and the fortnight as bars; its rail ring. Its Quest
+  Info, after Monster Train's window: the date, the goal, the Ember, the modifiers one a line, today, the best and the
+  days walked, the month as bars, the time left and **Brief: Daily Rift**. The brief: `C-Rank Daily Rift:`, `Once today`,
+  the modifiers fixed with no Ember on them, the Rift bonus, and the score's rules. The results: `Rift Cleared`, and the
+  score worked out a line at a time after Isaac's, the total counted up, gold for a new best.
+- **Not built: a replay code.** A Rift's seed is its id, so a run is the date, the grade, the party as it walked in and
+  its orders: a short code could let another phone replay and verify a score offline. The research calls it a stretch.
+- **Calibration**: none moves. A Rift takes its Gate's tuning (`GATE_TUNE` of its shape) and is walked under its
+  modifiers as a Gate is under Seals, so nothing tuned reads it.
+- **Campaign**, which now walks each day's Rift as its first run after the Spire's block, while the brief reads three in
+  four or better (as it takes Seals), at the level it would choose for the Gate:
+
+  | | Days to B, A, S, N | Cleared | Carried out | Ryn's jobs | Ascension opened | Rifts walked, cleared | Score, average and best | Rift Ember | Ember on day 120 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | One evening, `main` | 18, 30, 56, 107 | 97% | 8 | 42 | 9 | | | | 885 |
+  | This change | 19, 32, 59, 113 | 96% | 11 | 29 | 7 | 106, 93% | 3,149 and 4,395 | 1,019 | 1,074 |
+  | Three sessions, `main` | 15, 23, 37, 66 | 93% | 27 | 76 | 25 | | | | 2,101 |
+  | This change | 8, 14, 30, 60 | 93% | 28 | 61 | 26 | 116, 90% | 3,357 and 4,425 | 1,216 | 1,924 |
+
+  The three-session hunter walks the Rift beside a full board and reaches every rank sooner, most of it early: a Rift
+  opens on a Gate of its grade that may not have been cleared yet, so it reaches first clears' bounties sooner (each Gate
+  still pays one once). The one-evening hunter gives a run of two or three to it each day, and reaches each rank a day to
+  six later. It pays the Gate the board would have, but the Gate Ryn names is the Rift's only some days, so 13 fewer jobs
+  are reported; in return it walks away with 1,019 Ember and a score each day. Ember still piles up: step 7 is still
+  needed.
 
 ## What stays out
 
