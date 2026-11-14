@@ -2081,9 +2081,12 @@ with what ARISE took from them.
   head a row to each stat; Stats shows a stat's line only when its row is tapped and says once that the fight's
   numbers explain themselves; Skills' points stand gold without a mark.
 - **A crest to each rank** (the owner's call), in place of the grade's letter behind the licence (the Licence window,
-  the hunter's card and the desk's licence): the hunter's arms rising with the rank (`ui/rankcrest.tsx`), a dagger at
-  E, a round shield at D, a longsword at C, a sword over a heater shield at B, a winged sword at A, a crowned sword in
-  laurel at S, and a crown over spread wings for the Sovereign. A run's XP and shards stand as figures alone.
+  the hunter's card and the desk's licence): the hunter's arms rising with the rank (`ui/rankcrest.tsx`), each rank's
+  the one below with something won, at the owner's call, so the climb reads at a glance: a dagger at E, the dagger on a
+  round buckler at D, a longsword on a heater shield at C, two swords crossed behind the shield at B, the crossed arms
+  winged at A, the winged arms crowned in rays of light at S, and for the Sovereign a spiked crown over an open eye,
+  great wings and swords pointing down in a ring of light. Its pieces are solid and the crest is faded as one picture,
+  so a piece in front hides what stands behind it. A run's XP and shards stand as figures alone.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

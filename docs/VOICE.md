@@ -568,7 +568,7 @@ for advancement. Every quest's name wears its type, and these are the names:
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
 - **The licence's window**, `LICENCE` (its number and its seal are on the licence, so the head names the window only
   and holds no icon: the owner's calls, after both stood twice), opens on the licence itself, as the Association issues it: the grade's seal in a ring,
-  `Hunter` over the hunter's name and `Licence` over their number, the grade's crest large and faint behind (`ui/rankcrest.tsx`: E a dagger, D a round shield, C a longsword, B a sword over a heater shield, A a winged sword, S a crowned sword in laurel, the Sovereign a crown over spread wings), the card
+  `Hunter` over the hunter's name and `Licence` over their number, the grade's crest large and faint behind (`ui/rankcrest.tsx`, each rank's the one below with something won: E a dagger, D the dagger on a round buckler, C a longsword on a heater shield, B two swords crossed behind the shield, A the crossed arms winged, S the winged arms crowned in rays of light, the Sovereign a spiked crown over an open eye, great wings and swords pointing down in a ring of light), the card
   washed in the grade's colour; under it `Association grade` and `Gates open` as facts, with no box. `Rank` stands
   beside them only where the hunter's own rank differs from the grade the board answers to (held at D-Rank without the
   Association Licence where it is sold, or Sovereign, graded S), and `Association Licence` only where there is one to

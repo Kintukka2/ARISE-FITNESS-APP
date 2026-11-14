@@ -3845,3 +3845,9 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .licence__crest { right: -14px; bottom: -22px; transform: rotate(-8deg); color: color-mix(in srgb, var(--rc) 20%, transparent); }
 .glicence__card > :not(.glicence__crest) { position: relative; z-index: 1; }
 .rankcrest { overflow: visible; }
+/* A crest's pieces are solid and the crest is faded as one picture, so a piece in front hides what stands
+   behind it; the licence reads over it. */
+.rankcrest .rc-f { fill: color-mix(in srgb, currentColor 16%, #050a14); }
+.rankcrest .rc-f--lit { fill: color-mix(in srgb, currentColor 34%, #050a14); }
+.glicence__crest { color: var(--rc); opacity: 0.32; }
+.licence__crest { color: var(--rc); opacity: 0.22; }
