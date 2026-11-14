@@ -3838,3 +3838,10 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .sysframe .status .attr:not(.attr--points) { grid-template-columns: 20px 38px minmax(0, 1fr) 40px 36px 28px; grid-template-rows: auto; column-gap: 8px; padding: 6px 2px; border-radius: 0; background: none; }
 .sysframe .status .attr:not(.attr--points) > * { grid-row: 1; grid-column: auto; }
 .sysframe .status .attr__base { line-height: 1; }
+
+/* The rank's crest behind the licence, where its letter stood: line work in the rank's colour, faint. */
+.glicence__crest, .licence__crest { position: absolute; z-index: 0; width: 132px; height: 132px; color: color-mix(in srgb, var(--rc) 30%, transparent); pointer-events: none; }
+.glicence__crest { right: -10px; top: 50%; transform: translateY(-50%) rotate(-8deg); }
+.licence__crest { right: -14px; bottom: -22px; transform: rotate(-8deg); color: color-mix(in srgb, var(--rc) 20%, transparent); }
+.glicence__card > :not(.glicence__crest) { position: relative; z-index: 1; }
+.rankcrest { overflow: visible; }

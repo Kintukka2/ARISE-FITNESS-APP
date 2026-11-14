@@ -4,6 +4,7 @@
  *   2. The cut: the Arrival (ui/arrival.ts) takes the office away, and the System speaks for the
  *      first time.
  */
+import { RankCrest } from '@/ui/rankcrest';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { regNo } from '@/core/gates';
@@ -46,7 +47,7 @@ function Licence({ name, reg, lifted }: { name?: string; reg?: string; lifted?: 
   return (
     <div class={`licence reveal ${lifted ? 'is-lifted' : ''}`}>
       {/* The grade's letter behind, as the Licence window's card carries it. */}
-      <span class="licence__letter" aria-hidden="true">E</span>
+      <RankCrest rank="E" class="licence__crest" />
       <header>
         <div><span class="label">Hunter Association</span><b>Hunter Licence</b></div>
         <Sigil rank="E" size={40} />

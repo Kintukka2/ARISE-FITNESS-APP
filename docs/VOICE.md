@@ -568,7 +568,7 @@ for advancement. Every quest's name wears its type, and these are the names:
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
 - **The licence's window**, `LICENCE` (its number and its seal are on the licence, so the head names the window only
   and holds no icon: the owner's calls, after both stood twice), opens on the licence itself, as the Association issues it: the grade's seal in a ring,
-  `Hunter` over the hunter's name and `Licence` over their number, the grade's letter vast and faint behind, the card
+  `Hunter` over the hunter's name and `Licence` over their number, the grade's crest large and faint behind (`ui/rankcrest.tsx`: E a dagger, D a round shield, C a longsword, B a sword over a heater shield, A a winged sword, S a crowned sword in laurel, the Sovereign a crown over spread wings), the card
   washed in the grade's colour; under it `Association grade` and `Gates open` as facts, with no box. `Rank` stands
   beside them only where the hunter's own rank differs from the grade the board answers to (held at D-Rank without the
   Association Licence where it is sold, or Sovereign, graded S), and `Association Licence` only where there is one to
@@ -842,14 +842,14 @@ reads `Persistent` or `Best-effort` as a light over the line it has always had.
 outcome large in its colour on one line (`Gate Cleared`, `Floor 30 Cleared` green, `Withdrawn` orange, `Carried Out`
 red) with a rule under it, then a line that says what the title does not and never repeats it (`4 of 11 rooms
 cleared. The Gate is still open.`); a floor of the Spire cleared at the week's best has no line at all, its
-**Climb On** saying the rest. Then `XP` and `Shards` large side by side, each with what qualifies it
-under it (`paid in full`, `Banked +10`); `Health` and `Fatigue` as bars, `HP +5% each hour` under them;
+**Climb On** saying the rest. Then `XP` and `Shards` large side by side, the figures alone (the owner's call: what
+qualified them said nothing the hunter needs); `Health` and `Fatigue` as bars, `HP +5% each hour` under them;
 `Materials`, each its art on its rarity's ground, `+6` in green under it and its name under that; `Feats`
 unboxed; then the System's alerts, the finds and the buttons as before.
 
 **The hunter's card.** `HUNTER: {name}`, opened from the Inventory screen's licence row and the Gates
 screen's record, its head holding no seal. It opens on the licence as the Licence window draws it, its grade's
-seal and letter, `LICENCE` over the number and `AWAKENED` over the day, the name left to the title and the
+seal and crest, `LICENCE` over the number and `AWAKENED` over the day, the name left to the title and the
 grade to the seal (the owner's call: the rank once, not three times; and nothing says what each level or rank
 pays, which the level-up already reports); then `Record`, a figure to each
 line of the record three to a row, its name under it in capitals and what qualifies it under that

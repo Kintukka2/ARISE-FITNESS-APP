@@ -2068,7 +2068,7 @@ with what ARISE took from them.
   back at its head; every line still reads its numbers from the engine. Settings opens on the Guide as a card, its
   sections under heads with hairlines, the save's storage as a light (`Persistent` green, `Best-effort` gold), Export
   and Import side by side and Erase standing apart. At the Association's desk the licence is drawn as the Licence
-  window draws it, the grade's colour and letter behind, and the name fills in on it as it is typed. No engine
+  window draws it, the grade's colour and crest behind, and the name fills in on it as it is typed. No engine
   changed.
 - **A second pass, at the owner's call** (fewer boxes, less said twice). The Exchange is rebuilt as the shops of
   Genshin Impact, Honkai: Star Rail and Solo Leveling: Arise lay theirs out: the purse across the top, three counters
@@ -2080,6 +2080,10 @@ with what ARISE took from them.
   repeats its title. Status drops its Skills button and says nothing a + already says: the points and Auto-Allocate
   head a row to each stat; Stats shows a stat's line only when its row is tapped and says once that the fight's
   numbers explain themselves; Skills' points stand gold without a mark.
+- **A crest to each rank** (the owner's call), in place of the grade's letter behind the licence (the Licence window,
+  the hunter's card and the desk's licence): the hunter's arms rising with the rank (`ui/rankcrest.tsx`), a dagger at
+  E, a round shield at D, a longsword at C, a sword over a heater shield at B, a winged sword at A, a crowned sword in
+  laurel at S, and a crown over spread wings for the Sovereign. A run's XP and shards stand as figures alone.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

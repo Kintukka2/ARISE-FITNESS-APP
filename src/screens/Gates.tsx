@@ -1,4 +1,5 @@
 /** The Gates: the board, and the way to each Gate's brief (`./Brief`). */
+import { RankCrest } from '@/ui/rankcrest';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
@@ -370,7 +371,7 @@ function openGrade() {
         <div class="stack glicence">
           {/* The licence itself, as the Association issues it: the grade's seal, the hunter, their number, the grade's letter behind. */}
           <div class="glicence__card" style={`--rc: var(--rank-${mine})`}>
-            <span class="glicence__letter" aria-hidden="true">{mine}</span>
+            <RankCrest rank={mine} class="glicence__crest" />
             <span class="glicence__seal"><Sigil rank={mine} size={58} /></span>
             <span class="glicence__who">
               <small class="label">Hunter</small>

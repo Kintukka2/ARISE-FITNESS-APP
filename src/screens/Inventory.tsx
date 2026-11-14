@@ -4,6 +4,7 @@
  * their name and condition; the stats and the skills as two cards; the bag, the Forge and the Exchange as
  * three stations; the licence along the foot. Each opens its window.
  */
+import { RankCrest } from '@/ui/rankcrest';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -535,7 +536,7 @@ export function openDossier() {
         <div class="stack dossier">
           {/* The licence as the Association issues it, as the Licence window draws it: the grade's seal, the number, when the hunter woke. */}
           <div class="glicence__card dossier__card" style={`--rc: var(--rank-${mine === 'N' ? 'S' : mine})`}>
-            <span class="glicence__letter" aria-hidden="true">{mine}</span>
+            <RankCrest rank={mine} class="glicence__crest" />
             <span class="glicence__seal"><Sigil rank={mine} size={58} /></span>
             <span class="glicence__who">
               <small class="label">Licence</small>

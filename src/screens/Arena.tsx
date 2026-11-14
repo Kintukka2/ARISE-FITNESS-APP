@@ -1489,9 +1489,6 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         : r.rooms ? `${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Step ${r.steps} of ${r.depth}. The Gate is still open.`
       : trial ? 'The Trial opens again tomorrow. Proven Gates stay proven.'
         : `You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`;
-  // What the Daily Quests paid is shown once, on their own lines below, so the tiles do not repeat it.
-  const xpSub = r.xp?.levels ? `Level ${r.xp.to}` : r.outcome === 'cleared' ? 'paid in full' : 'a share, for what you cleared';
-  const shardSub = [r.bounty > 0 ? `First-clear bounty +${r.bounty}` : r.banked > 0 ? `Banked +${r.banked}` : ''].filter(Boolean);
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       {turn.flash}
@@ -1506,8 +1503,9 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         </header>
         {/* What the run paid, large and unframed, then the hunter's condition as bars. */}
         <div class="rpay">
-          <div class="rpay__one"><small>XP</small><b class="num grant">+{group(r.xp?.gained ?? 0)}</b><i>{xpSub}</i></div>
-          <div class="rpay__one"><small>Shards</small><b><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <i>{shardSub.join(' · ')}</i> : r.dungeonId === 'DNG-000' ? <i>the Practice Gate pays in kit</i> : null}</div>
+          {/* The figures alone: what qualified them said nothing the hunter needs (the owner's call). */}
+          <div class="rpay__one"><small>XP</small><b class="num grant">+{group(r.xp?.gained ?? 0)}</b></div>
+          <div class="rpay__one"><small>Shards</small><b><Shards n={r.shards + r.bounty + deal.shards} /></b></div>
         </div>
         <div class="rcond">
           <span class="rcond__row"><Glyph name="hp" /><span class="label">Health</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" /></span>

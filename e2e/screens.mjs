@@ -94,6 +94,8 @@ async function autoToResults() {
   await page.waitForSelector('.arena--results');
   // The results open on their title card, and what the run paid stands unframed: no tile is left.
   if (!(await page.locator('.arena--results .rhead__rule').count()) || await page.locator('.arena--results .tile').count()) throw new Error('THE RESULTS DO NOT OPEN ON THEIR TITLE CARD');
+  // XP and shards stand as figures alone.
+  if (await page.locator('.arena--results .rpay__one i').count()) throw new Error('THE RESULTS STILL QUALIFY THEIR XP OR SHARDS');
   // The outcome stands on one line, and the line under it never repeats it (measured once the title has drawn in).
   await page.waitForTimeout(800);
   const head = await page.locator('.arena--results .rhead h2').evaluate((el) => ({ over: el.scrollWidth - el.clientWidth, h: el.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(el).lineHeight) || 0, t: el.textContent }));
@@ -270,6 +272,8 @@ try {
   // once, not in the head too, and nothing tells what each level and rank pay.
   if (!(await page.locator('.sheet.is-top .dossier__card').count())) throw new Error('THE DOSSIER HAS NO LICENCE CARD');
   if ((await page.locator('.sheet.is-top .sigil').count()) !== 1) throw new Error('THE DOSSIER SHOWS THE GRADE MORE THAN ONCE');
+  // Behind the licence stands the rank's crest, not its letter.
+  if (!(await page.locator('.sheet.is-top .dossier__card .rankcrest').count()) || await page.locator('.sheet.is-top .glicence__letter').count()) throw new Error('THE LICENCE HAS NO CREST BEHIND IT');
   if (await page.locator('.sheet.is-top .dossier', { hasText: 'In force' }).count()) throw new Error('THE DOSSIER STILL HAS ITS IN FORCE SECTION');
   if ((await page.locator('.sheet.is-top .drecord__one').count()) < 10 || await page.locator('.sheet.is-top .dossier .sysfield').count()) throw new Error('THE DOSSIER RECORD IS NOT FIGURES');
   await close();
