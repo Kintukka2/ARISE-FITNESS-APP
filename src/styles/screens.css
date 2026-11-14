@@ -4016,3 +4016,88 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 @media (prefers-reduced-motion: reduce) {
   .cx-ins__ring, .cx-ins__text { animation: none; }
 }
+
+/* ------------------------------------------------------------------ the Daily Rift (ui/rift.tsx) */
+
+/* The tear it opens as: a ring of the Gates' orange, a bolt of white-hot light down its middle, flickering. */
+.rifttear { --rt: var(--ember); position: relative; display: inline-grid; place-items: center; flex: none; width: var(--s); height: var(--s); }
+.rifttear svg { overflow: visible; }
+.rifttear__halo { fill: color-mix(in srgb, var(--rt) 14%, transparent); filter: blur(3px); animation: riftBreath 3.6s ease-in-out infinite; transform-origin: 24px 24px; }
+.rifttear__ring { fill: rgba(10, 5, 2, 0.9); stroke: color-mix(in srgb, var(--rt) 75%, #fff); stroke-width: 1.4; filter: drop-shadow(0 0 4px var(--rt)); }
+.rifttear__glow { fill: var(--rt); filter: blur(2.2px); opacity: 0.9; animation: riftFlicker 2.4s steps(1) infinite; }
+.rifttear__core { fill: color-mix(in srgb, var(--rt) 25%, #fff); }
+.rifttear__mote { fill: color-mix(in srgb, var(--rt) 50%, #fff); opacity: 0; animation: riftMote 3.2s ease-in infinite; }
+.rifttear__mote.is-b { animation-delay: 1.1s; }
+.rifttear__mote.is-c { animation-delay: 2.1s; }
+@keyframes riftBreath { 0%, 100% { opacity: 0.7; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1.05); } }
+@keyframes riftFlicker { 0%, 100% { opacity: 0.9; } 8% { opacity: 0.45; } 11% { opacity: 1; } 47% { opacity: 0.7; } 52% { opacity: 1; } }
+@keyframes riftMote { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-9px); } }
+
+/* Its modifiers, one a line: the wax seal, the name, the rule. */
+.riftmods { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.riftmods li { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); animation: qaIn 320ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
+.riftmods li:last-child { border-bottom: 0; }
+.riftmods li > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.riftmods b { font-size: 0.86rem; font-weight: 700; color: #fff; }
+.riftmods small { font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 76%, transparent); }
+
+/* The days walked: a bar to each, today's at the right and ringed, a gap for a day not walked. */
+.rifthist { margin: 0; }
+.rifthist__bars { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; gap: 3px; height: 64px; margin: 0; padding: 0; list-style: none; }
+.rifthist__bars li { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; min-width: 0; }
+.rifthist__bars li > i { --bc: color-mix(in srgb, var(--sys-ink) 45%, transparent); display: block; width: 100%; max-width: 14px; height: calc(var(--h) * 44px); min-height: 0; border-top: 2px solid var(--bc); background: linear-gradient(color-mix(in srgb, var(--bc) 55%, transparent), color-mix(in srgb, var(--bc) 12%, transparent)); transform-origin: bottom; animation: riftBar 520ms var(--ease) both; animation-delay: calc(var(--i) * 25ms); }
+.rifthist__bars li.is-cleared > i { --bc: var(--verdant); }
+.rifthist__bars li.is-defeated > i { --bc: var(--blood); }
+.rifthist__bars li.is-open > i { --bc: var(--win); }
+.rifthist__bars li.is-none > i { height: 2px; border-top-width: 1px; border-top-style: dashed; background: none; }
+.rifthist__bars small { min-height: 1.3em; font-size: 0.5rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.rifthist__bars li.is-today small { color: #fff; font-weight: 700; }
+.rifthist__bars li.is-today > i { box-shadow: 0 0 0 1px color-mix(in srgb, var(--win) 70%, transparent), 0 0 10px var(--win-glow); }
+@keyframes riftBar { from { transform: scaleY(0); } to { transform: none; } }
+
+/* The score on the results, worked a line at a time, the total under a rule; a new best in gold. */
+.rscore { display: flex; flex-direction: column; gap: 6px; }
+.rscore__lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; font-family: var(--font-sys); }
+.rscore__lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 2px; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 86%, transparent); animation: qaIn 360ms var(--ease) both; animation-delay: calc(200ms + var(--i) * 110ms); }
+.rscore__lines li b { color: #fff; font-weight: 700; }
+.rscore__lines li.is-none { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.rscore__lines li.is-none b { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); font-weight: 500; }
+.rscore__total { display: flex; align-items: baseline; justify-content: space-between; padding: 8px 2px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.rscore__total b { font-size: 1.6rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 12px color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.rscore.is-best .rscore__total b { color: var(--gold); text-shadow: 0 0 14px var(--gold-glow); }
+.rscore__new { color: var(--gold) !important; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; animation: qaIn 420ms var(--ease) 1300ms both; }
+
+/* The Rift on the Quests log: its tear, the date and grade over the Gate, its seals, the attempt or the score. */
+.qsec--rift .sysframe__glass { padding: 12px 12px 10px; }
+.qrift { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px; padding: 4px 0 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.qrift__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.qrift__date { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
+.qrift__name { font-size: 0.98rem; font-style: italic; font-weight: 800; line-height: 1.2; color: #fff; }
+.qrift__mods { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; }
+.qrift__mod { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.qrift__side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.qrift__side small { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qrift__side b { font-size: 1.3rem; font-weight: 800; line-height: 1; color: #fff; }
+.qrift.is-done .qrift__side b { color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); }
+/* QUEST INFO for the Rift. */
+.qriftinfo__lead { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.qriftinfo__lead small { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--win); }
+.qriftinfo { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.qriftinfo--score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.qriftinfo__fig { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.qriftinfo__fig small { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.qriftinfo__fig b { font-size: 1.25rem; font-weight: 800; color: #fff; }
+.qriftinfo__fig i { font-size: 0.62rem; font-style: normal; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+
+/* The brief: the Rift's tag, its modifiers without pay, and how it is scored. */
+.gtag.is-rift { --tc: var(--ember); }
+.bseals.is-rift .bseal { cursor: default; }
+.brift__lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.brift__lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.brift__lines li:last-child { border-bottom: 0; }
+.brift__lines b { color: #fff; font-weight: 700; }
+.brift__note { display: block; margin-top: 6px; font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .rifttear__halo, .rifttear__glow, .rifttear__mote, .rifthist__bars li > i, .riftmods li, .rscore__lines li, .rscore__new { animation: none; }
+  .rifttear__mote { opacity: 0.6; }
+}

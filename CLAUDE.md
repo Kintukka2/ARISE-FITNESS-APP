@@ -45,6 +45,14 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `gates.dungeonById` resolves it and the whole raid engine plays it. `npm run calibrate` tunes it
   after the gates; anything that needs recalibrating the gates needs the Spire recalibrated too, and
   the same run does both.
+- The Daily Rift (`data/rift.ts`, `core/rift.ts`) is a gate drawn from its id (`RFT-<day>-<grade>`), as a block of the
+  Spire is, so `gates.dungeonById` resolves it and the whole raid engine plays it. It must be the same on every phone:
+  its shape, map, modifiers (`seals.riftSeals`, drawn from the id) and seed (`run.seed` is the id) read nothing of
+  the hunter but the grade in the id. Each hunter walks it at the Ascension they have chosen, as any Gate, and it
+  counts as the Gate it takes the shape of (`home` in `raid.finish`, and `ascension.prove`): its first clear, its Feats,
+  Ryn's jobs, the boss seen, the proof. Its modifiers ride on `run.seals` but pay no Seal's Ember. Its one attempt is written as it is
+  entered (`rift.enter`) and its score in `raid.finish` (`rift.settle`). It is not calibrated: it takes its Gate's
+  tuning, and changes to what it pays need the campaign rerun.
 - A run keeps the Ascension level it walked in with (`run.ascension`, read through `ascension.levelOf`).
   Every rule inside a run reads that, never the level the hunter has chosen since. `npm run calibrate`
   tunes the levels last, against hunters who keep up (`keptUpHunter`).

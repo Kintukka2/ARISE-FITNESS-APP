@@ -35,6 +35,8 @@ import * as shadows from '@/core/shadows';
 import * as association from '@/core/association';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
+import * as rift from '@/core/rift';
+import { RIFT_EMBER } from '@/data/rift';
 import type { Dungeon, GearDef, Rank, Save, SlotKey } from '@/core/types';
 import { RANKS } from '@/core/types';
 import { dayKey, rng } from '@/core/util';
@@ -66,11 +68,13 @@ interface Tally {
   bossDrops: number; sealEmber: number;
   /** Engraved pieces found, powers cut into worn pieces from the Codex, and the Ember that took. */
   engravedFound: number; engraved: number; engraveEmber: number;
+  /** Daily Rifts walked into, cleared, their scores added up, and the Ember they paid. */
+  rifts: number; riftCleared: number; riftScore: number; riftEmber: number;
 }
 const TALLY: Tally = {
   runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0,
   upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0, sealed: 0, feats: 0, drops: 0, bossDrops: 0, sealEmber: 0,
-  engravedFound: 0, engraved: 0, engraveEmber: 0,
+  engravedFound: 0, engraved: 0, engraveEmber: 0, rifts: 0, riftCleared: 0, riftScore: 0, riftEmber: 0,
 };
 
 const rk = (d: GearDef | undefined) => RANKS.indexOf((d?.rank ?? 'E') as Rank);
@@ -209,10 +213,12 @@ const PUSH = 0.5;
 function pickLevel(s: Save, d: Dungeon, now: number, floor = 0) {
   const a = s.ascension;
   const grade = licensedRank(s);
-  const counts = asc.proving(s) && d.rank === grade && !spire.isSpire(d) && !a.proof.gates.includes(d.id);
+  // A Rift proves the Gate it takes the shape of, and is read under its modifiers.
+  const counts = asc.proving(s) && d.rank === grade && !spire.isSpire(d) && !a.proof.gates.includes(rift.isRift(d) ? d.shape ?? d.id : d.id);
+  const mods = rift.isRift(d) ? sealing.riftSeals(d) : [];
   for (let L = a.unlocked; L > floor; L--) {
     asc.choose(s, L);
-    if (raid.project(s, d, 8, now).rate >= (counts && L === a.unlocked ? PUSH : SAFE)) return;
+    if (raid.project(s, d, 8, now, mods).rate >= (counts && L === a.unlocked ? PUSH : SAFE)) return;
   }
   asc.choose(s, floor);
 }
@@ -255,6 +261,11 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   if (association.ready(s)) { association.report(s); t.assoc++; }
   t.runs++;
   if (spire.isSpire(d)) t.spire++;
+  if (res.rift) {
+    t.rifts++;
+    t.riftScore += res.rift.total;
+    if (outcome === 'cleared') { t.riftCleared++; t.riftEmber += RIFT_EMBER[d.rank as Rank]; }
+  }
   t[outcome]++;
   t.contracts += res.contracts.done.length;
   if (res.contracts.bonus) t.bonusDays++;
@@ -305,9 +316,12 @@ function campaign(p: Profile) {
         const trial = asc.trialReady(s, dayKey(now)) && raid.project(s, asc.nextTrial(s), 8, now).rate >= PUSH ? asc.nextTrial(s) : null;
         const tower = !trial && spire.spireOpen(s) && climbed !== day && !entryBlock(s, spire.nextSpire(s, dayKey(now)), now);
         if (tower) climbed = day;
+        // Then the day's Rift, its one attempt, while the brief reads three in four or better, as it takes Seals.
+        const today = rift.riftFor(s, dayKey(now));
+        const riftD = !trial && !tower && !entryBlock(s, today, now) && (pickLevel(s, today, now, 0), raid.project(s, today, 24, now, sealing.riftSeals(today)).rate >= SAFE) ? today : null;
         // Then one of the Chosen, when it holds an open gate and the brief gives it an even chance.
-        const hunt = !trial && !tower ? huntGate(s, dayKey(now), now) : null;
-        const d = trial ?? (tower ? spire.nextSpire(s, dayKey(now)) : hunt?.d ?? pickGate(s, dayKey(now), now));
+        const hunt = !trial && !tower && !riftD ? huntGate(s, dayKey(now), now) : null;
+        const d = trial ?? (tower ? spire.nextSpire(s, dayKey(now)) : riftD ?? hunt?.d ?? pickGate(s, dayKey(now), now));
         if (!d) break;
         const cleared = t.cleared;
         play(s, d, now, r, t, hunt?.level ?? 0);
@@ -340,6 +354,7 @@ function campaign(p: Profile) {
   console.log(`  engravings ${t.engravedFound} engraved pieces found, ${engr.codex(s).length}/${engr.ENGRAVINGS.length} in the Codex, ${t.engraved} cut for ${t.engraveEmber} Ember; live: ${engr.live(s).map((id) => engr.engravingById(id)!.name).join(', ') || 'none'}`);
   console.log(`  materials  ${Object.entries(s.materials).filter(([, n]) => n).map(([k, n]) => `${forge.materialById(k)?.name ?? k} ${n}`).join(', ')}`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
+  console.log(`  Rift       ${t.rifts} walked into, ${Math.round((t.riftCleared / Math.max(1, t.rifts)) * 100)}% cleared, score ${Math.round(t.riftScore / Math.max(1, t.rifts))} on average, best ${rift.best(s)}, ${t.riftEmber} Ember`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);
   console.log(`  Association ${t.assoc} jobs reported; satchel ${shop.satchelMax(s)}; held: ${Object.entries(s.stock).filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).join(', ') || 'nothing'}`);

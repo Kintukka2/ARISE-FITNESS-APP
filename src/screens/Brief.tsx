@@ -23,6 +23,8 @@ import { GATE_XP, PRACTICE_LEVEL, practiceAward } from '@/core/progression';
 import { build, mapSeed, sight } from '@/core/map';
 import * as contracts from '@/core/contracts';
 import * as spire from '@/core/spire';
+import * as rift from '@/core/rift';
+import { RIFT_EMBER, RIFT_PAR, SCORE } from '@/data/rift';
 import * as ascension from '@/core/ascension';
 import { isTrial, trialLevel } from '@/core/trial';
 import * as association from '@/core/association';
@@ -35,7 +37,7 @@ import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as shop from '@/core/shop';
 import type { Dungeon, Rank, Save } from '@/core/types';
-import { dayKey, hhmmss, msUntilMidnight } from '@/core/util';
+import { dayKey, group, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import * as store from '@/store';
@@ -55,6 +57,7 @@ import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
 import { Keyed } from '@/ui/keyed';
+import { SealArt } from '@/ui/seals';
 import { drinkFlow } from './Inventory';
 
 /**
@@ -89,6 +92,11 @@ function sealsOn(s: Save, d: Dungeon): { offer: SealId[]; taken: SealId[]; fixed
   if (run) {
     const own = inOrder(sealing.of(run));
     return { offer: own, taken: own, fixed: true };
+  }
+  // A Rift's modifiers are its own, the same for every hunter: fixed before the run as during it.
+  if (rift.isRift(d)) {
+    const mods = sealing.riftSeals(d);
+    return { offer: mods, taken: mods, fixed: true };
   }
   const offer = sealing.offered(s, d);
   return { offer, taken: inOrder((wanted.get()[wantKey(d)] ?? []).filter((id) => offer.includes(id))), fixed: false };
@@ -142,16 +150,6 @@ function useProjection(s: Save, d: Dungeon, taken: readonly SealId[]): { proj: P
 
 // ------------------------------------------------------------------ marks
 
-/** A Seal pressed in wax: a scalloped disc, its rim embossed, a keyhole at its heart. Its colour is the wax's. */
-export function SealArt({ size = 24, class: cls, style }: { size?: number; class?: string; style?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} class={`sealart ${cls ?? ''}`} style={style} aria-hidden="true">
-      <path class="sealart__wax" d="M13.16 1.84Q14.32 2.58 15.69 2.47Q17.07 2.35 17.75 3.54Q18.43 4.74 19.7 5.27Q20.97 5.81 21.02 7.18Q21.07 8.56 21.95 9.62Q22.82 10.69 22.22 11.93Q21.63 13.17 21.91 14.52Q22.19 15.87 21.09 16.69Q19.98 17.51 19.61 18.83Q19.23 20.16 17.87 20.37Q16.51 20.59 15.56 21.59Q14.61 22.58 13.3 22.14Q12 21.7 10.7 22.14Q9.39 22.58 8.44 21.59Q7.49 20.59 6.13 20.37Q4.77 20.16 4.39 18.83Q4.02 17.51 2.91 16.69Q1.81 15.87 2.09 14.52Q2.37 13.17 1.78 11.93Q1.18 10.69 2.05 9.62Q2.93 8.56 2.98 7.18Q3.03 5.81 4.3 5.27Q5.57 4.74 6.25 3.54Q6.93 2.35 8.31 2.47Q9.68 2.58 10.84 1.84Q12 1.1 13.16 1.84z" />
-      <circle class="sealart__rim" cx="12" cy="12" r="6.7" />
-      <path class="sealart__key" d="M12 8.1a2.1 2.1 0 0 1 1.15 3.86l.75 4.04h-3.8l.75-4.04A2.1 2.1 0 0 1 12 8.1z" />
-    </svg>
-  );
-}
 
 /**
  * The assessment's ring: a tick to each of the System's runs, lit for each it cleared, round the clear rate
@@ -240,6 +238,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const trial = isTrial(d);
   const practice = isPractice(d);
   const tower = spire.isSpire(d);
+  const rifted = rift.isRift(d);
   // A Trial is fought at the level it proves, whatever is chosen: the party, the pay and the rules shown are that level's.
   const level = ascension.entryLevel(s, d, practice);
   const { offer, taken, fixed } = sealsOn(s, d);
@@ -273,7 +272,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       */}
       <header class={`bhero ${pending ? 'is-pending' : ''} ${sealed ? 'is-sealed' : ''}`} data-tone={v.tone} data-tour="assess">
         <span class="bhero__glow" aria-hidden="true" />
-        <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : `${d.rank}-Rank Gate`}:</span> <span class="bhero__name">{trial ? `Ascension ${trialLevel(d) + 1}` : d.name}</span></h3>
+        <h3 class="bhero__title"><span class="label bhero__grade">{trial ? 'Trial of Ascension' : tower ? `${d.rank}-Rank floors` : rifted ? `${d.rank}-Rank Daily Rift` : `${d.rank}-Rank Gate`}:</span> <span class="bhero__name">{trial ? `Ascension ${trialLevel(d) + 1}` : rifted ? dungeonById(d.shape ?? '')?.name ?? d.name : d.name}</span></h3>
         <span class="bhero__ring" role="img" aria-label={`Assessment: ${v.text}. Clear rate ${rate}%${sealed && plainRate !== rate ? `, ${plainRate}% without the Seals` : ''}.`}>
           <Ring p={proj} plain={plain} r={62} />
           <span class="bhero__portal ga-portal" aria-hidden="true">
@@ -286,7 +285,8 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           <b class="bhero__assess">{v.text}</b>
         </span>
         <span class="bhero__tags">
-          {!trial && !tower && !practice && <span class={`gtag ${cleared ? 'is-done' : 'is-fresh'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
+          {!trial && !tower && !practice && !rifted && <span class={`gtag ${cleared ? 'is-done' : 'is-fresh'}`}>{cleared ? 'Cleared' : 'Never cleared'}</span>}
+          {rifted && <span class="gtag is-rift">Once today</span>}
           {mark && <span class={`gtag is-${mark.toLowerCase()}`}>{mark}</span>}
           {level > 0 && <span class="gtag is-ascension">Ascension {level}</span>}
           {trial && <><span class="gtag">Rest: None</span><span class="gtag">Withdrawal: Not possible</span><span class="gtag">Allies: None</span></>}
@@ -300,10 +300,11 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <Facts d={d} level={level} taken={taken} />
       <Objectives d={d} level={level} taken={taken} />
       <RewardTiles d={d} level={level} taken={taken} />
-      {offer.length > 0 && <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} />}
+      {offer.length > 0 && <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} rifted={rifted} />}
+      {rifted && <RiftScoring />}
       <EnemyRow d={d} level={level} />
       <Lineup d={d} level={level} taken={taken} />
-      {hasFeats && <FeatList d={d} met={feats.metOn(s, d)} odds={proj.feats} runs={proj.runs} />}
+      {hasFeats && <FeatList d={d} met={feats.metOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} odds={proj.feats} runs={proj.runs} />}
       <MapRow d={d} road={proj.road} />
 
       {/* The way in stays at the foot of the window, whatever is scrolled past. */}
@@ -311,12 +312,12 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         {block === 'open' ? open?.id === d.id
           ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
           : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
-          : block === 'spent' ? <Btn block disabled>You have faced the Trial today. It opens again tomorrow.</Btn>
+          : block === 'spent' ? <Btn block disabled>{rifted ? 'You have walked today’s Rift. Another opens at midnight.' : 'You have faced the Trial today. It opens again tomorrow.'}</Btn>
           : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
             : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
               : (
                 <Btn kind={trial ? 'gold' : 'primary'} size="lg" block onClick={() => void enterGate(d, taken)} sound="none" tour="enter">
-                  {trial ? 'Enter The Trial' : 'Enter The Gate'}
+                  {trial ? 'Enter The Trial' : rifted ? 'Enter The Rift' : 'Enter The Gate'}
                 </Btn>
               )}
       </div>
@@ -371,7 +372,9 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
   const pay = ascension.payShare(level);
   const sh = Math.round(shop.GATE_SHARDS[d.rank as Rank] * pay);
   const xp = practice ? practiceAward(s) : Math.round(GATE_XP[d.rank as Rank] * pay);
-  const first = !tower && !trial && !practice && !s.gates.cleared.includes(d.id);
+  const rifted = rift.isRift(d);
+  // A Rift's first clear is its Gate's.
+  const first = !tower && !trial && !practice && !s.gates.cleared.includes(rifted ? d.shape ?? d.id : d.id);
   const sets = raid.homeSets(d);
   const tracked = new Set(practice ? [] : s.tracked ?? []);
   const mats = practice ? [ALLOYS.E.id] : forge.sourcesOf(d, level);
@@ -392,7 +395,8 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {first && tile('bounty', 'is-bounty', <Shard size={26} />, 'Bounty · once', `+${sh * 2}`, `Bounty: XP +${xp}, Mana Shards +${sh * 2}, one-time reward`)}
         {trial && tile('victory', 'is-victory', <Glyph name="crown" />, `Ascension ${s.ascension.unlocked + 1} opens`)}
         {tower && tile('week', 'is-victory', <Glyph name="spire" />, `Floor ${spire.lastFloor(spire.blockOf(d.floor ?? 1))}`, undefined, 'This week: a new best')}
-        {taken.length > 0 && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Seal bonus', `+${ember}`, `Seal bonus: Ember +${ember}`)}
+        {rifted && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Rift bonus', `+${RIFT_EMBER[d.rank as Rank]}`, `Rift bonus: Ember +${RIFT_EMBER[d.rank as Rank]}`)}
+        {!rifted && taken.length > 0 && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Seal bonus', `+${ember}`, `Seal bonus: Ember +${ember}`)}
         {mats.map((id) => tile(id, `is-mat ${tracked.has(id) ? 'is-tracked' : ''}`, <><MatArt id={id} size={30} />{tracked.has(id) && <TrackMark class="breward__track" />}</>, forge.materialById(id)?.name ?? id))}
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
           practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint', '×1')}
@@ -409,7 +413,7 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
  * tap and lit red, its name under it; what the one last touched does and pays, under them; and the Ember they
  * add on the right. The head's ring answers as each is pressed. A run open on the Gate keeps its own, fixed.
  */
-function SealStrip({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean }) {
+function SealStrip({ d, offer, taken, fixed, rifted }: { d: Dungeon; offer: SealId[]; taken: SealId[]; fixed: boolean; rifted?: boolean }) {
   const [shown, setShown] = useState<SealId | null>(null);
   const [pressed, setPressed] = useState<{ id: SealId; on: boolean } | null>(null);
   const ember = emberOf(taken, d);
@@ -423,10 +427,10 @@ function SealStrip({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; ta
   };
   const x = shown ? SEALS[shown] : null;
   return (
-    <section class={`bseals ${taken.length ? 'is-on' : ''}`} aria-label="Seals" data-tour="seals">
+    <section class={`bseals ${taken.length ? 'is-on' : ''} ${rifted ? 'is-rift' : ''}`} aria-label={rifted ? 'Modifiers' : 'Seals'} data-tour="seals">
       <span class="bseals__head">
-        <span class="label">Seals</span>
-        <span class="bseals__ember"><MatArt id={EMBER.id} size={16} /><b class="num emb" key={ember}>+{ember}</b><small>Ember on a clear</small></span>
+        <span class="label">{rifted ? 'Modifiers' : 'Seals'}</span>
+        {!rifted && <span class="bseals__ember"><MatArt id={EMBER.id} size={16} /><b class="num emb" key={ember}>+{ember}</b><small>Ember on a clear</small></span>}
       </span>
       <ul class="bseals__set">
         {offer.map((id, i) => {
@@ -439,7 +443,7 @@ function SealStrip({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; ta
                 onClick={() => toggle(id)}>
                 <span class="bseal__wax"><SealArt size={42} class={on ? 'is-on' : ''} />{just && pressed!.on && <i class="sealcard__ripple" />}</span>
                 <b>{SEALS[id].name}</b>
-                <small class="emb">+{sealEmber(id, d.rank)}</small>
+                {!rifted && <small class="emb">+{sealEmber(id, d.rank)}</small>}
               </button>
             </li>
           );
@@ -447,8 +451,34 @@ function SealStrip({ d, offer, taken, fixed }: { d: Dungeon; offer: SealId[]; ta
       </ul>
       <p class="bseals__rule">
         {x ? <><b>{x.name}:</b> {x.rule}{x.note ? <span class="muted"> {x.note}</span> : null}</>
-          : fixed ? 'Fixed for this run.' : SEAL_LINE}
+          : rifted ? offer.map((id) => SEALS[id].rule).join('. ') + '.' : fixed ? 'Fixed for this run.' : SEAL_LINE}
       </p>
+    </section>
+  );
+}
+
+/**
+ * How a Rift is scored, worked out before it is walked, as Dead Cells and Shattered Pixel Dungeon lay out the
+ * score after: a line to each part and its points, the best score kept under them.
+ */
+function RiftScoring() {
+  const s = useSave();
+  const best = rift.best(s);
+  const lines: [string, string][] = [
+    ['Each fight won', `${SCORE.fight}`],
+    ['Gatekeeper defeated', `${SCORE.keeper}`],
+    ['Boss defeated', `${SCORE.boss}`],
+    ['Each Feat met', `${SCORE.feat}`],
+    [`Each round under par (${RIFT_PAR} a fight)`, `${SCORE.pace}`],
+    ['HP left at the end', `up to ${SCORE.health}`],
+  ];
+  return (
+    <section class="bbox brift" aria-label="Score">
+      <span class="label bbox__head">Score{best > 0 && <small> · Best <b class="num">{group(best)}</b></small>}</span>
+      <ul class="brift__lines">
+        {lines.map(([k, v]) => <li key={k}><span>{k}</span><b class="num">{v}</b></li>)}
+      </ul>
+      <small class="brift__note">Feats, pace and HP left count on a clear.</small>
     </section>
   );
 }
@@ -739,7 +769,7 @@ function Objectives({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
         {assoc && <Line cls="is-assoc" side={<span class="num">{assoc.got}/{assoc.need}</span>}>Association Quest: {goalOf(assoc)}</Line>}
         {daily.map((k, i) => <Line key={i} cls="is-quest" side={<span class="num">{k.got}/{k.need}</span>}>Daily Quest: {contracts.contractText(k, q.grade)}</Line>)}
         {proof && <Line cls="is-proof" side={<span class="num">{a.proof.gates.length}/{ascension.proofNeeds(s)}</span>}>To open Ascension {a.unlocked + 1}: clear it at Ascension {a.unlocked}</Line>}
-        {taken.includes('wardens') && <Line cls="is-seal" mark={<SealArt size={14} class="is-on" />} side={<span class="emb">Ember +{sealEmber('wardens', d.rank)}</span>}>Wardens Wake: defeat the Gatekeeper</Line>}
+        {taken.includes('wardens') && !rift.isRift(d) && <Line cls="is-seal" mark={<SealArt size={14} class="is-on" />} side={<span class="emb">Ember +{sealEmber('wardens', d.rank)}</span>}>Wardens Wake: defeat the Gatekeeper</Line>}
       </ul>
     </section>
   );

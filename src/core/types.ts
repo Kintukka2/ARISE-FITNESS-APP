@@ -241,6 +241,21 @@ export interface RunTally {
   keeper?: boolean;
   /** The lowest the hunter's HP stood in any fight, as a share of its maximum. */
   lowest: number;
+  /** Rounds fought in every chamber, for the Daily Rift's pace. Unset on a run opened before it was counted. */
+  rounds?: number;
+}
+
+/** A day's Daily Rift, as the history keeps it. */
+export interface RiftDay {
+  day: string;
+  grade: Rank;
+  /** The Gate it took the shape of. */
+  shape: string;
+  /** Its modifiers: the Seals' rules it played. */
+  mods: SealId[];
+  score: number;
+  /** How it ended, or `open` while the run is underway. */
+  outcome: 'cleared' | 'withdrawn' | 'defeated' | 'open';
 }
 
 /** What a week on the Spire paid when it closed. */
@@ -402,6 +417,8 @@ export interface Save {
   };
 
   shop: { day: string | null; taken: number[] };
+  /** The Daily Rift: the days walked, newest first, and the best score. Unset until the first. */
+  rift?: { days: RiftDay[]; best: number };
   /** The Pale Spire: this week's highest floor cleared, the highest ever, and what the last week paid. */
   spire: {
     season: string | null;

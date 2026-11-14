@@ -12,6 +12,7 @@ import { ENEMIES } from '@/data/enemies';
 import { HOLLOW_MONARCH, HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
 import { licensedRank } from './licence';
 import { isSpire, spireById } from './spire';
+import { canEnter as riftCanEnter, isRift, riftById } from './rift';
 import { chosenById, isTrial, trialById } from './trial';
 import { trialReady } from './ascension';
 import type { Attrs, Dungeon, Enemy, Rank, Save } from './types';
@@ -28,8 +29,8 @@ export const enemyById = (id: string) => enemyMap.get(id) ?? chosenById(id);
 export const ALL_ENEMIES = ENEMIES;
 
 const dungeonMap = new Map<string, Dungeon>([...DUNGEONS, HOLLOW_THRONE, PRACTICE_GATE].map((d) => [d.id, d]));
-/** A gate by id: one on file, or a block of the Spire, which is drawn from its id. */
-export const dungeonById = (id: string) => dungeonMap.get(id) ?? spireById(id) ?? trialById(id);
+/** A gate by id: one on file, or a block of the Spire, a Trial or a day's Rift, each drawn from its id. */
+export const dungeonById = (id: string) => dungeonMap.get(id) ?? spireById(id) ?? trialById(id) ?? riftById(id);
 export const ALL_DUNGEONS = DUNGEONS;
 export { HOLLOW_THRONE, PRACTICE_GATE };
 
@@ -99,6 +100,8 @@ export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | 
   if (s.gates.raid) return 'open';
   // A Trial can be walked into once a day, and only with its gates proved.
   if (isTrial(d) && !trialReady(s, dayKey(now))) return 'spent';
+  // A Rift once a day, on its own day.
+  if (isRift(d) && !riftCanEnter(s, d, dayKey(now))) return 'spent';
   const can = vitals.canRaid(s, now);
   return can.ok ? null : can.why;
 }
@@ -111,7 +114,7 @@ export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | 
  */
 export const mapKnown = (s: Save, d: Dungeon) => isTrial(d) || s.gates.entered.includes(d.id) || (s.gates.surveyed ?? []).includes(d.id) || (s.gates.runs[d.id]?.fought ?? 0) > 0 || s.gates.cleared.includes(d.id);
 
-export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d) || isTrial(d);
+export const bossKnown = (s: Save, d: Dungeon) => s.gates.bosses.includes(d.id) || s.gates.cleared.includes(d.id) || isPractice(d) || isSpire(d) || isTrial(d) || isRift(d);
 
 // ------------------------------------------------------------------ allies
 

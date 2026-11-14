@@ -1,5 +1,6 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
 import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
+import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, SCORE } from '@/data/rift';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
@@ -458,6 +459,20 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
+    title: 'The Daily Rift',
+    lines: [
+      `The Daily Rift opens once you have cleared ${RIFT_OPENS} Gates. A new one opens at midnight, on Quests.`,
+      'It is a Gate of your grade, drawn from the date alone: every hunter of your grade walks the same map, the same creatures and the same fights.',
+      `It plays ${RIFT_MODIFIERS} of the Seals’ rules as its modifiers, the same for everyone. They pay no Seal’s Ember.`,
+      'You walk it at the Ascension you have chosen, as any Gate.',
+      'You walk into it once a day, however the run ends. Carried out or withdrawn, the day’s attempt is spent.',
+      `A clear pays the Gate’s clear and Ascendant Ember by grade: ${RANKS.map((r) => `${r} ${RIFT_EMBER[r]}`).join(', ')}.`,
+      'It counts as the Gate it takes the shape of: for its first clear, its Feats, Ryn’s jobs and the proof Ascension asks.',
+      `Its score: ${SCORE.fight} for each fight won, ${SCORE.keeper} for the Gatekeeper, ${SCORE.boss} for the boss. On a clear, ${SCORE.feat} for each Feat met, ${SCORE.pace} for each round under par (${RIFT_PAR} rounds to each fight won), and up to ${SCORE.health} for the HP you have left.`,
+      `Your last ${RIFT_KEPT} days and your best score are kept on this device.`,
+    ],
+  },
+  {
     title: 'Your data',
     lines: [
       'Everything is stored on this device. Nothing is sent anywhere.',
@@ -471,7 +486,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 const TOPIC_GLYPH: Record<string, string> = {
   'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
   Gates: 'gates', 'Seals, Feats and special drops': 'lock', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
-  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Shadows: 'shadows', 'Kin and Formation': 'roster',
+  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and Formation': 'roster',
   'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
 };
 
