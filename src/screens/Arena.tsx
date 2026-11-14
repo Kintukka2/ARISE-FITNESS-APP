@@ -20,7 +20,9 @@ import { NODES } from '@/data/tree';
 import { TRICK } from '@/data/tricks';
 import * as story from '@/core/story';
 import type { Dungeon, Order } from '@/core/types';
+import { group } from '@/core/util';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
+import { licensedRank } from '@/core/licence';
 import * as spire from '@/core/spire';
 import { chamberOf, isFight, type MapNode } from '@/core/map';
 import { HONE_LEVELS, NODE } from '@/data/nodes';
@@ -52,13 +54,13 @@ import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
-import { Glyph, Shard, SKILL_GLYPH, STAT_ICON, THROW_GLYPH } from '@/ui/icons';
+import { Glyph, Shard, Sigil, SKILL_GLYPH, STAT_ICON, THROW_GLYPH } from '@/ui/icons';
 import { ringIndex, ringMid, ringSlot } from '@/ui/items';
 import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
 import { openBlueprint } from './Forge';
 import * as forge from '@/core/forge';
-import { bundleText, MatList } from '@/ui/forge';
+import { bundleText, MatArt, MatList, ordered } from '@/ui/forge';
 import { LootCell, useReveal, type Loot } from '@/ui/loot';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
@@ -1282,8 +1284,15 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
   const who = u.tag === 'hero' ? 'you' : u.name;
   const coming = Array.isArray(incoming) ? incoming : [];
   const count = Array.isArray(incoming) ? incoming.length : incoming ?? 0;
+  // Its mark at the card's left: a creature's family, the hunter's grade, a Shadow's or a hunter's sign.
+  const foe = u.side === 'e' && u.ref ? enemyById(u.ref) : undefined;
+  const mark = u.side === 'e'
+    ? (foe ? <FamilyGlyph family={foe.family} size={18} /> : <Glyph name="skull" />)
+    : u.tag === 'hero' ? <Sigil rank={licensedRank(store.get())} size={20} />
+      : u.tag === 'shadow' ? <Glyph name="shadows" /> : <Glyph name="profile" />;
   const inner = (
     <>
+      <span class={`unit__mark ${u.boss ? 'is-boss' : ''}`} aria-hidden="true">{mark}</span>
       <div class="row between">
         <b class="unit__name">{u.name}</b>
         <span class="num unit__hp">
@@ -1477,9 +1486,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       {turn.flash}
       <div class={`arena__results stack ${turn.quake ? 'is-quake' : ''}`}>
-        <header class="report__head">
-          <span class="label">{d.name}</span>
+        {/* The outcome as a title card, after the victory screens of Hades and Slay the Spire: the Gate's grade and
+            name small, the outcome large in its colour with a rule drawn under it, then what it means. */}
+        <header class="report__head rhead">
+          <span class="rhead__gate"><RankPlate rank={d.rank} size={22} /><span class="label">{d.name}</span></span>
           <h2>{title}</h2>
+          <i class="rhead__rule" aria-hidden="true" />
           <p class="muted">{r.outcome === 'cleared' ? isPractice(d) ? 'The Practice Gate is closed.'
             : r.spire ? r.spire.best ? `Floor ${r.spire.floor} cleared: your best this week. The next ${BLOCK} floors are open.` : `Floor ${r.spire.floor} cleared. The week closed while you were inside, so it does not count this week.`
               : trial ? `The last of the Chosen is down: ${r.depth} in a row.`
@@ -1488,21 +1500,31 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               : trial ? 'You were carried out. The Trial opens again tomorrow. Proven Gates stay proven.'
               : `The party was carried out. You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`}</p>
         </header>
-        <div class="tiles">
-          <div class="tile"><span class="label">XP</span><b class="tile__v num">+{r.xp?.gained ?? 0}</b><small class="tile__sub">{xpSub}</small></div>
-          <div class="tile"><span class="label">Shards</span><b class="tile__v"><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <small class="tile__sub">{shardSub.join(' · ')}</small> : r.dungeonId === 'DNG-000' ? <small class="tile__sub">the Practice Gate pays in kit</small> : null}</div>
-          <div class="tile"><span class="label">Health</span><b class="tile__v num">{v.hp}/{v.hpMax}</b><small class="tile__sub">{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small></div>
-          <div class="tile"><span class="label">Fatigue</span><b class="tile__v num">{v.fatigue}</b><small class="tile__sub">of {vitals.FATIGUE_MAX}</small></div>
+        {/* What the run paid, large and unframed, then the hunter's condition as bars. */}
+        <div class="rpay">
+          <div class="rpay__one"><small>XP</small><b class="num grant">+{group(r.xp?.gained ?? 0)}</b><i>{xpSub}</i></div>
+          <div class="rpay__one"><small>Shards</small><b><Shards n={r.shards + r.bounty + deal.shards} /></b>{shardSub.length ? <i>{shardSub.join(' · ')}</i> : r.dungeonId === 'DNG-000' ? <i>the Practice Gate pays in kit</i> : null}</div>
+        </div>
+        <div class="rcond">
+          <span class="rcond__row"><Glyph name="hp" /><span class="label">Health</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" /></span>
+          <span class="rcond__row"><Glyph name="bolt" /><span class="label">Fatigue</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold'} /></span>
+          <small>{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small>
         </div>
         {Object.keys(r.mats).length > 0 && (
-          <section class="sysbox spoils">
-            <span class="label">Materials</span>
-            <MatList b={r.mats} gain />
+          <section class="rsec spoils">
+            <header class="exsec__head"><span class="label">Materials</span><i aria-hidden="true" /></header>
+            <span class="rmats">{ordered(r.mats).map(([id, n]) => (
+              <span key={id} class="rmat" data-rarity={forge.materialById(id)?.rank}>
+                <span class="rmat__art"><MatArt id={id} size={34} /></span>
+                <b class="num grant">+{group(n)}</b>
+                <small>{forge.materialById(id)?.name ?? id}</small>
+              </span>
+            ))}</span>
           </section>
         )}
         {r.outcome === 'cleared' && r.feats.asked.length > 0 && (
-          <section class="sysbox bfeats" aria-label="Feats">
-            <div class="row between"><span class="label">Feats</span><small class="num">{r.feats.met.length}/{r.feats.asked.length}</small></div>
+          <section class="rsec bfeats" aria-label="Feats">
+            <header class="exsec__head"><span class="label">Feats</span><i aria-hidden="true" /><small class="num">{r.feats.met.length}/{r.feats.asked.length}</small></header>
             {r.feats.asked.map((id) => (
               <div key={id} class={`bfeat ${r.feats.met.includes(id) ? 'is-done' : ''}`}>
                 <Glyph name="star" class="bfeat__star" />

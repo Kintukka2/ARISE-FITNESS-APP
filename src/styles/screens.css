@@ -3601,3 +3601,79 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .dossier__log { gap: 0; }
 .dossier__log li { padding: 8px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; }
 .shopcard__note .hint { font-size: 0.64rem; font-weight: 600; color: color-mix(in srgb, var(--gold) 80%, transparent); }
+
+/* ------------------------------------------------------------------ a run's results, rebuilt */
+
+/* The outcome as a title card: the Gate's plate and name small, the outcome large in its colour, a rule
+   drawn out under it from the centre, then what it means. */
+.rhead { align-items: center; gap: 6px; padding: 10px 0 4px; text-align: center; }
+.rhead__gate { display: inline-flex; align-items: center; gap: 8px; }
+.rhead__gate .label { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.arena--results .rhead h2 { margin: 2px 0 0; font-size: 2rem; letter-spacing: 0.1em; line-height: 1.05; animation: rheadIn 600ms var(--ease) both; }
+.arena--results.is-withdrawn .rhead h2 { color: var(--ember); text-shadow: 0 0 18px color-mix(in srgb, var(--ember) 50%, transparent); }
+.arena--results.is-defeated .rhead h2 { text-shadow: 0 0 18px rgba(255, 47, 62, 0.5); }
+.rhead__rule { display: block; width: min(260px, 80%); height: 2px; background: linear-gradient(90deg, transparent, currentColor, transparent); color: var(--verdant); box-shadow: 0 0 10px currentColor; transform-origin: center; animation: rheadRule 700ms 200ms var(--ease) both; }
+.arena--results.is-withdrawn .rhead__rule { color: var(--ember); }
+.arena--results.is-defeated .rhead__rule { color: var(--sysred); }
+.rhead p { max-width: 34ch; margin: 2px auto 0; font-size: 0.84rem; line-height: 1.45; }
+@keyframes rheadIn { from { opacity: 0; letter-spacing: 0.4em; } }
+@keyframes rheadRule { from { transform: scaleX(0); opacity: 0; } }
+
+/* What it paid: XP and shards large, side by side, a hairline between them. */
+.rpay { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+.rpay__one { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; text-align: center; }
+.rpay__one + .rpay__one { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.rpay__one small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.rpay__one > b { font-size: 1.8rem; font-weight: 800; line-height: 1.1; text-shadow: 0 0 14px var(--verdant-glow); }
+.rpay__one > b .shards { font-size: inherit; color: var(--verdant); }
+.rpay__one i { font-style: normal; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+/* The hunter's condition after it: health and fatigue as bars, and what comes back with time. */
+.rcond { display: flex; flex-direction: column; gap: 8px; }
+.rcond__row { display: grid; grid-template-columns: 18px 64px minmax(0, 1fr); align-items: center; gap: 8px; }
+.rcond__row .ico { width: 16px; height: 16px; color: var(--ink-2); }
+.rcond__row .label { font-size: 0.58rem; }
+.rcond > small { align-self: flex-end; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+
+/* A section of the results: its head (label, hairline, a count), then what it holds, unframed. */
+.rsec { display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; }
+/* The materials as a row of rewards, after the reward rows of Genshin Impact's domains: each its art on
+   its rarity's ground, the count under it in green, its name under that. */
+.rmats { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 8px; }
+.rmat { --rc: var(--rank-E); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 70px; text-align: center; animation: qaIn 420ms var(--ease) both; }
+.rmat[data-rarity='D'] { --rc: var(--rank-D); } .rmat[data-rarity='C'] { --rc: var(--rank-C); } .rmat[data-rarity='B'] { --rc: var(--rank-B); }
+.rmat[data-rarity='A'] { --rc: var(--rank-A); } .rmat[data-rarity='S'] { --rc: var(--rank-S); }
+.rmat__art { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid color-mix(in srgb, var(--rc) 55%, transparent); background: radial-gradient(color-mix(in srgb, var(--rc) 30%, transparent), color-mix(in srgb, var(--rc) 8%, rgba(4, 10, 24, 0.9)) 75%); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 20%, transparent); }
+.rmat > b { font-size: 0.86rem; font-weight: 800; }
+.rmat small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.62rem; line-height: 1.25; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+/* The feats without their box: a hairline between them. */
+.arena__results .bfeats .bfeat { border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; }
+.arena__results { --win: var(--mana); --win-glow: var(--mana-glow); }
+
+/* ------------------------------------------------------------------ the fight, redrawn */
+
+/* The field as a stage: the party's side lit cool and the foes' warm, a seam of light between them. */
+.arena__field { position: relative; column-gap: 14px; background: radial-gradient(ellipse 60% 80% at 22% 30%, rgba(79, 214, 255, 0.07), transparent 70%), radial-gradient(ellipse 60% 80% at 78% 30%, rgba(255, 77, 109, 0.07), transparent 70%); }
+.arena__field::before { content: ''; position: absolute; left: 50%; top: 14px; bottom: 14px; width: 1px; background: linear-gradient(transparent, rgba(255, 255, 255, 0.14) 20%, rgba(255, 255, 255, 0.14) 80%, transparent); pointer-events: none; }
+/* A card: its mark at its left, the name and HP over a fuller bar; its side's colour down its edge. */
+.unit { --uc: var(--mana); padding: 7px 9px 8px 40px; border-color: color-mix(in srgb, var(--uc) 34%, transparent); border-radius: 3px; background: linear-gradient(90deg, color-mix(in srgb, var(--uc) 12%, rgba(6, 12, 26, 0.9)), rgba(6, 12, 26, 0.86) 55%); }
+.unit::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--uc); box-shadow: 0 0 8px var(--uc); opacity: 0.8; }
+.unit--hero { --uc: var(--mana); border-color: color-mix(in srgb, var(--mana) 70%, transparent); }
+.unit--ally { --uc: #9fd4ff; }
+.unit--shadow { --uc: #9b6bff; border-color: rgba(155, 107, 255, 0.45); }
+.unit--foe { --uc: var(--blood); border-color: rgba(255, 77, 109, 0.32); background: linear-gradient(90deg, rgba(255, 77, 109, 0.1), rgba(6, 12, 26, 0.86) 55%); }
+.unit__mark { position: absolute; left: 9px; top: 8px; display: grid; place-items: center; width: 24px; height: 24px; color: var(--uc); }
+.unit__mark::before { content: ''; position: absolute; inset: 2px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--uc) 55%, transparent); background: color-mix(in srgb, var(--uc) 14%, rgba(4, 8, 18, 0.9)); }
+.unit__mark > * { position: relative; }
+.unit__mark .ico { width: 13px; height: 13px; filter: drop-shadow(0 0 4px var(--uc)); }
+.unit__mark.is-boss::before { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.unit__name { font-weight: 700; }
+.unit__hp { font-weight: 700; color: #fff; }
+.unit .bar { height: 5px; margin-top: 5px; }
+.unit.is-hurt { border-color: color-mix(in srgb, var(--gold) 70%, transparent); }
+.unit.is-hurt .unit__hp { color: var(--gold); }
+.unit.is-down::before { opacity: 0.2; }
+.arena__field { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.arena__side, .unit { min-width: 0; }
+.unit { padding-left: 33px; }
+.unit__mark { left: 6px; width: 22px; height: 22px; }
+.unit__name { font-size: 0.8rem; }

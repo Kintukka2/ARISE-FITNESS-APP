@@ -92,6 +92,8 @@ async function autoToResults() {
     await sleep(800);
   }
   await page.waitForSelector('.arena--results');
+  // The results open on their title card, and what the run paid stands unframed: no tile is left.
+  if (!(await page.locator('.arena--results .rhead__rule').count()) || await page.locator('.arena--results .tile').count()) throw new Error('THE RESULTS DO NOT OPEN ON THEIR TITLE CARD');
 }
 
 try {
@@ -457,6 +459,10 @@ try {
   await page.waitForSelector('.turnbar', { timeout: 20000 });
   await drain();
   await sleep(400); await snap('arena-turn');
+  // Every card on the field carries its mark, and neither side runs past the screen's edge.
+  if ((await page.locator('.arena__field .unit').count()) !== (await page.locator('.arena__field .unit__mark').count())) throw new Error('A FIGHT CARD HAS NO MARK');
+  const fieldOver = await page.locator('.arena__field').evaluate((el) => el.scrollWidth - el.clientWidth);
+  if (fieldOver > 1) throw new Error(`THE FIGHT FIELD RUNS ${fieldOver}px PAST THE SCREEN`);
   // Without Foresight a foe's card names its move and never its damage or its chance to hit, nor whom it goes at.
   if (await page.locator('.arena__side--foes .intent__hit').count()) throw new Error('A FOE SHOWS ITS DAMAGE WITHOUT FORESIGHT');
   if (await page.locator('.arena__side--foes .intent__foot, .arena__side--foes .intent__break').count()) throw new Error('A FOE CARD STILL CARRIES ITS FOOT OR ITS PIPS');

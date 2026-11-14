@@ -2054,6 +2054,14 @@ with what ARISE took from them.
   one that cannot be bought says why where its price would be. The hunter's dossier opens on the licence card, as the
   Licence window draws it (number and the day they woke, the name already in its title), then what is in force, the
   record as figures three to a row, and the log as lines. No engine changed.
+- **A run's results and the fight, redrawn** (the same call). The results open on a title card, after the victory
+  screens of Hades and Slay the Spire: the Gate's plate and name small, the outcome large in its colour with a rule
+  drawn out under it. What the run paid stands large and unframed (XP and shards side by side), the hunter's health
+  and fatigue as bars, the materials as a row of rewards on their rarities' grounds as Genshin Impact's domains lay
+  them, and the feats unboxed. In the fight, the field is a stage: the party's side lit cool and the foes' warm, a seam
+  between them; every card carries its mark at its left (a creature's family, the hunter's grade, a Shadow's or a
+  hunter's sign, a boss's in gold), its side's colour down its edge and a fuller HP bar. The action wheel, intents and
+  tips are as they were. No engine changed, and nothing a fight reads moved.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw

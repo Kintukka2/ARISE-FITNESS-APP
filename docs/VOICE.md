@@ -830,6 +830,13 @@ short, its price red. A card that cannot be bought (`Bought`, `Satchel full`, `B
 where its price would be. A card's note is short, `Satchel: 1/3`, `Held: 2`, `Bag: 0/3`; the Guide
 says where each is used.
 
+**A run's results.** A title card: the Gate's plate and name small (`E-Rank` plate, `Rustwater Drain`), the
+outcome large in its colour (`Gate Cleared` green, `Withdrawn` orange, `Carried Out` red) with a rule under
+it, then the line it has always had. Then `XP` and `Shards` large side by side, each with what qualifies it
+under it (`paid in full`, `Banked +10`); `Health` and `Fatigue` as bars, `HP +5% each hour` under them;
+`Materials`, each its art on its rarity's ground, `+6` in green under it and its name under that; `Feats`
+unboxed; then the System's alerts, the finds and the buttons as before.
+
 **The hunter's card.** `HUNTER: {name}`, opened from the Inventory screen's licence row and the Gates
 screen's record. It opens on the licence as the Licence window draws it, its grade's seal and letter, `LICENCE`
 over the number and `AWAKENED` over the day, the name left to the title; then `RANK` and `GUILD` as facts;
