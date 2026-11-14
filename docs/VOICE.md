@@ -856,13 +856,26 @@ Source: `NAME`, `LEVEL`, `JOB`, `FATIGUE`, `TITLE`, `HP`, `MP`, the five stats, 
 `JOB` is `CLASS`. ARISE has no titles, so `RANK` takes that place. Fatigue sits with HP and MP as a
 bar, because it falls over time and a potion lowers it. Tapping the class opens Skills.
 
-**Skills.** The skill tree, in the System's cyan frame. A box for the class (`[Class: {name}]`, its
-stat bonus) beside one for `SKILL POINTS`, which turns gold with its lit `+` mark while a point has
-somewhere to go. Then the five Paths as a constellation around the hunter, their points at its
+Drawn as the manhwa draws it, with no box round a field (the owner's call, with the other screens
+not yet rebuilt): the level large in a hexagon, `LEVEL` over it, beside `NAME:`, `CLASS:` and `RANK:`
+as lines with a hairline between them; under them `Level 35 for B-Rank.` over a bar of the climb;
+the vitals between hairlines; the stats two to a row, a hairline under each, a thin bar at its foot
+for how far its points have taken it toward their limit, and `ABILITY POINTS` large in gold while
+there are points to spend.
+
+**Stats.** The radar and its key, then where each stat comes from as a table: `STAT`, `BASE`,
+`CLASS`, `SKILLS`, `GEAR` and `TOTAL` over a row to each stat (`Strength 52 +5 +6 +1 64`, `--` where
+nothing adds), its line under it (`Increases physical damage.`), the columns lined up from row to row.
+Then `In a fight`, the fight's numbers two to a row (`ATTACK: 291`), each a line with a hairline under
+it and its `?` at its right, opening its line when tapped.
+
+**Skills.** The skill tree, in the System's cyan frame. At its head, unframed, the class
+(`[Class: {name}]`, its stat bonus) and at its right `SKILL POINTS` over the count, large, which turns
+gold with its lit `+` mark while a point has somewhere to go. Then the five Paths as a constellation around the hunter, their points at its
 centre (`17` / `POINTS`), each arm named for its Path with its stat and the points spent in it
 (`RUIN` / `STR · 13`), and a ring for each rank, lettered and lit once it is held. Then `SKILL SLOTS`
 (`3/3`), a hairline box to each slot with the skill's mark, name and `Lv.2`, or `-- --`. Then the
-chosen Path's box (`[Path: Ruin]`, its line, `SPENT 13`) and its tree, tier by tier under
+chosen Path's head between hairlines, its mark in a diamond (`[Path: Ruin]`, its line, `SPENT 13`) and its tree, tier by tier under
 `D-RANK` to `S-RANK`, each tier shut with what it waits for: `Opens at B-Rank`, or
 `Points in Ruin: 5/8`. A node is a hexagon for a skill, a diamond for a passive and a circle for a
 stat, with its counter (`2/3`) and its slot number when it is taken into fights.

@@ -3461,3 +3461,79 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .setcard .settiers { margin-top: 2px; }
 .setrow__bonus .settiers__boon b, .setbonus .settiers__boon b { display: block; width: auto; height: auto; border: 0; font-size: 0.74rem; line-height: 1.3; text-align: left; }
 .setrow__bonus .settiers__what .gains { line-height: 1.35; }
+
+/* ------------------------------------------------------------------ Status, Stats and Skills, rebuilt */
+
+/* STATUS: the source's window, its fields as plain lines. The level stands large in a hexagon beside
+   NAME, CLASS and RANK; the climb to the next rank under them; the vitals and the stats as rows with
+   hairlines between them, after the manhwa's own window, which draws no boxes. */
+.sthead { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 16px; padding: 4px 2px 0; }
+.sthead__lv { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 84px; height: 94px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, color-mix(in srgb, var(--win) 34%, rgb(6, 14, 30)), rgb(4, 10, 22) 70%); }
+.sthead__lv::before { content: ''; position: absolute; inset: 1.5px; clip-path: inherit; background: linear-gradient(160deg, rgb(8, 20, 40), rgb(3, 8, 18)); z-index: 0; }
+.sthead__lv > * { position: relative; }
+.sthead__lv small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.sthead__lv b { font-size: 2.1rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.sthead__fields { display: flex; flex-direction: column; gap: 0; margin: 0; }
+.sthead__fields > div { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: baseline; gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.sthead__fields > div:last-child { border-bottom: 0; }
+.sthead__fields dt { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.sthead__fields dt::after { content: ':'; }
+.sthead__fields dd { margin: 0; min-width: 0; font-size: 0.96rem; font-weight: 600; color: #fff; text-shadow: var(--sys-glow); overflow-wrap: anywhere; }
+.sthead__fields dd.status__rank { display: flex; align-items: center; gap: 6px; }
+.stclimb { display: flex; flex-direction: column; gap: 6px; }
+.stclimb > small { font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.stclimb__bar { display: block; height: 3px; background: rgba(255, 255, 255, 0.08); }
+.stclimb__bar > i { display: block; height: 100%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+/* The vitals without their box: a hairline above and below. */
+.status .vitals { gap: 12px; padding: 12px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-radius: 0; background: none; }
+/* The stats, two to a row, a hairline between rows; each a button that spends, its bar the base toward the points' limit. */
+.status .attrs { gap: 0 18px; }
+.status .attr { flex-wrap: wrap; min-height: 58px; padding: 10px 2px 12px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; }
+.status .attr > .ico { color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.status .attr__k { color: #fff; }
+.status .attr__v { color: #fff; text-shadow: var(--sys-glow); }
+.attr__bar { position: absolute; left: 2px; right: 2px; bottom: 5px; height: 2px; background: rgba(255, 255, 255, 0.07); }
+.attr__bar > i { display: block; height: 100%; background: color-mix(in srgb, var(--win) 75%, transparent); }
+.status .attr--points { align-items: flex-end; border-style: none; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.status .attr--points .label { font-size: 0.56rem; }
+.status .attr--points.is-hot { color: var(--gold); }
+.status .attr--points.is-hot b { color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
+.status .attrs__alloc { padding-top: 10px; }
+
+/* STATS: the radar, then a table of where each stat comes from, its columns lined up, then the fight's
+   numbers as a list two to a row. */
+.stattable { display: flex; flex-direction: column; }
+.stattable__head, .stattable__row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, 33px) 38px; align-items: center; column-gap: 3px; }
+.stattable__head { padding: 0 2px 6px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); }
+.stattable__head span { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; text-align: right; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.stattable__head span:first-child { text-align: left; }
+.stattable__row { row-gap: 2px; padding: 10px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.stattable__row > .num { text-align: right; font-size: 0.84rem; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.stattable__row > .num.is-up { color: #fff; }
+.stattable__row > .num.is-none { color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+.stattable__name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.stattable__name .ico { flex: none; width: 16px; height: 16px; color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.stattable__name b { font-size: 0.84rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stattable__total { text-align: right; font-size: 1.05rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.stattable__desc { grid-column: 1 / -1; padding-left: 24px; font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.statsheet .sysfields { gap: 0 18px; }
+.statsheet .sysfield { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 11px 24px 11px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; }
+.statsheet .sysfield > span { white-space: nowrap; }
+.statsheet .sysfield > b { font-size: 1rem; color: #fff; white-space: nowrap; }
+.statsheet .sysfield__help { top: 50%; right: 2px; translate: 0 -50%; border-radius: 50%; }
+.statsheet .sysfield.is-open { flex-wrap: wrap; border-color: var(--win); background: color-mix(in srgb, var(--win) 7%, transparent); }
+.statsheet .sysfield.is-open .sysfield__help { top: 14px; translate: 0 0; }
+.statsheet .sysfield__why { flex-basis: 100%; }
+
+/* SKILLS: the head unframed, the class at its left and the points large at its right, gold while a point
+   has somewhere to go; the Path's head between hairlines. */
+.st-head { align-items: center; padding: 2px 2px 0; }
+.st-head__class, .st-head__pts { padding: 0; border: 0; background: none; }
+.st-head__class strong { font-size: 1.02rem; color: #fff; }
+.st-head__pts b { font-size: 2rem; color: #fff; text-shadow: var(--sys-glow); }
+.st-head__pts.is-due { box-shadow: none; }
+.st-head__pts.is-due b { color: var(--gold); text-shadow: 0 0 14px var(--gold-glow); }
+.st-head__pts .apdue__mark { left: auto; right: calc(100% + 8px); top: auto; bottom: 6px; translate: none; box-shadow: 0 0 8px var(--gold-glow); }
+.st-pathhead { padding: 10px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 16%, transparent); background: none; }
+.st-pathhead__icon { transform: rotate(45deg); width: 28px; height: 28px; margin: 0 4px; background: color-mix(in srgb, var(--mana) 14%, transparent); }
+.st-pathhead__icon .ico { transform: rotate(-45deg); }

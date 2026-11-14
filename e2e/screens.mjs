@@ -109,6 +109,9 @@ try {
   await snap('inventory');
   await snap('inventory-full', true);
   await page.locator('[data-hub="status"]').click(); await sleep(400); await snap('status', true);
+  // STATUS is the source's window: its fields as plain lines beside the level, no box round each.
+  if (!(await page.locator('.sheet.is-top .sthead__lv').count())) throw new Error('THE STATUS SHEET HAS NO LEVEL AT ITS HEAD');
+  if (await page.locator('.sheet.is-top .status .sysfield').count()) throw new Error('THE STATUS SHEET STILL BOXES ITS FIELDS');
   // A potion held is drunk before one is bought, and its offer can be told not to ask again.
   if (!(await page.locator('.sheet.is-top .pip.is-held').count())) throw new Error('THE HELD POTION DOES NOT SHOW');
   await page.locator('.sheet.is-top .pip.is-held').first().click(); await sleep(400);
@@ -117,6 +120,10 @@ try {
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
   await page.locator('.sheet.is-top .status .linkish').click(); await sleep(400); await snap('class', true); await close(); await close();
   await page.locator('[data-hub="stats"]').click(); await sleep(400); await snap('stats', true);
+  // Where each stat comes from is a table: a row to each stat, its columns lined up.
+  if ((await page.locator('.sheet.is-top .stattable__row').count()) !== 5) throw new Error('THE STATS TABLE DOES NOT ROW EVERY STAT');
+  const cols = await page.locator('.sheet.is-top .stattable__row').evaluateAll((rows) => rows.map((r) => Math.round(r.querySelector('.stattable__total').getBoundingClientRect().right)));
+  if (new Set(cols).size !== 1) throw new Error(`THE STATS TABLE'S TOTALS DO NOT LINE UP (${cols.join(', ')})`);
   // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
   if (await page.locator('.sheet.is-top .btn', { hasText: 'Allocate' }).count()) throw new Error('THE STATS SHEET STILL ALLOCATES');
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);

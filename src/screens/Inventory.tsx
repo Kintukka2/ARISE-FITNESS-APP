@@ -273,13 +273,20 @@ function StatusSheet() {
   const rc = reclassification(s);
   return (
     <div class="stack status">
-      <div class="sysfields">
-        <Field k="Name" v={s.hunter.name} />
-        <Field k="Level" v={<span class="status__level">{s.hunter.level}</span>} />
-        <Field k="Class" v={<button type="button" class="linkish" onClick={openSkills}>{cls?.name ?? 'Unclassified'}</button>} />
-        <Field k="Rank" v={<span class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={20} />{r.name}</span>} />
+      {/* The source's window: its fields as plain lines under the header, the level large in its own hexagon. */}
+      <header class="sthead">
+        <span class="sthead__lv"><small>Level</small><b class="num status__level">{s.hunter.level}</b></span>
+        <dl class="sthead__fields">
+          <div><dt>Name</dt><dd>{s.hunter.name}</dd></div>
+          <div><dt>Class</dt><dd><button type="button" class="linkish" onClick={openSkills}>{cls?.name ?? 'Unclassified'}</button></dd></div>
+          <div><dt>Rank</dt><dd class="row status__rank"><Sigil rank={r.key === 'N' ? 'N' : licensedRank(s)} size={18} />{r.name}</dd></div>
+        </dl>
+      </header>
+      <div class={`stclimb ${rc?.ready ? 'is-ready' : ''}`}>
+        <small>{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}</small>
+        {rc && !rc.ready && <i class="stclimb__bar" aria-hidden="true"><i style={`width: ${Math.round(rc.share * 100)}%`} /></i>}
+        {licenceHolding(s) && <small class="muted">Gate grade: {licensedRank(s)}-Rank without the Association Licence.</small>}
       </div>
-      <small class="muted">{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}{licenceHolding(s) ? ` Gate grade: ${licensedRank(s)}-Rank without the Association Licence.` : ''}</small>
       {skilltree.canSpend(s) && <Btn kind="gold" block onClick={openSkills}>Skills · Skill Points: {skilltree.points(s)}</Btn>}
       <VitalsBlock />
       <Attributes />
@@ -339,24 +346,29 @@ function StatsSheet() {
         )}
         <small class="muted">Tap a stat for its value</small>
       </div>
-      <ul class="statrows">
+      {/* Where each stat comes from, as a table: the columns line up from stat to stat. */}
+      <div class="stattable" role="table" aria-label="Where each stat comes from">
+        <div class="stattable__head" role="row">
+          <span role="columnheader">Stat</span><span role="columnheader">Base</span><span role="columnheader">Class</span>
+          <span role="columnheader">Skills</span><span role="columnheader">Gear</span><span role="columnheader">Total</span>
+        </div>
         {STAT_ORDER.map((k) => {
           const a = ATTRS.find((x) => x.key === k)!;
           const cls = bonus[k] ?? 0;
           const learned = fromTree[k] ?? 0;
           const kit = Math.round(total[k] - s.hunter.attrs[k] - cls - learned);
+          const add = (n: number) => <span role="cell" class={`num ${n > 0 ? 'is-up' : 'is-none'}`}>{n > 0 ? `+${n}` : '--'}</span>;
           return (
-            <li key={k} class="sysbox statrow">
-              <span class="statrow__icon" aria-hidden="true"><Glyph name={STAT_ICON[k]} /></span>
-              <span class="statrow__body">
-                <span class="statrow__head"><b>{a.name}</b><b class="num">{Math.round(total[k])}</b></span>
-                <small>{[`Base ${s.hunter.attrs[k]}`, cls ? `Class +${cls}` : '', learned ? `Skills +${learned}` : '', kit > 0 ? `Gear +${kit}` : ''].filter(Boolean).join(' · ')}</small>
-                <small class="muted">{a.desc}</small>
-              </span>
-            </li>
+            <div key={k} class="stattable__row" role="row">
+              <span class="stattable__name" role="cell"><Glyph name={STAT_ICON[k]} /><b>{a.name}</b></span>
+              <span role="cell" class="num">{s.hunter.attrs[k]}</span>
+              {add(cls)}{add(learned)}{add(kit)}
+              <b role="cell" class="num stattable__total">{Math.round(total[k])}</b>
+              <small class="stattable__desc">{a.desc}</small>
+            </div>
           );
         })}
-      </ul>
+      </div>
       <span class="label">In a fight</span>
       <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
@@ -471,6 +483,8 @@ function Attributes() {
           {total[k] !== s.hunter.attrs[k] && <small class="attr__base num">({s.hunter.attrs[k]})</small>}
           <b class="attr__v num">{Math.round(total[k])}</b>
           {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP && <span class="attr__plus"><Glyph name="plus" /></span>}
+          {/* How far its points have taken it toward their limit. */}
+          <i class="attr__bar" aria-hidden="true"><i style={`width: ${Math.round(Math.min(1, s.hunter.attrs[k] / STAT_CAP) * 100)}%`} /></i>
         </button>
       ))}
       <div class={`attr attr--points ${s.hunter.points ? 'is-hot' : ''}`}>

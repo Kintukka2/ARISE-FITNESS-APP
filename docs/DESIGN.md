@@ -2041,6 +2041,12 @@ with what ARISE took from them.
   (a diamond to each Gate to prove, a line to the crown), the Pale Spire's storeys lit to the week's best, a
   mosaic of the Secret Quests lit as they are done. Pay is plain gains, not chips. Ryn's card holds his job
   unframed until it is done, when the row is the report as before. No engine changed.
+- **Status, Stats and Skills, rebuilt** (the same call). STATUS is drawn as the manhwa draws its window, with no
+  box round a field: the level large in a hexagon beside NAME, CLASS and RANK as lines, the climb to the next rank
+  as a bar, the vitals between hairlines, and the stats two to a row with a thin bar each for how far its points have
+  taken it. STATS sets where each stat comes from as a table (Base, Class, Skills, Gear, Total), its columns lined up
+  from stat to stat as the owner asked of the property bars, and the fight's numbers as a list with their `?` at
+  the right. Skills' head is unframed, the points large; the Path's head stands between hairlines. No engine changed.
 
 - **Calibration.** The hunter who keeps up (`keptUpHunter`) still fields a full squad drawn at random from
   its grade's gates, now with no creature twice: extraction allows one Shadow a creature, and the old draw
