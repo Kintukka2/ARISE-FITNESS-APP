@@ -4,6 +4,7 @@ import type { UnitSpec } from './combat';
 import type { SealId } from '@/data/seals';
 import type { FeatId } from '@/data/feats';
 import type { MedalId } from '@/data/par';
+import type { Row } from '@/data/ranks';
 
 export const STATS = ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const;
 export type Stat = (typeof STATS)[number];
@@ -355,6 +356,8 @@ export interface Save {
     attrs: Attrs;
     points: number;
     classId: string | null;
+    /** Where the hunter stands in a fight (`ranks.heroRow`); unset, their class's place. */
+    stand?: Row;
     missions: string[];
     /**
      * The skill tree (`core/skilltree.ts`): the points held in each node by its id, the skills

@@ -177,6 +177,14 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   middle of its range (`autoTemper`, `AUTO_TEMPER`), so Ascension and the Trials do. Change the ranges, the System's
   choice or what the hunters carry and you must recalibrate; change what it costs and rerun the campaign, which tempers
   as `smith` in `scripts/campaign.ts` does.
+- Front and rear (`data/ranks.ts`, `core/ranks.ts`): every unit's spec carries where it stands (`UnitSpec.row`) and
+  how its hits reach (`ranged`, `reaching`): creatures and Shadows by role (`byRole`, a boss or a Chosen in front),
+  Association hunters by class (`byLead`), the hunter where they chose (`s.hunter.stand`) or by class (`heroStand`).
+  The fight reads it only through `combat.reachable` (a melee hit reaches the front while anyone stands in it) and `blow`
+  (a melee hit from the rear at `REAR_MELEE`); targets, a foe's intent, standing orders and the wheel all go through
+  `reachable`. A foe's shown intent lands where it showed (`kept` in `targets`), whatever has moved since. Auto never
+  steps back or forward (`MOVE`). An open run keeps the places it walked in with (`run.party`). Change a role's place,
+  a rule or the share and you must recalibrate, rerun `npm run parstats` and the campaign.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

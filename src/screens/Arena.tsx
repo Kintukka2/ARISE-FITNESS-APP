@@ -16,6 +16,7 @@ import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { ability, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
+import { MOVE, REAR_MELEE, ROW_NAME, type Row } from '@/data/ranks';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import { TRICK } from '@/data/tricks';
@@ -72,6 +73,8 @@ import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 
 interface UnitView {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[];
+  /** Where it stands (`data/ranks.ts`): its side's front or rear. */
+  row?: Row;
   /** A foe's grade, which sets its behaviours' numbers. */
   grade?: string;
   /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
@@ -212,6 +215,10 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
       shown: !coming.length ? [`Damage taken -${(1 - GUARD) * 100}%`] : sight ? [`Incoming ${inc[0]}-${inc[1]}`, `Guarded ${inc[2]}-${inc[3]}`] : [`Damage taken -${(1 - GUARD) * 100}%`, `Aimed at you: ${coming.length}`],
       said: !coming.length ? `Damage taken -${(1 - GUARD) * 100}%` : sight ? `Incoming ${spoken(inc[0], inc[1])}, guarded ${spoken(inc[2], inc[3])}` : `Damage taken -${(1 - GUARD) * 100}%, ${coming.length} aimed at you` },
     cover,
+    // Move: to the other rank, for the turn. From the front, the melee that reaches the rear; from the rear, back in.
+    turn.row === 'front'
+      ? { use: MOVE, name: 'Step Back', glyph: 'down', shown: ['To the rear', `Your melee ${Math.round(REAR_MELEE * 100)}% from there`], said: `To the rear. Your melee lands at ${Math.round(REAR_MELEE * 100)}% from there` }
+      : { use: MOVE, name: 'Step Forward', glyph: 'up', shown: ['To the front', 'Your melee in full'], said: 'To the front. Your melee lands in full' },
     { use: 'Strike', name: 'Strike', glyph: 'Weapon', ...dmg('Strike') },
   ];
   const acts = [...skills, ...fixed];
@@ -223,7 +230,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
   const st = skillState(s, shown.use, turn);
   const use = (a: WheelAct) => { if (!a.off) { setPicked(a.use); give(a.use); } };
   /** Guard and Cover are the defence's blue, Potion healing's green; the rest are the Gate's ember. */
-  const kind = (a: WheelAct) => (a.use === 'Guard' || a.use === COVER ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
+  const kind = (a: WheelAct) => (a.use === 'Guard' || a.use === COVER || a.use === MOVE ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
   const tap = (a: WheelAct) => {
     if (performance.now() < quiet.current) return;
     if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); }
@@ -356,6 +363,7 @@ function apply(local: UnitView[], b: Beat) {
     else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
     else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
     else if (e.t === 'guard') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+    else if (e.t === 'move') { const t = u(e.a); if (t) t.row = e.row; }
     else if (e.t === 'cover') {
       const t = u(e.a), w = u(e.v);
       if (t && !t.status.includes('Guarded')) t.status.push('Guarded');
@@ -799,7 +807,14 @@ export function Arena() {
   const party = units.filter((u) => u.side === 'p');
   const foes = units.filter((u) => u.side === 'e');
   const hero = party.find((u) => u.uid === 'hero');
-  const aiming = phase === 'turn' && turn ? turn.foes : [];
+  // The foes the picked action reaches: a melee hit, the front while anyone stands in it; a throw, any.
+  const aiming = phase === 'turn' && turn ? (turn.reach[picked] ?? turn.foes) : [];
+  // A foe the picked action cannot reach is no aim: the nearest to falling it can reach is.
+  useEffect(() => {
+    if (phase !== 'turn' || !turn || !aiming.length || (aim && aiming.includes(aim))) return;
+    const live = foes.filter((f) => aiming.includes(f.uid));
+    setAim(live.reduce((a, b) => (b.hp < a.hp ? b : a), live[0])?.uid ?? null);
+  }, [phase, turn, picked]);
   // Foresight: every foe's damage and chance to hit shown, on its card and on Guard and Cover.
   const sight = skilltree.foresees(s);
   // The throwable the run readied as it walked in; a run opened before that throws the first kind it holds.
@@ -860,7 +875,7 @@ export function Arena() {
         <>
           <div class="arena__field">
             <div class="arena__side">
-              {party.map((u) => {
+              {ranked(party).map((u) => u === 'rear' ? <RowMark key="rear" /> : (() => {
                 // With Cover picked, an ally standing is tapped to choose it.
                 const can = phase === 'turn' && picked === COVER && !!turn?.allies.includes(u.uid);
                 // Who is coming for it: on the hunter's turn, each foe by its place in the order, the number on its card.
@@ -868,11 +883,14 @@ export function Arena() {
                 const orders = phase === 'turn' && turn ? at.map((f) => turn.threats.find((x) => x.uid === f.uid)?.order).filter((n): n is number => !!n).sort((x, y) => x - y) : null;
                 return <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={orders && orders.length === at.length ? orders : at.length}
                   aimed={can && ward === u.uid} onPick={can ? () => { sfx.tap(); setWard(u.uid); } : undefined} pick="cover" tell={tell} />;
-              })}
+              })())}
             </div>
             <div class="arena__side arena__side--foes">
-              {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-                intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />)}
+              {ranked(foes).map((u) => u === 'rear' ? <RowMark key="rear" /> : (
+                <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
+                  far={phase === 'turn' && u.hp > 0 && !!turn && turn.foes.includes(u.uid) && !aiming.includes(u.uid)}
+                  intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />
+              ))}
             </div>
           </div>
           <ol class="arena__feed" aria-live="polite">
@@ -907,7 +925,7 @@ export function Arena() {
               give={(use) => give(
                 use === COVER ? { use, at: ward ?? undefined }
                   : use === 'Throw' && toss ? { use: throwOrder(toss), at: aim ?? undefined }
-                    : { use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
+                    : { use, at: use === 'Guard' || use === 'Potion' || use === MOVE ? undefined : aim ?? undefined })} />
           </div>
         )}
         {phase === 'decide' && room && (
@@ -1273,8 +1291,22 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
   );
 }
 
-function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell, round = 0 }: {
+/** A side as it stands: the front, then a mark, then the rear; with no one in the rear, no mark. */
+function ranked(side: UnitView[]): (UnitView | 'rear')[] {
+  const front = side.filter((u) => (u.row ?? 'front') === 'front');
+  const rear = side.filter((u) => u.row === 'rear');
+  return rear.length ? [...front, 'rear', ...rear] : front;
+}
+
+/** Where a side's rear begins: a hairline and its name, after Etrian Odyssey's two rows and Final Fantasy's step back. */
+function RowMark() {
+  return <span class="rowmark" aria-hidden="true"><i /><small>{ROW_NAME.rear}</small><i /></span>;
+}
+
+function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell, round = 0, far = false }: {
   u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
+  /** A foe the action picked cannot reach: a melee hit while the front stands. */
+  far?: boolean;
   intent?: IntentView; threat?: Threat;
   /** The foes coming for it next: their places in the order on the hunter's turn, or how many otherwise. */
   incoming?: number[] | number;
@@ -1293,7 +1325,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
   const cond = u.side === 'e' ? u.cond : undefined;
   const want = cond ? CONDITION[cond] : null;
   const ready = !!want && (want.status ? u.status.includes(want.status) : want.rounds ? round > 0 && round <= want.rounds : false);
-  const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''} ${onPick && pick === 'cover' ? 'is-coverpick' : ''}`;
+  const cls = `unit unit--${u.tag ?? u.side} is-${u.row ?? 'front'} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''} ${onPick && pick === 'cover' ? 'is-coverpick' : ''} ${far ? 'is-far' : ''}`;
   // A wind-up or a channel turns its HP bar into the break: blue, a section to each hit it can still take.
   const brk = intent && intent.wind && !intent.broken && intent.max ? { left: intent.pips ?? 0, max: intent.max } : null;
   const who = u.tag === 'hero' ? 'you' : u.name;
@@ -1310,6 +1342,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
       <span class={`unit__mark ${u.boss ? 'is-boss' : ''}`} aria-hidden="true">{mark}</span>
       <div class="row between">
         <b class="unit__name">{u.name}</b>
+        {far && <small class="unit__far">Out of reach</small>}
         <span class="num unit__hp">
           {count > 0 && u.hp > 0 && (
             <span class="unit__incoming" role="img" aria-label={coming.length ? `Coming for ${who} next: the foes ${coming.join(' and ')} in the order` : `${count} ${count === 1 ? 'foe is' : 'foes are'} coming for ${who} next`}>

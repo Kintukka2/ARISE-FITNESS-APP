@@ -1189,7 +1189,7 @@ didn't was judged to have no tension (docs/research/labyrinth-crawlers.md).
 - **Balance.** No Gate tuning moves for the clock. Rerun the campaign, since a hunter who explores now
   sees less of each Gate.
 
-### Ranks: not now
+### Ranks: not now (since built, below: Front and rear)
 
 Front and rear ranks are the largest gain in combat depth the research found, and they touch every
 target rule, every creature's kit, Auto and calibration. Build first what gives a turn more answers
@@ -1257,9 +1257,8 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    own, is the one that keeps working at the top.
 8. **Challenges graded against a par** (built, below: Par). The last of "Auto clears; hands earn extras": a Gate's
    clear graded against the rounds its fights should take, and paid by the medal it reaches, once.
-9. **Ranks, revisited.** Front and rear ranks were put off until Cover, throwables, wind-ups and creature
-   mechanics had been played ("Ranks: not now"). They have been. Decide, from play, whether ranks still
-   earn what they would cost every target rule, every creature's kit, Auto and calibration.
+9. **Ranks, revisited** (built, below: Front and rear). The owner's call, from the measurements and the references:
+   full ranks on both sides, kept to two.
 
 ### Read the fight and the map — built
 
@@ -2376,6 +2375,64 @@ Advance Wars' rank screen and Devil May Cry 5's results.
   the 120 days with almost none. Auto reached Gold on 15 and 12 Gates: the campaign's hunters forge, upgrade and temper
   as they go, and are stronger than `typicalHunter`, whose clears set the pars; a hunter stronger than a Gate clears it
   fast. On a Gate at its own level, the System reaches Gold one clear in twenty.
+
+### Front and rear — built
+
+Step 9: ranks, revisited. Measured on the fights as they stood: half or more of the fights from E to C held one
+creature and none held more than three; a fight past D-Rank lasted about three rounds; 74% of the creatures' moves and
+66% of the party's skills went at one target; and taunts, Cover and the wind-ups' breaks already decided who was hit. The
+recommendation was to close the step with no ranks; the owner chose full ranks on both sides, kept to two. The
+references are in [step 9's README](research/references/step-9-ranks/README.md#front-and-rear): Darkest Dungeon's four
+ranks and its rank pips, Etrian Odyssey's rows, Final Fantasy's back row, AFK Arena's formation, Monster Train's floors.
+
+- **Two ranks a side**, `Front` and `Rear` (`data/ranks.ts`). Every unit's spec carries its place (`UnitSpec.row`).
+  - **Creatures and Shadows stand by role** (`ranks.byRole`, `ROLE_ROW`): Brutes, Guardians, Assassins and Fliers in
+    front; Casters, Archers, Leaders and Status Specialists behind. A boss, and a Trial's Chosen, stand in front.
+  - **Association hunters stand by their class's lead** (`byLead`, `LEAD_ROW`): STR, VIT and AGI in front, PER and INT
+    behind.
+  - **The hunter stands where they choose** on a Gate's brief (`s.hunter.stand`), their class's place until they do.
+- **Reach** (`combat.reachable`): a melee hit, a physical action at one foe or two, reaches only the front while anyone
+  stands in it.
+  - Magic, volleys, spreads, bursts, wild swings, strikes at all and throws reach either.
+  - Archers' shots and a PER hunter's are `ranged`: they reach either, and lose nothing from the rear.
+  - Assassins' and Fliers' melee, and an AGI hunter's, is `reaching`: it reaches past the front.
+  - The front down, the rear stands open.
+- **The rear's melee lands at half** (`REAR_MELEE`, in `blow`, so the reckoning shows it).
+- **Step Back and Step Forward** (`MOVE`): the hunter's action on the wheel, moving them to the other rank for their
+  turn and the rest of the fight. Auto never moves.
+- **Intents keep their promise.** A foe chooses only targets it can reach, and its shown intent lands where it showed,
+  whatever has moved since (`kept` in `targets`). A marked strike reaches its mark wherever it stands, and Cover and a
+  taunt turn intents whatever rank the one covering stands in.
+- **Creature counts are unchanged.** The map's fights are drawn from its seed, and an open run must keep the fights it
+  opened with. Ranks always bite on the party's side, where four to seven stand, and on the creatures' side in the
+  fights that hold two or three.
+- **Screens.**
+  - The field stands each side front first: a front card nearer the seam between the sides, a rear card stepped back,
+    and a hairline marked `Rear` between them, after Final Fantasy's step back.
+  - A foe the picked action cannot reach is dimmed and says `Out of reach`, and the aim moves to the nearest-to-falling
+    foe it can reach.
+  - The wheel offers Step Back or Step Forward, in the defence's blue.
+  - The brief's lineup carries `F` or `R` on each face, and `You stand` offers Front and Rear.
+- **Calibration.** Every fight changed. Moved, all within the 5-point hold elsewhere:
+  - **Gates:** 19 of 51, most harder. By grade: E 0%, D +1.8%, C +2.2%, B +1.4%, A 0%, S +10.2%; the Hollow Throne +18.0%.
+  - **Spire blocks:** 20 of 50. By grade: E 0%, D +0.4%, C +1.9%, B +1.0%, A +10.9%, S +5.6%.
+  - **Spire floors:** 6 of 20, five easier (51-70 and 81-85, by 6% to 11%), 86-90 harder (+2.9%).
+  - **Ascension:** 1 of 10 (level 7 -1.1%).
+  - **Trials:** 6 of 10, all easier by 1% to 6%.
+
+  Ranks favour the party on the Gates, whose casters and archers now stand out of a melee creature's reach, and the
+  creatures on the Spire's floors and in the Trials, where the strongest packs keep a rear.
+- **Par.** `npm run parstats` puts the System's average rounds within 9% of every par, so no par moved.
+- **Campaign**, over 120 days, against `main` after Par:
+
+  | | Days to B, A, S, N | Carried out | Ascension opened | Medals (B/S/G) | Tempers | Engravings cut | Ember on day 120 |
+  |---|---|---|---|---|---|---|---|
+  | One evening, `main` | 19, 33, 59, 116 | 13 | 6 | 39 / 24 / 15 | 46 | 10 | 40 |
+  | This change | 21, 33, 60, 117 | 14 | 6 | 38 / 24 / 13 | 50 | 7 | 38 |
+  | Three sessions, `main` | 8, 14, 31, 62 | 28 | 25 | 40 / 21 / 12 | 84 | 15 | 71 |
+  | This change | 9, 16, 32, 62 | 29 | 22 | 41 / 26 / 10 | 83 | 9 | 21 |
+
+  The pace holds within a day or two of `main`: calibration put every Gate back on its target.
 
 ## What stays out
 

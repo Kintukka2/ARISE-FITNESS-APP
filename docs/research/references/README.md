@@ -13,6 +13,7 @@ one folder up say what the games do; these show it.
 | [6. A map, an army, gear and a daily Gate](step-6-map-army-gear-daily/) | The map: gradients, landmarks, secrets, Gatekeepers' wings and toll doors. The army, the gear and the daily Gate to come | 50 |
 | [7. Something for Ember to buy](step-7-ember-tempering/) | Tempering at perfect: a property chosen, its size rolled in its range, Current against New, the better marked | 23 |
 | [8. Challenges graded against a par](step-8-par/) | Par: a clear's rounds against the par of the fights it won, Bronze, Silver or Gold, each paid once | 16 |
+| [9. Ranks, revisited](step-9-ranks/) | Front and rear: melee reaches only the front while anyone stands in it; the rear's melee at half | 16 |
 
 Every image belongs to the game's publisher, or to the wiki, site or player who captured it, as listed beside it. They are kept here as design reference only: nothing in ARISE copies their art, and none of them ships with the game.
 

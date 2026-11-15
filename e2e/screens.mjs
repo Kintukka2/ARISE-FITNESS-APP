@@ -525,6 +525,16 @@ try {
   if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
   if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Formation:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S FORMATION');
   await page.locator('.sheet.is-top .blineup').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
+  // Front and rear: every member's place on their face, and the hunter's own to choose; chosen, it is kept.
+  if ((await page.locator('.sheet.is-top .blineup .browtag').count()) < 2) throw new Error('THE LINEUP DOES NOT SAY WHERE EACH STANDS');
+  if ((await page.locator('.sheet.is-top .bstand__opt').count()) !== 2) throw new Error('THE BRIEF DOES NOT LET THE HUNTER CHOOSE WHERE THEY STAND');
+  {
+    const was = await page.locator('.sheet.is-top .bstand__opt.is-on').innerText();
+    await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
+    if ((await page.locator('.sheet.is-top .bstand__opt.is-on').innerText()) === was) throw new Error('THE HUNTER\'S PLACE DID NOT CHANGE');
+    await page.locator('.sheet.is-top .bstand').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-stand');
+    await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
+  }
   // The enemies as portraits, the boss first: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
   if ((await page.locator('.sheet.is-top .benemy').count()) < 2) throw new Error('THE ENEMIES SHOW NO CREATURES');
@@ -591,6 +601,10 @@ try {
   if (new Set(glyphs).size !== glyphs.length) throw new Error('TWO ACTIONS ON THE WHEEL SHARE A GLYPH');
   await snap('arena-wheel-guard');
   // Cover: picked, an ally is tapped to choose it, and the hub shows what is aimed at them and what of it would land on the hunter.
+  // Move: the hunter's step to the other rank, on the wheel.
+  if (!(await page.locator('.actwheel__slot[data-act="Move"]').count())) throw new Error('THE WHEEL HAS NO MOVE');
+  // Each side stands front first; a card says where it stands.
+  if (!(await page.locator('.arena__side .unit.is-front').count())) throw new Error('NO CARD STANDS IN FRONT');
   await page.locator('.actwheel__slot[data-act="Cover"]').click(); await sleep(250);
   if (!(await page.locator('.actwheel__hub .actwheel__name', { hasText: 'Cover' }).count())) throw new Error('COVER DID NOT SHOW IN THE HUB');
   const allies = page.locator('.arena__side:not(.arena__side--foes) .unit.is-coverpick');

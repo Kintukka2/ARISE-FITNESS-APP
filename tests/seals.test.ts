@@ -124,7 +124,9 @@ describe('Seals', () => {
       plain += raid.project(s, d, 24, now).rate;
       sealed += raid.project(s, d, 24, now, hard).rate;
     }
-    expect(sealed).toBeLessThan(plain * 0.8);
+    // A fifth or so of the clears lost: the rear (front and rear) spares the party some of a Seal's bite, so the bar
+    // is 15%, where it was 20% before ranks (19.9% measured with them).
+    expect(sealed).toBeLessThan(plain * 0.85);
   });
 });
 

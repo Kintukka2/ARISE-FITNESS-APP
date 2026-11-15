@@ -4316,3 +4316,28 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 @keyframes medalStrike { 0% { transform: scale(1.8) rotate(-20deg); opacity: 0; } 60% { transform: scale(0.92) rotate(4deg); opacity: 1; } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .rchal__medal .medal.is-on, .bpar__row, .bpar__odds i { animation: none; } }
 .bpar__got { color: var(--verdant); font-weight: 700; }
+
+/* ------------------------------------------------------------------ Front and rear (data/ranks.ts) */
+
+/* Each side stands in two: the front nearest the seam between the sides, the rear stepped back from it, a hairline
+   and its name between them, after Etrian Odyssey's two rows and Final Fantasy's step back. */
+.arena__side .unit.is-front { margin-left: 10px; }
+.arena__side .unit.is-rear { margin-right: 10px; }
+.arena__side--foes .unit.is-front { margin-left: 0; margin-right: 10px; }
+.arena__side--foes .unit.is-rear { margin-right: 0; margin-left: 10px; }
+.rowmark { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; margin: -2px 0; }
+.rowmark i { height: 1px; background: color-mix(in srgb, var(--sys-ink) 18%, transparent); }
+.rowmark small { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+/* A foe the picked action cannot reach: dimmed, and says so. */
+.unit.is-far { opacity: 0.5; filter: saturate(0.5); }
+.unit__far { flex: none; margin: 0 4px; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* The brief's lineup: where each stands on the corner of their face, and where the hunter stands, to choose. */
+.blineup__face { position: relative; }
+.browtag { position: absolute; right: -5px; bottom: -5px; display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--sys-hair); background: #08101e; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); font-size: 0.56rem; font-style: normal; font-weight: 800; }
+.browtag.is-rear { border-color: color-mix(in srgb, var(--sys-ink) 30%, transparent); color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bstand { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
+.bstand .label { font-size: 0.6rem; }
+.bstand__opts { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--sys-hair); }
+.bstand__opt { min-width: 76px; min-height: 40px; padding: 0 14px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); font: inherit; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; touch-action: manipulation; }
+.bstand__opt + .bstand__opt { border-left: 1px solid var(--sys-hair); }
+.bstand__opt.is-on { background: color-mix(in srgb, var(--mana) 16%, transparent); color: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 60%, transparent); }

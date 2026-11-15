@@ -2,6 +2,7 @@
 import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
 import { TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/temper';
 import { MEDAL_PAY, MEDALS, PAR, PAR_EMBER } from '@/data/par';
+import { LEAD_ROW, RANGED_LEADS, RANGED_ROLES, REACHING_LEADS, REACHING_ROLES, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
 import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
@@ -238,6 +239,20 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: ${CONDITION[c].text}.`),
       'A creature’s special drop is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
       'Feats and special drops count however they are met, by your hand or the System’s.',
+    ],
+  },
+  {
+    title: 'Front and rear',
+    lines: [
+      'Each side of a fight stands in two: a front and a rear.',
+      'A melee hit, a physical action at one foe or two, reaches only the front while anyone stands in it. Magic, a volley, a spread, a burst, a wild swing, a strike at every foe and a throw reach either.',
+      `A melee hit struck from the rear lands at ${Math.round(REAR_MELEE * 100)}%.`,
+      `Creatures stand by their role: ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear. A boss stands in front.`,
+      `${RANGED_ROLES.join(', ')} shoot: their hits reach either and lose nothing from the rear, as do a ${RANGED_LEADS.join(', ')} hunter's. ${REACHING_ROLES.join(' and ')} reach past the front, as does a ${REACHING_LEADS.join(', ')} hunter.`,
+      'A Shadow stands where its creature would, and an Association hunter where their class does.',
+      `You stand where your class does (${Object.entries(LEAD_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(LEAD_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear) until you choose on a Gate's brief. The choice is kept.`,
+      'In a fight, Step Back or Step Forward moves you to the other rank. It takes your turn, and lasts the fight.',
+      'A creature\'s intent lands where it showed, wherever its target stands by then. A creature\'s marked strike reaches its mark wherever it stands, and Cover and a taunt turn intents whatever rank the one covering stands in.',
     ],
   },
   {
@@ -513,7 +528,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 /** Each topic's mark in the index. */
 const TOPIC_GLYPH: Record<string, string> = {
   'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
-  Gates: 'gates', 'Seals, Feats and special drops': 'lock', Par: 'timer', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
+  Gates: 'gates', 'Seals, Feats and special drops': 'lock', Par: 'timer', 'Front and rear': 'swap', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
   Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Tempering: 'hammer', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and Formation': 'roster',
   'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
 };
