@@ -98,6 +98,8 @@ const P: Record<string, string> = {
   crown: 'M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5zm2.4 13.5h13.2V22H5.4z',
   // The Pale Spire: a tower narrowing to its point, on a base.
   spire: 'M12 1.5 15.5 7H14v6h2v7h3v2H5v-2h3v-7h2V7H8.5z',
+  // The Daily Rift: a ring torn down its middle.
+  rift: 'M12 1.5c4.1 0 7.5 4.7 7.5 10.5S16.1 22.5 12 22.5 4.5 17.8 4.5 12 7.9 1.5 12 1.5zM12 3.4c-3.2 0-5.8 3.9-5.8 8.6s2.6 8.6 5.8 8.6 5.8-3.9 5.8-8.6S15.2 3.4 12 3.4zM13.3 5.2 9.9 11.6h2.6l-2.2 7.2 4.4-8.2h-2.7l2.4-5.4z',
   // gear slots
   Weapon: 'M12 1.5l2 4v7.5h-4V5.5zM6.5 13h11v2h-11zM11 15h2v5h-2zM9.5 20h5v2h-5z',
   'Off-Hand': 'M12 2l8 3v6c0 4.5-3.4 8.2-8 11-4.6-2.8-8-6.5-8-11V5z',

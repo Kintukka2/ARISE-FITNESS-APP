@@ -24,6 +24,13 @@ import { earned, grantText, MISSIONS, TIER_NAMES, type Mission, type MissionTier
 import { reclassification } from '@/core/quests';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
+import * as rift from '@/core/rift';
+import * as sealing from '@/core/seals';
+import { RIFT_EMBER, RIFT_NAME } from '@/data/rift';
+import { EMBER } from '@/data/forge';
+import { MatArt } from '@/ui/forge';
+import { ModRows } from '@/ui/seals';
+import { OUTCOME, RatingMark, RiftHistory, RiftTear, riftDate } from '@/ui/rift';
 import { trialRounds } from '@/core/trial';
 import type { Rank, Save } from '@/core/types';
 import { STATS } from '@/core/types';
@@ -49,7 +56,7 @@ const STOREYS = 6;
 
 /** One quest on the log, as the rail rings it: how far it stands, and whether it waits on the hunter. */
 interface Entry {
-  key: 'assoc' | 'daily' | 'rank' | 'spire' | 'trial' | 'chosen' | 'secret';
+  key: 'assoc' | 'daily' | 'rift' | 'rank' | 'spire' | 'trial' | 'chosen' | 'secret';
   label: string;
   icon: string;
   kind: FrameKind;
@@ -75,9 +82,9 @@ export function Quests() {
     void playBeats().then(firstJob);
   }, [day]);
   const job = assocEntry(s);
-  const daily = dailyEntry(s, day), rank = rankEntry(s), spireE = spireEntry(s, day), trial = trialEntry(s, day), chosen = chosenEntry(s, day), secret = secretEntry(s);
+  const daily = dailyEntry(s, day), riftE = riftEntry(s, day), rank = rankEntry(s), spireE = spireEntry(s, day), trial = trialEntry(s, day), chosen = chosenEntry(s, day), secret = secretEntry(s);
   // A rank waiting to be claimed leads the climbs.
-  const entries = [job, daily, rank, trial, chosen, spireE, secret].filter((e): e is Entry => !!e);
+  const entries = [job, daily, riftE, rank, trial, chosen, spireE, secret].filter((e): e is Entry => !!e);
   const week = msUntilWeek();
   const sealed = MISSIONS.length - heldOf(s).length;
   return (
@@ -85,6 +92,7 @@ export function Quests() {
       <AssocCard />
       <QuestRail entries={entries} />
       {daily && <DailySection s={s} day={day} />}
+      {riftE && <RiftSection s={s} day={day} />}
       {(rank || trial || chosen) && (
         <SysFrame class="qsec" label="Advancement">
           <QHead label="Advancement" />
@@ -364,6 +372,95 @@ function RankBody() {
             onFire={() => void claimRank(plate.current?.querySelector('svg') ?? plate.current)} />
         </div>
       )}
+    </QuestWindow>
+  );
+}
+
+// ------------------------------------------------------------------ the Daily Rift
+
+function riftEntry(s: Save, day: string): Entry | null {
+  if (!rift.riftOpen(s)) return null;
+  const a = rift.attempt(s, day);
+  const done = !!a && a.outcome !== 'open';
+  return { key: 'rift', label: 'Rift', icon: 'rift', kind: 'gates', p: done ? 1 : 0, count: done ? group(a!.score) : a ? 'Open' : '0/1', done };
+}
+
+/**
+ * The day's Rift, after Monster Train's Daily Challenge: its tear beside the date and grade, the Gate, and
+ * the day's attempt or how it ended, with its rating once played; its modifiers, a row to each, each seal
+ * with its own sign beside its rule; the way to its brief while it stands open; and the fortnight as bars,
+ * each with its rating. The time left is in the head. Gates are orange.
+ */
+function RiftSection({ s, day }: { s: Save; day: string }) {
+  const d = rift.riftFor(s, day);
+  const a = rift.attempt(s, day);
+  const shape = dungeonById(d.shape ?? '');
+  const done = !!a && a.outcome !== 'open';
+  const open = !a && !entryBlock(s, d);
+  return (
+    <SysFrame class="qsec qsec--rift" kind="gates" label={RIFT_NAME}>
+      <QHead label={RIFT_NAME} meta={<>Closes in: <b class="num">{hhmmss(msUntilMidnight())}</b></>} />
+      <button type="button" id="quest-rift" class={`qrift ${done ? 'is-done' : ''}`} onClick={() => { sfx.tap(); openQuest(RiftBody, 'gates'); }}>
+        <RiftTear size={64} />
+        <span class="qrift__body">
+          <small class="qrift__date">{riftDate(day)} · {d.rank}-Rank</small>
+          <b class="qrift__name">[{shape?.name}]</b>
+          <span class="qrift__state">
+            {done ? <>{OUTCOME[a!.outcome]} · Score <b class="num">{group(a!.score)}</b></> : a ? 'Underway' : 'One attempt today'}
+          </span>
+        </span>
+        {done && a!.rating ? <RatingMark rating={a!.rating} size={54} /> : <Glyph name="chevron" class="qrow__go" />}
+      </button>
+      <ModRows mods={sealing.riftSeals(d)} compact size={30} />
+      {open && <Btn kind="primary" block onClick={() => { sfx.tap(); openBrief(d); }}>Brief: {RIFT_NAME}</Btn>}
+      <div class="qrift__hist">
+        <span class="label">Last 14 days</span>
+        <RiftHistory s={s} day={day} />
+      </div>
+    </SysFrame>
+  );
+}
+
+/**
+ * QUEST INFO for the day's Rift: its goal and pay; its modifiers, a row to each; today's score with its rating,
+ * the best, and the average of the days played; the month as bars; and the way in.
+ */
+function RiftBody({ close }: { close: () => void }) {
+  const s = useSave();
+  useNow();
+  if (!rift.riftOpen(s)) return null;
+  const day = dayKey();
+  const d = rift.riftFor(s, day);
+  const a = rift.attempt(s, day);
+  const shape = dungeonById(d.shape ?? '');
+  const block = entryBlock(s, d);
+  const best = rift.best(s);
+  const played = rift.days(s).filter((x) => x.outcome !== 'open');
+  const average = played.length ? Math.round(played.reduce((n, x) => n + x.score, 0) / played.length) : 0;
+  const done = !!a && a.outcome !== 'open';
+  return (
+    <QuestWindow bare name={`${RIFT_NAME}: ${shape?.name ?? ''}`} kind="gates" class="quest-rift"
+      lead={<span class="qriftinfo__lead"><RiftTear size={44} /><small>{riftDate(day)} · {d.rank}-Rank · One attempt</small></span>}
+      goals={<QuestGoal id="rift" text="Clear the Rift." got={a?.outcome === 'cleared' ? 1 : 0} need={1} done={a?.outcome === 'cleared'} />}
+      rewards={[<><MatArt id={EMBER.id} size={18} /> Ascendant Ember <b class="num grant">+{RIFT_EMBER[d.rank as Rank]}</b></>]}>
+      <section class="qriftinfo">
+        <span class="label">Modifiers</span>
+        <ModRows mods={sealing.riftSeals(d)} />
+      </section>
+      <section class="qriftinfo qriftinfo--score">
+        <span class="qriftinfo__fig">
+          <small>Today</small>
+          {done && a!.rating ? <RatingMark rating={a!.rating} size={34} /> : null}
+          <b class="num">{done ? group(a!.score) : '-- --'}</b>
+        </span>
+        <span class="qriftinfo__fig"><small>Best</small><b class="num">{best ? group(best) : '-- --'}</b></span>
+        <span class="qriftinfo__fig"><small>Average</small><b class="num">{played.length ? group(average) : '-- --'}</b></span>
+      </section>
+      <RiftHistory s={s} day={day} n={30} />
+      <small class="questinfo__when">Closes in: <b class="num countdown">{hhmmss(msUntilMidnight())}</b></small>
+      {block === 'spent'
+        ? <Btn block disabled>You have played today's Rift. Another opens at midnight.</Btn>
+        : <Btn kind="primary" block onClick={() => { close(); openBrief(d); }}>Brief: {RIFT_NAME}</Btn>}
     </QuestWindow>
   );
 }

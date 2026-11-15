@@ -9,6 +9,7 @@ import { ASCENSION_FROM, ASCENSION_NAMES, ASCENSION_PAY, ASCENSION_RULED, BEYOND
 import { DUNGEONS } from '@/data/dungeons';
 import { ASCENSION_TUNE } from '@/data/gatetune';
 import { licensedRank } from './licence';
+import { isRift } from './rift';
 import { isTrial, trialDungeon, trialLevel } from './trial';
 import type { Dungeon, OpenRaid, Save } from './types';
 import { RANKS } from './types';
@@ -82,6 +83,7 @@ export function choose(s: Save, level: number) {
  * The level a run at this gate is entered at: a Trial is always fought at the level it proves, the
  * practice gate at none, and every gate at none below Ascension's grade.
  */
+/** The Ascension level a run is entered at: none for the Practice Gate; a Trial's own; otherwise the level chosen, a Rift's too. */
 export const entryLevel = (s: Save, d: Dungeon, practice: boolean) => (practice ? 0 : isTrial(d) ? trialLevel(d) : proving(s) ? s.ascension.level : 0);
 
 /** The Trial the hunter would face next: the one that proves the highest level they have opened. */
@@ -111,7 +113,9 @@ export function prove(s: Save, d: Dungeon, run: OpenRaid): number | null {
   const a = s.ascension;
   if (!proving(s) || levelOf(run) !== a.unlocked) return null;
   if (!isTrial(d)) {
-    if (d.rank === licensedRank(s) && !d.floor && !a.proof.gates.includes(d.id)) a.proof.gates.push(d.id);
+    // A Rift proves the Gate it takes the shape of.
+    const gate = isRift(d) ? d.shape ?? d.id : d.id;
+    if (d.rank === licensedRank(s) && !d.floor && !a.proof.gates.includes(gate)) a.proof.gates.push(gate);
     return null;
   }
   if (trialLevel(d) !== a.unlocked || a.proof.gates.length < proofNeeds(s)) return null;

@@ -57,6 +57,7 @@ export function defaults(): Save {
     shop: { day: null, taken: [] },
     contracts: { day: null, grade: 'E', list: [], bonus: false, seen: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
+    rift: { days: [], best: 0 },
     ascension: { level: 0, unlocked: 0, best: 0, proof: { gates: [] }, trialDay: null, trials: 0, marks: {}, sent: [], felled: [] },
     satchelPlus: 0,
     stock: {},
