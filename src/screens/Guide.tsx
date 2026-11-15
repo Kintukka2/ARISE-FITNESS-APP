@@ -1,5 +1,6 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
 import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
+import { TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/temper';
 import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
@@ -459,6 +460,17 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     ],
   },
   {
+    title: 'Tempering',
+    lines: [
+      `A piece of ${TEMPER_FROM}-Rank or higher opens a Temper slot once it is perfect.`,
+      'Choose one of its slot’s properties. Its size rolls within that property’s range at the piece’s rarity, as its own properties roll.',
+      'Tempered again, the new roll stands beside the one held, and you keep either. Nothing held is lost.',
+      `A temper costs Ascendant Ember and Mana Shards. The first takes ${RANKS.filter((r) => TEMPER_EMBER[r]).map((r) => `${r} ${TEMPER_EMBER[r]}`).join(', ')} Ember, by the piece’s rarity.`,
+      `Each temper after it costs ${Math.round(TEMPER_STEP * 100)}% of the first more, up to ${TEMPER_CAP} times the first.`,
+      'A tempered piece recycled loses its temper.',
+    ],
+  },
+  {
     title: 'The Daily Rift',
     lines: [
       `The Daily Rift opens once you have cleared ${RIFT_OPENS} Gates. A new one opens at midnight, on Quests.`,
@@ -488,7 +500,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 const TOPIC_GLYPH: Record<string, string> = {
   'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
   Gates: 'gates', 'Seals, Feats and special drops': 'lock', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
-  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and Formation': 'roster',
+  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Tempering: 'hammer', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and Formation': 'roster',
   'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
 };
 

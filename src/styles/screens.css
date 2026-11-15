@@ -4150,3 +4150,56 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 
 .brift__lines .riftres__mark { width: 26px; height: 26px; }
 .brift__lines .riftres__mark .ico { width: 14px; height: 14px; }
+
+/* ------------------------------------------------------------------ Tempering (ui/temper.tsx) */
+
+/* A temper's place in its range: the fill gold, a bright mark where it sits. */
+.tbar { position: relative; display: block; height: 5px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.tbar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 45%, transparent), var(--gold)); box-shadow: 0 0 6px var(--gold-glow); }
+.tbar > b { position: absolute; top: 50%; width: 3px; height: 13px; margin: -6.5px 0 0 -1.5px; background: #fff; box-shadow: 0 0 8px var(--gold); }
+.tbar.is-rolling { height: 8px; }
+.tbar.is-rolling > i { transition: none; }
+/* The tempered property among the piece's properties. */
+.itemrolls__temper .itemrolls__name { color: var(--gold); }
+.itemrolls__temper .itemrolls__name b { color: #fff; }
+.itemrolls__hammer { width: 13px; height: 13px; margin-right: 5px; vertical-align: -2px; color: var(--gold); }
+.itemrolls__temper .tbar { align-self: center; }
+/* The Temper slot on a card. */
+.tprice { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); }
+.temperslot { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 2px; }
+.temperslot__mark { display: grid; place-items: center; width: 40px; height: 40px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 34%, transparent); color: color-mix(in srgb, var(--sys-ink) 45%, transparent); transform: rotate(45deg); }
+.temperslot__mark .ico { width: 18px; height: 18px; transform: rotate(-45deg); }
+.temperslot.is-held .temperslot__mark { border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); color: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
+.temperslot__text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.temperslot__text b { font-size: 0.86rem; color: #fff; }
+.temperslot__text b .num { color: var(--gold); }
+.temperslot.is-open .temperslot__text b { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); font-weight: 600; }
+.temperslot__wait { font-size: 0.7rem; color: var(--gold); }
+/* TEMPER: the piece, the properties to choose from, the price, the roll, Held against New. */
+.temperwin { gap: 14px; }
+.temperwin__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
+.temperwin__name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.temperwin__name b { font-size: 0.92rem; color: #fff; }
+.temperwin__name small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.temperwin__held { display: inline-flex; align-items: center; gap: 6px; color: var(--ember); font-weight: 800; }
+.tstats ul { display: flex; flex-direction: column; margin: 6px 0 0; padding: 0; list-style: none; }
+.tstat { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 6px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 9%, transparent); background: none; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.tstat__dot { width: 12px; height: 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 40%, transparent); transform: rotate(45deg); }
+.tstat.is-on { background: linear-gradient(90deg, color-mix(in srgb, var(--win) 14%, transparent), transparent); color: #fff; }
+.tstat.is-on .tstat__dot { border-color: var(--win); background: var(--win); box-shadow: 0 0 8px var(--win-glow); }
+.tstat__name { font-size: 0.86rem; font-weight: 600; }
+.tstat__held { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+.tprice-row { display: flex; flex-direction: column; gap: 6px; }
+.temperroll { display: flex; flex-direction: column; gap: 10px; padding: 18px 8px; border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); background: radial-gradient(ellipse at center, color-mix(in srgb, var(--gold) 12%, transparent), transparent 70%); text-align: center; }
+.tresult { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent); box-shadow: 0 0 18px var(--gold-glow); animation: qaIn 360ms var(--ease) both; }
+.tresult b { font-size: 1.05rem; color: #fff; }
+.tresult b .num { color: var(--gold); }
+.tresult .tbar { width: 80%; }
+.tcompare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; animation: qaIn 360ms var(--ease) both; }
+.tcompare__one { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.5); }
+.tcompare__one.is-new { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
+.tcompare__one.is-better { box-shadow: 0 0 16px var(--gold-glow); }
+.tcompare__one b { font-size: 0.86rem; color: #fff; }
+.tcompare__v { font-size: 1.5rem; font-weight: 800; color: #fff; }
+.tcompare__one.is-new .tcompare__v { color: var(--gold); }
+.tcompare__act { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

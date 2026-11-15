@@ -8,6 +8,7 @@
  */
 import * as engr from '@/core/engravings';
 import { AttunedTriad, EngravedBadge, EngravingBlock, openCodex } from '@/ui/engrave';
+import { TemperBlock, TemperLine, temperValue } from '@/ui/temper';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -555,6 +556,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
       `${system.tag(d.name, 'Item')} Quality ${gear.qualityText(it)}`,
       system.gain(bundleText(back)),
       ...(kept ? [`${system.tag(kept.name, 'Engraving')} is kept in the Codex.`] : []),
+      ...(it.temper ? [system.red(`Its temper, ${gear.rollName(it.temper.stat)} ${temperValue(it.temper)}, is lost.`)] : []),
       system.red('A recycled item cannot be recovered.'),
     ], 'gear', 'Recycle', 'Cancel'));
     if (ok !== true) return;
@@ -622,6 +624,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
                   </li>
                 );
               })}
+              <TemperLine it={it} />
             </ul>
           </>
         )}
@@ -630,6 +633,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
       </section>
       <EngravingBlock it={it} />
       {!d.issued && <Upgrade it={it} />}
+      <TemperBlock it={it} />
       {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {set && (
         <Section title={`Set: ${set.id}`} right={<span class="num">{gear.heldOf(s, set.id).size}/{gear.setPieces(set.id).length}{gear.setsIn(gear.worn(s)).get(set.id) ? ` · Worn ${gear.setsIn(gear.worn(s)).get(set.id)}` : ''}</span>}>
