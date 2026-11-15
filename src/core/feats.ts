@@ -40,6 +40,8 @@ export function count(t: RunTally, ch: ChamberResult, elite: boolean): RunTally 
     ...(t.bossBroken || broken ? { bossBroken: true } : {}),
     ...(t.keeper || (elite && ch.won) ? { keeper: true } : {}),
     rounds: (t.rounds ?? 0) + ch.rounds,
+    // The par counted so far rides along; the raid adds each fight's own (`raid.record`).
+    ...(t.par !== undefined ? { par: t.par } : {}),
   };
 }
 

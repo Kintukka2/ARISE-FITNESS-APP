@@ -20,7 +20,8 @@
     "fixture": "node scripts/run.mjs scripts/fixture.ts",
     "screens": "node e2e/screens.mjs",
     "tunediff": "node scripts/run.mjs scripts/tunediff.ts",
-    "mapstats": "node scripts/run.mjs scripts/mapstats.ts"
+    "mapstats": "node scripts/run.mjs scripts/mapstats.ts",
+    "parstats": "node scripts/run.mjs scripts/parstats.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",

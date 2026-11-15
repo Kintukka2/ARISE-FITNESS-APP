@@ -3,6 +3,7 @@ import type { ContractKind } from '@/data/contracts';
 import type { UnitSpec } from './combat';
 import type { SealId } from '@/data/seals';
 import type { FeatId } from '@/data/feats';
+import type { MedalId } from '@/data/par';
 
 export const STATS = ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const;
 export type Stat = (typeof STATS)[number];
@@ -252,6 +253,8 @@ export interface RunTally {
   lowest: number;
   /** Rounds fought in every chamber, for the Daily Rift's pace. Unset on a run opened before it was counted. */
   rounds?: number;
+  /** The par of every fight won (`par.parOf`), for the clear's medal. Unset on a run opened before it was counted. */
+  par?: number;
 }
 
 /** A day's Daily Rift, as the history keeps it. */
@@ -415,6 +418,8 @@ export interface Save {
     ready?: ThrowKind;
     /** Each Gate's Feats met, by Gate id: each pays once, the first time (`feats.settle`). */
     feats?: Record<string, FeatId[]>;
+    /** Each Gate's best medal against its par, by Gate id: each medal pays once, the first time (`par.settle`). */
+    par?: Record<string, MedalId>;
   };
 
   shadows: {

@@ -1224,9 +1224,9 @@ Auto's clear rate stays where it is. What is added pays only hand play:
 - **Feats:** three stated objectives on each Gate, and the brief says how often its 24 runs met each.
 - **Special drops:** a stated way to defeat each family and boss (while Stunned, within three
   rounds) that pays extra materials.
-- **Challenges graded against a par** (step 8 of "Order to build").
+- **Par** (step 8 of "Order to build", built): a Gate's clear graded against the rounds its fights should take.
 
-Auto never aims for them, so no tuning moves, and the campaign, which plays Auto, earns none.
+Auto never aims for them, so no tuning moves; the campaign plays Auto, and earns what Auto meets on the way.
 
 ### No second meter
 
@@ -1255,9 +1255,8 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
    perfect, which the upgrade limit and shards hold back before Ember ever does: both campaign hunters ended their 120
    days holding more Ember than the Seals had paid them. Engravings (6.3) were the first sink; Tempering, the research's
    own, is the one that keeps working at the top.
-8. **Challenges graded against a par.** The last of "Auto clears; hands earn extras" not yet built. Feats
-   and special drops are; a par is not: a Gate's clear graded against a stated mark (rounds, moves, HP
-   left), and paid by the grade it reaches, which Auto never aims for.
+8. **Challenges graded against a par** (built, below: Par). The last of "Auto clears; hands earn extras": a Gate's
+   clear graded against the rounds its fights should take, and paid by the medal it reaches, once.
 9. **Ranks, revisited.** Front and rear ranks were put off until Cover, throwables, wind-ups and creature
    mechanics had been played ("Ranks: not now"). They have been. Decide, from play, whether ranks still
    earn what they would cost every target rule, every creature's kit, Auto and calibration.
@@ -2330,6 +2329,53 @@ Star Rail's reroll, NIKKE's Overload, and Diablo's green marks for a stat that r
   their worn pieces carry sit from 22% to 93% of their ranges. The ranks come within the spread between two runs of
   `main`. Engravings now compete for the same Ember, and fewer are cut: the System's hunter tempers what it wears
   before it cuts a better engraving into it. Ember, for the first time, is scarce.
+
+### Par — built
+
+Step 8: challenges graded against a par, the last of "Auto clears; hands earn extras". The references are in
+[step 8's README](research/references/step-8-par/README.md#graded-against-a-par): Honkai: Star Rail's Memory of Chaos and
+its Insignia rewards, Genshin's Spiral Abyss, Blue Archive's turn objectives, Solo Leveling: Arise's Battle Missions,
+Advance Wars' rank screen and Devil May Cry 5's results.
+
+- **What is graded: rounds.** A turn-based fight's stand-in for Spiral Abyss's clock and Star Rail's cycles. HP left is
+  already the Feats' (Steady Hand, Unbroken), and moves are already the clock's: a par on moves would punish the map's
+  secrets, landmarks and wings, which the map is drawn to reward.
+- **Each fight carries its par** (`PAR` in `data/par.ts`, by the Gate's grade and the fight's kind): the System's
+  average rounds at the grade's middle level, measured by `npm run parstats`, a Gatekeeper's halfway between a fight's
+  and the boss's. A clear's par is the par of every fight it won, added up and rounded (`raid.record` counts it into
+  the tally beside the rounds), so a fight off the road brings its own par with it and exploring is graded like the road.
+- **Three medals** (`MEDALS`): Bronze within par, Silver within 65% of it, Gold within half of it, in whole rounds
+  rounded down. The System's clears at a grade's own level spread wide: about half come within par, a fifth within 65%
+  and one in twenty within half. Bronze is the System's; Silver and Gold are for the hunter's hands, or a hunter come
+  back stronger. Medals, not letters, so a grade is never mistaken for a Gate's rank; not stars, which are the Feats'.
+- **Paid once** (`par.settle`, `s.gates.par`): each medal pays Ascendant Ember the first time it is reached on its Gate,
+  the grade's own (`PAR_EMBER`, 2 at E to 13 at S) once for Bronze, once for Silver and twice for Gold; a Gold reached
+  first pays all three. As Genshin's Abyss treasures and Star Rail's Insignia rows pay once. Medals count whoever
+  fought, as Feats do. A Daily Rift's medal is its Gate's; the Practice Gate, the Spire and the Trials have none.
+- **Screens.** The brief's `Par` card: today's road's par large, the System's middle clear beside it, and a row to each
+  medal with the rounds it allows, how often the System reached it in its runs (`raid.project` grades its clears) and
+  its Ember, or `Earned`, after Star Rail's stated conditions and the Feats' odds. The run's HUD counts the rounds
+  against the par of the fights won, marked with the medal they are on pace for. On the results the medal opens a
+  `Challenges` band, the Feats under it in the same rows: the medal struck, the rounds against the par and the
+  difference, under in green and over in red, and `New` over the Ember it paid the first time. The results were
+  reordered into bands with it, after Helldivers 2's mission summary: what the run paid (XP, shards and Ember side by
+  side, Ember no longer counted again among the materials), the hunter's condition, Challenges, Spoils (the materials
+  and the finds together), then the System's reports. A Gate's row on the board carries the best medal earned, as
+  Advance Wars keeps a map's rank beside its name.
+- **No tuning moves**: par never reaches a fight.
+- **Campaign**, which plays Auto and so earns the medals Auto reaches, over 120 days against `main` after Tempering:
+
+  | | Days to B, A, S, N | Medals reached, Bronze, Silver, Gold | Ember from medals | Engravings cut, for Ember | Tempers, for Ember | Ember on day 120 |
+  |---|---|---|---|---|---|---|
+  | One evening, `main` | 18, 32, 58, 116 | | | 3, for 250 | 52, for 1,154 | 28 |
+  | This change | 19, 33, 59, 116 | 39, 24, 15 | 690 | 10, for 850 | 46, for 1,255 | 40 |
+  | Three sessions, `main` | 8, 15, 30, 61 | | | 7, for 520 | 88, for 2,734 | 15 |
+  | This change | 8, 14, 31, 62 | 40, 21, 12 | 621 | 15, for 1,340 | 84, for 2,600 | 71 |
+
+  The ranks do not move. The medals' Ember goes where Ember goes, into engravings and tempers, and both hunters still end
+  the 120 days with almost none. Auto reached Gold on 15 and 12 Gates: the campaign's hunters forge, upgrade and temper
+  as they go, and are stronger than `typicalHunter`, whose clears set the pars; a hunter stronger than a Gate clears it
+  fast. On a Gate at its own level, the System reaches Gold one clear in twenty.
 
 ## What stays out
 

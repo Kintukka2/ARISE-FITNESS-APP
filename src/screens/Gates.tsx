@@ -34,6 +34,8 @@ import { Glyph, Sigil } from '@/ui/icons';
 import { openSheet, sys, toast, tour } from '@/ui/overlays';
 import { openDossier, VitalsBlock } from './Inventory';
 import * as feats from '@/core/feats';
+import * as par from '@/core/par';
+import { MedalHeld } from '@/ui/par';
 import { FEATS_PER_GATE } from '@/data/feats';
 import { markOf, openBrief } from './Brief';
 
@@ -330,6 +332,8 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
                 </span>
               );
             })()}
+            {/* Its medal against par: the best held, dashed while none is. */}
+            {!practice && <MedalHeld best={par.bestOn(s, d)} />}
             {pieces.length > 0 && (
               <span class={`gtag is-pieces ${held >= pieces.length ? 'is-full' : ''}`} title={`Set blueprints known: ${sets.map((x) => x.id).join(', ')}`} aria-label={`Set blueprints known: ${held} of ${pieces.length}`}>
                 <Glyph name="blueprint" /><span class="num">{held}/{pieces.length}</span>

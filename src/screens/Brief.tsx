@@ -51,6 +51,7 @@ import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
 import * as feats from '@/core/feats';
+import * as par from '@/core/par';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
 import { TRICKS, tricksOf } from '@/data/tricks';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
@@ -58,6 +59,7 @@ import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
 import { Keyed } from '@/ui/keyed';
 import { ModRows, SealArt } from '@/ui/seals';
+import { ParCard } from '@/ui/par';
 import { drinkFlow } from './Inventory';
 
 /**
@@ -307,6 +309,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       <EnemyRow d={d} level={level} />
       <Lineup d={d} level={level} taken={taken} />
       {hasFeats && <FeatList d={d} met={feats.metOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} odds={proj.feats} runs={proj.runs} />}
+      {hasFeats && proj.par.road > 0 && (
+        <ParCard d={d} best={par.bestOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} road={proj.par.road} rounds={proj.par.rounds} medals={proj.par.medals} runs={proj.runs} />
+      )}
       <MapRow d={d} road={proj.road} />
 
       {/* The way in stays at the foot of the window, whatever is scrolled past. */}

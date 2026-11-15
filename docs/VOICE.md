@@ -874,6 +874,25 @@ Gatekeeper's, with `12%`), named alone, never `· Boss` (the owner's call: the o
 and its name over the piece's own; an engraved tile in the Item Bag carries the glyph in its corner, dim while
 dormant.
 
+**Par.** The System's, in the Gates' orange, each medal in its metal: Bronze, Silver, Gold, struck with the
+hourglass of rounds, never stars (stars are the Feats'). A Gate's clear is graded against its `Par`: the rounds its
+fights should take, never a time. The brief's `Par` card states two facts side by side, `Par today` and `The System`,
+each in rounds (`24`, `18`), and a row to each medal, worst first: `Bronze`, `Within 24 rounds`, how often the System
+reached it (`System 14/24`), and its Ember the first time (`+5`), or `Earned` in green once it is; its last line, `A
+fight won off the road adds its own par.` A Gate's row on the board carries the best medal earned, dashed while none
+is. In a run the HUD counts `Rounds` until a fight is won, then `12/15` over `Par`, its mark the medal the rounds are on
+pace for. On the results the medal is the first row of `Challenges`, the Feats under it in the same rows: the medal
+struck and `Gold medal` (or `No medal`), under it `7 rounds · par 24 · 17 under` (under in green, over in red, or
+`level`), and at its right `New` in green over the Ember it paid, or `Best: Gold`. A Feat's row ends `New` over
+`Blueprint +1`, `Met`, or `Not met`. A medal is earned or reached, never won or unlocked; par is `Par`, never a target or
+a goal.
+
+**The results, in bands.** A run's results read top to bottom in this order, after Helldivers 2's mission summary: the
+title card; what it paid, `XP`, `Shards` and `Ember` side by side (Ember is never counted again among the materials);
+the hunter's health and fatigue; `Challenges`, the medal against par then the Feats; `Spoils`, the materials then the
+finds, `Tap a find for its card` at the head's right; then the System's reports, each in its frame; and the way out.
+Each band opens on its label and hairline, with the same room above and below every band.
+
 **Tempering.** The System's, in the gear's cyan, its results in advancement's gold. A perfect piece of C-Rank or
 higher carries `Temper` on its card, `Tempered 2 times` at its right once tempered, over a panel as Familiarity's is:
 the slot, a hammer in a diamond, dashed and `Empty` while empty with the slot's properties under it (`Crit Chance ·
@@ -1273,6 +1292,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Rating | rank, grade, tier | A Rift score's letter against its full marks, E to S, in its grade's colour: `Rating B` to a screen reader. Rank and grade stay the hunter's and the Gate's. |
 | Daily Rift | daily challenge, daily run, daily dungeon | One Gate a day, drawn from the date, the same for every hunter of a grade, walked once: `Daily Rift`, `Rift Cleared`, `Rift Score`, **Enter The Rift**. Its rules are `Modifiers`, never Seals. |
 | Temper | affix, enchant, reroll, reforge | The one property a perfect piece takes beyond its design's, chosen and rolled: **Temper**, **Temper Again**, `Temper slot open`, `Tempered: Crit Chance +11.4%`, `Held` and `New`, **Keep Held** and **Take New**. |
+| Par, medal | target, goal, rank, stars (for par) | Par is the rounds a fight should take; Bronze, Silver and Gold are the medals a clear earns against it. Stars are the Feats'. |
 | Codex | collection, library, archive | Where an engraving is kept for good once its piece is recycled: `CODEX`, `Kept 4/16`, `[Engraving: Warcry] kept in the Codex.` A power not kept reads `Left by Orc bosses and Gatekeepers.` |
 | Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |
