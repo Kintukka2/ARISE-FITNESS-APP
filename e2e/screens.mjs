@@ -226,6 +226,44 @@ try {
   if (!(await page.locator('.sheet.is-top .cx-ins .btn', { hasText: 'Engrave' }).count())) throw new Error('A POWER KEPT CANNOT BE CUT INTO THE PIECE');
   await snap('codex-engrave');
   await close(); await close(); await close(); await close();
+  // Tempering: the worn weapon made perfect with Ember held. Its card shows the Temper slot with the Ember on its
+  // button; TEMPER lists its slot's properties with their ranges, the price on its button and no shards; a roll
+  // lands; a second stands Current against New, the better marked.
+  {
+    const wid = await page.evaluate(() => { const x = JSON.parse(localStorage.getItem('arise-rpg:save')); return x.items.find((i) => i.id === x.equipped.weapon)?.defId; });
+    const line = readFileSync('src/data/equipment.ts', 'utf8').split('\n').find((l) => l.includes(`"id":"${wid}"`));
+    const def = JSON.parse(line.trim().replace(/,$/, ''));
+    await page.evaluate((maxes) => {
+      const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k));
+      const w = x.items.find((i) => i.id === x.equipped.weapon); w.q = 1.25; w.rolls = maxes; delete w.temper; delete w.temperNew; delete w.tempers;
+      x.materials = { ...x.materials, ember: 600 }; x.wallet.shards = Math.max(x.wallet.shards, 5000);
+      localStorage.setItem(k, JSON.stringify(x));
+    }, (def.rolls ?? []).map((r) => r.max));
+    await page.reload(); await sleep(1400); await drain();
+    await nav('inventory'); await sleep(600); await drain();
+    await page.locator('[data-hub="equipment"]').click(); await sleep(800);
+    await page.locator('.sheet.is-top .pslot', { hasText: 'Weapon' }).first().click(); await sleep(600);
+    await page.locator('.sheet.is-top .slotworn__open').click(); await sleep(700);
+    if (!(await page.locator('.sheet.is-top .temperslot.is-open').count())) throw new Error('A PERFECT PIECE HAS NO OPEN TEMPER SLOT');
+    if (!(await page.locator('.sheet.is-top .temperslot .btn .embercost').count())) throw new Error('THE TEMPER SLOT\'S BUTTON DOES NOT CARRY ITS EMBER');
+    await page.locator('.sheet.is-top .temperslot').scrollIntoViewIfNeeded(); await sleep(300); await snap('item-temper-slot');
+    await page.locator('.sheet.is-top .temperslot .btn').click(); await sleep(800);
+    if ((await page.locator('.sheet.is-top .tstat').count()) < 4) throw new Error('TEMPER DOES NOT LIST THE SLOT\'S PROPERTIES');
+    if (!(await page.locator('.sheet.is-top .temperwin > .btn .embercost').count()) || await page.locator('.sheet.is-top .temperwin .shards').count()) throw new Error('TEMPER IS NOT PRICED IN EMBER ALONE');
+    await snap('temper');
+    await page.locator('.sheet.is-top .temperwin > .btn').click(); await sleep(1700);
+    if (!(await page.locator('.sheet.is-top .tresult').count())) throw new Error('A FIRST TEMPER DOES NOT LAND');
+    await snap('temper-tempered');
+    await page.locator('.sheet.is-top .temperwin > .btn').click(); await sleep(1700);
+    if (!(await page.locator('.sheet.is-top .tcompare__one').count())) throw new Error('A SECOND TEMPER DOES NOT STAND CURRENT AGAINST NEW');
+    if (await page.locator('.sheet.is-top .tcompare__one.is-better .tbetter').count() !== 1) throw new Error('THE BETTER OF TWO ROLLS IS NOT MARKED');
+    await snap('temper-compare');
+    await page.locator('.sheet.is-top .tcompare .btn', { hasText: 'Use New' }).click(); await sleep(500); await drain();
+    await close();
+    if (!(await page.locator('.sheet.is-top .itemrolls__temper').count())) throw new Error('THE TEMPER IS NOT AMONG THE PIECE\'S PROPERTIES');
+    await page.locator('.sheet.is-top .itemrolls__temper').scrollIntoViewIfNeeded(); await sleep(300); await snap('item-tempered');
+    await close(); await close(); await close();
+  }
   await page.locator('[data-hub="inventory"]').click(); await sleep(900); await snap('inventory-grid');
   if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: 'Item Bag' }).count())) throw new Error('THE BAG IS NOT NAMED ITEM BAG');
   if ((await page.locator('.sheet.is-top .bagkind').count()) !== 10) throw new Error('THE BAG DOES NOT HAVE A TAB TO EVERY KIND');

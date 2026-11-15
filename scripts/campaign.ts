@@ -36,6 +36,7 @@ import * as association from '@/core/association';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
 import * as rift from '@/core/rift';
+import * as tempering from '@/core/temper';
 import { RIFT_EMBER } from '@/data/rift';
 import type { Dungeon, GearDef, Rank, Save, SlotKey } from '@/core/types';
 import { RANKS } from '@/core/types';
@@ -68,13 +69,15 @@ interface Tally {
   bossDrops: number; sealEmber: number;
   /** Engraved pieces found, powers cut into worn pieces from the Codex, and the Ember that took. */
   engravedFound: number; engraved: number; engraveEmber: number;
+  /** Tempers taken, and the Ember they took. */
+  tempered: number; temperEmber: number;
   /** Daily Rifts walked into, cleared, their scores added up, and the Ember they paid. */
   rifts: number; riftCleared: number; riftScore: number; riftEmber: number;
 }
 const TALLY: Tally = {
   runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0,
   upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0, sealed: 0, feats: 0, drops: 0, bossDrops: 0, sealEmber: 0,
-  engravedFound: 0, engraved: 0, engraveEmber: 0, rifts: 0, riftCleared: 0, riftScore: 0, riftEmber: 0,
+  engravedFound: 0, engraved: 0, engraveEmber: 0, rifts: 0, riftCleared: 0, riftScore: 0, riftEmber: 0, tempered: 0, temperEmber: 0,
 };
 
 const rk = (d: GearDef | undefined) => RANKS.indexOf((d?.rank ?? 'E') as Rank);
@@ -137,6 +140,19 @@ function smith(s: Save, t: Tally) {
     t.engraveEmber += engr.cost(it);
     engr.engrave(s, it.id, want);
     t.engraved++;
+  }
+  // Then temper what is worn and perfect with the System's property while the Ember is there, and temper
+  // again any roll of it under the middle of its range, keeping the better of the two.
+  for (const it of gear.worn(s)) {
+    if (!tempering.temperable(it)) continue;
+    const stat = tempering.systemStat(it);
+    if (!stat || (it.temper && (it.temper.stat !== stat || tempering.share(it, it.temper) >= 0.5))) continue;
+    const price = tempering.cost(it);
+    if (!forge.affords(s, price)) continue;
+    t.temperEmber += price.mats[forge.EMBER.id] ?? 0;
+    if (!tempering.temper(s, it.id, stat)) continue;
+    t.tempered++;
+    if (it.temperNew) tempering.settle(s, it.id, it.temperNew.v > (it.temper?.v ?? 0));
   }
   // Then upgrade what is worn, cheapest step first, above a reserve, and past perfect as far as Ascension allows;
   // never with the alloy a slot waiting to be forged needs.
@@ -354,6 +370,7 @@ function campaign(p: Profile) {
   console.log(`  engravings ${t.engravedFound} engraved pieces found, ${engr.codex(s).length}/${engr.ENGRAVINGS.length} in the Codex, ${t.engraved} cut for ${t.engraveEmber} Ember; live: ${engr.live(s).map((id) => engr.engravingById(id)!.name).join(', ') || 'none'}`);
   console.log(`  materials  ${Object.entries(s.materials).filter(([, n]) => n).map(([k, n]) => `${forge.materialById(k)?.name ?? k} ${n}`).join(', ')}`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
+  console.log(`  tempering  ${t.tempered} tempers for ${t.temperEmber} Ember; worn and tempered: ${gear.worn(s).filter((it) => it.temper).map((it) => `${it.temper!.stat} ${Math.round(tempering.share(it, it.temper!) * 100)}%`).join(', ') || 'none'}`);
   console.log(`  Rift       ${t.rifts} walked into, ${Math.round((t.riftCleared / Math.max(1, t.rifts)) * 100)}% cleared, score ${Math.round(t.riftScore / Math.max(1, t.rifts))} on average, best ${rift.best(s)}, ${t.riftEmber} Ember`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);

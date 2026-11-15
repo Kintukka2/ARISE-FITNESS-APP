@@ -1251,11 +1251,10 @@ No Composure beside HP. Fatigue spans runs, and the Gate clock gives each run it
       recycling one keeps its power in a Codex for good; setting a power from the Codex onto a piece costs
       Ember, which makes it step 7's sink too. Three worn: weapon, armour, jewellery.
    4. **The Daily Rift** (built, below): one Gate a day from the date's seed, the same on every phone.
-7. **Something for Ember to buy.** Seals pay Ascendant Ember, and all it buys today is steps past perfect,
-   which the upgrade limit and shards hold back before Ember ever does: both campaign hunters ended their
-   120 days holding more Ember than the Seals had paid them (1,667 and 2,185; "Seals, Feats and special
-   drops — built"). "New power sinks cost Ember" names the candidates, tempering at perfect and bought
-   drop odds. Until one is built, a Seal's pay buys nothing a hunter needs.
+7. **Something for Ember to buy** (built, below: Tempering). Seals pay Ascendant Ember, and all it bought was steps past
+   perfect, which the upgrade limit and shards hold back before Ember ever does: both campaign hunters ended their 120
+   days holding more Ember than the Seals had paid them. Engravings (6.3) were the first sink; Tempering, the research's
+   own, is the one that keeps working at the top.
 8. **Challenges graded against a par.** The last of "Auto clears; hands earn extras" not yet built. Feats
    and special drops are; a par is not: a Gate's clear graded against a stated mark (rounds, moves, HP
    left), and paid by the grade it reaches, which Auto never aims for.
@@ -2278,6 +2277,59 @@ Shattered Pixel Dungeon's local history for the days walked.
   six later. It pays the Gate the board would have, but the Gate Ryn names is the Rift's only some days, so 13 fewer jobs
   are reported; in return it walks away with 1,019 Ember and a score each day. Ember still piles up: step 7 is still
   needed.
+
+### Tempering — built
+
+Step 7: something for Ember to buy, the research's fifth idea for loot ([arpg-loot-endgame.md](research/arpg-loot-endgame.md),
+"Tempering at perfect: choose the property, roll its size, compare before you keep it"). The references are in
+[step 7's README](research/references/step-7-ember-tempering/README.md#tempering): Diablo IV's tempering and
+enchanting, Warframe's Riven cycle and Last Epoch's forge; and, for keeping one of two rolls, Genshin's reshape, Honkai:
+Star Rail's reroll, NIKKE's Overload, and Diablo's green marks for a stat that rises.
+
+- **One Temper slot on a perfect piece** of C-Rank or higher (`temper.temperable`; below C the designs carry no
+  properties). The hunter chooses one of its slot's properties (`temper.statsFor`: a weapon's Crit Chance, Accuracy,
+  Effect Chance, Physical Attack, Magic Power; a chest's Defence, Resistance, Max HP and the rest). Its size rolls within
+  that property's range at the piece's rarity, as the designs roll it (`temper.rangeOf`: 9-13% Crit Chance at S), from
+  `arise|temper|<item>|<count>`: the same piece tempered the same number of times rolls the same, whichever property is
+  chosen, so changing the property is never a way to fish.
+- **Nothing is lost.** The first temper fills the slot. Each after it waits beside the current one (`it.temperNew`),
+  Current against New, until the hunter keeps one (`temper.settle`), as Diablo IV's enchanting and Warframe's Riven
+  cycle set them. A piece waiting on a choice cannot be tempered again.
+- **What it costs**: Ember alone (`temper.emberFor`), by the piece's rarity, 8 at C to 30 at S (`TEMPER_EMBER`); each
+  temper after the first 50% of the first more, up to three times it (`TEMPER_STEP`, `TEMPER_CAP`). The top of a range is
+  its ceiling, so Ember buys a better roll, never more than the range. A temper took a Gate clear's shards as well at
+  first; the owner dropped them, so its one price is the Ember it is there to spend.
+- **The fight** reads a temper as one more property of the piece, through `gear.rollBonuses`. Recycling a tempered
+  piece loses its temper, and its offer says so in red.
+- **Screens.** A perfect piece's card says no more of its upgrades (its quality line says `Perfect`) and carries
+  `Temper`, a panel as Familiarity's is: the slot, a hammer in a diamond, empty with the slot's properties under it or
+  lit with what it holds and where it sits in its range, and **Temper**, **Temper Again** or **Choose**, the next
+  temper's Ember on the button. The tempered property stands last among the piece's properties, the hammer before it,
+  in gold. The `TEMPER` window lists the slot's properties with their ranges, and **Temper** with its Ember on it, as
+  Warframe's `CYCLE FOR 7,000` carries its price; pressed, the mark sweeps across the range and lands; a second roll
+  stands Current against New, the better edged in green with `▲ Better` on its border, as a piece's card marks a stat
+  that rises, and **Keep Current** or **Use New**. `TEMPER` joins the System's window titles.
+- **Calibration.** `typicalHunter` carries no temper, so no Gate, Spire block or floor moved. `keptUpHunter` carries the
+  System's property on every perfect piece worn at the middle of its range (`autoTemper`: the first of `AUTO_TEMPER` the
+  slot offers, Crit Chance where it can, then Max HP, Defence and Accuracy). Every Ascension level held, within 5 points
+  of its target. The Trials moved at 6 of 10, all harder: Ascension 0 1.34 → 1.35 (+0.7%), 2 0.69 → 0.72 (+4.3%), 5 0.44
+  → 0.45 (+2.3%), 6 0.39 → 0.40 (+2.6%), 7 0.37 → 0.38 (+2.7%), 9 0.32 → 0.33 (+3.1%); 1, 3, 4 and 8 held. The balance
+  report's days to each rank do not move.
+- **Campaign**, which now tempers every perfect piece worn with the System's property while the Ember is there, after
+  the engravings and before any step past perfect, and tempers again any roll of it under the middle of its range,
+  keeping the better. Over 120 days, against `main` after the Daily Rift:
+
+  | | Days to B, A, S, N | Carried out | Ascension opened | Tempers, for Ember | Engravings cut, for Ember | Ember on day 120 |
+  |---|---|---|---|---|---|---|
+  | One evening, `main` | 19, 32, 59, 113 | 11 | 7 | | | 1,074 |
+  | This change | 18, 32, 58, 116 | 12 | 6 | 52, for 1,154 | 3, for 250 | 28 |
+  | Three sessions, `main` | 8, 14, 30, 60 | 28 | 26 | | | 1,924 |
+  | This change | 8, 15, 30, 61 | 30 | 24 | 88, for 2,734 | 7, for 520 | 15 |
+
+  Ember is spent. Both hunters end the 120 days holding almost none, where they held 1,074 and 1,924, and the tempers
+  their worn pieces carry sit from 22% to 93% of their ranges. The ranks come within the spread between two runs of
+  `main`. Engravings now compete for the same Ember, and fewer are cut: the System's hunter tempers what it wears
+  before it cuts a better engraving into it. Ember, for the first time, is scarce.
 
 ## What stays out
 

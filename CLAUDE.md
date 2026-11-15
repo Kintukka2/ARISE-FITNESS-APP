@@ -159,6 +159,15 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   (`autoEngrave`, `AUTO_ENGRAVE`), so Ascension and the Trials do. Change an engraving, its numbers, the
   System's choice or what the hunters carry and you must recalibrate; change the odds or the Ember they cost
   and rerun the campaign, which engraves as `smith` in `scripts/campaign.ts` does.
+- Tempering (`data/temper.ts`, `core/temper.ts`) opens one slot on a perfect piece of C-Rank or higher: a property of
+  its slot's list, its size rolled in that property's range at the piece's rarity from `arise|temper|<item>|<count>`, so
+  it never reads the clock. A second roll waits beside the current one (`it.temperNew`) until `temper.settle` keeps one.
+  It costs Ember alone (`temper.emberFor`), never shards. A temper reaches the fight only as one more property of the
+  piece, through `gear.rollBonuses` and `raid.heroSpec`.
+  Calibration's `typicalHunter` carries none, so no Gate moves; `keptUpHunter` carries the System's property at the
+  middle of its range (`autoTemper`, `AUTO_TEMPER`), so Ascension and the Trials do. Change the ranges, the System's
+  choice or what the hunters carry and you must recalibrate; change what it costs and rerun the campaign, which tempers
+  as `smith` in `scripts/campaign.ts` does.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

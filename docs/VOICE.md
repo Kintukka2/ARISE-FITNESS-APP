@@ -874,6 +874,30 @@ Gatekeeper's, with `12%`), named alone, never `· Boss` (the owner's call: the o
 and its name over the piece's own; an engraved tile in the Item Bag carries the glyph in its corner, dim while
 dormant.
 
+**Tempering.** The System's, in the gear's cyan, its results in advancement's gold. A perfect piece of C-Rank or
+higher carries `Temper` on its card, `Tempered 2 times` at its right once tempered, over a panel as Familiarity's is:
+the slot, a hammer in a diamond, dashed and `Empty` while empty with the slot's properties under it (`Crit Chance ·
+Accuracy · Effect Chance`), gold and lit with what it holds once tempered (`Crit Chance`, `+10.7%` at the right in
+gold, and under them its bar, the fill gold and a white mark where the roll sits, beside its range); `New roll` and
+`Crit Chance +9.6%` on a gold rule while one waits; and its button, **Temper** or **Temper Again** with the next
+temper's Ember on it after a hairline, by Ember's art (`30`, red while the Ember held falls short), or **Choose** in
+gold while a roll waits. A perfect piece's card says no more of its upgrades: the quality line at its head says
+`Perfect`, and the Temper slot is what follows. A tempered property stands last among the piece's properties, the
+hammer before it, its name in gold, its size, its bar and its range (`9-13%`). A property is named as the card names
+it (`Crit Chance`, `Effect Chance`), never by the design's own word. A temper costs Ember alone: its price is never
+written with shards, and never in a `Price` grid of its own. The `TEMPER` window: the piece, `Never tempered` or
+`Tempered 2 times`, the Ember held (red while it falls short); `Choose a property`, a row to each of its slot's, a
+diamond lit for the one chosen, `Current +10.7%` in gold by the one the slot holds, its range at the right; and
+**Temper** or **Temper Again** with its Ember on the button, as Warframe's `CYCLE FOR 7,000` carries its price, or,
+short, `Ascendant Ember 12/30`. Pressed, the roll lands: the property's name over its bar, the mark sweeping across
+the whole range and settling where it rolled. The first lands as `Tempered` over `Crit Chance +10.7%`; after it,
+`Current` and `New` side by side, each the property, its size large, its bar and its range, the better of the two
+edged in green with `▲ Better` on its border, as a piece's card marks a stat that rises in green; level, neither is
+marked. Under them **Keep Current** and **Use New**, the better one's lit, as NIKKE's `Keep Effects` and Honkai: Star
+Rail's `Use the new stats` pair a keep with a use. The roll the slot holds is `Current`, never `Held`. Taken: the
+toast `Tempered: Crit Chance +11.4%`. A temper is never called an affix, an enchantment or a reroll; to temper again
+is **Temper Again**. Recycling a tempered piece says in red, `Its temper, Crit Chance +10.7%, is lost.`
+
 **The Daily Rift.** On Quests, in the Gates' orange, under the Daily Quests: `Daily Rift` with `Closes in: 13:01:48` at its
 right. Its card, after Monster Train's Daily Challenge: the Rift's tear, a ring of the Gates' orange split by a bolt of
 white light, flickering; `SAT 14 NOV · C-RANK` over the Gate it opens on, `[Beastmaster Pits]`, and under it
@@ -1248,6 +1272,7 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | Attuned | live, active | An engraving in play from a piece worn, one to each kind of gear: `ATTUNED`, `ATTUNED · WEAPON`. Its opposite is `Dormant`. |
 | Rating | rank, grade, tier | A Rift score's letter against its full marks, E to S, in its grade's colour: `Rating B` to a screen reader. Rank and grade stay the hunter's and the Gate's. |
 | Daily Rift | daily challenge, daily run, daily dungeon | One Gate a day, drawn from the date, the same for every hunter of a grade, walked once: `Daily Rift`, `Rift Cleared`, `Rift Score`, **Enter The Rift**. Its rules are `Modifiers`, never Seals. |
+| Temper | affix, enchant, reroll, reforge | The one property a perfect piece takes beyond its design's, chosen and rolled: **Temper**, **Temper Again**, `Temper slot open`, `Tempered: Crit Chance +11.4%`, `Held` and `New`, **Keep Held** and **Take New**. |
 | Codex | collection, library, archive | Where an engraving is kept for good once its piece is recycled: `CODEX`, `Kept 4/16`, `[Engraving: Warcry] kept in the Codex.` A power not kept reads `Left by Orc bosses and Gatekeepers.` |
 | Item Bag | inventory (for the window), stash, storage | The window that holds the hunter's gear, opened from the Inventory screen and from Equipment: `ITEM BAG`, `28 items`. The screen keeps the name Inventory |
 | Gate Survey | scout, survey report, map item | The Association's report that charts every room of a Gate's map, from its brief or inside it. An item: `[Item: Gate Survey]`. Charted, not mapped or revealed |

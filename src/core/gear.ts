@@ -295,6 +295,9 @@ export function rollBonuses(items: Item[]): Record<string, number> {
       const v = it.rolls[i] ?? r.min;
       out[eff.key] = (out[eff.key] ?? 0) + (eff.pct ? v / 100 : v);
     });
+    // A piece's temper is one more property of it (`core/temper.ts`).
+    const t = it.temper ? ROLL_EFFECT[it.temper.stat] : undefined;
+    if (t) out[t.key] = (out[t.key] ?? 0) + (t.pct ? it.temper!.v / 100 : it.temper!.v);
   }
   return out;
 }

@@ -8,13 +8,13 @@
  */
 import * as engr from '@/core/engravings';
 import { AttunedTriad, EngravedBadge, EngravingBlock, openCodex } from '@/ui/engrave';
+import { TemperBlock, TemperLine, temperValue } from '@/ui/temper';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
-import { ascensionOpen, overCap } from '@/core/ascension';
+import { overCap } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
-import { OVERCHARGE } from '@/data/ascension';
 import { dungeonById } from '@/core/gates';
 import * as forge from '@/core/forge';
 import type { GearDef, Item, Rank, Save, SlotKey, Stat } from '@/core/types';
@@ -555,6 +555,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
       `${system.tag(d.name, 'Item')} Quality ${gear.qualityText(it)}`,
       system.gain(bundleText(back)),
       ...(kept ? [`${system.tag(kept.name, 'Engraving')} is kept in the Codex.`] : []),
+      ...(it.temper ? [system.red(`Its temper, ${gear.rollName(it.temper.stat)} ${temperValue(it.temper)}, is lost.`)] : []),
       system.red('A recycled item cannot be recovered.'),
     ], 'gear', 'Recycle', 'Cancel'));
     if (ok !== true) return;
@@ -622,6 +623,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
                   </li>
                 );
               })}
+              <TemperLine it={it} />
             </ul>
           </>
         )}
@@ -630,6 +632,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
       </section>
       <EngravingBlock it={it} />
       {!d.issued && <Upgrade it={it} />}
+      <TemperBlock it={it} />
       {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {set && (
         <Section title={`Set: ${set.id}`} right={<span class="num">{gear.heldOf(s, set.id).size}/{gear.setPieces(set.id).length}{gear.setsIn(gear.worn(s)).get(set.id) ? ` · Worn ${gear.setsIn(gear.worn(s)).get(set.id)}` : ''}</span>}>
@@ -671,17 +674,15 @@ function QualityLine({ it }: { it: Item }) {
   );
 }
 
-/** The next upgrade step on a piece: what it raises, before and after side by side, and the alloys and shards it takes. */
+/** The next upgrade step on a piece: what it raises, before and after side by side, and the alloys and shards it takes. Nothing once it is perfect. */
 function Upgrade({ it }: { it: Item }) {
   const s = useSave();
   const cap = overCap(s);
   const next = gear.upgradeStep(it, cap);
   const cost = forge.upgradeCost(it, cap);
-  if (!next || !cost) {
-    const over = it.over ?? 0;
-    return <p class="hint">{!ascensionOpen(s) ? 'Perfect. Nothing left to raise.'
-      : `Perfect${over ? ` +${over}` : ''}. Each Ascension level opened allows ${OVERCHARGE.per === 1 ? '1 more step' : `${OVERCHARGE.per} more steps`}.`}</p>;
-  }
+  // Perfect, and as far past it as Ascension allows: the quality line at the card's head says so, and the
+  // Temper slot below takes over.
+  if (!next || !cost) return null;
   const ok = forge.affords(s, cost);
   return (
     <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? <span class="num">Steps taken: {it.up}</span> : <Shards n={cost.shards} />}>

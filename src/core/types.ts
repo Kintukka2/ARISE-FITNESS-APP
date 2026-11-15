@@ -48,7 +48,16 @@ export interface Item {
   master?: number;
   /** Its engraving: a power cut into it, by its family's id (`data/engravings.ts`). */
   engr?: string;
+  /** Its temper, once tempered at perfect (`core/temper.ts`): a property of its slot's and its size. */
+  temper?: Temper;
+  /** A new temper rolled beside the one held, waiting to be kept or turned down. */
+  temperNew?: Temper;
+  /** How many times it has been tempered: each costs more, and draws its own roll. */
+  tempers?: number;
 }
+
+/** A temper: a property by name and its size, in the units its designs roll it in. */
+export interface Temper { stat: string; v: number }
 
 // ------------------------------------------------------------------ combat data
 
