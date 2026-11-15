@@ -26,6 +26,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - `npm run mapstats` — what the map generator draws, every Gate of each grade over a run of days: the
   shape of the plans, what the road and the side rooms hold, and what a side fight costs. Run it after a
   change to how a map is drawn or what waits in its rooms, and say what moved.
+- `npm run parstats` — par as the System meets it: for every Gate of each grade, the rounds each kind of fight
+  takes beside its par, and how often the System reaches each medal. Run it after a change to combat, and move a
+  par in `data/par.ts` that has drifted from the System's average at the grade's middle level.
 - `npm run campaign` — plays two hunters from Level 1 for 120 days through the real engine. Run it
   after a change to what anything pays or costs. It reads the brief before every run, so it takes a few
   minutes.
@@ -159,6 +162,12 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   (`autoEngrave`, `AUTO_ENGRAVE`), so Ascension and the Trials do. Change an engraving, its numbers, the
   System's choice or what the hunters carry and you must recalibrate; change the odds or the Ember they cost
   and rerun the campaign, which engraves as `smith` in `scripts/campaign.ts` does.
+- Par (`data/par.ts`, `core/par.ts`) grades a Gate's clear: each fight won adds its par (`par.parOf`, by kind and
+  grade) to the run's tally in `raid.record`, beside the rounds, and `raid.finish` judges the medal (`par.medalOf`)
+  and pays each medal once on its Gate (`par.settle`, `s.gates.par`), the Rift's on the Gate it takes the shape of.
+  It never reaches a fight, so it moves no tuning, and medals count whoever fought. The pars are the System's average
+  rounds at each grade's middle level: after a change to combat, run `npm run parstats` and move a par that has
+  drifted. Change what a medal pays and rerun the campaign.
 - Tempering (`data/temper.ts`, `core/temper.ts`) opens one slot on a perfect piece of C-Rank or higher: a property of
   its slot's list, its size rolled in that property's range at the piece's rarity from `arise|temper|<item>|<count>`, so
   it never reads the clock. A second roll waits beside the current one (`it.temperNew`) until `temper.settle` keeps one.

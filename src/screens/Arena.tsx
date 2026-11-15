@@ -27,6 +27,8 @@ import { licensedRank } from '@/core/licence';
 import * as spire from '@/core/spire';
 import { isRift } from '@/core/rift';
 import { RiftResults } from '@/ui/rift';
+import { Medal, ParResult } from '@/ui/par';
+import * as par from '@/core/par';
 import { chamberOf, isFight, type MapNode } from '@/core/map';
 import { HONE_LEVELS, NODE } from '@/data/nodes';
 import * as blessings from '@/core/blessings';
@@ -920,7 +922,8 @@ export function Arena() {
 
 /**
  * What the run is carrying, as one slim row along the top in the way Slay the Spire keeps its run in view: the
- * hunter's health, the allies still standing, the shards banked and the things found, each by its mark over its
+ * hunter's health, the allies still standing, the shards banked, the things found, and on a Gate the rounds
+ * fought against the par of the fights won, its mark the medal they are on pace for, each by its mark over its
  * word; under it, each blessing taken, as Hades lines its boons. No box: it is read, not acted on.
  */
 function RunHud({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<ReturnType<typeof dungeonById>>; tell: Tell }) {
@@ -931,6 +934,11 @@ function RunHud({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<
   const up = party.slice(1).filter((u) => u.alive()).length;
   const found = (run.haul ?? []).length + Object.values(run.stash ?? {}).reduce((n, x) => n + x, 0);
   const hp = Math.round(Math.max(0, hero.hp));
+  // Rounds against the par of the fights won so far, and the medal they are on pace for: a Gate's runs only.
+  const graded = run.tally?.par !== undefined && !isPractice(d) && !spire.isSpire(d) && !isTrial(d);
+  const rounds = run.tally?.rounds ?? 0;
+  const parNow = par.whole(run.tally?.par ?? 0);
+  const pace = graded && parNow > 0 ? par.medalOf(rounds, run.tally!.par!) : null;
   return (
     <div class="runhud">
       <div class="runhud__row">
@@ -946,6 +954,11 @@ function RunHud({ s, d, tell }: { s: ReturnType<typeof useSave>; d: NonNullable<
         <span class="runhud__stat" aria-label={`Found: ${found}`}>
           <b class="num"><Glyph name="roomCache" />{found}</b><small>Found</small>
         </span>
+        {graded && (
+          <span class={`runhud__stat runhud__par ${pace ? `is-${pace}` : ''}`} aria-label={`Rounds: ${rounds}, par so far ${parNow}${pace ? `, on ${pace} pace` : ''}`}>
+            <b class="num">{pace ? <Medal id={pace} size={13} /> : <Glyph name="timer" />}{parNow ? `${rounds}/${parNow}` : rounds}</b><small>{parNow ? 'Par' : 'Rounds'}</small>
+          </span>
+        )}
       </div>
       {(run.blessings ?? []).length > 0 && (
         <div class="boons" aria-label="Blessings">
@@ -1549,6 +1562,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             ))}
           </section>
         )}
+        {r.par && <ParResult r={r.par} />}
         {(r.seals.length > 0 || r.drops > 0) && (
           <div class="alerts">
             {r.seals.length > 0 && <SysAlert fyi delay={150} icon={<Glyph name="lock" />}><strong>[Seals]</strong> {r.seals.map((id) => SEALS[id].name).join(', ')}{r.outcome === 'defeated' ? '. Carried out: nothing is paid.' : '. Their pay is in what the run left.'}</SysAlert>}

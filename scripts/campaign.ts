@@ -73,11 +73,14 @@ interface Tally {
   tempered: number; temperEmber: number;
   /** Daily Rifts walked into, cleared, their scores added up, and the Ember they paid. */
   rifts: number; riftCleared: number; riftScore: number; riftEmber: number;
+  /** Clears graded against par, each medal reached for the first time on its Gate, and the Ember they paid. */
+  graded: number; bronze: number; silver: number; gold: number; parEmber: number;
 }
 const TALLY: Tally = {
   runs: 0, cleared: 0, defeated: 0, spire: 0, chosen: 0, masterworks: 0, contracts: 0, bonusDays: 0, shardsIn: 0, shardsOut: 0,
   upgrades: 0, bought: 0, assoc: 0, forged: 0, rerolls: 0, recycled: 0, blueprints: 0, found: 0, sealed: 0, feats: 0, drops: 0, bossDrops: 0, sealEmber: 0,
   engravedFound: 0, engraved: 0, engraveEmber: 0, rifts: 0, riftCleared: 0, riftScore: 0, riftEmber: 0, tempered: 0, temperEmber: 0,
+  graded: 0, bronze: 0, silver: 0, gold: 0, parEmber: 0,
 };
 
 const rk = (d: GearDef | undefined) => RANKS.indexOf((d?.rank ?? 'E') as Rank);
@@ -289,6 +292,11 @@ function play(s: Save, d: Dungeon, now: number, r: () => number, t: Tally, floor
   t.blueprints += res.blueprints.length;
   t.feats += res.feats.fresh.length;
   t.drops += res.drops;
+  if (res.par) {
+    t.graded++;
+    for (const m of res.par.fresh) t[m]++;
+    t.parEmber += res.par.ember;
+  }
   if (outcome === 'cleared') {
     t.bossDrops += (run.drops ?? []).filter((x) => x.boss).length;
     t.sealEmber += seals.filter((id) => id !== 'wardens' || !!run.tally?.keeper).reduce((n, id) => n + sealEmber(id, d.rank), 0);
@@ -371,6 +379,7 @@ function campaign(p: Profile) {
   console.log(`  materials  ${Object.entries(s.materials).filter(([, n]) => n).map(([k, n]) => `${forge.materialById(k)?.name ?? k} ${n}`).join(', ')}`);
   console.log(`  Spire      best floor ${s.spire.top}, ${s.spire.seasons} weeks paid`);
   console.log(`  tempering  ${t.tempered} tempers for ${t.temperEmber} Ember; worn and tempered: ${gear.worn(s).filter((it) => it.temper).map((it) => `${it.temper!.stat} ${Math.round(tempering.share(it, it.temper!) * 100)}%`).join(', ') || 'none'}`);
+  console.log(`  par        ${t.graded} clears graded; medals reached for the first time: ${t.bronze} Bronze, ${t.silver} Silver, ${t.gold} Gold, ${t.parEmber} Ember; best held: ${Object.values(s.gates.par ?? {}).length} Gates (${['gold', 'silver', 'bronze'].map((m) => `${Object.values(s.gates.par ?? {}).filter((x) => x === m).length} ${m}`).join(', ')})`);
   console.log(`  Rift       ${t.rifts} walked into, ${Math.round((t.riftCleared / Math.max(1, t.rifts)) * 100)}% cleared, score ${Math.round(t.riftScore / Math.max(1, t.rifts))} on average, best ${rift.best(s)}, ${t.riftEmber} Ember`);
   console.log(`  Ascension  ${s.ascension.unlocked} opened by day ${days}, ${s.ascension.trials} Trials walked into; the last 28 days cleared ${Math.round((late.cleared / Math.max(1, late.runs)) * 100)}%`);
   console.log(`  Chosen     ${s.ascension.sent.length} sent into the world, ${t.chosen} felled, ${t.masterworks} masterworks (${gear.worn(s).filter((it) => it.master).length} worn)`);

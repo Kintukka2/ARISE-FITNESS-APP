@@ -1,6 +1,7 @@
 /** How the System works, in one place. Every number here is read from the engine, so it cannot drift. */
 import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
 import { TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/temper';
+import { MEDAL_PAY, MEDALS, PAR, PAR_EMBER } from '@/data/par';
 import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
@@ -237,6 +238,19 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: ${CONDITION[c].text}.`),
       'A creature’s special drop is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
       'Feats and special drops count however they are met, by your hand or the System’s.',
+    ],
+  },
+  {
+    title: 'Par',
+    lines: [
+      'Every fight won on a Gate carries a par: the rounds it should take, by its kind and the Gate’s grade. A clear’s par is the par of every fight it won, added up.',
+      `Par by grade, a fight, a Gatekeeper and the boss: ${RANKS.map((r) => `${r} ${PAR[r].fight}, ${PAR[r].elite}, ${PAR[r].boss}`).join('; ')}. A clear’s par is rounded to whole rounds.`,
+      `A clear within par earns ${MEDALS[2].name}, within ${Math.round(MEDALS[1].at * 100)}% of it ${MEDALS[1].name}, and within ${Math.round(MEDALS[0].at * 100)}% of it ${MEDALS[0].name}.`,
+      `Each medal pays Ascendant Ember once on its Gate, the first time it is reached there: ${MEDALS.slice().reverse().map((m) => `${m.name} ${MEDAL_PAY[m.id]}×`).join(', ')} the grade’s ${RANKS.map((r) => `${r} ${PAR_EMBER[r]}`).join(', ')}. A better medal pays the ones below it not yet reached.`,
+      'A fight won off the road brings its own par with it: a room explored is graded like any other.',
+      'The brief states the par of today’s road, the rounds each medal allows, and how often the System reached each in its runs. A Gate’s row on the board shows the best medal earned there.',
+      'A Daily Rift’s medal is the Gate it takes the shape of. The Practice Gate, the Pale Spire and the Trials have no par.',
+      'Medals count however they are reached, by your hand or the System’s.',
     ],
   },
   {
@@ -499,7 +513,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 /** Each topic's mark in the index. */
 const TOPIC_GLYPH: Record<string, string> = {
   'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
-  Gates: 'gates', 'Seals, Feats and special drops': 'lock', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
+  Gates: 'gates', 'Seals, Feats and special drops': 'lock', Par: 'timer', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
   Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Tempering: 'hammer', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and Formation': 'roster',
   'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
 };

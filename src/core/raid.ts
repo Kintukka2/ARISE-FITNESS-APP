@@ -44,6 +44,8 @@ import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION, type ConditionId } f
 import { sealEmber } from '@/data/seals';
 import { FEAT_PAY, type FeatId } from '@/data/feats';
 import * as feats from './feats';
+import * as par from './par';
+import type { MedalId } from '@/data/par';
 import { LOG_MAX } from './save';
 import type { AssocMove } from './association';
 import * as shop from './shop';
@@ -427,7 +429,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     ...(toss ? { throw: toss } : {}),
     ...(taken.length ? { seals: [...taken] } : {}),
     ...(charted ? { charted: true } : {}),
-    tally: { downs: 0, lowest: 1 },
+    tally: { downs: 0, lowest: 1, rounds: 0, par: 0 },
   };
   return s.gates.raid;
 }
@@ -1014,7 +1016,10 @@ export function record(s: Save, d: Dungeon, run: OpenRaid, party: Unit[], ch: Ch
   run.orders = [];
   run.felled.push(...ch.felled);
   if (ch.drops.length) run.drops = [...(run.drops ?? []), ...ch.drops];
+  // A fight won brings its par; a run opened before par was counted keeps none.
+  const counting = !run.tally || run.tally.par !== undefined;
   run.tally = feats.count(run.tally ?? { downs: 0, lowest: 1 }, ch, x?.kind === 'elite');
+  if (counting) run.tally.par = (run.tally.par ?? 0) + (ch.won && x ? par.parOf(d.rank, x.kind) : 0);
   if (ch.boss) run.bossFaced = true;
   if (ch.won) {
     run.won += 1;
@@ -1101,6 +1106,11 @@ export interface RaidResult {
   feats: { asked: FeatId[]; met: FeatId[]; fresh: FeatId[] };
   /** Creatures felled the way their condition asks, kept by the run. */
   drops: number;
+  /**
+   * A clear against its par: the rounds it took, the par of the fights it won, the medal they earned, the best now
+   * held on its Gate, the medals reached there for the first time, and the Ember they paid. Null off a Gate's clear.
+   */
+  par: { rounds: number; par: number; medal: MedalId | null; best: MedalId | null; fresh: MedalId[]; ember: number } | null;
   allies: string[];
 }
 
@@ -1238,6 +1248,10 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // A run opened before Feats were counted has no tally, and is judged on none.
   const met = cleared && !practice && !tower && run.tally ? feats.judge(asked, run.tally, !m.tower && chartedFloors(m, explored(m, run)) === m.floors.length) : [];
   const fresh = feats.settle(s, home, met);
+  // The clear against its par: the medal its rounds earn, each medal paying once on its Gate, the first time.
+  const runPar = cleared && !practice && !tower && run.tally?.par !== undefined ? run.tally.par : 0;
+  const medal = runPar > 0 ? par.medalOf(run.tally?.rounds ?? 0, runPar) : null;
+  const medals = par.settle(s, home, medal);
   // A Rift's modifiers are its terms, not Seals taken: it pays its own Ember instead.
   const extra: Extras = { seals: rifted ? [] : sealing.of(run), drops: run.drops ?? [], feats: fresh.length };
   const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m), extra) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
@@ -1250,6 +1264,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     mats = forge.addUp(mats, { [forge.alloyId('E')]: 8, [forge.partId('hide')]: 2 });
   }
   if (rifted && cleared) mats = forge.addUp(mats, { [forge.EMBER.id]: RIFT_EMBER[d.rank as Rank] ?? 0 });
+  if (medals.length) mats = forge.addUp(mats, { [forge.EMBER.id]: par.emberFor(d.rank, medals) });
   forge.give(s, mats);
   const loot = lootIds.map((id, i) => grant(s, id, `${run.seed}|${i}`) ?? make(id)).filter(Boolean);
   // A clear's boss and Gatekeeper leave a piece found whole with their family's engraving, at stated odds,
@@ -1358,6 +1373,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
     seals: extra.seals.slice(), feats: { asked, met, fresh }, drops: kept ? extra.drops.length : 0,
+    par: runPar > 0 ? { rounds: run.tally?.rounds ?? 0, par: par.whole(runPar), medal, best: par.bestOn(s, home), fresh: medals, ember: par.emberFor(d.rank, medals) } : null,
     ...(scored ? { rift: scored } : {}),
   };
 }
@@ -1417,6 +1433,10 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
   let clears = 0;
   let heroDown = 0;
   let reached = 0;
+  // The System against par: the rounds of each clear it made, and how often each medal was its.
+  const rounds: number[] = [];
+  const medals: Record<MedalId, number> = { gold: 0, silver: 0, bronze: 0 };
+  const perFight: Record<string, { n: number; rounds: number }> = {};
   for (let i = 0; i < runs; i++) {
     const seed = `proj|${d.id}|${day}|${i}`;
     // What the System's run carries: the blessings it takes, and the skills it hones.
@@ -1441,6 +1461,11 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
         const ch = runChamber(d, seed, x.n, party, chamberAt(d, x, level, walker, taken), s.gates.tactic, level, taken);
         tally = feats.count(tally, ch, x.kind === 'elite');
         won = ch.won;
+        if (won) {
+          tally.par = (tally.par ?? 0) + par.parOf(d.rank, x.kind);
+          const k = (perFight[x.kind] ??= { n: 0, rounds: 0 });
+          k.n++; k.rounds += ch.rounds;
+        }
         if (!won) break;
       } else if (x.kind === 'rest') {
         // Up a tower, a rest is taken as it is reached; in a Gate, the walk says when.
@@ -1456,12 +1481,21 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
     }
     if (won) {
       clears++;
+      rounds.push(tally.rounds ?? 0);
+      const medal = par.medalOf(tally.rounds ?? 0, tally.par ?? 0);
+      for (const k of Object.keys(medals) as MedalId[]) if (par.reaches(medal, k)) medals[k]++;
       // The System's road never clears every room, so Thorough is never the System's.
       for (const id of feats.judge(asked, tally, false)) featsMet[id]++;
     }
     if (!won && party[0].hp <= 0) heroDown++;
   }
-  return { runs, cleared: clears, rate: clears / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id), feats: featsMet };
+    rounds.sort((a, b) => a - b);
+  return {
+    runs, cleared: clears, rate: clears / runs, heroDown, reachedBoss: reached, road: road.map((x) => x.id), feats: featsMet,
+    // Par on the System's road, the rounds its middle clear took, how often it reached each medal, and the rounds
+    // each kind of fight it won took (`npm run parstats` sets the pars from them).
+    par: { road: par.whole(par.roadPar(d, m)), rounds: rounds.length ? rounds[Math.floor(rounds.length / 2)] : null, medals, perFight },
+  };
 }
 
 /** The System's assessment of a Gate, graded from its clear rate. It reports; it does not advise. */

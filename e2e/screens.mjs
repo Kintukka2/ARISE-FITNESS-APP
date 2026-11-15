@@ -427,6 +427,8 @@ try {
   // The Pale Spire is a Weekly Quest, not a Gates tile.
   if (await page.locator('.btile--spire').count()) throw new Error('THE PALE SPIRE IS STILL ON THE GATES SCREEN');
   await page.locator('.gradar__all').click(); await sleep(600); await snap('board', true);
+  // Every Gate's row holds its medal against par, dashed while none is held.
+  if (!(await page.locator('.sheet.is-top .gaterow .gtag.is-par').count())) throw new Error('THE BOARD DOES NOT SHOW THE MEDAL HELD ON EACH GATE');
   // The board: a band to each grade, a row to each Gate; the rail filters by grade, and to the marked ones.
   if (!(await page.locator('.sheet.is-top .gband .gaterow').count())) throw new Error('THE BOARD HAS NO GATE ROWS');
   // The day as facts, the grades as a rail of portals, and each Gate's boss power at its card's right.
@@ -499,6 +501,10 @@ try {
   if (await page.locator('.sheet.is-top .btabs').count()) throw new Error('THE BRIEF STILL HAS TABS');
   if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
   await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
+  // Par: the road's par, and a row to each medal with the rounds it allows, the System's odds and its Ember.
+  if ((await page.locator('.sheet.is-top .bpar__row').count()) !== 3) throw new Error('THE BRIEF DOES NOT STATE PAR AND ITS THREE MEDALS');
+  if (!/\d/.test(await page.locator('.sheet.is-top .bpar__par b').innerText())) throw new Error('THE BRIEF STATES NO PAR');
+  await page.locator('.sheet.is-top .bpar').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-par');
   // Today's map is one row, its rooms and floors and no more; a tap opens the map in its own window.
   const maprow = page.locator('.sheet.is-top .bmaprow');
   if (/moves|to the boss/i.test(await maprow.innerText())) throw new Error('TODAY’S MAP STILL COUNTS MOVES OR THE ROAD');
@@ -544,7 +550,7 @@ try {
   await sleep(400); await snap('arena-map');
   // Orders are the Shadows screen's: the map gives none.
   if (await page.locator('.arena .chips--orders, .arena .runorders').count()) throw new Error('THE MAP STILL GIVES ORDERS');
-  if ((await page.locator('.runhud__stat').count()) !== 3) throw new Error('THE RUN HUD DOES NOT CARRY ITS ALLIES, BANKED AND FOUND');
+  if ((await page.locator('.runhud__stat').count()) !== 4 || !(await page.locator('.runhud__par').count())) throw new Error('THE RUN HUD DOES NOT CARRY ITS ALLIES, BANKED, FOUND AND PAR');
   if (await page.evaluate(() => document.querySelector('.arena').scrollWidth > window.innerWidth)) throw new Error('THE MAP SCREEN SCROLLS SIDEWAYS');
   await page.locator('button.gnode.is-next').first().click();
   await page.waitForSelector('.turnbar', { timeout: 20000 });
@@ -729,6 +735,11 @@ try {
   await autoToResults();
   await revealLoot();
   await sleep(600); await snap('raid-results', true);
+  // A Gate cleared is graded against its par: the rounds, the par and the medal, or none.
+  if (await page.locator('.arena--results.is-cleared').count()) {
+    if (!(await page.locator('.arena--results .rpar .rpar__score').count())) throw new Error('A CLEAR IS NOT GRADED AGAINST ITS PAR');
+    await page.locator('.arena--results .rpar').scrollIntoViewIfNeeded(); await sleep(1000); await snap('raid-results-par');
+  }
   {
     // An alert that only reports goes when it is tapped, and the rest go of themselves.
     const fyi = () => page.locator('.arena--results .sysalert.is-fyi').count();

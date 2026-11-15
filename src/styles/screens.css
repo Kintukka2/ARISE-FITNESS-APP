@@ -641,7 +641,9 @@ button.dmap__floor { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .dmap__key { animation: none; } .dmap__keybtn .ico { transition: none; } }
 /* What the run carries, one slim row along the top as Slay the Spire keeps its run: no box, a hairline under it. */
 .runhud { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 10px; border-bottom: 1px solid rgba(255, 154, 60, 0.18); }
-.runhud__row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 14px; }
+.runhud__row { display: flex; align-items: center; gap: 14px; }
+.runhud__row > .runhud__hp { flex: 1; }
+.runhud__row:has(.runhud__par) { gap: 10px; }
 .runhud__hp { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .runhud__hp > .ico { flex: none; width: 16px; height: 16px; color: var(--blood); filter: drop-shadow(0 0 5px var(--blood-glow)); }
 .runhud__hp .vbar .num { min-width: 0; font-size: 0.84rem; }
@@ -4227,3 +4229,84 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .tbetter i { font-style: normal; font-size: 0.56rem; }
 .tcompare__act { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .tcompare__act .btn { min-height: 48px; }
+
+/* ------------------------------------------------------------------ Par (ui/par.tsx) */
+
+/* A medal in its metal: a milled rim, the face, a bright ring, the hourglass of rounds struck in it. */
+.medal { --mc: var(--gold); flex: none; overflow: visible; }
+.medal.is-bronze { --mc: #d9925a; }
+.medal.is-silver { --mc: #d3dbe8; }
+.medal.is-gold { --mc: var(--gold); }
+.medal__rim { fill: color-mix(in srgb, var(--mc) 62%, #120a02); stroke: var(--mc); stroke-width: 0.5; }
+.medal__face { fill: var(--mc); }
+.medal__ring { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 0.55; }
+.medal__mark { fill: color-mix(in srgb, var(--mc) 30%, #120a02); }
+.medal.is-on { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mc) 55%, transparent)); }
+.medal.is-off .medal__rim { fill: none; stroke: color-mix(in srgb, var(--sys-ink) 34%, transparent); stroke-width: 0.6; stroke-dasharray: 1.4 1.1; }
+.medal.is-off .medal__face { fill: color-mix(in srgb, var(--sys-ink) 5%, transparent); }
+.medal.is-off .medal__ring { stroke: color-mix(in srgb, var(--sys-ink) 18%, transparent); }
+.medal.is-off .medal__mark { fill: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
+/* The medal a Gate holds, on its row of the board. */
+.gtag.is-par { --tc: color-mix(in srgb, var(--sys-ink) 55%, transparent); padding: 1px 4px; }
+.gtag.is-par.is-bronze { --tc: #d9925a; }
+.gtag.is-par.is-silver { --tc: #d3dbe8; }
+.gtag.is-par.is-gold { --tc: var(--gold); }
+/* The brief's Par card: the road's par large, the System's rounds beside it, a row to each medal. */
+.bpar__held { display: inline-flex; gap: 3px; }
+.bpar__top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 2px 2px 6px; border-bottom: 1px solid var(--sys-hair); }
+.bpar__par { display: inline-flex; align-items: baseline; gap: 6px; }
+.bpar__par b { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 14px color-mix(in srgb, var(--ember) 35%, transparent); }
+.bpar__par small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.bpar__sys { display: grid; justify-items: end; gap: 1px; }
+.bpar__sys small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bpar__sys b { font-size: 1rem; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.bpar__rows { display: grid; margin: 0; padding: 0; list-style: none; }
+.bpar__row { display: flex; align-items: center; gap: 12px; padding: 9px 2px; border-top: 1px solid var(--sys-hair); animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
+.bpar__row:first-child { border-top: 0; }
+.bpar__body { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.bpar__body b { font-size: 0.82rem; }
+.bpar__row.is-bronze .bpar__body b { color: #e3a675; }
+.bpar__row.is-silver .bpar__body b { color: #dfe6f0; }
+.bpar__row.is-gold .bpar__body b { color: var(--gold); }
+.bpar__body small { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bpar__odds { position: relative; height: 3px; margin-top: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.bpar__odds i { position: absolute; inset: 0 auto 0 0; width: calc(var(--odds) * 100%); background: var(--sys-ink); box-shadow: 0 0 6px var(--sys-ink); animation: oddsIn 800ms calc(200ms + var(--i) * 80ms) var(--ease) both; }
+.bpar__side { display: grid; flex: none; justify-items: end; gap: 2px; }
+.bpar__side small { font-size: 0.64rem; }
+.bpar__pay { display: inline-flex; align-items: center; gap: 4px; color: var(--ember); font-weight: 700; }
+.bpar__note { font-size: 0.64rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+/* The run's rounds against par in its HUD, marked with the medal they are on pace for. */
+.runhud__par b .medal { width: 13px; height: 13px; }
+.runhud__par.is-gold b { color: var(--gold); }
+.runhud__par.is-silver b { color: #dfe6f0; }
+.runhud__par.is-bronze b { color: #e3a675; }
+/* The results' Par card: the medal struck, the scorecard beside it, the medals held, what the first ones paid. */
+.rpar__card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 12px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.rpar.is-gold .rpar__card { border-color: color-mix(in srgb, var(--gold) 50%, transparent); background: radial-gradient(ellipse at 20% 50%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 60%), rgba(3, 8, 20, 0.45); }
+.rpar.is-silver .rpar__card { border-color: rgba(211, 219, 232, 0.45); background: radial-gradient(ellipse at 20% 50%, rgba(211, 219, 232, 0.1), transparent 60%), rgba(3, 8, 20, 0.45); }
+.rpar.is-bronze .rpar__card { border-color: rgba(217, 146, 90, 0.5); background: radial-gradient(ellipse at 20% 50%, rgba(217, 146, 90, 0.12), transparent 60%), rgba(3, 8, 20, 0.45); }
+.rpar__strike { display: grid; justify-items: center; gap: 4px; min-width: 76px; }
+.rpar__strike .medal.is-on { animation: medalStrike 620ms 300ms var(--ease) both; }
+.rpar__strike b { font-size: 0.86rem; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; }
+.rpar.is-gold .rpar__strike b { color: var(--gold); }
+.rpar.is-silver .rpar__strike b { color: #e6ecf5; }
+.rpar.is-bronze .rpar__strike b { color: #e3a675; }
+.rpar__strike.is-none b { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.rpar__score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rpar__cell { display: grid; justify-items: center; gap: 2px; padding: 4px 2px; border-left: 1px solid var(--sys-hair); }
+.rpar__cell:first-child { border-left: 0; }
+.rpar__cell small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.rpar__cell b { font-size: 1.35rem; font-weight: 800; color: #fff; }
+.rpar__diff.is-under b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.rpar__diff.is-over b { color: var(--blood); }
+.rpar__track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rpar__track li { position: relative; display: grid; justify-items: center; gap: 3px; padding: 8px 4px 6px; border: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.rpar__track li small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.rpar__track li.is-held small { color: #fff; }
+.rpar__track li.is-fresh { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); }
+.rpar__new { position: absolute; top: -8px; right: 6px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background-color: #06140f; color: var(--verdant); font-size: 0.56rem; font-style: normal; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.rpar__paid { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 0 2px; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.rpar__paid b { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); font-size: 0.9rem; }
+@keyframes medalStrike { 0% { transform: scale(1.8) rotate(-20deg); opacity: 0; } 60% { transform: scale(0.92) rotate(4deg); opacity: 1; } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rpar__strike .medal.is-on, .bpar__row, .bpar__odds i { animation: none; } }
+.bpar__got { color: var(--verdant); font-weight: 700; }

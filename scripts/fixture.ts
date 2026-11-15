@@ -80,6 +80,8 @@ s.gates.clears = 61; s.gates.fails = 3; s.gates.withdrawn = 4;
 // cleared Gate is on it for the screens to see its tick.
 s.gates.cleared = ['DNG-000', 'DNG-001', 'DNG-002', 'DNG-003', 'DNG-004', 'DNG-005', 'DNG-006', 'DNG-007', 'DNG-009', 'DNG-011', 'DNG-013', 'DNG-015'];
 s.gates.bosses = [...s.gates.cleared, 'DNG-019'];
+// Medals held against par on a few of them: a Gold, a Silver and two Bronze.
+s.gates.par = { 'DNG-001': 'gold', 'DNG-002': 'silver', 'DNG-003': 'bronze', 'DNG-006': 'bronze' };
 s.gates.last = 'cleared'; s.gates.unbroken = 11; s.gates.bestUnbroken = 19;
 s.gates.sealed = { day: today, ids: ['DNG-015'] };
 s.stats = { ...s.stats, extractions: 7, extractionsWon: 3, reachClears: 4, comebacks: 1, killsByFamily: { Undead: 140, Beast: 96, Goblinoid: 61, Orc: 44, Plant: 30 } };
