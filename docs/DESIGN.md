@@ -2355,10 +2355,13 @@ Advance Wars' rank screen and Devil May Cry 5's results.
 - **Screens.** The brief's `Par` card: today's road's par large, the System's middle clear beside it, and a row to each
   medal with the rounds it allows, how often the System reached it in its runs (`raid.project` grades its clears) and
   its Ember, or `Earned`, after Star Rail's stated conditions and the Feats' odds. The run's HUD counts the rounds
-  against the par of the fights won, marked with the medal they are on pace for. The results' `Par` card is a
-  scorecard after Advance Wars' rank screen: the medal struck large, `Rounds`, `Par` and the difference, under in green
-  and over in red, the medals earned with the new ones marked, and the Ember paid. A Gate's row on the board carries the
-  best medal earned, as Advance Wars keeps a map's rank beside its name.
+  against the par of the fights won, marked with the medal they are on pace for. On the results the medal opens a
+  `Challenges` band, the Feats under it in the same rows: the medal struck, the rounds against the par and the
+  difference, under in green and over in red, and `New` over the Ember it paid the first time. The results were
+  reordered into bands with it, after Helldivers 2's mission summary: what the run paid (XP, shards and Ember side by
+  side, Ember no longer counted again among the materials), the hunter's condition, Challenges, Spoils (the materials
+  and the finds together), then the System's reports. A Gate's row on the board carries the best medal earned, as
+  Advance Wars keeps a map's rank beside its name.
 - **No tuning moves**: par never reaches a fight.
 - **Campaign**, which plays Auto and so earns the medals Auto reaches, over 120 days against `main` after Tempering:
 

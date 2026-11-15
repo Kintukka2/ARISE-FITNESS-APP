@@ -3628,6 +3628,9 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .rpay__one small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
 .rpay__one > b { font-size: 1.8rem; font-weight: 800; line-height: 1.1; text-shadow: 0 0 14px var(--verdant-glow); }
 .rpay__one > b .shards { font-size: inherit; color: var(--verdant); }
+.rpay.has-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rpay.has-3 .rpay__one > b { font-size: 1.5rem; }
+.rpay__one.is-ember > b { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); text-shadow: 0 0 14px color-mix(in srgb, var(--ember) 45%, transparent); }
 .rpay__one i { font-style: normal; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 /* The hunter's condition after it: health and fatigue as bars, and what comes back with time. */
 .rcond { display: flex; flex-direction: column; gap: 8px; }
@@ -3647,8 +3650,38 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .rmat__art { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid color-mix(in srgb, var(--rc) 55%, transparent); background: radial-gradient(color-mix(in srgb, var(--rc) 30%, transparent), color-mix(in srgb, var(--rc) 8%, rgba(4, 10, 24, 0.9)) 75%); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 20%, transparent); }
 .rmat > b { font-size: 0.86rem; font-weight: 800; }
 .rmat small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.62rem; line-height: 1.25; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
-/* The feats without their box: a hairline between them. */
-.arena__results .bfeats .bfeat { border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); background: none; }
+/* A band of the results, after Helldivers 2's mission summary: its head, then what it holds, the same room above
+   and below every band. */
+.arena__results.stack { gap: 20px; }
+.rband { gap: 10px; }
+.rband > .exsec__head small { font-weight: 600; }
+/* Challenges: the medal against par first, then the Feats, a row to each in one grid: the mark, the name and what
+   it asks, and at the right what it paid the first time, or that it was met. */
+.rchal__rows { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.rchal__row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 58px; padding: 9px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); animation: rowIn 320ms var(--ease) both; }
+.rchal__row:nth-child(2) { animation-delay: 70ms; } .rchal__row:nth-child(3) { animation-delay: 140ms; } .rchal__row:nth-child(4) { animation-delay: 210ms; }
+.rchal__mark { display: grid; place-items: center; width: 44px; height: 44px; }
+.rchal__mark > .ico { width: 22px; height: 22px; color: color-mix(in srgb, var(--sys-ink) 28%, transparent); }
+.rchal__row.is-met:not(.rchal__par) .rchal__mark > .ico { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
+.rchal__medal .medal.is-on { animation: medalStrike 620ms 300ms var(--ease) both; }
+.rchal__body { display: grid; gap: 3px; min-width: 0; }
+.rchal__body b { font-size: 0.86rem; color: #fff; }
+.rchal__row.is-met:not(.rchal__par) .rchal__body b { color: var(--gold); }
+.rchal__par.is-gold .rchal__body b { color: var(--gold); }
+.rchal__par.is-silver .rchal__body b { color: #e6ecf5; }
+.rchal__par.is-bronze .rchal__body b { color: #e3a675; }
+.rchal__row.is-missed .rchal__body b { color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.rchal__body small { font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.rchal__under { color: var(--verdant); font-weight: 700; }
+.rchal__over { color: var(--blood); font-weight: 700; }
+.rchal__side { display: grid; justify-items: end; gap: 4px; text-align: right; }
+.rchal__side small { font-size: 0.68rem; font-weight: 700; }
+.rchal__met { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.rchal__ember { display: inline-flex; align-items: center; gap: 4px; color: var(--ember); }
+/* New: reached here for the first time, green, as a stat that rises. */
+.rnew { padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background: color-mix(in srgb, var(--verdant) 10%, transparent); color: var(--verdant); font-size: 0.56rem; font-style: normal; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+/* Spoils: the materials, then the finds under them, in one band. */
+.spoils .loot { padding-top: 4px; }
 .arena__results { --win: var(--mana); --win-glow: var(--mana-glow); }
 
 /* ------------------------------------------------------------------ the fight, redrawn */
@@ -4253,13 +4286,13 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .gtag.is-par.is-gold { --tc: var(--gold); }
 /* The brief's Par card: the road's par large, the System's rounds beside it, a row to each medal. */
 .bpar__held { display: inline-flex; gap: 3px; }
-.bpar__top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 2px 2px 6px; border-bottom: 1px solid var(--sys-hair); }
-.bpar__par { display: inline-flex; align-items: baseline; gap: 6px; }
-.bpar__par b { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 14px color-mix(in srgb, var(--ember) 35%, transparent); }
-.bpar__par small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
-.bpar__sys { display: grid; justify-items: end; gap: 1px; }
-.bpar__sys small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.bpar__sys b { font-size: 1rem; color: color-mix(in srgb, var(--sys-ink) 85%, transparent); }
+.bpar__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); }
+.bpar__facts > div { display: grid; justify-items: center; gap: 2px; padding: 9px 2px; }
+.bpar__facts > div + div { border-left: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
+.bpar__facts dt { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.bpar__facts dd { display: inline-flex; align-items: baseline; gap: 5px; margin: 0; }
+.bpar__facts dd b { font-size: 1.3rem; font-weight: 800; color: #fff; }
+.bpar__facts dd small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .bpar__rows { display: grid; margin: 0; padding: 0; list-style: none; }
 .bpar__row { display: flex; align-items: center; gap: 12px; padding: 9px 2px; border-top: 1px solid var(--sys-hair); animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
 .bpar__row:first-child { border-top: 0; }
@@ -4280,33 +4313,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .runhud__par.is-gold b { color: var(--gold); }
 .runhud__par.is-silver b { color: #dfe6f0; }
 .runhud__par.is-bronze b { color: #e3a675; }
-/* The results' Par card: the medal struck, the scorecard beside it, the medals held, what the first ones paid. */
-.rpar__card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 12px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
-.rpar.is-gold .rpar__card { border-color: color-mix(in srgb, var(--gold) 50%, transparent); background: radial-gradient(ellipse at 20% 50%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 60%), rgba(3, 8, 20, 0.45); }
-.rpar.is-silver .rpar__card { border-color: rgba(211, 219, 232, 0.45); background: radial-gradient(ellipse at 20% 50%, rgba(211, 219, 232, 0.1), transparent 60%), rgba(3, 8, 20, 0.45); }
-.rpar.is-bronze .rpar__card { border-color: rgba(217, 146, 90, 0.5); background: radial-gradient(ellipse at 20% 50%, rgba(217, 146, 90, 0.12), transparent 60%), rgba(3, 8, 20, 0.45); }
-.rpar__strike { display: grid; justify-items: center; gap: 4px; min-width: 76px; }
-.rpar__strike .medal.is-on { animation: medalStrike 620ms 300ms var(--ease) both; }
-.rpar__strike b { font-size: 0.86rem; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; }
-.rpar.is-gold .rpar__strike b { color: var(--gold); }
-.rpar.is-silver .rpar__strike b { color: #e6ecf5; }
-.rpar.is-bronze .rpar__strike b { color: #e3a675; }
-.rpar__strike.is-none b { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.rpar__score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.rpar__cell { display: grid; justify-items: center; gap: 2px; padding: 4px 2px; border-left: 1px solid var(--sys-hair); }
-.rpar__cell:first-child { border-left: 0; }
-.rpar__cell small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.rpar__cell b { font-size: 1.35rem; font-weight: 800; color: #fff; }
-.rpar__diff.is-under b { color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
-.rpar__diff.is-over b { color: var(--blood); }
-.rpar__track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.rpar__track li { position: relative; display: grid; justify-items: center; gap: 3px; padding: 8px 4px 6px; border: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
-.rpar__track li small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.rpar__track li.is-held small { color: #fff; }
-.rpar__track li.is-fresh { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); }
-.rpar__new { position: absolute; top: -8px; right: 6px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background-color: #06140f; color: var(--verdant); font-size: 0.56rem; font-style: normal; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
-.rpar__paid { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 0 2px; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
-.rpar__paid b { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); font-size: 0.9rem; }
 @keyframes medalStrike { 0% { transform: scale(1.8) rotate(-20deg); opacity: 0; } 60% { transform: scale(0.92) rotate(4deg); opacity: 1; } 100% { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .rpar__strike .medal.is-on, .bpar__row, .bpar__odds i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rchal__medal .medal.is-on, .bpar__row, .bpar__odds i { animation: none; } }
 .bpar__got { color: var(--verdant); font-weight: 700; }

@@ -2,8 +2,8 @@
  * Par on screen (`core/par.ts`), the System's, in the Gates' orange with each medal in its metal: a medal struck
  * with the hourglass of rounds; the brief's Par card, after Honkai: Star Rail's star conditions and Rogue Legacy 2's
  * Scars, the road's par large and the three medals beside the rounds each allows, what each pays the first time and
- * how often the System reached it today; the results' card, after Advance Wars' rank screen and a golf scorecard,
- * the rounds against the par, the difference, and the medal struck; and the medal held on a Gate's row of the board.
+ * how often the System reached it today; the first row of the results' Challenges, the medal struck beside the
+ * rounds against the par; and the medal held on a Gate's row of the board.
  */
 import { group } from '@/core/util';
 import * as par from '@/core/par';
@@ -58,7 +58,8 @@ export function MedalHeld({ best, size = 16 }: { best: MedalId | null; size?: nu
 const payOf = (d: Dungeon, m: MedalId) => (PAR_EMBER[d.rank as keyof typeof PAR_EMBER] ?? 0) * MEDAL_PAY[m];
 
 /**
- * The brief's Par card: the par of today's road large, the rounds the System's middle clear took beside it; then
+ * The brief's Par card: the par of today's road and the rounds the System's middle clear took, two facts side by
+ * side as the brief's head sets its own; then
  * a row to each medal, worst first, its medal lit once held here, the rounds it allows, how often the System
  * reached it in its runs, and the Ember it pays the first time, or that it is earned.
  */
@@ -69,10 +70,10 @@ export function ParCard({ d, best, road, rounds, medals, runs }: {
   return (
     <section class="bbox bpar" aria-label="Par">
       <span class="label bbox__head">Par<small class="bbox__right bpar__held">{UP.map((m) => <Medal key={m} id={m} size={14} on={par.reaches(best, m)} />)}</small></span>
-      <div class="bpar__top">
-        <span class="bpar__par"><b class="num">{road}</b><small>rounds</small></span>
-        <span class="bpar__sys"><small>System</small><b class="num">{rounds ?? '-'}</b></span>
-      </div>
+      <dl class="bpar__facts">
+        <div><dt>Par today</dt><dd><b class="num">{road}</b><small>rounds</small></dd></div>
+        <div><dt>The System</dt><dd><b class="num">{rounds ?? '-'}</b><small>rounds</small></dd></div>
+      </dl>
       <ol class="bpar__rows">
         {UP.map((m, i) => {
           const held = par.reaches(best, m);
@@ -99,39 +100,27 @@ export function ParCard({ d, best, road, rounds, medals, runs }: {
 }
 
 /**
- * The results' Par card, as a scorecard: the rounds the clear took against the par of the fights it won, the
- * difference (under par in green, over in red), the medal struck large, or none; the three medals, those the
- * Gate now holds lit and those reached here for the first time marked New; and the Ember they paid.
+ * The clear against its par, as the first row of the results' Challenges: the medal struck, its name, the rounds
+ * against the par and the difference (under in green, over in red); at its right, `New` and the Ember it paid the
+ * first time, or the best the Gate holds.
  */
-export function ParResult({ r }: { r: NonNullable<RaidResult['par']> }) {
+export function ParRow({ r }: { r: NonNullable<RaidResult['par']> }) {
   const diff = r.rounds - r.par;
+  const fresh = r.fresh.length > 0;
   return (
-    <section class={`rsec rpar ${r.medal ? `is-${r.medal}` : 'is-none'}`} aria-label="Par">
-      <header class="exsec__head"><span class="label">Par</span><i aria-hidden="true" /></header>
-      <div class="rpar__card">
-        <span class={`rpar__strike ${r.medal ? '' : 'is-none'}`}>
-          {r.medal ? <Medal id={r.medal} size={68} /> : <Medal id="bronze" size={68} on={false} />}
-          <b>{r.medal ? NAME[r.medal] : 'No medal'}</b>
-        </span>
-        <span class="rpar__score">
-          <span class="rpar__cell"><small>Rounds</small><b class="num">{r.rounds}</b></span>
-          <span class="rpar__cell"><small>Par</small><b class="num">{r.par}</b></span>
-          <span class={`rpar__cell rpar__diff ${diff <= 0 ? 'is-under' : 'is-over'}`}><small>{diff < 0 ? 'Under' : diff > 0 ? 'Over' : 'Level'}</small><b class="num">{diff > 0 ? `+${diff}` : diff < 0 ? `−${-diff}` : '0'}</b></span>
-        </span>
-      </div>
-      <ol class="rpar__track" aria-label="Medals earned">
-        {UP.map((m) => {
-          const fresh = r.fresh.includes(m);
-          return (
-            <li key={m} class={`${par.reaches(r.best, m) ? 'is-held' : ''} ${fresh ? 'is-fresh' : ''}`}>
-              <Medal id={m} size={26} on={par.reaches(r.best, m)} />
-              <small>{NAME[m]}</small>
-              {fresh && <i class="rpar__new">New</i>}
-            </li>
-          );
-        })}
-      </ol>
-      {r.ember > 0 && <p class="rpar__paid"><span>First time</span><b class="num"><MatArt id={EMBER.id} size={16} />+{group(r.ember)}</b></p>}
-    </section>
+    <li class={`rchal__row rchal__par ${r.medal ? `is-met is-${r.medal}` : 'is-missed'}`}>
+      <span class="rchal__mark rchal__medal"><Medal id={r.medal ?? 'bronze'} size={40} on={!!r.medal} /></span>
+      <span class="rchal__body">
+        <b>{r.medal ? `${NAME[r.medal]} medal` : 'No medal'}</b>
+        <small class="num">
+          {r.rounds} rounds · par {r.par} · <span class={diff <= 0 ? 'rchal__under' : 'rchal__over'}>{diff < 0 ? `${-diff} under` : diff > 0 ? `${diff} over` : 'level'}</span>
+        </small>
+      </span>
+      <span class="rchal__side">
+        {fresh
+          ? <><i class="rnew">New</i><small class="rchal__ember"><MatArt id={EMBER.id} size={14} /><span class="num">+{group(r.ember)}</span></small></>
+          : <small class="muted">{r.best ? `Best: ${NAME[r.best]}` : 'Par'}</small>}
+      </span>
+    </li>
   );
 }

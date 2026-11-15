@@ -876,15 +876,22 @@ dormant.
 
 **Par.** The System's, in the Gates' orange, each medal in its metal: Bronze, Silver, Gold, struck with the
 hourglass of rounds, never stars (stars are the Feats'). A Gate's clear is graded against its `Par`: the rounds its
-fights should take, never a time. The brief's `Par` card states today's road's par large (`24 rounds`), the rounds the
-System's middle clear took beside it (`System 18`), and a row to each medal, worst first: `Bronze`, `Within 24 rounds`,
-how often the System reached it (`System 14/24`), and its Ember the first time (`+5`), or `Earned` in green once it is;
-its last line, `A fight won off the road adds its own par.` A Gate's row on the board carries the best medal earned,
-dashed while none is. In a run the HUD counts `Rounds` until a fight is won, then `12/15` over `Par`, its mark the medal
-the rounds are on pace for. The results' `Par` card is a scorecard: the medal struck large with its name (`Gold`), or
-`No medal`; `Rounds`, `Par`, and `Under` in green (`−16`), `Over` in red (`+3`) or `Level`; the three medals, those
-earned lit, those reached for the first time marked `New` in green; and `First time` with the Ember paid. A medal is
-earned or reached, never won or unlocked; par is `Par`, never a target or a goal.
+fights should take, never a time. The brief's `Par` card states two facts side by side, `Par today` and `The System`,
+each in rounds (`24`, `18`), and a row to each medal, worst first: `Bronze`, `Within 24 rounds`, how often the System
+reached it (`System 14/24`), and its Ember the first time (`+5`), or `Earned` in green once it is; its last line, `A
+fight won off the road adds its own par.` A Gate's row on the board carries the best medal earned, dashed while none
+is. In a run the HUD counts `Rounds` until a fight is won, then `12/15` over `Par`, its mark the medal the rounds are on
+pace for. On the results the medal is the first row of `Challenges`, the Feats under it in the same rows: the medal
+struck and `Gold medal` (or `No medal`), under it `7 rounds · par 24 · 17 under` (under in green, over in red, or
+`level`), and at its right `New` in green over the Ember it paid, or `Best: Gold`. A Feat's row ends `New` over
+`Blueprint +1`, `Met`, or `Not met`. A medal is earned or reached, never won or unlocked; par is `Par`, never a target or
+a goal.
+
+**The results, in bands.** A run's results read top to bottom in this order, after Helldivers 2's mission summary: the
+title card; what it paid, `XP`, `Shards` and `Ember` side by side (Ember is never counted again among the materials);
+the hunter's health and fatigue; `Challenges`, the medal against par then the Feats; `Spoils`, the materials then the
+finds, `Tap a find for its card` at the head's right; then the System's reports, each in its frame; and the way out.
+Each band opens on its label and hairline, with the same room above and below every band.
 
 **Tempering.** The System's, in the gear's cyan, its results in advancement's gold. A perfect piece of C-Rank or
 higher carries `Temper` on its card, `Tempered 2 times` at its right once tempered, over a panel as Familiarity's is:

@@ -27,7 +27,7 @@ import { licensedRank } from '@/core/licence';
 import * as spire from '@/core/spire';
 import { isRift } from '@/core/rift';
 import { RiftResults } from '@/ui/rift';
-import { Medal, ParResult } from '@/ui/par';
+import { Medal, ParRow } from '@/ui/par';
 import * as par from '@/core/par';
 import { chamberOf, isFight, type MapNode } from '@/core/map';
 import { HONE_LEVELS, NODE } from '@/data/nodes';
@@ -1495,6 +1495,9 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const rifted = isRift(d);
   const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Cleared` : trial ? 'Trial Won' : rifted ? 'Rift Cleared' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
   const deal = r.contracts;
+  // Ascendant Ember is paid with the XP and the shards; the rest of what the run left are its spoils.
+  const ember = r.mats[EMBER.id] ?? 0;
+  const mats = ordered(r.mats).filter(([id]) => id !== EMBER.id);
   // The line under the title says what the title does not: it never repeats the outcome (the owner's call).
   const line: string | null = r.outcome === 'cleared'
     ? isPractice(d) ? 'The Practice Gate is closed.'
@@ -1526,10 +1529,11 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             {line && <p class="muted">{line}</p>}
           </header>
           {/* What the run paid, large and unframed, then the hunter's condition as bars. */}
-          <div class="rpay">
+          <div class={`rpay ${ember > 0 ? 'has-3' : ''}`}>
             {/* The figures alone: what qualified them said nothing the hunter needs (the owner's call). */}
             <div class="rpay__one"><small>XP</small><b class="num grant">+{group(r.xp?.gained ?? 0)}</b></div>
             <div class="rpay__one"><small>Shards</small><b><Shards n={r.shards + r.bounty + deal.shards} /></b></div>
+            {ember > 0 && <div class="rpay__one is-ember"><small>Ember</small><b class="num"><MatArt id={EMBER.id} size={22} />+{group(ember)}</b></div>}
           </div>
           </>
         )}
@@ -1538,31 +1542,60 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           <span class="rcond__row"><Glyph name="bolt" /><span class="label">Fatigue</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold'} /></span>
           <small>{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small>
         </div>
-        {Object.keys(r.mats).length > 0 && (
-          <section class="rsec spoils">
-            <header class="exsec__head"><span class="label">Materials</span><i aria-hidden="true" /></header>
-            <span class="rmats">{ordered(r.mats).map(([id, n]) => (
+        {/* What the clear asked of the hand, after Helldivers 2's mission summary: one band, the medal against par first,
+            then the Gate's Feats, a row to each, what each paid the first time at its right. */}
+        {r.outcome === 'cleared' && (r.par || r.feats.asked.length > 0) && (
+          <section class="rsec rband rchal" aria-label="Challenges">
+            <header class="exsec__head"><span class="label">Challenges</span><i aria-hidden="true" />{r.feats.asked.length > 0 && <small class="num">Feats {r.feats.met.length}/{r.feats.asked.length}</small>}</header>
+            <ol class="rchal__rows">
+              {r.par && <ParRow r={r.par} />}
+              {r.feats.asked.map((id) => {
+                const met = r.feats.met.includes(id);
+                const fresh = r.feats.fresh.includes(id);
+                return (
+                  <li key={id} class={`rchal__row ${met ? 'is-met' : 'is-missed'}`}>
+                    <span class="rchal__mark"><Glyph name="star" /></span>
+                    <span class="rchal__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
+                    <span class="rchal__side">
+                      {fresh ? <><i class="rnew">New</i><small class="grant">Blueprint +{FEAT_PAY.blueprints}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        )}
+        {/* What the run left, materials and finds together: Ember is paid above, with the XP and the shards. */}
+        {(mats.length > 0 || found.length > 0) && (
+          <section class="rsec rband spoils" aria-label="Spoils">
+            <header class="exsec__head"><span class="label">Spoils</span><i aria-hidden="true" />{found.length > 0 && <small>{faceDown ? 'Tap to reveal' : 'Tap a find for its card'}</small>}</header>
+            {mats.length > 0 && <span class="rmats">{mats.map(([id, n]) => (
               <span key={id} class="rmat" data-rarity={forge.materialById(id)?.rank}>
                 <span class="rmat__art"><MatArt id={id} size={34} /></span>
                 <b class="num grant">+{group(n)}</b>
                 <small>{forge.materialById(id)?.name ?? id}</small>
               </span>
-            ))}</span>
-          </section>
-        )}
-        {r.outcome === 'cleared' && r.feats.asked.length > 0 && (
-          <section class="rsec bfeats" aria-label="Feats">
-            <header class="exsec__head"><span class="label">Feats</span><i aria-hidden="true" /><small class="num">{r.feats.met.length}/{r.feats.asked.length}</small></header>
-            {r.feats.asked.map((id) => (
-              <div key={id} class={`bfeat ${r.feats.met.includes(id) ? 'is-done' : ''}`}>
-                <Glyph name="star" class="bfeat__star" />
-                <span class="bfeat__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
-                <span class="bfeat__side"><small class={r.feats.fresh.includes(id) ? 'grant' : 'muted'}>{r.feats.fresh.includes(id) ? `First time: Blueprint +${FEAT_PAY.blueprints}` : r.feats.met.includes(id) ? 'Met' : 'Not met'}</small></span>
+            ))}</span>}
+            {found.length > 0 && (
+              <div class="loot">
+                <div class="haul">
+                  {found.map((l, i) => (
+                    <LootCell key={'item' in l ? l.item.id : `bp-${l.defId}`} loot={l} i={i} state={turn.stateOf(i)} onTap={() => turn.reveal(i)}
+                      onOpen={() => { sfx.tap(); if ('item' in l) openItem(l.item.id); else openBlueprint(l.defId); }} />
+                  ))}
+                </div>
+                {upgradeWaits && (
+                  // Dimmed until everything is turned over: one more reason to turn it.
+                  <div class={`loot__act ${faceDown ? '' : 'is-ready'}`}>
+                    {equipped
+                      ? <span class="grant">Upgrades equipped</span>
+                      : <Btn kind="gold" size="sm" disabled={faceDown > 0} onClick={() => { store.update(gear.autoEquip); setEquipped(true); sfx.success(); }}>Auto Equip Upgrades</Btn>}
+                  </div>
+                )}
               </div>
-            ))}
+            )}
           </section>
         )}
-        {r.par && <ParResult r={r.par} />}
         {(r.seals.length > 0 || r.drops > 0) && (
           <div class="alerts">
             {r.seals.length > 0 && <SysAlert fyi delay={150} icon={<Glyph name="lock" />}><strong>[Seals]</strong> {r.seals.map((id) => SEALS[id].name).join(', ')}{r.outcome === 'defeated' ? '. Carried out: nothing is paid.' : '. Their pay is in what the run left.'}</SysAlert>}
@@ -1583,25 +1616,6 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             </div>
           );
         })()}
-        {found.length > 0 && (
-          <section class="loot">
-            <span class="label">{faceDown ? 'Tap to reveal' : 'Tap a find for its card'}</span>
-            <div class="haul">
-              {found.map((l, i) => (
-                <LootCell key={'item' in l ? l.item.id : `bp-${l.defId}`} loot={l} i={i} state={turn.stateOf(i)} onTap={() => turn.reveal(i)}
-                  onOpen={() => { sfx.tap(); if ('item' in l) openItem(l.item.id); else openBlueprint(l.defId); }} />
-              ))}
-            </div>
-            {upgradeWaits && (
-              // Dimmed until everything is turned over: one more reason to turn it.
-              <div class={`loot__act ${faceDown ? '' : 'is-ready'}`}>
-                {equipped
-                  ? <span class="grant">Upgrades equipped</span>
-                  : <Btn kind="gold" size="sm" disabled={faceDown > 0} onClick={() => { store.update(gear.autoEquip); setEquipped(true); sfx.success(); }}>Auto Equip Upgrades</Btn>}
-              </div>
-            )}
-          </section>
-        )}
         {/* A lingering Shadow is an alert; tapped, it opens the extraction, where the hold is. */}
         {r.lingering.length > 0 && (
           <div class="alerts">

@@ -503,7 +503,7 @@ try {
   await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
   // Par: the road's par, and a row to each medal with the rounds it allows, the System's odds and its Ember.
   if ((await page.locator('.sheet.is-top .bpar__row').count()) !== 3) throw new Error('THE BRIEF DOES NOT STATE PAR AND ITS THREE MEDALS');
-  if (!/\d/.test(await page.locator('.sheet.is-top .bpar__par b').innerText())) throw new Error('THE BRIEF STATES NO PAR');
+  if (!/\d/.test(await page.locator('.sheet.is-top .bpar__facts dd b').first().innerText())) throw new Error('THE BRIEF STATES NO PAR');
   await page.locator('.sheet.is-top .bpar').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-par');
   // Today's map is one row, its rooms and floors and no more; a tap opens the map in its own window.
   const maprow = page.locator('.sheet.is-top .bmaprow');
@@ -737,8 +737,12 @@ try {
   await sleep(600); await snap('raid-results', true);
   // A Gate cleared is graded against its par: the rounds, the par and the medal, or none.
   if (await page.locator('.arena--results.is-cleared').count()) {
-    if (!(await page.locator('.arena--results .rpar .rpar__score').count())) throw new Error('A CLEAR IS NOT GRADED AGAINST ITS PAR');
-    await page.locator('.arena--results .rpar').scrollIntoViewIfNeeded(); await sleep(1000); await snap('raid-results-par');
+    if (!(await page.locator('.arena--results .rchal .rchal__par').count())) throw new Error('A CLEAR IS NOT GRADED AGAINST ITS PAR');
+    // The Challenges band opens on the medal against par, the Feats under it in the same rows.
+    if ((await page.locator('.arena--results .rchal .rchal__row').first().getAttribute('class')).indexOf('rchal__par') < 0) throw new Error('THE CHALLENGES DO NOT OPEN ON PAR');
+    // Ember is paid beside the XP and the shards, never again among the materials.
+    if (await page.locator('.arena--results .spoils .rmat', { hasText: 'Ascendant Ember' }).count()) throw new Error('EMBER IS COUNTED AMONG THE MATERIALS');
+    await page.locator('.arena--results .rchal').scrollIntoViewIfNeeded(); await sleep(1000); await snap('raid-results-par');
   }
   {
     // An alert that only reports goes when it is tapped, and the rest go of themselves.
