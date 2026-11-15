@@ -13,9 +13,8 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
-import { ascensionOpen, overCap } from '@/core/ascension';
+import { overCap } from '@/core/ascension';
 import { walkerOf } from '@/core/walkers';
-import { OVERCHARGE } from '@/data/ascension';
 import { dungeonById } from '@/core/gates';
 import * as forge from '@/core/forge';
 import type { GearDef, Item, Rank, Save, SlotKey, Stat } from '@/core/types';
@@ -675,17 +674,15 @@ function QualityLine({ it }: { it: Item }) {
   );
 }
 
-/** The next upgrade step on a piece: what it raises, before and after side by side, and the alloys and shards it takes. */
+/** The next upgrade step on a piece: what it raises, before and after side by side, and the alloys and shards it takes. Nothing once it is perfect. */
 function Upgrade({ it }: { it: Item }) {
   const s = useSave();
   const cap = overCap(s);
   const next = gear.upgradeStep(it, cap);
   const cost = forge.upgradeCost(it, cap);
-  if (!next || !cost) {
-    const over = it.over ?? 0;
-    return <p class="hint">{!ascensionOpen(s) ? 'Perfect. Nothing left to raise.'
-      : `Perfect${over ? ` +${over}` : ''}. Each Ascension level opened allows ${OVERCHARGE.per === 1 ? '1 more step' : `${OVERCHARGE.per} more steps`}.`}</p>;
-  }
+  // Perfect, and as far past it as Ascension allows: the quality line at the card's head says so, and the
+  // Temper slot below takes over.
+  if (!next || !cost) return null;
   const ok = forge.affords(s, cost);
   return (
     <Section title={next.over ? 'Past perfect' : 'Upgrade'} right={it.up ? <span class="num">Steps taken: {it.up}</span> : <Shards n={cost.shards} />}>

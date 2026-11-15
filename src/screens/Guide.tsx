@@ -464,8 +464,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       `A piece of ${TEMPER_FROM}-Rank or higher opens a Temper slot once it is perfect.`,
       'Choose one of its slot’s properties. Its size rolls within that property’s range at the piece’s rarity, as its own properties roll.',
-      'Tempered again, the new roll stands beside the one held, and you keep either. Nothing held is lost.',
-      `A temper costs Ascendant Ember and Mana Shards. The first takes ${RANKS.filter((r) => TEMPER_EMBER[r]).map((r) => `${r} ${TEMPER_EMBER[r]}`).join(', ')} Ember, by the piece’s rarity.`,
+      'Tempered again, the new roll stands beside the current one, and you keep either. Nothing is lost.',
+      `A temper costs Ascendant Ember alone. The first takes ${RANKS.filter((r) => TEMPER_EMBER[r]).map((r) => `${r} ${TEMPER_EMBER[r]}`).join(', ')} Ember, by the piece’s rarity.`,
       `Each temper after it costs ${Math.round(TEMPER_STEP * 100)}% of the first more, up to ${TEMPER_CAP} times the first.`,
       'A tempered piece recycled loses its temper.',
     ],

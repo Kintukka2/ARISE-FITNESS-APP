@@ -3,7 +3,8 @@
  * higher, perfect, opens one Temper slot. The hunter chooses one of its slot's properties; its size rolls
  * within that property's range at the piece's rarity, seeded from the piece and how often it has been
  * tempered. A second temper shows the new roll against the old, and the hunter keeps either, so nothing is
- * ever lost. Each costs more than the last, up to a cap. Numbers here are rules; the screens quote them.
+ * ever lost. It costs Ember alone, each temper more than the last, up to a cap. Numbers here are rules; the
+ * screens quote them.
  */
 import type { Rank } from '@/core/types';
 
@@ -12,9 +13,6 @@ export const TEMPER_FROM: Rank = 'C';
 
 /** A first temper's Ascendant Ember, by the piece's rarity. */
 export const TEMPER_EMBER: Record<Rank, number> = { E: 0, D: 0, C: 8, B: 12, A: 20, S: 30 };
-
-/** Its Mana Shards, in Gate clears' worth of the piece's grade. */
-export const TEMPER_SHARDS = 1;
 
 /** Each temper after the first on a piece costs this share of the first more, up to `TEMPER_CAP` times it. */
 export const TEMPER_STEP = 0.5;

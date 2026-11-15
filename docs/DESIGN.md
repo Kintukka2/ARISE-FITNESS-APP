@@ -2283,7 +2283,8 @@ Shattered Pixel Dungeon's local history for the days walked.
 Step 7: something for Ember to buy, the research's fifth idea for loot ([arpg-loot-endgame.md](research/arpg-loot-endgame.md),
 "Tempering at perfect: choose the property, roll its size, compare before you keep it"). The references are in
 [step 7's README](research/references/step-7-ember-tempering/README.md#tempering): Diablo IV's tempering and
-enchanting, Warframe's Riven cycle and Last Epoch's forge.
+enchanting, Warframe's Riven cycle and Last Epoch's forge; and, for keeping one of two rolls, Genshin's reshape, Honkai:
+Star Rail's reroll, NIKKE's Overload, and Diablo's green marks for a stat that rises.
 
 - **One Temper slot on a perfect piece** of C-Rank or higher (`temper.temperable`; below C the designs carry no
   properties). The hunter chooses one of its slot's properties (`temper.statsFor`: a weapon's Crit Chance, Accuracy,
@@ -2291,20 +2292,23 @@ enchanting, Warframe's Riven cycle and Last Epoch's forge.
   that property's range at the piece's rarity, as the designs roll it (`temper.rangeOf`: 9-13% Crit Chance at S), from
   `arise|temper|<item>|<count>`: the same piece tempered the same number of times rolls the same, whichever property is
   chosen, so changing the property is never a way to fish.
-- **Nothing is lost.** The first temper fills the slot. Each after it waits beside the one held (`it.temperNew`), Held
-  against New, until the hunter keeps one (`temper.settle`), as Diablo IV's enchanting and Warframe's Riven cycle set
-  them. A piece waiting on a choice cannot be tempered again.
-- **What it costs**: Ember by the piece's rarity, 8 at C to 30 at S (`TEMPER_EMBER`), and a Gate clear's shards; each
+- **Nothing is lost.** The first temper fills the slot. Each after it waits beside the current one (`it.temperNew`),
+  Current against New, until the hunter keeps one (`temper.settle`), as Diablo IV's enchanting and Warframe's Riven
+  cycle set them. A piece waiting on a choice cannot be tempered again.
+- **What it costs**: Ember alone (`temper.emberFor`), by the piece's rarity, 8 at C to 30 at S (`TEMPER_EMBER`); each
   temper after the first 50% of the first more, up to three times it (`TEMPER_STEP`, `TEMPER_CAP`). The top of a range is
-  its ceiling, so Ember buys a better roll, never more than the range; shards alone cannot buy it.
+  its ceiling, so Ember buys a better roll, never more than the range. A temper took a Gate clear's shards as well at
+  first; the owner dropped them, so its one price is the Ember it is there to spend.
 - **The fight** reads a temper as one more property of the piece, through `gear.rollBonuses`. Recycling a tempered
   piece loses its temper, and its offer says so in red.
-- **Screens.** A perfect piece's card carries `Temper` under its Upgrade: the slot, a hammer in a diamond, empty or
-  lit with what it holds and where it sits in its range, the next temper's Ember, and **Temper**, **Temper Again** or
-  **Choose**. The tempered property stands last among the piece's properties, the hammer before it, in gold. The
-  `TEMPER` window lists the slot's properties with their ranges, the price held over needed, and **Temper**; pressed,
-  the mark sweeps across the range and lands; a second roll stands Held against New, the better of the two in gold.
-  `TEMPER` joins the System's window titles.
+- **Screens.** A perfect piece's card says no more of its upgrades (its quality line says `Perfect`) and carries
+  `Temper`, a panel as Familiarity's is: the slot, a hammer in a diamond, empty with the slot's properties under it or
+  lit with what it holds and where it sits in its range, and **Temper**, **Temper Again** or **Choose**, the next
+  temper's Ember on the button. The tempered property stands last among the piece's properties, the hammer before it,
+  in gold. The `TEMPER` window lists the slot's properties with their ranges, and **Temper** with its Ember on it, as
+  Warframe's `CYCLE FOR 7,000` carries its price; pressed, the mark sweeps across the range and lands; a second roll
+  stands Current against New, the better edged in green with `▲ Better` on its border, as a piece's card marks a stat
+  that rises, and **Keep Current** or **Use New**. `TEMPER` joins the System's window titles.
 - **Calibration.** `typicalHunter` carries no temper, so no Gate, Spire block or floor moved. `keptUpHunter` carries the
   System's property on every perfect piece worn at the middle of its range (`autoTemper`: the first of `AUTO_TEMPER` the
   slot offers, Crit Chance where it can, then Max HP, Defence and Accuracy). Every Ascension level held, within 5 points
@@ -2318,12 +2322,12 @@ enchanting, Warframe's Riven cycle and Last Epoch's forge.
   | | Days to B, A, S, N | Carried out | Ascension opened | Tempers, for Ember | Engravings cut, for Ember | Ember on day 120 |
   |---|---|---|---|---|---|---|
   | One evening, `main` | 19, 32, 59, 113 | 11 | 7 | | | 1,074 |
-  | This change | 18, 32, 58, 116 | 12 | 6 | 48, for 1,075 | 4, for 340 | 35 |
+  | This change | 18, 32, 58, 116 | 12 | 6 | 52, for 1,154 | 3, for 250 | 28 |
   | Three sessions, `main` | 8, 14, 30, 60 | 28 | 26 | | | 1,924 |
-  | This change | 8, 17, 32, 64 | 30 | 24 | 98, for 2,654 | 6, for 550 | 184 |
+  | This change | 8, 15, 30, 61 | 30 | 24 | 88, for 2,734 | 7, for 520 | 15 |
 
   Ember is spent. Both hunters end the 120 days holding almost none, where they held 1,074 and 1,924, and the tempers
-  their worn pieces carry sit from 10% to 100% of their ranges. The ranks come within the spread between two runs of
+  their worn pieces carry sit from 22% to 93% of their ranges. The ranks come within the spread between two runs of
   `main`. Engravings now compete for the same Ember, and fewer are cut: the System's hunter tempers what it wears
   before it cuts a better engraving into it. Ember, for the first time, is scarce.
 

@@ -67,16 +67,20 @@ describe('Tempering', () => {
     expect(temper.count(it)).toBe(3);
   });
 
-  it('costs Ember and shards, more each time, up to the cap', () => {
+  it('costs Ember alone, more each time, up to the cap', () => {
     const s = rich(defaults());
     const it = perfect(s, 'Weapon', 'A', 'w');
     const ember = (n: number) => temper.cost({ ...it, tempers: n }).mats[EMBER.id];
     expect(ember(0)).toBe(TEMPER_EMBER.A);
     expect(ember(1)).toBe(Math.round(TEMPER_EMBER.A * (1 + TEMPER_STEP)));
     expect(ember(50)).toBe(Math.round(TEMPER_EMBER.A * TEMPER_CAP));
+    expect(temper.cost(it).shards).toBe(0);
+    expect(temper.emberFor({ ...it, tempers: 1 })).toBe(ember(1));
     const before = s.materials[EMBER.id];
+    const shards = s.wallet.shards;
     temper.temper(s, it.id, 'Critical Chance');
     expect(s.materials[EMBER.id]).toBe(before - TEMPER_EMBER.A);
+    expect(s.wallet.shards).toBe(shards);
     // Short of Ember, no temper.
     const poor = defaults();
     const p = perfect(poor, 'Weapon', 'A', 'p');

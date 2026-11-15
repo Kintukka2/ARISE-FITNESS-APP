@@ -2,12 +2,13 @@
  * Tempering on screen (`core/temper.ts`), the System's, in the gear's cyan: the Temper slot on a perfect piece's
  * card, the tempered property among its properties, and the TEMPER window. The window follows Diablo IV's
  * tempering, where the property is chosen, and Warframe's Riven cycle and Diablo IV's enchanting, where the new
- * roll stands beside the old to keep either: the slot's properties with their ranges, the price, a roll swept
- * across its range as it lands, and then Held against New.
+ * roll stands beside the old to keep either: the slot's properties with their ranges, a roll swept across its
+ * range as it lands, and then Current against New, the better marked green as a piece's card marks a stat
+ * that rises, and Keep Current or Use New, as NIKKE's and Honkai: Star Rail's keep-one windows word it. The price
+ * is Ember alone, carried on the button, as Warframe's `CYCLE FOR 7,000` carries it.
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import * as forge from '@/core/forge';
 import * as gear from '@/core/gear';
 import * as temper from '@/core/temper';
 import type { Item, Temper } from '@/core/types';
@@ -16,9 +17,9 @@ import { EMBER } from '@/data/forge';
 import { TEMPER_FROM } from '@/data/temper';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, GearArt, Section, Shards } from './components';
+import { Btn, GearArt, Section } from './components';
 import { buzz } from './feedback';
-import { CostGrid, MatArt } from './forge';
+import { MatArt } from './forge';
 import { Glyph } from './icons';
 import { openSheet, toast } from './overlays';
 
@@ -51,26 +52,58 @@ export function TemperLine({ it }: { it: Item }) {
   );
 }
 
+/** The Temper slot's mark: a diamond, lit gold once it holds a temper, the hammer at its heart. */
+function TemperMark({ on, size = 44 }: { on: boolean; size?: number }) {
+  return (
+    <span class={`tmark ${on ? 'is-on' : ''}`} style={`--s: ${size}px`} aria-hidden="true">
+      <svg viewBox="0 0 44 44"><path class="tmark__d" d="M22 2.5 41.5 22 22 41.5 2.5 22z" /><path class="tmark__in" d="M22 8 36 22 22 36 8 22z" /></svg>
+      <Glyph name="hammer" />
+    </span>
+  );
+}
+
+/** A temper's price as a button carries it: the Ember mark and the count, red while the Ember held falls short. */
+export function EmberCost({ n, short = false }: { n: number; short?: boolean }) {
+  return <span class={`embercost ${short ? 'is-short' : ''}`}><MatArt id={EMBER.id} size={18} /><b class="num">{group(n)}</b></span>;
+}
+
 /**
- * The Temper slot on a piece's card: what it holds, or that it is open, a new roll waiting if one is, and the
- * way to the TEMPER window. A piece short of perfect, or below C-Rank, has no slot.
+ * The Temper slot on a piece's card, a panel as Familiarity's is: the slot's mark and what it holds, its place in
+ * its range, or the properties it can take while it is empty; a new roll waiting, if one is; and the way to the
+ * TEMPER window, with the next temper's Ember on it. A piece short of perfect, or below C-Rank, has no slot.
  */
 export function TemperBlock({ it }: { it: Item }) {
   const s = useSave();
-  if (!temper.temperable(it)) return null;
+  const d = gear.defOf(it);
+  if (!d || !temper.temperable(it)) return null;
   const t = it.temper;
-  const price = temper.cost(it);
+  const ember = temper.emberFor(it);
+  const short = (s.materials?.[EMBER.id] ?? 0) < ember;
+  const n = temper.count(it);
   return (
-    <Section title="Temper" right={<span class="tprice"><MatArt id={EMBER.id} size={16} /><b class="num">{group(price.mats[EMBER.id] ?? 0)}</b></span>}>
-      <div class={`temperslot ${t ? 'is-held' : 'is-open'} ${it.temperNew ? 'is-waiting' : ''}`}>
-        <span class="temperslot__mark"><Glyph name="hammer" /></span>
-        <span class="temperslot__text">
-          {t ? <><b>{nameOf(t.stat)} <span class="num">{temperValue(t)}</span></b><RangeBar at={temper.share(it, t)} /></> : <b>Temper slot open</b>}
-          {it.temperNew && <small class="temperslot__wait">New roll waiting: {nameOf(it.temperNew.stat)} {temperValue(it.temperNew)}</small>}
-        </span>
-        <Btn kind={it.temperNew ? 'gold' : 'ghost'} onClick={() => openTemper(it.id)}>{it.temperNew ? 'Choose' : t ? 'Temper Again' : 'Temper'}</Btn>
+    <Section title="Temper" right={n ? <span class="num">Tempered {n} {n === 1 ? 'time' : 'times'}</span> : undefined}>
+      <div class={`sysbox temperslot ${t ? 'is-held' : 'is-open'} ${it.temperNew ? 'is-waiting' : ''}`}>
+        <div class="temperslot__row">
+          <TemperMark on={!!t} />
+          {t ? (
+            <span class="temperslot__text">
+              <span class="temperslot__line"><b>{nameOf(t.stat)}</b><span class="temperslot__v num">{temperValue(t)}</span></span>
+              <span class="temperslot__range"><RangeBar at={temper.share(it, t)} /><small class="num">{rangeText(t.stat, d.rank)}</small></span>
+            </span>
+          ) : (
+            <span class="temperslot__text">
+              <b>Empty</b>
+              <small class="temperslot__can">{temper.statsFor(it).map(nameOf).join(' · ')}</small>
+            </span>
+          )}
+        </div>
+        {it.temperNew && (
+          <p class="temperslot__wait"><span class="label">New roll</span><b>{nameOf(it.temperNew.stat)} <span class="num">{temperValue(it.temperNew)}</span></b></p>
+        )}
+        <Btn kind={it.temperNew ? 'gold' : undefined} block class="temperslot__go" onClick={() => openTemper(it.id)}>
+          {it.temperNew ? 'Choose' : <><Glyph name="hammer" /> {t ? 'Temper Again' : 'Temper'} <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} short={short} /></>}
+        </Btn>
       </div>
-      {!forge.affords(s, price) && !it.temperNew && <small class="hint">Not enough {s.wallet.shards < price.shards ? 'Mana Shards' : 'Ascendant Ember'}.</small>}
     </Section>
   );
 }
@@ -111,7 +144,8 @@ function TemperWindow({ itemId }: { itemId: string }) {
   const done = landing !== null && sweep === landing.at;
   if (!it || !d) return null;
   if (!temper.temperable(it)) return <p class="hint">A piece is tempered once it is perfect, from {TEMPER_FROM}-Rank.</p>;
-  const price = temper.cost(it);
+  const ember = temper.emberFor(it);
+  const held = s.materials?.[EMBER.id] ?? 0;
   const short = stat ? temper.blocked(s, it.id, stat) : 'stat';
   const roll = () => {
     if (!stat) return;
@@ -128,14 +162,16 @@ function TemperWindow({ itemId }: { itemId: string }) {
     setLanding(null);
   };
   const waiting = it.temperNew && (!landing || done);
-  // The better of the two, by its place in its range: the same property compares by size.
-  const newBetter = !!(it.temper && it.temperNew && temper.share(it, it.temperNew) > temper.share(it, it.temper));
+  // The better of the two, by its place in its range: the same property compares by size. Level, neither is.
+  const gap = it.temper && it.temperNew ? temper.share(it, it.temperNew) - temper.share(it, it.temper) : 0;
+  const newBetter = gap > 1e-9;
+  const oldBetter = gap < -1e-9;
   return (
     <div class="stack temperwin">
       <header class="temperwin__head">
         <GearArt item={it} size={48} />
         <span class="temperwin__name"><b>{d.name}</b><small>{temper.count(it) ? `Tempered ${temper.count(it)} ${temper.count(it) === 1 ? 'time' : 'times'}` : 'Never tempered'}</small></span>
-        <span class="temperwin__held"><MatArt id={EMBER.id} size={22} /><b class="num">{group(s.materials?.[EMBER.id] ?? 0)}</b></span>
+        <span class={`temperwin__held ${held < ember ? 'is-short' : ''}`} aria-label={`Ascendant Ember held: ${held}`}><MatArt id={EMBER.id} size={22} /><b class="num">{group(held)}</b></span>
       </header>
       {landing && !done && (
         <section class="temperroll" aria-live="polite">
@@ -144,23 +180,26 @@ function TemperWindow({ itemId }: { itemId: string }) {
         </section>
       )}
       {waiting && it.temper && it.temperNew ? (
-        <section class="tcompare" aria-label="Held or new">
-          {(['held', 'new'] as const).map((k) => {
-            const t = k === 'held' ? it.temper! : it.temperNew!;
-            const better = k === 'new' ? newBetter : !newBetter;
+        <section class="tcompare" aria-label="Current or new">
+          {(['current', 'new'] as const).map((k) => {
+            const x = k === 'current' ? it.temper! : it.temperNew!;
+            const better = k === 'new' ? newBetter : oldBetter;
             return (
               <div key={k} class={`tcompare__one is-${k} ${better ? 'is-better' : ''}`}>
-                <span class="label">{k === 'held' ? 'Held' : 'New'}</span>
-                <b>{nameOf(t.stat)}</b>
-                <span class="tcompare__v num">{temperValue(t)}</span>
-                <RangeBar at={temper.share(it, t)} />
-                <small class="num muted">{rangeText(t.stat, d.rank)}</small>
+                <span class="tcompare__top">
+                  <span class="label">{k === 'current' ? 'Current' : 'New'}</span>
+                  {better && <span class="tbetter"><i aria-hidden="true">▲</i>Better</span>}
+                </span>
+                <b>{nameOf(x.stat)}</b>
+                <span class="tcompare__v num">{temperValue(x)}</span>
+                <RangeBar at={temper.share(it, x)} />
+                <small class="num muted">{rangeText(x.stat, d.rank)}</small>
               </div>
             );
           })}
           <div class="tcompare__act">
-            <Btn kind={newBetter ? undefined : 'gold'} onClick={() => settle(false)}>Keep Held</Btn>
-            <Btn kind={newBetter ? 'gold' : undefined} onClick={() => settle(true)}>Take New</Btn>
+            <Btn kind={oldBetter ? 'primary' : undefined} onClick={() => settle(false)}>Keep Current</Btn>
+            <Btn kind={newBetter ? 'primary' : undefined} onClick={() => settle(true)}>Use New</Btn>
           </div>
         </section>
       ) : landing && done && !it.temperNew ? (
@@ -180,20 +219,19 @@ function TemperWindow({ itemId }: { itemId: string }) {
                   <button type="button" class={`tstat ${stat === x ? 'is-on' : ''} ${it.temper?.stat === x ? 'is-held' : ''}`} aria-pressed={stat === x} onClick={() => { sfx.tap(); setStat(x); }}>
                     <span class="tstat__dot" aria-hidden="true" />
                     <span class="tstat__name">{nameOf(x)}</span>
-                    {it.temper?.stat === x && <small class="tstat__held">Held {temperValue(it.temper)}</small>}
-                    <small class="num muted">{rangeText(x, d.rank)}</small>
+                    <span class="tstat__end">
+                      {it.temper?.stat === x && <small class="tstat__held">Current {temperValue(it.temper)}</small>}
+                      <small class="num muted">{rangeText(x, d.rank)}</small>
+                    </span>
                   </button>
                 </li>
               ))}
             </ul>
           </section>
-          <section class="tprice-row">
-            <span class="label">Price</span>
-            <CostGrid s={s} c={price} />
-          </section>
-          <Btn kind="primary" block disabled={!!short} onClick={roll}>
-            {short === 'short' ? (s.wallet.shards < price.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(price.shards)}` : 'Not enough Ascendant Ember')
-              : <><Glyph name="hammer" /> {it.temper ? 'Temper Again' : 'Temper'} · <Shards n={price.shards} /></>}
+          <Btn kind="primary" block class="temperwin__go" disabled={!!short} onClick={roll}>
+            {short === 'short'
+              ? <>Ascendant Ember <span class="num">{group(held)}/{group(ember)}</span></>
+              : <><Glyph name="hammer" /> {it.temper ? 'Temper Again' : 'Temper'} <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} /></>}
           </Btn>
         </>
       )}

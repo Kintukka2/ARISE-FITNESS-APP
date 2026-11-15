@@ -4164,42 +4164,66 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .itemrolls__temper .itemrolls__name b { color: #fff; }
 .itemrolls__hammer { width: 13px; height: 13px; margin-right: 5px; vertical-align: -2px; color: var(--gold); }
 .itemrolls__temper .tbar { align-self: center; }
-/* The Temper slot on a card. */
-.tprice { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); }
-.temperslot { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 2px; }
-.temperslot__mark { display: grid; place-items: center; width: 40px; height: 40px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 34%, transparent); color: color-mix(in srgb, var(--sys-ink) 45%, transparent); transform: rotate(45deg); }
-.temperslot__mark .ico { width: 18px; height: 18px; transform: rotate(-45deg); }
-.temperslot.is-held .temperslot__mark { border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); color: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
-.temperslot__text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.temperslot__text b { font-size: 0.86rem; color: #fff; }
-.temperslot__text b .num { color: var(--gold); }
-.temperslot.is-open .temperslot__text b { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); font-weight: 600; }
-.temperslot__wait { font-size: 0.7rem; color: var(--gold); }
-/* TEMPER: the piece, the properties to choose from, the price, the roll, Held against New. */
+/* The Temper slot on a card: a panel as Familiarity's is, the mark and what it holds, then its button with the
+   Ember on it. */
+.temperslot { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+.temperslot__row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 14px; }
+.tmark { position: relative; display: grid; place-items: center; width: var(--s); height: var(--s); flex: none; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.tmark svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tmark__d { fill: none; stroke: color-mix(in srgb, var(--sys-ink) 34%, transparent); stroke-width: 1.2; stroke-dasharray: 3 2.5; }
+.tmark__in { fill: color-mix(in srgb, var(--sys-ink) 5%, transparent); stroke: none; }
+.tmark .ico { position: relative; width: 18px; height: 18px; }
+.tmark.is-on { color: var(--gold); }
+.tmark.is-on .tmark__d { stroke: var(--gold); stroke-dasharray: none; filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.tmark.is-on .tmark__in { fill: color-mix(in srgb, var(--gold) 16%, transparent); }
+.temperslot__text { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.temperslot__line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.temperslot__line b { font-size: 0.9rem; color: #fff; }
+.temperslot__v { font-size: 1.05rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.temperslot__range { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.temperslot__range small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.temperslot.is-open .temperslot__text b { font-size: 0.9rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.temperslot__can { overflow: hidden; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); text-overflow: ellipsis; white-space: nowrap; }
+.temperslot__wait { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0; padding: 8px 10px; border-left: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 8%, transparent); }
+.temperslot__wait .label { color: var(--gold); }
+.temperslot__wait b { font-size: 0.82rem; color: #fff; }
+.temperslot__wait b .num { color: var(--gold); }
+/* A temper's price on its button: a hairline between the word and the Ember, the count in the Ember's orange. */
+.tsep { display: inline-block; width: 1px; height: 1.1em; margin: 0 4px; background: currentColor; opacity: 0.35; vertical-align: -0.15em; }
+.embercost { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); }
+.embercost b { font-weight: 800; }
+.embercost.is-short { color: var(--blood); }
+.temperslot__go, .temperwin__go { min-height: 48px; }
+.temperslot__go .ico, .temperwin__go .ico { width: 17px; height: 17px; vertical-align: -3px; }
+/* TEMPER: the piece, the properties to choose from, the roll, Current against New, and the button with its price. */
 .temperwin { gap: 14px; }
 .temperwin__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }
 .temperwin__name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .temperwin__name b { font-size: 0.92rem; color: #fff; }
 .temperwin__name small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .temperwin__held { display: inline-flex; align-items: center; gap: 6px; color: var(--ember); font-weight: 800; }
+.temperwin__held.is-short { color: var(--blood); }
 .tstats ul { display: flex; flex-direction: column; margin: 6px 0 0; padding: 0; list-style: none; }
-.tstat { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 6px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 9%, transparent); background: none; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.tstat { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 6px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 9%, transparent); background: none; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
 .tstat__dot { width: 12px; height: 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 40%, transparent); transform: rotate(45deg); }
 .tstat.is-on { background: linear-gradient(90deg, color-mix(in srgb, var(--win) 14%, transparent), transparent); color: #fff; }
 .tstat.is-on .tstat__dot { border-color: var(--win); background: var(--win); box-shadow: 0 0 8px var(--win-glow); }
 .tstat__name { font-size: 0.86rem; font-weight: 600; }
+.tstat__end { display: inline-flex; align-items: baseline; gap: 10px; }
 .tstat__held { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
-.tprice-row { display: flex; flex-direction: column; gap: 6px; }
 .temperroll { display: flex; flex-direction: column; gap: 10px; padding: 18px 8px; border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); background: radial-gradient(ellipse at center, color-mix(in srgb, var(--gold) 12%, transparent), transparent 70%); text-align: center; }
 .tresult { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent); box-shadow: 0 0 18px var(--gold-glow); animation: qaIn 360ms var(--ease) both; }
 .tresult b { font-size: 1.05rem; color: #fff; }
 .tresult b .num { color: var(--gold); }
 .tresult .tbar { width: 80%; }
-.tcompare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; animation: qaIn 360ms var(--ease) both; }
-.tcompare__one { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.5); }
-.tcompare__one.is-new { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
-.tcompare__one.is-better { box-shadow: 0 0 16px var(--gold-glow); }
+.tcompare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 6px; animation: qaIn 360ms var(--ease) both; }
+.tcompare__one { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.5); transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease); }
+.tcompare__top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 20px; }
 .tcompare__one b { font-size: 0.86rem; color: #fff; }
 .tcompare__v { font-size: 1.5rem; font-weight: 800; color: #fff; }
-.tcompare__one.is-new .tcompare__v { color: var(--gold); }
+/* The better of the two, marked green as a piece's card marks a stat that rises. */
+.tcompare__one.is-better { border-color: color-mix(in srgb, var(--verdant) 60%, transparent); box-shadow: 0 0 14px color-mix(in srgb, var(--verdant) 18%, transparent); }
+.tbetter { position: absolute; top: -10px; right: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; background-color: #06140f; border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background-image: linear-gradient(color-mix(in srgb, var(--verdant) 14%, transparent), color-mix(in srgb, var(--verdant) 14%, transparent)); color: var(--verdant); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; text-shadow: 0 0 6px var(--verdant-glow); }
+.tbetter i { font-style: normal; font-size: 0.56rem; }
 .tcompare__act { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tcompare__act .btn { min-height: 48px; }

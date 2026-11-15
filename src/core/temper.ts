@@ -2,17 +2,16 @@
  * Tempering (`data/temper.ts`): a perfect piece's one Temper slot. A temper is a property of the piece's slot's
  * list and its size, rolled within that property's range at the piece's rarity from the piece and its count of
  * tempers, so the same piece tempered the same number of times rolls the same. The first fills the slot; each
- * after it waits, beside the one held, until the hunter keeps one of the two (`settle`). Paid in Ember and
- * shards (`cost`), more each time up to a cap.
+ * after it waits, beside the one held, until the hunter keeps one of the two (`settle`). Paid in Ember alone
+ * (`cost`), more each time up to a cap.
  *
  * A temper reaches the fight as one more property of the piece, through `gear.rollBonuses`.
  */
 import { EQUIPMENT } from '@/data/equipment';
 import { EMBER } from '@/data/forge';
-import { AUTO_TEMPER, TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_SHARDS, TEMPER_STEP } from '@/data/temper';
+import { AUTO_TEMPER, TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/temper';
 import { spend, affords, type Cost } from './forge';
 import { defOf, ROLL_EFFECT, stepsToPerfect, worn } from './gear';
-import * as shop from './shop';
 import type { Item, Rank, Save, Temper } from './types';
 import { RANKS } from './types';
 import { rng } from './util';
@@ -51,12 +50,14 @@ export function temperable(it: Item | null | undefined): boolean {
 /** How many times a piece has been tempered. */
 export const count = (it: Item) => it.tempers ?? 0;
 
-/** What the next temper on a piece takes: Ember and shards, more each time, up to the cap. */
-export function cost(it: Item): Cost {
+/** The Ember the next temper on a piece takes: more each time, up to the cap. */
+export function emberFor(it: Item): number {
   const r = (defOf(it)?.rank ?? 'C') as Rank;
-  const k = Math.min(TEMPER_CAP, 1 + TEMPER_STEP * count(it));
-  return { shards: shop.gateShards(r, TEMPER_SHARDS * k), mats: { [EMBER.id]: Math.round(TEMPER_EMBER[r] * k) } };
+  return Math.round(TEMPER_EMBER[r] * Math.min(TEMPER_CAP, 1 + TEMPER_STEP * count(it)));
 }
+
+/** What the next temper on a piece takes, as the Forge counts a price: its Ember, and no shards. */
+export const cost = (it: Item): Cost => ({ shards: 0, mats: { [EMBER.id]: emberFor(it) } });
 
 /** A roll's place in its range, 0 to 1, drawn from the piece and its count of tempers. */
 const fraction = (it: Item, n: number) => rng(`arise|temper|${it.id}|${n}`)();
