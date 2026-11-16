@@ -16,7 +16,7 @@ import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { ability, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
-import { MOVE, REAR_MELEE, ROW_NAME, type Row } from '@/data/ranks';
+import { MOVE, REAR_MELEE, ROW_NAME, ROWS, type Row } from '@/data/ranks';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import { TRICK } from '@/data/tricks';
@@ -873,24 +873,42 @@ export function Arena() {
         </div>
       ) : (
         <>
-          <div class="arena__field">
-            <div class="arena__side">
-              {ranked(party).map((u) => u === 'rear' ? <RowMark key="rear" /> : (() => {
-                // With Cover picked, an ally standing is tapped to choose it.
-                const can = phase === 'turn' && picked === COVER && !!turn?.allies.includes(u.uid);
-                // Who is coming for it: on the hunter's turn, each foe by its place in the order, the number on its card.
-                const at = foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid);
-                const orders = phase === 'turn' && turn ? at.map((f) => turn.threats.find((x) => x.uid === f.uid)?.order).filter((n): n is number => !!n).sort((x, y) => x - y) : null;
-                return <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={orders && orders.length === at.length ? orders : at.length}
-                  aimed={can && ward === u.uid} onPick={can ? () => { sfx.tap(); setWard(u.uid); } : undefined} pick="cover" tell={tell} />;
-              })())}
+          {/* The field in ranks, after AFK Journey's upright field and Wizardry Variants Daphne's plates: the foes above,
+              their rear at the top and their front at the line; the party below, its front at the line and its rear at
+              the foot. A rank no one stands in is not drawn. */}
+          <div class="arena__field is-ranked">
+            <div class="arena__band arena__band--foes" aria-label="Foes">
+              {ROWS.slice().reverse().map((r) => {
+                const here = foes.filter((u) => (u.row ?? 'front') === r);
+                return here.length ? (
+                  <RankRow key={r} row={r} side="e">
+                    {here.map((u) => (
+                      <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
+                        far={phase === 'turn' && u.hp > 0 && !!turn && turn.foes.includes(u.uid) && !aiming.includes(u.uid)}
+                        intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />
+                    ))}
+                  </RankRow>
+                ) : null;
+              })}
             </div>
-            <div class="arena__side arena__side--foes">
-              {ranked(foes).map((u) => u === 'rear' ? <RowMark key="rear" /> : (
-                <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-                  far={phase === 'turn' && u.hp > 0 && !!turn && turn.foes.includes(u.uid) && !aiming.includes(u.uid)}
-                  intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />
-              ))}
+            <div class="arena__line" aria-hidden="true"><i /></div>
+            <div class="arena__band arena__band--party" aria-label="Your party">
+              {ROWS.map((r) => {
+                const here = party.filter((u) => (u.row ?? 'front') === r);
+                return here.length ? (
+                  <RankRow key={r} row={r} side="p">
+                    {here.map((u) => {
+                      // With Cover picked, an ally standing is tapped to choose it.
+                      const can = phase === 'turn' && picked === COVER && !!turn?.allies.includes(u.uid);
+                      // Who is coming for it: on the hunter's turn, each foe by its place in the order, the number on its card.
+                      const at = foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid);
+                      const orders = phase === 'turn' && turn ? at.map((f) => turn.threats.find((x) => x.uid === f.uid)?.order).filter((n): n is number => !!n).sort((x, y) => x - y) : null;
+                      return <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={orders && orders.length === at.length ? orders : at.length}
+                        aimed={can && ward === u.uid} onPick={can ? () => { sfx.tap(); setWard(u.uid); } : undefined} pick="cover" tell={tell} />;
+                    })}
+                  </RankRow>
+                ) : null;
+              })}
             </div>
           </div>
           <ol class="arena__feed" aria-live="polite">
@@ -1291,16 +1309,14 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
   );
 }
 
-/** A side as it stands: the front, then a mark, then the rear; with no one in the rear, no mark. */
-function ranked(side: UnitView[]): (UnitView | 'rear')[] {
-  const front = side.filter((u) => (u.row ?? 'front') === 'front');
-  const rear = side.filter((u) => u.row === 'rear');
-  return rear.length ? [...front, 'rear', ...rear] : front;
-}
-
-/** Where a side's rear begins: a hairline and its name, after Etrian Odyssey's two rows and Final Fantasy's step back. */
-function RowMark() {
-  return <span class="rowmark" aria-hidden="true"><i /><small>{ROW_NAME.rear}</small><i /></span>;
+/** One rank of one side: its name at its edge, the side's colour, then its cards, as many to a line as fit. */
+function RankRow({ row, side, children }: { row: Row; side: 'p' | 'e'; children: preact.ComponentChildren }) {
+  return (
+    <div class={`rankrow is-${row} is-${side === 'e' ? 'foes' : 'party'}`}>
+      <span class="rankrow__label" aria-hidden="true"><b>{ROW_NAME[row]}</b><i /></span>
+      <div class="rankrow__units" role="group" aria-label={`${side === 'e' ? 'Foes' : 'Your party'}: ${ROW_NAME[row]}`}>{children}</div>
+    </div>
+  );
 }
 
 function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell, round = 0, far = false }: {

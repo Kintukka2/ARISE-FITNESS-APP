@@ -162,7 +162,7 @@ function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1, s
     const e = enemyById(id)!;
     // Its behaviours: its role's, its family's from C-Rank, and a wind-up for the chamber's boss or Gatekeeper.
     const head = j === 0 && (c.boss || c.elite || !!c.champion);
-    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id, tricks: tricksOf(e, head), grade: String(e.rank), ...ranks.byRole(e.role, (c.boss || !!c.champion) && j === 0) });
+    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * ((c.boss || c.champion) && (j === 0 || !c.retinue) ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id, tricks: tricksOf(e, head), grade: String(e.rank), ...ranks.byRole(e.role, (c.boss || !!c.champion) && j === 0) });
   });
   const seen: Record<string, number> = {};
   for (const u of units) seen[u.name] = (seen[u.name] ?? 0) + 1;
@@ -415,7 +415,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
-  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth2'));
+  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth3'));
   // A map charted from the brief today is charted for the run: its hidden passages need no noticing.
   const charted = (s.gates.charted ?? []).includes(mapSeed(d, day));
   // The throwable readied is the one its fights throw, whatever is readied while it is open.
@@ -426,7 +426,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'labyrinth2', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'labyrinth3', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     lean: blessings.leanOf(s), levels: levelsOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),

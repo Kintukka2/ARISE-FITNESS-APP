@@ -36,3 +36,10 @@ export const REAR_MELEE = 0.5;
 
 /** The hunter's action that changes where they stand, for their turn. */
 export const MOVE = 'Move';
+
+/**
+ * A fight's pack on the later plans (`labyrinth3`): each fight one creature more than its room would hold alone, at
+ * least `min` and at most `max`, standing in both ranks when its Gate can field both; a Gatekeeper and a boss each
+ * with `retinue` of its Gate's creatures behind it.
+ */
+export const PACK = { add: 1, min: 2, max: 4, retinue: 1 } as const;

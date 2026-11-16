@@ -50,7 +50,7 @@ export const SEALS: Record<SealId, { name: string; rule: string; note?: string }
   shorthanded: { name: 'Short-Handed', rule: `The Association sends ${SEAL.shorthanded.allies} hunter fewer` },
   wardens: { name: 'Wardens Wake', rule: `The Gatekeeper: strength +${pct(SEAL.wardens.elite - 1)}%`, note: 'paid only if it falls' },
   dry: { name: 'Dry', rule: 'No Health Potion, and nothing healed after a fight' },
-  alone: { name: 'Never Alone', rule: 'The boss stands with one of its creatures' },
+  alone: { name: 'Never Alone', rule: 'The boss stands with one more of its creatures' },
   heavier: { name: 'Heavier Air', rule: `Creatures fight as if Ascension +${SEAL.heavier.levels}` },
 };
 

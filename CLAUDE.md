@@ -30,8 +30,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   takes beside its par, and how often the System reaches each medal. Run it after a change to combat, and move a
   par in `data/par.ts` that has drifted from the System's average at the grade's middle level.
 - `npm run campaign` — plays two hunters from Level 1 for 120 days through the real engine. Run it
-  after a change to what anything pays or costs. It reads the brief before every run, so it takes a few
-  minutes.
+  after a change to what anything pays or costs. It reads the brief before every run, the Spire's block
+  included, so it takes a few minutes. It keeps a clock of its own (an item's id reads the clock, and some
+  rolls are drawn from it), so every run of it plays the same: compare two commits run for run.
 
 ## Rules that matter
 
@@ -184,7 +185,11 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   (a melee hit from the rear at `REAR_MELEE`); targets, a foe's intent, standing orders and the wheel all go through
   `reachable`. A foe's shown intent lands where it showed (`kept` in `targets`), whatever has moved since. Auto never
   steps back or forward (`MOVE`). An open run keeps the places it walked in with (`run.party`). Change a role's place,
-  a rule or the share and you must recalibrate, rerun `npm run parstats` and the campaign.
+  a rule or the share and you must recalibrate, rerun `npm run parstats` and the campaign. Gates are drawn on
+  `labyrinth3`, the later plans with their fights grown into packs (`packed` in `core/map.ts`, `PACK`): two to four
+  creatures, both ranks where the Gate's creatures stand in both, and one behind a Gatekeeper or boss
+  (`Chamber.retinue`, whose health is the creature's own, never `BOSS_HP`). A run opened on `labyrinth2` keeps its
+  fights. Change `PACK` or how a pack is drawn and you must run mapstats, recalibrate, rerun parstats and the campaign.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

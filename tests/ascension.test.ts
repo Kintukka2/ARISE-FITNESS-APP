@@ -88,11 +88,11 @@ describe('a run keeps the level it walked in with', () => {
     // Changing the chosen level now does not reach the run.
     asc.choose(s, 0);
     expect(asc.levelOf(s.gates.raid)).toBe(ASCENSION_RULED);
-    // Never Alone: the boss has company.
+    // Never Alone: the boss has one more beside it than its retinue.
     const m = build(d, mapSeed(d, day));
     const boss = m.byId[m.boss];
-    expect(raid.chamberAt(d, boss, ASCENSION_RULED).foes).toHaveLength(2);
-    expect(raid.chamberAt(d, boss, 0).foes).toHaveLength(1);
+    expect(raid.chamberAt(d, boss, ASCENSION_RULED).foes).toHaveLength(raid.chamberAt(d, boss, 0).foes.length + 1);
+    expect(raid.chamberAt(d, boss, 0).foes[0]).toBe(d.boss);
   });
 
   it('Crooked Luck costs every rolled choice, and leaves a certain one certain', () => {

@@ -522,16 +522,20 @@ try {
   await page.locator('.sheet.is-top [aria-label="Close"]').first().click(); await sleep(400);
   if (!(await page.locator('.sheet.is-top .bfacts').count())) throw new Error('CLOSING THE MAP DID NOT RETURN TO THE BRIEF');
   // The party lined up, the hunter first, and the squad's Formation under it.
-  if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
+  if (!(await page.locator('.sheet.is-top .bformation__one.is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
   if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Formation:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S FORMATION');
-  await page.locator('.sheet.is-top .blineup').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
+  await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
   // Front and rear: every member's place on their face, and the hunter's own to choose; chosen, it is kept.
-  if ((await page.locator('.sheet.is-top .blineup .browtag').count()) < 2) throw new Error('THE LINEUP DOES NOT SAY WHERE EACH STANDS');
+  // The party is a formation: a front rank and a rear rank, every member in the rank they stand in, the hunter among them.
+  if ((await page.locator('.sheet.is-top .bformation__rank').count()) !== 2) throw new Error('THE PARTY IS NOT DRAWN AS A FORMATION');
+  if ((await page.locator('.sheet.is-top .bformation__one.is-you').count()) !== 1) throw new Error('THE HUNTER DOES NOT STAND IN THE FORMATION');
   if ((await page.locator('.sheet.is-top .bstand__opt').count()) !== 2) throw new Error('THE BRIEF DOES NOT LET THE HUNTER CHOOSE WHERE THEY STAND');
   {
     const was = await page.locator('.sheet.is-top .bstand__opt.is-on').innerText();
     await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
     if ((await page.locator('.sheet.is-top .bstand__opt.is-on').innerText()) === was) throw new Error('THE HUNTER\'S PLACE DID NOT CHANGE');
+    const rankOfYou = await page.locator('.sheet.is-top .bformation__one.is-you').evaluate((el) => el.closest('.bformation__rank').classList.contains('is-rear') ? 'Rear' : 'Front');
+    if (rankOfYou === was) throw new Error('THE HUNTER\'S FACE DID NOT MOVE TO THE RANK CHOSEN');
     await page.locator('.sheet.is-top .bstand').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-stand');
     await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
   }
@@ -571,10 +575,10 @@ try {
   const fieldOver = await page.locator('.arena__field').evaluate((el) => el.scrollWidth - el.clientWidth);
   if (fieldOver > 1) throw new Error(`THE FIGHT FIELD RUNS ${fieldOver}px PAST THE SCREEN`);
   // Without Foresight a foe's card names its move and never its damage or its chance to hit, nor whom it goes at.
-  if (await page.locator('.arena__side--foes .intent__hit').count()) throw new Error('A FOE SHOWS ITS DAMAGE WITHOUT FORESIGHT');
-  if (await page.locator('.arena__side--foes .intent__foot, .arena__side--foes .intent__break').count()) throw new Error('A FOE CARD STILL CARRIES ITS FOOT OR ITS PIPS');
+  if (await page.locator('.arena__band--foes .intent__hit').count()) throw new Error('A FOE SHOWS ITS DAMAGE WITHOUT FORESIGHT');
+  if (await page.locator('.arena__band--foes .intent__foot, .arena__band--foes .intent__break').count()) throw new Error('A FOE CARD STILL CARRIES ITS FOOT OR ITS PIPS');
   // A habit tapped tells what it does, and aims at nothing.
-  const habit = page.locator('.arena__side--foes button.trick').first();
+  const habit = page.locator('.arena__band--foes button.trick').first();
   if (!(await habit.count())) throw new Error('A FOE HAS NO HABIT TO TAP');
   await habit.click(); await sleep(300);
   if (!(await page.locator('.tip').isVisible())) throw new Error('A HABIT TAPPED TOLD NOTHING');
@@ -604,10 +608,10 @@ try {
   // Move: the hunter's step to the other rank, on the wheel.
   if (!(await page.locator('.actwheel__slot[data-act="Move"]').count())) throw new Error('THE WHEEL HAS NO MOVE');
   // Each side stands front first; a card says where it stands.
-  if (!(await page.locator('.arena__side .unit.is-front').count())) throw new Error('NO CARD STANDS IN FRONT');
+  if (!(await page.locator('.arena__band--party .rankrow.is-front .unit').count()) || !(await page.locator('.arena__band--foes .rankrow .unit').count())) throw new Error('THE FIELD DOES NOT STAND IN RANKS');
   await page.locator('.actwheel__slot[data-act="Cover"]').click(); await sleep(250);
   if (!(await page.locator('.actwheel__hub .actwheel__name', { hasText: 'Cover' }).count())) throw new Error('COVER DID NOT SHOW IN THE HUB');
-  const allies = page.locator('.arena__side:not(.arena__side--foes) .unit.is-coverpick');
+  const allies = page.locator('.arena__band--party .unit.is-coverpick');
   if (!(await allies.count())) throw new Error('NO ALLY CAN BE COVERED');
   await allies.last().click(); await sleep(250);
   await snap('arena-wheel-cover');
@@ -1106,9 +1110,9 @@ try {
   if (await page.locator('.sheet.is-top .bfeat').count()) throw new Error('THE TRIAL HOLDS FEATS');
   if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 3) throw new Error('THE TRIAL’S FACTS COUNT ITS CHOSEN TWICE');
   if (!(await page.locator('.sheet.is-top .bfacts dt', { hasText: 'Last Chosen' }).count())) throw new Error('THE TRIAL DOES NOT NAME ITS LAST CHOSEN');
-  await page.locator('.sheet.is-top .blineup').scrollIntoViewIfNeeded(); await sleep(400);
-  if (!(await page.locator('.sheet.is-top .blineup .is-you').count())) throw new Error('THE TRIAL’S PARTY HOLDS NO ONE');
-  if (await page.locator('.sheet.is-top .blineup .is-ally').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
+  await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .bformation__one.is-you').count())) throw new Error('THE TRIAL’S PARTY HOLDS NO ONE');
+  if (await page.locator('.sheet.is-top .bformation__one.is-ally').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
   await snap('trial-brief-party');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));

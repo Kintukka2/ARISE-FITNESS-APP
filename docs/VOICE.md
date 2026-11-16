@@ -875,12 +875,15 @@ and its name over the piece's own; an engraved tile in the Item Bag carries the 
 dormant.
 
 **Front and rear.** Each side of a fight stands in two: `Front` and `Rear`, never a rank or a row, which are a
-hunter's grade and a table's. On the fight's field each side's front stands nearest the seam between the sides and
-its rear a step back, a hairline marked `Rear` between them. A foe the picked action cannot reach is dimmed and says
-`Out of reach`. On the wheel, **Step Back** (`To the rear`, `Your melee 50% from there`) or **Step Forward** (`To the
-front`, `Your melee in full`), in the defence's blue. On the brief, each member of the party carries `F` or `R` on the
-corner of their face, and `You stand` offers **Front** and **Rear**. A melee hit is a physical action at one foe or
-two; what reaches past the front reaches the rear, never "the back line".
+hunter's grade and a table's. On the fight's field the foes stand above the seam and the party below, each side's
+front nearest the seam, its rear a step away, and each line carries `Front` or `Rear` along its left edge. A foe the
+picked action cannot reach is dimmed and says `Out of reach`. On the wheel, **Step Back** (`To the rear`, `Your melee
+50% from there`) or **Step Forward** (`To the front`, `Your melee in full`), in the defence's blue. On the brief, the
+party is a formation: `Facing the enemies` across its top, then `Front` and `Rear` along the left edge with how many
+stand there, every member's face in the line they stand in, an empty Shadow slot `Free`, and an empty rear `No one
+stands behind`. `You stand` under it offers **Front** and **Rear**. A melee hit is a physical action at one foe or two;
+what reaches past the front reaches the rear, never "the back line". A fight of several creatures is a fight, never
+a pack or a wave, in every line a player reads.
 
 **Par.** The System's, in the Gates' orange, each medal in its metal: Bronze, Silver, Gold, struck with the
 hourglass of rounds, never stars (stars are the Feats'). A Gate's clear is graded against its `Par`: the rounds its

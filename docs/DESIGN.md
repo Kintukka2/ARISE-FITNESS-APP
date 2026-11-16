@@ -2403,8 +2403,8 @@ ranks and its rank pips, Etrian Odyssey's rows, Final Fantasy's back row, AFK Ar
 - **Intents keep their promise.** A foe chooses only targets it can reach, and its shown intent lands where it showed,
   whatever has moved since (`kept` in `targets`). A marked strike reaches its mark wherever it stands, and Cover and a
   taunt turn intents whatever rank the one covering stands in.
-- **Creature counts are unchanged.** The map's fights are drawn from its seed, and an open run must keep the fights it
-  opened with. Ranks always bite on the party's side, where four to seven stand, and on the creatures' side in the
+- **Creature counts were unchanged** (since changed, below: Packs). The map's fights are drawn from its seed, and an
+  open run must keep the fights it opened with. Ranks always bite on the party's side, where four to seven stand, and on the creatures' side in the
   fights that hold two or three.
 - **Screens.**
   - The field stands each side front first: a front card nearer the seam between the sides, a rear card stepped back,
@@ -2433,6 +2433,84 @@ ranks and its rank pips, Etrian Odyssey's rows, Final Fantasy's back row, AFK Ar
   | This change | 9, 16, 32, 62 | 29 | 22 | 41 / 26 / 10 | 83 | 9 | 21 |
 
   The pace holds within a day or two of `main`: calibration put every Gate back on its target.
+
+### Packs and the formation — built
+
+Step 9, second part, at the owner's word: with front and rear on both sides, a fight of one creature had nothing to stand
+behind it. The references are in [step 9's README](research/references/step-9-ranks/README.md#formations-and-the-field-in-ranks):
+AFK Journey's and Wizardry Variants Daphne's upright fields, Cookie Run: Kingdom's lines named on the floor, Idle Heroes'
+formation screen.
+
+- **Packs** (`labyrinth3`, `packed` in `core/map.ts`, `PACK` in `data/ranks.ts`). The later plans as they stand, the
+  same rooms and roads, with their fights grown:
+  - Every fight holds one more creature than it drew, at least two and at most four.
+  - Where its Gate's creatures stand in both ranks, a fight holds at least one of each, so the rear always has someone
+    in it.
+  - A Gatekeeper and a boss stand with one creature behind them (`PACK.retinue`, `Chamber.retinue`), drawn from the
+    Gate's rear. The boss's or Gatekeeper's health is its own; the one behind it is a creature of the Gate.
+  - The added creatures are drawn from `arise|pack|<seed>|<room>`, so nothing else the map draws moves.
+  - A run opened on `labyrinth2` keeps the fights it opened with; the Pale Spire, the Trials and the practice gate are
+    towers or have no creatures to add, and are unchanged.
+  - The Seal Never Alone and the Ascension rule it shares now add one more creature to a boss's side, after its
+    retinue.
+- **The field in ranks** (`screens/Arena.tsx`). The foes stand above the seam and the party below, each side in two
+  lines, front lines nearest the seam, after AFK Journey's upright field and Daphne's two rows of plates:
+  - Each line is named `Front` or `Rear` along its left edge, as Cookie Run: Kingdom names its lines on the floor; the
+    foes' read rear on top, front at the seam. A line no one stands in is not drawn.
+  - Foes two to a line, the party three, so four creatures and six of the party fit without a scroll; a lone creature
+    stands centred at half the width.
+  - The seam is a line of the Gates' orange: the fight is where the two front rows meet.
+- **The brief's formation** (`Lineup` in `screens/Brief.tsx`), after Idle Heroes' Hero Deployment:
+  - A board facing the creatures (`Facing the enemies` across its top), a front rank and a rear rank, each with its name
+    and how many stand there along its left edge.
+  - Every member stands in their rank: the hunter in the System's blue, the Association's hunters, the Shadows in violet,
+    and a free Shadow slot dashed at the end of the front; four seats to a line, so a name is read whole.
+  - `You stand` under the board moves the hunter's face to the other rank as it is pressed.
+- **Calibration.** Every Gate's fights grew, so the creatures were made weaker to put each back on its target:
+  - **Gates:** 40 of 51 moved, all but one easier. By grade: E -17.7%, D -18.5%, C -7.0%, B -13.7%, A -11.4%,
+    S -19.2%; the Hollow Throne -18.6%. Reaper Carapace Hive alone moved harder (+4.9%). Held: the other 11.
+  - **Spire blocks and floors:** unchanged, all 70 (towers hold no packs).
+  - **Ascension:** 10 of 10 easier, by 2.8% (level 9) to 9.2% (level 6).
+  - **Trials:** 8 of 10 harder, by 2.9% to 11.1%. A Trial's creatures are scaled by both its own tuning and the
+    Ascension level it is walked at, so these rose about as far as Ascension's fell; the Trials stand where they stood.
+  - **Balance:** every grade's middle clear rate is 76% to 82%, and the days to every rank are unchanged.
+- **Par.** `npm run parstats` measured the System's rounds at each grade's middle level, and every par that had drifted
+  was moved to it. A fight of several creatures takes longer; a boss or Gatekeeper fight is mostly shorter, since
+  calibration made the creatures weaker and the one behind the boss falls fast:
+
+  | Grade | Fight | Gatekeeper | Boss |
+  |---|---|---|---|
+  | E | 4.2 → 5.3 | 7.6 → 8.3 | 11 → 11.3 |
+  | D | 2.8 → 3.6 | 7.2 → 7 | 11.7 → 10.4 |
+  | C | 1.8 → 2.2 | 5.2 (held) | 8.6 → 8.1 |
+  | B | 2.6 → 3.1 | 4.9 → 5.1 | 7.3 → 7.1 |
+  | A | 2.3 → 2.4 | 5.3 → 4.8 | 8.3 → 7.1 |
+  | S | 2.7 → 3.4 | 4.6 → 4.5 | 6.6 → 5.6 |
+
+  The System's middle clears then reach Bronze 41% to 66% of the time, Silver 16% to 35%, Gold 3% to 24%.
+- **The map.** `npm run mapstats`: the System's road holds 2.8 creatures a fight at E-Rank to 3.4 at S-Rank, a side
+  room's fight 3.1 to 3.7, and the System's way fits every map's clock.
+- **Campaign**, over 120 days, against the step's first part. Two changes to the campaign first, so the two compare
+  run for run:
+  - It reads the Pale Spire's brief as it reads every other: the morning's block is taken while it reads three in four
+    or better. Taken blind, a hunter who lost two D-Rank Gates on its first days walked into a C-Rank block at Level 14
+    six mornings running, carried out each time.
+  - It keeps a clock of its own. An item's id read the real clock, and some rolls are drawn from an item's id, so the
+    same code gave different campaigns run to run (two runs of the same 14 days walked into 38 Gates and 29). Every run
+    of it now plays the same.
+
+  Both sides below play the campaign as it now stands:
+
+  | | Days to C, B, A, S, N | Carried out | Ascension opened | Medals (B/S/G) | Tempers | Engravings cut | Ember on day 120 |
+  |---|---|---|---|---|---|---|---|
+  | One evening, before packs | 6, 15, 28, 56, 114 | 8 | 6 | 38 / 24 / 13 | 49 | 7 | 23 |
+  | Packs | 10, 20, 33, 60, 116 | 13 | 6 | 39 / 22 / 14 | 36 | 8 | 931 |
+  | Three sessions, before packs | 5, 8, 16, 32, 64 | 27 | 25 | 40 / 22 / 9 | 77 | 13 | 71 |
+  | Packs | 5, 10, 17, 32, 63 | 29 | 24 | 39 / 21 / 13 | 88 | 9 | 6 |
+
+  The hunter who plays three sessions a day keeps its pace. The one who plays an evening is carried out five times
+  more, reaches C-Rank to S-Rank four or five days later and N-Rank two days later, and, tempering less, ends with
+  Ember unspent.
 
 ## What stays out
 

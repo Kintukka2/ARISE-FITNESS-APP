@@ -16,12 +16,12 @@ export type MedalId = 'bronze' | 'silver' | 'gold';
  * own level (`npm run parstats`), a Gatekeeper's halfway between a fight's and the boss's.
  */
 export const PAR: Record<Rank, Record<FightKind, number>> = {
-  E: { fight: 4.2, elite: 7.6, boss: 11 },
-  D: { fight: 2.8, elite: 7.2, boss: 11.7 },
-  C: { fight: 1.8, elite: 5.2, boss: 8.6 },
-  B: { fight: 2.6, elite: 4.9, boss: 7.3 },
-  A: { fight: 2.3, elite: 5.3, boss: 8.3 },
-  S: { fight: 2.7, elite: 4.6, boss: 6.6 },
+  E: { fight: 5.3, elite: 8.3, boss: 11.3 },
+  D: { fight: 3.6, elite: 7, boss: 10.4 },
+  C: { fight: 2.2, elite: 5.2, boss: 8.1 },
+  B: { fight: 3.1, elite: 5.1, boss: 7.1 },
+  A: { fight: 2.4, elite: 4.8, boss: 7.1 },
+  S: { fight: 3.4, elite: 4.5, boss: 5.6 },
 };
 
 /**

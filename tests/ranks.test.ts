@@ -5,7 +5,9 @@ import * as raid from '@/core/raid';
 import { defaults } from '@/core/save';
 import type { Ability } from '@/core/types';
 import { rng } from '@/core/util';
-import { MOVE, REAR_MELEE } from '@/data/ranks';
+import { MOVE, PACK, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
+import { ALL_DUNGEONS, enemyById, isPractice } from '@/core/gates';
+import { build, mapSeed } from '@/core/map';
 
 const base = { STR: 10, AGI: 10, PER: 10, VIT: 10, INT: 10 };
 const unit = (uid: string, side: 'p' | 'e', more: Partial<UnitSpec> = {}) => new Unit({ uid, name: uid, side, base, hpMult: 20, ...more });
@@ -77,5 +79,45 @@ describe('front and rear', () => {
       for (const e of log) if (e.t === 'intent' && e.u === 'e0' && e.at) expect(e.at).toBe('hero');
       for (const e of log) if (e.t === 'hit' && e.a === 'e0') expect(e.v).toBe('hero');
     }
+  });
+
+  it('the later plans field packs: every fight two to four, in both ranks where its Gate can; a Gatekeeper and a boss with one behind', () => {
+    const place = (id: string) => ROLE_ROW[enemyById(id)?.role ?? ''] ?? 'front';
+    let fights = 0;
+    for (const d of ALL_DUNGEONS.filter((x) => !isPractice(x))) {
+      for (const day of ['2026-03-01', '2026-03-02']) {
+        const seed = mapSeed(d, day);
+        const old = build(d, seed, 'labyrinth2');
+        const m = build(d, seed);
+        // The plan is the same plan: only who waits in its fights has grown.
+        expect(m.nodes.map((x) => [x.id, x.kind])).toEqual(old.nodes.map((x) => [x.id, x.kind]));
+        const both = d.mobs.some((id) => place(id) === 'front') && d.mobs.some((id) => place(id) === 'rear');
+        for (const x of m.nodes) {
+          const was = old.byId[x.id].foes ?? [];
+          if (x.kind === 'fight') {
+            fights++;
+            expect(x.foes!.length).toBe(Math.max(PACK.min, Math.min(PACK.max, was.length + PACK.add)));
+            if (both) expect(new Set(x.foes!.map(place))).toEqual(new Set(['front', 'rear']));
+          }
+          if (x.kind === 'elite' || x.kind === 'boss') {
+            expect(x.foes![0]).toBe(was[0]);
+            expect(x.foes).toHaveLength(1 + PACK.retinue);
+            expect(x.retinue).toBe(PACK.retinue);
+          }
+        }
+      }
+    }
+    expect(fights).toBeGreaterThan(100);
+  });
+
+  it('a run opened on the plans before keeps its fights as they were', () => {
+    const d = ALL_DUNGEONS.find((x) => x.rank === 'C')!;
+    const s = defaults();
+    const run = raid.begin(s, d, Date.parse('2026-03-01T12:00:00'));
+    expect(run.layout).toBe('labyrinth3');
+    run.layout = 'labyrinth2';
+    const m = raid.mapOf(d, run);
+    const old = build(d, run.map!, 'labyrinth2');
+    for (const x of m.nodes) expect(x.foes ?? []).toEqual(old.byId[x.id].foes ?? []);
   });
 });

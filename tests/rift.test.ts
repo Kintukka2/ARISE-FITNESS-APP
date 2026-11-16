@@ -142,10 +142,11 @@ describe('the Daily Rift', () => {
     expect(s.gates.cleared).not.toContain(d.id);
     expect(res.feats.fresh).toEqual(res.feats.met.filter((id) => !metBefore.includes(id)));
     expect(s.gates.feats?.[d.id]).toBeUndefined();
-    // Its modifiers pay no Seal's Ember: the Rift pays its own.
+    // Its modifiers pay no Seal's Ember: the Rift pays its own, beside a medal reached for the first time on its Gate.
     expect(res.seals).toEqual([]);
-    expect(res.mats[EMBER.id]).toBe(RIFT_EMBER.C);
-    expect(s.materials[EMBER.id]).toBe(ember + RIFT_EMBER.C);
+    const medal = res.par?.ember ?? 0;
+    expect(res.mats[EMBER.id]).toBe(RIFT_EMBER.C + medal);
+    expect(s.materials[EMBER.id]).toBe(ember + RIFT_EMBER.C + medal);
     // It keeps no tally of its own, and the board's Gate is not sealed by it.
     expect(s.gates.runs[d.id]).toBeUndefined();
     expect(res.rift!.total).toBeGreaterThanOrEqual(SCORE.boss);

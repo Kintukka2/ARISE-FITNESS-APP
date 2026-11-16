@@ -2,7 +2,7 @@
 import { ENGRAVE_EMBER, ENGRAVED, ENGRAVINGS, GROUPS } from '@/data/engravings';
 import { TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/temper';
 import { MEDAL_PAY, MEDALS, PAR, PAR_EMBER } from '@/data/par';
-import { LEAD_ROW, RANGED_LEADS, RANGED_ROLES, REACHING_LEADS, REACHING_ROLES, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
+import { LEAD_ROW, PACK, RANGED_LEADS, RANGED_ROLES, REACHING_LEADS, REACHING_ROLES, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
 import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
 import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
@@ -245,6 +245,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Front and rear',
     lines: [
       'Each side of a fight stands in two: a front and a rear.',
+      `A Gate's fight holds ${PACK.min}-${PACK.max} creatures, in front and in the rear where its creatures stand in both. A Gatekeeper and a boss stand with ${PACK.retinue === 1 ? 'one creature' : `${PACK.retinue} creatures`} of the Gate behind them.`,
       'A melee hit, a physical action at one foe or two, reaches only the front while anyone stands in it. Magic, a volley, a spread, a burst, a wild swing, a strike at every foe and a throw reach either.',
       `A melee hit struck from the rear lands at ${Math.round(REAR_MELEE * 100)}%.`,
       `Creatures stand by their role: ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear. A boss stands in front.`,

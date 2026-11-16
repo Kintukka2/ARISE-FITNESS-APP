@@ -184,7 +184,7 @@ export interface OpenRaid {
   map: string;
   path: string[];
   /** How the map is drawn: a Gate's labyrinth floors. Runs opened before them walk the smaller floors (`floors`), one floor of rooms (`rooms`), or the tower they began on (none). */
-  layout?: 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+  layout?: 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
   /** The map has been charted by a Gate Survey: its hidden passages open with no noticing. */
   charted?: boolean;
   /** The toll doors paid for, by `map.pairKey`: open for good. */
