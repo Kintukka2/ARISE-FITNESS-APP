@@ -153,7 +153,7 @@ export async function claimPromotion(id: string, badge: Element | null) {
   if (lifted) lifted.style.visibility = 'hidden';
   let made: shadows.Promotion | null = null;
   const claim = () => { if (!made) made = store.update((x) => shadows.promote(x, id)) ?? null; };
-  const cut = promotion({ from, family: e.family, was, now: was + 1, onDark: claim });
+  const cut = promotion({ from, family: e.family, id: e.id, was, now: was + 1, onDark: claim });
   try {
     await cut.ready;
     claim();
@@ -225,7 +225,7 @@ export async function claimAll(badge: Element | null) {
     await checkAwards();
     return;
   }
-  const cut = promotion({ from: fromEl(badge), family: e.family, was: first.from, now: first.to, onDark: claim });
+  const cut = promotion({ from: fromEl(badge), family: e.family, id: e.id, was: first.from, now: first.to, onDark: claim });
   try {
     await cut.ready;
     claim();

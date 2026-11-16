@@ -577,6 +577,21 @@ button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
 .emblem__glyph { fill: none; stroke: #f1e9ff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .emblem__echo { fill: none; stroke: var(--arcane); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; opacity: 0.6; }
 .emblem__insignia { fill: #c9a6ff; }
+/* A Shadow's badge carrying its creature's portrait: the dark it became, rimmed in violet, its eyes lit, a violet echo
+   behind it, as Solo Leveling draws a shadow soldier. */
+.emblem__body path { fill: #0e0720; stroke: #b48cff; stroke-width: 0.9; stroke-linejoin: round; }
+.emblem__eyes path { fill: #efe4ff; filter: drop-shadow(0 0 1.2px #c9a6ff) drop-shadow(0 0 2.4px var(--arcane)); }
+.emblem__ghost path { fill: var(--arcane); opacity: 0.32; }
+
+/* A creature's portrait (ui/portraits.tsx; `cface`, apart from the coach's `portrait`): its body in the colour it is set in, its eyes lit. */
+.cface { display: block; flex: none; overflow: visible; }
+.cface__body path { fill: currentColor; }
+.cface.is-foe .cface__eyes path { fill: #ff3355; filter: drop-shadow(0 0 1px #ff3355); }
+.cface.is-red { color: #ff5d75; }
+.cface.is-red .cface__eyes path { fill: #fff4cf; filter: drop-shadow(0 0 1.2px #ffd36b); }
+.cface.is-shadow .cface__body path { fill: #0e0720; stroke: #b48cff; stroke-width: 0.7; stroke-linejoin: round; }
+.cface.is-shadow { filter: drop-shadow(0 0 3px var(--arcane-glow)); }
+.cface.is-shadow .cface__eyes path { fill: #efe4ff; filter: drop-shadow(0 0 1.5px var(--arcane)); }
 
 /* The lit rails: a bright bar running past the frame, hooked down at the ends, a raised plate at its centre. */
 .sysrail { position: absolute; z-index: 1; left: -6px; right: -6px; height: 10px; pointer-events: none; filter: drop-shadow(0 0 3px var(--win)) drop-shadow(0 0 9px var(--win-glow)); }

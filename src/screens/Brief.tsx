@@ -45,13 +45,18 @@ import { createStore, useSave } from '@/store';
 import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
-import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
+import { HabitMark, StatusMark } from '@/ui/effects';
+import { ShadowEmblem } from '@/ui/emblems';
+import { Portrait } from '@/ui/portraits';
 import { makeLine } from '@/ui/kin';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
 import * as feats from '@/core/feats';
 import * as par from '@/core/par';
+import * as ranks from '@/core/ranks';
+import { ROW_NAME, ROWS, type Row } from '@/data/ranks';
+import { classFor } from '@/data/classes';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
 import { TRICKS, tricksOf } from '@/data/tricks';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
@@ -506,7 +511,7 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   const one = (key: string, cls: string, family: string | null, name: string, tag: string, openIt?: () => void, label?: string) => {
     const body = (
       <>
-        <span class="benemy__face">{family ? <FamilyGlyph family={family} size={cls.includes('is-boss') ? 34 : 24} /> : <Glyph name="unknown" />}</span>
+        <span class="benemy__face">{family && cls.includes('is-boss') && <Glyph name="crown" class="benemy__crown" />}{family ? <Portrait id={key} size={cls.includes('is-boss') ? 40 : 30} tone={cls.includes('is-boss') ? 'red' : 'foe'} /> : <Glyph name="unknown" />}</span>
         <b class="benemy__name">{name}</b>
         <small class="benemy__tag">{tag}</small>
       </>
@@ -539,31 +544,66 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   );
 }
 
+/** Statuses named in a line, each with its mark, as a fight's card shows them. */
+function StatusList({ names }: { names: string[] }) {
+  return <>{names.map((x, i) => <span key={x} class="bstatus"><span class="tag__mark"><StatusMark name={x} /></span>{x}{i < names.length - 1 ? ',' : ''}</span>)}</>;
+}
+
 /**
- * Who walks in, as Darkest Dungeon lines its party up before it embarks: a portrait to each, the hunter first,
- * the Association's hunters, then the Shadows; their power under them and together; the squad's Kin and
- * Formation under the line.
+ * The party as a formation, after Idle Heroes' Hero Deployment: a board facing the enemies above it,
+ * the front rank at its head and the rear under it, each member a face in the rank they stand in, the hunter's own
+ * lit; the Shadow slots still open dashed at the end of the front; under the board, where the hunter stands, to choose.
  */
 function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
   const s = useSave();
   const { hero, party, squad } = partyOf(s, d, level, taken);
+  type Seat = { key: string; row: Row; el: preact.JSX.Element };
+  const seats: Seat[] = [
+    { key: 'you', row: ranks.heroRow(s), el: <li key="you" class="bformation__one is-you"><span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small></li> },
+    ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
+      <li key={a.id} class="bformation__one is-ally"><span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></li>
+    ) })),
+    ...squad.map((x) => {
+      const e = enemyById(x.enemyId)!;
+      return { key: x.id, row: ranks.byRole(e.role).row, el: (
+        <li key={x.id} class="bformation__one is-shadow"><span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /></span><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small class="num">{shadows.power(x)}</small></li>
+      ) };
+    }),
+  ];
+  const free = isPractice(d) ? 0 : shadows.freeSlots(s);
+  const here = ranks.heroRow(s);
   return (
     <section class="bbox" aria-label="Party" data-tour="party">
       <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right bpower" aria-label={`Power ${partyPower(s, d, level, taken)}`}><Glyph name="power" /><b class="num">{partyPower(s, d, level, taken)}</b></small></span>
-      <ul class="blineup">
-        <li class="blineup__one is-you"><span class="blineup__face"><Sigil rank={licensedRank(s)} size={30} /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small></li>
-        {party.map((a) => (
-          <li key={a.id} class="blineup__one is-ally"><span class="blineup__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></li>
-        ))}
-        {squad.map((x) => {
-          const e = enemyById(x.enemyId)!;
-          return <li key={x.id} class="blineup__one is-shadow"><span class="blineup__face"><ShadowEmblem family={e.family} rank={shadows.rankIndex(x)} size={34} /></span><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small class="num">{shadows.power(x)}</small></li>;
+      <div class="bformation">
+        <span class="bformation__facing" aria-hidden="true"><Glyph name="up" />Facing the enemies</span>
+        {ROWS.map((r) => {
+          const on = seats.filter((x) => x.row === r);
+          return (
+            <div key={r} class={`bformation__rank is-${r}`}>
+              <span class="bformation__label"><b>{ROW_NAME[r]}</b><small class="num">{on.length}</small></span>
+              <ul class="bformation__seats" aria-label={`${ROW_NAME[r]}: ${on.length}`}>
+                {on.map((x) => x.el)}
+                {r === 'front' && Array.from({ length: free }, (_, i) => (
+                  <li key={`free-${i}`} class="bformation__one is-free" aria-label="Shadow slot empty"><span class="bformation__face"><Glyph name="plus" /></span><b>Free</b><small> </small></li>
+                ))}
+                {!on.length && r === 'rear' && <li class="bformation__none">No one stands behind</li>}
+              </ul>
+            </div>
+          );
         })}
-        {!isPractice(d) && Array.from({ length: shadows.freeSlots(s) }, (_, i) => (
-          <li key={`free-${i}`} class="blineup__one is-free" aria-label="Shadow slot empty"><span class="blineup__face"><Glyph name="plus" /></span><b>Free</b><small> </small></li>
-        ))}
-      </ul>
+      </div>
       {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
+      {/* Where the hunter stands: their class's place until they choose, kept for every Gate after. */}
+      <div class="bstand" role="radiogroup" aria-label="Where you stand">
+        <span class="label">You stand</span>
+        <span class="bstand__opts">
+          {ROWS.map((r) => (
+            <button key={r} type="button" role="radio" aria-checked={here === r} class={`bstand__opt ${here === r ? 'is-on' : ''}`}
+              onClick={() => { if (here !== r) { sfx.tap(); store.update((x) => ranks.setStand(x, r)); } }}>{ROW_NAME[r]}</button>
+          ))}
+        </span>
+      </div>
       {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
     </section>
   );
@@ -788,13 +828,13 @@ function openCreature(id: string, d: Dungeon) {
   const e = enemyById(id)!;
   openSheet({
     title: id === d.boss ? `Boss: ${e.name}` : id === d.elite ? `Gatekeeper: ${e.name}` : `Creature: ${e.name}`,
-    system: { icon: <FamilyGlyph family={e.family} size={30} />, kind: 'gates' },
+    system: { icon: <Portrait id={id} size={30} tone="red" />, kind: 'gates' },
     render: () => <CreatureCard id={id} d={d} />,
   });
 }
 
 /**
- * What a creature is: its family's glyph in a spotlight, its grade, family, role and power, and whether it
+ * What a creature is: its portrait in a spotlight, its grade, family, role and power, and whether it
  * serves as a Shadow; what it does besides hit, as the fight's tips word it; the statuses it shrugs off or
  * resists; and its special drop, how to defeat it for more.
  */
@@ -807,7 +847,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
   return (
     <div class="stack bcreature">
       <section class="bspot is-card">
-        <span class="bspot__art"><FamilyGlyph family={e.family} size={52} /></span>
+        <span class="bspot__art"><Portrait id={id} size={50} tone="red" /></span>
         <span class="label">{boss ? 'Gate boss' : id === d.elite ? 'Gatekeeper' : 'Creature'}</span>
         <b class="bspot__name">{e.name}</b>
         <small class="bspot__line">{e.rank}-Rank {e.family} · {e.role} · Power {powerOf(e.base)}</small>
@@ -816,15 +856,15 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name">{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
+          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name"><HabitMark id={h} size={17} />{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (
         <section class="bbox" aria-label="Statuses">
           <span class="label bbox__head">Statuses</span>
           <ul class="blist">
-            {e.imm.length > 0 && <Line cls="is-imm"><b>Immune:</b> {e.imm.join(', ')}</Line>}
-            {e.res.length > 0 && <Line cls="is-res"><b>Resists:</b> {e.res.join(', ')}</Line>}
+            {e.imm.length > 0 && <Line cls="is-imm"><b>Immune:</b> <StatusList names={e.imm} /></Line>}
+            {e.res.length > 0 && <Line cls="is-res"><b>Resists:</b> <StatusList names={e.res} /></Line>}
           </ul>
         </section>
       )}

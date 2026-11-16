@@ -67,7 +67,7 @@ describe('the Chosen sent into the world', () => {
     const low = enterAt(s, w.gateId, 1);
     expect(low.chosen).toBeNull();
     const d = dungeonById(w.gateId)!;
-    expect(raid.chamberAt(d, bossNode(w.gateId), 1, low.chosen).foes).toEqual([d.boss]);
+    expect(raid.chamberAt(d, bossNode(w.gateId), 1, low.chosen).foes[0]).toBe(d.boss);
     s.gates.raid = null;
     const high = enterAt(s, w.gateId, 2);
     expect(high.chosen).toBe(2);

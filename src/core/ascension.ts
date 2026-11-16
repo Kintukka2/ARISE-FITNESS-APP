@@ -48,7 +48,7 @@ export function ruleText(level: number): string {
     case RULES.wardens.at: return `Gatekeepers are a further ${pct(RULES.wardens.elite - 1)} stronger.`;
     case RULES.crooked.at: return `Every choice that rolls goes well ${pct(RULES.crooked.odds)} less often.`;
     case RULES.hungryDark.at: return `Extraction costs ${RULES.hungryDark.mana} times the MP.`;
-    case RULES.guarded.at: return 'A boss never fights alone: one of its Gate’s creatures stands with it.';
+    case RULES.guarded.at: return 'A boss stands with one more of its Gate’s creatures.';
     case RULES.wornThin.at: return `Fatigue lowers stats ${RULES.wornThin.drag} times as much.`;
     case RULES.watched.at: return 'Auto will not fight a boss for you. Every order in its chamber is yours.';
     default: return level > ASCENSION_RULED ? `Every foe is ${pct(BEYOND.growth - 1)} stronger than at the level below. Every rule below is already in force.` : '';

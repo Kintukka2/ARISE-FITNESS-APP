@@ -341,6 +341,7 @@ describe('the reckoning', () => {
       uid: 'hero', foes: ['e0'], potions: 0, throws: {}, allies: [], threats: [],
       skills: skills.map(([name, , cd]) => ({ ability: { name, type: 'physical', profile: 'single', mult: 1.2, cd: 2, inflicts: [] }, cd })),
       aims: { Strike: { e0: hit(strike) }, ...Object.fromEntries(skills.map(([name, kill]) => [name, { e0: hit(kill) }])) },
+      row: 'front', reach: {},
     });
     // A Strike that fells the foe every time leaves no skill worth marking.
     expect(finishers(turn('sure', [['Hammerblow', 'sure', 0]]), 'e0')).toEqual({});

@@ -46,6 +46,10 @@ import { walk } from '../tests/walk';
 
 const DAYS = Number(process.argv[2] ?? 120);
 const START = Date.UTC(2026, 0, 5, 0);
+// An item takes its id from the clock (`uid`), and some rolls are drawn from an item's id: the campaign keeps a clock of
+// its own, counted on from its start, so every run of it plays the same.
+let tick = START;
+Date.now = () => tick++;
 const HOUR = 36e5;
 /** What a sensible hunter will not walk in carrying, and the health they will not walk in below. */
 const TIRED = 45;
@@ -335,10 +339,12 @@ function campaign(p: Profile) {
       for (let k = 0; k < p.perSession; k++) {
         const v = vitals.read(s, now);
         if (v.locked || v.fatigue > TIRED || v.hp < v.hpMax * HURT) break;
-        // A block of the Spire first thing each day, once it is open; gates otherwise.
+        // A block of the Spire first thing each day, once it is open and its brief reads three in four or better; gates otherwise.
         // The Trial, when it stands open and the brief gives it an even chance; then the Spire; then the board.
         const trial = asc.trialReady(s, dayKey(now)) && raid.project(s, asc.nextTrial(s), 8, now).rate >= PUSH ? asc.nextTrial(s) : null;
-        const tower = !trial && spire.spireOpen(s) && climbed !== day && !entryBlock(s, spire.nextSpire(s, dayKey(now)), now);
+        // The block is read on its brief as everything else is: taken while it reads three in four or better.
+        const block = spire.spireOpen(s) ? spire.nextSpire(s, dayKey(now)) : null;
+        const tower = !trial && !!block && climbed !== day && !entryBlock(s, block, now) && (asc.choose(s, 0), raid.project(s, block, 8, now).rate >= SAFE);
         if (tower) climbed = day;
         // Then the day's Rift, its one attempt, while the brief reads three in four or better, as it takes Seals.
         const today = rift.riftFor(s, dayKey(now));

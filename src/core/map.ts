@@ -15,6 +15,7 @@
 import { FONT_SHARE } from '@/data/blessings';
 import { landmarkOf, leadFamily } from '@/data/landmarks';
 import { EVENTS, type NodeKind } from '@/data/nodes';
+import { PACK, ROLE_ROW } from '@/data/ranks';
 import { enemyById, isPractice } from './gates';
 import { powerOf } from './combat';
 import type { Dungeon } from './types';
@@ -38,6 +39,8 @@ export interface MapNode {
   hidden?: string[];
   /** Who waits in a fight, a Gatekeeper's room or the boss's. */
   foes?: string[];
+  /** On the later plans (`labyrinth3`), the creatures standing behind a Gatekeeper or a boss: the last of `foes`. */
+  retinue?: number;
   /** The event drawn for an event node, or a landmark's own. */
   event?: string;
   /**
@@ -95,7 +98,7 @@ export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${
  * labyrinths walk the smaller floors they began on (`floors`), runs opened before the floors one floor
  * of rooms (`rooms`), and runs opened before the dungeons the tower they began on (`layers`).
  */
-export type Layout = 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+export type Layout = 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
 
 /** How many floors a Gate goes down, by its grade. */
 export const FLOORS: Record<string, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 };
@@ -104,7 +107,7 @@ export const floorsOf = (d: Dungeon) => (isPractice(d) ? 1 : FLOORS[d.rank] ?? 1
 export const floorRoad = (d: Dungeon, floors = floorsOf(d)) => (floors === 1 ? choiceLayers(d) : Math.max(3, Math.round((choiceLayers(d) * 1.4) / floors)));
 
 /** A fight. A champion is one of the Trial's Chosen before the last: fought with a boss's health, but not the end of the run. */
-export interface Chamber { label: string; foes: string[]; boss: boolean; elite: boolean; champion?: boolean }
+export interface Chamber { label: string; foes: string[]; boss: boolean; elite: boolean; champion?: boolean; retinue?: number }
 
 /** The seed a gate's map is drawn from: the same all day. */
 export const mapSeed = (d: Dungeon, day: string) => `${d.id}|${day}`;
@@ -816,12 +819,44 @@ function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: 
  * Draw a Gate's map. A Trial and a block of the Spire are towers; any other Gate is a dungeon of its
  * grade's floors, unless an open run began on a tower or on one floor of rooms.
  */
-export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth2'): GateMap {
+export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth3'): GateMap {
   if (d.trial) return trialMap(d);
   if (d.floor || layout === 'layers') return layered(d, seed);
   if (layout === 'rooms') return dungeon(d, seed, 1, false);
   if (layout === 'floors') return dungeon(d, seed, floorsOf(d), true);
-  return dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout === 'labyrinth2');
+  const m = dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout === 'labyrinth2' || layout === 'labyrinth3');
+  return layout === 'labyrinth3' ? packed(d, seed, m) : m;
+}
+
+/**
+ * The later plans' fuller fights (`labyrinth3`): the plan of `labyrinth2`, every fight a pack (`PACK`), drawn apart from
+ * everything else on the map so nothing else moves. A fight holds one creature more than its room did alone, at least
+ * two, and stands in both ranks when its Gate can field both: a creature of the front's roles and one of the rear's. A
+ * Gatekeeper and a boss each stand with one of the Gate's creatures behind them, of the rear's roles where it has one.
+ * The Practice Gate keeps its fights as they are.
+ */
+function packed(d: Dungeon, seed: string, m: GateMap): GateMap {
+  if (isPractice(d) || !d.mobs.length) return m;
+  const place = (id: string) => ROLE_ROW[enemyById(id)?.role ?? ''] ?? 'front';
+  const fronts = d.mobs.filter((id) => place(id) === 'front');
+  const rears = d.mobs.filter((id) => place(id) === 'rear');
+  for (const x of m.nodes) {
+    if (!x.foes?.length) continue;
+    const rr = rng(`arise|pack|${seed}|${x.id}`);
+    const pick = (pool: string[]) => pool[Math.floor(rr() * pool.length)];
+    if (x.kind === 'fight') {
+      const n = Math.max(PACK.min, Math.min(PACK.max, x.foes.length + PACK.add));
+      const foes = [...x.foes];
+      while (foes.length < n) foes.push(pick(d.mobs));
+      if (fronts.length && !foes.some((id) => place(id) === 'front')) foes[0] = pick(fronts);
+      if (rears.length && !foes.some((id) => place(id) === 'rear')) foes[foes.length - 1] = pick(rears);
+      x.foes = foes;
+    } else if (x.kind === 'elite' || x.kind === 'boss') {
+      x.foes = [...x.foes, ...Array.from({ length: PACK.retinue }, () => pick(rears.length ? rears : d.mobs))];
+      x.retinue = PACK.retinue;
+    }
+  }
+  return m;
 }
 
 /** The stairs a stairway leads to, on the floor above or below. */
@@ -971,7 +1006,7 @@ export function chamberOf(d: Dungeon, x: MapNode): Chamber {
   const elite = x.kind === 'elite';
   if (d.trial) return { label: enemyById(x.foes?.[0] ?? '')?.name ?? 'The Chosen', foes: x.foes ?? [], boss, elite, champion: !boss };
   const label = boss ? enemyById(d.boss)?.name ?? 'Boss' : elite ? 'Gatekeeper' : d.floor ? `Floor ${d.floor + x.layer}` : `Chamber ${x.x === undefined ? x.layer + 1 : x.n}`;
-  return { label, foes: x.foes ?? [], boss, elite };
+  return { label, foes: x.foes ?? [], boss, elite, ...(x.retinue ? { retinue: x.retinue } : {}) };
 }
 
 export const isFight = (x: MapNode) => x.kind === 'fight' || x.kind === 'elite' || x.kind === 'boss';

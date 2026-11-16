@@ -21,6 +21,7 @@ import { skillLine } from './Skills';
 import { SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
+import { Portrait } from '@/ui/portraits';
 import { KIN_TIER, KinHex, KinOfShadow, KinTracker } from '@/ui/kin';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
@@ -110,7 +111,7 @@ function ArmyStage({ news }: { news: string[] }) {
         <span class="armystage__fog" aria-hidden="true"><i /><i /><i /></span>
         <span class="armystage__ghosts" aria-hidden="true">
           {reserve.slice(0, RESERVE_SHOWN).map((sh, i) => (
-            <i key={sh.id} style={`--i: ${i}; --x: ${8 + (i * 84) / Math.max(1, Math.min(reserve.length, RESERVE_SHOWN) - 1)}`}><FamilyGlyph family={enemyById(sh.enemyId)!.family} size={34} /></i>
+            <i key={sh.id} style={`--i: ${i}; --x: ${8 + (i * 84) / Math.max(1, Math.min(reserve.length, RESERVE_SHOWN) - 1)}`}><Portrait id={sh.enemyId} size={36} tone="shadow" /></i>
           ))}
         </span>
         <span class="armystage__floor" aria-hidden="true" />
@@ -124,7 +125,7 @@ function ArmyStage({ news }: { news: string[] }) {
             return (
               <span key={sh.id} class={`armystage__one ${i === 0 ? 'is-lead' : ''} ${shadows.waiting(s, sh) ? 'is-ready' : ''}`} style={style}>
                 {i === 0 && <span class="armystage__aura" />}
-                <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={92} />
+                <ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={92} />
                 {i > 0 && <small>{shortName(sh)}</small>}
               </span>
             );
@@ -302,7 +303,7 @@ function ArmySheet({ news }: { news: string[] }) {
               <div key={sh.id} data-drop={`slot:${i}`} class={`sysbox roster__slot ${ready(sh) ? 'is-ready' : ''} ${hit} ${drag.lifted === sh.id ? 'is-lifted' : ''}`} {...drag.handle(sh.id)}>
                 <button type="button" class="roster__slot-open" onClick={() => { sfx.tap(); openShadow(sh.id); }}>
                   <span class="roster__slot-grade"><RankPlate rank={e.rank} size={16} /></span>
-                  <span class="roster__slot-badge"><ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} /></span>
+                  <span class="roster__slot-badge"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={40} /></span>
                   <b>{shortName(sh)}</b>
                   <small class="num">Lv.{shadows.levelOf(sh)} · {shadows.power(sh)}</small>
                 </button>
@@ -356,7 +357,7 @@ function ArmySheet({ news }: { news: string[] }) {
       {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
       {createPortal(
         <div class="dragghost" ref={drag.ghost} hidden={!held} aria-hidden="true">
-          {held && heldE && <><ShadowEmblem family={heldE.family} rank={shadows.rankIndex(held)} size={40} /><b>{shortName(held)}</b></>}
+          {held && heldE && <><ShadowEmblem family={heldE.family} id={heldE.id} rank={shadows.rankIndex(held)} size={40} /><b>{shortName(held)}</b></>}
         </div>,
         document.body,
       )}
@@ -392,7 +393,7 @@ function RosterRow({ sh, i, on, full, ready, fresh, move, drag, lifted }: { sh: 
       </button>
       <button type="button" class="roster__who" {...drag} onClick={() => { sfx.tap(); openShadow(sh.id); }}>
         <span class="roster__badge">
-          <ShadowEmblem family={e.family} rank={at} size={40} />
+          <ShadowEmblem family={e.family} id={e.id} rank={at} size={40} />
           {ready ? <span class="roster__tag is-ready">Ready</span> : fresh ? <span class="roster__tag">New</span> : null}
         </span>
         <span class="roster__name">
@@ -428,7 +429,7 @@ function RosterCard({ sh, i, on, ready, fresh, drag, lifted }: { sh: Shadow; i: 
           <circle cx="50" cy="50" r="40" class="rostercard__track" />
           <circle cx="50" cy="50" r="40" class="rostercard__fill" style={`stroke-dasharray: ${c * share(sh)} ${c}`} />
         </svg>
-        <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={40} />
+        <ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={40} />
       </span>
       <small class="rostercard__name">{shortName(sh)}</small>
       <small class="rostercard__lv num">Lv.{shadows.levelOf(sh)}{ready ? ' · Ready' : fresh ? ' · New' : ''}</small>
@@ -469,7 +470,7 @@ function CardBadge({ id }: { id: string }) {
   const s = useSave();
   const sh = s.shadows.army.find((x) => x.id === id);
   const e = sh && enemyById(sh.enemyId);
-  return e ? <ShadowEmblem family={e.family} rank={shadows.rankIndex(sh!)} size={44} /> : null;
+  return e ? <ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh!)} size={44} /> : null;
 }
 
 const ORDER = ['STR', 'VIT', 'AGI', 'INT', 'PER'] as const;
@@ -529,7 +530,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
             <circle cx="60" cy="60" r="52" class="sp-ring__fill" style={`stroke-dasharray: ${c * unit(share)} ${c}`} />
           </svg>
           <span class="sp-head__smoke" />
-          <ShadowEmblem family={e.family} rank={at} size={66} />
+          <ShadowEmblem family={e.family} id={e.id} rank={at} size={66} />
           {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
         </div>
         <div class="sp-head__who">
@@ -592,9 +593,9 @@ function NextRank({ sh, e }: { sh: Shadow; e: Enemy }) {
       </header>
       {ready && (
         <div class="rankplates promote__plates" aria-label={`${shadows.rankOf(sh).name} Rank to ${next.name} Rank`}>
-          <span class="rankplates__from" ref={badge}><ShadowEmblem family={e.family} rank={at} size={60} /></span>
+          <span class="rankplates__from" ref={badge}><ShadowEmblem family={e.family} id={e.id} rank={at} size={60} /></span>
           <span class="rankplates__path" style="--p: 1" aria-hidden="true"><i /></span>
-          <span class="rankplates__to"><ShadowEmblem family={e.family} rank={at + 1} size={60} /></span>
+          <span class="rankplates__to"><ShadowEmblem family={e.family} id={e.id} rank={at + 1} size={60} /></span>
         </div>
       )}
       <ul class="sp-reqs">
@@ -827,7 +828,7 @@ export function ShadowAlerts({ grew, ready, delay = 500 }: { grew: RaidResult['g
         const was = share(g.from, sh.xp - g.xp);
         return (
           <SysAlert key={g.id} kind="shadow" fyi delay={delay + i * 180} class={`is-shadowline ${made ? 'is-ready' : ''}`}
-            icon={<ShadowEmblem family={e.family} rank={shadows.rankIndex(sh)} size={34} />}
+            icon={<ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={34} />}
             meter={{ from: up ? was : Math.min(was, now), to: now, up }}
             aside={g.xp > 0 ? <span class="num">XP <span class="grant">+{g.xp}</span></span> : null}
             sub={made ? undefined : <span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>

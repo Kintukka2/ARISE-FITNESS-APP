@@ -109,8 +109,9 @@ describe('a set’s home gate', () => {
     expect(trophy).toBe(forge.trophyAt(dungeonById('DNG-015')!));
     const res = clear(s, 'DNG-015');
     const got = res.blueprints.filter((id) => pieces.includes(id));
-    expect(got).toHaveLength(1);
-    expect(got[0]).not.toBe(pieces[0]);
+    // At least the first clear's; a Feat met or a boss's condition can leave another of the Gate's grade.
+    expect(got.length).toBeGreaterThanOrEqual(1);
+    expect(got).not.toContain(pieces[0]);
     expect(forge.knows(s, got[0])).toBe(true);
     expect(res.mats[trophy]).toBe(1);
     expect(forge.held(s, trophy)).toBe(1);

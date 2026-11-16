@@ -24,7 +24,7 @@
  */
 import { music, sfx } from '@/audio/audio';
 import { buzz, reducedMotion } from './feedback';
-import { emblemParts, PLACE } from './emblems';
+import { emblemParts, PLACE, PORTRAIT_PLACE } from './emblems';
 import { plateParts } from './icons';
 
 /** When each beat lands, in ms from the start. */
@@ -286,17 +286,21 @@ function placed(d: string, [k, x, y]: readonly [number, number, number]) {
   return p;
 }
 
-/** A Shadow's badge, as a plate: the shield, the family glyph and its shadow, and the rank's insignia. Violet, as the Shadows are. */
-function emblemOf(family: string, rank: number): Plate {
-  const p = emblemParts(family, rank);
+/**
+ * A Shadow's badge, as a plate: the shield, its creature's portrait (or its family's glyph) and its shadow, and the
+ * rank's insignia. Violet, as the Shadows are; the portrait's outline is the line that burns.
+ */
+function emblemOf(family: string, rank: number, id?: string): Plate {
+  const p = emblemParts(family, rank, id);
+  const place = p.portrait ? PORTRAIT_PLACE : PLACE;
   return {
     frame: new Path2D(p.frame),
-    rune: placed(p.glyph, PLACE.glyph),
-    extras: [placed(p.glyph, PLACE.echo)],
+    rune: placed(p.glyph, place.glyph),
+    extras: [placed(p.glyph, place.echo)],
     nodes: placed(p.insignia, PLACE.insignia),
     halo: false,
     rgb: VIOLET.heat,
-    weight: 0.55,
+    weight: p.portrait ? 0.4 : 0.55,
   };
 }
 
@@ -329,11 +333,11 @@ export function rankUp(opts: { from?: From | null; was: string; now: string; onD
 }
 
 /**
- * A Shadow promoted: its badge, of family `family` at rank `was`, lifts off its card, and the breach
- * leaves it at rank `now`. As `rankUp` in every other way.
+ * A Shadow promoted: its badge, its creature `id` (of family `family`) at rank `was`, lifts off its card, and the
+ * breach leaves it at rank `now`. As `rankUp` in every other way.
  */
-export function promotion(opts: { from?: From | null; family: string; was: number; now: number; onDark?: () => void }): ArrivalCtl {
-  return overlay({ t: RANK_T, pal: VIOLET, plate: () => emblemOf(opts.family, opts.was), rise: () => emblemOf(opts.family, opts.now), idle: false }, opts);
+export function promotion(opts: { from?: From | null; family: string; id?: string; was: number; now: number; onDark?: () => void }): ArrivalCtl {
+  return overlay({ t: RANK_T, pal: VIOLET, plate: () => emblemOf(opts.family, opts.was, opts.id), rise: () => emblemOf(opts.family, opts.now, opts.id), idle: false }, opts);
 }
 
 // ------------------------------------------------------------------ the engine

@@ -216,7 +216,6 @@
 @media (prefers-reduced-motion: reduce) { .arena__red { animation: none; } }
 /* The cards give way, scrolling, before the foot does: the wheel, its throws and its lines always fit. */
 .arena__field { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 10px; padding: 12px; max-width: 640px; width: 100%; margin: 0 auto; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
-.arena__side { display: flex; flex-direction: column; gap: 6px; }
 .unit { padding: 7px 9px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(6, 12, 26, 0.8); transition: opacity 300ms, border-color 300ms; }
 .unit--hero { border-color: var(--mana); box-shadow: 0 0 12px rgba(79, 214, 255, 0.15); }
 .unit--shadow { border-color: rgba(155, 107, 255, 0.55); }
@@ -250,18 +249,19 @@
 .unit { position: relative; }
 .unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 0 5px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
 .unit__incoming b { color: var(--ink); font-size: 0.62rem; }
-.arena__side { gap: 10px; }
 /* A word on a card that tells what it is when tapped. */
-/* A foe's condition drop: its part's glyph at the end of its habits, gold while the condition holds. */
-.dropmark { display: inline-grid; place-items: center; margin-left: auto; color: var(--ink-3); }
+/* A foe's special drop: the part's glyph alone beside its HP, apart from its habits, with no frame; dim gold until the
+   condition holds, then gold, glowing and swelling, as a loot marker lights when it is there to take. */
+.unit__hp { display: inline-flex; align-items: center; }
+.dropmark, button.dropmark.is-told { display: inline-grid; flex: none; place-items: center; margin: 0 7px 0 4px; color: #a8936a; }
 .dropmark .ico { width: 13px; height: 13px; }
-.dropmark.is-ready { color: var(--gold); filter: drop-shadow(0 0 5px var(--gold-glow)); animation: dropReady 1.4s ease-in-out infinite; }
-@keyframes dropReady { 50% { transform: scale(1.18); } }
+.dropmark.is-ready, button.dropmark.is-ready.is-told { color: var(--gold); filter: drop-shadow(0 0 5px var(--gold-glow)); animation: dropReady 1.4s ease-in-out infinite; }
+@keyframes dropReady { 50% { transform: scale(1.2); } }
 @media (prefers-reduced-motion: reduce) { .dropmark.is-ready { animation: none; } }
 button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }
 button.is-told:not(.tag) { background: none; }
-button.tag.is-told { padding: 0 5px; }
-button.trick.is-told, button.intent__what.is-told { text-decoration: underline dotted rgba(255, 255, 255, 0.28); text-underline-offset: 3px; }
+button.tag.is-told { padding: 1px 5px 1px 4px; }
+button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration: underline dotted rgba(255, 255, 255, 0.28); text-underline-offset: 3px; }
 .tipshade { position: fixed; inset: 0; z-index: 60; }
 .tip { position: fixed; display: grid; gap: 3px; padding: 8px 10px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 6px; background: rgba(14, 9, 5, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); animation: feedIn 140ms var(--ease) both; }
 .tip__title { color: var(--ink); font-size: 0.8rem; }
@@ -351,14 +351,27 @@ button.trick.is-told, button.intent__what.is-told { text-decoration: underline d
 .actwheel__ring.is-dragging .actwheel__foot:not(.is-off) { color: var(--ember); }
 .actwheel__close { position: absolute; right: -4px; bottom: -4px; }
 /* Throw: a chip to each kind held, under the wheel; the one picked lit. */
-/* A creature's habits, under its name: small and quiet until they matter. */
-.unit__tricks { display: flex; align-items: center; gap: 0 6px; margin-top: 4px; }
-.unit__habits { display: flex; flex-wrap: wrap; gap: 0 4px; min-width: 0; }
-.trick { color: var(--ink-3); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
-/* The dot after a habit, so a line that breaks ends on one rather than starting with it. */
-.unit__tricks { position: relative; }
-.trick:not(:last-child)::after { content: '·'; display: inline-block; margin-left: 4px; color: rgba(255, 255, 255, 0.25); text-decoration: none; }
+/* A creature's habits, under its name: each its mark in a hexagonal plate, then its name in small capitals. */
+.unit__tricks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 9px; margin-top: 5px; }
+.trick { display: inline-flex; align-items: center; gap: 4px; min-width: 0; color: #d9a9b2; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
 .trick--windup, .trick--channel { color: #a9c2ff; }
+
+/* The marks (ui/effects.tsx), with no frame: the glyph alone. A habit's in rose with a soft glow of the creature's red;
+   a habit that breaks (Charged Strike, Incantation) in blue, as its break bar is. */
+.fxhabit { display: inline-grid; flex: none; place-items: center; width: var(--fx); height: var(--fx); color: #ff9fb0; }
+.fxhabit .fxmark { width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(255, 77, 109, 0.45)); }
+.fxhabit--windup, .fxhabit--channel { color: #a9c2ff; }
+.fxhabit--windup .fxmark, .fxhabit--channel .fxmark { filter: drop-shadow(0 0 3px rgba(127, 168, 255, 0.5)); }
+.fxmark { display: block; fill: currentColor; }
+/* A status's mark at its tag's head, the glyph alone in the tag's colour, with no tile of its own. */
+.tag { display: inline-flex; align-items: center; gap: 3px; }
+.tag__mark { display: inline-grid; flex: none; place-items: center; width: 11px; height: 11px; }
+/* Rajdhani's capitals stand above the middle of its line, a tenth of its size: a mark centred on the line sat that much
+   low against its word, so it is lifted to the capitals' middle (measured on the ink at 4x: 0.9px to 1.1px at the
+   card's sizes). */
+.tag__mark { transform: translateY(-0.1em); }
+.trick .fxhabit { transform: translateY(-0.14em); }
+.tag__mark .fxmark { width: 11px; height: 11px; }
 /* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
    with the hits left, a diamond to each, the ones taken hollow. */
 .unit__intent.is-wind:not(.is-lethal) { border-color: rgba(127, 168, 255, 0.5); }
@@ -1591,7 +1604,11 @@ button.dmap__floor { cursor: pointer; }
 .bline.is-res .bline__mark > i { background: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 /* A habit: its name over one paragraph, in the creature's own numbers. */
 .bhabit { margin: 0; font-size: 0.74rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
-.bhabit__name { display: block; margin-bottom: 2px; font-size: 0.8rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.bhabit__name { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; font-size: 0.8rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.bhabit__name .fxhabit { text-shadow: none; }
+/* A status named on the creature card: its mark in a tile, then its name, as on a fight's card. */
+.bstatus { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; white-space: nowrap; }
+.bstatus .tag__mark { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
 .bhabit + .bhabit { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
@@ -2749,7 +2766,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bseals__rule b { color: #fff; }
 
 /* The enemies: a portrait to each, the boss first and larger in red, a Gatekeeper ringed in gold. */
-.benemies { display: flex; align-items: flex-end; gap: 10px; margin: 0; padding: 2px 0 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
+.benemies { display: flex; align-items: flex-end; gap: 10px; margin: 0; padding: 12px 0 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
 .benemies::-webkit-scrollbar { display: none; }
 .benemy { display: grid; justify-items: center; gap: 3px; width: 68px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
 .benemy.is-tap { cursor: pointer; }
@@ -2767,21 +2784,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .benemy.is-elite .benemy__face { border-color: var(--gold); color: var(--gold); }
 .benemy.is-elite .benemy__tag { color: var(--gold); }
 
-/* The party lined up: the hunter, the Association's hunters, the Shadows, each over a name and a power. */
-.blineup { display: flex; flex-wrap: wrap; gap: 10px 8px; margin: 0; padding: 0 0 2px; list-style: none; }
-.blineup::-webkit-scrollbar { display: none; }
-.blineup__one { display: grid; flex: none; justify-items: center; gap: 2px; width: 62px; text-align: center; animation: rowIn 320ms var(--ease) both; }
-.blineup__face { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.6); }
-.blineup__one.is-you .blineup__face { border-color: color-mix(in srgb, var(--mana) 70%, transparent); box-shadow: 0 0 10px rgba(79, 214, 255, 0.25); }
-.blineup__one.is-shadow .blineup__face { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 25%, transparent), rgba(6, 3, 18, 0.8)); }
-.blineup__one.is-shadow .blineup__face .emblem { color: var(--arcane); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
-.blineup__one.is-free .blineup__face { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
-.blineup__one.is-free .blineup__face .ico { width: 14px; height: 14px; }
-.blineup__one b { max-width: 100%; overflow: hidden; font-size: 0.62rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; color: #fff; }
-.blineup__one.is-you b { color: var(--mana); }
-.blineup__one.is-shadow b { color: #d9c6ff; }
-.blineup__one.is-free b { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-.blineup__one small { font-size: 0.62rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 
 /* Today's map, one row: a tap opens it in its own window once the hunter has been inside. */
 .bmaprow { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 16px; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 6px 2px; border: 0; border-top: 1px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); background: none; color: inherit; font: inherit; text-align: left; }
@@ -3698,6 +3700,9 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .unit--foe { --uc: var(--blood); border-color: rgba(255, 77, 109, 0.32); background: linear-gradient(90deg, rgba(255, 77, 109, 0.1), rgba(6, 12, 26, 0.86) 55%); }
 .unit__mark { position: absolute; left: 9px; top: 8px; display: grid; place-items: center; width: 24px; height: 24px; color: var(--uc); }
 .unit__mark::before { content: ''; position: absolute; inset: 2px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--uc) 55%, transparent); background: color-mix(in srgb, var(--uc) 14%, rgba(4, 8, 18, 0.9)); }
+/* A creature's mark is its portrait, bare: no diamond round it. */
+.unit--foe .unit__mark::before { display: none; }
+.unit--foe .unit__mark .cface { filter: drop-shadow(0 0 4px rgba(255, 47, 62, 0.45)); }
 .unit__mark > * { position: relative; }
 .unit__mark .ico { width: 13px; height: 13px; filter: drop-shadow(0 0 4px var(--uc)); }
 .unit__mark.is-boss::before { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
@@ -3708,7 +3713,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .unit.is-hurt .unit__hp { color: var(--gold); }
 .unit.is-down::before { opacity: 0.2; }
 .arena__field { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.arena__side, .unit { min-width: 0; }
+.unit { min-width: 0; }
 .unit { padding-left: 33px; }
 .unit__mark { left: 6px; width: 22px; height: 22px; }
 .unit__name { font-size: 0.8rem; }
@@ -4316,3 +4321,86 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 @keyframes medalStrike { 0% { transform: scale(1.8) rotate(-20deg); opacity: 0; } 60% { transform: scale(0.92) rotate(4deg); opacity: 1; } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .rchal__medal .medal.is-on, .bpar__row, .bpar__odds i { animation: none; } }
 .bpar__got { color: var(--verdant); font-weight: 700; }
+
+/* ------------------------------------------------------------------ Front and rear (data/ranks.ts) */
+
+/* The field in ranks, after Etrian Odyssey and Dragon Quest: the foes above, their rear at the top and their front at
+   the line; the party below, its front at the line and its rear at the foot. Each rank's name at its edge, in its side's
+   colour; the foes' cards two to a line, the party's three. */
+.arena__field.is-ranked { display: flex; flex-direction: column; align-items: stretch; gap: 8px; background: radial-gradient(ellipse 90% 45% at 50% 18%, rgba(255, 77, 109, 0.08), transparent 70%), radial-gradient(ellipse 90% 45% at 50% 82%, rgba(79, 214, 255, 0.07), transparent 70%); }
+.arena__field.is-ranked::before { display: none; }
+.arena__band { display: flex; flex-direction: column; gap: 8px; }
+.rankrow { display: grid; gap: 5px; }
+.rankrow__label { display: flex; align-items: center; gap: 8px; }
+.rankrow__label b { font-size: 0.52rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; }
+.rankrow__label i { flex: 1; height: 1px; }
+.rankrow.is-foes .rankrow__label b { color: color-mix(in srgb, var(--blood) 70%, var(--ink-3)); }
+.rankrow.is-foes .rankrow__label i { background: linear-gradient(90deg, color-mix(in srgb, var(--blood) 35%, transparent), transparent); }
+.rankrow.is-party .rankrow__label b { color: color-mix(in srgb, var(--mana) 70%, var(--ink-3)); }
+.rankrow.is-party .rankrow__label i { background: linear-gradient(90deg, color-mix(in srgb, var(--mana) 35%, transparent), transparent); }
+.rankrow.is-rear .rankrow__label b { opacity: 0.75; }
+.rankrow__units { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.rankrow__units > .unit { box-sizing: border-box; flex: 0 1 calc(50% - 4px); min-width: 0; margin: 0; }
+.arena__band--party .rankrow__units > .unit { flex-basis: calc(33.333% - 5px); }
+/* The line between the sides: where the fronts meet. */
+.arena__line { position: relative; height: 16px; margin: 2px 0; }
+.arena__line i { position: absolute; left: 4%; right: 4%; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, rgba(255, 154, 60, 0.8) 25%, rgba(255, 220, 160, 0.95) 50%, rgba(255, 154, 60, 0.8) 75%, transparent); box-shadow: 0 0 10px rgba(255, 154, 60, 0.55), 0 0 22px rgba(255, 154, 60, 0.25); }
+/* The party's cards, three to a line: the mark smaller, the name and HP on one line, the bar under them. */
+.arena__band--party .unit { padding: 6px 6px 7px 26px; }
+.arena__band--party .unit__mark { left: 4px; top: 7px; width: 18px; height: 18px; }
+.arena__band--party .unit__mark .ico { width: 11px; height: 11px; }
+.arena__band--party .unit__name { font-size: 0.68rem; }
+.arena__band--party .unit__hp { font-size: 0.68rem; }
+.arena__band--party .unit .row.between { gap: 4px; }
+.arena__band--party .unit__status { gap: 2px; }
+.arena__band--party .tag { padding: 0 3px; font-size: 0.52rem; }
+.arena__band--party .unit__incoming { right: 4px; }
+/* A foe the picked action cannot reach: dimmed, and says so. */
+.unit.is-far { opacity: 0.5; filter: saturate(0.5); }
+.unit__far { flex: none; margin: 0 4px; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* Where the hunter stands, to choose, under the formation. */
+.bstand { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
+.bstand .label { font-size: 0.6rem; }
+.bstand__opts { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--sys-hair); }
+.bstand__opt { min-width: 76px; min-height: 40px; padding: 0 14px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); font: inherit; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; touch-action: manipulation; }
+.bstand__opt + .bstand__opt { border-left: 1px solid var(--sys-hair); }
+.bstand__opt.is-on { background: color-mix(in srgb, var(--mana) 16%, transparent); color: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 60%, transparent); }
+/* The party as a formation, after AFK Arena's lineup and Etrian Odyssey's rows: a board facing the enemies above it,
+   the front at its head and the rear under it, each member a face in its rank, the hunter's own lit. */
+.bformation { position: relative; display: grid; gap: 0; border: 1px solid var(--sys-hair); background: linear-gradient(180deg, rgba(255, 154, 60, 0.07), transparent 38%), rgba(4, 8, 18, 0.5); }
+.bformation__facing { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 0 3px; border-bottom: 1px solid rgba(255, 154, 60, 0.35); color: color-mix(in srgb, var(--ember) 80%, transparent); font-size: 0.52rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; box-shadow: 0 1px 10px rgba(255, 154, 60, 0.18); }
+.bformation__facing .ico { width: 11px; height: 11px; }
+.bformation__rank { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: stretch; }
+.bformation__rank + .bformation__rank { border-top: 1px dashed color-mix(in srgb, var(--sys-ink) 18%, transparent); }
+.bformation__label { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-right: 1px solid var(--sys-hair); background: rgba(255, 255, 255, 0.02); }
+.bformation__label b { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.bformation__rank.is-front .bformation__label b { color: var(--ember); }
+.bformation__label small { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.bformation__seats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 4px; margin: 0; padding: 10px 6px; list-style: none; }
+.bformation__one { display: grid; justify-items: center; gap: 2px; min-width: 0; text-align: center; animation: rowIn 320ms var(--ease) both; }
+.bformation__face { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.6); }
+.bformation__one.is-free .bformation__face .ico { width: 14px; height: 14px; }
+.bformation__one.is-shadow b { color: #d9c6ff; }
+.bformation__one b { max-width: 100%; overflow: hidden; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.bformation__one small { font-size: 0.62rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.bformation__one.is-you .bformation__face { border-color: color-mix(in srgb, var(--mana) 70%, transparent); box-shadow: 0 0 12px rgba(79, 214, 255, 0.35); }
+.bformation__one.is-you b { color: var(--mana); }
+.bformation__one.is-shadow .bformation__face { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 25%, transparent), rgba(6, 3, 18, 0.8)); }
+.bformation__one.is-shadow .bformation__face .emblem { color: var(--arcane); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.bformation__one.is-free .bformation__face { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.bformation__one.is-free b { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.bformation__none { grid-column: 1 / -1; align-self: center; padding: 14px 4px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+
+/* A tip on a habit or a status: its mark beside its name, as the word tapped wears it. */
+.tip__title { display: flex; align-items: center; gap: 7px; }
+.tip__status { width: 16px; height: 16px; color: var(--blood); }
+.tip__status.is-good { color: var(--verdant); }
+.tip__status .fxmark { width: 16px; height: 16px; }
+
+/* A boss's portrait wears a crown, as the reference games crest a pack's leader (Monster Hunter's Great Jagras, Dragon
+   Quest's King slime): its rank not by red alone. White-hot, as its eyes are. The Enemies row scrolls sideways, and a
+   scrolling box clips on every side, so the row leaves room over its faces for the crown. */
+.unit__crown, .benemy__crown { position: absolute; left: 50%; z-index: 1; color: #fff4cf; filter: drop-shadow(0 0 3px rgba(255, 47, 62, 0.9)); transform: translateX(-50%); }
+.unit__crown { top: -8px; width: 11px; height: 11px; }
+.benemy__face { position: relative; }
+.benemy__crown { top: -9px; width: 18px; height: 18px; }

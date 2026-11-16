@@ -93,7 +93,7 @@ export const restShare = (seals: readonly SealId[]) => (on(seals, 'lightless') ?
 export const alliesCut = (seals: readonly SealId[]) => (on(seals, 'shorthanded') ? SEAL.shorthanded.allies : 0);
 /** The Gatekeeper's strength, as a share: more under Wardens Wake. */
 export const eliteShare = (seals: readonly SealId[]) => (on(seals, 'wardens') ? SEAL.wardens.elite : 1);
-/** Whether the boss stands with one of its creatures: Never Alone. */
+/** Whether the boss stands with one more of its creatures: Never Alone. */
 export const bossGuarded = (seals: readonly SealId[]) => on(seals, 'alone');
 /** Whether a Health Potion can be drunk: never in a Dry Gate. */
 export const potionsAllowed = (seals: readonly SealId[]) => !on(seals, 'dry');

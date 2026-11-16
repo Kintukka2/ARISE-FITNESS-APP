@@ -24,13 +24,13 @@ function hunter(level: number) {
 
 /** Every map of every Gate over some days, on the later plans. */
 function* maps(days = DAYS.slice(0, 6)): Generator<{ d: Dungeon; day: string; m: GateMap }> {
-  for (const d of GATES) for (const day of days) yield { d, day, m: build(d, mapSeed(d, day)) };
+  for (const d of GATES) for (const day of days) yield { d, day, m: build(d, mapSeed(d, day), 'labyrinth2') };
 }
 
 /** A Gate and day whose map holds a room as asked. */
 function find(where: (m: GateMap, x: MapNode) => boolean) {
   for (const day of DAYS) for (const d of GATES) {
-    const m = build(d, mapSeed(d, day));
+    const m = build(d, mapSeed(d, day), 'labyrinth2');
     const x = m.nodes.find((y) => where(m, y));
     if (x) return { d, day, m, x, at: Date.parse(`${day}T12:00:00`) };
   }

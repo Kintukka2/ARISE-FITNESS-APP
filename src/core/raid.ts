@@ -45,6 +45,8 @@ import { sealEmber } from '@/data/seals';
 import { FEAT_PAY, type FeatId } from '@/data/feats';
 import * as feats from './feats';
 import * as par from './par';
+import * as ranks from './ranks';
+import type { Row } from '@/data/ranks';
 import type { MedalId } from '@/data/par';
 import { LOG_MAX } from './save';
 import type { AssocMove } from './association';
@@ -80,20 +82,20 @@ export function heroSpec(s: Save, now = Date.now(), level = 0): UnitSpec {
   const boons = setBoons(items);
   // The engravings live on what is worn, one to each kind, ride in as passives by name.
   const engr = engravings.live(s).map((id) => engravingById(id)!.name);
-  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: [...b.passives, ...engr], bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero', ...(Object.keys(boons).length ? { boons } : {}) };
+  return { uid: 'hero', name: s.hunter.name, side: 'p', base, kit: b.kit, own: b.own, passives: [...b.passives, ...engr], bonus: sumBonuses(rollBonuses(items), setBonuses(items), forge.familiarityBonus(s), marks.heroBonus(s), b.bonus), hpMult: HERO.hp, atkMult: HERO.atk, tag: 'hero', ...(Object.keys(boons).length ? { boons } : {}), ...ranks.heroStand(s) };
 }
 
 export function allySpec(a: Ally, i: number): UnitSpec {
   const cls = classFor(a.base, a.rank);
   // The Association's hunters fight with every rung's first option.
   const k = cls ? kitFor(cls.lead, cls.tier) : { kit: [], passives: [] };
-  return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id, atkMult: a.atkMult };
+  return { uid: `a${i}`, name: a.name, side: 'p', base: a.base, ...k, tag: 'ally', ref: a.id, atkMult: a.atkMult, ...ranks.byLead(cls?.lead) };
 }
 
 /** A Shadow as it fights. `bonus` is what it takes beyond its own: the hunter's marks, its Kin's boon and the Formation's auras. */
 export function shadowSpec(sh: Shadow, i: number, bonus: Record<string, number> = {}): UnitSpec {
   const e = enemyById(sh.enemyId)!;
-  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id };
+  return { uid: `s${i}`, name: shadows.nameOf(sh), side: 'p', base: shadows.statsOf(sh), kit: shadows.kitOf(sh), passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, bonus, tag: 'shadow', ref: sh.id, ...ranks.byRole(e.role) };
 }
 
 /** The hunters the Association sends with you at an Ascension level, and under the Seals taken. The Trial is the System's, so it sends none there. */
@@ -123,6 +125,8 @@ export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) 
 
 export interface RosterRow {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[];
+  /** Where it stood as the chamber opened (`data/ranks.ts`). */
+  row?: Row;
   /** A foe's grade, which sets its behaviours' numbers. */
   grade?: string;
   /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
@@ -158,7 +162,7 @@ function foeUnits(c: Chamber, d: Dungeon, index: number, level = 0, might = 1, s
     const e = enemyById(id)!;
     // Its behaviours: its role's, its family's from C-Rank, and a wind-up for the chamber's boss or Gatekeeper.
     const head = j === 0 && (c.boss || c.elite || !!c.champion);
-    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * (c.boss || c.champion ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id, tricks: tricksOf(e, head), grade: String(e.rank) });
+    return new Unit({ uid: `e${index}-${j}`, name: e.name, side: 'e', base: e.base, kit: e.kit, passives: e.passive ? [e.passive] : [], imm: e.imm, res: e.res, hpMult: k * t * ((c.boss || c.champion) && (j === 0 || !c.retinue) ? BOSS_HP : 1), atkMult: t, tag: 'foe', ref: e.id, tricks: tricksOf(e, head), grade: String(e.rank), ...ranks.byRole(e.role, (c.boss || !!c.champion) && j === 0) });
   });
   const seen: Record<string, number> = {};
   for (const u of units) seen[u.name] = (seen[u.name] ?? 0) + 1;
@@ -207,7 +211,7 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
   const roster: RosterRow[] = [...party, ...foes].map((u) => {
     const boss = u.side === 'e' && c.boss && u === foes[0];
     const cond = u.side === 'e' && u.ref ? conditionOf(u.ref, boss) ?? undefined : undefined;
-    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, ...(u.side === 'e' ? { grade: u.grade } : {}), ...(cond ? { ref: u.ref, cond, boss } : {}) };
+    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, row: u.row, ...(u.side === 'e' ? { grade: u.grade, ref: u.ref, ...(boss ? { boss } : {}) } : {}), ...(cond ? { cond } : {}) };
   });
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];
@@ -411,7 +415,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
-  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth2'));
+  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth3'));
   // A map charted from the brief today is charted for the run: its hidden passages need no noticing.
   const charted = (s.gates.charted ?? []).includes(mapSeed(d, day));
   // The throwable readied is the one its fights throw, whatever is readied while it is open.
@@ -422,7 +426,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'labyrinth2', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'labyrinth3', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     lean: blessings.leanOf(s), levels: levelsOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),

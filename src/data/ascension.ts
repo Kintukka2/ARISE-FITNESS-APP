@@ -89,7 +89,7 @@ export const RULES = {
   crooked: { at: 6, odds: 0.15 },
   /** Reaching for a lingering Shadow costs this much more mana. */
   hungryDark: { at: 7, mana: 2 },
-  /** The boss never fights alone: one of its gate's creatures stands with it. */
+  /** The boss stands with one more of its gate's creatures. */
   guarded: { at: 8 },
   /** Fatigue drags the hunter down this much harder. */
   wornThin: { at: 9, drag: 2 },

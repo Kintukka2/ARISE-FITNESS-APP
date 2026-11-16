@@ -4,6 +4,7 @@ import type { UnitSpec } from './combat';
 import type { SealId } from '@/data/seals';
 import type { FeatId } from '@/data/feats';
 import type { MedalId } from '@/data/par';
+import type { Row } from '@/data/ranks';
 
 export const STATS = ['STR', 'AGI', 'PER', 'VIT', 'INT'] as const;
 export type Stat = (typeof STATS)[number];
@@ -183,7 +184,7 @@ export interface OpenRaid {
   map: string;
   path: string[];
   /** How the map is drawn: a Gate's labyrinth floors. Runs opened before them walk the smaller floors (`floors`), one floor of rooms (`rooms`), or the tower they began on (none). */
-  layout?: 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+  layout?: 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
   /** The map has been charted by a Gate Survey: its hidden passages open with no noticing. */
   charted?: boolean;
   /** The toll doors paid for, by `map.pairKey`: open for good. */
@@ -355,6 +356,8 @@ export interface Save {
     attrs: Attrs;
     points: number;
     classId: string | null;
+    /** Where the hunter stands in a fight (`ranks.heroRow`); unset, their class's place. */
+    stand?: Row;
     missions: string[];
     /**
      * The skill tree (`core/skilltree.ts`): the points held in each node by its id, the skills

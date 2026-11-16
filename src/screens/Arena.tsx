@@ -15,7 +15,9 @@ import { SEALS } from '@/data/seals';
 import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
+import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
 import { ability, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
+import { MOVE, REAR_MELEE, ROW_NAME, ROWS, type Row } from '@/data/ranks';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import { TRICK } from '@/data/tricks';
@@ -54,7 +56,8 @@ import { QuestLines } from '@/ui/contracts';
 import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
 import { SysAlert } from '@/ui/frame';
-import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
+import { ShadowEmblem } from '@/ui/emblems';
+import { Portrait } from '@/ui/portraits';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
@@ -72,6 +75,8 @@ import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 
 interface UnitView {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[];
+  /** Where it stands (`data/ranks.ts`): its side's front or rear. */
+  row?: Row;
   /** A foe's grade, which sets its behaviours' numbers. */
   grade?: string;
   /** A foe's creature, its condition drop, and whether it is the chamber's boss. */
@@ -212,6 +217,10 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
       shown: !coming.length ? [`Damage taken -${(1 - GUARD) * 100}%`] : sight ? [`Incoming ${inc[0]}-${inc[1]}`, `Guarded ${inc[2]}-${inc[3]}`] : [`Damage taken -${(1 - GUARD) * 100}%`, `Aimed at you: ${coming.length}`],
       said: !coming.length ? `Damage taken -${(1 - GUARD) * 100}%` : sight ? `Incoming ${spoken(inc[0], inc[1])}, guarded ${spoken(inc[2], inc[3])}` : `Damage taken -${(1 - GUARD) * 100}%, ${coming.length} aimed at you` },
     cover,
+    // Move: to the other rank, for the turn. From the front, the melee that reaches the rear; from the rear, back in.
+    turn.row === 'front'
+      ? { use: MOVE, name: 'Step Back', glyph: 'down', shown: ['To the rear', `Your melee ${Math.round(REAR_MELEE * 100)}% from there`], said: `To the rear. Your melee lands at ${Math.round(REAR_MELEE * 100)}% from there` }
+      : { use: MOVE, name: 'Step Forward', glyph: 'up', shown: ['To the front', 'Your melee in full'], said: 'To the front. Your melee lands in full' },
     { use: 'Strike', name: 'Strike', glyph: 'Weapon', ...dmg('Strike') },
   ];
   const acts = [...skills, ...fixed];
@@ -223,7 +232,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
   const st = skillState(s, shown.use, turn);
   const use = (a: WheelAct) => { if (!a.off) { setPicked(a.use); give(a.use); } };
   /** Guard and Cover are the defence's blue, Potion healing's green; the rest are the Gate's ember. */
-  const kind = (a: WheelAct) => (a.use === 'Guard' || a.use === COVER ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
+  const kind = (a: WheelAct) => (a.use === 'Guard' || a.use === COVER || a.use === MOVE ? 'guard' : a.use === 'Potion' ? 'potion' : 'act');
   const tap = (a: WheelAct) => {
     if (performance.now() < quiet.current) return;
     if (a.use === chosen.use) use(a); else { sfx.blip(); setPicked(a.use); }
@@ -356,6 +365,7 @@ function apply(local: UnitView[], b: Beat) {
     else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
     else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
     else if (e.t === 'guard') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+    else if (e.t === 'move') { const t = u(e.a); if (t) t.row = e.row; }
     else if (e.t === 'cover') {
       const t = u(e.a), w = u(e.v);
       if (t && !t.status.includes('Guarded')) t.status.push('Guarded');
@@ -799,7 +809,14 @@ export function Arena() {
   const party = units.filter((u) => u.side === 'p');
   const foes = units.filter((u) => u.side === 'e');
   const hero = party.find((u) => u.uid === 'hero');
-  const aiming = phase === 'turn' && turn ? turn.foes : [];
+  // The foes the picked action reaches: a melee hit, the front while anyone stands in it; a throw, any.
+  const aiming = phase === 'turn' && turn ? (turn.reach[picked] ?? turn.foes) : [];
+  // A foe the picked action cannot reach is no aim: the nearest to falling it can reach is.
+  useEffect(() => {
+    if (phase !== 'turn' || !turn || !aiming.length || (aim && aiming.includes(aim))) return;
+    const live = foes.filter((f) => aiming.includes(f.uid));
+    setAim(live.reduce((a, b) => (b.hp < a.hp ? b : a), live[0])?.uid ?? null);
+  }, [phase, turn, picked]);
   // Foresight: every foe's damage and chance to hit shown, on its card and on Guard and Cover.
   const sight = skilltree.foresees(s);
   // The throwable the run readied as it walked in; a run opened before that throws the first kind it holds.
@@ -858,21 +875,42 @@ export function Arena() {
         </div>
       ) : (
         <>
-          <div class="arena__field">
-            <div class="arena__side">
-              {party.map((u) => {
-                // With Cover picked, an ally standing is tapped to choose it.
-                const can = phase === 'turn' && picked === COVER && !!turn?.allies.includes(u.uid);
-                // Who is coming for it: on the hunter's turn, each foe by its place in the order, the number on its card.
-                const at = foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid);
-                const orders = phase === 'turn' && turn ? at.map((f) => turn.threats.find((x) => x.uid === f.uid)?.order).filter((n): n is number => !!n).sort((x, y) => x - y) : null;
-                return <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={orders && orders.length === at.length ? orders : at.length}
-                  aimed={can && ward === u.uid} onPick={can ? () => { sfx.tap(); setWard(u.uid); } : undefined} pick="cover" tell={tell} />;
+          {/* The field in ranks, after AFK Journey's upright field and Wizardry Variants Daphne's plates: the foes above,
+              their rear at the top and their front at the line; the party below, its front at the line and its rear at
+              the foot. A rank no one stands in is not drawn. */}
+          <div class="arena__field is-ranked">
+            <div class="arena__band arena__band--foes" aria-label="Foes">
+              {ROWS.slice().reverse().map((r) => {
+                const here = foes.filter((u) => (u.row ?? 'front') === r);
+                return here.length ? (
+                  <RankRow key={r} row={r} side="e">
+                    {here.map((u) => (
+                      <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
+                        far={phase === 'turn' && u.hp > 0 && !!turn && turn.foes.includes(u.uid) && !aiming.includes(u.uid)}
+                        intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />
+                    ))}
+                  </RankRow>
+                ) : null;
               })}
             </div>
-            <div class="arena__side arena__side--foes">
-              {foes.map((u) => <UnitChip key={u.uid} u={u} aimed={phase === 'turn' && aim === u.uid} onPick={aiming.includes(u.uid) ? () => { sfx.tap(); setAim(u.uid); } : undefined}
-                intent={u.hp > 0 ? u.intent : undefined} self={foes} threat={phase === 'turn' ? turn?.threats.find((x) => x.uid === u.uid) : undefined} sight={sight} tell={tell} round={round} />)}
+            <div class="arena__line" aria-hidden="true"><i /></div>
+            <div class="arena__band arena__band--party" aria-label="Your party">
+              {ROWS.map((r) => {
+                const here = party.filter((u) => (u.row ?? 'front') === r);
+                return here.length ? (
+                  <RankRow key={r} row={r} side="p">
+                    {here.map((u) => {
+                      // With Cover picked, an ally standing is tapped to choose it.
+                      const can = phase === 'turn' && picked === COVER && !!turn?.allies.includes(u.uid);
+                      // Who is coming for it: on the hunter's turn, each foe by its place in the order, the number on its card.
+                      const at = foes.filter((f) => f.hp > 0 && f.intent?.at === u.uid);
+                      const orders = phase === 'turn' && turn ? at.map((f) => turn.threats.find((x) => x.uid === f.uid)?.order).filter((n): n is number => !!n).sort((x, y) => x - y) : null;
+                      return <UnitChip key={u.uid} u={u} acting={phase === 'turn' && u.uid === 'hero'} incoming={orders && orders.length === at.length ? orders : at.length}
+                        aimed={can && ward === u.uid} onPick={can ? () => { sfx.tap(); setWard(u.uid); } : undefined} pick="cover" tell={tell} />;
+                    })}
+                  </RankRow>
+                ) : null;
+              })}
             </div>
           </div>
           <ol class="arena__feed" aria-live="polite">
@@ -907,7 +945,7 @@ export function Arena() {
               give={(use) => give(
                 use === COVER ? { use, at: ward ?? undefined }
                   : use === 'Throw' && toss ? { use: throwOrder(toss), at: aim ?? undefined }
-                    : { use, at: use === 'Guard' || use === 'Potion' ? undefined : aim ?? undefined })} />
+                    : { use, at: use === 'Guard' || use === 'Potion' || use === MOVE ? undefined : aim ?? undefined })} />
           </div>
         )}
         {phase === 'decide' && room && (
@@ -1202,7 +1240,15 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
 export interface TipAt { title: string; lines: string[]; x: number; y: number; below: number }
 type Tell = (el: Element, title: string, lines: string[]) => void;
 
-/** The tip a tapped word opens: its name over its lines, under the word, kept on the screen. */
+/** A habit's or a status's mark beside a tip's name, as the word tapped wears it. */
+function tipMark(title: string) {
+  const habit = (Object.keys(TRICKS) as TrickId[]).find((k) => TRICKS[k].name === title);
+  if (habit) return <HabitMark id={habit} size={17} />;
+  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good' : ''}`}><StatusMark name={title} /></span>;
+  return null;
+}
+
+/** The tip a tapped word opens: its mark and name over its lines, under the word, kept on the screen. */
 function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
   const w = Math.min(260, window.innerWidth - 24);
   const left = Math.max(12, Math.min(window.innerWidth - w - 12, tip.x - w / 2));
@@ -1211,7 +1257,7 @@ function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
   return (
     <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
       <div class="tip" role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - tip.y + 6}px` : `top:${tip.below + 6}px`}`}>
-        <b class="tip__title">{tip.title}</b>
+        <b class="tip__title">{tipMark(tip.title)}{tip.title}</b>
         {tip.lines.map((l) => <p key={l}><Keyed text={l} /></p>)}
       </div>
     </div>
@@ -1273,8 +1319,20 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
   );
 }
 
-function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell, round = 0 }: {
+/** One rank of one side: its name at its edge, the side's colour, then its cards, as many to a line as fit. */
+function RankRow({ row, side, children }: { row: Row; side: 'p' | 'e'; children: preact.ComponentChildren }) {
+  return (
+    <div class={`rankrow is-${row} is-${side === 'e' ? 'foes' : 'party'}`}>
+      <span class="rankrow__label" aria-hidden="true"><b>{ROW_NAME[row]}</b><i /></span>
+      <div class="rankrow__units" role="group" aria-label={`${side === 'e' ? 'Foes' : 'Your party'}: ${ROW_NAME[row]}`}>{children}</div>
+    </div>
+  );
+}
+
+function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = 'aim', self, sight = false, tell, round = 0, far = false }: {
   u: UnitView; acting?: boolean; aimed?: boolean; onPick?: () => void;
+  /** A foe the action picked cannot reach: a melee hit while the front stands. */
+  far?: boolean;
   intent?: IntentView; threat?: Threat;
   /** The foes coming for it next: their places in the order on the hunter's turn, or how many otherwise. */
   incoming?: number[] | number;
@@ -1293,16 +1351,16 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
   const cond = u.side === 'e' ? u.cond : undefined;
   const want = cond ? CONDITION[cond] : null;
   const ready = !!want && (want.status ? u.status.includes(want.status) : want.rounds ? round > 0 && round <= want.rounds : false);
-  const cls = `unit unit--${u.tag ?? u.side} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''} ${onPick && pick === 'cover' ? 'is-coverpick' : ''}`;
+  const cls = `unit unit--${u.tag ?? u.side} is-${u.row ?? 'front'} ${u.hp <= 0 ? 'is-down' : pct < 45 ? 'is-hurt' : ''} ${acting ? 'is-acting' : ''} ${aimed ? 'is-aimed' : ''} ${onPick ? 'is-pickable' : ''} ${onPick && pick === 'cover' ? 'is-coverpick' : ''} ${far ? 'is-far' : ''}`;
   // A wind-up or a channel turns its HP bar into the break: blue, a section to each hit it can still take.
   const brk = intent && intent.wind && !intent.broken && intent.max ? { left: intent.pips ?? 0, max: intent.max } : null;
   const who = u.tag === 'hero' ? 'you' : u.name;
   const coming = Array.isArray(incoming) ? incoming : [];
   const count = Array.isArray(incoming) ? incoming.length : incoming ?? 0;
-  // Its mark at the card's left: a creature's family, the hunter's grade, a Shadow's or a hunter's sign.
+  // Its mark at the card's left: a creature's portrait (a boss's crowned), the hunter's grade, a Shadow's or a hunter's sign.
   const foe = u.side === 'e' && u.ref ? enemyById(u.ref) : undefined;
   const mark = u.side === 'e'
-    ? (foe ? <FamilyGlyph family={foe.family} size={18} /> : <Glyph name="skull" />)
+    ? (foe ? <>{u.boss && <Glyph name="crown" class="unit__crown" />}<Portrait id={foe.id} size={24} tone="red" /></> : <Glyph name="skull" />)
     : u.tag === 'hero' ? <Sigil rank={licensedRank(store.get())} size={20} />
       : u.tag === 'shadow' ? <Glyph name="shadows" /> : <Glyph name="profile" />;
   const inner = (
@@ -1310,11 +1368,18 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
       <span class={`unit__mark ${u.boss ? 'is-boss' : ''}`} aria-hidden="true">{mark}</span>
       <div class="row between">
         <b class="unit__name">{u.name}</b>
+        {far && <small class="unit__far">Out of reach</small>}
         <span class="num unit__hp">
           {count > 0 && u.hp > 0 && (
             <span class="unit__incoming" role="img" aria-label={coming.length ? `Coming for ${who} next: the foes ${coming.join(' and ')} in the order` : `${count} ${count === 1 ? 'foe is' : 'foes are'} coming for ${who} next`}>
               ◀{coming.length ? coming.map((n) => <b key={n} class="num">{n}</b>) : <b class="num">{count}</b>}
             </span>
+          )}
+          {/* Its special drop, beside its HP and apart from its habits: the part's glyph, gold while the condition holds. */}
+          {cond && u.ref && u.hp > 0 && (
+            <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
+              <Glyph name={dropGlyph(u.ref, !!u.boss)} />
+            </Told>
           )}
           {Math.max(0, u.hp)}
         </span>
@@ -1324,21 +1389,24 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           {Array.from({ length: brk.max }, (_, i) => <i key={i} class={i < brk.left ? 'is-on' : ''} />)}
         </div>
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
-      {((u.tricks && u.tricks.length > 0) || cond) && (
+      {/* Its habits, each its mark and its name. */}
+      {u.tricks && u.tricks.length > 0 && (
         <div class="unit__tricks">
-          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
-          {cond && u.ref && u.hp > 0 && (
-            <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
-              <Glyph name={dropGlyph(u.ref, !!u.boss)} />
+          {u.tricks.map((k) => (
+            <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>
+              <HabitMark id={k} size={13} /><span class="trick__name">{TRICKS[k].name}</span>
             </Told>
-          )}
+          ))}
         </div>
       )}
+      {/* What holds it, each its mark and its name in its tag: red what harms, green what serves the party, orange what serves a foe. */}
       {u.status.length > 0 && (
         <div class="unit__status">
           {u.status.map((st) => (
             <Told key={st} tell={tell} title={st} lines={[STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it comes at you, guarded, until your next turn.' : '')].filter(Boolean)}
-              class={`tag ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>{st}</Told>
+              class={`tag tag--${st.toLowerCase()} ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>
+              <span class="tag__mark"><StatusMark name={st} /></span>{st}
+            </Told>
           ))}
         </div>
       )}
@@ -1627,7 +1695,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               return (
                 <SysAlert key={`${l.enemyId}-${i}`} kind="shadow" fyi={done} delay={400 + i * 200} class={out ? `is-${out}` : ''}
                   label={done ? undefined : `The mana of ${e.name} ${out ? 'still lingers' : 'lingers'}. Open the extraction.`}
-                  icon={sh ? <ShadowEmblem family={e.family} rank={0} size={36} /> : <FamilyGlyph family={e.family} size={30} />}
+                  icon={sh ? <ShadowEmblem family={e.family} id={e.id} rank={0} size={36} /> : <Portrait id={e.id} size={32} tone="shadow" />}
                   onTap={done ? undefined : () => openExtraction(i)}
                   aside={out === 'bound' ? <span class="grant">ARISE</span> : out === 'lost' ? <span class="warn">Failed</span>
                     : l.essence ? <span class="sp-essence"><EssenceMark /><span class="grant num">+{l.essence}</span></span> : null}>

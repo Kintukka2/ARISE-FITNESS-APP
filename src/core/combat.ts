@@ -16,6 +16,7 @@ import { boonById, boonValue, GRUDGE_MAX } from '@/data/blessings';
 import { EDGE, TREE_PASSIVES, TREE_SKILLS } from '@/data/tree';
 import { ENGRAVE, ENGRAVE_PASSIVES, engravingById, engraveStyle, type EngravingId } from '@/data/engravings';
 import { at as byGrade, TRICK, TRICKS, type TrickId } from '@/data/tricks';
+import { MOVE, REAR_MELEE, type Row } from '@/data/ranks';
 import type { Ability, Attrs, Order, Tactic } from './types';
 import { clamp, type Rand } from './util';
 
@@ -113,6 +114,23 @@ export const REACH_TEXT: Record<string, string> = {
 };
 
 const STRIKE: Ability = { name: 'Strike', type: 'physical', profile: 'single', mult: 1, cd: 0, inflicts: [] };
+
+/** A melee hit: physical, at one or two, from a unit whose hits are not shots. */
+export const melee = (u: Pick<Unit, 'ranged'>, a: Pick<Ability, 'type' | 'profile'>) => a.type === 'physical' && (a.profile === 'single' || a.profile === 'cleave') && !u.ranged;
+
+/**
+ * The foes an ability of `u`'s can reach: a melee hit only the front while anyone stands in it, unless the unit
+ * reaches past it; anything else, every foe standing.
+ */
+export function reachable(u: Pick<Unit, 'ranged' | 'reaching'>, a: Pick<Ability, 'type' | 'profile'>, foes: Unit[]): Unit[] {
+  const live = foes.filter((f) => f.alive());
+  if (!melee(u, a) || u.reaching) return live;
+  const front = live.filter((f) => f.row === 'front');
+  return front.length ? front : live;
+}
+
+/** Whether `t` can be reached by `u`'s ability, as the side stands now. */
+export const reaches = (u: Unit, a: Ability, t: Unit, foes: Unit[]) => reachable(u, a, foes).includes(t);
 export { STRIKE };
 /** What a guarding unit takes of every hit. */
 export const GUARD = 0.5;
@@ -173,6 +191,13 @@ export interface UnitSpec {
   grade?: string;
   /** The hunter's blessings for the run (`data/blessings.ts`), by id, at their tiers 1 to 3. */
   boons?: Record<string, number>;
+  /**
+   * Where it stands (`data/ranks.ts`): its side's front or rear; unset, the front. `ranged`: its physical hits are
+   * shots, reaching either and losing nothing from the rear. `reaching`: its melee reaches past the front.
+   */
+  row?: Row;
+  ranged?: boolean;
+  reaching?: boolean;
 }
 
 /** A foe's next action as shown: an ability and the unit it goes at first, or one of its behaviours. */
@@ -225,10 +250,13 @@ export class Unit {
   against?: Unit;
   /** What blessings have gathered this fight: a Bloodrush waiting, Grudge's hits taken, Thousand Cuts' hits landed, Killing Gaze's quarry, Iron Skin spent this round. */
   rush = false; grudge = 0; cuts = 0; gaze?: string; ironUsed = false;
+  /** Where it stands this fight, and how its hits reach (`UnitSpec.row`). */
+  row: Row; ranged: boolean; reaching: boolean;
 
   constructor(sp: UnitSpec) {
     this.uid = sp.uid; this.name = sp.name; this.side = sp.side; this.base = sp.base;
     this.tag = sp.tag; this.ref = sp.ref;
+    this.row = sp.row ?? 'front'; this.ranged = !!sp.ranged; this.reaching = !!sp.reaching;
     this.tricks = new Set(sp.tricks ?? []);
     this.boons = sp.boons && Object.keys(sp.boons).length ? sp.boons : NONE;
     this.grade = sp.grade ?? 'E';
@@ -301,6 +329,8 @@ export type Ev =
   /** A creature felled the way its condition asks: it leaves more (`data/drops.ts`). */
   | { t: 'drop'; v: string }
   | { t: 'guard'; a: string }
+  /** The hunter stepped to the other rank: where they stand now. */
+  | { t: 'move'; a: string; row: Row }
   /** Cover: `a` covers `v`; `n` counts the foes it turned. */
   | { t: 'cover'; a: string; v: string; n: number }
   /** A throw from the bag: what, and on whom. What it inflicts follows as `status` events. */
@@ -340,6 +370,8 @@ function blow(u: Unit, t: Unit, a: Ability, swing: number, crit: boolean, guarde
   if (t.does('hardened') && !t.hardUsed) dmg *= TRICK.hardened.taken;
   if (t.shieldOf?.alive()) dmg *= TRICK.shield.taken;
   if (guarded) dmg *= GUARD * (1 - t.bv('aegis'));
+  // A melee hit struck from the rear lands at half.
+  if (!plain && u.row === 'rear' && melee(u, a)) dmg *= REAR_MELEE;
   return Math.round(dmg);
 }
 
@@ -436,9 +468,15 @@ function choose(u: Unit, r: Rand, ahead = 0): Ability {
   return r() < 0.6 ? heavy : ready[Math.floor(r() * ready.length)];
 }
 
-/** Who an ability lands on. A `first` target is always among them; the rest are drawn at random. */
-function targets(a: Ability, foes: Unit[], r: Rand, first?: Unit): Unit[] {
-  const live = foes.filter((f) => f.alive());
+/**
+ * Who an ability lands on: among those `u` can reach (`reachable`), every foe standing with no `u`. A `first` target
+ * is always among them while it can be reached, or, `kept`, whatever stands where it is: a foe's shown intent lands
+ * where it showed. The rest are drawn at random.
+ */
+function targets(a: Ability, foes: Unit[], r: Rand, first?: Unit, u?: Unit, kept = false): Unit[] {
+  let live = u ? reachable(u, a, foes) : foes.filter((f) => f.alive());
+  if (first && kept && first.alive() && !live.includes(first)) live = [first, ...live];
+  else if (first && !live.includes(first)) first = undefined;
   const n = REACH[a.profile] ?? 1;
   // Reaching everyone still means the one aimed at is hit first.
   if (n >= live.length) return first && live.includes(first) ? [first, ...live.filter((x) => x !== first)] : live;
@@ -468,7 +506,9 @@ function foresee(u: Unit, enemy: Unit[], r: Rand, log: Ev[], ahead: number) {
   const live = enemy.filter((x) => x.alive());
   if (u.wind) {
     const t = through(live.find((x) => x.uid === u.wind!.at));
-    if (u.wind.at && !t) u.wind.at = live[Math.floor(r() * live.length)]?.uid;
+    // Its first target down, it turns on another it can reach.
+    const can = reachable(u, u.ab(u.wind.ab) ?? STRIKE, live);
+    if (u.wind.at && !t) u.wind.at = can[Math.floor(r() * can.length)]?.uid;
     else if (t) u.wind.at = t.uid;
     return show({ ab: u.wind.ab, at: u.wind.at, mult: u.wind.mult, wind: u.wind.left, pips: u.wind.pips, max: u.wind.max });
   }
@@ -486,9 +526,11 @@ function foresee(u: Unit, enemy: Unit[], r: Rand, log: Ev[], ahead: number) {
     if (r() < TRICK.mark.chance) return show({ ab: 'Mark', kind: 'mark', at: through(live[Math.floor(r() * live.length)])!.uid });
   }
   const a = choose(u, r, ahead);
-  const aimed = a.profile !== 'support' && a.profile !== 'all' && live.length > 0;
+  // It goes only at what the ability reaches: a melee hit, the front while anyone stands in it.
+  const can = reachable(u, a, live);
+  const aimed = a.profile !== 'support' && a.profile !== 'all' && can.length > 0;
   // Picking off goes for the one with the least HP; everyone else draws a target.
-  let t = !aimed ? undefined : u.does('pickoff') ? live.reduce((x, y) => (y.hp < x.hp ? y : x)) : live[Math.floor(r() * live.length)];
+  let t = !aimed ? undefined : u.does('pickoff') ? can.reduce((x, y) => (y.hp < x.hp ? y : x)) : can[Math.floor(r() * can.length)];
   t = through(t);
   const heavy = heaviest(u);
   if (u.does('windup') && heavy && a.name === heavy.name && r() < TRICK.windup.chance) {
@@ -536,7 +578,8 @@ const threat = (f: Unit) => Math.max(f.atk(false), f.atk(true));
  */
 function aim(u: Unit, a: Ability, foes: Unit[], tactic: Tactic, hero?: Unit): Unit | undefined {
   if (u.side !== 'p' || u.tag === 'ally') return undefined;
-  const live = foes.filter((f) => f.alive());
+  // Only what the ability can reach: a melee hit, the front while anyone stands in it.
+  const live = reachable(u, a, foes);
   if (!live.length) return undefined;
   // Whatever the orders, a foe winding up or channelling comes first: the one nearest to breaking.
   const winding = live.filter((f) => f.wind);
@@ -749,6 +792,12 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     log.push({ t: 'charge', a: u.uid, ab: u.wind.ab, left: u.wind.left });
     return;
   }
+  if (o?.use === MOVE) {
+    // The hunter steps to the other rank: the turn is spent on it.
+    u.row = u.row === 'front' ? 'rear' : 'front';
+    log.push({ t: 'move', a: u.uid, row: u.row });
+    return;
+  }
   if (o?.use === 'Guard') {
     u.status.Guarded = STATUS.Guarded.turns;
     log.push({ t: 'guard', a: u.uid });
@@ -847,10 +896,12 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   const meant = u.intent?.ab === a.name ? u.intent.at : undefined;
   const at = o?.at ?? meant;
   const first = at ? foes.find((f) => f.uid === at && f.alive()) : aim(u, a, foes, ctx.tactic, ctx.hero);
+  // A foe's shown intent lands where it showed, wherever that stands now; an order or a pick, only where it reaches.
+  const kept = !o?.at && !!meant && at === meant;
   if (a.mult === 0) {
     // A curse: no damage and no roll; what it inflicts lands on every target unless it is immune.
     log.push({ t: 'cast', a: u.uid, ab: a.name, k: 'curse' });
-    for (const t of targets(a, foes, r, first)) {
+    for (const t of targets(a, foes, r, first, u, kept)) {
       for (const st of a.inflicts) {
         if (!STATUS[st] || t.imm.includes(st)) continue;
         t.status[st] = STATUS[st].turns + longer(u, st);
@@ -867,7 +918,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   let quick = false;
   // Twin Fangs strikes twice: the same targets again, each hit lighter.
   const { a: one, times } = struck(u, a);
-  const aimedAt = targets(a, foes, r, first);
+  const aimedAt = targets(a, foes, r, first, u, kept);
   let landed: Unit | undefined;
   let last = 0;
   for (let k = 0; k < times; k++) for (const t of aimedAt) {
@@ -1139,6 +1190,9 @@ export interface Turn {
   threats: Threat[];
   /** One hit of each action that does damage, by its name, on each foe left, by uid. */
   aims: Record<string, Record<string, Reckoning>>;
+  /** Where the hunter stands, and the foes each of their actions can reach, by its name. */
+  row: Row;
+  reach: Record<string, string[]>;
 }
 
 export interface BattleOpts {
@@ -1236,7 +1290,9 @@ function turnOf(u: Unit, foes: Unit[], own: Unit[], potions: number, after: Unit
     }
   }
   const allies = own.filter((x) => x !== u && x.alive()).map((x) => x.uid);
-  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, throws: { ...throws }, allies, threats, aims };
+  const reach: Turn['reach'] = {};
+  for (const a of [STRIKE, ...skills.map((k) => k.ability)]) reach[a.name] = reachable(u, a, live).map((f) => f.uid);
+  return { uid: u.uid, skills, foes: live.map((f) => f.uid), potions, throws: { ...throws }, allies, threats, aims, row: u.row, reach };
 }
 
 const KILL_RANK = { sure: 2, maybe: 1 } as const;
