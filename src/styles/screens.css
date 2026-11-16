@@ -250,13 +250,13 @@
 .unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 0 5px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
 .unit__incoming b { color: var(--ink); font-size: 0.62rem; }
 /* A word on a card that tells what it is when tapped. */
-/* A foe's special drop: a diamond beside its HP, the part's glyph in it, apart from its habits; dim gold until the
-   condition holds, then gold and swelling, as a loot marker lights when it is there to take. */
+/* A foe's special drop: the part's glyph alone beside its HP, apart from its habits, with no frame; dim gold until the
+   condition holds, then gold, glowing and swelling, as a loot marker lights when it is there to take. */
 .unit__hp { display: inline-flex; align-items: center; }
-.dropmark, button.dropmark.is-told { display: inline-grid; flex: none; place-items: center; width: 14px; height: 14px; margin: 0 8px 0 4px; border: 1px solid rgba(255, 210, 122, 0.45); background: linear-gradient(135deg, #1d1708, #0a0c14); color: #b9a273; transform: rotate(45deg); }
-.dropmark .ico { width: 10px; height: 10px; transform: rotate(-45deg); }
-.dropmark.is-ready, button.dropmark.is-ready.is-told { border-color: var(--gold); background: #2a1e06; color: var(--gold); box-shadow: 0 0 9px var(--gold-glow); animation: dropReady 1.4s ease-in-out infinite; }
-@keyframes dropReady { 50% { transform: rotate(45deg) scale(1.18); } }
+.dropmark, button.dropmark.is-told { display: inline-grid; flex: none; place-items: center; margin: 0 7px 0 4px; color: #a8936a; }
+.dropmark .ico { width: 13px; height: 13px; }
+.dropmark.is-ready, button.dropmark.is-ready.is-told { color: var(--gold); filter: drop-shadow(0 0 5px var(--gold-glow)); animation: dropReady 1.4s ease-in-out infinite; }
+@keyframes dropReady { 50% { transform: scale(1.2); } }
 @media (prefers-reduced-motion: reduce) { .dropmark.is-ready { animation: none; } }
 button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }
 button.is-told:not(.tag) { background: none; }
@@ -356,29 +356,17 @@ button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration
 .trick { display: inline-flex; align-items: center; gap: 4px; min-width: 0; color: #d9a9b2; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
 .trick--windup, .trick--channel { color: #a9c2ff; }
 
-/* The marks (ui/effects.tsx). A habit's plate: a hexagon, its rim in the creature's red, a dark ground, the mark in rose;
-   a habit that breaks (Charged Strike, Incantation) in blue, as its break bar is. A habit is the creature's for good, so
-   its frame is the one shape no status takes. */
-.fxplate { position: relative; display: inline-grid; flex: none; place-items: center; width: var(--fx); height: calc(var(--fx) * 1.12); color: #ffc9d2; }
-.fxplate::before, .fxplate::after { content: ''; position: absolute; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
-.fxplate::before { inset: 0; background: linear-gradient(160deg, #ff6d86, #8c1c33); }
-.fxplate::after { inset: 1px; background: radial-gradient(circle at 50% 35%, #3a0d18, #13060b 75%); }
-.fxplate .fxmark { position: relative; z-index: 1; filter: drop-shadow(0 0 3px rgba(255, 77, 109, 0.55)); }
-.fxplate--windup, .fxplate--channel { color: #cfe0ff; }
-.fxplate--windup::before, .fxplate--channel::before { background: linear-gradient(160deg, #9dbcff, #2c4a9c); }
-.fxplate--windup::after, .fxplate--channel::after { background: radial-gradient(circle at 50% 35%, #142650, #070d1e 75%); }
-.fxplate--windup .fxmark, .fxplate--channel .fxmark { filter: drop-shadow(0 0 3px rgba(127, 168, 255, 0.6)); }
+/* The marks (ui/effects.tsx), with no frame: the glyph alone. A habit's in rose with a soft glow of the creature's red;
+   a habit that breaks (Charged Strike, Incantation) in blue, as its break bar is. */
+.fxhabit { display: inline-grid; flex: none; place-items: center; width: var(--fx); height: var(--fx); color: #ff9fb0; }
+.fxhabit .fxmark { width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(255, 77, 109, 0.45)); }
+.fxhabit--windup, .fxhabit--channel { color: #a9c2ff; }
+.fxhabit--windup .fxmark, .fxhabit--channel .fxmark { filter: drop-shadow(0 0 3px rgba(127, 168, 255, 0.5)); }
 .fxmark { display: block; fill: currentColor; }
-/* A status's tile: a square in its chip's colour, the mark inside, at the chip's head. */
+/* A status's mark at its tag's head, the glyph alone in the tag's colour, with no tile of its own. */
 .tag { display: inline-flex; align-items: center; gap: 3px; }
-.tag__mark { display: inline-grid; flex: none; place-items: center; width: 13px; height: 13px; margin-left: -3px; border-radius: 2px; background: color-mix(in srgb, currentColor 24%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 50%, transparent); }
-.tag__mark .fxmark { width: 10px; height: 10px; }
-/* Its sign at the tile's corner, as Honkai: Star Rail marks its effects, so it never rests on colour alone: a point up for
-   what serves the one it holds, down for what harms it. */
-.tag__mark { position: relative; }
-.tag__mark.is-up::after, .tag__mark.is-down::after { content: ''; position: absolute; right: -2px; width: 0; height: 0; border-left: 3px solid transparent; border-right: 3px solid transparent; }
-.tag__mark.is-up::after { top: -2px; border-bottom: 4px solid currentColor; }
-.tag__mark.is-down::after { bottom: -2px; border-top: 4px solid currentColor; }
+.tag__mark { display: inline-grid; flex: none; place-items: center; width: 11px; height: 11px; }
+.tag__mark .fxmark { width: 11px; height: 11px; }
 /* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
    with the hits left, a diamond to each, the ones taken hollow. */
 .unit__intent.is-wind:not(.is-lethal) { border-color: rgba(127, 168, 255, 0.5); }
@@ -1612,10 +1600,10 @@ button.dmap__floor { cursor: pointer; }
 /* A habit: its name over one paragraph, in the creature's own numbers. */
 .bhabit { margin: 0; font-size: 0.74rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
 .bhabit__name { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; font-size: 0.8rem; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
-.bhabit__name .fxplate { text-shadow: none; }
+.bhabit__name .fxhabit { text-shadow: none; }
 /* A status named on the creature card: its mark in a tile, then its name, as on a fight's card. */
 .bstatus { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; white-space: nowrap; }
-.bstatus .tag__mark { margin-left: 0; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.bstatus .tag__mark { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
 .bhabit + .bhabit { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
@@ -4397,6 +4385,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 
 /* A tip on a habit or a status: its mark beside its name, as the word tapped wears it. */
 .tip__title { display: flex; align-items: center; gap: 7px; }
-.tip__status { width: 17px; height: 17px; margin-left: 0; color: var(--blood); }
+.tip__status { width: 16px; height: 16px; color: var(--blood); }
 .tip__status.is-good { color: var(--verdant); }
-.tip__status .fxmark { width: 12px; height: 12px; }
+.tip__status .fxmark { width: 16px; height: 16px; }

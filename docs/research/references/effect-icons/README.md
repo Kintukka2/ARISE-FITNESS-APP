@@ -90,21 +90,21 @@ Built in `src/ui/effects.tsx` and the creature's card in `src/screens/Arena.tsx`
 - **A mark to every effect, one silhouette each**, as Darkest Dungeon's and Raid's: a drop for Bleeding, a flame for
   Burning, roots for Rooted, stars about a ring for Stunned, a broken sword for Weakened. Filled, on the 24 grid, so it
   reads at fourteen pixels.
-- **Two frames for two kinds**, as Monster Train 2 puts a unit's own ability in a disc and its statuses in squares, and
-  Epic Seven sets a boss's abilities apart from the tiles under its bar: a habit, the creature's for good, in a
-  hexagonal plate rimmed in the creature's red; a status, laid on for a time, in a square tile. Slay the Spire draws the
-  two alike, and only its tip tells them apart; ARISE does not.
+- **No frame round a mark** (the owner's call, after a first build that set a habit in a hexagonal plate and a status in
+  a square tile, as Monster Train 2 puts a unit's own ability in a disc and its statuses in squares): a frame set the
+  marks oddly on the card, and a tile inside a tag doubled its ground. A mark stands alone, as Slay the Spire's and
+  Darkest Dungeon's do: a habit's bare beside its name in the creature's rose, a status's at its tag's head in the tag's
+  colour. The tag is what tells a status from a habit.
 - **A habit and the status it lays share one mark**: Enrage and Enraged, Bodyguard and Shielded, War Cry and
-  Emboldened. The plate says the creature will; the tile, that it has.
-- **The sign at the tile's corner**, as Honkai: Star Rail marks its effects with an arrow, so it never rests on colour
-  alone: a point up for what serves the one it holds, down for what harms it. The tile keeps its tag's colour: red what
-  harms, green what serves the party, orange what serves a creature.
+  Emboldened. Beside the habit's name the mark says the creature will; in a tag, that it has.
+- **The sign by the tag's colour**: red what harms, green what serves the party, orange what serves a creature. A point
+  at a tile's corner, as Honkai: Star Rail marks its effects, went with the tile.
 - **The name stays beside the mark** on the card: a fight shows two to four habits and statuses, and Wildfrost's and
   Darkest Dungeon II's panels name each mark beside it.
-- **The tip leads with the mark**, as Monster Train 2's tooltip leads with the icon on its header: a habit's plate or a
-  status's tile beside its name.
+- **The tip leads with the mark**, as Monster Train 2's tooltip leads with the icon on its header: a habit's or a
+  status's mark beside its name.
 - **The creature card names its resistances by their marks**, as Darkest Dungeon II's creature panel and the first
   game's hero sheet list theirs.
-- **Not taken**: a figure for the turns left on each tile (Summoners War's, Star Rail's). A fight's card does not yet
+- **Not taken**: a figure for the turns left on each status (Summoners War's, Star Rail's). A fight's card does not yet
   know how many turns a status has left; the tip tells what it does. Raid's solid blue and red tiles were not taken
   either: blue is the System's and the defence's in ARISE.

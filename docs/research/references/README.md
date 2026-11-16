@@ -14,7 +14,7 @@ one folder up say what the games do; these show it.
 | [7. Something for Ember to buy](step-7-ember-tempering/) | Tempering at perfect: a property chosen, its size rolled in its range, Current against New, the better marked | 23 |
 | [8. Challenges graded against a par](step-8-par/) | Par: a clear's rounds against the par of the fights it won, Bronze, Silver or Gold, each paid once | 16 |
 | [9. Ranks, revisited](step-9-ranks/) | Front and rear: melee reaches only the front while anyone stands in it; the rear's melee at half. Then packs of two to four creatures, the field stacked in its lines, the party as a formation | 30 |
-| [Effect icons](effect-icons/) (not a step) | A mark to every habit and status: a habit in a hexagonal plate, a status in a square tile with its sign at the corner, the special drop in a diamond by the HP | 16 |
+| [Effect icons](effect-icons/) (not a step) | A mark to every habit and status, drawn alone with no frame: a habit's beside its name, a status's in its tag, the special drop's by the HP | 16 |
 
 Every image belongs to the game's publisher, or to the wiki, site or player who captured it, as listed beside it. They are kept here as design reference only: nothing in ARISE copies their art, and none of them ships with the game.
 

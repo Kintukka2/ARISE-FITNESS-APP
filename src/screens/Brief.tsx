@@ -543,7 +543,7 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   );
 }
 
-/** Statuses named in a line, each with its mark in its tile, as a fight's card shows them. */
+/** Statuses named in a line, each with its mark, as a fight's card shows them. */
 function StatusList({ names }: { names: string[] }) {
   return <>{names.map((x, i) => <span key={x} class="bstatus"><span class="tag__mark"><StatusMark name={x} /></span>{x}{i < names.length - 1 ? ',' : ''}</span>)}</>;
 }
@@ -855,7 +855,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name"><HabitMark id={h} size={20} />{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
+          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name"><HabitMark id={h} size={17} />{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (

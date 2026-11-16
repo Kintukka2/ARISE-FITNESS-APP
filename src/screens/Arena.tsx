@@ -1239,11 +1239,11 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
 export interface TipAt { title: string; lines: string[]; x: number; y: number; below: number }
 type Tell = (el: Element, title: string, lines: string[]) => void;
 
-/** A habit's plate or a status's tile beside a tip's name, as the word tapped wears it. */
+/** A habit's or a status's mark beside a tip's name, as the word tapped wears it. */
 function tipMark(title: string) {
   const habit = (Object.keys(TRICKS) as TrickId[]).find((k) => TRICKS[k].name === title);
-  if (habit) return <HabitMark id={habit} size={18} />;
-  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good is-up' : 'is-down'}`}><StatusMark name={title} /></span>;
+  if (habit) return <HabitMark id={habit} size={17} />;
+  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good' : ''}`}><StatusMark name={title} /></span>;
   return null;
 }
 
@@ -1374,7 +1374,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
               ◀{coming.length ? coming.map((n) => <b key={n} class="num">{n}</b>) : <b class="num">{count}</b>}
             </span>
           )}
-          {/* Its special drop, beside its HP and apart from its habits: the part's glyph in a diamond, gold while the condition holds. */}
+          {/* Its special drop, beside its HP and apart from its habits: the part's glyph, gold while the condition holds. */}
           {cond && u.ref && u.hp > 0 && (
             <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
               <Glyph name={dropGlyph(u.ref, !!u.boss)} />
@@ -1388,23 +1388,23 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           {Array.from({ length: brk.max }, (_, i) => <i key={i} class={i < brk.left ? 'is-on' : ''} />)}
         </div>
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
-      {/* Its habits, each its mark in a plate and its name. */}
+      {/* Its habits, each its mark and its name. */}
       {u.tricks && u.tricks.length > 0 && (
         <div class="unit__tricks">
           {u.tricks.map((k) => (
             <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>
-              <HabitMark id={k} size={15} /><span class="trick__name">{TRICKS[k].name}</span>
+              <HabitMark id={k} size={13} /><span class="trick__name">{TRICKS[k].name}</span>
             </Told>
           ))}
         </div>
       )}
-      {/* What holds it, each its mark in a tile and its name: red what harms, green what serves the party, orange what serves a foe. */}
+      {/* What holds it, each its mark and its name in its tag: red what harms, green what serves the party, orange what serves a foe. */}
       {u.status.length > 0 && (
         <div class="unit__status">
           {u.status.map((st) => (
             <Told key={st} tell={tell} title={st} lines={[STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it comes at you, guarded, until your next turn.' : '')].filter(Boolean)}
               class={`tag tag--${st.toLowerCase()} ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>
-              <span class={`tag__mark ${STATUS[st]?.good || st === 'Covered' ? 'is-up' : 'is-down'}`}><StatusMark name={st} /></span>{st}
+              <span class="tag__mark"><StatusMark name={st} /></span>{st}
             </Told>
           ))}
         </div>

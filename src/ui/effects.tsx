@@ -3,8 +3,9 @@
  * statuses (`STATUS` in `core/combat.ts`), each laid on for a time. Drawn for ARISE on the 24-unit grid, filled,
  * each mark a list of parts, each part filled even-odd so a hole is a shape drawn inside it. They follow the reference
  * games' status icons (docs/research/references/effect-icons/): one silhouette to an effect, read at a glance at
- * fourteen pixels, set in a frame that tells its kind. A habit sits in a hexagonal plate, a status in a square tile;
- * the colour says whom it serves (docs/VOICE.md, "Colour and emphasis").
+ * fourteen pixels, drawn alone with no frame (the owner's call: a frame round it set it oddly on the card). A habit's
+ * mark leads its name in the creature's rose; a status's leads its tag in the tag's colour, which says whom it serves
+ * (docs/VOICE.md, "Colour and emphasis").
  */
 import type { TrickId } from '@/data/tricks';
 import { glyphPath } from './icons';
@@ -214,7 +215,7 @@ export const STATUS_MARK: Record<string, string[]> = {
   ],
   /**
    * War Cry's horn: the pack it rallied. A habit and the status it lays wear one mark, as the reference games share a
-   * glyph between a creature's ability and its effect: the plate says it will, the tile that it has.
+   * glyph between a creature's ability and its effect: beside the habit's name it says it will, in a tag that it has.
    */
   Emboldened: HABIT_MARK.rally,
   /** Enrage's vein: the habit, come to pass. */
@@ -239,12 +240,12 @@ export function Mark({ parts, size = 14, class: cls }: { parts: string[]; size?:
   );
 }
 
-/** A habit's mark in its hexagonal plate. */
+/** A habit's mark, the glyph alone in the habit's colour. */
 export function HabitMark({ id, size = 15 }: { id: TrickId; size?: number }) {
-  return <span class={`fxplate fxplate--${id}`} style={`--fx: ${size}px`}><Mark parts={HABIT_MARK[id]} size={Math.round(size * 0.66)} /></span>;
+  return <span class={`fxhabit fxhabit--${id}`} style={`--fx: ${size}px`}><Mark parts={HABIT_MARK[id]} size={size} /></span>;
 }
 
-/** A status's mark, for its tile. */
+/** A status's mark, at its tag's head in the tag's colour. */
 export function StatusMark({ name, size = 11 }: { name: string; size?: number }) {
   const parts = STATUS_MARK[name];
   return parts ? <Mark parts={parts} size={size} class="fxmark--status" /> : null;
