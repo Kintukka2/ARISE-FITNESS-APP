@@ -118,6 +118,6 @@ ARISE did not take, for now:
   sentence should give the status its box under it.
 - **Where a unit stands as a tile, not a sentence.** Teamfight Tactics' panel shows 'Back' over three hexes and '4 Hex'
   beside the ability, and its role's tip says only what the role does ('Casters gain 7 mana per attack.'); Darkest
-  Dungeon II shows a skill's ranks as pips beside 'Ranged'. A Shadow's card shows its rank nowhere else, so its role's
-  tip keeps it as its first sentence (`Stands in the Rear.`), told as the fight's tips are, and spends the second on
-  the aura.
+  Dungeon II shows a skill's ranks as pips beside 'Ranged'. ARISE took the role's tip saying only what the role does:
+  a Shadow's Formation tip is its aura alone, since where the Shadow stands decides nothing of it. It has not yet
+  taken the tile, so a Shadow's card does not show its rank.

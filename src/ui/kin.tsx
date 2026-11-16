@@ -9,7 +9,6 @@
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { bonusText, tipGain, tipNames, tipStats } from '@/core/gear';
-import { RANGED_ROLES, REACHING_ROLES, ROLE_ROW, ROW_NAME } from '@/data/ranks';
 import { enemyById } from '@/core/gates';
 import * as kin from '@/core/kin';
 import type { Shadow } from '@/core/types';
@@ -55,21 +54,19 @@ export function familyTip(family: string, tier: number): TipText {
   };
 }
 
-/** What a Shadow's role is, in the game's one tooltip: where it stands and how far its hits reach, then its Formation's aura. */
+/**
+ * What a Shadow's role gives the squad, in the game's one tooltip: its Formation's aura and nothing else, as
+ * Teamfight Tactics' role tip says only what the role does. Where the Shadow stands decides nothing here (the
+ * aura holds wherever it stands, and its role sets its rank), so the tooltip does not say it.
+ */
 export function roleTip(role: string): TipText {
-  const row = ROLE_ROW[role];
-  const where = row ? `Stands in the ${ROW_NAME[row]}` : '';
-  const reach = RANGED_ROLES.includes(role) ? ', and its shots reach either rank' : REACHING_ROLES.includes(role) ? ', and its melee reaches the Rear' : '';
   const aura = kin.FORMATION[role];
   return {
     title: role,
     kind: 'Formation',
     mark: <span class="tip__mark"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} /></span>,
     tone: 'shadow',
-    lines: [
-      ...(where ? [`${where}${reach}.`] : []),
-      ...(aura ? [`While ${an(role)} ${role} is deployed, you and every Shadow gain ${tipGain(aura)}.`] : []),
-    ],
+    lines: aura ? [`While ${an(role)} ${role} is deployed, you and every Shadow gain ${tipGain(aura)}.`] : [],
   };
 }
 

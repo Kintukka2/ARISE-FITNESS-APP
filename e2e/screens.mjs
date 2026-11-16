@@ -926,7 +926,9 @@ try {
   await page.locator('.tipshade').click({ position: { x: 10, y: 10 } }); await sleep(250);
   if (await page.locator('.tip.tip--shadow').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE TAG\'S TOOLTIP');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').nth(1).click(); await sleep(300);
-  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Stands in the' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHERE IT STANDS');
+  // A role's tooltip says what its Formation gives, and nothing that decides nothing: not where it stands.
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'you and every Shadow gain' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHAT ITS FORMATION GIVES');
+  if (await page.locator('.tip.tip--shadow', { hasText: 'Stands in the' }).count()) throw new Error('A ROLE\'S TOOLTIP STILL SAYS WHERE IT STANDS');
   if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Formation' }).count())) throw new Error('THE ROLE\'S TOOLTIP DOES NOT NAME ITS KIND');
   await snap('shadow-role-tip');
   await page.keyboard.press('Escape'); await sleep(250);
