@@ -1374,6 +1374,12 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
               ◀{coming.length ? coming.map((n) => <b key={n} class="num">{n}</b>) : <b class="num">{count}</b>}
             </span>
           )}
+          {/* Its special drop, beside its HP and apart from its habits: the part's glyph in a diamond, gold while the condition holds. */}
+          {cond && u.ref && u.hp > 0 && (
+            <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
+              <Glyph name={dropGlyph(u.ref, !!u.boss)} />
+            </Told>
+          )}
           {Math.max(0, u.hp)}
         </span>
       </div>
@@ -1382,12 +1388,6 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           {Array.from({ length: brk.max }, (_, i) => <i key={i} class={i < brk.left ? 'is-on' : ''} />)}
         </div>
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
-      {/* Its special drop, a tag hung on the card's corner, apart from its habits: the part's glyph, gold while the condition holds. */}
-      {cond && u.ref && u.hp > 0 && (
-        <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
-          <Glyph name={dropGlyph(u.ref, !!u.boss)} />
-        </Told>
-      )}
       {/* Its habits, each its mark in a plate and its name. */}
       {u.tricks && u.tricks.length > 0 && (
         <div class="unit__tricks">

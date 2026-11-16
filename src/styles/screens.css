@@ -250,12 +250,13 @@
 .unit__incoming { position: absolute; top: -8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 0 5px; border-radius: 3px; background: #2a0b12; box-shadow: inset 0 0 0 1px var(--blood); color: var(--blood); font-size: 0.62rem; font-weight: 800; line-height: 15px; }
 .unit__incoming b { color: var(--ink); font-size: 0.62rem; }
 /* A word on a card that tells what it is when tapped. */
-/* A foe's special drop: a diamond tag hung on the card's top edge at its right, the part's glyph in it; dim until the
+/* A foe's special drop: a diamond beside its HP, the part's glyph in it, apart from its habits; dim gold until the
    condition holds, then gold and swelling, as a loot marker lights when it is there to take. */
-.dropmark { position: absolute; top: -10px; right: 14px; z-index: 2; display: grid; place-items: center; width: 19px; height: 19px; border: 1px solid rgba(255, 210, 122, 0.5); background: linear-gradient(135deg, #1d1708, #0a0c14); box-shadow: 0 0 0 2px #070b16; color: #c9b27c; transform: rotate(45deg); }
-.dropmark .ico { width: 12px; height: 12px; transform: rotate(-45deg); }
-.dropmark.is-ready { border-color: var(--gold); background: #1f1606; color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); animation: dropReady 1.4s ease-in-out infinite; }
-@keyframes dropReady { 50% { transform: rotate(45deg) scale(1.16); } }
+.unit__hp { display: inline-flex; align-items: center; }
+.dropmark, button.dropmark.is-told { display: inline-grid; flex: none; place-items: center; width: 14px; height: 14px; margin: 0 8px 0 4px; border: 1px solid rgba(255, 210, 122, 0.45); background: linear-gradient(135deg, #1d1708, #0a0c14); color: #b9a273; transform: rotate(45deg); }
+.dropmark .ico { width: 10px; height: 10px; transform: rotate(-45deg); }
+.dropmark.is-ready, button.dropmark.is-ready.is-told { border-color: var(--gold); background: #2a1e06; color: var(--gold); box-shadow: 0 0 9px var(--gold-glow); animation: dropReady 1.4s ease-in-out infinite; }
+@keyframes dropReady { 50% { transform: rotate(45deg) scale(1.18); } }
 @media (prefers-reduced-motion: reduce) { .dropmark.is-ready { animation: none; } }
 button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inherit; text-align: left; cursor: help; }
 button.is-told:not(.tag) { background: none; }
