@@ -22,7 +22,7 @@ import { SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
-import { familyLines, KIN_TIER, KinHex, KinOfShadow, KinTracker, roleLines } from '@/ui/kin';
+import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, roleTip } from '@/ui/kin';
 import { InfoTag } from '@/ui/infotag';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
@@ -513,6 +513,9 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
   const squad = shadows.squad(s);
   const on = squad.includes(sh);
   const full = !on && squad.length >= shadows.slots(s);
+  // The breakpoint its family's Kin reaches in the squad as it stands, lit in its tooltip.
+  const make = kin.makeOf(squad);
+  const kinTier = e.family === kin.KIN_ALL ? Math.max(0, ...make.kin.map((k) => k.tier)) : make.kin.find((k) => k.family === e.family)?.tier ?? 0;
   const at = shadows.rankIndex(sh);
   const lv = shadows.levelOf(sh);
   const p = shadows.progress(sh);
@@ -556,8 +559,8 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           <span class="sp-head__tags">
             <RankPlate rank={e.rank} size={20} />
             {/* Family and role tell what they are to the squad when tapped. */}
-            <InfoTag class="sp-tag" title={e.family} lines={familyLines(e.family)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
-            <InfoTag class="sp-tag" title={e.role} lines={roleLines(e.role)}>{e.role}</InfoTag>
+            <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
+            <InfoTag class="sp-tag" tip={roleTip(e.role)}>{e.role}</InfoTag>
             <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Not deployed'}</span>
           </span>
         </div>

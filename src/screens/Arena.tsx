@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core/combat';
 import { TRICKS, type TrickId } from '@/data/tricks';
-import { Keyed } from '@/ui/keyed';
+import { Tip, tipAt, type TipAt, type TipText } from '@/ui/tip';
 import { CONDITION, type ConditionId } from '@/data/drops';
 import { FEAT_PAY, FEATS } from '@/data/feats';
 import * as feats from '@/core/feats';
@@ -447,13 +447,10 @@ export function Arena() {
   /** The ally the hunter would cover. */
   const [ward, setWard] = useState<string | null>(null);
   /** A word on a card tapped to tell what it is. */
-  const [tip, setTip] = useState<TipAt | null>(null);
+  const [tip, setTip] = useState<{ tip: TipText; at: TipAt } | null>(null);
   /** The round the fight shown stands in: a condition within three rounds is met only while it lasts. */
   const [round, setRound] = useState(0);
-  const tell: Tell = (el, title, lines) => {
-    const r = el.getBoundingClientRect();
-    setTip({ title, lines, x: r.left + r.width / 2, y: r.top, below: r.bottom });
-  };
+  const tell: Tell = (el, title, lines, more) => setTip({ tip: { ...tipHead(title), ...more, title, lines }, at: tipAt(el) });
   const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
   const paceRef = useRef<Pace>(pace);
@@ -949,7 +946,7 @@ export function Arena() {
           </ol>
         </>
       )}
-      {tip && <Tip tip={tip} close={() => setTip(null)} />}
+      {tip && <Tip tip={tip.tip} at={tip.at} close={() => setTip(null)} />}
       <footer class="arena__foot">
         {phase === 'map' && run && m && (
           // The dock, in the thumb's reach as a phone game keeps its bag: the way out or what to do, and the bag.
@@ -1280,32 +1277,19 @@ const skillMax = (name: string) => NODES.find((n) => n.kind === 'skill' && n.nam
 
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
-/** A tap on a word on a card tells what it is: a small tip by the word, gone on the next tap anywhere. */
-export interface TipAt { title: string; lines: string[]; x: number; y: number; below: number }
-type Tell = (el: Element, title: string, lines: string[]) => void;
+/** A tap on a word on a card tells what it is: the game's one tooltip (`ui/tip.tsx`) by the word, gone on the next tap anywhere. */
+type Tell = (el: Element, title: string, lines: string[], more?: Partial<TipText>) => void;
 
-/** A habit's or a status's mark beside a tip's name, as the word tapped wears it. */
-function tipMark(title: string) {
+/**
+ * A tip's head for a word on a card: a habit's or a status's mark beside its name, as the word tapped wears
+ * it, and what kind of thing it is at the head's right, as the trait tooltip of the references names a
+ * trait's kind (`Habit`, `Status`).
+ */
+function tipHead(title: string): Partial<TipText> {
   const habit = (Object.keys(TRICKS) as TrickId[]).find((k) => TRICKS[k].name === title);
-  if (habit) return <HabitMark id={habit} size={17} />;
-  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good' : ''}`}><StatusMark name={title} /></span>;
-  return null;
-}
-
-/** The tip a tapped word opens: its mark and name over its lines, under the word, kept on the screen. */
-function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
-  const w = Math.min(260, window.innerWidth - 24);
-  const left = Math.max(12, Math.min(window.innerWidth - w - 12, tip.x - w / 2));
-  // Under the word, unless that runs off the foot of the screen.
-  const up = tip.below > window.innerHeight - 140;
-  return (
-    <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
-      <div class="tip" role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - tip.y + 6}px` : `top:${tip.below + 6}px`}`}>
-        <b class="tip__title">{tipMark(tip.title)}{tip.title}</b>
-        {tip.lines.map((l) => <p key={l}><Keyed text={l} /></p>)}
-      </div>
-    </div>
-  );
+  if (habit) return { mark: <HabitMark id={habit} size={17} />, kind: 'Habit' };
+  if (STATUS_MARK[title]) return { mark: <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good' : ''}`}><StatusMark name={title} /></span>, kind: 'Status' };
+  return {};
 }
 
 /** A word on a card that tells what it is when tapped, and never aims or covers. */

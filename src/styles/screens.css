@@ -262,10 +262,29 @@ button.is-told { padding: 0; border: 0; font-family: inherit; line-height: inher
 button.is-told:not(.tag) { background: none; }
 button.tag.is-told { padding: 1px 5px 1px 4px; }
 button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration: underline dotted rgba(255, 255, 255, 0.28); text-underline-offset: 3px; }
-.tipshade { position: fixed; inset: 0; z-index: 60; }
+/* The game's one tooltip (ui/tip.tsx): a fight's, a Shadow card's, the Army's, the run strip's. Its edge takes
+   where it opens: a Gate's ember, or the Shadows' violet. */
+.tipshade { position: fixed; inset: 0; z-index: var(--z-tip); }
 .tip { position: fixed; display: grid; gap: 3px; padding: 8px 10px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 6px; background: rgba(14, 9, 5, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); animation: feedIn 140ms var(--ease) both; }
+.tip--shadow { border-color: color-mix(in srgb, var(--arcane) 55%, transparent); background: rgba(11, 6, 22, 0.97); }
+.tip--system { border-color: color-mix(in srgb, var(--mana) 50%, transparent); background: rgba(4, 10, 20, 0.97); }
+.tip--inline { position: static; margin: 2px 0 4px; box-shadow: none; }
+/* Inside a System sheet it keeps its own type, as it is on the page: the fight's, never the sheet's. */
+.tip { font-family: var(--font); letter-spacing: normal; text-transform: none; }
+.tip p, .tip li { text-shadow: none; }
 .tip__title { color: var(--ink); font-size: 0.8rem; }
+.tip__name { min-width: 0; }
+.tip__kind { margin-left: auto; padding-left: 8px; color: var(--ink-3); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.tip__mark { display: inline-grid; place-items: center; flex: none; width: 16px; height: 16px; color: var(--ember, #ff9a3c); }
+.tip__mark svg { width: 16px; height: 16px; }
+.tip--shadow .tip__mark { color: var(--arcane); }
+.tip--system .tip__mark { color: var(--mana); }
 .tip p { margin: 0; color: var(--ink-2); font-size: 0.74rem; line-height: 1.35; }
+/* Breakpoints, as Teamfight Tactics lists a trait's: the one reached at full colour, the rest greyed. */
+.tip__tiers { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 2px; color: var(--ink-2); font-size: 0.74rem; line-height: 1.35; }
+.tip__tiers li { opacity: 0.45; }
+.tip__tiers li.is-on { opacity: 1; }
+.tip__tiers li > .num { margin-right: 3px; color: var(--ink); font-weight: 700; }
 .unit.is-pickable:hover { border-color: rgba(255, 77, 109, 0.7); }
 .unit.is-aimed { border-color: var(--blood); box-shadow: 0 0 0 1px var(--blood), 0 0 14px var(--blood-glow); }
 .unit.is-acting { box-shadow: 0 0 0 1px var(--mana), 0 0 16px var(--mana-glow); }
@@ -1961,8 +1980,6 @@ button.infotag { position: relative; margin: 0; font: inherit; color: inherit; c
 button.sp-tag.infotag { padding: 2px 7px; font-size: 0.66rem; font-weight: 600; }
 .infotag__q { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--win, var(--mana)); color: #0a0614; font-size: 0.56rem; font-weight: 800; line-height: 1; opacity: 0; transform: scale(0.6); transition: opacity 120ms, transform 120ms; pointer-events: none; }
 button.infotag:hover .infotag__q, button.infotag:focus-visible .infotag__q, button.infotag[aria-expanded="true"] .infotag__q { opacity: 1; transform: none; }
-.infotip-shade { z-index: var(--z-wheel); }
-.infotip { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: rgba(12, 6, 26, 0.97); }
 .sp-tag.sp-head__state { border-style: dashed; border-color: var(--sys-hair); background: none; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .sp-tag.sp-head__state.is-on { border-style: solid; border-color: color-mix(in srgb, var(--win) 80%, transparent); color: #fff; background: color-mix(in srgb, var(--win) 24%, transparent); box-shadow: 0 0 10px var(--win-glow); }
 .sp-head__exp { position: relative; grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; margin-top: 6px; }
@@ -2635,10 +2652,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .kinsteps i { font-style: normal; opacity: 0.6; }
 .kinsteps b { font-weight: 600; }
 .kinsteps b.is-on { color: #fff; text-shadow: 0 0 6px var(--win-glow); }
-.kintip { display: grid; gap: 5px; margin: 2px 0 4px; padding: 2px 0 2px 12px; border-left: 2px solid var(--win); animation: fadein 200ms both; }
-.kintip__head { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-.kintip__head b { font-size: 0.86rem; font-weight: 700; }
-.kintip__kind, .kintip__who { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
 .kintiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.78rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
 .kintiers b { margin-right: 4px; font-weight: 700; }
 .kintiers li.is-on { color: var(--verdant); }
@@ -3576,7 +3589,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .stattable__name .ico { flex: none; width: 16px; height: 16px; color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
 .stattable__name b { font-size: 0.84rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stattable__total { text-align: right; font-size: 1.05rem; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
-.stattable__desc { grid-column: 1 / -1; padding-left: 24px; font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
 .statsheet .sysfields { gap: 0 18px; }
 .statsheet .sysfield { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 11px 24px 11px 2px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: none; }
 .statsheet .sysfield > span { white-space: nowrap; }
@@ -3584,7 +3596,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .statsheet .sysfield__help { top: 50%; right: 2px; translate: 0 -50%; border-radius: 50%; }
 .statsheet .sysfield.is-open { flex-wrap: wrap; border-color: var(--win); background: color-mix(in srgb, var(--win) 7%, transparent); }
 .statsheet .sysfield.is-open .sysfield__help { top: 14px; translate: 0 0; }
-.statsheet .sysfield__why { flex-basis: 100%; }
 
 /* SKILLS: the head unframed, the class at its left and the points large at its right, gold while a point
    has somewhere to go; the Path's head between hairlines. */
@@ -4467,3 +4478,5 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .unit__crown { top: -8px; width: 11px; height: 11px; }
 .benemy__face { position: relative; }
 .benemy__crown { top: -9px; width: 18px; height: 18px; }
+/* A blessing's tooltip leads with its Path's mark (a Duo's two), in advancement's gold as its chip wears it. */
+.tip__mark--boon { width: auto; grid-auto-flow: column; gap: 2px; color: var(--gold); }

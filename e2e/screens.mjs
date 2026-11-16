@@ -132,8 +132,13 @@ try {
   await page.locator('[data-hub="stats"]').click(); await sleep(400); await snap('stats', true);
   // Where each stat comes from is a table: a row to each stat, its columns lined up.
   if ((await page.locator('.sheet.is-top .stattable__row').count()) !== 5) throw new Error('THE STATS TABLE DOES NOT ROW EVERY STAT');
-  // A stat's line shows only when its row is tapped.
-  if (await page.locator('.sheet.is-top .stattable__desc').count()) throw new Error('THE STATS TABLE SHOWS EVERY LINE AT ONCE');
+  // A stat's line shows only when its row is tapped, in the game's one tooltip, and a tap away closes it.
+  if (await page.locator('.tip').count()) throw new Error('THE STATS TABLE SHOWS A LINE BEFORE A ROW IS TAPPED');
+  await page.locator('.sheet.is-top .stattable__row').nth(2).click(); await sleep(250);
+  if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Stat' }).isVisible())) throw new Error('A STAT\'S ROW TAPPED DID NOT OPEN ITS TOOLTIP');
+  await snap('stats-row-tip');
+  await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(200);
+  if (await page.locator('.tip').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE STAT\'S TOOLTIP');
   const cols = await page.locator('.sheet.is-top .stattable__row').evaluateAll((rows) => rows.map((r) => Math.round(r.querySelector('.stattable__total').getBoundingClientRect().right)));
   if (new Set(cols).size !== 1) throw new Error(`THE STATS TABLE'S TOTALS DO NOT LINE UP (${cols.join(', ')})`);
   // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
@@ -141,10 +146,13 @@ try {
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
   if (!(await page.locator('.sheet.is-top .ia-radar__label.is-on').count())) throw new Error('THE RADAR DID NOT SHOW A VALUE');
   await page.locator('.sheet.is-top .statsheet__radar').scrollIntoViewIfNeeded(); await snap('stats-radar');
-  if (await page.locator('.sheet.is-top .sysfield__why').count()) throw new Error('A FIGHT NUMBER EXPLAINED ITSELF BEFORE IT WAS TAPPED');
-  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).click(); await sleep(200);
-  if (!(await page.locator('.sheet.is-top .sysfield.is-open .sysfield__why').isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
-  await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
+  if (await page.locator('.tip').count()) throw new Error('A FIGHT NUMBER EXPLAINED ITSELF BEFORE IT WAS TAPPED');
+  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).scrollIntoViewIfNeeded(); await sleep(200);
+  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).click(); await sleep(250);
+  if (!(await page.locator('.tip.tip--system', { hasText: 'Accuracy' }).isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
+  await snap('stats-help');
+  await page.keyboard.press('Escape'); await sleep(200);
+  if (await page.locator('.tip').count()) throw new Error('ESCAPE DID NOT CLOSE THE FIGHT NUMBER\'S TOOLTIP');
   await close();
   // The skill tree: the tile calls while a point has somewhere to go, and a point spent is reported on its card.
   if (!(await page.locator('[data-hub="skills"].is-call').count())) throw new Error('THE SKILLS TILE DOES NOT CALL FOR ITS POINTS');
@@ -899,22 +907,27 @@ try {
     if (!squad || !fams || !roles || fams > squad || roles > squad) throw new Error(`KIN AND FORMATION DO NOT FOLLOW THE SQUAD (${squad} deployed, ${fams} families, ${roles} roles)`);
     // A tap on a Kin opens its breakpoints under the tracker, as a trait's tooltip does; another closes it.
     await page.locator('.sheet.is-top .kinchip--kin').first().click(); await sleep(300);
-    if (!(await page.locator('.sheet.is-top .kintip .kintiers li', { hasText: '(2)' }).count())) throw new Error('A KIN DID NOT OPEN ITS BREAKPOINTS');
+    if (!(await page.locator('.sheet.is-top .tip--inline .tip__tiers li', { hasText: '(2)' }).count())) throw new Error('A KIN DID NOT OPEN ITS BREAKPOINTS');
+    if (!(await page.locator('.sheet.is-top .tip--inline .tip__title .tip__mark').count())) throw new Error('THE KIN\'S TOOLTIP DOES NOT LEAD WITH ITS MARK');
     await snap('army-kin');
     await page.locator('.sheet.is-top .kinchip--kin').first().click(); await sleep(200);
-    if (await page.locator('.sheet.is-top .kintip').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
+    if (await page.locator('.sheet.is-top .tip--inline').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
   // The card's family and role tell what they are to the squad when tapped, and a tap away closes it.
   if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 2) throw new Error('THE SHADOW CARD\'S FAMILY AND ROLE DO NOT TELL WHAT THEY ARE');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').first().hover(); await sleep(200);
   await page.locator('.sheet.is-top .sp-head__tags .infotag').first().click(); await sleep(300);
-  if (!(await page.locator('.infotip', { hasText: 'deployed' }).isVisible())) throw new Error('A FAMILY TAG TAPPED SAID NOTHING OF ITS KIN');
+  // The game's one tooltip, as a fight's: its mark and name, its kind, a sentence coloured by its keywords.
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Kin' }).isVisible())) throw new Error('A FAMILY TAG TAPPED SAID NOTHING OF ITS KIN');
+  if (!(await page.locator('.tip.tip--shadow .tip__title .tip__mark').count())) throw new Error('THE FAMILY\'S TOOLTIP DOES NOT LEAD WITH ITS MARK');
+  if (!(await page.locator('.tip.tip--shadow .kw').count())) throw new Error('THE FAMILY\'S TOOLTIP DOES NOT COLOUR ITS KEYWORDS');
   await snap('shadow-tag-tip');
-  await page.locator('.infotip-shade').click({ position: { x: 10, y: 10 } }); await sleep(250);
-  if (await page.locator('.infotip').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE TAG\'S TOOLTIP');
+  await page.locator('.tipshade').click({ position: { x: 10, y: 10 } }); await sleep(250);
+  if (await page.locator('.tip.tip--shadow').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE TAG\'S TOOLTIP');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').nth(1).click(); await sleep(300);
-  if (!(await page.locator('.infotip', { hasText: 'Stands in the' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHERE IT STANDS');
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Stands in the' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHERE IT STANDS');
+  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Formation' }).count())) throw new Error('THE ROLE\'S TOOLTIP DOES NOT NAME ITS KIND');
   await snap('shadow-role-tip');
   await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.

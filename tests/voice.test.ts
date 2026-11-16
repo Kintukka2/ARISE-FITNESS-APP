@@ -31,6 +31,8 @@ import { lines, toBeats } from '@/ui/log';
 import { GRADES, verdict } from '@/core/raid';
 import type { Ev } from '@/core/combat';
 import { TOPICS } from '@/screens/Guide';
+import { familyTip, roleTip } from '@/ui/kin';
+import { FORMATION, KIN, KIN_ALL } from '@/data/kin';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
 
@@ -273,6 +275,44 @@ describe('the look', () => {
       });
     }
     expect(found).toEqual([]);
+  });
+});
+
+describe('the tooltip', () => {
+  it('is the one tooltip, opened only through ui/tip.tsx', () => {
+    const found: string[] = [];
+    for (const f of srcFiles) {
+      if (/ui[\\/]tip\.tsx$/.test(f)) continue;
+      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+        if (/role="tooltip"/.test(line)) found.push(`${f}:${i + 1} opens a tooltip of its own`);
+      });
+    }
+    expect(found).toEqual([]);
+  });
+
+  // A tooltip says what a fight's tip says, as the fight's tip says it: a name over a sentence or two, the trigger
+  // then what happens, active, with no label inside the sentence (`Formation: while...`), and breakpoints name first.
+  const shadowTips = [
+    ...[...Object.keys(KIN), KIN_ALL].map((f) => familyTip(f, 1)),
+    ...Object.keys(FORMATION).map((r) => roleTip(r)),
+  ];
+  it('tells a Shadow\'s family and role in whole sentences, with no label inside them', () => {
+    expect(shadowTips.length).toBeGreaterThan(10);
+    for (const t of shadowTips) {
+      expect(t.lines.length, t.title).toBeGreaterThan(0);
+      expect(t.kind, t.title).toBeTruthy();
+      for (const l of t.lines) {
+        expect(l, l).toMatch(/^[A-Z].*\.$/);
+        expect(l, l).not.toMatch(/^[A-Za-z ]+: /);
+        expect(l.split(/(?<=\.) /).length, l).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+
+  it('lists each breakpoint as a stat name then its value', () => {
+    const tiers = shadowTips.flatMap((t) => t.tiers ?? []);
+    expect(tiers.length).toBeGreaterThan(10);
+    for (const x of tiers) for (const part of x.text.split(', ')) expect(part, x.text).toMatch(/^[A-Z][A-Za-z ]* \+\d+(\.\d)?%?$/);
   });
 });
 

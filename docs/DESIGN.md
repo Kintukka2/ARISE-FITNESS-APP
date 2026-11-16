@@ -2608,6 +2608,44 @@ and role to explain themselves as a fight's tags do.
 
   Blueprints from Gates fall by nearly half again; the hunters still reach every rank within a day or four of before.
 
+## One tooltip, the fight's — built
+
+The owner found the Shadow card's tooltips awkward beside the fight's, asked for them to be made like the fight's in
+look, voice and wording after the reference games, and for every tooltip from now on to be the fight's. References:
+[docs/research/references/tooltips/](research/references/tooltips/) (Teamfight Tactics' trait and role tips, Slay
+the Spire's keyword tips, Hades II's boons and their glossary, Darkest Dungeon, Marvel Snap, Solo Leveling: Arise).
+
+- **One tooltip** (`ui/tip.tsx`): `Tip` by the word tapped, over a shade a tap anywhere or Escape closes, on its own
+  layer over a fight, a sheet or the wheel (`--z-tip`), and `TipBody` for a panel that stands in for one. The head is
+  the thing's mark and its name, with its kind small at the right (`Habit`, `Status`, `Kin`, `Formation`,
+  `Blessing`, `Stat`, `In a fight`), as Hades II sets a boon's rarity; then a sentence or two through `Keyed`; then,
+  for a Kin, its breakpoints a line each as Teamfight Tactics lists a trait's, the one the squad reaches lit and the
+  rest greyed. Its edge is the Gate's ember in a Gate, the Shadows' violet on a Shadow, the System's cyan in a System
+  sheet; its type is always the fight's.
+- **Every tooltip uses it**: a fight's habits, statuses, moves and special drops (the head now names `Habit` or
+  `Status`); the run strip's blessings (now led by their Path's mark); the Shadow card's family and role
+  (`InfoTag`); the Army's Kin and Formation panel (`TipBody`, in place); the Stats sheet's rows and its `In a fight`
+  numbers (`Field`'s help), which opened their lines inline before.
+- **The Shadow card's words**, before and after:
+
+  | Tag | Before | After |
+  |---|---|---|
+  | Orc | `Orc` over `2 Orc Shadows deployed: each takes Attack +10%.` and `3 or more: twice that.` | `Orc` and `Kin` over `Deployed together, Orc Shadows each gain Attack.`, then `(2) Attack +10%` and `(3) Attack +20%`, the one reached lit |
+  | Leader | `Leader` over `Stands in the Rear.` and `Formation: while one is deployed, Initiative +4 for you and every Shadow.` | `Leader` and `Formation` over `Stands in the Rear.` and `While a Leader is deployed, you and every Shadow gain 4 Initiative.` |
+
+  The Stats sheet's lines are told the same way (`Sets how often your hits land against the target’s Evasion,
+  between 5% and 95%. Grows with PER, and a little with AGI.`), and a stat is capitalised wherever a tooltip names
+  it, so `Keyed` colours it: `STAT_WORDS` in `core/gear.ts` spells each, and `tipStats`, `tipGain` and `tipNames`
+  write a bonus as a breakpoint, a sentence or a list of names.
+- **Held by tests**: `tests/voice.test.ts` fails on a `role="tooltip"` outside `ui/tip.tsx`, on a Shadow tooltip
+  line that is not a whole sentence or carries a label inside it, and on a breakpoint that is not a stat's name then
+  its value. The tour opens a fight's, a Shadow card's, the Army's and the Stats sheet's, and checks each leads with
+  its mark, names its kind and colours its keywords.
+- **Left for later**: Hades II's and Slay the Spire's box for each keyword a tooltip names, and Teamfight Tactics'
+  tile for where a unit stands. No tooltip yet names a word it does not explain itself, and a Shadow's card shows its
+  rank nowhere else.
+- **Balance.** Nothing a fight, a map or a reward reads changed: no calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

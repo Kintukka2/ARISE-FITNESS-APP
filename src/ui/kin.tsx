@@ -8,7 +8,7 @@
  */
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { bonusText } from '@/core/gear';
+import { bonusText, tipGain, tipNames, tipStats } from '@/core/gear';
 import { RANGED_ROLES, REACHING_ROLES, ROLE_ROW, ROW_NAME } from '@/data/ranks';
 import { enemyById } from '@/core/gates';
 import * as kin from '@/core/kin';
@@ -16,6 +16,7 @@ import type { Shadow } from '@/core/types';
 import { Section } from './components';
 import { FamilyGlyph } from './emblems';
 import { Glyph } from './icons';
+import { TipBody, type TipText } from './tip';
 
 /** Each role's mark. */
 export const ROLE_GLYPH: Record<string, string> = {
@@ -32,22 +33,44 @@ export const kinText = (family: string, tier: number) => bonusText(kin.kinBoon(f
 /** A role's aura in words: `Defence +5%`. */
 export const auraText = (role: string) => bonusText(kin.FORMATION[role] ?? {});
 
-/** What a Shadow's family is to the squad, in a tooltip: its Kin's boon and when it is taken. */
-export function familyLines(family: string): string[] {
-  if (family === kin.KIN_ALL) return ['Kin to every family. One deployed counts toward every Kin beside it, and takes the boon of each it completes.'];
+const an = (word: string) => (/^[AEIOU]/.test(word) ? 'an' : 'a');
+
+/**
+ * What a Shadow's family is to the squad, in the game's one tooltip (`ui/tip.tsx`), as Teamfight Tactics
+ * tells a trait: the family by its mark and name, `Kin` at the head's right, one sentence of what it gives and
+ * to whom, then each breakpoint and what it gives, the one the squad reaches lit (`tier`, 0 while short).
+ */
+export function familyTip(family: string, tier: number): TipText {
+  const mark = <span class="tip__mark"><FamilyGlyph family={family} size={16} /></span>;
+  const head = { title: family, kind: 'Kin', mark, tone: 'shadow' as const };
+  if (family === kin.KIN_ALL) {
+    return { ...head, lines: ['Counts as every family. Deployed, it adds to each Kin beside it and gains the bonus of each one it completes.'] };
+  }
   const boon = kin.KIN[family];
-  if (!boon) return [];
-  return [`${kin.KIN_AT[0]} ${family} Shadows deployed: each takes ${bonusText(boon)}.`, `${kin.KIN_AT[1]} or more: twice that.`];
+  if (!boon) return { ...head, lines: [] };
+  return {
+    ...head,
+    lines: [`Deployed together, ${family} Shadows each gain ${tipNames(boon)}.`],
+    tiers: kin.KIN_AT.map((at, i) => ({ at, text: tipStats(kin.kinBoon(family, i + 1)), on: tier === i + 1 })),
+  };
 }
 
-/** What a Shadow's role is, in a tooltip: where it stands, how far its hits reach, and its Formation aura. */
-export function roleLines(role: string): string[] {
+/** What a Shadow's role is, in the game's one tooltip: where it stands and how far its hits reach, then its Formation's aura. */
+export function roleTip(role: string): TipText {
   const row = ROLE_ROW[role];
-  const reach = RANGED_ROLES.includes(role) ? ' Its shots reach either rank.' : REACHING_ROLES.includes(role) ? ' Its melee reaches past the front.' : '';
-  return [
-    ...(row ? [`Stands in the ${ROW_NAME[row]}.${reach}`] : []),
-    ...(kin.FORMATION[role] ? [`Formation: while one is deployed, ${auraText(role)} for you and every Shadow.`] : []),
-  ];
+  const where = row ? `Stands in the ${ROW_NAME[row]}` : '';
+  const reach = RANGED_ROLES.includes(role) ? ', and its shots reach either rank' : REACHING_ROLES.includes(role) ? ', and its melee reaches the Rear' : '';
+  const aura = kin.FORMATION[role];
+  return {
+    title: role,
+    kind: 'Formation',
+    mark: <span class="tip__mark"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} /></span>,
+    tone: 'shadow',
+    lines: [
+      ...(where ? [`${where}${reach}.`] : []),
+      ...(aura ? [`While ${an(role)} ${role} is deployed, you and every Shadow gain ${tipGain(aura)}.`] : []),
+    ],
+  };
 }
 
 /** The squad's Kin and Formation in one line, for the brief: `Kin: Orc II · Formation: Brute, Caster`. */
@@ -128,22 +151,10 @@ export function KinTracker({ squad }: { squad: readonly Shadow[] }) {
           </li>
         ))}
       </ul>
+      {/* What a chip gives opens under the chips in the game's one tooltip, as the trait tracker's tooltip does. */}
       {shown && (
-        <div class="kintip" role="note">
-          <header class="kintip__head">
-            <KinHex family={shown.kind === 'role' ? undefined : shown.name} role={shown.kind === 'role' ? shown.name : undefined} on={shown.tier > 0} />
-            <b>{shown.kind === 'role' ? shown.name : `${shown.name} Kin`}</b>
-            <small class="kintip__kind">{shown.kind === 'role' ? 'Formation' : `${shown.n} deployed`}</small>
-          </header>
-          {shown.kind === 'kin' && <Tiers family={shown.name} tier={shown.tier} />}
-          {shown.kind === 'kin' && <small class="kintip__who">Each {shown.name} Shadow deployed</small>}
-          {shown.kind === 'all' && <ul class="kintiers"><li class="is-on"><b class="num">(1)</b> Kin to every family</li></ul>}
-          {shown.kind === 'role' && (
-            <>
-              <ul class="kintiers"><li class="is-on"><b class="num">(1)</b> {auraText(shown.name)}</li></ul>
-              <small class="kintip__who">You and every Shadow</small>
-            </>
-          )}
+        <div class="tip tip--shadow tip--inline" role="note">
+          <TipBody {...(shown.kind === 'role' ? roleTip(shown.name) : familyTip(shown.name, shown.tier))} />
         </div>
       )}
     </div>

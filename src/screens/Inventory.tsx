@@ -29,6 +29,7 @@ import { weekBest } from '@/core/spire';
 import * as system from '@/ui/system';
 import { Btn, Empty, GearArt, HpBar, useNow } from '@/ui/components';
 import { Field, SysFrame } from '@/ui/frame';
+import { Tip, tipAt, type TipAt } from '@/ui/tip';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, STAT_ICON, Sigil } from '@/ui/icons';
 import { ask } from '@/ui/ask';
@@ -305,22 +306,26 @@ export function openStats() {
 
 const STAT_ORDER: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
 
-/** What each number in a fight does, and where it comes from: the interface, one line each, numbers read from the engine. */
+/**
+ * What each number in a fight does, and where it comes from, in the game's one tooltip: as a fight's tip says
+ * a habit, what it does first and then what it grows with, its numbers read from the engine.
+ */
 const FIGHT_HELP: Record<string, string> = {
-  Attack: 'The power of a Strike and of a physical skill, set against the target’s Defence. From STR, and a little AGI.',
-  Magic: 'The power of a magic skill, set against the target’s Resistance. From INT, and a little PER.',
-  Defence: 'Takes the force out of a physical hit: the more of it, the less each one does. From VIT, and a little STR.',
-  Resistance: 'Takes the force out of a magic hit, and wards off debuffs. From VIT and INT.',
-  Accuracy: `How often your hits land: your Accuracy against the target’s Evasion, ${HIT.min}-${HIT.max}%. From PER, and a little AGI.`,
-  Evasion: 'How often a foe misses you: its Accuracy against your Evasion. From AGI, and a little PER.',
-  'Crit chance': `The chance a hit does ×${CRIT.mult} damage. From AGI and PER, up to ${CRIT.base}%, and ${CRIT.max}% with gear and passives.`,
-  Initiative: 'Who acts first in each round: the highest goes first. From AGI, and a little PER.',
+  Attack: 'Powers a Strike and every physical skill, against the target’s Defence. Grows with STR, and a little with AGI.',
+  Magic: 'Powers every magic skill, against the target’s Resistance. Grows with INT, and a little with PER.',
+  Defence: 'Takes the force out of every physical hit you take. Grows with VIT, and a little with STR.',
+  Resistance: 'Takes the force out of every magic hit you take, and wards off debuffs. Grows with VIT and INT.',
+  Accuracy: `Sets how often your hits land against the target’s Evasion, between ${HIT.min}% and ${HIT.max}%. Grows with PER, and a little with AGI.`,
+  Evasion: 'Sets how often a foe’s hits miss you, against its Accuracy. Grows with AGI, and a little with PER.',
+  'Crit chance': `Each hit has this chance to deal ×${CRIT.mult} damage: up to ${CRIT.base}% from AGI and PER, and ${CRIT.max}% with gear and passives.`,
+  Initiative: 'Sets who acts first each round, the highest first. Grows with AGI, and a little with PER.',
 };
 
 function StatsSheet() {
   const s = useSave();
-  // A stat's line shows when its row is tapped, so the table reads as one figure a stat.
-  const [why, setWhy] = useState<Stat | null>(null);
+  // A stat's line opens in the game's one tooltip when its row is tapped, so the table reads as one figure a stat.
+  const [why, setWhy] = useState<{ k: Stat; at: TipAt } | null>(null);
+  const tell = (k: Stat, el: Element) => setWhy(why?.k === k ? null : { k, at: tipAt(el) });
   useNow(5000);
   const bonus = classBonus(s);
   const fromTree = skilltree.treeAttrs(s);
@@ -362,19 +367,22 @@ function StatsSheet() {
           const kit = Math.round(total[k] - s.hunter.attrs[k] - cls - learned);
           const add = (n: number) => <span role="cell" class={`num ${n > 0 ? 'is-up' : 'is-none'}`}>{n > 0 ? `+${n}` : '--'}</span>;
           return (
-            <div key={k} class={`stattable__row ${why === k ? 'is-open' : ''}`} role="row" tabIndex={0} aria-expanded={why === k}
-              onClick={() => setWhy(why === k ? null : k)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWhy(why === k ? null : k); } }}>
+            <div key={k} class={`stattable__row ${why?.k === k ? 'is-open' : ''}`} role="row" tabIndex={0} aria-expanded={why?.k === k}
+              onClick={(e) => tell(k, e.currentTarget as Element)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tell(k, e.currentTarget as Element); } }}>
               <span class="stattable__name" role="cell"><Glyph name={STAT_ICON[k]} /><b>{a.name}</b></span>
               <span role="cell" class="num">{s.hunter.attrs[k]}</span>
               {add(cls)}{add(learned)}{add(kit)}
               <b role="cell" class="num stattable__total">{Math.round(total[k])}</b>
-              {why === k && <small class="stattable__desc">{a.desc}</small>}
             </div>
           );
         })}
       </div>
+      {why && (() => {
+        const a = ATTRS.find((x) => x.key === why.k)!;
+        return <Tip tip={{ title: a.name, kind: 'Stat', mark: <span class="tip__mark"><Glyph name={STAT_ICON[why.k]} /></span>, lines: [a.desc], tone: 'system' }} at={why.at} close={() => setWhy(null)} />;
+      })()}
       <header class="exsec__head"><span class="label">In a fight</span><i aria-hidden="true" /><small>Tap one for what it does</small></header>
-      <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} />)}</div>
+      <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} kind="In a fight" />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
     </div>
   );

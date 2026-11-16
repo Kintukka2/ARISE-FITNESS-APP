@@ -11,6 +11,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Kind } from './overlays';
 import { Glyph } from './icons';
+import { Tip, tipAt, type TipAt } from './tip';
 import type { Header } from './system';
 
 /** One of the lit rails along the top or the bottom of the frame. */
@@ -70,12 +71,12 @@ export function SysFrame({ title, icon, tools, kind = 'system', class: cls, tour
 
 /** A labelled value, as the source sets its fields: the label small above, the value under it. */
 /**
- * A field: its label small, in capitals, above its value. With `help`, a `?` beside the label opens a
- * line on what the field means, the interface explaining inside the System's frame; a pointer that
- * can hover shows it on hover too.
+ * A field: its label small, in capitals, above its value. With `help`, the whole box is a button and a `?`
+ * in its corner says there is something to open: a tap opens what the field means in the game's one
+ * tooltip (`ui/tip.tsx`), the field's name over its line, edged in the System's cyan.
  */
-export function Field({ k, v, wide, help }: { k: string; v: ComponentChildren; wide?: boolean; help?: string }) {
-  const [open, setOpen] = useState(false);
+export function Field({ k, v, wide, help, kind }: { k: string; v: ComponentChildren; wide?: boolean; help?: string; kind?: string }) {
+  const [at, setAt] = useState<TipAt | null>(null);
   if (!help) {
     return (
       <div class={`sysfield ${wide ? 'is-wide' : ''}`}>
@@ -84,16 +85,16 @@ export function Field({ k, v, wide, help }: { k: string; v: ComponentChildren; w
       </div>
     );
   }
-  // With a line to give, the whole box is the button: a tap opens it, another closes it. The `?` in
-  // its corner only says there is something to open.
   return (
-    <button type="button" class={`sysfield has-help ${wide ? 'is-wide' : ''} ${open ? 'is-open' : ''}`}
-      aria-expanded={open} aria-label={`${k}: what it means`} onClick={() => setOpen(!open)}>
-      <span>{k}:</span>
-      <b>{v}</b>
-      <i class="sysfield__help" aria-hidden="true">?</i>
-      {open && <small class="sysfield__why">{help}</small>}
-    </button>
+    <>
+      <button type="button" class={`sysfield has-help ${wide ? 'is-wide' : ''} ${at ? 'is-open' : ''}`}
+        aria-haspopup="dialog" aria-expanded={!!at} aria-label={`${k}: what it means`} onClick={(e) => setAt(at ? null : tipAt(e.currentTarget as Element))}>
+        <span>{k}:</span>
+        <b>{v}</b>
+        <i class="sysfield__help" aria-hidden="true">?</i>
+      </button>
+      {at && <Tip tip={{ title: k, kind, lines: [help], tone: 'system' }} at={at} close={() => setAt(null)} />}
+    </>
   );
 }
 

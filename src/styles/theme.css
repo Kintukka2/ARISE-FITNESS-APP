@@ -83,6 +83,8 @@
   --z-player: 600;
   --z-sheet: 700;
   --z-wheel: 720;
+  /* The one tooltip, opened on the page over a fight, a sheet or the wheel. */
+  --z-tip: 740;
   --z-tour: 760;
   --z-arrival: 780;
   --z-window: 800;

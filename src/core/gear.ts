@@ -371,6 +371,38 @@ export function bonusText(b: Record<string, number>): string {
   return parts.join(' · ');
 }
 
+/** Each bonus as a tooltip names it, a keyword capitalised so the tip's colours find it: `Attack`, `Max HP`, `Status Save`. */
+export const STAT_WORDS: Record<string, string> = {
+  patk: 'Attack', mpow: 'Magic', defense: 'Defence', resist: 'Resistance', maxHp: 'Max HP', recovery: 'Healing',
+  crit: 'Crit Chance', accuracy: 'Accuracy', evasion: 'Evasion', initiative: 'Initiative', statusChance: 'Effect Chance', statusSave: 'Status Save',
+};
+
+/** A bonus's parts as a tooltip says them: its names, and each figure (`10%`, `4`), the equal pairs as one. */
+function tipParts(b: Record<string, number>): { name: string; amount: string }[] {
+  const amount = (k: string, v: number) => (FRACTION.has(k) ? `${Math.round(v * 100)}%` : `${Math.round(v * 10) / 10}`);
+  const left = { ...b };
+  const parts: { name: string; amount: string }[] = [];
+  for (const [x, y] of PAIRS) {
+    if (left[x] === undefined || left[x] !== left[y]) continue;
+    parts.push({ name: `${STAT_WORDS[x]} and ${STAT_WORDS[y]}`, amount: amount(x, left[x]) });
+    delete left[x];
+    delete left[y];
+  }
+  for (const [k, v] of Object.entries(left)) parts.push({ name: STAT_WORDS[k] ?? cap(k), amount: amount(k, v) });
+  return parts;
+}
+
+const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/** A bonus as a tooltip's breakpoint lists it, name then value: `Max HP +8%, Status Save +8`. */
+export const tipStats = (b: Record<string, number>) => tipParts(b).map((p) => `${p.name} +${p.amount}`).join(', ');
+
+/** A bonus as a tooltip's sentence says it, the figure first, as a fight's tip says `gains 20% Attack`: `8% Max HP and 8 Status Save`. */
+export const tipGain = (b: Record<string, number>) => andList(tipParts(b).map((p) => `${p.amount} ${p.name}`));
+
+/** Only a bonus's names, for a sentence that leaves the figures to its breakpoints: `Max HP and Status Save`. */
+export const tipNames = (b: Record<string, number>) => andList(tipParts(b).map((p) => p.name));
+
 // ------------------------------------------------------------------ upgrades
 
 /**

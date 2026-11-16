@@ -8,6 +8,7 @@ import { pathOf } from '@/data/tree';
 import { describe } from '@/core/blessings';
 import { Glyph, STAT_ICON } from './icons';
 import { Keyed } from './keyed';
+import type { TipText } from './tip';
 
 /** A blessing's Paths by name: `Ruin`, or a Duo's `Ruin + Tempest`. */
 export const pathsOf = (id: string) => (boonById(id)?.paths ?? []).map((k) => pathOf(k)?.name ?? k).join(' + ');
@@ -74,13 +75,16 @@ export function BoonCard({ id, tier, from, onPick }: { id: string; tier: number;
  * A blessing the run holds, as the run strip shows it: its Path's mark in a diamond and its tier's numeral,
  * nothing more. A tap tells its name and what it does, in the tip the fight's words open (`tell`).
  */
-export function BoonChip({ id, tier, tell }: { id: string; tier: number; tell: (el: Element, title: string, lines: string[]) => void }) {
+export function BoonChip({ id, tier, tell }: { id: string; tier: number; tell: (el: Element, title: string, lines: string[], more?: Partial<TipText>) => void }) {
   const said = describe(id, tier);
   const b = boonById(id);
   const title = `${said.name}${b ? ` ${TIERS[tier - 1]}` : ''}`;
+  const marks = (b?.paths ?? ['']).map((k, i) => <Glyph key={i} name={STAT_ICON[k] ?? 'star'} />);
+  // Its tooltip leads with its Path's mark, as a habit's leads with the habit's.
+  const mark = <span class="tip__mark tip__mark--boon">{marks}</span>;
   return (
-    <button type="button" class="boon" aria-label={`${title}: ${said.text}`} onClick={(e) => tell(e.currentTarget, title, [said.text])}>
-      <span class="boon__mark" aria-hidden="true">{(b?.paths ?? ['']).map((k, i) => <Glyph key={i} name={STAT_ICON[k] ?? 'star'} />)}</span>
+    <button type="button" class="boon" aria-label={`${title}: ${said.text}`} onClick={(e) => tell(e.currentTarget, title, [said.text], { mark, kind: 'Blessing' })}>
+      <span class="boon__mark" aria-hidden="true">{marks}</span>
       {b && <b class="boon__tier" aria-hidden="true">{TIERS[tier - 1]}</b>}
     </button>
   );
