@@ -366,6 +366,11 @@ button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration
 /* A status's mark at its tag's head, the glyph alone in the tag's colour, with no tile of its own. */
 .tag { display: inline-flex; align-items: center; gap: 3px; }
 .tag__mark { display: inline-grid; flex: none; place-items: center; width: 11px; height: 11px; }
+/* Rajdhani's capitals stand above the middle of its line, a tenth of its size: a mark centred on the line sat that much
+   low against its word, so it is lifted to the capitals' middle (measured on the ink at 4x: 0.9px to 1.1px at the
+   card's sizes). */
+.tag__mark { transform: translateY(-0.1em); }
+.trick .fxhabit { transform: translateY(-0.14em); }
 .tag__mark .fxmark { width: 11px; height: 11px; }
 /* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
    with the hits left, a diamond to each, the ones taken hollow. */
