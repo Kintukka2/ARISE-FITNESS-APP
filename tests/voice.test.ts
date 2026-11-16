@@ -309,6 +309,15 @@ describe('the tooltip', () => {
     }
   });
 
+  it('tells a role by its aura alone, never by where it stands, which decides nothing of it', () => {
+    for (const r of Object.keys(FORMATION)) {
+      const t = roleTip(r);
+      expect(t.lines, r).toHaveLength(1);
+      expect(t.lines[0], r).toMatch(/^While an? .+ is deployed, you and every Shadow gain /);
+      expect(t.lines[0], r).not.toMatch(/\b(Front|Rear|Stands|rank)\b/);
+    }
+  });
+
   it('lists each breakpoint as a stat name then its value', () => {
     const tiers = shadowTips.flatMap((t) => t.tiers ?? []);
     expect(tiers.length).toBeGreaterThan(10);
