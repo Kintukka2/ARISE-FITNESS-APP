@@ -4,7 +4,7 @@ import { dungeonById, entryBlock, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
 import * as vitals from '@/core/vitals';
-import { battle, fight, finishers, POTION_HEAL, GUARD, Unit, type Turn } from '@/core/combat';
+import { battle, counts, fight, finishers, POTION_HEAL, GUARD, STATUS, Unit, type Turn } from '@/core/combat';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
 import { autoLearn } from '@/core/skilltree';
 import { SKILL_SLOTS } from '@/data/tree';
@@ -250,6 +250,44 @@ describe('foe intents', () => {
     expect(checked).toBeGreaterThan(50);
     expect(tricks).toBeGreaterThan(5);
     expect(charges).toBeGreaterThan(0);
+  });
+
+  it('the turns a status shows are the turns it holds, one fewer at each round’s end', () => {
+    let counted = 0;
+    let stuns = 0;
+    for (const [level, id] of [[8, 'DNG-004'], [12, 'DNG-007'], [24, 'DNG-016'], [40, 'DNG-029'], [55, 'DNG-044']] as const) {
+      const s = hunter(level);
+      const d = dungeonById(id)!;
+      const run = raid.begin(s, d, now);
+      for (const x of raid.mapOf(d, run).nodes.filter(isFight)) {
+        const ch = raid.openChamber(d, run.seed, x.n, raid.partyFor(s, d, run, now), chamberOf(d, x));
+        while (ch.turn) ch.play(null);
+        const side = Object.fromEntries(ch.roster.map((u) => [u.uid, u.side]));
+        const held: Record<string, Record<string, number>> = Object.fromEntries(ch.roster.map((u) => [u.uid, { ...u.turns }]));
+        const down = new Set<string>();
+        // What the arena reads, kept as it keeps it: every count the fight says is the one before, less a round.
+        for (const e of ch.log) {
+          if (e.t === 'down') down.add(e.v);
+          else if (e.t === 'status') { expect(e.n).toBeGreaterThan(0); held[e.v][e.s] = e.n; }
+          else if ((e.t === 'support' || (e.t === 'trick' && e.k === 'rally')) && e.n) {
+            const st = e.t === 'trick' ? 'Emboldened' : e.s ?? 'Rallied';
+            for (const uid of Object.keys(held)) if (side[uid] === side[e.a] && !down.has(uid)) held[uid][st] = e.n;
+          } else if (e.t === 'expire') delete held[e.v][e.s];
+          else if (e.t === 'stun') { expect(held[e.a].Stunned).toBe(1); delete held[e.a].Stunned; stuns++; }
+          else if (e.t === 'left') {
+            for (const [st, n] of Object.entries(e.n)) {
+              expect(counts(st)).toBe(true);
+              expect(n).toBeGreaterThan(0);
+              expect(n).toBe(held[e.v][st] - (STATUS[st].skip ? 0 : 1));
+              held[e.v][st] = n;
+              counted++;
+            }
+          }
+        }
+      }
+    }
+    expect(counted).toBeGreaterThan(20);
+    expect(stuns).toBeGreaterThan(0);
   });
 
   it('every foe still standing has shown its next action when the hunter’s turn comes', () => {

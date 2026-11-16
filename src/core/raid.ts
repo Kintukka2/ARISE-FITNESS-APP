@@ -18,7 +18,7 @@ import { NODES } from '@/data/tree';
 import * as blessings from './blessings';
 import { SETS } from '@/data/sets';
 import { tricksOf, type TrickId } from '@/data/tricks';
-import { battle, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
+import { battle, counts, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
 import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, pairKey, passages, reach, sight, systemPick, systemRoad, systemWalk, type Chamber, type GateMap, type MapNode, type Openings } from './map';
 import { dungeonById, enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setBoons, setPieces, sumBonuses, worn as wornItems } from './gear';
@@ -124,7 +124,9 @@ export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[]
 export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) * marks.fatigueShare(s);
 
 export interface RosterRow {
-  uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; tricks?: TrickId[];
+  uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[];
+  /** The turns left on each status that counts them (`combat.counts`). */
+  turns: Record<string, number>; tricks?: TrickId[];
   /** Where it stood as the chamber opened (`data/ranks.ts`). */
   row?: Row;
   /** A foe's grade, which sets its behaviours' numbers. */
@@ -211,7 +213,7 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
   const roster: RosterRow[] = [...party, ...foes].map((u) => {
     const boss = u.side === 'e' && c.boss && u === foes[0];
     const cond = u.side === 'e' && u.ref ? conditionOf(u.ref, boss) ?? undefined : undefined;
-    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, row: u.row, ...(u.side === 'e' ? { grade: u.grade, ref: u.ref, ...(boss ? { boss } : {}) } : {}), ...(cond ? { cond } : {}) };
+    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), turns: Object.fromEntries(Object.entries(u.status).filter(([st]) => counts(st))), tricks: u.tricks.size ? [...u.tricks] : undefined, row: u.row, ...(u.side === 'e' ? { grade: u.grade, ref: u.ref, ...(boss ? { boss } : {}) } : {}), ...(cond ? { cond } : {}) };
   });
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];

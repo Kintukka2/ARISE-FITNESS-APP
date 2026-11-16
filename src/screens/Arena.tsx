@@ -16,7 +16,7 @@ import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
-import { ability, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
+import { ability, counts, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
 import { MOVE, REAR_MELEE, ROW_NAME, ROWS, type Row } from '@/data/ranks';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
@@ -75,6 +75,8 @@ import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
 
 interface UnitView {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[];
+  /** The turns left on each status that counts them, as the fight last said (`combat.counts`). */
+  turns: Record<string, number>;
   /** Where it stands (`data/ranks.ts`): its side's front or rear. */
   row?: Row;
   /** A foe's grade, which sets its behaviours' numbers. */
@@ -356,27 +358,50 @@ function PaceMenu({ pace, setPace, auto, toggleAuto }: { pace: Pace; setPace: (p
   );
 }
 
+/** A unit as the arena draws it, apart from the picture the fight goes on moving. */
+const copyOf = (x: UnitView): UnitView => ({ ...x, status: [...x.status], turns: { ...x.turns } });
+
+/** A status put on a unit the arena shows, with the turns it holds where it counts them. */
+function hold(t: UnitView | undefined, st: string, n?: number) {
+  if (!t) return;
+  if (!t.status.includes(st)) t.status.push(st);
+  if (n !== undefined) t.turns[st] = n;
+}
+
+/** A status come off a unit the arena shows. */
+function lift(t: UnitView | undefined, st: string) {
+  if (!t) return;
+  t.status = t.status.filter((x) => x !== st);
+  delete t.turns[st];
+}
+
 /** Move the arena's picture of everyone forward by one beat's events. */
 function apply(local: UnitView[], b: Beat) {
   const u = (x: string) => local.find((v) => v.uid === x);
   for (const e of b.ev) {
     if (e.t === 'hit' || e.t === 'tick') { const t = u(e.v); if (t) t.hp = e.hp; }
     else if (e.t === 'heal') { const t = u(e.a); if (t) t.hp = e.hp; }
-    else if (e.t === 'down') { const t = u(e.v); if (t) t.hp = 0; }
-    else if (e.t === 'status') { const t = u(e.v); if (t && !t.status.includes(e.s)) t.status.push(e.s); }
-    else if (e.t === 'guard') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+    // Defeated, it holds nothing more: its tags come off with it, and no count stands frozen on its card.
+    else if (e.t === 'down') { const t = u(e.v); if (t) { t.hp = 0; t.status = []; t.turns = {}; } }
+    else if (e.t === 'status') hold(u(e.v), e.s, e.n);
+    else if (e.t === 'left') { const t = u(e.v); if (t) Object.assign(t.turns, e.n); }
+    // A stun is spent on the action it costs: it comes off then, with no countdown of its own.
+    else if (e.t === 'stun') lift(u(e.a), 'Stunned');
+    // A creature's own behaviours: a guardian's shield on its ward, a rally on its whole side.
+    else if (e.t === 'trick' && e.k === 'shield') hold(e.v ? u(e.v) : undefined, 'Shielded');
+    else if (e.t === 'trick' && e.k === 'rally') { for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0) hold(t, 'Emboldened', e.n); }
+    else if (e.t === 'guard') hold(u(e.a), 'Guarded');
     else if (e.t === 'move') { const t = u(e.a); if (t) t.row = e.row; }
     else if (e.t === 'cover') {
-      const t = u(e.a), w = u(e.v);
-      if (t && !t.status.includes('Guarded')) t.status.push('Guarded');
-      if (w && !w.status.includes('Covered')) w.status.push('Covered');
+      hold(u(e.a), 'Guarded');
+      hold(u(e.v), 'Covered');
     }
     else if (e.t === 'intent') { const t = u(e.u); if (t) { const { t: _t, u: _u, ...i } = e; t.intent = i; } }
     else if (e.t === 'pip') { const t = u(e.v); if (t?.intent) t.intent = { ...t.intent, pips: e.left }; }
     else if (e.t === 'break') { const t = u(e.v); if (t?.intent) t.intent = { ...t.intent, broken: true }; }
     else if (e.t === 'expire') {
       const t = u(e.v);
-      if (t) t.status = t.status.filter((x) => x !== e.s);
+      lift(t, e.s);
       // The hunter's guard coming down is their next turn starting: a cover they gave ends with it.
       if (t?.uid === 'hero' && e.s === 'Guarded') for (const v of local) v.status = v.status.filter((x) => x !== 'Covered');
     }
@@ -384,8 +409,8 @@ function apply(local: UnitView[], b: Beat) {
     else if (e.t === 'passive' && e.hp !== undefined) { const t = u(e.u); if (t) t.hp = e.hp; }
     else if (e.t === 'support') {
       const st = e.s === undefined ? 'Rallied' : e.s;
-      if (st) for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0 && !t.status.includes(st)) t.status.push(st);
-    } else if (e.t === 'cast' && e.k === 'taunt') { const t = u(e.a); if (t && !t.status.includes('Guarded')) t.status.push('Guarded'); }
+      if (st) for (const t of local) if (t.side === (e.a.startsWith('e') ? 'e' : 'p') && t.hp > 0) hold(t, st, e.n);
+    } else if (e.t === 'cast' && e.k === 'taunt') hold(u(e.a), 'Guarded');
   }
 }
 
@@ -685,7 +710,7 @@ export function Arena() {
       const ls = lines(b, name, drop);
       // Skip still writes the log, so what happened between turns can be read; it only takes no time.
       if (p === 'skip') { say(ls); continue; }
-      setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+      setUnits(local.map(copyOf));
       // A beat with nothing to say (a foe settling its next move) costs no time.
       if (!ls.length) continue;
       say(ls);
@@ -693,7 +718,7 @@ export function Arena() {
       else if (b.ev.some((e) => e.t === 'hit' && e.crit)) sfx.hit(80);
       await new Promise((r) => setTimeout(r, b.kind === 'round' ? PACE[p] * 0.6 : PACE[p]));
     }
-    setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+    setUnits(local.map(copyOf));
     return log.length;
   }
 
@@ -748,8 +773,8 @@ export function Arena() {
     handRef.current = c.boss && ascension.bossByHand(ascension.levelOf(r));
     setWon(null);
     setPhase('fight');
-    const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status] }));
-    setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+    const local: UnitView[] = ch.roster.map((u) => ({ ...u, status: [...u.status], turns: { ...u.turns } }));
+    setUnits(local.map(copyOf));
     setRound(ch.log.reduce((n, e) => (e.t === 'round' ? n + 1 : n), 0));
     setFeed([{ text: c.boss ? `[${c.label}] has appeared.` : `${c.label}.`, tone: 'room', k: ++seq.current }]);
     if (handRef.current) say([{ text: '▸ Auto is not available in this chamber.', tone: 'muted' }]);
@@ -758,7 +783,7 @@ export function Arena() {
     if ((r.orders ?? []).length) {
       for (const b of toBeats(ch.log)) apply(local, b);
       at = ch.log.length;
-      setUnits(local.map((x) => ({ ...x, status: [...x.status] })));
+      setUnits(local.map(copyOf));
       say([{ text: '▸ Chamber resumed.', tone: 'muted' }]);
     }
     at = await show(ch.log, at, local);
@@ -1399,15 +1424,19 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           ))}
         </div>
       )}
-      {/* What holds it, each its mark and its name in its tag: red what harms, green what serves the party, orange what serves a foe. */}
+      {/* What holds it, each its mark, its name and its turns left in its tag: red what harms, green what serves the party, orange what serves a foe. */}
       {u.status.length > 0 && (
         <div class="unit__status">
-          {u.status.map((st) => (
-            <Told key={st} tell={tell} title={st} lines={[STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it comes at you, guarded, until your next turn.' : '')].filter(Boolean)}
-              class={`tag tag--${st.toLowerCase()} ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>
-              <span class="tag__mark"><StatusMark name={st} /></span>{st}
-            </Told>
-          ))}
+          {u.status.map((st) => {
+            // The turns it has left, after its name, as Summoners War and Star Rail count them; none on what is held.
+            const n = counts(st) ? u.turns[st] : undefined;
+            return (
+              <Told key={st} tell={tell} title={st} lines={[STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it comes at you, guarded, until your next turn.' : ''), n ? `Turns left: ${n}` : ''].filter(Boolean)}
+                class={`tag tag--${st.toLowerCase()} ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>
+                <span class="tag__mark"><StatusMark name={st} /></span>{st}{n ? <b class="tag__turns">{n}</b> : null}
+              </Told>
+            );
+          })}
         </div>
       )}
       {intent && <Intent intent={intent} threat={threat} self={self} sight={sight} tell={tell} />}

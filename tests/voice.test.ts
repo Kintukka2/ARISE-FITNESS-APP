@@ -226,7 +226,7 @@ describe('the System keeping score', () => {
   const log = [
     { t: 'hit', a: 'e0', v: 'hero', ab: 'Grave Strike', dmg: 12, crit: false },
     { t: 'miss', a: 'e0', v: 'hero', ab: 'Grave Strike' },
-    { t: 'status', v: 'hero', s: 'Bleeding' },
+    { t: 'status', v: 'hero', s: 'Bleeding', n: 3 },
     { t: 'tick', v: 'e0', dmg: 6, s: 'Bleeding' },
     { t: 'down', v: 'e0' },
   ] as unknown as Ev[];
