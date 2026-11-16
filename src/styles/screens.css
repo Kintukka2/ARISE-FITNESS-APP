@@ -2766,7 +2766,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bseals__rule b { color: #fff; }
 
 /* The enemies: a portrait to each, the boss first and larger in red, a Gatekeeper ringed in gold. */
-.benemies { display: flex; align-items: flex-end; gap: 10px; margin: 0; padding: 2px 0 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
+.benemies { display: flex; align-items: flex-end; gap: 10px; margin: 0; padding: 12px 0 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
 .benemies::-webkit-scrollbar { display: none; }
 .benemy { display: grid; justify-items: center; gap: 3px; width: 68px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
 .benemy.is-tap { cursor: pointer; }
@@ -4398,7 +4398,8 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .tip__status .fxmark { width: 16px; height: 16px; }
 
 /* A boss's portrait wears a crown, as the reference games crest a pack's leader (Monster Hunter's Great Jagras, Dragon
-   Quest's King slime): its rank not by red alone. White-hot, as its eyes are. */
+   Quest's King slime): its rank not by red alone. White-hot, as its eyes are. The Enemies row scrolls sideways, and a
+   scrolling box clips on every side, so the row leaves room over its faces for the crown. */
 .unit__crown, .benemy__crown { position: absolute; left: 50%; z-index: 1; color: #fff4cf; filter: drop-shadow(0 0 3px rgba(255, 47, 62, 0.9)); transform: translateX(-50%); }
 .unit__crown { top: -8px; width: 11px; height: 11px; }
 .benemy__face { position: relative; }
