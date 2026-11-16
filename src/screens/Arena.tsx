@@ -15,6 +15,7 @@ import { SEALS } from '@/data/seals';
 import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
+import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
 import { ability, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
 import { MOVE, REAR_MELEE, ROW_NAME, ROWS, type Row } from '@/data/ranks';
 import * as skilltree from '@/core/skilltree';
@@ -1238,7 +1239,15 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
 export interface TipAt { title: string; lines: string[]; x: number; y: number; below: number }
 type Tell = (el: Element, title: string, lines: string[]) => void;
 
-/** The tip a tapped word opens: its name over its lines, under the word, kept on the screen. */
+/** A habit's plate or a status's tile beside a tip's name, as the word tapped wears it. */
+function tipMark(title: string) {
+  const habit = (Object.keys(TRICKS) as TrickId[]).find((k) => TRICKS[k].name === title);
+  if (habit) return <HabitMark id={habit} size={18} />;
+  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good ? 'is-good' : ''}`}><StatusMark name={title} /></span>;
+  return null;
+}
+
+/** The tip a tapped word opens: its mark and name over its lines, under the word, kept on the screen. */
 function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
   const w = Math.min(260, window.innerWidth - 24);
   const left = Math.max(12, Math.min(window.innerWidth - w - 12, tip.x - w / 2));
@@ -1247,7 +1256,7 @@ function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
   return (
     <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
       <div class="tip" role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - tip.y + 6}px` : `top:${tip.below + 6}px`}`}>
-        <b class="tip__title">{tip.title}</b>
+        <b class="tip__title">{tipMark(tip.title)}{tip.title}</b>
         {tip.lines.map((l) => <p key={l}><Keyed text={l} /></p>)}
       </div>
     </div>
@@ -1373,21 +1382,30 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           {Array.from({ length: brk.max }, (_, i) => <i key={i} class={i < brk.left ? 'is-on' : ''} />)}
         </div>
         : <Bar pct={pct} tone={u.side === 'e' ? 'blood' : u.tag === 'shadow' ? 'arcane' : 'hp'} thin />}
-      {((u.tricks && u.tricks.length > 0) || cond) && (
+      {/* Its special drop, a tag hung on the card's corner, apart from its habits: the part's glyph, gold while the condition holds. */}
+      {cond && u.ref && u.hp > 0 && (
+        <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
+          <Glyph name={dropGlyph(u.ref, !!u.boss)} />
+        </Told>
+      )}
+      {/* Its habits, each its mark in a plate and its name. */}
+      {u.tricks && u.tricks.length > 0 && (
         <div class="unit__tricks">
-          <span class="unit__habits">{u.tricks?.map((k) => <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>{TRICKS[k].name}</Told>)}</span>
-          {cond && u.ref && u.hp > 0 && (
-            <Told tell={tell} title="Special drop" lines={[conditionLine(u.ref, !!u.boss, cond)!]} class={`dropmark ${ready ? 'is-ready' : ''}`}>
-              <Glyph name={dropGlyph(u.ref, !!u.boss)} />
+          {u.tricks.map((k) => (
+            <Told key={k} tell={tell} title={TRICKS[k].name} lines={[TRICKS[k].about(u.grade ?? 'E')]} class={`trick trick--${k}`}>
+              <HabitMark id={k} size={15} /><span class="trick__name">{TRICKS[k].name}</span>
             </Told>
-          )}
+          ))}
         </div>
       )}
+      {/* What holds it, each its mark in a tile and its name: red what harms, green what serves the party, orange what serves a foe. */}
       {u.status.length > 0 && (
         <div class="unit__status">
           {u.status.map((st) => (
             <Told key={st} tell={tell} title={st} lines={[STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it comes at you, guarded, until your next turn.' : '')].filter(Boolean)}
-              class={`tag ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>{st}</Told>
+              class={`tag tag--${st.toLowerCase()} ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>
+              <span class="tag__mark"><StatusMark name={st} /></span>{st}
+            </Told>
           ))}
         </div>
       )}

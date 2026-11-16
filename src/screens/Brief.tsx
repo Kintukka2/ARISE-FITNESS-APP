@@ -45,6 +45,7 @@ import { createStore, useSave } from '@/store';
 import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
+import { HabitMark, StatusMark } from '@/ui/effects';
 import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
 import { makeLine } from '@/ui/kin';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
@@ -542,6 +543,11 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   );
 }
 
+/** Statuses named in a line, each with its mark in its tile, as a fight's card shows them. */
+function StatusList({ names }: { names: string[] }) {
+  return <>{names.map((x, i) => <span key={x} class="bstatus"><span class="tag__mark"><StatusMark name={x} /></span>{x}{i < names.length - 1 ? ',' : ''}</span>)}</>;
+}
+
 /**
  * The party as a formation, after Idle Heroes' Hero Deployment: a board facing the enemies above it,
  * the front rank at its head and the rear under it, each member a face in the rank they stand in, the hunter's own
@@ -849,15 +855,15 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name">{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
+          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name"><HabitMark id={h} size={20} />{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (
         <section class="bbox" aria-label="Statuses">
           <span class="label bbox__head">Statuses</span>
           <ul class="blist">
-            {e.imm.length > 0 && <Line cls="is-imm"><b>Immune:</b> {e.imm.join(', ')}</Line>}
-            {e.res.length > 0 && <Line cls="is-res"><b>Resists:</b> {e.res.join(', ')}</Line>}
+            {e.imm.length > 0 && <Line cls="is-imm"><b>Immune:</b> <StatusList names={e.imm} /></Line>}
+            {e.res.length > 0 && <Line cls="is-res"><b>Resists:</b> <StatusList names={e.res} /></Line>}
           </ul>
         </section>
       )}
