@@ -313,12 +313,14 @@ export interface Settings {
   reminders: { on: boolean };
   /** Purchases and uses the hunter has asked not to be asked about again, by key (`buy:hp`, `drink:mp`, `buy:shelf`). */
   skipAsk: string[];
+  /** The arena's pace as the hunter last set it, kept for the next Gate: `1`, `2` (twice as fast) or `skip`. Text, so a saved `skip` keeps its type. */
+  pace: '1' | '2' | 'skip';
 }
 
 /** What can be held in stock: the four potions, the Association's Gate Survey, and what the hunter throws. */
 /** What the hunter throws, by kind (`combat.THROWABLES`). */
 export type ThrowKind = 'flash' | 'cord' | 'ember';
-export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | ThrowKind;
+export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'revive' | ThrowKind;
 
 export interface Stats {
   xpTotal: number;

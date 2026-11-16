@@ -4,7 +4,7 @@ import { TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/tempe
 import { MEDAL_PAY, MEDALS, PAR, PAR_EMBER } from '@/data/par';
 import { LEAD_ROW, PACK, RANGED_LEADS, RANGED_ROLES, REACHING_LEADS, REACHING_ROLES, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
 import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
-import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, POTIONS, SATCHEL, THROW_MAX } from '@/core/shop';
+import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, MATERIALS, POTIONS, REVIVE, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, GRADIENT, LABYRINTH, REST_CHANCE, WING, WINGS } from '@/core/map';
@@ -185,7 +185,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Your actions sit on a wheel behind one button: a slot for each skill slot your rank holds, then Throw, Health Potion, Guard, Cover and Strike. Press the button and drag onto a slot to see what it does on the foe you aimed at, then let go on it to use it, or tap a slot to see it and tap it again.',
       'A green mark on a skill means it defeats the foe you aimed at more surely than a Strike would. A Strike is never marked, and when a Strike defeats the foe every time, nothing is.',
       'Guard shows how many foes are aimed at you before your next turn, and with Foresight what they would do, and the same guarded.',
-      'The pace button in the head sets how fast the fight plays, and holds Auto.',
+      'The pace button in the head sets how fast the fight plays, and holds Auto. The pace you set is kept for the next Gate.',
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
       'Cover: you guard, and everything aimed at the ally you cover comes at you instead, shown on each foe first, until your next turn.',
       'Pick Cover, then tap the ally. The hub shows how many are aimed at them, and with Foresight what of it would land on you.',
@@ -235,7 +235,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Seals pay Ascendant Ember on a clear, more at a higher grade, and never Mana Shards. Carried out, a run pays nothing, Seals included.',
       ...SEAL_IDS.map((id) => `${SEALS[id].name}: ${SEALS[id].rule}. A clear pays Ascendant Ember +${sealEmber(id, 'E')}-${sealEmber(id, 'S')} by grade${SEALS[id].note ? `, ${SEALS[id].note}` : ''}.`),
       'Lightless and Wardens Wake leave the assessment where it was: the System rests only before the boss and never meets a Gatekeeper.',
-      `Every Gate holds ${FEATS_PER_GATE} Feats, the same every day. Each pays once, the first time a clear meets it on that Gate: Blueprint +${FEAT_PAY.blueprints}.`,
+      `Every Gate holds ${FEATS_PER_GATE} Feats, the same every day. Each pays once, the first time a clear meets it on that Gate: ${FEAT_PAY.alloy} of the Gate’s alloy.`,
       'The brief’s Feats tab says how often the System met each Feat in its runs. A Feat met wears a gold star there and on the board.',
       ...FEAT_IDS.map((id) => `${FEATS[id].name}: ${FEATS[id].text}.`),
       `Every family of creature has a special drop, and every boss one of its own: ${CONDITION[BOSS_CONDITION].text}. A creature’s pays its family’s part +${DROP.part}, and a boss’s pays Blueprint +${DROP.bossBlueprints}.`,
@@ -446,6 +446,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}.`,
       'Health and Mana Potions are bought to carry. Health Potions go in your satchel, for a fight or between rooms.',
       'The other potions are drunk when bought.',
+      `Materials sells every alloy your licence covers, ${MATERIALS.alloy} at a time, and each part, ${MATERIALS.part} at a time. A Gate’s own alloy is always cheaper won than bought.`,
+      `Gate Items sells the ${REVIVE.name} for ${REVIVE.price}. Your bag holds ${REVIVE.max}.`,
+      `Drunk between rooms, a ${REVIVE.name} stands one fallen ally back up at ${REVIVE.hp * 100}% of their HP.`,
     ],
   },
   {
@@ -461,7 +464,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Fights, gatekeepers and the clear leave alloys of the Gate’s grade, and some of the grade below. Each creature defeated leaves its part ${Math.round(DROPS.part * 100)}% of the time.`,
       `The clear also leaves ${DROPS.clearParts} of every part.`,
       `${forge.EMBER.name} comes from clears entered at an Ascension level, more the higher it is, and from the Chosen.`,
-      'Every Gate’s first clear leaves a blueprint, for the kind of piece your best blueprint is weakest at. A set’s home Gate leaves one of its own.',
+      'Blueprints are rare. Every Gate’s first clear leaves one, for the kind of piece your best blueprint is weakest at.',
+      'A set’s home Gate leaves one of its own on its first clear.',
       `Each rank you claim pays ${BLUEPRINTS.rank} blueprints of its grade, chosen the same way.`,
       `Any other clear leaves one ${Math.round(BLUEPRINTS.clear * 100)}% of the time, and a gatekeeper ${Math.round(BLUEPRINTS.elite * 100)}%. A set’s home Gate leaves one of its own ${Math.round(BLUEPRINTS.home * 100)}% of the time.`,
       `When you know every design of a rarity, a blueprint of it comes as ${BLUEPRINTS.known} of its alloy instead.`,

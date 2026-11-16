@@ -6,7 +6,7 @@
  */
 import { useMemo } from 'preact/hooks';
 
-export type ShopArtId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'flash' | 'cord' | 'ember';
+export type ShopArtId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'flash' | 'cord' | 'ember' | 'revive';
 
 let seq = 0;
 
@@ -30,6 +30,7 @@ export function ShopArt({ id, size = 56 }: { id: ShopArtId; size?: number }) {
     flash: ['#fff1a8', '#ffffff', '#ffd84a'],
     cord: ['#e0a05a', '#f0c48a', '#a8692e'],
     ember: ['#ff7a2e', '#ffd36a', '#ff4415'],
+    revive: ['#5cffa8', '#e8fff1', '#1fbf6a'],
   };
   const [glow, top, bottom] = tone[id];
   const defs = (
@@ -63,6 +64,7 @@ export function ShopArt({ id, size = 56 }: { id: ShopArtId; size?: number }) {
   let body: preact.JSX.Element;
   switch (id) {
     case 'hp':
+    case 'revive':
     case 'ember':
     case 'flash': {
       // A round flask: Health white with a heart, Ember orange with a flame over its cork, Flash small in a burst.
@@ -89,6 +91,12 @@ export function ShopArt({ id, size = 56 }: { id: ShopArtId; size?: number }) {
           <circle cx={32 + r * 0.35} cy={cy + r * 0.35} r="1.6" fill="#fff" opacity=".6" />
           <circle cx={32 + r * 0.1} cy={cy + r * 0.55} r="1" fill="#fff" opacity=".5" />
           {id === 'hp' && <path d="M32 50.5c-4.6-3.2-7.4-5.8-7.4-8.7 0-2 1.6-3.6 3.5-3.6 1.6 0 2.9.9 3.9 2.3 1-1.4 2.3-2.3 3.9-2.3 1.9 0 3.5 1.6 3.5 3.6 0 2.9-2.8 5.5-7.4 8.7z" fill="#e6f6ff" stroke="#6fb8f0" stroke-width="1" />}
+          {/* The Revival Potion: green, a figure's way up marked on its glass, wings at its shoulders. */}
+          {id === 'revive' && <>
+            <path d="M32 33.5 L38.5 40.5 H34.6 V49 H29.4 V40.5 H25.5 Z" fill="#effff5" stroke="#159a52" stroke-width="1.1" stroke-linejoin="round" />
+            <path d="M14.5 30 C9 27.5 6.5 22.5 7.5 17.5 C10.5 21.5 13.5 23 17.5 23.5 C15 25.5 14.4 27.6 14.5 30 Z" fill="#e8fff1" stroke="#1fbf6a" stroke-width="1" />
+            <path d="M49.5 30 C55 27.5 57.5 22.5 56.5 17.5 C53.5 21.5 50.5 23 46.5 23.5 C49 25.5 49.6 27.6 49.5 30 Z" fill="#e8fff1" stroke="#1fbf6a" stroke-width="1" />
+          </>}
           {id === 'ember' && <path d="M32 3c3.6 4.2 5.2 7.4 4 10.4-.7 1.8-2.2 2.9-4 2.9s-3.4-1.1-4-2.9c-.6-1.7 0-3.4 1.4-5 .2 1.4.9 2.3 1.9 2.6C30.6 8.6 31 5.9 32 3z" fill="#ffb02e" stroke="#ff5a1a" stroke-width="1" />}
         </>
       );

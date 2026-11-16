@@ -768,6 +768,35 @@ export function drinkPotion(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()
   return Math.round(hero.hp - was);
 }
 
+/** The party's fallen, between steps: everyone but the hunter whose health the run carries at nothing. */
+export function downed(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): { uid: string; name: string }[] {
+  return partyFor(s, d, run, now).slice(1).filter((u) => !u.alive()).map((u) => ({ uid: u.uid, name: u.name }));
+}
+
+/** Why a Revival Potion cannot be drunk between steps now, or null if it can. A potion, so Dry seals it too. */
+export function reviveIdle(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): string | null {
+  if (shop.held(s, 'revive') <= 0) return 'None held';
+  if (!sealing.potionsAllowed(sealing.of(run))) return 'Sealed: Dry';
+  if (run.lost || pending(d, run) || bossDown(d, run)) return 'Not now';
+  return downed(s, d, run, now).length ? null : 'No one down';
+}
+
+/**
+ * Drink a Revival Potion between steps: the fallen member named stands again at the potion's share of
+ * their maximum HP, what ailed them gone. Returns the HP they stand at, 0 if they could not. Mutates.
+ */
+export function revive(s: Save, d: Dungeon, run: OpenRaid, uid: string, now = Date.now()): number {
+  if (reviveIdle(s, d, run, now)) return 0;
+  const party = partyFor(s, d, run, now);
+  const u = party.find((x, i) => i > 0 && x.uid === uid && !x.alive());
+  if (!u) return 0;
+  u.hp = Math.max(1, Math.round(u.maxHp * shop.REVIVE.hp));
+  u.status = {};
+  s.stock.revive = shop.held(s, 'revive') - 1;
+  settleParty(s, d, run, party, now);
+  return u.hp;
+}
+
 /**
  * Nothing is underway and the run has cleared a room: in a Gate, while the hunter stands at the
  * entrance and the Gate has not turned red; up a tower, when the last floor done was a rest. The only
@@ -1187,9 +1216,9 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
   for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
   // Each vault opened leaves a blueprint at its odds: an A- or S-Rank Gate can hold two.
   for (let k = 0; k < vault; k++) if (r() < BLUEPRINTS.vault) leave(rank);
-  // A boss felled the way its condition asks, and each Feat met for the first time, leave a blueprint.
+  // A boss felled the way its condition asks leaves a blueprint; each Feat met for the first time, the Gate's alloy.
   for (const x of extra.drops) if (x.boss) leave(rank);
-  for (let i = 0; i < extra.feats * FEAT_PAY.blueprints; i++) leave(rank);
+  if (extra.feats) Object.assign(mats, forge.addUp(mats, { [forge.alloyId(rank)]: extra.feats * FEAT_PAY.alloy }));
   // A piece found whole, rarely.
   const forged: string[] = [];
   if (cleared && r() < FORGED.clear) {

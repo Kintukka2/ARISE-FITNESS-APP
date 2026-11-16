@@ -29,7 +29,7 @@ export interface BagItem {
 }
 
 /** The wheel's slots: one to each kind of item, and room for more. */
-export const ITEM_SLOTS = 6;
+export const ITEM_SLOTS = 8;
 
 const C = 150;
 const R_OUT = 147;

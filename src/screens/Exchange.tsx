@@ -1,6 +1,7 @@
 /** The Exchange: the System's shop. Blueprints, a shelf a day, and the potions, paid for in Mana Shards. */
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
+import * as forge from '@/core/forge';
 import { SURVEY } from '@/data/association';
 import * as shop from '@/core/shop';
 import { throwable, type ThrowId } from '@/core/combat';
@@ -13,6 +14,7 @@ import { useSave } from '@/store';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { ShopArt, type ShopArtId } from '@/ui/shopart';
+import { MatArt } from '@/ui/forge';
 import { Btn, GearArt, Section, Shards, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard } from '@/ui/icons';
@@ -38,13 +40,14 @@ export function openExchange() {
 /** Not enough Mana Shards for it: the System's refusal, with the count. */
 const short = (price: number) => sys(system.refuse([`Not enough Mana Shards. (${store.get().wallet.shards}/${price})`], 'gear'));
 
-type Tab = 'bp' | 'potions' | 'gates';
+type Tab = 'bp' | 'mats' | 'potions' | 'gates';
 
-/** The shop's three counters, as the reference shops set their tabs across the top: each its mark, its name and what it holds. */
+/** The shop's four counters, as the reference shops set their tabs across the top: each its mark, its name and what it holds. */
 const TABS: { key: Tab; name: string; glyph: string }[] = [
   { key: 'bp', name: 'Blueprints', glyph: 'blueprint' },
+  { key: 'mats', name: 'Materials', glyph: 'forge' },
   { key: 'potions', name: 'Potions', glyph: 'potion' },
-  { key: 'gates', name: 'For the Gates', glyph: 'gates' },
+  { key: 'gates', name: 'Gate Items', glyph: 'gates' },
 ];
 
 /** One good on a counter: its picture, its name and kind, what it gives, what is held, its price, and why it cannot be bought now. */
@@ -173,6 +176,37 @@ function Exchange() {
     buzz([14, 30, 22]);
     toast(`${k.name} · Bag ${shop.held(store.get(), id)}/${shop.THROW_MAX}`, 'xp');
   };
+  /** A bundle of a material, bought for the Forge. */
+  const buyMat = async (o: shop.MatOffer) => {
+    const m = forge.materialById(o.id);
+    if (store.get().wallet.shards < o.price) return void short(o.price);
+    const want = await ask('buy:mats', system.offer([
+      'Would you like to purchase?',
+      system.tag(`${m?.name ?? 'Material'} ×${o.n}`, 'Item'),
+      `Price: ${group(o.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
+    if (!store.update((x) => shop.buyMat(x, o.id))) return void short(o.price);
+    sfx.success();
+    buzz([14, 30, 22]);
+    toast(`${m?.name ?? 'Material'} +${o.n} · Held: ${group(forge.held(store.get(), o.id))}`, 'xp');
+  };
+  /** A Revival Potion, bought to carry into the Gates. */
+  const buyRevive = async () => {
+    const r = shop.REVIVE;
+    if (store.get().wallet.shards < r.price) return void short(r.price);
+    const want = await ask('buy:revive', system.offer([
+      'Would you like to purchase?',
+      system.tag(r.name, 'Item'),
+      `A fallen ally stands at ${r.hp * 100}% HP.`,
+      `Price: ${group(r.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+    ], 'gear', 'Buy', 'Cancel'));
+    if (want !== true) return;
+    if (!store.update(shop.buyRevive)) return void short(r.price);
+    sfx.success();
+    buzz([14, 30, 22]);
+    toast(`${r.name} · Bag ${shop.held(store.get(), 'revive')}/${r.max}`, 'xp');
+  };
   const buySurvey = async () => {
     if (store.get().wallet.shards < SURVEY.price) return void short(SURVEY.price);
     const want = await ask('buy:survey', system.offer([
@@ -217,6 +251,20 @@ function Exchange() {
         buy: carried ? () => void buyCarried(p.id) : () => { if (store.get().wallet.shards < p.price) void short(p.price); else void drinkFlow(p.id); },
       };
     }),
+    // Materials for the Forge, a bundle at a time: every alloy the licence covers, and each part.
+    ...shop.matOffers(s).map((o): Good => {
+      const m = forge.materialById(o.id);
+      return {
+        key: o.id, tab: 'mats', name: `${m?.name ?? o.id} ×${o.n}`, art: <MatArt id={o.id} size={50} />,
+        kind: m?.kind === 'alloy' ? `${m.rank}-Rank alloy` : 'Part', gives: m?.desc ?? '', note: `Held: ${group(forge.held(s, o.id))}`,
+        held: forge.held(s, o.id), price: o.price, buy: () => void buyMat(o),
+      };
+    }),
+    {
+      key: 'revive', tab: 'gates', name: shop.REVIVE.name, art: <ShopArt id="revive" size={58} />, kind: 'Drunk between a Gate’s rooms',
+      gives: `A fallen ally stands at ${shop.REVIVE.hp * 100}% HP`, note: `Bag: ${shop.held(s, 'revive')}/${shop.REVIVE.max}`,
+      held: shop.held(s, 'revive'), price: shop.REVIVE.price, off: shop.reviveRoom(s) <= 0 ? 'Bag full' : null, buy: () => void buyRevive(),
+    },
     {
       key: 'survey', tab: 'gates', name: SURVEY.name, art: <ShopArt id="survey" size={58} />, kind: 'Used from a Gate’s brief, or inside it',
       gives: 'Charts every room of a Gate’s map', note: `Held: ${shop.held(s, 'survey')}`, held: shop.held(s, 'survey'),

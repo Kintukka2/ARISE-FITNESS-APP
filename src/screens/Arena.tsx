@@ -12,7 +12,7 @@ import { Keyed } from '@/ui/keyed';
 import { CONDITION, type ConditionId } from '@/data/drops';
 import { FEAT_PAY, FEATS } from '@/data/feats';
 import { SEALS } from '@/data/seals';
-import { EMBER } from '@/data/forge';
+import { ALLOYS, EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
@@ -91,6 +91,8 @@ type IntentView = CombatIntent & { broken?: boolean };
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
+/** The pace kept in the settings, as the arena reads it; anything else is 1×. */
+const paceOf = (p: string | undefined): Pace => (p === 'skip' ? 'skip' : p === '2' ? 2 : 1);
 
 
 /** A skill's level and readiness, for the hub: `Lv.2` or `Lv.MAX`, and `Ready` or `Ready in 2`. */
@@ -432,7 +434,9 @@ export function Arena() {
   const [won, setWon] = useState<boolean | null>(null);
   const [units, setUnits] = useState<UnitView[]>([]);
   const [feed, setFeed] = useState<{ text: string; tone: string; k: number }[]>([]);
-  const [pace, setPace] = useState<Pace>(1);
+  // The pace the hunter last set, kept from Gate to Gate.
+  const [pace, setPaceNow] = useState<Pace>(() => paceOf(store.get().settings.pace));
+  const setPace = (p: Pace) => { setPaceNow(p); store.update((x) => { x.settings.pace = String(p) as typeof x.settings.pace; }); };
   const [auto, setAuto] = useState(false);
   const [turn, setTurn] = useState<Turn | null>(null);
   const [aim, setAim] = useState<string | null>(null);
@@ -451,7 +455,7 @@ export function Arena() {
   };
   const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
-  const paceRef = useRef<Pace>(1);
+  const paceRef = useRef<Pace>(pace);
   paceRef.current = pace;
   const autoRef = useRef(false);
   autoRef.current = auto;
@@ -1668,7 +1672,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                     <span class="rchal__mark"><Glyph name="star" /></span>
                     <span class="rchal__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
                     <span class="rchal__side">
-                      {fresh ? <><i class="rnew">New</i><small class="grant">Blueprint +{FEAT_PAY.blueprints}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
+                      {fresh ? <><i class="rnew">New</i><small class="grant">{ALLOYS[d.rank as keyof typeof ALLOYS]?.name ?? 'Alloy'} +{FEAT_PAY.alloy}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
                     </span>
                   </li>
                 );

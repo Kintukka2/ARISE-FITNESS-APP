@@ -185,6 +185,50 @@ export function buyThrow(s: Save, id: ThrowId): boolean {
   return true;
 }
 
+// ------------------------------------------------------------------ materials
+
+/**
+ * The Exchange's materials, sold in bundles: alloy of every grade the licence covers, and each of the
+ * three parts. An alloy costs a share of a clear's shards at its grade for each piece, so a Gate's own
+ * alloy is always cheaper won than bought; a part costs the same at every grade.
+ */
+export const MATERIALS = { alloy: 5, part: 3, alloyShare: 0.6, partPrice: 15 } as const;
+
+export interface MatOffer { id: string; n: number; price: number }
+
+/** What the materials counter sells today: a bundle of each alloy the licence covers, then each part. */
+export function matOffers(s: Save): MatOffer[] {
+  const top = RANKS.indexOf(licensedRank(s));
+  const alloys = RANKS.slice(0, Math.max(0, top) + 1).map((r): MatOffer => ({ id: forge.alloyId(r), n: MATERIALS.alloy, price: round5(MATERIALS.alloy * MATERIALS.alloyShare * GATE_SHARDS[r]) }));
+  const parts = (['hide', 'bone', 'core'] as const).map((k): MatOffer => ({ id: forge.partId(k), n: MATERIALS.part, price: MATERIALS.part * MATERIALS.partPrice }));
+  return [...alloys, ...parts];
+}
+
+/** Buy a bundle of a material. False if it is not on the counter or the shards are short. Mutates. */
+export function buyMat(s: Save, id: string): boolean {
+  const o = matOffers(s).find((x) => x.id === id);
+  if (!o || !pay(s, o.price)) return false;
+  forge.give(s, { [id]: o.n });
+  return true;
+}
+
+// ------------------------------------------------------------------ the Revival Potion
+
+/**
+ * The Revival Potion: drunk between a Gate's rooms, it stands one fallen member of the party back up at
+ * `hp` of their maximum HP. Dearer than a Health Potion, and the bag holds only `max`.
+ */
+export const REVIVE = { name: 'Revival Potion', price: 90, max: 2, hp: 0.5 } as const;
+/** Room left in the bag for a Revival Potion. */
+export const reviveRoom = (s: Save) => Math.max(0, REVIVE.max - held(s, 'revive'));
+
+/** Buy a Revival Potion to carry. False if the bag holds as many as it can, or the shards are short. Mutates. */
+export function buyRevive(s: Save): boolean {
+  if (reviveRoom(s) <= 0 || !pay(s, REVIVE.price)) return false;
+  stockUp(s, 'revive');
+  return true;
+}
+
 /** Buy a Gate Survey into stock. False if the shards are short. Mutates. */
 export function buySurvey(s: Save): boolean {
   if (!pay(s, SURVEY.price)) return false;

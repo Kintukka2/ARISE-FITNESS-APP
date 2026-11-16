@@ -2531,6 +2531,48 @@ Front and the Rear instead of choosing with buttons.
   face crosses to the other rank too, so dragging is never the only way. The **You stand** buttons are gone.
 - **Balance.** Nothing a fight, a road or a payout reads changed: no recalibration, and no campaign.
 
+## Materials at the Exchange, Gate Items, the Revival Potion, a pace kept, and rarer blueprints — built
+
+The owner asked for materials to buy at the Exchange; for its last counter to be called Gate Items and to sell a
+Revival Potion, dearer than the rest, that stands a fallen ally back up; for the arena's pace to carry over to the
+next Gate; and for blueprints to be rarer, so that finding one feels like a find.
+
+- **Four counters** (`screens/Exchange.tsx`): Blueprints, **Materials**, Potions and **Gate Items** (once For the Gates).
+  Materials sells bundles (`shop.matOffers`, `shop.buyMat`, `MATERIALS`): five of every alloy the licence covers, each
+  at 60% of a clear's shards at its grade a piece (Iron Scrap ×5 for 30, Mana Silver ×5 for 80, Sovereign Steel ×5 for
+  330), so a Gate's own alloy is always cheaper won than bought; and three of each part for 45. The campaign buys none.
+- **The Revival Potion** (`shop.REVIVE`: 90 shards, the bag holds 2, 50% of HP). Drunk between a Gate's rooms from
+  the bag's wheel (`raid.revive`, `raid.reviveIdle`, `raid.downed`), it stands one fallen member of the party back up
+  at half their maximum HP, what ailed them gone; with more than one down, the System asks who. It is a potion, so
+  Dry seals it, and like every potion Auto, the brief and calibration never drink one: no tuning moves. The wheel
+  has eight slots now, the Revival Potion third.
+- **The pace is kept** (`settings.pace`, as text so a saved `skip` survives the settings' merge): set to Skip, the
+  next Gate opens on Skip.
+- **Blueprints are rarer** (`BLUEPRINTS`, `FEAT_PAY`). A Gate's first clear still leaves one surely, a rank claimed
+  still pays three, and the boss defeated the way its condition asks still leaves one. What changed:
+
+  | Source | Before | After |
+  |---|---|---|
+  | A clear after the first | 10% | 4% |
+  | A Gatekeeper defeated | 3% | 2% |
+  | A vault opened | 12% | 8% |
+  | A set's home Gate, on a clear after the first | 30% | 15% |
+  | A Feat met the first time | a blueprint | 10 of the Gate's alloy |
+
+  A first clear that met its three Feats left four or five blueprints at once; now it leaves one or two.
+- **Balance.** No recalibration: nothing a fight or the System's way reads changed, and the calibration hunters carry
+  gear by level, not by what they found. The campaign, run for run against the same code before the change:
+
+  | | Days to C, B, A, S, N | Carried out | Blueprints known (from Gates) | Forged | Upgrade steps | Ascension opened |
+  |---|---|---|---|---|---|---|
+  | One evening, before | 10, 20, 33, 60, 116 | 13 | 253 (212) | 111 | 183 | 6 |
+  | One evening, after | 7, 17, 33, 59, 116 | 11 | 164 (121) | 63 | 327 | 6 |
+  | Three sessions, before | 5, 10, 17, 32, 63 | 29 | 252 (217) | 48 | 371 | 24 |
+  | Three sessions, after | 5, 9, 17, 32, 63 | 27 | 173 (140) | 59 | 444 | 26 |
+
+  The hunters know about a third fewer blueprints by day 120 and reach every rank on the same day or sooner: with
+  fewer designs to forge, they spend more on upgrading what they wear, and a Feat's alloy feeds it.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

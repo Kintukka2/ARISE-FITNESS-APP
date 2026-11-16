@@ -652,7 +652,7 @@ function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Par
               </span>
               <span class="bfeat__side">
                 <small class="num" aria-label={`The System met it in ${n} of ${runs} runs`}>System {n}/{runs}</small>
-                <small class={done ? 'muted' : 'grant'}>{done ? 'Met' : `Blueprint +${FEAT_PAY.blueprints}`}</small>
+                <small class={done ? 'muted' : 'grant'}>{done ? 'Met' : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
               </span>
             </div>
           );

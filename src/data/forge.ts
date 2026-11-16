@@ -111,14 +111,18 @@ export const DROPS = {
  * of piece the hunter knows fewest of at that rarity. When every design of a rarity is known, the
  * System leaves `known` of its alloy instead.
  */
+/**
+ * Blueprints are rare: a find should feel like one. A Gate's first clear leaves one surely; after that a clear,
+ * a Gatekeeper and a vault each leave one only now and then (the owner's call, after Feats stopped paying them).
+ */
 export const BLUEPRINTS = {
   first: 1,
-  clear: 0.1,
-  elite: 0.03,
+  clear: 0.04,
+  elite: 0.02,
   /** A Gatekeeper's vault, opened, leaves a blueprint of the Gate's grade this often when the run is not carried out. */
-  vault: 0.12,
+  vault: 0.08,
   /** A set's home Gate leaves one of its blueprints not yet known this often on a clear, and surely on its first. */
-  home: 0.3,
+  home: 0.15,
   /** A blueprint is one rarity up this often, below Legendary. */
   up: 0.15,
   known: 10,

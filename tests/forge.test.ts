@@ -191,8 +191,8 @@ describe('what a run leaves', () => {
     const res = raid.finish(s, d, run, 'cleared', now);
     expect(res.mats[ALLOYS.C.id]).toBeGreaterThan(0);
     expect((res.mats[PARTS.hide.id] ?? 0) + (res.mats[PARTS.bone.id] ?? 0) + (res.mats[PARTS.core.id] ?? 0)).toBeGreaterThan(0);
-    // The first clear's, and one for each Feat met for the first time and for the boss felled the way its condition asks.
-    expect(res.blueprints).toHaveLength(1 + res.feats.fresh.length + (run.drops ?? []).filter((x) => x.boss).length);
+    // The first clear's, and one for the boss felled the way its condition asks. A Feat pays the Gate's alloy, not a blueprint.
+    expect(res.blueprints).toHaveLength(1 + (run.drops ?? []).filter((x) => x.boss).length);
     expect(forge.knows(s, res.blueprints[0])).toBe(true);
     for (const [k, n] of Object.entries(res.mats)) expect(forge.held(s, k)).toBe(n);
   });

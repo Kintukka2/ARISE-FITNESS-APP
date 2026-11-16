@@ -705,7 +705,8 @@ try {
     const useBtn = page.locator('.bagwheel__hub .btn', { hasText: /^Use$/ });
     await bag.click(); await sleep(500);
     if (!(await page.locator('.bagwheel').isVisible())) throw new Error('THE BAG DID NOT OPEN ITS WHEEL');
-    if ((await page.locator('.bagwheel__slot').count()) !== 6) throw new Error('THE WHEEL DOES NOT HAVE SIX SLOTS');
+    if ((await page.locator('.bagwheel__slot').count()) !== 8) throw new Error('THE WHEEL DOES NOT HAVE EIGHT SLOTS');
+    if (!(await page.locator('.bagwheel__slot[aria-label^="Revival Potion"]').count())) throw new Error('THE WHEEL HAS NO REVIVAL POTION');
     await snap('arena-items');
     // A Health Potion, drunk between rooms, if the fight left the hunter hurt.
     await slot('Health Potion').click(); await sleep(300);
@@ -1005,18 +1006,34 @@ try {
   // blueprint shelf open first as tiles three to a row; a tile tapped is held in a dock with Buy.
   if (!(await page.locator('.sheet.is-top .exbar__purse').count())) throw new Error('THE EXCHANGE HAS NO PURSE AT ITS HEAD');
   if (await page.locator('.sheet.is-top .shoprow, .sheet.is-top .shopcard, .sheet.is-top .exchange .sysfield').count()) throw new Error('THE EXCHANGE STILL HAS ITS OLD ROWS');
-  if ((await page.locator('.sheet.is-top .extab').count()) !== 3 || !(await page.locator('.sheet.is-top .extab.is-on', { hasText: 'Blueprints' }).count())) throw new Error('THE EXCHANGE DOES NOT OPEN ON ITS BLUEPRINT COUNTER');
+  if ((await page.locator('.sheet.is-top .extab').count()) !== 4 || !(await page.locator('.sheet.is-top .extab.is-on', { hasText: 'Blueprints' }).count())) throw new Error('THE EXCHANGE DOES NOT OPEN ON ITS BLUEPRINT COUNTER');
   if (!(await page.locator('.sheet.is-top .extile.is-bp').count())) throw new Error('THE BLUEPRINT COUNTER HOLDS NO TILES');
   if (await page.locator('.sheet.is-top .exdock').count()) throw new Error('THE EXCHANGE OPENED WITH A GOOD HELD');
   await page.locator('.sheet.is-top .extile').first().click(); await sleep(300);
   if (!(await page.locator('.sheet.is-top .exdock .exdock__buy').count())) throw new Error('A TILE TAPPED HELD NOTHING IN THE DOCK');
   await snap('exchange-blueprints');
+  // Materials: a bundle of every alloy the licence covers, and each part, each drawn as the Inventory draws it.
+  await page.locator('.sheet.is-top .extab', { hasText: 'Materials' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .matart').count()) < 4) throw new Error('THE MATERIALS COUNTER SELLS NO MATERIALS');
+  if (!(await page.locator('.sheet.is-top .extile', { hasText: 'Monster Bone' }).count())) throw new Error('THE MATERIALS COUNTER SELLS NO PARTS');
+  {
+    const tile = page.locator('.sheet.is-top .extile').first();
+    const before = await tile.locator('.extile__held').innerText().catch(() => '×0');
+    await tile.click(); await sleep(300); await snap('exchange-materials');
+    await page.locator('.sheet.is-top .exdock .exdock__buy').click(); await sleep(400);
+    if (await page.locator('.syswin', { hasText: 'Would you like to purchase?' }).isVisible()) await page.locator('.syswin__foot .btn', { hasText: /^Buy$/ }).click();
+    await sleep(500);
+    const after = await page.locator('.sheet.is-top .extile').first().locator('.extile__held').innerText();
+    if (after === before) throw new Error('A BUNDLE OF MATERIALS BOUGHT DID NOT REACH THE HOLD');
+  }
   // Every good of the other counters is drawn as itself, not a glyph.
   await page.locator('.sheet.is-top .extab', { hasText: 'Potions' }).click(); await sleep(300);
   if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A POTION IS NOT DRAWN');
   await page.locator('.sheet.is-top .extile').first().click(); await sleep(300); await snap('exchange-potions');
-  await page.locator('.sheet.is-top .extab', { hasText: 'For the Gates' }).click(); await sleep(300);
-  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A GOOD FOR THE GATES IS NOT DRAWN');
+  await page.locator('.sheet.is-top .extab', { hasText: 'Gate Items' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A GATE ITEM IS NOT DRAWN');
+  if (!(await page.locator('.sheet.is-top .extile', { hasText: 'Revival Potion' }).count())) throw new Error('GATE ITEMS SELLS NO REVIVAL POTION');
+  await page.locator('.sheet.is-top .extile', { hasText: 'Revival Potion' }).click(); await sleep(300);
   await snap('exchange-gates');
   await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);
