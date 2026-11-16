@@ -69,6 +69,7 @@ import { openBlueprint } from './Forge';
 import * as forge from '@/core/forge';
 import { bundleText, MatArt, MatList, ordered } from '@/ui/forge';
 import { LootCell, useReveal, type Loot } from '@/ui/loot';
+import { CacheEmblem, openCache, type CacheStage } from '@/ui/cache';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
@@ -885,7 +886,7 @@ export function Arena() {
         <div class="arena__map">
           <RunHud s={s} d={d} tell={tell} />
           {phase === 'node' && panel
-            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
+            ? <NodePanel key={panel.node.id} auto={auto} d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
             : <>
               {feed[0] && <p class={`arena__log feed feed--${feed[0].tone}`} aria-live="polite">{feed[0].text}</p>}
               {clock && <GateClock c={clock} more={Math.round((raid.mightOf(d, run) - 1) * 100)} />}
@@ -1096,10 +1097,11 @@ function GateClock({ c, more }: { c: ClockState; more: number }) {
   );
 }
 
-/** A cache's find, face down until tapped, turned over by its grade as the results turn over what a run found. */
+/** A cache's find, turned over by its grade as the results turn over what a run found, as soon as the cache is opened. */
 function CacheFind({ defId }: { defId: string }) {
   const [loot] = useState(() => [{ defId }]);
   const turn = useReveal(loot);
+  useEffect(() => { const t = setTimeout(() => turn.reveal(0), 260); return () => clearTimeout(t); }, []);
   const name = gear.gearDef(defId)?.name;
   return (
     <>
@@ -1124,8 +1126,8 @@ const SHRINE_LINE = 'Three marks are cut into the altar stone. Each one is warm 
 const FONT_LINE = 'Water wells up through a crack in the floor, lit from beneath.';
 
 /** A step that is not a fight: what happened, or the choice it puts to you. */
-function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
-  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: (pick: raid.RestPick) => void;
+function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
+  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; auto: boolean; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: (pick: raid.RestPick) => void;
 }) {
   const s = useSave();
   const run = s.gates.raid;
@@ -1141,21 +1143,33 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
   const blessed = x.kind === 'shrine' || x.kind === 'font';
   const offer = blessed && run ? blessings.offerAt(run, x) : null;
   const glyph = x.kind === 'shrine' && offer ? STAT_ICON[offer.path] ?? kind.glyph : kind.glyph;
+  // A cache or a vault waits shut for the hunter to open it; on Auto it is opened for them.
+  const cache = x.kind === 'treasure' || x.kind === 'vault' ? x.kind : null;
+  const [stage, setStage] = useState<CacheStage>(cache && !auto ? 'shut' : 'open');
+  const shut = !!cache && stage !== 'open';
   return (
-    <section class={`nodepanel nodepanel--${x.kind}`}>
+    <section class={`nodepanel nodepanel--${x.kind} ${cache ? `is-${stage}` : ''}`}>
       <header class="nodepanel__head">
         {/* The scene's art: the room's mark, vast and faint, behind light turning slowly round its emblem. */}
         <span class="nodepanel__art" aria-hidden="true"><Glyph name={glyph} /></span>
-        <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>
+        {cache
+          ? <CacheEmblem kind={cache} stage={stage} onOpen={() => openCache(cache, setStage)} />
+          : <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>}
         <b class="nodepanel__title">{ev?.title ?? nodeName(x, run)}</b>
       </header>
       {x.kind === 'rest' && !p.rested && <p>The air is still here. Nothing has come this way in a long time.</p>}
       {asks && run && <RestChoice s={s} run={run} onRest={onRest} />}
       {x.kind === 'rest' && p.rested && <RestDone pick={p.rested.pick} potions={p.rested.potions} run={run} />}
-      {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
-      {(x.kind === 'treasure' || x.kind === 'vault') && (item ? <CacheFind key={x.id} defId={p.item!} />
-        : p.mats ? <><p>Something lies under the dust. You take what is worth carrying.</p><MatList b={p.mats} gain /></>
-        : <p>The cache is empty.</p>)}
+      {shut && <p>{cache === 'vault' ? 'The seal is broken.' : 'Something lies under the dust.'}</p>}
+      {shut && <small class="nodepanel__hint">Tap the {cache === 'vault' ? 'vault' : 'cache'} to open it.</small>}
+      {cache && !shut && (
+        <div class="nodepanel__finds">
+          {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
+          {item ? <CacheFind key={x.id} defId={p.item!} />
+            : p.mats ? <>{x.kind !== 'vault' && <p>Something lies under the dust. You take what is worth carrying.</p>}<MatList b={p.mats} gain /></>
+            : <p>The cache is empty.</p>}
+        </div>
+      )}
       {blessed && waiting && <p>{offer?.font ? FONT_LINE : SHRINE_LINE}</p>}
       {ev && !p.done && <p>{ev.text}</p>}
       {p.done && <p>{x.kind === 'font' && offer?.font ? 'The water rises around you, and sinks back into the floor.' : blessed ? 'One of the marks burns, and fades into your skin.' : p.done.effect.text}</p>}
@@ -1192,7 +1206,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
           })}
         </div>
       )}
-      {!waiting && !asks && (
+      {!waiting && !asks && !shut && (
         x.kind === 'rest' && run && !rooms && raid.canWithdraw(d, run)
           ? <div class="row">
             <Btn kind="ghost" onClick={onWithdraw}>Withdraw</Btn>

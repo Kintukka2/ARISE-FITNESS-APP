@@ -2512,6 +2512,25 @@ formation screen.
   more, reaches C-Rank to S-Rank four or five days later and N-Rank two days later, and, tempering less, ends with
   Ember unspent.
 
+## Caches opened by hand, the Gatekeeper after the boss, and the hunter dragged — built
+
+The owner asked for a cache to be opened by a tap on it, with an animation, before its finds and Continue
+show; for the Gatekeeper to follow the boss on the brief; and for the hunter to be dragged between the
+Front and the Rear instead of choosing with buttons.
+
+- **A cache or a vault waits shut** (`ui/cache.tsx`, `NodePanel` in `screens/Arena.tsx`). Its emblem is the
+  button: shut, it glows and bobs over `Tap the cache to open it.`; tapped, it rattles, then a chest's lid lifts
+  on light coming up out of it, or a vault's dial spins and its door swings wide on the light behind. Only then
+  do its finds rise in under it, a piece found whole turning over by its grade at once, and Continue with them.
+  What it held is banked when the room is entered (`raid.choose`), as before: opening only shows it, so
+  nothing pays out on the tap. On Auto it is opened for the hunter. Reduced motion opens it at once.
+- **The Gatekeeper stands next after the boss** in the brief's Enemies, then what else walks in the Gate.
+- **The hunter is dragged** (`Lineup` in `screens/Brief.tsx`, with the Army's `ui/drag.ts`): their face, with a
+  grip at its corner, is picked up (a mouse at once, a finger after a short hold, so a swipe still scrolls),
+  the other rank lights under it, and letting go there stands them in it (`ranks.setStand`). A tap on the
+  face crosses to the other rank too, so dragging is never the only way. The **You stand** buttons are gone.
+- **Balance.** Nothing a fight, a road or a payout reads changed: no recalibration, and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

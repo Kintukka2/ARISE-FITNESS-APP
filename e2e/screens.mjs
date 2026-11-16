@@ -529,18 +529,33 @@ try {
   // The party is a formation: a front rank and a rear rank, every member in the rank they stand in, the hunter among them.
   if ((await page.locator('.sheet.is-top .bformation__rank').count()) !== 2) throw new Error('THE PARTY IS NOT DRAWN AS A FORMATION');
   if ((await page.locator('.sheet.is-top .bformation__one.is-you').count()) !== 1) throw new Error('THE HUNTER DOES NOT STAND IN THE FORMATION');
-  if ((await page.locator('.sheet.is-top .bstand__opt').count()) !== 2) throw new Error('THE BRIEF DOES NOT LET THE HUNTER CHOOSE WHERE THEY STAND');
+  if (await page.locator('.sheet.is-top .bstand__opt').count()) throw new Error('THE BRIEF STILL CHOOSES WHERE THE HUNTER STANDS WITH BUTTONS');
   {
-    const was = await page.locator('.sheet.is-top .bstand__opt.is-on').innerText();
-    await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
-    if ((await page.locator('.sheet.is-top .bstand__opt.is-on').innerText()) === was) throw new Error('THE HUNTER\'S PLACE DID NOT CHANGE');
-    const rankOfYou = await page.locator('.sheet.is-top .bformation__one.is-you').evaluate((el) => el.closest('.bformation__rank').classList.contains('is-rear') ? 'Rear' : 'Front');
-    if (rankOfYou === was) throw new Error('THE HUNTER\'S FACE DID NOT MOVE TO THE RANK CHOSEN');
-    await page.locator('.sheet.is-top .bstand').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-stand');
-    await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
+    // The hunter's face is dragged to the other rank, and a tap crosses back.
+    const rankOfYou = () => page.locator('.sheet.is-top .bformation__one.is-you').evaluate((el) => el.closest('.bformation__rank').classList.contains('is-rear') ? 'rear' : 'front');
+    const was = await rankOfYou();
+    const to = was === 'front' ? 'rear' : 'front';
+    await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
+    const from = await page.locator('.sheet.is-top .bformation__one.is-you .bformation__face').boundingBox();
+    const into = await page.locator(`.sheet.is-top .bformation__rank.is-${to} .bformation__seats`).boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 8, from.y + from.height / 2 + 8, { steps: 3 });
+    await page.mouse.move(into.x + into.width * 0.7, into.y + into.height / 2, { steps: 12 }); await sleep(150);
+    if (!(await page.locator(`.sheet.is-top .bformation__rank.is-${to}.is-over`).count())) throw new Error('THE RANK UNDER THE DRAGGED HUNTER DID NOT LIGHT');
+    await snap('brief-stand-drag');
+    await page.mouse.up(); await sleep(600);
+    if ((await rankOfYou()) !== to) throw new Error('DRAGGING THE HUNTER DID NOT MOVE THEM TO THE OTHER RANK');
+    await snap('brief-stand');
+    await page.locator('.sheet.is-top .bformation__me').click(); await sleep(600);
+    if ((await rankOfYou()) !== was) throw new Error('A TAP ON THE HUNTER DID NOT CROSS THEM BACK');
   }
-  // The enemies as portraits, the boss first: what walks in the Gate and nothing else.
+  // The enemies as portraits, the boss first and the Gatekeeper next: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
+  if (await page.locator('.sheet.is-top .benemy.is-elite').count()) {
+    const second = await page.locator('.sheet.is-top .benemies > li').nth(1).locator('.benemy').getAttribute('class');
+    if (!/is-elite/.test(second ?? '')) throw new Error('THE GATEKEEPER DOES NOT STAND NEXT AFTER THE BOSS');
+  }
   if ((await page.locator('.sheet.is-top .benemy').count()) < 2) throw new Error('THE ENEMIES SHOW NO CREATURES');
   if (await page.locator('.sheet.is-top .benemies', { hasText: /Shadows bound|while Burning|while Stunned|Blueprint \+1/ }).count()) throw new Error('THE ENEMIES STILL SHOW DROPS OR SHADOWS');
   // A creature's portrait opens its card: its habits, a fact to a line, its statuses and its special drop.
@@ -668,6 +683,7 @@ try {
     if (await page.locator('.arena__foot >> text=Carried Out').isVisible().catch(() => false)) break;
     if (await page.locator('.dmap').isVisible().catch(() => false)) break;
     if (await page.locator('.turnbar').isVisible().catch(() => false)) await act('Strike');
+    else if (await page.locator('.nodepanel button.cacheemblem').isVisible().catch(() => false)) { await page.locator('.nodepanel button.cacheemblem').click(); await sleep(900); }
     else if (await page.locator('.nodepanel .btn').last().isVisible().catch(() => false)) await page.locator('.nodepanel .btn').last().click();
     await sleep(250);
   }

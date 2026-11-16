@@ -744,6 +744,53 @@ button.dmap__floor { cursor: pointer; }
 @keyframes emblemIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .nodepanel__emblem, .nodepanel__head::before { animation: none; } }
 .nodepanel > :not(.nodepanel__head) { position: relative; }
+/* A cache or a vault, shut until tapped: it rattles, then opens, and what it held rises in under it. */
+button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.cacheemblem.is-shut { animation: emblemIn 460ms var(--ease) both, cacheCall 2.4s 600ms ease-in-out infinite; }
+.cacheemblem.is-shut .cachesvg { animation: cacheBob 2.4s 600ms ease-in-out infinite; }
+.cacheemblem.is-shut::before { animation: sceneRays 18s linear infinite; }
+.cacheemblem.is-shut:active { transform: scale(0.96); }
+.cachesvg { width: 64px; height: 64px; overflow: visible; fill: currentColor; filter: drop-shadow(0 0 10px var(--nk-glow)); }
+.cachesvg__beam { fill: color-mix(in srgb, var(--nk) 45%, transparent); opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0); }
+.cachesvg__glow { fill: color-mix(in srgb, var(--nk) 40%, #fff); opacity: 0; }
+.cachesvg__lid { transform-box: fill-box; transform-origin: 0% 100%; }
+.cachesvg__inside { fill: color-mix(in srgb, var(--nk) 55%, #fff); opacity: 0; }
+.cachesvg__dial { fill: #0a0806; transform-box: fill-box; transform-origin: 50% 50%; }
+.cachesvg__door { transform-box: fill-box; transform-origin: 0% 50%; }
+.cacheemblem.is-opening .cachesvg { animation: cacheRattle 420ms ease-in-out both; }
+.cacheemblem.is-opening .cachesvg__dial { animation: cacheDial 600ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+.cacheemblem.is-open { animation: cacheFlash 900ms ease-out both; }
+.cacheemblem.is-open .cachesvg__lid { animation: cacheLid 420ms cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+.cacheemblem.is-open .cachesvg__door { animation: cacheDoor 520ms cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+.cacheemblem.is-open .cachesvg__beam { animation: cacheBeam 700ms 80ms ease-out both; }
+.cacheemblem.is-open .cachesvg__glow, .cacheemblem.is-open .cachesvg__inside { animation: cacheGlow 500ms 60ms ease-out both; }
+.nodepanel.is-open .nodepanel__head::before { animation-duration: 14s; filter: brightness(1.7); transition: filter 600ms; }
+.nodepanel__hint { margin: 0; color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.12em; text-align: center; text-transform: uppercase; animation: hintPulse 2.4s ease-in-out infinite; }
+.nodepanel__finds { display: flex; flex-direction: column; gap: 12px; animation: findsRise 420ms 140ms var(--ease) both; }
+.nodepanel__finds > p { margin: 0; color: var(--ink-2); line-height: 1.5; text-align: center; text-wrap: balance; }
+.nodepanel__finds > p.muted { color: var(--ink-3); font-size: 0.86rem; }
+.nodepanel.is-open > .btn { animation: findsRise 380ms 320ms var(--ease) both; }
+@keyframes cacheCall { 0%, 100% { box-shadow: 0 0 30px var(--nk-glow), inset 0 0 18px color-mix(in srgb, var(--nk) 22%, transparent); }
+  50% { box-shadow: 0 0 46px var(--nk-glow), inset 0 0 24px color-mix(in srgb, var(--nk) 34%, transparent); } }
+@keyframes cacheBob { 0%, 100% { transform: none; } 50% { transform: translateY(-4px); } }
+@keyframes cacheRattle { 0%, 100% { transform: none; } 15% { transform: rotate(-8deg) translateX(-1px); } 35% { transform: rotate(7deg) translateX(1px); }
+  55% { transform: rotate(-6deg); } 75% { transform: rotate(4deg); } 90% { transform: rotate(-2deg) scale(1.04); } }
+@keyframes cacheDial { from { transform: none; } to { transform: rotate(540deg); } }
+@keyframes cacheLid { 0% { transform: none; } 60% { transform: translate(-0.6px, -5px) rotate(-22deg); } 100% { transform: translate(-0.4px, -4.2px) rotate(-16deg); } }
+@keyframes cacheDoor { from { transform: none; } to { transform: scaleX(0.2) skewY(-12deg); } }
+@keyframes cacheBeam { 0% { opacity: 0; transform: scaleY(0); } 40% { opacity: 0.85; } 100% { opacity: 0.5; transform: scaleY(1); } }
+@keyframes cacheGlow { from { opacity: 0; } to { opacity: 0.95; } }
+@keyframes cacheFlash { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--nk) 70%, transparent), 0 0 90px var(--nk-glow); }
+  100% { box-shadow: 0 0 0 26px transparent, 0 0 30px var(--nk-glow); } }
+@keyframes findsRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes hintPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .cacheemblem.is-shut, .cacheemblem.is-shut::before, .cacheemblem.is-shut .cachesvg, .cacheemblem.is-opening .cachesvg, .cacheemblem.is-open, .nodepanel__hint, .nodepanel__finds, .nodepanel.is-open > .btn { animation: none; }
+  .cacheemblem.is-open .cachesvg__lid { animation: none; transform: translate(-0.4px, -4.2px) rotate(-16deg); }
+  .cacheemblem.is-open .cachesvg__door { animation: none; transform: scaleX(0.2) skewY(-12deg); }
+  .cacheemblem.is-open .cachesvg__beam { animation: none; opacity: 0.5; transform: none; }
+  .cacheemblem.is-open .cachesvg__glow, .cacheemblem.is-open .cachesvg__inside { animation: none; opacity: 0.95; }
+}
 /* A choice is a row the hunter acts on: what they do over its odds, a bar filled to them, and a chevron. */
 .choice-row { display: grid; grid-template-columns: minmax(0, 1fr) 16px; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--nk, var(--ember)) 45%, transparent);
   border-radius: var(--r-sm); background: rgba(14, 10, 8, 0.82); color: var(--ink); text-align: left; font: inherit; cursor: pointer; touch-action: manipulation; transition: background 140ms var(--ease), border-color 140ms var(--ease); }
@@ -4362,12 +4409,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .unit.is-far { opacity: 0.5; filter: saturate(0.5); }
 .unit__far { flex: none; margin: 0 4px; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 /* Where the hunter stands, to choose, under the formation. */
-.bstand { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
-.bstand .label { font-size: 0.6rem; }
-.bstand__opts { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--sys-hair); }
-.bstand__opt { min-width: 76px; min-height: 40px; padding: 0 14px; border: 0; background: none; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); font: inherit; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; touch-action: manipulation; }
-.bstand__opt + .bstand__opt { border-left: 1px solid var(--sys-hair); }
-.bstand__opt.is-on { background: color-mix(in srgb, var(--mana) 16%, transparent); color: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 60%, transparent); }
 /* The party as a formation, after AFK Arena's lineup and Etrian Odyssey's rows: a board facing the enemies above it,
    the front at its head and the rear under it, each member a face in its rank, the hunter's own lit. */
 .bformation { position: relative; display: grid; gap: 0; border: 1px solid var(--sys-hair); background: linear-gradient(180deg, rgba(255, 154, 60, 0.07), transparent 38%), rgba(4, 8, 18, 0.5); }
@@ -4393,6 +4434,18 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bformation__one.is-free .bformation__face { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
 .bformation__one.is-free b { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
 .bformation__none { grid-column: 1 / -1; align-self: center; padding: 14px 4px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+/* The hunter's own face: picked up and dragged to a rank, or tapped to cross to the other. */
+.bformation__me { display: grid; justify-items: center; gap: 2px; width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: grab; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.bformation__me:active { cursor: grabbing; }
+.bformation__grip { position: absolute; right: -7px; bottom: -7px; width: 16px; height: 16px; padding: 2px; border: 1px solid color-mix(in srgb, var(--mana) 70%, transparent); background: #06101d; color: var(--mana); }
+.bformation__one.is-you.is-lifted { opacity: 0.3; }
+.bformation__rank { transition: background 160ms, box-shadow 160ms; }
+.bformation__rank.is-target { background: color-mix(in srgb, var(--mana) 6%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 45%, transparent); }
+.bformation__rank.is-target .bformation__none { color: color-mix(in srgb, var(--mana) 80%, transparent); }
+.bformation__rank.is-over { background: color-mix(in srgb, var(--mana) 16%, transparent); box-shadow: inset 0 0 0 2px var(--mana), inset 0 0 22px color-mix(in srgb, var(--mana) 30%, transparent); }
+.bstand__hint { margin: 0; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); text-align: center; }
+.dragghost--you { border-color: color-mix(in srgb, var(--mana) 80%, #fff); background: rgba(4, 14, 28, 0.94); box-shadow: 0 0 22px rgba(79, 214, 255, 0.45), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--mana); }
+.dragghost--you b { color: var(--mana); }
 
 /* A tip on a habit or a status: its mark beside its name, as the word tapped wears it. */
 .tip__title { display: flex; align-items: center; gap: 7px; }

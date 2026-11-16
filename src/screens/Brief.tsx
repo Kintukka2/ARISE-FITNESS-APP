@@ -11,6 +11,7 @@ import { ENGRAVED } from '@/data/engravings';
 import { Runestone } from '@/ui/runes';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { createPortal } from 'preact/compat';
 import { sfx } from '@/audio/audio';
 import { powerOf } from '@/core/combat';
 import { bossKnown, dungeonById, enemyById, entryBlock, isPractice, mapKnown, rankIdx } from '@/core/gates';
@@ -44,6 +45,7 @@ import * as store from '@/store';
 import { createStore, useSave } from '@/store';
 import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
+import { useDrag } from '@/ui/drag';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { HabitMark, StatusMark } from '@/ui/effects';
 import { ShadowEmblem } from '@/ui/emblems';
@@ -507,7 +509,8 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   const boss = enemyById(d.boss)!;
   const { holds, met } = bossOf(s, d, level);
   const seen = mapKnown(s, d);
-  const inside = isTrial(d) ? [] : [...new Set([...d.mobs, ...(d.elite ? [d.elite] : [])])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
+  // The Gatekeeper stands next after the boss, then the rest of what walks in the Gate.
+  const inside = isTrial(d) ? [] : [...new Set([...(d.elite ? [d.elite] : []), ...d.mobs])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
   const one = (key: string, cls: string, family: string | null, name: string, tag: string, openIt?: () => void, label?: string) => {
     const body = (
       <>
@@ -552,14 +555,31 @@ function StatusList({ names }: { names: string[] }) {
 /**
  * The party as a formation, after Idle Heroes' Hero Deployment: a board facing the enemies above it,
  * the front rank at its head and the rear under it, each member a face in the rank they stand in, the hunter's own
- * lit; the Shadow slots still open dashed at the end of the front; under the board, where the hunter stands, to choose.
+ * lit; the Shadow slots still open dashed at the end of the front. The hunter's own face is dragged to the rank
+ * they would stand in, or tapped to cross to the other; the choice is kept for every Gate after.
  */
 function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
   const s = useSave();
   const { hero, party, squad } = partyOf(s, d, level, taken);
+  const here = ranks.heroRow(s);
+  const other: Row = here === 'front' ? 'rear' : 'front';
+  const stand = (r: Row) => {
+    if (r === ranks.heroRow(store.get())) return;
+    sfx.tap();
+    buzz(12);
+    store.update((x) => ranks.setStand(x, r));
+  };
+  const drag = useDrag((_id, at) => { if (at === 'front' || at === 'rear') stand(at); });
   type Seat = { key: string; row: Row; el: preact.JSX.Element };
   const seats: Seat[] = [
-    { key: 'you', row: ranks.heroRow(s), el: <li key="you" class="bformation__one is-you"><span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small></li> },
+    { key: 'you', row: here, el: (
+      <li key="you" class={`bformation__one is-you is-drag ${drag.lifted === 'you' ? 'is-lifted' : ''}`} {...drag.handle('you')}>
+        <button type="button" class="bformation__me" aria-label={`${s.hunter.name}, in the ${ROW_NAME[here]}. Tap to stand in the ${ROW_NAME[other]}, or drag to a rank.`}
+          onClick={() => stand(other)}>
+          <span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /><Glyph name="grip" class="bformation__grip" /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small>
+        </button>
+      </li>
+    ) },
     ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
       <li key={a.id} class="bformation__one is-ally"><span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></li>
     ) })),
@@ -571,16 +591,17 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
     }),
   ];
   const free = isPractice(d) ? 0 : shadows.freeSlots(s);
-  const here = ranks.heroRow(s);
   return (
     <section class="bbox" aria-label="Party" data-tour="party">
       <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right bpower" aria-label={`Power ${partyPower(s, d, level, taken)}`}><Glyph name="power" /><b class="num">{partyPower(s, d, level, taken)}</b></small></span>
-      <div class="bformation">
+      <div class={`bformation ${drag.lifted ? 'is-dragging' : ''}`} {...drag.guard}>
         <span class="bformation__facing" aria-hidden="true"><Glyph name="up" />Facing the enemies</span>
         {ROWS.map((r) => {
           const on = seats.filter((x) => x.row === r);
+          // While the hunter is lifted, the rank they are not in waits for them, and lights under them.
+          const target = drag.lifted && r !== here ? `is-target ${drag.over === r ? 'is-over' : ''}` : '';
           return (
-            <div key={r} class={`bformation__rank is-${r}`}>
+            <div key={r} data-drop={r} class={`bformation__rank is-${r} ${target}`}>
               <span class="bformation__label"><b>{ROW_NAME[r]}</b><small class="num">{on.length}</small></span>
               <ul class="bformation__seats" aria-label={`${ROW_NAME[r]}: ${on.length}`}>
                 {on.map((x) => x.el)}
@@ -593,17 +614,16 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
           );
         })}
       </div>
+      {/* Where the hunter stands: their class's place until they move, kept for every Gate after. */}
+      <p class="bstand__hint">Drag yourself to the Front or the Rear. A tap crosses over.</p>
       {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
-      {/* Where the hunter stands: their class's place until they choose, kept for every Gate after. */}
-      <div class="bstand" role="radiogroup" aria-label="Where you stand">
-        <span class="label">You stand</span>
-        <span class="bstand__opts">
-          {ROWS.map((r) => (
-            <button key={r} type="button" role="radio" aria-checked={here === r} class={`bstand__opt ${here === r ? 'is-on' : ''}`}
-              onClick={() => { if (here !== r) { sfx.tap(); store.update((x) => ranks.setStand(x, r)); } }}>{ROW_NAME[r]}</button>
-          ))}
-        </span>
-      </div>
+      {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
+      {createPortal(
+        <div class="dragghost dragghost--you" ref={drag.ghost} hidden={drag.lifted !== 'you'} aria-hidden="true">
+          <Sigil rank={licensedRank(s)} size={30} /><b>{s.hunter.name}</b>
+        </div>,
+        document.body,
+      )}
       {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
     </section>
   );

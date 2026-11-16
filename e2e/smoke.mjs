@@ -122,6 +122,7 @@ async function raidGate(row, name, auto = false) {
   let resumed = false;
   let steps = 0;
   let panels = 0;
+  let caches = 0;
   // The practice Gate's rest: found and kept for later, then walked back to and used before the boss.
   let kept = false;
   let restedBack = false;
@@ -189,6 +190,16 @@ async function raidGate(row, name, auto = false) {
         if ((await page.locator('.nodepanel button.boonc').count()) < 1) throw new Error('A SHRINE OFFERED NOTHING');
         await snap(`${name}-shrine`);
         await page.locator('.nodepanel button.boonc').first().click();
+        continue;
+      }
+      // A cache or a vault waits shut: what it held and the way on show only once it is opened.
+      if (await visible('.nodepanel button.cacheemblem')) {
+        if (await visible('.nodepanel >> text=Continue')) throw new Error('A SHUT CACHE ALREADY OFFERS CONTINUE');
+        if (!caches++) await snap(`${name}-cache-shut`);
+        await page.locator('.nodepanel button.cacheemblem').click();
+        await page.waitForSelector('.nodepanel .nodepanel__finds', { timeout: 5000 });
+        await sleep(900);
+        if (caches === 1) await snap(`${name}-cache-open`);
         continue;
       }
       if (await visible('.nodepanel >> text=Press On')) { await page.locator('.nodepanel >> text=Press On').click(); continue; }
