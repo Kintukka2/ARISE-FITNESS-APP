@@ -1243,7 +1243,7 @@ type Tell = (el: Element, title: string, lines: string[]) => void;
 function tipMark(title: string) {
   const habit = (Object.keys(TRICKS) as TrickId[]).find((k) => TRICKS[k].name === title);
   if (habit) return <HabitMark id={habit} size={18} />;
-  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good ? 'is-good' : ''}`}><StatusMark name={title} /></span>;
+  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good is-up' : 'is-down'}`}><StatusMark name={title} /></span>;
   return null;
 }
 
@@ -1404,7 +1404,7 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
           {u.status.map((st) => (
             <Told key={st} tell={tell} title={st} lines={[STATUS_TEXT[st] ?? (st === 'Covered' ? 'What is aimed at it comes at you, guarded, until your next turn.' : '')].filter(Boolean)}
               class={`tag tag--${st.toLowerCase()} ${STATUS[st]?.good ? (u.side === 'e' ? 'is-foegood' : 'is-good') : ''} ${st === 'Covered' ? 'is-cover' : ''}`}>
-              <span class="tag__mark"><StatusMark name={st} /></span>{st}
+              <span class={`tag__mark ${STATUS[st]?.good || st === 'Covered' ? 'is-up' : 'is-down'}`}><StatusMark name={st} /></span>{st}
             </Told>
           ))}
         </div>

@@ -373,6 +373,12 @@ button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration
 .tag { display: inline-flex; align-items: center; gap: 3px; }
 .tag__mark { display: inline-grid; flex: none; place-items: center; width: 13px; height: 13px; margin-left: -3px; border-radius: 2px; background: color-mix(in srgb, currentColor 24%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 50%, transparent); }
 .tag__mark .fxmark { width: 10px; height: 10px; }
+/* Its sign at the tile's corner, as Honkai: Star Rail marks its effects, so it never rests on colour alone: a point up for
+   what serves the one it holds, down for what harms it. */
+.tag__mark { position: relative; }
+.tag__mark.is-up::after, .tag__mark.is-down::after { content: ''; position: absolute; right: -2px; width: 0; height: 0; border-left: 3px solid transparent; border-right: 3px solid transparent; }
+.tag__mark.is-up::after { top: -2px; border-bottom: 4px solid currentColor; }
+.tag__mark.is-down::after { bottom: -2px; border-top: 4px solid currentColor; }
 /* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
    with the hits left, a diamond to each, the ones taken hollow. */
 .unit__intent.is-wind:not(.is-lethal) { border-color: rgba(127, 168, 255, 0.5); }

@@ -212,17 +212,12 @@ export const STATUS_MARK: Record<string, string[]> = {
   Guarded: [
     'M12 2.4L20.2 5.4V11.4C20.2 16.4 16.8 20.4 12 22.1C7.2 20.4 3.8 16.4 3.8 11.4V5.4ZM12 5V19.2C15.4 17.6 17.4 14.8 17.4 11.4V7Z',
   ],
-  /** A sword, and attack rising. */
-  Emboldened: [
-    'M7.6 2L9.6 4.4L9.6 14.2L5.6 14.2L5.6 4.4Z',
-    'M3 14.2L12.2 14.2L12.2 16.2L3 16.2Z',
-    'M6.6 16.2L8.6 16.2L8.6 20.2L6.6 20.2Z',
-    'M6.1 21.4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0Z',
-    'M13.2 8L17 4L20.8 8L20.8 10.4L17 6.4L13.2 10.4Z',
-    'M13.2 14.2L17 10.2L20.8 14.2L20.8 16.6L17 12.6L13.2 16.6Z',
-    'M13.2 20.4L17 16.4L20.8 20.4L20.8 22.8L17 18.8L13.2 22.8Z',
-  ],
-  /** Enrage's vein. */
+  /**
+   * War Cry's horn: the pack it rallied. A habit and the status it lays wear one mark, as the reference games share a
+   * glyph between a creature's ability and its effect: the plate says it will, the tile that it has.
+   */
+  Emboldened: HABIT_MARK.rally,
+  /** Enrage's vein: the habit, come to pass. */
   Enraged: HABIT_MARK.enrage,
   /** An orb shattered. */
   Broken: [
@@ -230,13 +225,8 @@ export const STATUS_MARK: Record<string, string[]> = {
     'M2.2 3.6L5 2.8L4.4 5.8Z',
     'M20.2 18.4L22.4 20.6L19.4 21.4Z',
   ],
-  /** A dome over the one it holds. */
-  Shielded: [
-    'M1.2 15L1.29 13.59L1.57 12.2L2.02 10.87L2.65 9.6L3.43 8.43L4.36 7.36L5.43 6.43L6.6 5.65L7.87 5.02L9.2 4.57L10.59 4.29L12 4.2L13.41 4.29L14.8 4.57L16.13 5.02L17.4 5.65L18.57 6.43L19.64 7.36L20.57 8.43L21.35 9.6L21.98 10.87L22.43 12.2L22.71 13.59L22.8 15L20.8 15L20.72 13.85L20.5 12.72L20.13 11.63L19.62 10.6L18.98 9.64L18.22 8.78L17.36 8.02L16.4 7.38L15.37 6.87L14.28 6.5L13.15 6.28L12 6.2L10.85 6.28L9.72 6.5L8.63 6.87L7.6 7.38L6.64 8.02L5.78 8.78L5.02 9.64L4.38 10.6L3.87 11.63L3.5 12.72L3.28 13.85L3.2 15Z',
-    'M9.6 10.6a2.4 2.4 0 1 0 4.8 0a2.4 2.4 0 1 0 -4.8 0Z',
-    'M7.8 19.6V17.4C7.8 15.2 9.6 13.8 12 13.8C14.4 13.8 16.2 15.2 16.2 17.4V19.6Z',
-    'M1.2 19.8L22.8 19.8L22.8 21.8L1.2 21.8Z',
-  ],
+  /** Bodyguard's shield: the ally it holds. */
+  Shielded: HABIT_MARK.shield,
   Covered: [glyphPath('cover')!],
 };
 
