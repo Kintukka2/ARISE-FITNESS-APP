@@ -8,7 +8,7 @@ import { FAMILY_PART, PARTS } from '@/data/forge';
 export const partOf = (ref: string) => PARTS[FAMILY_PART[enemyById(ref)?.family ?? ''] ?? 'hide'];
 
 /** What a condition met leaves: `Monster Bone +2`, or from a boss `a blueprint`. */
-export const dropPay = (ref: string, boss: boolean) => (boss ? `Blueprint +${DROP.bossBlueprints}` : `${partOf(ref).name} +${DROP.part}`);
+export const dropPay = (ref: string, boss: boolean) => (boss ? `Blueprint · ${Math.round(DROP.bossBlueprint * 100)}%` : `${partOf(ref).name} +${DROP.part}`);
 
 /** The condition and its pay: `The final hit lands while it is Stunned: Monster Bone +2.` */
 export function conditionLine(ref: string, boss: boolean, cond: ConditionId | null = conditionOf(ref, boss)): string | null {

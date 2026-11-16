@@ -18,7 +18,7 @@ import { bossKnown, dungeonById, enemyById, entryBlock, isPractice, mapKnown, ra
 import { licensedRank } from '@/core/licence';
 import { RARITY } from '@/core/gear';
 import * as forge from '@/core/forge';
-import { ALLOYS, EMBER } from '@/data/forge';
+import { ALLOYS, BLUEPRINTS, EMBER } from '@/data/forge';
 import { MatArt, TrackMark } from '@/ui/forge';
 import { GATE_XP, PRACTICE_LEVEL, practiceAward } from '@/core/progression';
 import { build, mapSeed, sight } from '@/core/map';
@@ -412,8 +412,11 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {rifted && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Rift bonus', `+${RIFT_EMBER[d.rank as Rank]}`, `Rift bonus: Ember +${RIFT_EMBER[d.rank as Rank]}`)}
         {!rifted && taken.length > 0 && tile('ember', 'is-ember', <MatArt id={EMBER.id} size={30} />, 'Seal bonus', `+${ember}`, `Seal bonus: Ember +${ember}`)}
         {mats.map((id) => tile(id, `is-mat ${tracked.has(id) ? 'is-tracked' : ''}`, <><MatArt id={id} size={30} />{tracked.has(id) && <TrackMark class="breward__track" />}</>, forge.materialById(id)?.name ?? id))}
+        {/* A blueprint is a chance, never a promise: a first clear's odds before the Gate is cleared, a clear's after. */}
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
-          practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint', '×1')}
+          practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint',
+          practice ? '×1' : `${Math.round((first ? BLUEPRINTS.first : sets.length ? BLUEPRINTS.home : BLUEPRINTS.clear) * 100)}%`,
+          practice ? undefined : `Blueprint: ${Math.round((first ? BLUEPRINTS.first : sets.length ? BLUEPRINTS.home : BLUEPRINTS.clear) * 100)}% on a clear`)}
         {/* The engraving the boss, and the Gatekeeper, can leave on a piece found whole, at their odds. */}
         {!practice && !trial && engraving.boss && tile('engr-boss', 'is-engrave', <Runestone e={engraving.boss} size={32} />, engraving.boss.name, `${Math.round(ENGRAVED.boss * 100)}%`, `Engraving: ${engraving.boss.name}, left by the boss at ${Math.round(ENGRAVED.boss * 100)}%`)}
         {!practice && !trial && engraving.keeper && engraving.keeper.id !== engraving.boss?.id && tile('engr-keeper', 'is-engrave', <Runestone e={engraving.keeper} size={32} />, engraving.keeper.name, `${Math.round(ENGRAVED.keeper * 100)}%`, `Engraving: ${engraving.keeper.name}, left by the Gatekeeper at ${Math.round(ENGRAVED.keeper * 100)}%`)}
@@ -634,6 +637,7 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
  * here, what it asks, how often the System met it on today's map, and what it pays the first time.
  */
 function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Partial<Record<FeatId, number>>; runs: number }) {
+  const bpFeat = feats.blueprintFeat(d);
   const got = feats.featsOf(d).filter((id) => met.includes(id)).length;
   return (
     <section class="bbox" aria-label="Feats">
@@ -652,7 +656,7 @@ function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Par
               </span>
               <span class="bfeat__side">
                 <small class="num" aria-label={`The System met it in ${n} of ${runs} runs`}>System {n}/{runs}</small>
-                <small class={done ? 'muted' : 'grant'}>{done ? 'Met' : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
+                <small class={done ? 'muted' : id === bpFeat ? 'bfeat__bp' : 'grant'}>{done ? 'Met' : id === bpFeat ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
               </span>
             </div>
           );

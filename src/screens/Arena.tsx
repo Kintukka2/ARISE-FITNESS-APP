@@ -11,6 +11,7 @@ import { TRICKS, type TrickId } from '@/data/tricks';
 import { Keyed } from '@/ui/keyed';
 import { CONDITION, type ConditionId } from '@/data/drops';
 import { FEAT_PAY, FEATS } from '@/data/feats';
+import * as feats from '@/core/feats';
 import { SEALS } from '@/data/seals';
 import { ALLOYS, EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
@@ -1672,7 +1673,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                     <span class="rchal__mark"><Glyph name="star" /></span>
                     <span class="rchal__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
                     <span class="rchal__side">
-                      {fresh ? <><i class="rnew">New</i><small class="grant">{ALLOYS[d.rank as keyof typeof ALLOYS]?.name ?? 'Alloy'} +{FEAT_PAY.alloy}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
+                      {fresh ? <><i class="rnew">New</i><small class="grant">{id === feats.blueprintFeat(d) ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as keyof typeof ALLOYS]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
                     </span>
                   </li>
                 );

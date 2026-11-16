@@ -28,6 +28,9 @@ export interface BagItem {
   use: () => void;
 }
 
+/** Why an item cannot be used when there is none: its slot's count already says so, so the hub leaves it unsaid. */
+export const NONE_HELD = 'None held';
+
 /** The wheel's slots: one to each kind of item, and room for more. */
 export const ITEM_SLOTS = 8;
 
@@ -119,9 +122,9 @@ function ItemWheel({ items, close }: { items: BagItem[]; close: () => void }) {
             <span class={`bagwheel__glyph ${chosen.tone ?? ''}`}><Glyph name={chosen.glyph} /></span>
             <b class="bagwheel__name">{chosen.name}</b>
             <span class="bagwheel__effect">{chosen.effect}</span>
-            <span class="bagwheel__held">Held: <span class="num">{chosen.held}</span></span>
+            {/* The count is on the item's slot, so the hub does not say it again, nor that none is held. */}
             {chosen.off
-              ? <small class="bagwheel__off">{chosen.off}</small>
+              ? chosen.off !== NONE_HELD && <small class="bagwheel__off">{chosen.off}</small>
               : <Btn kind="primary" size="sm" onClick={() => { close(); chosen.use(); }}>{chosen.act ?? 'Use'}</Btn>}
           </> : <>
             <Glyph name="satchel" />

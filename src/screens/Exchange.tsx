@@ -198,7 +198,7 @@ function Exchange() {
     const want = await ask('buy:revive', system.offer([
       'Would you like to purchase?',
       system.tag(r.name, 'Item'),
-      `A fallen ally stands at ${r.hp * 100}% HP.`,
+      `Revive ally at ${r.hp * 100}% HP.`,
       `Price: ${group(r.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
@@ -262,7 +262,7 @@ function Exchange() {
     }),
     {
       key: 'revive', tab: 'gates', name: shop.REVIVE.name, art: <ShopArt id="revive" size={58} />, kind: 'Drunk between a Gate’s rooms',
-      gives: `A fallen ally stands at ${shop.REVIVE.hp * 100}% HP`, note: `Bag: ${shop.held(s, 'revive')}/${shop.REVIVE.max}`,
+      gives: `Revive ally at ${shop.REVIVE.hp * 100}% HP`, note: `Bag: ${shop.held(s, 'revive')}/${shop.REVIVE.max}`,
       held: shop.held(s, 'revive'), price: shop.REVIVE.price, off: shop.reviveRoom(s) <= 0 ? 'Bag full' : null, buy: () => void buyRevive(),
     },
     {

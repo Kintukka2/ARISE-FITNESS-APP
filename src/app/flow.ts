@@ -402,7 +402,7 @@ export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
     },
     {
       id: 'revive', name: shop.REVIVE.name, glyph: 'potion', tone: 'potion--revive', count: revives, held: `${revives}/${shop.REVIVE.max}`,
-      effect: `A fallen ally stands at ${shop.REVIVE.hp * 100}% HP`,
+      effect: `Revive ally at ${shop.REVIVE.hp * 100}% HP`,
       off: revives <= 0 ? 'None held' : !run ? 'Drunk inside a Gate' : raid.reviveIdle(s, d, run) ?? undefined,
       use: () => void reviveNow(d),
     },

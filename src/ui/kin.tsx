@@ -9,6 +9,7 @@
 import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { bonusText } from '@/core/gear';
+import { RANGED_ROLES, REACHING_ROLES, ROLE_ROW, ROW_NAME } from '@/data/ranks';
 import { enemyById } from '@/core/gates';
 import * as kin from '@/core/kin';
 import type { Shadow } from '@/core/types';
@@ -30,6 +31,24 @@ export const kinText = (family: string, tier: number) => bonusText(kin.kinBoon(f
 
 /** A role's aura in words: `Defence +5%`. */
 export const auraText = (role: string) => bonusText(kin.FORMATION[role] ?? {});
+
+/** What a Shadow's family is to the squad, in a tooltip: its Kin's boon and when it is taken. */
+export function familyLines(family: string): string[] {
+  if (family === kin.KIN_ALL) return ['Kin to every family. One deployed counts toward every Kin beside it, and takes the boon of each it completes.'];
+  const boon = kin.KIN[family];
+  if (!boon) return [];
+  return [`${kin.KIN_AT[0]} ${family} Shadows deployed: each takes ${bonusText(boon)}.`, `${kin.KIN_AT[1]} or more: twice that.`];
+}
+
+/** What a Shadow's role is, in a tooltip: where it stands, how far its hits reach, and its Formation aura. */
+export function roleLines(role: string): string[] {
+  const row = ROLE_ROW[role];
+  const reach = RANGED_ROLES.includes(role) ? ' Its shots reach either rank.' : REACHING_ROLES.includes(role) ? ' Its melee reaches past the front.' : '';
+  return [
+    ...(row ? [`Stands in the ${ROW_NAME[row]}.${reach}`] : []),
+    ...(kin.FORMATION[role] ? [`Formation: while one is deployed, ${auraText(role)} for you and every Shadow.`] : []),
+  ];
+}
 
 /** The squad's Kin and Formation in one line, for the brief: `Kin: Orc II · Formation: Brute, Caster`. */
 export function makeLine(squad: readonly Shadow[]): string | null {

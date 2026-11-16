@@ -905,6 +905,18 @@ try {
     if (await page.locator('.sheet.is-top .kintip').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
+  // The card's family and role tell what they are to the squad when tapped, and a tap away closes it.
+  if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 2) throw new Error('THE SHADOW CARD\'S FAMILY AND ROLE DO NOT TELL WHAT THEY ARE');
+  await page.locator('.sheet.is-top .sp-head__tags .infotag').first().hover(); await sleep(200);
+  await page.locator('.sheet.is-top .sp-head__tags .infotag').first().click(); await sleep(300);
+  if (!(await page.locator('.infotip', { hasText: 'deployed' }).isVisible())) throw new Error('A FAMILY TAG TAPPED SAID NOTHING OF ITS KIN');
+  await snap('shadow-tag-tip');
+  await page.locator('.infotip-shade').click({ position: { x: 10, y: 10 } }); await sleep(250);
+  if (await page.locator('.infotip').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE TAG\'S TOOLTIP');
+  await page.locator('.sheet.is-top .sp-head__tags .infotag').nth(1).click(); await sleep(300);
+  if (!(await page.locator('.infotip', { hasText: 'Stands in the' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHERE IT STANDS');
+  await snap('shadow-role-tip');
+  await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
   if (!(await page.locator('.sheet.is-top .sp-auth', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');

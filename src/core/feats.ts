@@ -3,7 +3,7 @@
  * clear met. A Feat pays once, the first time it is met on its Gate (`settle`), whoever fought: the hunter
  * or the System. The brief counts how often the System met each in its runs (`raid.project`).
  */
-import { FEAT, FEAT_IDS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
+import { FEAT, FEAT_IDS, FEAT_PAY, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import type { ChamberResult } from './raid';
 import type { Dungeon, RunTally, Save } from './types';
 import { rng } from './util';
@@ -60,6 +60,14 @@ export function judge(asked: readonly FeatId[], t: RunTally, every: boolean): Fe
 
 /** The Feats already met on a Gate. */
 export const metOn = (s: Save, d: Dungeon): FeatId[] => s.gates.feats?.[d.id] ?? [];
+
+/** The one of a Gate's Feats that pays a blueprint, the same every day, on about one Gate in four; null on the rest. */
+export function blueprintFeat(d: Dungeon): FeatId | null {
+  const r = rng(`arise|featbp|${d.shape ?? d.id}`);
+  if (r() >= FEAT_PAY.blueprintGates) return null;
+  const list = featsOf(d);
+  return list[Math.floor(r() * list.length)] ?? null;
+}
 
 /** Record the Feats a clear met; returns the ones met for the first time, which pay. Mutates. */
 export function settle(s: Save, d: Dungeon, met: readonly FeatId[]): FeatId[] {

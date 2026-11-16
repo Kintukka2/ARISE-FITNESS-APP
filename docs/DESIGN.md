@@ -2548,8 +2548,8 @@ next Gate; and for blueprints to be rarer, so that finding one feels like a find
   has eight slots now, the Revival Potion third.
 - **The pace is kept** (`settings.pace`, as text so a saved `skip` survives the settings' merge): set to Skip, the
   next Gate opens on Skip.
-- **Blueprints are rarer** (`BLUEPRINTS`, `FEAT_PAY`). A Gate's first clear still leaves one surely, a rank claimed
-  still pays three, and the boss defeated the way its condition asks still leaves one. What changed:
+- **Blueprints are rarer** (`BLUEPRINTS`, `FEAT_PAY`). A rank claimed still pays three. What changed first (the
+  second pass, below, made the first clear, the boss's drop and some Feats chances too):
 
   | Source | Before | After |
   |---|---|---|
@@ -2572,6 +2572,41 @@ next Gate; and for blueprints to be rarer, so that finding one feels like a find
 
   The hunters know about a third fewer blueprints by day 120 and reach every rank on the same day or sooner: with
   fewer designs to forge, they spend more on upgrading what they wear, and a Feat's alloy feeds it.
+
+## Blueprints as finds, the wheel's hub trimmed, and the Shadow card's tags told — built
+
+The owner asked for every blueprint source but a rank claimed to be a chance rather than a promise, for a few Feats
+to pay one for variety, for the bag's wheel to stop repeating what its slots already show, and for a Shadow's family
+and role to explain themselves as a fight's tags do.
+
+- **Blueprints are finds** (`BLUEPRINTS`, `DROP`, `FEAT_PAY`, `feats.blueprintFeat`):
+
+  | Source | Before this pass | Now |
+  |---|---|---|
+  | A Gate's first clear (a set's own at its home) | always | 20% |
+  | A boss defeated the way its condition asks | always | 30% |
+  | A Feat met the first time | 10 of the Gate's alloy | the same, but on about one Gate in four one of its three Feats, the same every day, pays a blueprint instead |
+  | A rank claimed | three | three |
+
+  The clear after the first (4%), a Gatekeeper (2%), a vault (8%) and a set's home Gate (15%) are as the first pass
+  left them. The brief's blueprint tile reads its odds (`20%` before a first clear) as the engraving tiles do, its
+  blueprint Feat reads `Blueprint +1` in gold, and the special drop reads `Blueprint · 30%`.
+- **The wheel's hub** no longer says `Held` (the slot shows the count) or `None held` (the slot shows 0), and the
+  Revival Potion reads `Revive ally at 50% HP`, on the wheel and at the Exchange.
+- **The Shadow card's family and role are info tags** (`ui/infotag.tsx`): unchanged at rest, a `?` under a resting
+  pointer, and a tooltip on a tap: the family's Kin boon and when it is taken (`familyLines`), the role's rank, reach
+  and Formation aura (`roleLines`).
+- **Balance.** No recalibration: nothing a fight or the System's way reads changed. The campaign, run for run against
+  this branch before the pass:
+
+  | | Days to C, B, A, S, N | Carried out | Blueprints known (from Gates) | Forged | Upgrade steps | Ascension opened |
+  |---|---|---|---|---|---|---|
+  | One evening, before | 7, 17, 33, 59, 116 | 11 | 164 (121) | 63 | 327 | 6 |
+  | One evening, after | 8, 16, 29, 58, 112 | 10 | 108 (65) | 125 | 219 | 7 |
+  | Three sessions, before | 5, 9, 17, 32, 63 | 27 | 173 (140) | 59 | 444 | 26 |
+  | Three sessions, after | 5, 10, 17, 32, 63 | 30 | 124 (79) | 43 | 481 | 25 |
+
+  Blueprints from Gates fall by nearly half again; the hunters still reach every rank within a day or four of before.
 
 ## What stays out
 

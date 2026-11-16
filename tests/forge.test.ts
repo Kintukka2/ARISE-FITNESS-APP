@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as association from '@/core/association';
 import * as forge from '@/core/forge';
-import { dungeonById, PRACTICE_GATE } from '@/core/gates';
+import { ALL_DUNGEONS, dungeonById, PRACTICE_GATE } from '@/core/gates';
+import * as feats from '@/core/feats';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import { defaults, parse } from '@/core/save';
@@ -182,7 +183,7 @@ describe('blueprints', () => {
 });
 
 describe('what a run leaves', () => {
-  it('a clear leaves alloys of the Gate’s grade and the one below, parts, and on a first clear a blueprint', () => {
+  it('a clear leaves alloys of the Gate’s grade and the one below, parts, and only sometimes a blueprint', () => {
     const s = typicalHunter(27, 'C', 'spoils');
     const d = dungeonById('DNG-016')!;
     expect(d.rank).toBe('C');
@@ -191,10 +192,24 @@ describe('what a run leaves', () => {
     const res = raid.finish(s, d, run, 'cleared', now);
     expect(res.mats[ALLOYS.C.id]).toBeGreaterThan(0);
     expect((res.mats[PARTS.hide.id] ?? 0) + (res.mats[PARTS.bone.id] ?? 0) + (res.mats[PARTS.core.id] ?? 0)).toBeGreaterThan(0);
-    // The first clear's, and one for the boss felled the way its condition asks. A Feat pays the Gate's alloy, not a blueprint.
-    expect(res.blueprints).toHaveLength(1 + (run.drops ?? []).filter((x) => x.boss).length);
-    expect(forge.knows(s, res.blueprints[0])).toBe(true);
+    // At most the first clear's, one for the boss felled the way its condition asks, and the Gate's blueprint Feat:
+    // each is a chance, never a promise. Every other Feat pays the Gate's alloy.
+    const bp = feats.blueprintFeat(d);
+    const most = 1 + (run.drops ?? []).filter((x) => x.boss).length + (bp && res.feats.fresh.includes(bp) ? 1 : 0);
+    expect(res.blueprints.length).toBeLessThanOrEqual(most);
+    for (const id of res.blueprints) expect(forge.knows(s, id)).toBe(true);
     for (const [k, n] of Object.entries(res.mats)) expect(forge.held(s, k)).toBe(n);
+  });
+
+  it('about one Gate in four has one Feat, the same every day, that pays a blueprint', () => {
+    const gates = ALL_DUNGEONS.filter((g) => !g.trial);
+    const with_ = gates.filter((g) => feats.blueprintFeat(g));
+    expect(with_.length / gates.length).toBeGreaterThan(0.1);
+    expect(with_.length / gates.length).toBeLessThan(0.45);
+    for (const g of with_) {
+      expect(feats.featsOf(g)).toContain(feats.blueprintFeat(g));
+      expect(feats.blueprintFeat(g)).toBe(feats.blueprintFeat(g));
+    }
   });
 
   it('a party carried out leaves with nothing; the weapon still grows familiar', () => {
