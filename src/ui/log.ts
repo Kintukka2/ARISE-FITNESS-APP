@@ -20,7 +20,8 @@ export function toBeats(log: Ev[]): Beat[] {
       else push({ kind: 'act', ev: [e] });
     } else if (e.t === 'heal' && e.ab && cur && (cur as Beat).ev[0].t === 'support') (cur as Beat).ev.push(e);
     else if (e.t === 'support' || e.t === 'stun' || e.t === 'guard' || e.t === 'heal' || e.t === 'cast' || e.t === 'cover' || e.t === 'throw' || e.t === 'trick' || e.t === 'charge') push({ kind: 'act', ev: [e] });
-    else if (e.t === 'tick' || e.t === 'expire') {
+    // The round's end: what bleeds and burns, what runs out, and the turns left on the rest (no line of its own).
+    else if (e.t === 'tick' || e.t === 'expire' || e.t === 'left') {
       if (cur && (cur as Beat).kind === 'drain') (cur as Beat).ev.push(e);
       else push({ kind: 'drain', ev: [e] });
     } else if (e.t === 'passive' && e.k === 'aura') push({ kind: 'aura', ev: [e] });

@@ -9,7 +9,7 @@ import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, GRADIENT, LABYRINTH, REST_CHANCE, WING, WINGS } from '@/core/map';
 import { CLOCK } from '@/core/clock';
-import { POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES } from '@/core/combat';
+import { HELD, POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES } from '@/core/combat';
 import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -192,6 +192,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `The bag holds ${THROW_MAX} of each throwable, and the Exchange sells them. Ready one from the bag, on a Gate’s brief or anywhere else, and the wheel throws that one in every fight inside.`,
       'Auto never covers or throws, and the brief’s verdict assumes nothing thrown.',
       'Every creature does something besides hit, and shows it first: an action as its next move, a habit named under its bar. Tap a habit, a status or a move on a card to read it.',
+      'A status on a card shows the turns it has left after its name, one fewer at the end of each round. Stunned shows the one turn it costs.',
+      `${[...HELD].slice(0, -1).join(', ')} and ${[...HELD].at(-1)} last until something ends them, and show no count.`,
       `A creature has its role’s behaviour at every grade, and from ${FAMILY_FROM}-Rank its family’s too.`,
       ...Object.entries(ROLE_TRICK).map(([role, k]) => `${role} (${TRICKS[k].name}): ${TRICKS[k].text}`),
       ...[...new Set(Object.values(FAMILY_TRICK))].map((k) => `${Object.entries(FAMILY_TRICK).filter(([, t]) => t === k).map(([f]) => f).join(', ')} (${TRICKS[k].name}): ${TRICKS[k].text}`),

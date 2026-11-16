@@ -89,6 +89,14 @@ export const STATUS: Record<string, { turns: number; dot?: number; pdef?: number
   Shielded: { turns: 99, good: true },
 };
 
+/**
+ * Statuses held until something happens rather than for a count of rounds: a guard until the unit's next
+ * turn, a shield while its guardian stands, a rage to the end. Their tags show no turns.
+ */
+export const HELD: ReadonlySet<string> = new Set(['Guarded', 'Shielded', 'Enraged']);
+/** Whether a status's turns are worth showing: it counts down, or (Stunned) it says the actions it takes. */
+export const counts = (st: string) => !!STATUS[st] && !HELD.has(st);
+
 const pctOf = (x: number) => Math.round(Math.abs(1 - x) * 100);
 /** What a status does, read from STATUS, name before value (docs/VOICE.md). */
 export const STATUS_TEXT: Record<string, string> = Object.fromEntries(Object.entries(STATUS).map(([k, st]) => {
@@ -317,14 +325,17 @@ export type Ev =
   | { t: 'round'; n: number }
   | { t: 'hit'; a: string; v: string; ab: string; dmg: number; crit: boolean; hp: number }
   | { t: 'miss'; a: string; v: string; ab: string }
-  /** `s`: the status it granted the side; unset is Rallied, null none (a heal). */
-  | { t: 'support'; a: string; ab: string; s?: string | null }
+  /** `s`: the status it granted the side; unset is Rallied, null none (a heal). `n`: the turns it lasts. */
+  | { t: 'support'; a: string; ab: string; s?: string | null; n?: number }
   /** A curse cast, or a taunt: no damage. `n` counts the foes a taunt turned. */
   | { t: 'cast'; a: string; ab: string; k: 'curse' | 'taunt'; n?: number }
   | { t: 'stun'; a: string }
-  | { t: 'status'; v: string; s: string }
+  /** A status landed: `n`, the turns it holds now. */
+  | { t: 'status'; v: string; s: string; n: number }
   | { t: 'tick'; v: string; s: string; dmg: number; hp: number }
   | { t: 'expire'; v: string; s: string }
+  /** The round's countdown: the turns left on each status a unit still holds that counts down. */
+  | { t: 'left'; v: string; n: Record<string, number> }
   | { t: 'down'; v: string }
   /** A creature felled the way its condition asks: it leaves more (`data/drops.ts`). */
   | { t: 'drop'; v: string }
@@ -335,8 +346,8 @@ export type Ev =
   | { t: 'cover'; a: string; v: string; n: number }
   /** A throw from the bag: what, and on whom. What it inflicts follows as `status` events. */
   | { t: 'throw'; a: string; item: string; v: string[] }
-  /** A creature's behaviour taken instead of an attack: `v` the ally shielded or the target marked. */
-  | { t: 'trick'; a: string; k: 'shield' | 'rally' | 'mark' | 'drink'; v?: string }
+  /** A creature's behaviour taken instead of an attack: `v` the ally shielded or the target marked; `n` the turns a rally lasts. */
+  | { t: 'trick'; a: string; k: 'shield' | 'rally' | 'mark' | 'drink'; v?: string; n?: number }
   /** A wind-up or a channel gathering: `left` actions until it lands. */
   | { t: 'charge'; a: string; ab: string; left: number }
   /** A hit took a pip off a wind-up or a channel: `left` remain. */
@@ -628,7 +639,7 @@ function enrage(t: Unit, log: Ev[]) {
   if (!t.does('enrage') || t.status.Enraged || !t.alive() || t.hp >= t.maxHp * TRICK.enrage.below) return;
   t.rage = byGrade(TRICK.enrage.atk, t.grade);
   t.status.Enraged = STATUS.Enraged.turns;
-  log.push({ t: 'status', v: t.uid, s: 'Enraged' });
+  log.push({ t: 'status', v: t.uid, s: 'Enraged', n: t.status.Enraged });
 }
 
 /** A hit landed on a creature winding up or channelling takes a pip off; the last breaks it. Mutates. */
@@ -642,8 +653,8 @@ function chip(t: Unit, log: Ev[], by?: Unit) {
   t.status.Stunned = STATUS.Stunned.turns;
   t.status.Broken = STATUS.Broken.turns;
   log.push({ t: 'break', v: t.uid });
-  log.push({ t: 'status', v: t.uid, s: 'Stunned' });
-  log.push({ t: 'status', v: t.uid, s: 'Broken' });
+  log.push({ t: 'status', v: t.uid, s: 'Stunned', n: t.status.Stunned });
+  log.push({ t: 'status', v: t.uid, s: 'Broken', n: t.status.Broken });
 }
 
 /** A creature's behaviour, as it showed it. Mutates. */
@@ -661,12 +672,12 @@ function trick(u: Unit, foes: Unit[], friends: Unit[], log: Ev[]) {
     log.push({ t: 'trick', a: u.uid, k: 'shield', v: ward?.uid });
   } else if (i.kind === 'rally') {
     for (const f of friends) if (f.alive()) { f.status.Emboldened = STATUS.Emboldened.turns; f.bold = byGrade(TRICK.rally.atk, u.grade); }
-    log.push({ t: 'trick', a: u.uid, k: 'rally' });
+    log.push({ t: 'trick', a: u.uid, k: 'rally', n: STATUS.Emboldened.turns });
   } else if (i.kind === 'mark') {
     const t = foes.find((f) => f.uid === i.at && f.alive());
     if (t) { u.quarry = t; t.status.Marked = STATUS.Marked.turns; }
     log.push({ t: 'trick', a: u.uid, k: 'mark', v: t?.uid });
-    if (t) log.push({ t: 'status', v: t.uid, s: 'Marked' });
+    if (t) log.push({ t: 'status', v: t.uid, s: 'Marked', n: t.status.Marked });
   }
 }
 
@@ -682,7 +693,7 @@ const shadowsOf = (u: Unit) => (u.kin ?? []).filter((f) => f !== u && f.tag === 
 function branded(u: Unit, t: Unit, st: string, turns: number, log: Ev[]) {
   if (st !== 'Burning' || t === u || !engraved(u, 'demon') || !t.alive() || t.imm.includes('Cursed')) return;
   t.status.Cursed = Math.max(t.status.Cursed ?? 0, turns);
-  log.push({ t: 'status', v: t.uid, s: 'Cursed' });
+  log.push({ t: 'status', v: t.uid, s: 'Cursed', n: t.status.Cursed });
 }
 
 /** The turns past its own a debuff `u` inflicts lasts: Lingering Curse's and Lingering Dark's, and Deep Cuts' on a wound. */
@@ -704,7 +715,7 @@ function inflict(u: Unit, t: Unit, st: string, turns: number, log: Ev[]) {
     return;
   }
   t.status[st] = Math.max(t.status[st] ?? 0, turns + longer(u, st));
-  log.push({ t: 'status', v: t.uid, s: st });
+  log.push({ t: 'status', v: t.uid, s: st, n: t.status[st] });
   branded(u, t, st, t.status[st], log);
 }
 
@@ -783,7 +794,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   }
   if (u.side === 'e' && u.intent?.kind) {
     trick(u, foes, friends, log);
-    if (u.does('aloft')) { u.status.Veiled = TRICK.aloft.turns; log.push({ t: 'status', v: u.uid, s: 'Veiled' }); }
+    if (u.does('aloft')) { u.status.Veiled = TRICK.aloft.turns; log.push({ t: 'status', v: u.uid, s: 'Veiled', n: u.status.Veiled }); }
     return;
   }
   // A wind-up gathering: the action is spent on it, and it is one action nearer.
@@ -806,7 +817,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     if (u.boon('forewarn')) for (const f of foes) if (f.alive() && f.intent?.at === u.uid) inflict(u, f, 'Marked', u.bv('forewarn'), log);
     // Pack Hide weakens what is coming; Bulwark Core guards the Shadows too.
     if (engraved(u, 'beast')) for (const f of foes) if (f.alive() && f.intent?.at === u.uid) inflict(u, f, 'Weakened', ENGRAVE.pack, log);
-    if (engraved(u, 'construct')) for (const f of shadowsOf(u)) { f.status.Guarded = STATUS.Guarded.turns; log.push({ t: 'status', v: f.uid, s: 'Guarded' }); }
+    if (engraved(u, 'construct')) for (const f of shadowsOf(u)) { f.status.Guarded = STATUS.Guarded.turns; log.push({ t: 'status', v: f.uid, s: 'Guarded', n: f.status.Guarded }); }
     return;
   }
   const ward = o?.use === COVER ? friends.find((f) => f.uid === o.at && f !== u && f.alive()) : undefined;
@@ -839,7 +850,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       if (t.imm.includes(thrown.status)) continue;
       // Ritual Flask: what is thrown lasts longer.
       t.status[thrown.status] = STATUS[thrown.status].turns + u.bv('ritual');
-      log.push({ t: 'status', v: t.uid, s: thrown.status });
+      log.push({ t: 'status', v: t.uid, s: thrown.status, n: t.status[thrown.status] });
       branded(u, t, thrown.status, t.status[thrown.status], log);
     }
     // Flask Thrower: what is thrown lands as a hit too.
@@ -864,7 +875,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
     // A heal, a status for the side, or, with neither, a rally.
     const grant = a.grant ?? (a.heal ? null : 'Rallied');
     if (grant) for (const f of friends) if (f.alive()) f.status[grant] = STATUS[grant]?.turns ?? 2;
-    log.push({ t: 'support', a: u.uid, ab: a.name, s: grant === 'Rallied' ? undefined : grant });
+    log.push({ t: 'support', a: u.uid, ab: a.name, s: grant === 'Rallied' ? undefined : grant, ...(grant ? { n: STATUS[grant]?.turns ?? 2 } : {}) });
     if (a.heal) {
       for (const f of friends) {
         if (!f.alive() || f.hp >= f.maxHp) continue;
@@ -905,7 +916,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
       for (const st of a.inflicts) {
         if (!STATUS[st] || t.imm.includes(st)) continue;
         t.status[st] = STATUS[st].turns + longer(u, st);
-        log.push({ t: 'status', v: t.uid, s: st });
+        log.push({ t: 'status', v: t.uid, s: st, n: t.status[st] });
       }
       // Evil Eye marks what the curse reaches; Hexfire burns it.
       if (u.boon('eye')) inflict(u, t, 'Marked', u.bv('eye'), log);
@@ -1009,7 +1020,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
         continue;
       }
       t.status[st] = STATUS[st].turns + longer(u, st) + (u.does('virulent') && !STATUS[st].skip ? TRICK.virulent.turns : 0);
-      log.push({ t: 'status', v: t.uid, s: st });
+      log.push({ t: 'status', v: t.uid, s: st, n: t.status[st] });
       branded(u, t, st, t.status[st], log);
     }
     // What the hunter's engravings leave on a foe they hit: Withering Strike weakens, Overcharge chills.
@@ -1039,7 +1050,7 @@ function act(u: Unit, foes: Unit[], friends: Unit[], r: Rand, log: Ev[], onKill:
   if (u.side === 'e') {
     if (u.wind) u.wind = undefined;
     if (u.intent?.mult && u.quarry) u.quarry = undefined;
-    if (u.does('aloft') && u.alive()) { u.status.Veiled = TRICK.aloft.turns; log.push({ t: 'status', v: u.uid, s: 'Veiled' }); }
+    if (u.does('aloft') && u.alive()) { u.status.Veiled = TRICK.aloft.turns; log.push({ t: 'status', v: u.uid, s: 'Veiled', n: u.status.Veiled }); }
   }
   // Bloodthirst: what the action drew comes back at once, as one heal.
   const heal = Math.min(Math.round(drawn), Math.round(u.maxHp - u.hp));
@@ -1122,6 +1133,9 @@ function endOfRound(u: Unit, log: Ev[], onKill: (killer: Unit | null, victim: Un
       if (u.alive()) log.push({ t: 'expire', v: u.uid, s: st });
     }
   }
+  // What is left to count, said once for the unit: the fight card shows it on each tag.
+  const left = Object.fromEntries(Object.entries(u.status).filter(([st]) => counts(st)));
+  if (u.alive() && Object.keys(left).length) log.push({ t: 'left', v: u.uid, n: left });
   for (const k of Object.keys(u.cd)) if (--u.cd[k] <= 0) delete u.cd[k];
 }
 
@@ -1134,7 +1148,7 @@ function hazard(u: Unit, foes: Unit[], r: Rand, log: Ev[]) {
   if (r() * 100 >= statusLands(u, t, st)) return;
   t.status[st] = Math.max(t.status[st] ?? 0, 1);
   log.push({ t: 'passive', u: u.uid, p: u.named('hazard'), k: 'hazard' });
-  log.push({ t: 'status', v: t.uid, s: st });
+  log.push({ t: 'status', v: t.uid, s: st, n: t.status[st] });
 }
 
 function openSide(side: Unit[], log: Ev[]) {

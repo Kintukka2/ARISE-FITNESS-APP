@@ -372,6 +372,9 @@ button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration
 .tag__mark { transform: translateY(-0.1em); }
 .trick .fxhabit { transform: translateY(-0.14em); }
 .tag__mark .fxmark { width: 11px; height: 11px; }
+/* The turns a status has left, after its name as the reference games count them: a bare figure a step brighter than the
+   name, with no chip of its own (a tile inside a tag doubled its ground, the owner's call on the marks). */
+.tag__turns { margin-left: 1px; color: color-mix(in srgb, currentColor 55%, #fff); font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: 0; }
 /* A wind-up or a channel: its move called out, and the break under it, after Octopath's shield: a badge
    with the hits left, a diamond to each, the ones taken hollow. */
 .unit__intent.is-wind:not(.is-lethal) { border-color: rgba(127, 168, 255, 0.5); }

@@ -641,6 +641,23 @@ try {
   }
   await sleep(300);
   await snap('arena-foes');
+  // A guard is held to the next turn, so its tag shows no turns left.
+  if (!(await page.locator('.arena__field .tag--guarded').count())) throw new Error('THE HUNTER GUARDED AND WEARS NO GUARD');
+  if (await page.locator('.arena__field .tag--guarded .tag__turns').count()) throw new Error('A GUARD SHOWS TURNS LEFT');
+  // The flask readied, thrown: the Burning it lands counts its turns after its name, and a tap on it says them.
+  await act('Throw');
+  if (!(await page.waitForSelector('.arena__field .tag--burning .tag__turns', { timeout: 10000 }).catch(() => null))) throw new Error('A STATUS LANDED SHOWS NO TURNS LEFT');
+  for (let i = 0; i < 60 && !(await page.locator('.turnbar').isVisible().catch(() => false)); i++) {
+    if (await page.locator('.arena__foot >> text=Claim The Gate').isVisible().catch(() => false)) break;
+    await drain(); await sleep(400);
+  }
+  const counted = page.locator('.arena__field button.tag:has(.tag__turns)');
+  if ((await page.locator('.turnbar').isVisible().catch(() => false)) && (await counted.count())) {
+    await counted.first().click(); await sleep(300);
+    if (!(await page.locator('.tip', { hasText: 'Turns left:' }).isVisible())) throw new Error('A STATUS TAPPED DOES NOT SAY ITS TURNS LEFT');
+    await snap('arena-status-tip');
+    await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(200);
+  }
   // The pace and Auto sit behind one button in the head.
   await page.locator('.pacebtn').click(); await sleep(200);
   if (!(await page.locator('.pacemenu').isVisible())) throw new Error('THE PACE MENU DID NOT OPEN');
