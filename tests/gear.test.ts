@@ -4,7 +4,7 @@ import { dungeonById } from '@/core/gates';
 import * as gear from '@/core/gear';
 import * as raid from '@/core/raid';
 import * as forge from '@/core/forge';
-import { ALLOYS, SALVAGE, UPGRADE_COST } from '@/data/forge';
+import { ALLOYS, BLUEPRINTS, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import * as spire from '@/core/spire';
 import type { Save } from '@/core/types';
 import { SETS, UPGRADE } from '@/data/sets';
@@ -100,7 +100,11 @@ describe('a set’s home gate', () => {
     return raid.finish(s, d, run, 'cleared', now);
   }
 
-  it('its first clear leaves a blueprint of its set the hunter does not know, and every clear its boss’s trophy', () => {
+  it('its first clear\'s find, when there is one, is a blueprint of its set the hunter does not know, and every clear its boss’s trophy', () => {
+    // A first clear leaves a blueprint only at its odds: here it surely does, to see which one it is.
+    const was = BLUEPRINTS.first;
+    (BLUEPRINTS as { first: number }).first = 1;
+    try {
     const s = typicalHunter(34, 'C', 'home');
     // Champion and the Oathkeeper jewellery are both at home there: a blueprint of either.
     const pieces = raid.homeSets(dungeonById('DNG-015')!).flatMap((x) => gear.setPieces(x.id)).map((d) => d.id);
@@ -115,6 +119,7 @@ describe('a set’s home gate', () => {
     expect(forge.knows(s, got[0])).toBe(true);
     expect(res.mats[trophy]).toBe(1);
     expect(forge.held(s, trophy)).toBe(1);
+    } finally { (BLUEPRINTS as { first: number }).first = was; }
   });
 
   it('a gate that is home to no set leaves none, and a Spire block in a home gate’s shape does', () => {

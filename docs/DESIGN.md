@@ -2512,6 +2512,140 @@ formation screen.
   more, reaches C-Rank to S-Rank four or five days later and N-Rank two days later, and, tempering less, ends with
   Ember unspent.
 
+## Caches opened by hand, the Gatekeeper after the boss, and the hunter dragged — built
+
+The owner asked for a cache to be opened by a tap on it, with an animation, before its finds and Continue
+show; for the Gatekeeper to follow the boss on the brief; and for the hunter to be dragged between the
+Front and the Rear instead of choosing with buttons.
+
+- **A cache or a vault waits shut** (`ui/cache.tsx`, `NodePanel` in `screens/Arena.tsx`). Its emblem is the
+  button: shut, it glows and bobs over `Tap the cache to open it.`; tapped, it rattles, then a chest's lid lifts
+  on light coming up out of it, or a vault's dial spins and its door swings wide on the light behind. Only then
+  do its finds rise in under it, a piece found whole turning over by its grade at once, and Continue with them.
+  What it held is banked when the room is entered (`raid.choose`), as before: opening only shows it, so
+  nothing pays out on the tap. On Auto it is opened for the hunter. Reduced motion opens it at once.
+- **The Gatekeeper stands next after the boss** in the brief's Enemies, then what else walks in the Gate.
+- **The hunter is dragged** (`Lineup` in `screens/Brief.tsx`, with the Army's `ui/drag.ts`): their face, with a
+  grip at its corner, is picked up (a mouse at once, a finger after a short hold, so a swipe still scrolls),
+  the other rank lights under it, and letting go there stands them in it (`ranks.setStand`). A tap on the
+  face crosses to the other rank too, so dragging is never the only way. The **You stand** buttons are gone.
+- **Balance.** Nothing a fight, a road or a payout reads changed: no recalibration, and no campaign.
+
+## Materials at the Exchange, Gate Items, the Revival Potion, a pace kept, and rarer blueprints — built
+
+The owner asked for materials to buy at the Exchange; for its last counter to be called Gate Items and to sell a
+Revival Potion, dearer than the rest, that stands a fallen ally back up; for the arena's pace to carry over to the
+next Gate; and for blueprints to be rarer, so that finding one feels like a find.
+
+- **Four counters** (`screens/Exchange.tsx`): Blueprints, **Materials**, Potions and **Gate Items** (once For the Gates).
+  Materials sells bundles (`shop.matOffers`, `shop.buyMat`, `MATERIALS`): five of every alloy the licence covers, each
+  at 60% of a clear's shards at its grade a piece (Iron Scrap ×5 for 30, Mana Silver ×5 for 80, Sovereign Steel ×5 for
+  330), so a Gate's own alloy is always cheaper won than bought; and three of each part for 45. The campaign buys none.
+- **The Revival Potion** (`shop.REVIVE`: 90 shards, the bag holds 2, 50% of HP). Drunk between a Gate's rooms from
+  the bag's wheel (`raid.revive`, `raid.reviveIdle`, `raid.downed`), it stands one fallen member of the party back up
+  at half their maximum HP, what ailed them gone; with more than one down, the System asks who. It is a potion, so
+  Dry seals it, and like every potion Auto, the brief and calibration never drink one: no tuning moves. The wheel
+  has eight slots now, the Revival Potion third.
+- **The pace is kept** (`settings.pace`, as text so a saved `skip` survives the settings' merge): set to Skip, the
+  next Gate opens on Skip.
+- **Blueprints are rarer** (`BLUEPRINTS`, `FEAT_PAY`). A rank claimed still pays three. What changed first (the
+  second pass, below, made the first clear, the boss's drop and some Feats chances too):
+
+  | Source | Before | After |
+  |---|---|---|
+  | A clear after the first | 10% | 4% |
+  | A Gatekeeper defeated | 3% | 2% |
+  | A vault opened | 12% | 8% |
+  | A set's home Gate, on a clear after the first | 30% | 15% |
+  | A Feat met the first time | a blueprint | 10 of the Gate's alloy |
+
+  A first clear that met its three Feats left four or five blueprints at once; now it leaves one or two.
+- **Balance.** No recalibration: nothing a fight or the System's way reads changed, and the calibration hunters carry
+  gear by level, not by what they found. The campaign, run for run against the same code before the change:
+
+  | | Days to C, B, A, S, N | Carried out | Blueprints known (from Gates) | Forged | Upgrade steps | Ascension opened |
+  |---|---|---|---|---|---|---|
+  | One evening, before | 10, 20, 33, 60, 116 | 13 | 253 (212) | 111 | 183 | 6 |
+  | One evening, after | 7, 17, 33, 59, 116 | 11 | 164 (121) | 63 | 327 | 6 |
+  | Three sessions, before | 5, 10, 17, 32, 63 | 29 | 252 (217) | 48 | 371 | 24 |
+  | Three sessions, after | 5, 9, 17, 32, 63 | 27 | 173 (140) | 59 | 444 | 26 |
+
+  The hunters know about a third fewer blueprints by day 120 and reach every rank on the same day or sooner: with
+  fewer designs to forge, they spend more on upgrading what they wear, and a Feat's alloy feeds it.
+
+## Blueprints as finds, the wheel's hub trimmed, and the Shadow card's tags told — built
+
+The owner asked for every blueprint source but a rank claimed to be a chance rather than a promise, for a few Feats
+to pay one for variety, for the bag's wheel to stop repeating what its slots already show, and for a Shadow's family
+and role to explain themselves as a fight's tags do.
+
+- **Blueprints are finds** (`BLUEPRINTS`, `DROP`, `FEAT_PAY`, `feats.blueprintFeat`):
+
+  | Source | Before this pass | Now |
+  |---|---|---|
+  | A Gate's first clear (a set's own at its home) | always | 20% |
+  | A boss defeated the way its condition asks | always | 30% |
+  | A Feat met the first time | 10 of the Gate's alloy | the same, but on about one Gate in four one of its three Feats, the same every day, pays a blueprint instead |
+  | A rank claimed | three | three |
+
+  The clear after the first (4%), a Gatekeeper (2%), a vault (8%) and a set's home Gate (15%) are as the first pass
+  left them. The brief's blueprint tile reads its odds (`20%` before a first clear) as the engraving tiles do, its
+  blueprint Feat reads `Blueprint +1` in gold, and the special drop reads `Blueprint · 30%`.
+- **The wheel's hub** no longer says `Held` (the slot shows the count) or `None held` (the slot shows 0), and the
+  Revival Potion reads `Revive ally at 50% HP`, on the wheel and at the Exchange.
+- **The Shadow card's family and role are info tags** (`ui/infotag.tsx`): unchanged at rest, a `?` under a resting
+  pointer, and a tooltip on a tap: the family's Kin boon and when it is taken (`familyLines`), the role's rank, reach
+  and Formation aura (`roleLines`).
+- **Balance.** No recalibration: nothing a fight or the System's way reads changed. The campaign, run for run against
+  this branch before the pass:
+
+  | | Days to C, B, A, S, N | Carried out | Blueprints known (from Gates) | Forged | Upgrade steps | Ascension opened |
+  |---|---|---|---|---|---|---|
+  | One evening, before | 7, 17, 33, 59, 116 | 11 | 164 (121) | 63 | 327 | 6 |
+  | One evening, after | 8, 16, 29, 58, 112 | 10 | 108 (65) | 125 | 219 | 7 |
+  | Three sessions, before | 5, 9, 17, 32, 63 | 27 | 173 (140) | 59 | 444 | 26 |
+  | Three sessions, after | 5, 10, 17, 32, 63 | 30 | 124 (79) | 43 | 481 | 25 |
+
+  Blueprints from Gates fall by nearly half again; the hunters still reach every rank within a day or four of before.
+
+## One tooltip, the fight's — built
+
+The owner found the Shadow card's tooltips awkward beside the fight's, asked for them to be made like the fight's in
+look, voice and wording after the reference games, and for every tooltip from now on to be the fight's. References:
+[docs/research/references/tooltips/](research/references/tooltips/) (Teamfight Tactics' trait and role tips, Slay
+the Spire's keyword tips, Hades II's boons and their glossary, Darkest Dungeon, Marvel Snap, Solo Leveling: Arise).
+
+- **One tooltip** (`ui/tip.tsx`): `Tip` by the word tapped, over a shade a tap anywhere or Escape closes, on its own
+  layer over a fight, a sheet or the wheel (`--z-tip`), and `TipBody` for a panel that stands in for one. The head is
+  the thing's mark and its name, with its kind small at the right (`Habit`, `Status`, `Kin`, `Formation`,
+  `Blessing`, `Stat`, `In a fight`), as Hades II sets a boon's rarity; then a sentence or two through `Keyed`; then,
+  for a Kin, its breakpoints a line each as Teamfight Tactics lists a trait's, the one the squad reaches lit and the
+  rest greyed. Its edge is the Gate's ember in a Gate, the Shadows' violet on a Shadow, the System's cyan in a System
+  sheet; its type is always the fight's.
+- **Every tooltip uses it**: a fight's habits, statuses, moves and special drops (the head now names `Habit` or
+  `Status`); the run strip's blessings (now led by their Path's mark); the Shadow card's family and role
+  (`InfoTag`); the Army's Kin and Formation panel (`TipBody`, in place); the Stats sheet's rows and its `In a fight`
+  numbers (`Field`'s help), which opened their lines inline before.
+- **The Shadow card's words**, before and after:
+
+  | Tag | Before | After |
+  |---|---|---|
+  | Orc | `Orc` over `2 Orc Shadows deployed: each takes Attack +10%.` and `3 or more: twice that.` | `Orc` and `Kin` over `Deployed together, Orc Shadows each gain Attack.`, then `(2) Attack +10%` and `(3) Attack +20%`, the one reached lit |
+  | Leader | `Leader` over `Stands in the Rear.` and `Formation: while one is deployed, Initiative +4 for you and every Shadow.` | `Leader` and `Formation` over `Stands in the Rear.` and `While a Leader is deployed, you and every Shadow gain 4 Initiative.` |
+
+  The Stats sheet's lines are told the same way (`Sets how often your hits land against the target’s Evasion,
+  between 5% and 95%. Grows with PER, and a little with AGI.`), and a stat is capitalised wherever a tooltip names
+  it, so `Keyed` colours it: `STAT_WORDS` in `core/gear.ts` spells each, and `tipStats`, `tipGain` and `tipNames`
+  write a bonus as a breakpoint, a sentence or a list of names.
+- **Held by tests**: `tests/voice.test.ts` fails on a `role="tooltip"` outside `ui/tip.tsx`, on a Shadow tooltip
+  line that is not a whole sentence or carries a label inside it, and on a breakpoint that is not a stat's name then
+  its value. The tour opens a fight's, a Shadow card's, the Army's and the Stats sheet's, and checks each leads with
+  its mark, names its kind and colours its keywords.
+- **Left for later**: Hades II's and Slay the Spire's box for each keyword a tooltip names, and Teamfight Tactics'
+  tile for where a unit stands. No tooltip yet names a word it does not explain itself, and a Shadow's card shows its
+  rank nowhere else.
+- **Balance.** Nothing a fight, a map or a reward reads changed: no calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

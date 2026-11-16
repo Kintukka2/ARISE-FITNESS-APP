@@ -68,6 +68,13 @@ describe('save', () => {
     expect(s.settings.skipAsk).toEqual(['drink:hp']);
   });
 
+  it('keeps the arena\'s pace from one Gate to the next, skip included', () => {
+    expect(defaults().settings.pace).toBe('1');
+    const s = defaults();
+    s.settings.pace = 'skip';
+    expect(parse(JSON.stringify(s))?.settings.pace).toBe('skip');
+  });
+
   it('rejects things that are not saves', () => {
     expect(parse('nope')).toBeNull();
     expect(parse('{"a":1}')).toBeNull();

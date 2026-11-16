@@ -132,8 +132,13 @@ try {
   await page.locator('[data-hub="stats"]').click(); await sleep(400); await snap('stats', true);
   // Where each stat comes from is a table: a row to each stat, its columns lined up.
   if ((await page.locator('.sheet.is-top .stattable__row').count()) !== 5) throw new Error('THE STATS TABLE DOES NOT ROW EVERY STAT');
-  // A stat's line shows only when its row is tapped.
-  if (await page.locator('.sheet.is-top .stattable__desc').count()) throw new Error('THE STATS TABLE SHOWS EVERY LINE AT ONCE');
+  // A stat's line shows only when its row is tapped, in the game's one tooltip, and a tap away closes it.
+  if (await page.locator('.tip').count()) throw new Error('THE STATS TABLE SHOWS A LINE BEFORE A ROW IS TAPPED');
+  await page.locator('.sheet.is-top .stattable__row').nth(2).click(); await sleep(250);
+  if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Stat' }).isVisible())) throw new Error('A STAT\'S ROW TAPPED DID NOT OPEN ITS TOOLTIP');
+  await snap('stats-row-tip');
+  await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(200);
+  if (await page.locator('.tip').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE STAT\'S TOOLTIP');
   const cols = await page.locator('.sheet.is-top .stattable__row').evaluateAll((rows) => rows.map((r) => Math.round(r.querySelector('.stattable__total').getBoundingClientRect().right)));
   if (new Set(cols).size !== 1) throw new Error(`THE STATS TABLE'S TOTALS DO NOT LINE UP (${cols.join(', ')})`);
   // Stats reads, Status spends: no Allocate here. A fight's number explains itself, and the radar gives a stat's value.
@@ -141,10 +146,13 @@ try {
   await page.locator('.sheet.is-top .ia-radar__hit').nth(3).click(); await sleep(200);
   if (!(await page.locator('.sheet.is-top .ia-radar__label.is-on').count())) throw new Error('THE RADAR DID NOT SHOW A VALUE');
   await page.locator('.sheet.is-top .statsheet__radar').scrollIntoViewIfNeeded(); await snap('stats-radar');
-  if (await page.locator('.sheet.is-top .sysfield__why').count()) throw new Error('A FIGHT NUMBER EXPLAINED ITSELF BEFORE IT WAS TAPPED');
-  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).click(); await sleep(200);
-  if (!(await page.locator('.sheet.is-top .sysfield.is-open .sysfield__why').isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
-  await page.locator('.sheet.is-top .sysfield.is-open').scrollIntoViewIfNeeded(); await sleep(200); await snap('stats-help');
+  if (await page.locator('.tip').count()) throw new Error('A FIGHT NUMBER EXPLAINED ITSELF BEFORE IT WAS TAPPED');
+  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).scrollIntoViewIfNeeded(); await sleep(200);
+  await page.locator('.sheet.is-top .sysfield.has-help').nth(4).click(); await sleep(250);
+  if (!(await page.locator('.tip.tip--system', { hasText: 'Accuracy' }).isVisible())) throw new Error('A FIGHT NUMBER DID NOT EXPLAIN ITSELF');
+  await snap('stats-help');
+  await page.keyboard.press('Escape'); await sleep(200);
+  if (await page.locator('.tip').count()) throw new Error('ESCAPE DID NOT CLOSE THE FIGHT NUMBER\'S TOOLTIP');
   await close();
   // The skill tree: the tile calls while a point has somewhere to go, and a point spent is reported on its card.
   if (!(await page.locator('[data-hub="skills"].is-call').count())) throw new Error('THE SKILLS TILE DOES NOT CALL FOR ITS POINTS');
@@ -529,18 +537,33 @@ try {
   // The party is a formation: a front rank and a rear rank, every member in the rank they stand in, the hunter among them.
   if ((await page.locator('.sheet.is-top .bformation__rank').count()) !== 2) throw new Error('THE PARTY IS NOT DRAWN AS A FORMATION');
   if ((await page.locator('.sheet.is-top .bformation__one.is-you').count()) !== 1) throw new Error('THE HUNTER DOES NOT STAND IN THE FORMATION');
-  if ((await page.locator('.sheet.is-top .bstand__opt').count()) !== 2) throw new Error('THE BRIEF DOES NOT LET THE HUNTER CHOOSE WHERE THEY STAND');
+  if (await page.locator('.sheet.is-top .bstand__opt').count()) throw new Error('THE BRIEF STILL CHOOSES WHERE THE HUNTER STANDS WITH BUTTONS');
   {
-    const was = await page.locator('.sheet.is-top .bstand__opt.is-on').innerText();
-    await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
-    if ((await page.locator('.sheet.is-top .bstand__opt.is-on').innerText()) === was) throw new Error('THE HUNTER\'S PLACE DID NOT CHANGE');
-    const rankOfYou = await page.locator('.sheet.is-top .bformation__one.is-you').evaluate((el) => el.closest('.bformation__rank').classList.contains('is-rear') ? 'Rear' : 'Front');
-    if (rankOfYou === was) throw new Error('THE HUNTER\'S FACE DID NOT MOVE TO THE RANK CHOSEN');
-    await page.locator('.sheet.is-top .bstand').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-stand');
-    await page.locator('.sheet.is-top .bstand__opt:not(.is-on)').click(); await sleep(600);
+    // The hunter's face is dragged to the other rank, and a tap crosses back.
+    const rankOfYou = () => page.locator('.sheet.is-top .bformation__one.is-you').evaluate((el) => el.closest('.bformation__rank').classList.contains('is-rear') ? 'rear' : 'front');
+    const was = await rankOfYou();
+    const to = was === 'front' ? 'rear' : 'front';
+    await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
+    const from = await page.locator('.sheet.is-top .bformation__one.is-you .bformation__face').boundingBox();
+    const into = await page.locator(`.sheet.is-top .bformation__rank.is-${to} .bformation__seats`).boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 8, from.y + from.height / 2 + 8, { steps: 3 });
+    await page.mouse.move(into.x + into.width * 0.7, into.y + into.height / 2, { steps: 12 }); await sleep(150);
+    if (!(await page.locator(`.sheet.is-top .bformation__rank.is-${to}.is-over`).count())) throw new Error('THE RANK UNDER THE DRAGGED HUNTER DID NOT LIGHT');
+    await snap('brief-stand-drag');
+    await page.mouse.up(); await sleep(600);
+    if ((await rankOfYou()) !== to) throw new Error('DRAGGING THE HUNTER DID NOT MOVE THEM TO THE OTHER RANK');
+    await snap('brief-stand');
+    await page.locator('.sheet.is-top .bformation__me').click(); await sleep(600);
+    if ((await rankOfYou()) !== was) throw new Error('A TAP ON THE HUNTER DID NOT CROSS THEM BACK');
   }
-  // The enemies as portraits, the boss first: what walks in the Gate and nothing else.
+  // The enemies as portraits, the boss first and the Gatekeeper next: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
+  if (await page.locator('.sheet.is-top .benemy.is-elite').count()) {
+    const second = await page.locator('.sheet.is-top .benemies > li').nth(1).locator('.benemy').getAttribute('class');
+    if (!/is-elite/.test(second ?? '')) throw new Error('THE GATEKEEPER DOES NOT STAND NEXT AFTER THE BOSS');
+  }
   if ((await page.locator('.sheet.is-top .benemy').count()) < 2) throw new Error('THE ENEMIES SHOW NO CREATURES');
   if (await page.locator('.sheet.is-top .benemies', { hasText: /Shadows bound|while Burning|while Stunned|Blueprint \+1/ }).count()) throw new Error('THE ENEMIES STILL SHOW DROPS OR SHADOWS');
   // A creature's portrait opens its card: its habits, a fact to a line, its statuses and its special drop.
@@ -668,6 +691,7 @@ try {
     if (await page.locator('.arena__foot >> text=Carried Out').isVisible().catch(() => false)) break;
     if (await page.locator('.dmap').isVisible().catch(() => false)) break;
     if (await page.locator('.turnbar').isVisible().catch(() => false)) await act('Strike');
+    else if (await page.locator('.nodepanel button.cacheemblem').isVisible().catch(() => false)) { await page.locator('.nodepanel button.cacheemblem').click(); await sleep(900); }
     else if (await page.locator('.nodepanel .btn').last().isVisible().catch(() => false)) await page.locator('.nodepanel .btn').last().click();
     await sleep(250);
   }
@@ -689,7 +713,8 @@ try {
     const useBtn = page.locator('.bagwheel__hub .btn', { hasText: /^Use$/ });
     await bag.click(); await sleep(500);
     if (!(await page.locator('.bagwheel').isVisible())) throw new Error('THE BAG DID NOT OPEN ITS WHEEL');
-    if ((await page.locator('.bagwheel__slot').count()) !== 6) throw new Error('THE WHEEL DOES NOT HAVE SIX SLOTS');
+    if ((await page.locator('.bagwheel__slot').count()) !== 8) throw new Error('THE WHEEL DOES NOT HAVE EIGHT SLOTS');
+    if (!(await page.locator('.bagwheel__slot[aria-label^="Revival Potion"]').count())) throw new Error('THE WHEEL HAS NO REVIVAL POTION');
     await snap('arena-items');
     // A Health Potion, drunk between rooms, if the fight left the hunter hurt.
     await slot('Health Potion').click(); await sleep(300);
@@ -882,12 +907,29 @@ try {
     if (!squad || !fams || !roles || fams > squad || roles > squad) throw new Error(`KIN AND FORMATION DO NOT FOLLOW THE SQUAD (${squad} deployed, ${fams} families, ${roles} roles)`);
     // A tap on a Kin opens its breakpoints under the tracker, as a trait's tooltip does; another closes it.
     await page.locator('.sheet.is-top .kinchip--kin').first().click(); await sleep(300);
-    if (!(await page.locator('.sheet.is-top .kintip .kintiers li', { hasText: '(2)' }).count())) throw new Error('A KIN DID NOT OPEN ITS BREAKPOINTS');
+    if (!(await page.locator('.sheet.is-top .tip--inline .tip__tiers li', { hasText: '(2)' }).count())) throw new Error('A KIN DID NOT OPEN ITS BREAKPOINTS');
+    if (!(await page.locator('.sheet.is-top .tip--inline .tip__title .tip__mark').count())) throw new Error('THE KIN\'S TOOLTIP DOES NOT LEAD WITH ITS MARK');
     await snap('army-kin');
     await page.locator('.sheet.is-top .kinchip--kin').first().click(); await sleep(200);
-    if (await page.locator('.sheet.is-top .kintip').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
+    if (await page.locator('.sheet.is-top .tip--inline').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
+  // The card's family and role tell what they are to the squad when tapped, and a tap away closes it.
+  if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 2) throw new Error('THE SHADOW CARD\'S FAMILY AND ROLE DO NOT TELL WHAT THEY ARE');
+  await page.locator('.sheet.is-top .sp-head__tags .infotag').first().hover(); await sleep(200);
+  await page.locator('.sheet.is-top .sp-head__tags .infotag').first().click(); await sleep(300);
+  // The game's one tooltip, as a fight's: its mark and name, its kind, a sentence coloured by its keywords.
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Kin' }).isVisible())) throw new Error('A FAMILY TAG TAPPED SAID NOTHING OF ITS KIN');
+  if (!(await page.locator('.tip.tip--shadow .tip__title .tip__mark').count())) throw new Error('THE FAMILY\'S TOOLTIP DOES NOT LEAD WITH ITS MARK');
+  if (!(await page.locator('.tip.tip--shadow .kw').count())) throw new Error('THE FAMILY\'S TOOLTIP DOES NOT COLOUR ITS KEYWORDS');
+  await snap('shadow-tag-tip');
+  await page.locator('.tipshade').click({ position: { x: 10, y: 10 } }); await sleep(250);
+  if (await page.locator('.tip.tip--shadow').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE TAG\'S TOOLTIP');
+  await page.locator('.sheet.is-top .sp-head__tags .infotag').nth(1).click(); await sleep(300);
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Stands in the' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHERE IT STANDS');
+  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Formation' }).count())) throw new Error('THE ROLE\'S TOOLTIP DOES NOT NAME ITS KIND');
+  await snap('shadow-role-tip');
+  await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
   if (!(await page.locator('.sheet.is-top .sp-auth', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');
@@ -989,18 +1031,34 @@ try {
   // blueprint shelf open first as tiles three to a row; a tile tapped is held in a dock with Buy.
   if (!(await page.locator('.sheet.is-top .exbar__purse').count())) throw new Error('THE EXCHANGE HAS NO PURSE AT ITS HEAD');
   if (await page.locator('.sheet.is-top .shoprow, .sheet.is-top .shopcard, .sheet.is-top .exchange .sysfield').count()) throw new Error('THE EXCHANGE STILL HAS ITS OLD ROWS');
-  if ((await page.locator('.sheet.is-top .extab').count()) !== 3 || !(await page.locator('.sheet.is-top .extab.is-on', { hasText: 'Blueprints' }).count())) throw new Error('THE EXCHANGE DOES NOT OPEN ON ITS BLUEPRINT COUNTER');
+  if ((await page.locator('.sheet.is-top .extab').count()) !== 4 || !(await page.locator('.sheet.is-top .extab.is-on', { hasText: 'Blueprints' }).count())) throw new Error('THE EXCHANGE DOES NOT OPEN ON ITS BLUEPRINT COUNTER');
   if (!(await page.locator('.sheet.is-top .extile.is-bp').count())) throw new Error('THE BLUEPRINT COUNTER HOLDS NO TILES');
   if (await page.locator('.sheet.is-top .exdock').count()) throw new Error('THE EXCHANGE OPENED WITH A GOOD HELD');
   await page.locator('.sheet.is-top .extile').first().click(); await sleep(300);
   if (!(await page.locator('.sheet.is-top .exdock .exdock__buy').count())) throw new Error('A TILE TAPPED HELD NOTHING IN THE DOCK');
   await snap('exchange-blueprints');
+  // Materials: a bundle of every alloy the licence covers, and each part, each drawn as the Inventory draws it.
+  await page.locator('.sheet.is-top .extab', { hasText: 'Materials' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .matart').count()) < 4) throw new Error('THE MATERIALS COUNTER SELLS NO MATERIALS');
+  if (!(await page.locator('.sheet.is-top .extile', { hasText: 'Monster Bone' }).count())) throw new Error('THE MATERIALS COUNTER SELLS NO PARTS');
+  {
+    const tile = page.locator('.sheet.is-top .extile').first();
+    const before = await tile.locator('.extile__held').innerText().catch(() => '×0');
+    await tile.click(); await sleep(300); await snap('exchange-materials');
+    await page.locator('.sheet.is-top .exdock .exdock__buy').click(); await sleep(400);
+    if (await page.locator('.syswin', { hasText: 'Would you like to purchase?' }).isVisible()) await page.locator('.syswin__foot .btn', { hasText: /^Buy$/ }).click();
+    await sleep(500);
+    const after = await page.locator('.sheet.is-top .extile').first().locator('.extile__held').innerText();
+    if (after === before) throw new Error('A BUNDLE OF MATERIALS BOUGHT DID NOT REACH THE HOLD');
+  }
   // Every good of the other counters is drawn as itself, not a glyph.
   await page.locator('.sheet.is-top .extab', { hasText: 'Potions' }).click(); await sleep(300);
   if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A POTION IS NOT DRAWN');
   await page.locator('.sheet.is-top .extile').first().click(); await sleep(300); await snap('exchange-potions');
-  await page.locator('.sheet.is-top .extab', { hasText: 'For the Gates' }).click(); await sleep(300);
-  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A GOOD FOR THE GATES IS NOT DRAWN');
+  await page.locator('.sheet.is-top .extab', { hasText: 'Gate Items' }).click(); await sleep(300);
+  if ((await page.locator('.sheet.is-top .extile .shopart').count()) !== (await page.locator('.sheet.is-top .extile').count())) throw new Error('A GATE ITEM IS NOT DRAWN');
+  if (!(await page.locator('.sheet.is-top .extile', { hasText: 'Revival Potion' }).count())) throw new Error('GATE ITEMS SELLS NO REVIVAL POTION');
+  await page.locator('.sheet.is-top .extile', { hasText: 'Revival Potion' }).click(); await sleep(300);
   await snap('exchange-gates');
   await close();
   await page.locator('.topbar__cog').click(); await sleep(400); await snap('settings', true);

@@ -196,6 +196,12 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   the run when its next step is chosen (`raid.choose`). No Shadow takes orders of its own.
 - Copy that quotes a number reads it from the engine's constants (see `screens/Guide.tsx`), so the
   text cannot drift from the rules.
+- Every tooltip is the one tooltip, the fight's: `Tip` in `src/ui/tip.tsx`, opened by a fight's `tell`, an
+  `InfoTag`, a System `Field`'s help or a panel's `TipBody`. Its mark and name, its kind at the right, a sentence
+  or two told as a fight's tip tells a habit (the trigger, then what happens), coloured by `Keyed`, and its
+  breakpoints where it has any (VOICE.md, "The tooltip"). Never build a tooltip of another shape;
+  `tests/voice.test.ts` fails on a `role="tooltip"` outside `ui/tip.tsx`. A stat a tooltip names is spelt as
+  `STAT_WORDS` (`core/gear.ts`) spells it, so `Keyed` colours it.
 - Save shape: adding a field with a default needs nothing beyond `defaults()` in `core/save.ts`.
   Reshaping existing data needs a `SAVE_VERSION` bump and a `MIGRATIONS` step. Never change
   `STORAGE_KEY` (`arise-rpg:save`); it is deliberately not the fitness app's `arise:save`.

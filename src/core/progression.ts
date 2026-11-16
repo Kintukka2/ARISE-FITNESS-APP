@@ -34,10 +34,10 @@ export const RANK_LADDER: RankInfo[] = [
 
 export const ATTRS: { key: Stat; name: string; desc: string }[] = [
   { key: 'STR', name: 'Strength', desc: 'Increases physical damage.' },
-  { key: 'AGI', name: 'Agility', desc: 'Increases initiative, evasion and crit chance.' },
-  { key: 'PER', name: 'Perception', desc: 'Increases accuracy and crit chance.' },
-  { key: 'VIT', name: 'Vitality', desc: 'Increases HP and defence.' },
-  { key: 'INT', name: 'Intelligence', desc: 'Increases MP, magic damage and extraction success rate.' },
+  { key: 'AGI', name: 'Agility', desc: 'Increases Initiative, Evasion and Crit Chance.' },
+  { key: 'PER', name: 'Perception', desc: 'Increases Accuracy and Crit Chance.' },
+  { key: 'VIT', name: 'Vitality', desc: 'Increases HP and Defence.' },
+  { key: 'INT', name: 'Intelligence', desc: 'Increases MP, Magic damage and extraction success rate.' },
 ];
 
 export const STAT_CAP = 100;

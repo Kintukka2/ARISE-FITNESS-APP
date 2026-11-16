@@ -16,6 +16,7 @@ one folder up say what the games do; these show it.
 | [9. Ranks, revisited](step-9-ranks/) | Front and rear: melee reaches only the front while anyone stands in it; the rear's melee at half. Then packs of two to four creatures, the field stacked in its lines, the party as a formation | 30 |
 | [Effect icons](effect-icons/) (not a step) | A mark to every habit and status, drawn alone with no frame: a habit's beside its name, a status's in its tag, the special drop's by the HP | 16 |
 | [Creature icons](creature-icons/) (not a step) | A portrait to every kind of creature, its eyes lit; a boss crowned; a Shadow as the dark its creature became, rimmed and eyed in violet | 15 |
+| [Tooltips](tooltips/) (not a step) | The one tooltip, the fight's: a mark and a name, its kind at the right, a sentence with the trigger first, a Kin's breakpoints a line each with the one reached lit | 14 |
 
 Every image belongs to the game's publisher, or to the wiki, site or player who captured it, as listed beside it. They are kept here as design reference only: nothing in ARISE copies their art, and none of them ships with the game.
 

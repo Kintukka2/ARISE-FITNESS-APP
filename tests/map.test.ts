@@ -412,6 +412,55 @@ describe('walking it', () => {
     expect(raid.restHere(s, d, run, { kind: 'heal' }, at)).toBe(false);
   });
 
+  it('a Revival Potion stands a fallen ally back up between steps, at its share of their HP', () => {
+    const s = hunter(30);
+    const d = dungeonById('DNG-001')!;
+    const run = raid.begin(s, d, now);
+    const m = raid.mapOf(d, run);
+    expect(run.carried.length).toBeGreaterThan(1);
+    expect(raid.reviveIdle(s, d, run, now)).toBe('None held');
+    s.wallet.shards = 1000;
+    for (let i = 0; i < shop.REVIVE.max + 1; i++) shop.buyRevive(s);
+    expect(shop.held(s, 'revive')).toBe(shop.REVIVE.max);
+    expect(s.wallet.shards).toBe(1000 - shop.REVIVE.max * shop.REVIVE.price);
+    expect(raid.reviveIdle(s, d, run, now)).toBe('No one down');
+    run.carried[1].hp = 0;
+    const fallen = raid.downed(s, d, run, now);
+    expect(fallen).toHaveLength(1);
+    // Not while a step is underway.
+    raid.choose(s, d, run, systemRoad(m)[0], now);
+    expect(raid.reviveIdle(s, d, run, now)).toBe('Not now');
+    clearStep(s, d, run);
+    run.carried[1].hp = 0;
+    const max = raid.partyFor(s, d, run, now)[1].maxHp;
+    expect(raid.revive(s, d, run, fallen[0].uid, now)).toBe(Math.round(max * shop.REVIVE.hp));
+    expect(run.carried[1].hp).toBe(Math.round(max * shop.REVIVE.hp));
+    expect(shop.held(s, 'revive')).toBe(shop.REVIVE.max - 1);
+    expect(raid.downed(s, d, run, now)).toHaveLength(0);
+    // The hunter is never one of the fallen it can raise.
+    expect(raid.revive(s, d, run, 'hero', now)).toBe(0);
+    // A potion: a Dry seal keeps it in the bag.
+    run.carried[1].hp = 0;
+    run.seals = ['dry'];
+    expect(raid.reviveIdle(s, d, run, now)).toBe('Sealed: Dry');
+  });
+
+  it('the Exchange sells materials in bundles: every alloy the licence covers, and each part', () => {
+    const s = hunter(30);
+    const offers = shop.matOffers(s);
+    const alloys = offers.filter((o) => o.id.startsWith('alloy-'));
+    expect(alloys.map((o) => o.id)).toEqual(['E', 'D', 'C'].map((r) => forge.alloyId(r as Rank)));
+    expect(offers.filter((o) => o.id.startsWith('part-'))).toHaveLength(3);
+    // A Gate's own alloy is cheaper won than bought: a bundle costs more than a clear pays in shards.
+    for (const o of alloys) expect(o.price).toBeGreaterThan(shop.gateShards(o.id.slice(-1)));
+    s.wallet.shards = 1000;
+    const o = alloys[0];
+    expect(shop.buyMat(s, o.id)).toBe(true);
+    expect(forge.held(s, o.id)).toBe(o.n);
+    expect(s.wallet.shards).toBe(1000 - o.price);
+    expect(shop.buyMat(s, forge.alloyId('S'))).toBe(false);
+  });
+
   it('a Health Potion is drunk between steps, from the satchel, only when it would heal', () => {
     const s = hunter(30);
     const d = dungeonById('DNG-001')!;

@@ -8,11 +8,12 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { music, sfx } from '@/audio/audio';
 import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core/combat';
 import { TRICKS, type TrickId } from '@/data/tricks';
-import { Keyed } from '@/ui/keyed';
+import { Tip, tipAt, type TipAt, type TipText } from '@/ui/tip';
 import { CONDITION, type ConditionId } from '@/data/drops';
 import { FEAT_PAY, FEATS } from '@/data/feats';
+import * as feats from '@/core/feats';
 import { SEALS } from '@/data/seals';
-import { EMBER } from '@/data/forge';
+import { ALLOYS, EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
@@ -69,6 +70,7 @@ import { openBlueprint } from './Forge';
 import * as forge from '@/core/forge';
 import { bundleText, MatArt, MatList, ordered } from '@/ui/forge';
 import { LootCell, useReveal, type Loot } from '@/ui/loot';
+import { CacheEmblem, openCache, type CacheStage } from '@/ui/cache';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
@@ -90,6 +92,8 @@ type IntentView = CombatIntent & { broken?: boolean };
 
 const PACE = { 1: 650, 2: 300, skip: 0 } as const;
 type Pace = keyof typeof PACE;
+/** The pace kept in the settings, as the arena reads it; anything else is 1×. */
+const paceOf = (p: string | undefined): Pace => (p === 'skip' ? 'skip' : p === '2' ? 2 : 1);
 
 
 /** A skill's level and readiness, for the hub: `Lv.2` or `Lv.MAX`, and `Ready` or `Ready in 2`. */
@@ -431,7 +435,9 @@ export function Arena() {
   const [won, setWon] = useState<boolean | null>(null);
   const [units, setUnits] = useState<UnitView[]>([]);
   const [feed, setFeed] = useState<{ text: string; tone: string; k: number }[]>([]);
-  const [pace, setPace] = useState<Pace>(1);
+  // The pace the hunter last set, kept from Gate to Gate.
+  const [pace, setPaceNow] = useState<Pace>(() => paceOf(store.get().settings.pace));
+  const setPace = (p: Pace) => { setPaceNow(p); store.update((x) => { x.settings.pace = String(p) as typeof x.settings.pace; }); };
   const [auto, setAuto] = useState(false);
   const [turn, setTurn] = useState<Turn | null>(null);
   const [aim, setAim] = useState<string | null>(null);
@@ -441,16 +447,13 @@ export function Arena() {
   /** The ally the hunter would cover. */
   const [ward, setWard] = useState<string | null>(null);
   /** A word on a card tapped to tell what it is. */
-  const [tip, setTip] = useState<TipAt | null>(null);
+  const [tip, setTip] = useState<{ tip: TipText; at: TipAt } | null>(null);
   /** The round the fight shown stands in: a condition within three rounds is met only while it lasts. */
   const [round, setRound] = useState(0);
-  const tell: Tell = (el, title, lines) => {
-    const r = el.getBoundingClientRect();
-    setTip({ title, lines, x: r.left + r.width / 2, y: r.top, below: r.bottom });
-  };
+  const tell: Tell = (el, title, lines, more) => setTip({ tip: { ...tipHead(title), ...more, title, lines }, at: tipAt(el) });
   const [panel, setPanel] = useState<Panel | null>(null);
   const [result, setResult] = useState<raid.RaidResult | null>(null);
-  const paceRef = useRef<Pace>(1);
+  const paceRef = useRef<Pace>(pace);
   paceRef.current = pace;
   const autoRef = useRef(false);
   autoRef.current = auto;
@@ -885,7 +888,7 @@ export function Arena() {
         <div class="arena__map">
           <RunHud s={s} d={d} tell={tell} />
           {phase === 'node' && panel
-            ? <NodePanel d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
+            ? <NodePanel key={panel.node.id} auto={auto} d={d} p={panel} onChoose={(i) => void choice(i)} onGo={() => void guarded(dispatch)} onWithdraw={() => end('withdrawn')} onRest={(pick) => void restNow(pick, true)} />
             : <>
               {feed[0] && <p class={`arena__log feed feed--${feed[0].tone}`} aria-live="polite">{feed[0].text}</p>}
               {clock && <GateClock c={clock} more={Math.round((raid.mightOf(d, run) - 1) * 100)} />}
@@ -943,7 +946,7 @@ export function Arena() {
           </ol>
         </>
       )}
-      {tip && <Tip tip={tip} close={() => setTip(null)} />}
+      {tip && <Tip tip={tip.tip} at={tip.at} close={() => setTip(null)} />}
       <footer class="arena__foot">
         {phase === 'map' && run && m && (
           // The dock, in the thumb's reach as a phone game keeps its bag: the way out or what to do, and the bag.
@@ -1096,10 +1099,11 @@ function GateClock({ c, more }: { c: ClockState; more: number }) {
   );
 }
 
-/** A cache's find, face down until tapped, turned over by its grade as the results turn over what a run found. */
+/** A cache's find, turned over by its grade as the results turn over what a run found, as soon as the cache is opened. */
 function CacheFind({ defId }: { defId: string }) {
   const [loot] = useState(() => [{ defId }]);
   const turn = useReveal(loot);
+  useEffect(() => { const t = setTimeout(() => turn.reveal(0), 260); return () => clearTimeout(t); }, []);
   const name = gear.gearDef(defId)?.name;
   return (
     <>
@@ -1124,8 +1128,8 @@ const SHRINE_LINE = 'Three marks are cut into the altar stone. Each one is warm 
 const FONT_LINE = 'Water wells up through a crack in the floor, lit from beneath.';
 
 /** A step that is not a fight: what happened, or the choice it puts to you. */
-function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
-  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: (pick: raid.RestPick) => void;
+function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
+  d: NonNullable<ReturnType<typeof dungeonById>>; p: Panel; auto: boolean; onChoose: (i: number) => void; onGo: () => void; onWithdraw: () => void; onRest: (pick: raid.RestPick) => void;
 }) {
   const s = useSave();
   const run = s.gates.raid;
@@ -1141,21 +1145,33 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
   const blessed = x.kind === 'shrine' || x.kind === 'font';
   const offer = blessed && run ? blessings.offerAt(run, x) : null;
   const glyph = x.kind === 'shrine' && offer ? STAT_ICON[offer.path] ?? kind.glyph : kind.glyph;
+  // A cache or a vault waits shut for the hunter to open it; on Auto it is opened for them.
+  const cache = x.kind === 'treasure' || x.kind === 'vault' ? x.kind : null;
+  const [stage, setStage] = useState<CacheStage>(cache && !auto ? 'shut' : 'open');
+  const shut = !!cache && stage !== 'open';
   return (
-    <section class={`nodepanel nodepanel--${x.kind}`}>
+    <section class={`nodepanel nodepanel--${x.kind} ${cache ? `is-${stage}` : ''}`}>
       <header class="nodepanel__head">
         {/* The scene's art: the room's mark, vast and faint, behind light turning slowly round its emblem. */}
         <span class="nodepanel__art" aria-hidden="true"><Glyph name={glyph} /></span>
-        <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>
+        {cache
+          ? <CacheEmblem kind={cache} stage={stage} onOpen={() => openCache(cache, setStage)} />
+          : <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>}
         <b class="nodepanel__title">{ev?.title ?? nodeName(x, run)}</b>
       </header>
       {x.kind === 'rest' && !p.rested && <p>The air is still here. Nothing has come this way in a long time.</p>}
       {asks && run && <RestChoice s={s} run={run} onRest={onRest} />}
       {x.kind === 'rest' && p.rested && <RestDone pick={p.rested.pick} potions={p.rested.potions} run={run} />}
-      {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
-      {(x.kind === 'treasure' || x.kind === 'vault') && (item ? <CacheFind key={x.id} defId={p.item!} />
-        : p.mats ? <><p>Something lies under the dust. You take what is worth carrying.</p><MatList b={p.mats} gain /></>
-        : <p>The cache is empty.</p>)}
+      {shut && <p>{cache === 'vault' ? 'The seal is broken.' : 'Something lies under the dust.'}</p>}
+      {shut && <small class="nodepanel__hint">Tap the {cache === 'vault' ? 'vault' : 'cache'} to open it.</small>}
+      {cache && !shut && (
+        <div class="nodepanel__finds">
+          {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
+          {item ? <CacheFind key={x.id} defId={p.item!} />
+            : p.mats ? <>{x.kind !== 'vault' && <p>Something lies under the dust. You take what is worth carrying.</p>}<MatList b={p.mats} gain /></>
+            : <p>The cache is empty.</p>}
+        </div>
+      )}
       {blessed && waiting && <p>{offer?.font ? FONT_LINE : SHRINE_LINE}</p>}
       {ev && !p.done && <p>{ev.text}</p>}
       {p.done && <p>{x.kind === 'font' && offer?.font ? 'The water rises around you, and sinks back into the floor.' : blessed ? 'One of the marks burns, and fades into your skin.' : p.done.effect.text}</p>}
@@ -1192,7 +1208,7 @@ function NodePanel({ d, p, onChoose, onGo, onWithdraw, onRest }: {
           })}
         </div>
       )}
-      {!waiting && !asks && (
+      {!waiting && !asks && !shut && (
         x.kind === 'rest' && run && !rooms && raid.canWithdraw(d, run)
           ? <div class="row">
             <Btn kind="ghost" onClick={onWithdraw}>Withdraw</Btn>
@@ -1261,32 +1277,19 @@ const skillMax = (name: string) => NODES.find((n) => n.kind === 'skill' && n.nam
 
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
-/** A tap on a word on a card tells what it is: a small tip by the word, gone on the next tap anywhere. */
-export interface TipAt { title: string; lines: string[]; x: number; y: number; below: number }
-type Tell = (el: Element, title: string, lines: string[]) => void;
+/** A tap on a word on a card tells what it is: the game's one tooltip (`ui/tip.tsx`) by the word, gone on the next tap anywhere. */
+type Tell = (el: Element, title: string, lines: string[], more?: Partial<TipText>) => void;
 
-/** A habit's or a status's mark beside a tip's name, as the word tapped wears it. */
-function tipMark(title: string) {
+/**
+ * A tip's head for a word on a card: a habit's or a status's mark beside its name, as the word tapped wears
+ * it, and what kind of thing it is at the head's right, as the trait tooltip of the references names a
+ * trait's kind (`Habit`, `Status`).
+ */
+function tipHead(title: string): Partial<TipText> {
   const habit = (Object.keys(TRICKS) as TrickId[]).find((k) => TRICKS[k].name === title);
-  if (habit) return <HabitMark id={habit} size={17} />;
-  if (STATUS_MARK[title]) return <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good' : ''}`}><StatusMark name={title} /></span>;
-  return null;
-}
-
-/** The tip a tapped word opens: its mark and name over its lines, under the word, kept on the screen. */
-function Tip({ tip, close }: { tip: TipAt; close: () => void }) {
-  const w = Math.min(260, window.innerWidth - 24);
-  const left = Math.max(12, Math.min(window.innerWidth - w - 12, tip.x - w / 2));
-  // Under the word, unless that runs off the foot of the screen.
-  const up = tip.below > window.innerHeight - 140;
-  return (
-    <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
-      <div class="tip" role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - tip.y + 6}px` : `top:${tip.below + 6}px`}`}>
-        <b class="tip__title">{tipMark(tip.title)}{tip.title}</b>
-        {tip.lines.map((l) => <p key={l}><Keyed text={l} /></p>)}
-      </div>
-    </div>
-  );
+  if (habit) return { mark: <HabitMark id={habit} size={17} />, kind: 'Habit' };
+  if (STATUS_MARK[title]) return { mark: <span class={`tag__mark tip__status ${STATUS[title]?.good || title === 'Covered' ? 'is-good' : ''}`}><StatusMark name={title} /></span>, kind: 'Status' };
+  return {};
 }
 
 /** A word on a card that tells what it is when tapped, and never aims or covers. */
@@ -1654,7 +1657,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                     <span class="rchal__mark"><Glyph name="star" /></span>
                     <span class="rchal__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
                     <span class="rchal__side">
-                      {fresh ? <><i class="rnew">New</i><small class="grant">Blueprint +{FEAT_PAY.blueprints}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
+                      {fresh ? <><i class="rnew">New</i><small class="grant">{id === feats.blueprintFeat(d) ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as keyof typeof ALLOYS]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
                     </span>
                   </li>
                 );

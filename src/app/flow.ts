@@ -348,6 +348,31 @@ export function readyThrow(id: ThrowId) {
 }
 
 /**
+ * Drink a Revival Potion between a Gate's rooms, from the bag: one fallen stands again. With more than one
+ * down, the System asks who; with one, the wheel has asked already. True if one stood.
+ */
+export async function reviveNow(d: Dungeon): Promise<boolean> {
+  const s = store.get();
+  const run = s.gates.raid?.dungeonId === d.id ? s.gates.raid : null;
+  if (!run) return false;
+  const down = raid.downed(s, d, run);
+  if (!down.length) return false;
+  let uid: string | null = down[0].uid;
+  if (down.length > 1) {
+    const v = await sys(system.notify(['Would you like to use?', system.tag(shop.REVIVE.name, 'Item'), `Fallen: ${down.length}`], 'gear',
+      [...down.map((x) => ({ label: x.name, value: x.uid })), { label: 'Cancel', value: null }]));
+    uid = typeof v === 'string' ? v : null;
+  }
+  if (!uid) return false;
+  const who = down.find((x) => x.uid === uid)?.name ?? 'Ally';
+  const hp = store.update((x) => raid.revive(x, d, x.gates.raid!, uid!));
+  if (!hp) return false;
+  sfx.success();
+  toast(`${shop.REVIVE.name} · ${who} stands again. HP ${hp}.`, 'good');
+  return true;
+}
+
+/**
  * What the bag holds for a Gate, a slot to each kind, the same slot every time: the Health Potion
  * (inside the Gate drunk between steps by `drink`, the arena's; on the brief, for the hunter's own
  * health), the Mana Potion and the Gate Survey. Each says why it cannot be used, where it cannot.
@@ -357,6 +382,7 @@ export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
   const hp = shop.held(s, 'hp');
   const mp = shop.held(s, 'mp');
   const charts = shop.held(s, 'survey');
+  const revives = shop.held(s, 'revive');
   const health = shop.POTIONS.find((x) => x.id === 'hp')!;
   const mana = shop.POTIONS.find((x) => x.id === 'mp')!;
   // Inside the Gate it is the run's health a Health Potion restores; on the brief, the hunter's own.
@@ -373,6 +399,12 @@ export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
       id: 'mp', name: mana.name, glyph: 'potion', tone: 'potion--mp', count: mp, held: `${mp}`,
       effect: mana.effect, off: mp <= 0 ? 'None held' : shop.potionIdle(s, 'mp') ? 'MP full' : undefined,
       use: () => void drinkHeld('mp'),
+    },
+    {
+      id: 'revive', name: shop.REVIVE.name, glyph: 'potion', tone: 'potion--revive', count: revives, held: `${revives}/${shop.REVIVE.max}`,
+      effect: `Revive ally at ${shop.REVIVE.hp * 100}% HP`,
+      off: revives <= 0 ? 'None held' : !run ? 'Drunk inside a Gate' : raid.reviveIdle(s, d, run) ?? undefined,
+      use: () => void reviveNow(d),
     },
     {
       id: 'survey', name: SURVEY.name, glyph: 'survey', count: charts, held: `${charts}`,

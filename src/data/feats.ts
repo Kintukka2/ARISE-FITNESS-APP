@@ -16,8 +16,11 @@ export const FEAT = {
   steady: { above: 0.5 },
 } as const;
 
-/** What a Feat pays, the first time it is met on a Gate: a blueprint of the Gate's grade. */
-export const FEAT_PAY = { blueprints: 1 } as const;
+/**
+ * What a Feat pays, the first time it is met on a Gate: alloy of the Gate's grade. About one Gate in
+ * `blueprintGates` has one Feat, the same every day, that pays a blueprint of its grade instead.
+ */
+export const FEAT_PAY = { alloy: 10, blueprints: 1, blueprintGates: 0.25 } as const;
 
 const pct = (x: number) => Math.round(x * 100);
 

@@ -768,6 +768,35 @@ export function drinkPotion(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()
   return Math.round(hero.hp - was);
 }
 
+/** The party's fallen, between steps: everyone but the hunter whose health the run carries at nothing. */
+export function downed(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): { uid: string; name: string }[] {
+  return partyFor(s, d, run, now).slice(1).filter((u) => !u.alive()).map((u) => ({ uid: u.uid, name: u.name }));
+}
+
+/** Why a Revival Potion cannot be drunk between steps now, or null if it can. A potion, so Dry seals it too. */
+export function reviveIdle(s: Save, d: Dungeon, run: OpenRaid, now = Date.now()): string | null {
+  if (shop.held(s, 'revive') <= 0) return 'None held';
+  if (!sealing.potionsAllowed(sealing.of(run))) return 'Sealed: Dry';
+  if (run.lost || pending(d, run) || bossDown(d, run)) return 'Not now';
+  return downed(s, d, run, now).length ? null : 'No one down';
+}
+
+/**
+ * Drink a Revival Potion between steps: the fallen member named stands again at the potion's share of
+ * their maximum HP, what ailed them gone. Returns the HP they stand at, 0 if they could not. Mutates.
+ */
+export function revive(s: Save, d: Dungeon, run: OpenRaid, uid: string, now = Date.now()): number {
+  if (reviveIdle(s, d, run, now)) return 0;
+  const party = partyFor(s, d, run, now);
+  const u = party.find((x, i) => i > 0 && x.uid === uid && !x.alive());
+  if (!u) return 0;
+  u.hp = Math.max(1, Math.round(u.maxHp * shop.REVIVE.hp));
+  u.status = {};
+  s.stock.revive = shop.held(s, 'revive') - 1;
+  settleParty(s, d, run, party, now);
+  return u.hp;
+}
+
 /**
  * Nothing is underway and the run has cleared a room: in a Gate, while the hunter stands at the
  * entrance and the Gate has not turned red; up a tower, when the last floor done was a rest. The only
@@ -1133,7 +1162,8 @@ export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?
  * Mutates.
  */
 /** What a run's Seals, its condition drops and its first Feats add to what it leaves. */
-interface Extras { seals: readonly SealId[]; drops: readonly { ref: string; boss: boolean }[]; feats: number }
+/** `feats`: the Feats met for the first time that pay alloy; `featBlueprint`, whether the one that pays a blueprint was among them. */
+interface Extras { seals: readonly SealId[]; drops: readonly { ref: string; boss: boolean }[]; feats: number; featBlueprint?: boolean }
 
 function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: number, pace = 1, extra: Extras = { seals: [], drops: [], feats: 0 }) {
   const g = rankIdx(d.rank);
@@ -1174,22 +1204,27 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     Object.assign(mats, forge.addUp(mats, got.mats));
   };
   const up = () => (g < 5 && r() < BLUEPRINTS.up ? RANKS[g + 1] : rank);
-  let firstPaid = false;
   if (cleared) {
+    // A first clear leaves one only sometimes: a set's own at its home Gate, else the Gate's. A later clear
+    // rolls for a set's and for the Gate's, each at its own odds.
     const sets = homeSets(d).filter((x) => forge.setBlueprintsLeft(s, x.id).length);
-    if (sets.length && (first || r() < BLUEPRINTS.home)) {
+    const firstFind = first && r() < BLUEPRINTS.first;
+    let setPaid = false;
+    if (sets.length && (firstFind || (!first && r() < BLUEPRINTS.home))) {
       const set = sets[Math.floor(r() * sets.length)];
       leave(setPieces(set.id)[0]?.rank as Rank ?? rank, forge.setBlueprintsLeft(s, set.id));
-      firstPaid = first;
+      setPaid = true;
     }
-    if ((first && !firstPaid) || (!first && r() < BLUEPRINTS.clear)) leave(up());
+    if ((firstFind && !setPaid) || (!first && r() < BLUEPRINTS.clear)) leave(up());
   }
   for (let i = 0; i < elites; i++) if (r() < BLUEPRINTS.elite) leave(up());
   // Each vault opened leaves a blueprint at its odds: an A- or S-Rank Gate can hold two.
   for (let k = 0; k < vault; k++) if (r() < BLUEPRINTS.vault) leave(rank);
-  // A boss felled the way its condition asks, and each Feat met for the first time, leave a blueprint.
-  for (const x of extra.drops) if (x.boss) leave(rank);
-  for (let i = 0; i < extra.feats * FEAT_PAY.blueprints; i++) leave(rank);
+  // A boss felled the way its condition asks leaves a blueprint at its odds; each Feat met for the first time,
+  // the Gate's alloy, but for the one Feat on some Gates that pays a blueprint.
+  for (const x of extra.drops) if (x.boss && r() < DROP.bossBlueprint) leave(rank);
+  if (extra.feats) Object.assign(mats, forge.addUp(mats, { [forge.alloyId(rank)]: extra.feats * FEAT_PAY.alloy }));
+  if (extra.featBlueprint) for (let i = 0; i < FEAT_PAY.blueprints; i++) leave(rank);
   // A piece found whole, rarely.
   const forged: string[] = [];
   if (cleared && r() < FORGED.clear) {
@@ -1259,7 +1294,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const medal = runPar > 0 ? par.medalOf(run.tally?.rounds ?? 0, runPar) : null;
   const medals = par.settle(s, home, medal);
   // A Rift's modifiers are its terms, not Seals taken: it pays its own Ember instead.
-  const extra: Extras = { seals: rifted ? [] : sealing.of(run), drops: run.drops ?? [], feats: fresh.length };
+  const bpFeat = feats.blueprintFeat(d);
+  const extra: Extras = { seals: rifted ? [] : sealing.of(run), drops: run.drops ?? [], feats: fresh.filter((id) => id !== bpFeat).length, featBlueprint: !!bpFeat && fresh.includes(bpFeat) };
   const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m), extra) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
   let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
   let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};

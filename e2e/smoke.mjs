@@ -122,6 +122,7 @@ async function raidGate(row, name, auto = false) {
   let resumed = false;
   let steps = 0;
   let panels = 0;
+  let caches = 0;
   // The practice Gate's rest: found and kept for later, then walked back to and used before the boss.
   let kept = false;
   let restedBack = false;
@@ -156,8 +157,9 @@ async function raidGate(row, name, auto = false) {
       if (turns === 1 && (await page.locator('.arena__feed li').count()) < 2) throw new Error('SKIP LEFT THE FIGHT LOG EMPTY');
       if (!turns++) {
         await snap(`${name}-turn`);
-        // Aim at the last foe standing in the list, so aiming is exercised as well as striking.
-        if (await visible('.unit.is-pickable')) await page.locator('.unit.is-pickable').last().click();
+        // Aim at the last foe standing in the list, so aiming is exercised as well as striking. The tap is on
+        // its name: the middle of the card may be a status tag, which opens its tooltip instead of aiming.
+        if (await visible('.unit.is-pickable')) await page.locator('.unit.is-pickable').last().locator('.unit__name').click();
       }
       if (name === 'practice' && turns === 2) {
         // Leave with a turn waiting. Every order so far is in the save, so coming back
@@ -189,6 +191,16 @@ async function raidGate(row, name, auto = false) {
         if ((await page.locator('.nodepanel button.boonc').count()) < 1) throw new Error('A SHRINE OFFERED NOTHING');
         await snap(`${name}-shrine`);
         await page.locator('.nodepanel button.boonc').first().click();
+        continue;
+      }
+      // A cache or a vault waits shut: what it held and the way on show only once it is opened.
+      if (await visible('.nodepanel button.cacheemblem')) {
+        if (await visible('.nodepanel >> text=Continue')) throw new Error('A SHUT CACHE ALREADY OFFERS CONTINUE');
+        if (!caches++) await snap(`${name}-cache-shut`);
+        await page.locator('.nodepanel button.cacheemblem').click();
+        await page.waitForSelector('.nodepanel .nodepanel__finds', { timeout: 5000 });
+        await sleep(900);
+        if (caches === 1) await snap(`${name}-cache-open`);
         continue;
       }
       if (await visible('.nodepanel >> text=Press On')) { await page.locator('.nodepanel >> text=Press On').click(); continue; }
@@ -380,14 +392,16 @@ try {
   const firstCleared = await page.evaluate(() => JSON.parse(localStorage.getItem('arise-rpg:save') ?? '{}').gates?.clears > 0).catch(() => false);
   if ((await page.locator('.xpbar__label').innerText()) === before) throw new Error('A GATE PAID NO EXPERIENCE');
 
-  // The first real Gate's first clear left a blueprint and its materials: the Forge forges it.
+  // The first real Gate left its materials, and now and then a blueprint: a first clear finds one only by chance
+  // (`BLUEPRINTS.first`), so the Forge is held to listing every blueprint the save knows, whatever was found.
   await nav('inventory');
   await drain();
   await page.locator('[data-hub="forge"]').click();
   await sleep(500);
-  // A clear leaves a blueprint; a party carried out leaves with nothing, and the Practice Gate's iron is all there is.
+  const known = await page.evaluate(() => new Set(JSON.parse(localStorage.getItem('arise-rpg:save') ?? '{}').blueprints ?? []).size);
   const blueprints = await page.locator('.sheet.is-top .bprow').count();
-  if (firstCleared && blueprints < 1) throw new Error('THE FIRST CLEAR LEFT NO BLUEPRINT IN THE FORGE');
+  if (blueprints !== known) throw new Error(`THE FORGE LISTS ${blueprints} BLUEPRINTS, THE SAVE KNOWS ${known}`);
+  console.log(`first gate ${firstCleared ? 'cleared' : 'not cleared'} · ${known} blueprint${known === 1 ? '' : 's'} known`);
   await snap('forge');
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click();
   await sleep(300);

@@ -35,5 +35,5 @@ export const FAMILY_CONDITION: Record<string, ConditionId> = {
 /** Every boss's: defeated by the hunter's own blow while Broken. */
 export const BOSS_CONDITION: ConditionId = 'broken';
 
-/** What a condition met leaves: the family's part, and from a boss a blueprint of the Gate's grade. */
-export const DROP = { part: 2, bossBlueprints: 1 } as const;
+/** What a condition met leaves: the family's part, and from a boss, this often, a blueprint of the Gate's grade. */
+export const DROP = { part: 2, bossBlueprint: 0.3 } as const;
