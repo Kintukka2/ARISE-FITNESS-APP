@@ -511,7 +511,7 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   const one = (key: string, cls: string, family: string | null, name: string, tag: string, openIt?: () => void, label?: string) => {
     const body = (
       <>
-        <span class="benemy__face">{family ? <Portrait id={key} size={cls.includes('is-boss') ? 40 : 30} tone={cls.includes('is-boss') ? 'red' : 'foe'} /> : <Glyph name="unknown" />}</span>
+        <span class="benemy__face">{family && cls.includes('is-boss') && <Glyph name="crown" class="benemy__crown" />}{family ? <Portrait id={key} size={cls.includes('is-boss') ? 40 : 30} tone={cls.includes('is-boss') ? 'red' : 'foe'} /> : <Glyph name="unknown" />}</span>
         <b class="benemy__name">{name}</b>
         <small class="benemy__tag">{tag}</small>
       </>

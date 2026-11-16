@@ -103,23 +103,29 @@ creature the player fought, made of light.
 | <a href="dragonquest_family_glyphs_sprites_palette_swaps.jpg"><img src="dragonquest_family_glyphs_sprites_palette_swaps.jpg" width="260"></a> | `dragonquest_family_glyphs_sprites_palette_swaps.jpg`<br>Assembled from the Dragon Quest Wiki's files. Dragon Quest Tact's family icons, one white glyph on black to each, doubled: 'Slime', 'Dragon', 'Nature', 'Beast', 'Material', 'Demon', 'Undead' and the unknown family's crown. Dragon Quest XI's 2D sprites at their own pixels, each facing the player, full body: 'Slime', 'Dracky', 'Spiked hare', 'Great sabrecat', 'Ghoul', 'Hammerhood', 'Restless armour', 'Killing machine', 'Green dragon', 'Golem', 'Troll', 'Wight king'. One sprite recoloured as a stronger kin ('Slime' → 'She-slime' → 'Metal slime'; 'Golem' → 'Stone golem' → 'Gold golem'; 'Troll' → 'Boss troll'; 'Orc' → 'Orc king'; 'Cyclops' → 'Gigantes'), and the crowned 'King slime'. The wiki: King slimes 'appear to be large, engorged slimes'. | [page](https://dragonquest.fandom.com/wiki/Category:Dragon_Quest_Tact_family_icons) · [page](https://dragonquest.fandom.com/wiki/King_slime) · [image](https://static.wikia.nocookie.net/dragonquest/images/d/d3/Slime_Family_Icon.jpg) · [image](https://static.wikia.nocookie.net/dragonquest/images/b/b8/DQXI_-_King_slime_2D.png) (one `DQXI_-_<Name>_2D.png` to each) |
 | <a href="eldenring_spirit_ash_ghost_icons_and_summon.jpg"><img src="eldenring_spirit_ash_ghost_icons_and_summon.jpg" width="260"></a> | `eldenring_spirit_ash_ghost_icons_and_summon.jpg`<br>Assembled from the Elden Ring Wiki's files. Twelve Spirit Ashes' icons, each creature whole as a pale blue-white phantom with a glowing edge before a dark grave-stone ('Lone Wolf', 'Giant Rat', 'Warhawk', 'Rotten Stray', 'Skeletal Militiaman', 'Demi-Human', 'Man-Serpent', 'Kindred of Rot', 'Winged Misbegotten', 'Spirit Jellyfish', 'Fanged Imp', 'Mimic Tear'), then at 48, 32 and 24 pixels. Below, the wiki's 'Spirit Summoning' screenshot, cropped: a summoned spirit, translucent and sparking, beside the player. The wiki: 'Ashen Remains, also referred to as Spirit Ashes, are items [...] that allow players to summon spirits to assist in combat.' | [page](https://eldenring.fandom.com/wiki/Ashes) · [page](https://eldenring.fandom.com/wiki/Spirits) · [image](https://static.wikia.nocookie.net/eldenring/images/c/c6/ER_Icon_Ash_Lone_Wolf_Ashes.png) (one `ER_Icon_Ash_<Name>.png` to each) · [image](https://static.wikia.nocookie.net/eldenring/images/8/81/Spirit_Summoning.jpg) |
 
-## What ARISE can take
+## What ARISE took
 
-- **A mark to every kind, not to every family**, as Monster Hunter and Palworld give each monster its own: the wolf,
-  the bat and the boar told apart by their outline. The family's glyph can stay where Dragon Quest Tact keeps its own,
-  beside the name, as the family's badge.
-- **The head and shoulders, cropped by the frame, facing the viewer**, as Darkest Dungeon II's, Palworld's and
-  Solo Leveling's portraits are: the face is what reads at 24 pixels. Kinds whose body is their mark (a slime, a spider,
-  a bat, a serpent, a jellyfish) are drawn whole, as Darkest Dungeon's silhouettes still read at 28 pixels by pose alone.
-- **One flat fill and an outline that holds against the ground**: Pokémon's one-pixel dark line and Monster Hunter Rise's
-  pale halo keep a small icon apart from the card; World's near-black monsters and Solo Leveling's Shadows sink into a
-  dark ground at 24 pixels.
-- **The eyes lit**: the brightest point of nearly every portrait here (Solo Leveling's bosses and Shadows, Palworld,
-  Darkest Dungeon II, the Shadow Pokémon's red eyes, the Guardian's black ones).
-- **A boss is its kind grown and crowned**: Great Jagras, King slime, the Megagorgon, Darkest Dungeon II's named stronger
-  kinds; a mark of its own round the frame where the kind repeats (Wilds' Tempered ring, Darkest Dungeon II's boss-part
-  ground).
-- **A Shadow is the creature it was, re-lit**: the same silhouette filled near-black and drawn by a rim of light and lit
-  eyes, as Solo Leveling's army and Elden Ring's spirits are, in violet where Solo Leveling uses cyan (cyan is the
-  System's in ARISE). One trace of the creature may stay, as Tusk keeps his red mask. Not taken: Wilds' and Elden Ring's
-  pale-white drain, which reads as a ghost, not a shadow.
+Built in `src/ui/portraits.tsx` (the creatures) and `src/ui/emblems.tsx` (the Shadow's badge); the words in
+[docs/VOICE.md](../../../VOICE.md), "A creature is drawn by its kind, a family by its glyph".
+
+- **A portrait to every kind, not to every family**, as Monster Hunter and Palworld give each monster its own: 46 kinds
+  for the 110 creatures, so the wolf, the bat and the boar are told apart by their outline. The family's glyph stays
+  where Dragon Quest Tact keeps its own, as the family's badge: a Kin, a family's tag.
+- **The head or the bust, facing the viewer**, as Darkest Dungeon II's, Palworld's and Solo Leveling's portraits are; the
+  kinds whose body is their mark drawn whole, as Darkest Dungeon's silhouettes read by pose alone: the slime, the spider,
+  the bat, the moth, the wasp, the wyvern, the hydra, the wisp. Two in profile, where the profile is the creature: the
+  raptor and the crocodile.
+- **One flat fill, centred and scaled to one square**, so all read at one weight at 24 pixels; light on the dark card,
+  never dark on dark (World's near-black monsters sink).
+- **The eyes lit, the brightest point**: red on a creature, white-hot on red (a boss, the spotlight, a fight's card),
+  violet-white on a Shadow.
+- **A boss is its kind crowned**, as Great Jagras grows and King slime wears a crown: the same portrait, red, with a
+  white-hot crown over it on its fight card and in the brief's Enemies row, larger there and ringed in red, so its rank
+  does not rest on colour alone.
+- **A Shadow is the creature it was, re-lit**: the same portrait filled near-black, drawn by a violet rim and lit
+  violet eyes, a violet echo behind, as Solo Leveling's army and Elden Ring's spirits are, in violet where Solo Leveling
+  uses cyan (cyan is the System's). The rank's chevrons stay under it on its shield; the doubled family glyph is gone.
+  In the promotion's cinematic the portrait's outline is the line that burns.
+- **Not taken**: Wilds' and Elden Ring's pale-white drain, which reads as a ghost, not a shadow; a trace of the creature's
+  colour kept on its Shadow (Tusk's red mask), which would break the Shadows' one violet; Monster Hunter's colour to each
+  monster, since ARISE's colours carry meaning.

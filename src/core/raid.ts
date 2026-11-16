@@ -211,7 +211,7 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
   const roster: RosterRow[] = [...party, ...foes].map((u) => {
     const boss = u.side === 'e' && c.boss && u === foes[0];
     const cond = u.side === 'e' && u.ref ? conditionOf(u.ref, boss) ?? undefined : undefined;
-    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, row: u.row, ...(u.side === 'e' ? { grade: u.grade, ref: u.ref } : {}), ...(cond ? { cond, boss } : {}) };
+    return { uid: u.uid, name: u.name, side: u.side, tag: u.tag, mx: u.maxHp, hp: Math.max(0, Math.round(u.hp)), status: Object.keys(u.status), tricks: u.tricks.size ? [...u.tricks] : undefined, row: u.row, ...(u.side === 'e' ? { grade: u.grade, ref: u.ref, ...(boss ? { boss } : {}) } : {}), ...(cond ? { cond } : {}) };
   });
   const kills: ChamberResult['kills'] = {};
   const felled: string[] = [];

@@ -135,7 +135,8 @@ later cinematic follows the same rule: if it needs words, they go in a window af
 and ten creatures, each a head or a bust, head-on wherever a face can be, filled in one colour with its eyes a
 part of their own and lit, after the reference games' monster icons (Monster Hunter's, Solo Leveling: Arise's
 shadows). A creature shows its portrait in the colour it is set in, its eyes red; on red (a boss, its spotlight,
-a fight's card) red, its eyes white-hot. A Shadow shows its creature's portrait as the dark it became, rimmed in
+a fight's card) red, its eyes white-hot; a boss wears a white-hot crown over it, on its fight card and in the brief's
+`Enemies`, so its rank does not rest on colour alone. A Shadow shows its creature's portrait as the dark it became, rimmed in
 violet, its eyes violet, a violet echo of it behind, on a shield with its rank's insignia under it: chevrons after an
 army's, one for Bound, two for Sworn, three for Vanguard, three over a rocker for Ascendant. The badge is the
 Shadow's mark everywhere it is drawn large (the Army, its card, the promotion, where its outline is the line that

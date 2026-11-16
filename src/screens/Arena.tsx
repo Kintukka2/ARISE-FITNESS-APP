@@ -1357,10 +1357,10 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
   const who = u.tag === 'hero' ? 'you' : u.name;
   const coming = Array.isArray(incoming) ? incoming : [];
   const count = Array.isArray(incoming) ? incoming.length : incoming ?? 0;
-  // Its mark at the card's left: a creature's portrait, the hunter's grade, a Shadow's or a hunter's sign.
+  // Its mark at the card's left: a creature's portrait (a boss's crowned), the hunter's grade, a Shadow's or a hunter's sign.
   const foe = u.side === 'e' && u.ref ? enemyById(u.ref) : undefined;
   const mark = u.side === 'e'
-    ? (foe ? <Portrait id={foe.id} size={24} tone="red" /> : <Glyph name="skull" />)
+    ? (foe ? <>{u.boss && <Glyph name="crown" class="unit__crown" />}<Portrait id={foe.id} size={24} tone="red" /></> : <Glyph name="skull" />)
     : u.tag === 'hero' ? <Sigil rank={licensedRank(store.get())} size={20} />
       : u.tag === 'shadow' ? <Glyph name="shadows" /> : <Glyph name="profile" />;
   const inner = (

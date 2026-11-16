@@ -4396,3 +4396,10 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .tip__status { width: 16px; height: 16px; color: var(--blood); }
 .tip__status.is-good { color: var(--verdant); }
 .tip__status .fxmark { width: 16px; height: 16px; }
+
+/* A boss's portrait wears a crown, as the reference games crest a pack's leader (Monster Hunter's Great Jagras, Dragon
+   Quest's King slime): its rank not by red alone. White-hot, as its eyes are. */
+.unit__crown, .benemy__crown { position: absolute; left: 50%; z-index: 1; color: #fff4cf; filter: drop-shadow(0 0 3px rgba(255, 47, 62, 0.9)); transform: translateX(-50%); }
+.unit__crown { top: -8px; width: 11px; height: 11px; }
+.benemy__face { position: relative; }
+.benemy__crown { top: -9px; width: 18px; height: 18px; }
