@@ -1,7 +1,8 @@
 /**
- * What a creature is, at a glance. Every family has a glyph of its own, drawn in strokes on a
- * 24-unit grid: a creature shows it alone (`FamilyGlyph`), and a Shadow shows it doubled in violet,
- * the creature and the shadow behind it, on its badge with the insignia of its rank (`ShadowEmblem`).
+ * What a creature's family is, and what a Shadow has become. Every family has a glyph of its own, drawn in strokes on a
+ * 24-unit grid (`FamilyGlyph`), the mark of a family and its Kin. A Shadow's badge (`ShadowEmblem`) carries the
+ * creature's own portrait (`ui/portraits.tsx`) as the dark it became, rimmed and eyed in violet, a violet echo of it
+ * behind, with the insignia of its rank; a creature with no portrait drawn carries its family's glyph, doubled.
  * The insignia are chevrons, after an army's: one for Bound, then two and three, and a rocker under
  * three for Ascendant.
  *
@@ -9,6 +10,7 @@
  * (`emblemParts`, read by `ui/arrival.ts`).
  */
 import { SHADOW_RANKS } from '@/data/shadows';
+import { kindOf, PORTRAIT, portraitPath } from './portraits';
 
 const dot = (x: number, y: number, r = 0.9) => `M${x - r} ${y}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
 
@@ -52,8 +54,15 @@ export const SHIELD = 'M12 1.6 20.6 4.9v6.9c0 5.4-3.6 9.2-8.6 10.7-5-1.5-8.6-5.3
 export const PLACE = { glyph: [0.48, 6.24, 2.3], echo: [0.48, 7.1, 1.5], insignia: [0.34, 7.92, 13.9] } as const;
 const at = ([k, x, y]: readonly [number, number, number]) => `translate(${x} ${y}) scale(${k})`;
 
-export interface EmblemParts { frame: string; glyph: string; insignia: string }
-export const emblemParts = (family: string, rank: number): EmblemParts => ({ frame: SHIELD, glyph: familyPath(family), insignia: insigniaPath(rank) });
+/** Where a portrait sits on the shield, above the insignia, and its echo, a step up and to the right. */
+export const PORTRAIT_PLACE = { glyph: [0.54, 5.52, 2.02], echo: [0.54, 6.32, 1.22] } as const;
+
+export interface EmblemParts { frame: string; glyph: string; insignia: string; portrait: boolean }
+/** A badge's parts: its creature's portrait where one is drawn (`id`), else its family's glyph. */
+export const emblemParts = (family: string, rank: number, id?: string): EmblemParts => {
+  const kind = id ? kindOf(id) : undefined;
+  return { frame: SHIELD, glyph: kind ? portraitPath(kind) : familyPath(family), insignia: insigniaPath(rank), portrait: !!kind };
+};
 
 /** A creature's family, alone. Takes the colour it is set in. */
 export function FamilyGlyph({ family, size = 24, class: cls }: { family: string; size?: number; class?: string }) {
@@ -73,11 +82,27 @@ export function Insignia({ rank, size = 20, class: cls }: { rank: number; size?:
   );
 }
 
-/** A Shadow's badge: what it was, the shadow it is, and its rank. */
-export function ShadowEmblem({ family, rank, size = 48, class: cls }: { family: string; rank: number; size?: number; class?: string }) {
+/** A Shadow's badge: what it was, the shadow it is, and its rank. `id` is its creature, whose portrait it carries. */
+export function ShadowEmblem({ family, rank, id, size = 48, class: cls }: { family: string; rank: number; id?: string; size?: number; class?: string }) {
+  const kind = id ? kindOf(id) : undefined;
+  const label = `${family}, ${SHADOW_RANKS[rank]?.name ?? ''} Rank`;
+  if (kind) {
+    const face = PORTRAIT[kind];
+    return (
+      <svg viewBox="0 0 24 24" width={size} height={size} class={`emblem has-portrait ${cls ?? ''}`} data-rank={rank} role="img" aria-label={label}>
+        <path class="emblem__shield" d={SHIELD} />
+        <g class="emblem__ghost" transform={at(PORTRAIT_PLACE.echo)}>{face.body.map((d, i) => <path key={i} d={d} fill-rule="evenodd" />)}</g>
+        <g transform={at(PORTRAIT_PLACE.glyph)}>
+          <g class="emblem__body">{face.body.map((d, i) => <path key={i} d={d} fill-rule="evenodd" />)}</g>
+          <g class="emblem__eyes">{face.eyes.map((d, i) => <path key={i} d={d} />)}</g>
+        </g>
+        <path class="emblem__insignia" d={insigniaPath(rank)} transform={at(PLACE.insignia)} />
+      </svg>
+    );
+  }
   const p = emblemParts(family, rank);
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} class={`emblem ${cls ?? ''}`} data-rank={rank} role="img" aria-label={`${family}, ${SHADOW_RANKS[rank]?.name ?? ''} Rank`}>
+    <svg viewBox="0 0 24 24" width={size} height={size} class={`emblem ${cls ?? ''}`} data-rank={rank} role="img" aria-label={label}>
       <path class="emblem__shield" d={p.frame} />
       <path class="emblem__echo" d={p.glyph} transform={at(PLACE.echo)} />
       <path class="emblem__glyph" d={p.glyph} transform={at(PLACE.glyph)} />

@@ -46,7 +46,8 @@ import { Btn, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { HabitMark, StatusMark } from '@/ui/effects';
-import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
+import { ShadowEmblem } from '@/ui/emblems';
+import { Portrait } from '@/ui/portraits';
 import { makeLine } from '@/ui/kin';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
@@ -510,7 +511,7 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   const one = (key: string, cls: string, family: string | null, name: string, tag: string, openIt?: () => void, label?: string) => {
     const body = (
       <>
-        <span class="benemy__face">{family ? <FamilyGlyph family={family} size={cls.includes('is-boss') ? 34 : 24} /> : <Glyph name="unknown" />}</span>
+        <span class="benemy__face">{family ? <Portrait id={key} size={cls.includes('is-boss') ? 40 : 30} tone={cls.includes('is-boss') ? 'red' : 'foe'} /> : <Glyph name="unknown" />}</span>
         <b class="benemy__name">{name}</b>
         <small class="benemy__tag">{tag}</small>
       </>
@@ -565,7 +566,7 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
     ...squad.map((x) => {
       const e = enemyById(x.enemyId)!;
       return { key: x.id, row: ranks.byRole(e.role).row, el: (
-        <li key={x.id} class="bformation__one is-shadow"><span class="bformation__face"><ShadowEmblem family={e.family} rank={shadows.rankIndex(x)} size={34} /></span><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small class="num">{shadows.power(x)}</small></li>
+        <li key={x.id} class="bformation__one is-shadow"><span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /></span><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small class="num">{shadows.power(x)}</small></li>
       ) };
     }),
   ];
@@ -827,13 +828,13 @@ function openCreature(id: string, d: Dungeon) {
   const e = enemyById(id)!;
   openSheet({
     title: id === d.boss ? `Boss: ${e.name}` : id === d.elite ? `Gatekeeper: ${e.name}` : `Creature: ${e.name}`,
-    system: { icon: <FamilyGlyph family={e.family} size={30} />, kind: 'gates' },
+    system: { icon: <Portrait id={id} size={30} tone="red" />, kind: 'gates' },
     render: () => <CreatureCard id={id} d={d} />,
   });
 }
 
 /**
- * What a creature is: its family's glyph in a spotlight, its grade, family, role and power, and whether it
+ * What a creature is: its portrait in a spotlight, its grade, family, role and power, and whether it
  * serves as a Shadow; what it does besides hit, as the fight's tips word it; the statuses it shrugs off or
  * resists; and its special drop, how to defeat it for more.
  */
@@ -846,7 +847,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
   return (
     <div class="stack bcreature">
       <section class="bspot is-card">
-        <span class="bspot__art"><FamilyGlyph family={e.family} size={52} /></span>
+        <span class="bspot__art"><Portrait id={id} size={50} tone="red" /></span>
         <span class="label">{boss ? 'Gate boss' : id === d.elite ? 'Gatekeeper' : 'Creature'}</span>
         <b class="bspot__name">{e.name}</b>
         <small class="bspot__line">{e.rank}-Rank {e.family} · {e.role} · Power {powerOf(e.base)}</small>

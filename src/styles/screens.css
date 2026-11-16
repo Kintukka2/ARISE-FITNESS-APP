@@ -3700,6 +3700,9 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .unit--foe { --uc: var(--blood); border-color: rgba(255, 77, 109, 0.32); background: linear-gradient(90deg, rgba(255, 77, 109, 0.1), rgba(6, 12, 26, 0.86) 55%); }
 .unit__mark { position: absolute; left: 9px; top: 8px; display: grid; place-items: center; width: 24px; height: 24px; color: var(--uc); }
 .unit__mark::before { content: ''; position: absolute; inset: 2px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--uc) 55%, transparent); background: color-mix(in srgb, var(--uc) 14%, rgba(4, 8, 18, 0.9)); }
+/* A creature's mark is its portrait, bare: no diamond round it. */
+.unit--foe .unit__mark::before { display: none; }
+.unit--foe .unit__mark .cface { filter: drop-shadow(0 0 4px rgba(255, 47, 62, 0.45)); }
 .unit__mark > * { position: relative; }
 .unit__mark .ico { width: 13px; height: 13px; filter: drop-shadow(0 0 4px var(--uc)); }
 .unit__mark.is-boss::before { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }

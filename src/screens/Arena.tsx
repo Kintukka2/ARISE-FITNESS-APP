@@ -56,7 +56,8 @@ import { QuestLines } from '@/ui/contracts';
 import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
 import { SysAlert } from '@/ui/frame';
-import { FamilyGlyph, ShadowEmblem } from '@/ui/emblems';
+import { ShadowEmblem } from '@/ui/emblems';
+import { Portrait } from '@/ui/portraits';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
@@ -1356,10 +1357,10 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
   const who = u.tag === 'hero' ? 'you' : u.name;
   const coming = Array.isArray(incoming) ? incoming : [];
   const count = Array.isArray(incoming) ? incoming.length : incoming ?? 0;
-  // Its mark at the card's left: a creature's family, the hunter's grade, a Shadow's or a hunter's sign.
+  // Its mark at the card's left: a creature's portrait, the hunter's grade, a Shadow's or a hunter's sign.
   const foe = u.side === 'e' && u.ref ? enemyById(u.ref) : undefined;
   const mark = u.side === 'e'
-    ? (foe ? <FamilyGlyph family={foe.family} size={18} /> : <Glyph name="skull" />)
+    ? (foe ? <Portrait id={foe.id} size={24} tone="red" /> : <Glyph name="skull" />)
     : u.tag === 'hero' ? <Sigil rank={licensedRank(store.get())} size={20} />
       : u.tag === 'shadow' ? <Glyph name="shadows" /> : <Glyph name="profile" />;
   const inner = (
@@ -1694,7 +1695,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
               return (
                 <SysAlert key={`${l.enemyId}-${i}`} kind="shadow" fyi={done} delay={400 + i * 200} class={out ? `is-${out}` : ''}
                   label={done ? undefined : `The mana of ${e.name} ${out ? 'still lingers' : 'lingers'}. Open the extraction.`}
-                  icon={sh ? <ShadowEmblem family={e.family} rank={0} size={36} /> : <FamilyGlyph family={e.family} size={30} />}
+                  icon={sh ? <ShadowEmblem family={e.family} id={e.id} rank={0} size={36} /> : <Portrait id={e.id} size={32} tone="shadow" />}
                   onTap={done ? undefined : () => openExtraction(i)}
                   aside={out === 'bound' ? <span class="grant">ARISE</span> : out === 'lost' ? <span class="warn">Failed</span>
                     : l.essence ? <span class="sp-essence"><EssenceMark /><span class="grant num">+{l.essence}</span></span> : null}>
