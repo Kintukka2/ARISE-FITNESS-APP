@@ -32,7 +32,7 @@ export function shapeOf(day: string, grade: Rank): Dungeon {
 export function riftDungeon(day: string, grade: Rank): Dungeon {
   const g = shapeOf(day, grade);
   return {
-    id: `RFT-${day}-${grade}`, rank: grade, name: `${RIFT_NAME} · ${g.name}`,
+    id: `RFT-${day}-${grade}`, rank: grade, name: `${RIFT_NAME}: ${g.name}`,
     theme: `${RIFT_THEME} Today it opens on ${g.name}.`, identity: g.identity,
     mobs: g.mobs, elite: g.elite, boss: g.boss, mobRounds: g.mobRounds,
     shape: g.id, scale: GATE_TUNE[g.id] ?? 1,

@@ -16,7 +16,8 @@ import { ATTRS, RANK_LADDER } from '@/core/progression';
 import { POTIONS } from '@/core/shop';
 import { STATUS_TEXT, TACTICS } from '@/core/combat';
 import { CLASS_PASSIVES } from '@/data/abilities';
-import { CLASSES } from '@/data/classes';
+import { CLASS_RANKS, CLASSES, nextRung } from '@/data/classes';
+import { byLead } from '@/core/ranks';
 import { MARKS } from '@/data/ascension';
 import { CONTRACT_KINDS } from '@/data/contracts';
 import { DUNGEONS } from '@/data/dungeons';
@@ -151,6 +152,25 @@ describe('the words', () => {
     }
   });
 
+  it('writes a class as a fighter, never as `A class given to`, and puts it in the row the fight stands it in', () => {
+    for (const c of CLASSES) {
+      const r = `${c.name}: ${c.desc}`;
+      expect(c.desc, r).not.toMatch(/^A class given/);
+      expect(c.desc, r).toMatch(/^[A-Z][^.]*\.( [A-Z][^.]*\.)?$/);
+      // A line that names a row names the one its class stands in (`ranks.byLead`).
+      const row = c.desc.match(/\b(Front|Rear)-row\b/);
+      if (row) expect(row[1].toLowerCase(), r).toBe(byLead(c.lead).row);
+      // Every rung below the top names the one it rises to, of its own line, a rank on.
+      const next = nextRung(c);
+      if (c.tier < CLASS_RANKS.length - 1) {
+        expect(next?.lead, r).toBe(c.lead);
+        expect(next?.rank, r).toBe(CLASS_RANKS[c.tier + 1]);
+      } else expect(next, r).toBeNull();
+    }
+    // The first rung of each line says where it stands.
+    for (const c of CLASSES.filter((x) => x.tier === 0)) expect(c.desc, c.name).toMatch(/\b(Front|Rear)-row\b/);
+  });
+
   it('says defeat, never fell, and special drop, never condition drop: in every string, template and line of markup a player can read', () => {
     // A word in a player's text has a space or a capital beside it, or stands in markup; a lone lowercase
     // literal is a key ('fell', the Daily Quest's kind), which stays as the save wrote it.
@@ -190,6 +210,8 @@ describe('the words', () => {
         if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return;
         const code = line.replace(/\s\/\/\s.*$/, '');
         if (/[—–]/.test(code)) found.push(`${f}:${i + 1} dash`);
+        // Facts sit side by side, spaced, or in a list joined by commas, never joined by a middle dot (VOICE.md, "No middle dots").
+        if (/\u00b7/.test(code)) found.push(`${f}:${i + 1} middle dot`);
         if (/(?<!first_)\b[Aa]rtifacts?\b|Secret Missions?\b/.test(code)) found.push(`${f}:${i + 1} old word`);
         // XP is XP everywhere a player reads it: never EXP, never Experience.
         if (/\bEXP\b|\b[Ee]xperience\b/.test(code)) found.push(`${f}:${i + 1} XP written another way`);
@@ -328,7 +350,8 @@ describe('the tooltip', () => {
     for (const [r, row] of Object.entries(ROLE_ROW)) {
       const t = styleTip(r);
       expect(t.title, r).toBe(row === 'front' ? 'Melee' : 'Ranged');
-      expect(t.lines[0], r).toMatch(row === 'front' ? /^Takes its place in the Front\./ : /^Takes its place in the Rear\./);
+      expect(t.lines[0], r).toMatch(row === 'front' ? /^Fights best from the Front row\./ : /^Fights best from the Rear row\./);
+      expect(t.lines[0], r).not.toMatch(/\brank\b/);
       if (row === 'front') expect(t.lines[0], r).toContain(`${Math.round(REAR_MELEE * 100)}%`);
     }
   });

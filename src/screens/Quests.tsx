@@ -40,7 +40,7 @@ import { OVERCHARGE, PROOF, WALKERS } from '@/data/ascension';
 import { SPIRE_NAME } from '@/data/spire';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, useNow } from '@/ui/components';
+import { Btn, Facts, useNow } from '@/ui/components';
 import { ContractsWindow, Pay, QuestGoal, QuestWindow, Ring } from '@/ui/contracts';
 import { Field, SysFrame, type FrameKind } from '@/ui/frame';
 import { CoachPortrait, Glyph, Sigil } from '@/ui/icons';
@@ -295,7 +295,7 @@ function DailyBody() {
   return (
     <ContractsWindow c={contracts.today(s)} bare>
       <small class="questinfo__when">New Daily Quests in: <b class="num countdown">{hhmmss(msUntilMidnight())}</b></small>
-      <p class="questinfo__note">Daily Quests completed: {s.stats.contracts} · Full days: {s.stats.contractDays}</p>
+      <p class="questinfo__note"><Facts items={[`Daily Quests completed: ${s.stats.contracts}`, `Full days: ${s.stats.contractDays}`]} /></p>
     </ContractsWindow>
   );
 }
@@ -325,7 +325,7 @@ function RankRow({ s }: { s: Save }) {
           <Sigil rank={q.from.key} size={20} />
         </span>
       )}
-      sub={q.ready ? 'Requirements met.' : <>Reach Level {q.to.min} · XP needed: <b class="num">{group(q.left)}</b></>}
+      sub={q.ready ? 'Requirements met.' : <Facts items={[`Reach Level ${q.to.min}`, <>XP needed: <b class="num">{group(q.left)}</b></>]} />}
       p={q.share} pay={pay} onOpen={() => openQuest(RankBody, 'gold')} />
   );
 }
@@ -347,7 +347,7 @@ function RankBody() {
     <>Skill Points <b class="num grant">+{q.skills.points}</b></>,
   ];
   if (q.cls && !q.cls.was) rewards.push(<span class="grant">ACCESS GRANTED: CLASS</span>);
-  if (q.cls?.was) rewards.push(<>Class: {q.cls.was} → <strong>[Class: {q.cls.is}]</strong> · {q.cls.lead} <b class="num grant">+{q.cls.bonus}</b></>);
+  if (q.cls?.was) rewards.push(<>Class: {q.cls.was} → <strong>[Class: {q.cls.is}]</strong>, {q.cls.lead} <b class="num grant">+{q.cls.bonus}</b></>);
   if (q.skills.tier) rewards.push(<span class="grant">ACCESS GRANTED: {q.skills.tier}-RANK SKILLS</span>);
   if (q.skills.slots) rewards.push(<>Skill slots: {q.skills.slots[0]} → {q.skills.slots[1]}</>);
   if (q.slots) rewards.push(<>Shadow slots: {q.slots[0]} → {q.slots[1]}</>);
@@ -403,10 +403,10 @@ function RiftSection({ s, day }: { s: Save; day: string }) {
       <button type="button" id="quest-rift" class={`qrift ${done ? 'is-done' : ''}`} onClick={() => { sfx.tap(); openQuest(RiftBody, 'gates'); }}>
         <RiftTear size={64} />
         <span class="qrift__body">
-          <small class="qrift__date">{riftDate(day)} · {d.rank}-Rank</small>
+          <small class="qrift__date"><Facts items={[riftDate(day), `${d.rank}-Rank`]} /></small>
           <b class="qrift__name">[{shape?.name}]</b>
           <span class="qrift__state">
-            {done ? <>{OUTCOME[a!.outcome]} · Score <b class="num">{group(a!.score)}</b></> : a ? 'Underway' : 'One attempt today'}
+            {done ? <Facts items={[OUTCOME[a!.outcome], <>Score <b class="num">{group(a!.score)}</b></>]} /> : a ? 'Underway' : 'One attempt today'}
           </span>
         </span>
         {done && a!.rating ? <RatingMark rating={a!.rating} size={54} /> : <Glyph name="chevron" class="qrow__go" />}
@@ -440,7 +440,7 @@ function RiftBody({ close }: { close: () => void }) {
   const done = !!a && a.outcome !== 'open';
   return (
     <QuestWindow bare name={`${RIFT_NAME}: ${shape?.name ?? ''}`} kind="gates" class="quest-rift"
-      lead={<span class="qriftinfo__lead"><RiftTear size={44} /><small>{riftDate(day)} · {d.rank}-Rank · One attempt</small></span>}
+      lead={<span class="qriftinfo__lead"><RiftTear size={44} /><small><Facts items={[riftDate(day), `${d.rank}-Rank`, 'One attempt']} /></small></span>}
       goals={<QuestGoal id="rift" text="Clear the Rift." got={a?.outcome === 'cleared' ? 1 : 0} need={1} done={a?.outcome === 'cleared'} />}
       rewards={[<><MatArt id={EMBER.id} size={18} /> Ascendant Ember <b class="num grant">+{RIFT_EMBER[d.rank as Rank]}</b></>]}>
       <section class="qriftinfo">
@@ -490,7 +490,7 @@ function SpireRow({ s, day }: { s: Save; day: string }) {
           {Array.from({ length: STOREYS }, (_, i) => <i key={i} style={`--s: ${i}`} class={STOREYS - i <= lit ? 'is-on' : ''} />)}
         </span>
       )}
-      sub={<>Clear Floor {goal} · Floors {spire.firstFloor(b)}-{spire.lastFloor(b)} next</>}
+      sub={<Facts items={[`Clear Floor ${goal}`, `Floors ${spire.firstFloor(b)}-${spire.lastFloor(b)} next`]} />}
       p={best / Math.max(1, goal)}
       pay={[<>Reward tier: {pay.tier}</>, <>Mana Shards <b class="grant num">+{group(pay.shards)}</b></>, <>{RARITY[pay.rank].name} gear <b class="grant num">+1</b></>]}
       onOpen={() => openQuest(SpireBody, 'gates')} />
@@ -519,7 +519,7 @@ function SpireBody({ close }: { close: () => void }) {
         <>Mana Shards <b class="num grant">+{group(pay.shards)}</b></>,
         <>{RARITY[pay.rank].name} gear <b class="num grant">+1</b></>,
       ]}>
-      {now && <p class="questinfo__note">This week: Floor {best} · Reward tier: {now.tier}</p>}
+      {now && <p class="questinfo__note"><Facts items={[`This week: Floor ${best}`, `Reward tier: ${now.tier}`]} /></p>}
       <small class="questinfo__when">New week in: <b class="num countdown">{days ? `${days}d ` : ''}{hhmmss(left % 864e5)}</b></small>
       <Btn kind="primary" block onClick={() => {
         if (locked) return toast(`Floors ${from}-${to} are ${d.rank}-Rank. Your licence does not cover ${d.rank}-Rank yet.`, 'warn');
@@ -554,7 +554,7 @@ function TrialRow({ s, day }: { s: Save; day: string }) {
   return (
     <QuestRow id="trial" name={`Trial: Ascension ${a.unlocked + 1}`} call={ready} count={ready ? 'Open' : `${got}/${need}`}
       art={<Glyph name="cert" />}
-      sub={ready ? 'The Trial is open.' : proved ? 'Faced today.' : <>Gates proved: {got}/{need} · Then {rounds} of the Chosen</>}
+      sub={ready ? 'The Trial is open.' : proved ? 'Faced today.' : <>Gates proved: {got}/{need}, then {rounds} of the Chosen</>}
       extra={(
         <span class={`qroad ${ready ? 'is-ready' : ''}`} aria-hidden="true">
           {Array.from({ length: need }, (_, i) => <i key={i} class={`qroad__gate ${i < got ? 'is-on' : ''}`} />)}
@@ -618,7 +618,7 @@ function ChosenRow({ s, day }: { s: Save; day: string }) {
   return (
     <QuestRow id="chosen" name={`Chosen: ${w.name}`} count={open ? '0/1' : 'Closed'}
       art={<Glyph name="crown" />}
-      sub={open ? <>{gate.name} · From Ascension {w.level}</> : `${gate.name} is closed until tomorrow.`}
+      sub={open ? <>{gate.name}, from Ascension {w.level}</> : `${gate.name} is closed until tomorrow.`}
       p={null}
       pay={[felled
         ? <>Mana Shards <b class="grant num">+{group(shop.gateShards(gate.rank, WALKERS.bounty * ascension.payShare(at)))}</b></>
@@ -644,7 +644,7 @@ function ChosenBody({ close }: { close: () => void }) {
         got={0} need={1} done={false} count={open ? undefined : 'Closed'} />}
       rewards={[felled
         ? <>Mana Shards <b class="num grant">+{group(shop.gateShards(gate.rank, WALKERS.bounty * ascension.payShare(at)))}</b> at Ascension {at}</>
-        : <>Masterwork: {RARITY[gate.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>]}>
+        : <>Masterwork: {RARITY[gate.rank as Rank].name} {walkers.slotOf(w.level)}, Perfect +{w.level}</>]}>
       <p class="questinfo__note">Chosen defeated: {s.ascension.felled.length}/{s.ascension.sent.length}</p>
       {open && <Btn kind="primary" block onClick={() => { close(); openBrief(gate); }}>Brief: {gate.name}</Btn>}
     </QuestWindow>
@@ -697,7 +697,7 @@ function SecretBody() {
   const held = heldOf(s);
   const sealed = MISSIONS.length - held.length;
   const got = earned(s);
-  const stats = STATS.filter((k) => got.stats[k]).map((k) => `${k} +${got.stats[k]}`).join(' · ');
+  const stats = STATS.filter((k) => got.stats[k]).map((k) => `${k} +${got.stats[k]}`).join(', ');
   const rewards: ComponentChildren[] = [];
   if (stats) rewards.push(<span class="grant">{stats}</span>);
   if (got.free) rewards.push(<>Ability Points <b class="num grant">+{got.free}</b></>);

@@ -15,7 +15,7 @@ import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { ShopArt, type ShopArtId } from '@/ui/shopart';
 import { MatArt } from '@/ui/forge';
-import { Btn, GearArt, Section, Shards, useNow } from '@/ui/components';
+import { Btn, Facts, GearArt, Section, Shards, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Shard } from '@/ui/icons';
 import { ask } from '@/ui/ask';
@@ -128,7 +128,8 @@ function Exchange() {
       'Would you like to purchase?',
       system.tag(`Blueprint: ${d?.name ?? 'Item'}`, 'Item'),
       `${gear.RARITY[(d?.rank ?? 'E') as keyof typeof gear.RARITY].name} ${d?.slot ?? ''}`,
-      `Price: ${group(o.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      `Price: ${group(o.price)} Mana Shards`,
+      `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
     if (!store.update((x) => shop.buy(x, o.index))) return void short(o.price);
@@ -150,14 +151,15 @@ function Exchange() {
       'Would you like to purchase?',
       system.tag(p.name, 'Item'),
       system.gain(p.effect),
-      `Price: ${group(p.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      `Price: ${group(p.price)} Mana Shards`,
+      `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
     if (!store.update((x) => shop.buyCarried(x, id))) return void short(p.price);
     sfx.success();
     buzz([14, 30, 22]);
     const x = store.get();
-    toast(id === 'hp' ? `${p.name} · Satchel ${shop.held(x, 'hp')}/${shop.satchelMax(x)}` : `${p.name} · Held: ${shop.held(x, id)}`, 'xp');
+    toast(id === 'hp' ? `${p.name} bought. Satchel ${shop.held(x, 'hp')}/${shop.satchelMax(x)}.` : `${p.name} bought. ${shop.held(x, id)} held.`, 'xp');
   };
   /** Something to throw in a fight, bought to carry in the bag. */
   const buyThrow = async (id: ThrowId) => {
@@ -168,13 +170,14 @@ function Exchange() {
       'Would you like to purchase?',
       system.tag(k.name, 'Item'),
       `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`,
-      `Price: ${group(t.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      `Price: ${group(t.price)} Mana Shards`,
+      `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
     if (!store.update((x) => shop.buyThrow(x, id))) return void short(t.price);
     sfx.success();
     buzz([14, 30, 22]);
-    toast(`${k.name} · Bag ${shop.held(store.get(), id)}/${shop.THROW_MAX}`, 'xp');
+    toast(`${k.name} bought. Bag ${shop.held(store.get(), id)}/${shop.THROW_MAX}.`, 'xp');
   };
   /** A bundle of a material, bought for the Forge. */
   const buyMat = async (o: shop.MatOffer) => {
@@ -183,13 +186,14 @@ function Exchange() {
     const want = await ask('buy:mats', system.offer([
       'Would you like to purchase?',
       system.tag(`${m?.name ?? 'Material'} ×${o.n}`, 'Item'),
-      `Price: ${group(o.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      `Price: ${group(o.price)} Mana Shards`,
+      `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
     if (!store.update((x) => shop.buyMat(x, o.id))) return void short(o.price);
     sfx.success();
     buzz([14, 30, 22]);
-    toast(`${m?.name ?? 'Material'} +${o.n} · Held: ${group(forge.held(store.get(), o.id))}`, 'xp');
+    toast(`${m?.name ?? 'Material'} +${o.n}. ${group(forge.held(store.get(), o.id))} held.`, 'xp');
   };
   /** A Revival Potion, bought to carry into the Gates. */
   const buyRevive = async () => {
@@ -199,13 +203,14 @@ function Exchange() {
       'Would you like to purchase?',
       system.tag(r.name, 'Item'),
       `Revive ally at ${r.hp * 100}% HP.`,
-      `Price: ${group(r.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      `Price: ${group(r.price)} Mana Shards`,
+      `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
     if (!store.update(shop.buyRevive)) return void short(r.price);
     sfx.success();
     buzz([14, 30, 22]);
-    toast(`${r.name} · Bag ${shop.held(store.get(), 'revive')}/${r.max}`, 'xp');
+    toast(`${r.name} bought. Bag ${shop.held(store.get(), 'revive')}/${r.max}.`, 'xp');
   };
   const buySurvey = async () => {
     if (store.get().wallet.shards < SURVEY.price) return void short(SURVEY.price);
@@ -213,13 +218,14 @@ function Exchange() {
       'Would you like to purchase?',
       system.tag(SURVEY.name, 'Item'),
       'Every room of a Gate’s map, through the fog.',
-      `Price: ${group(SURVEY.price)} Mana Shards · Held: ${group(store.get().wallet.shards)}`,
+      `Price: ${group(SURVEY.price)} Mana Shards`,
+      `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
     if (want !== true) return;
     if (!store.update(shop.buySurvey)) return void short(SURVEY.price);
     sfx.success();
     buzz([14, 30, 22]);
-    toast(`${SURVEY.name} · Held: ${shop.held(store.get(), 'survey')}`, 'xp');
+    toast(`${SURVEY.name} bought. ${shop.held(store.get(), 'survey')} held.`, 'xp');
   };
   const [tab, setTab] = useState<Tab>('bp');
   const [pick, setPick] = useState<string | null>(null);
@@ -230,11 +236,11 @@ function Exchange() {
       return {
         key: `bp-${o.index}`, tab: 'bp', rank: d.rank, name: d.name,
         art: <span class="shopbp"><GearArt defId={o.defId} size={50} plain /><Glyph name="blueprint" class="shopbp__mark" /></span>,
-        kind: `${gear.RARITY[d.rank].name} ${d.slot}${d.set ? ` · ${d.set}` : ''}`,
+        kind: `${gear.RARITY[d.rank].name} ${d.slot}${d.set ? `, ${d.set} set` : ''}`,
         gives: 'Blueprint',
         note: <>
           <span class="shopcard__stats">{props.map((x) => <i key={x}>{x}</i>)}</span>
-          {o.reach > 0 && <span class="hint">Grade +{o.reach + 1} · Price +{o.reach * shop.REACH_PREMIUM * 100}%</span>}
+          {o.reach > 0 && <span class="hint"><Facts items={[`Grade +${o.reach + 1}`, `Price +${o.reach * shop.REACH_PREMIUM * 100}%`]} /></span>}
         </>,
         price: o.price, off: o.sold ? 'Bought' : o.known ? 'Known' : null,
         up: !o.sold && !o.known && rarerThanWorn(s, o.defId), buy: () => void buy(o),

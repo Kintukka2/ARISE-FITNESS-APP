@@ -110,7 +110,7 @@ export const STATUS_TEXT: Record<string, string> = Object.fromEntries(Object.ent
   if (st.atk) parts.push(`Attack ${sign(st.atk)}${pctOf(st.atk)}%`);
   if (st.ini) parts.push(`Initiative ${st.ini > 1 ? '+' : '-'}${pctOf(st.ini)}%`);
   if (st.skip) parts.push('Next action lost');
-  return [k, parts.join(' · ')];
+  return [k, parts.join(', ')];
 }));
 
 const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0, taunt: 0 };

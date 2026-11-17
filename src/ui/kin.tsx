@@ -73,13 +73,12 @@ export function roleTip(role: string, tier: number): TipText {
   };
 }
 
-/** The squad's Kin and role bonuses in one line, for the brief: `Kin: Orc II · Role bonus: Brute II, Caster I`. */
-export function makeLine(squad: readonly Shadow[]): string | null {
+/** The squad's Kin and role bonuses, for the brief, each its own fact: `Kin: Orc II` and `Role bonus: Brute II, Caster I`. */
+export function makeLine(squad: readonly Shadow[]): string[] {
   const m = kin.makeOf(squad);
   const lit = m.kin.filter((k) => k.tier > 0).map((k) => `${k.family} ${KIN_TIER[k.tier - 1]}`);
   const roles = m.roleLines.map((l) => `${l.role} ${ROLE_TIER[l.tier - 1]}`);
-  const parts = [lit.length ? `Kin: ${lit.join(', ')}` : null, roles.length ? `Role bonus: ${roles.join(', ')}` : null].filter(Boolean);
-  return parts.length ? parts.join(' · ') : null;
+  return [lit.length ? `Kin: ${lit.join(', ')}` : null, roles.length ? `Role bonus: ${roles.join(', ')}` : null].filter((x): x is string => !!x);
 }
 
 /** A trait's mark, in a hexagon: lit while it is active, grey while it is short. */
@@ -165,7 +164,7 @@ export function KinTracker({ squad }: { squad: readonly Shadow[] }) {
 
 /**
  * What a Shadow brings to a squad, on its card, as Solo Leveling: Arise sets a Shadow's aura under its
- * stats: a name over its breakpoints, hairlines between. Its role's bonus under `Role bonus · Leader`, for the
+ * stats: a name over its breakpoints, hairlines between. Its role's bonus under `Leader Role bonus`, for the
  * whole party; its family's Kin under `Orc Kin`; each breakpoint and what it gives, the one its squad reaches lit
  * while it is deployed.
  */
@@ -178,7 +177,7 @@ export function KinOfShadow({ sh, family, role, squad }: { sh: Shadow; family: s
     <Section title="Kin & Role">
     <div class="sp-auth">
       <div class="sp-auth__row">
-        <span class="sp-auth__name"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} />Role bonus · {role}</span>
+        <span class="sp-auth__name"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} />{role} Role bonus</span>
         <Tiers steps={kin.ROLE_AT} text={(t) => `${roleText(role, t)} for the whole party`} tier={roleTier} />
       </div>
       <div class="sp-auth__row">

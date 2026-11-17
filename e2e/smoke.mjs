@@ -401,7 +401,7 @@ try {
   const known = await page.evaluate(() => new Set(JSON.parse(localStorage.getItem('arise-rpg:save') ?? '{}').blueprints ?? []).size);
   const blueprints = await page.locator('.sheet.is-top .bprow').count();
   if (blueprints !== known) throw new Error(`THE FORGE LISTS ${blueprints} BLUEPRINTS, THE SAVE KNOWS ${known}`);
-  console.log(`first gate ${firstCleared ? 'cleared' : 'not cleared'} · ${known} blueprint${known === 1 ? '' : 's'} known`);
+  console.log(`first gate ${firstCleared ? 'cleared' : 'not cleared'}, ${known} blueprint${known === 1 ? '' : 's'} known`);
   await snap('forge');
   await page.locator('.sheet.is-top .seg__btn', { hasText: 'Materials' }).click();
   await sleep(300);
@@ -431,7 +431,7 @@ try {
   await snap('exchange');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));
-  console.log(`smoke green · ${shot} screenshots in ${OUT}/`);
+  console.log(`smoke green: ${shot} screenshots in ${OUT}/`);
 } catch (e) {
   await snap('failure').catch(() => {});
   console.error(e);

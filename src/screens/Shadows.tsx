@@ -10,7 +10,7 @@ import * as shadows from '@/core/shadows';
 import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Chip, Empty, RankPlate, Section } from '@/ui/components';
+import { Btn, Chip, Empty, Facts, RankPlate, Section } from '@/ui/components';
 import * as kin from '@/core/kin';
 import type { Enemy, Save, Shadow, Tactic } from '@/core/types';
 import { RANKS } from '@/core/types';
@@ -137,7 +137,7 @@ function ArmyStage({ news }: { news: string[] }) {
           {lead && leadE
             ? <>
               <b>{shortName(lead)}</b>
-              <small><Insignia rank={shadows.rankIndex(lead)} size={12} />{shadows.rankOf(lead).name} · <span class="num">Lv.{shadows.levelOf(lead)}</span>{shadows.starsOf(lead) > 0 && <span class="armystage__stars"> {'★'.repeat(shadows.starsOf(lead))}</span>}</small>
+              <small><Insignia rank={shadows.rankIndex(lead)} size={12} /><Facts items={[shadows.rankOf(lead).name, <span class="num">Lv.{shadows.levelOf(lead)}</span>]} />{shadows.starsOf(lead) > 0 && <span class="armystage__stars"> {'★'.repeat(shadows.starsOf(lead))}</span>}</small>
             </>
             : <b>No Shadow deployed</b>}
         </span>
@@ -307,7 +307,7 @@ function ArmySheet({ news }: { news: string[] }) {
                   <span class="roster__slot-grade"><RankPlate rank={e.rank} size={16} /></span>
                   <span class="roster__slot-badge"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={40} /></span>
                   <b>{shortName(sh)}</b>
-                  <small class="num">Lv.{shadows.levelOf(sh)} · {shadows.power(sh)}</small>
+                  <small class="num"><Facts items={[`Lv.${shadows.levelOf(sh)}`, `Power ${shadows.power(sh)}`]} /></small>
                 </button>
                 <button type="button" class="roster__slot-x" aria-label={`Take out: ${shadows.nameOf(sh)}`} title="Take out"
                   onPointerDown={(ev) => ev.stopPropagation()} onClick={() => move(sh.id)}><Glyph name="close" /></button>
@@ -434,7 +434,7 @@ function RosterCard({ sh, i, on, ready, fresh, drag, lifted }: { sh: Shadow; i: 
         <ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={40} />
       </span>
       <small class="rostercard__name">{shortName(sh)}</small>
-      <small class="rostercard__lv num">Lv.{shadows.levelOf(sh)}{ready ? ' · Ready' : fresh ? ' · New' : ''}</small>
+      <small class="rostercard__lv num"><Facts items={[`Lv.${shadows.levelOf(sh)}`, ready ? 'Ready' : fresh ? 'New' : null]} /></small>
     </button>
   );
 }
@@ -540,7 +540,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
         </div>
         <div class="sp-head__who">
-          <span class="sp-head__was">{sh.name ? `${e.name} · ${e.shadow}` : e.name}</span>
+          <span class="sp-head__was">{sh.name ? <Facts items={[e.name, e.shadow]} /> : e.name}</span>
           <dl class="sp-rows">
             <div class="sp-row">
               <dt>Rank</dt>
@@ -797,11 +797,11 @@ function Release({ sh, close }: { sh: Shadow; close: () => void }) {
     if (got === null) return;
     close();
     sfx.blip();
-    toast(`Released · Shadow Essence +${got}`, 'good');
+    toast(`Released. Shadow Essence +${got}.`, 'good');
   };
   return (
     <Btn class="sp-release" block disabled={busy} onClick={() => void go()}>
-      <Glyph name="trash" /> {busy ? 'Release · In a Gate' : <>Release · Shadow Essence <span class="num">+{n}</span></>}
+      <Glyph name="trash" /> {busy ? 'In a Gate' : <>Release<span class="btn__aside">Shadow Essence <span class="num">+{n}</span></span></>}
     </Btn>
   );
 }
@@ -839,7 +839,7 @@ export function ShadowAlerts({ grew, ready, delay = 500 }: { grew: RaidResult['g
             icon={<ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={34} />}
             meter={{ from: up ? was : Math.min(was, now), to: now, up }}
             aside={g.xp > 0 ? <span class="num">XP <span class="grant">+{g.xp}</span></span> : null}
-            sub={made ? undefined : <span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? ' · Level cap' : ''}</span>}>
+            sub={made ? undefined : <span class="num">{up ? <>Lv.{g.from} → <span class="grant">Lv.{g.to}</span></> : `Lv.${g.to}`}{capped ? <span class="btn__aside">Level cap</span> : ''}</span>}>
             {made ? <><strong>[{name}]</strong> has met the requirements for promotion.</>
               : <><strong>[{name}]</strong> has levelled up.</>}
           </SysAlert>

@@ -3,20 +3,21 @@
  * (`screens/Shadows.tsx`) and the info panel of Solo Leveling: Arise, in the System's cyan: what the System sees of a
  * hunter beside you. Top to bottom it reads who they are, what they fight with, and what you have done together:
  * their grade's plate in a ring, their registration, `Rank`, `Class` (the class itself tells what it is when tapped)
- * and `Power`, how they fight and where their grade stands against the Gate's; their stats in one row; their skills,
+ * and `Power`, and how they fight; their stats in one row; their skills,
  * Strike first, and their traits, as their class gives them; and `Together`, your record with them alone, which
  * follows them from Gate to Gate (`hunters.recordOf`). Every number is the engine's: their class from
  * `hunters.classOf`, their kit from `hunters.kitOf`, as the fight builds them.
  */
 import { ability, passiveText, STRIKE } from '@/core/combat';
-import { rankIdx, regNo, type Ally } from '@/core/gates';
+import { regNo, type Ally } from '@/core/gates';
 import * as hunters from '@/core/hunters';
+import { nextRung } from '@/data/classes';
 import { ATTRS } from '@/core/progression';
-import type { Dungeon, Stat } from '@/core/types';
+import type { Stat } from '@/core/types';
 import { daysBetween, dayKey } from '@/core/util';
 import { useSave } from '@/store';
 import { skillLine } from './Skills';
-import { RankPlate, Section } from '@/ui/components';
+import { Facts, RankPlate, Section } from '@/ui/components';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { InfoTag } from '@/ui/infotag';
 import { openSheet } from '@/ui/overlays';
@@ -26,32 +27,37 @@ import type { TipText } from '@/ui/tip';
 const ORDER: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
 
 /** Open a hunter's card. Their record is read from the save as it stands; the rest is who they are. */
-export function openHunter(a: Ally, d: Dungeon) {
+export function openHunter(a: Ally) {
   openSheet({
     title: `Hunter: ${a.name}`,
     system: { icon: <RankPlate rank={a.rank} size={26} /> },
-    render: () => <HunterCard a={a} d={d} />,
+    render: () => <HunterCard a={a} />,
   });
 }
 
-/** A class in the game's one tooltip: its name and `Class`, what it is given for, and the stat it leads with. */
+/**
+ * A class in the game's one tooltip: its name and `Class`, what kind of fighter it is, then the stat it leads with and
+ * the rung it rises to, as Fire Emblem's class screen shows a class's promotion (`Leads with Strength. Rises to
+ * Berserker at C-Rank.`).
+ */
 export function classTip(a: Ally): TipText {
   const c = hunters.classOf(a);
   if (!c) return { title: 'Unclassified', kind: 'Class', tone: 'system', lines: ['No class is given below D-Rank. At D-Rank one comes from their leading stat.'] };
   const stat = ATTRS.find((x) => x.key === c.lead)?.name ?? c.lead;
+  const next = nextRung(c);
   return {
     title: c.name,
     kind: 'Class',
     mark: <span class="tip__mark"><Glyph name={STAT_ICON[c.lead] ?? 'star'} /></span>,
     tone: 'system',
-    lines: [c.desc, `Leads with ${stat}, the ${c.rank}-Rank rung of its line.`],
+    lines: [c.desc, next ? `Leads with ${stat}. Rises to ${next.name} at ${next.rank}-Rank.` : `Leads with ${stat}. The highest class of its line.`],
   };
 }
 
-function HunterCard({ a, d }: { a: Ally; d: Dungeon }) {
+function HunterCard({ a }: { a: Ally }) {
   return (
     <div class="stack shadowcard huntercard">
-      <Head a={a} d={d} />
+      <Head a={a} />
       <Stats a={a} />
       <Kit a={a} />
       <Together a={a} />
@@ -62,13 +68,13 @@ function HunterCard({ a, d }: { a: Ally; d: Dungeon }) {
 /**
  * The head, as the Shadow card's: their grade's plate inside a ring, their registration small over the rows
  * `Rank │ D-Rank`, `Class │ Brawler` (the class itself the tag that tells what it is, so it is said once) and
- * `Power │ 26`; under them how they fight, and where their grade stands against the Gate's.
+ * `Power │ 26`; under them how they fight. Where their grade stands against the Gate's is the brief's party's to say,
+ * by the arrow beside their power.
  */
-function Head({ a, d }: { a: Ally; d: Dungeon }) {
+function Head({ a }: { a: Ally }) {
   const c = hunters.classOf(a);
   const st = hunters.standOf(a);
   const style = styleOfLead(st);
-  const vs = rankIdx(a.rank) - rankIdx(d.rank);
   return (
     <section class="sysbox sp-head huntercard__head">
       <div class="sp-head__badge">
@@ -79,7 +85,7 @@ function Head({ a, d }: { a: Ally; d: Dungeon }) {
         <RankPlate rank={a.rank} size={60} />
       </div>
       <div class="sp-head__who">
-        <span class="sp-head__was">{a.note ? `${a.note} · ` : ''}Registration {regNo(a.id)}</span>
+        <span class="sp-head__was"><Facts items={[a.note, `Registration ${regNo(a.id)}`]} /></span>
         <dl class="sp-rows">
           <div class="sp-row"><dt>Rank</dt><dd>{a.rank}-Rank</dd></div>
           <div class="sp-row">
@@ -90,7 +96,6 @@ function Head({ a, d }: { a: Ally; d: Dungeon }) {
         </dl>
         <span class="sp-head__tags">
           <InfoTag class="sp-tag sp-tag--style" tip={hunterStyleTip(c?.lead)}><Glyph name={STYLE_GLYPH[style]} />{style}</InfoTag>
-          <span class={`sp-tag sp-head__state ${vs > 0 ? 'is-on' : ''}`}>{vs > 0 ? 'Above the Gate' : vs < 0 ? 'Under the Gate' : 'At the Gate’s grade'}</span>
         </span>
       </div>
     </section>

@@ -21,7 +21,7 @@ import { ENGRAVINGS, GROUPS, type EngraveGroup, type Engraving, type EngravingId
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { buzz } from './feedback';
-import { Btn, GearArt } from './components';
+import { Btn, Facts, GearArt } from './components';
 import { MatArt } from './forge';
 import { Glyph } from './icons';
 import { openSheet, sys, toast } from './overlays';
@@ -131,7 +131,8 @@ async function cut(itemId: string, e: Engraving, close?: () => void) {
     system.tag(d.name, 'Item'),
     `${system.tag(e.name, 'Engraving')} ${e.text}`,
     ...(was ? [system.red(`It replaces [Engraving: ${was.name}], which is kept in the Codex.`)] : []),
-    `Price: ${group(price)} Ascendant Ember · Held: ${group(ember(s))}`,
+    `Price: ${group(price)} Ascendant Ember`,
+    `Held: ${group(ember(s))}`,
   ], 'gear', 'Engrave', 'Cancel'));
   if (yes !== true) return;
   const done = store.update((x) => engr.engrave(x, itemId, e.id));
@@ -257,7 +258,7 @@ function Inscription({ e, it, close }: { e: Engraving; it?: Item; close: () => v
         <Runestone e={e} size={78} state={st} drawn />
       </div>
       <div class="cx-ins__text" key={`t-${e.id}`}>
-        <span class="cx-ins__state">{STANDING[st]} · {groupName(e.group)}</span>
+        <span class="cx-ins__state"><Facts items={[STANDING[st], groupName(e.group)]} /></span>
         <b class="cx-ins__name">{e.name}</b>
         <p>{e.text}</p>
         {holder && <span class="cx-ins__on"><GearArt item={holder} size={22} />{gear.defOf(holder)?.name}</span>}

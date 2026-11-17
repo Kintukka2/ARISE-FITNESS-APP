@@ -87,7 +87,7 @@ function Settings() {
         {store.backup() && <Btn kind="ghost" block onClick={restoreBackup}>Restore Previous Save</Btn>}
       </section>
       <Btn kind="danger" block onClick={erase}>Erase Everything</Btn>
-      <small class="muted center">Arise v{__APP_VERSION__} · Instructor Ryn Valcorde · all data stored on this device</small>
+      <small class="muted center settings__foot"><span>Arise v{__APP_VERSION__}</span><span>Instructor Ryn Valcorde</span><span>All data is stored on this device.</span></small>
     </div>
   );
 }

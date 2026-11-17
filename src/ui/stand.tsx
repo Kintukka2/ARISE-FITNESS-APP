@@ -3,7 +3,8 @@
  * the front for melee and the rear for ranged (every role in the rear fights from range, `RANGED_ROLES`). A tap opens
  * the game's one tooltip (`ui/tip.tsx`): where it takes its place and how its hits reach from there, read from the
  * rules in `data/ranks.ts` through the engine's own placing (`ranks.byRole`). The hunter may still drag it to the
- * other rank on a Gate's brief (`shadows.setStand`); the tag says where it fights best.
+ * other row on a Gate's brief (`shadows.setStand`); the tag says where it fights best. Front and Rear are rows, as
+ * Etrian Odyssey and Final Fantasy call them; a rank is a hunter's grade.
  */
 import * as ranks from '@/core/ranks';
 import type { Stand } from '@/core/ranks';
@@ -26,10 +27,10 @@ export function styleTip(role: string): TipText {
   const style = styleOf(role);
   const rear = Math.round(REAR_MELEE * 100);
   const line = st.ranged
-    ? 'Takes its place in the Rear. Its shots reach either rank, and lose nothing from there.'
+    ? 'Fights best from the Rear row. Its shots reach any foe, Front or Rear, at full strength.'
     : st.reaching
-      ? `Takes its place in the Front. Its melee hits reach the foes’ Rear as well, and land at ${rear}% from the Rear.`
-      : `Takes its place in the Front. Its melee hits reach only the foes’ Front while anyone stands in it, and land at ${rear}% from the Rear.`;
+      ? `Fights best from the Front row. Its melee hits reach the foes’ Rear row as well, and land at ${rear}% from the Rear row.`
+      : `Fights best from the Front row. Its melee hits reach only the foes’ Front row while anyone stands in it, and land at ${rear}% from the Rear row.`;
   return {
     title: style,
     kind: 'How it fights',
@@ -53,11 +54,11 @@ export function hunterStyleTip(lead: Stat | null | undefined): TipText {
   const rear = Math.round(REAR_MELEE * 100);
   const line = st.row === 'rear'
     ? st.ranged
-      ? 'Takes their place in the Rear. Their shots reach either rank, and lose nothing from there.'
-      : `Takes their place in the Rear. Their spells reach either rank, and a melee hit of theirs lands at ${rear}% from there.`
+      ? 'Fights best from the Rear row. Their shots reach any foe, Front or Rear, at full strength.'
+      : `Fights best from the Rear row. Their spells reach any foe, Front or Rear, and a melee hit of theirs lands at ${rear}% from there.`
     : st.reaching
-      ? `Takes their place in the Front. Their melee hits reach the foes’ Rear as well, and land at ${rear}% from the Rear.`
-      : `Takes their place in the Front. Their melee hits reach only the foes’ Front while anyone stands in it, and land at ${rear}% from the Rear.`;
+      ? `Fights best from the Front row. Their melee hits reach the foes’ Rear row as well, and land at ${rear}% from the Rear row.`
+      : `Fights best from the Front row. Their melee hits reach only the foes’ Front row while anyone stands in it, and land at ${rear}% from the Rear row.`;
   return {
     title: style,
     kind: 'How they fight',

@@ -9,15 +9,16 @@ import { describe } from '@/core/blessings';
 import { Glyph, STAT_ICON } from './icons';
 import { Keyed } from './keyed';
 import type { TipText } from './tip';
+import { Facts } from './components';
 
 /** A blessing's Paths by name: `Ruin`, or a Duo's `Ruin + Tempest`. */
 export const pathsOf = (id: string) => (boonById(id)?.paths ?? []).map((k) => pathOf(k)?.name ?? k).join(' + ');
 
-/** What kind of blessing it is, as its card's small line says it: `Ruin`, `Duo · Ruin + Tempest`, `Capstone · Ruin`. */
+/** What kind of blessing it is, as its card's small line says it: `Ruin`, `Duo: Ruin + Tempest`, `Capstone: Ruin`. */
 function kindLine(id: string): string {
   const b = boonById(id);
   if (!b) return '';
-  return b.kind === 'duo' ? `Duo · ${pathsOf(id)}` : b.kind === 'capstone' ? `Capstone · ${pathsOf(id)}` : pathsOf(id);
+  return b.kind === 'duo' ? `Duo: ${pathsOf(id)}` : b.kind === 'capstone' ? `Capstone: ${pathsOf(id)}` : pathsOf(id);
 }
 
 /**
@@ -59,7 +60,7 @@ export function BoonCard({ id, tier, from, onPick }: { id: string; tier: number;
       </span>
       <span class="boonc__body">
         <span class="boonc__head"><b class="boonc__name">{said.name}</b><TierPips tier={tier} from={from} /></span>
-        <small class="boonc__kind">{kindLine(id)}{from !== undefined ? ` · Tier ${TIERS[from - 1]} → ${TIERS[tier - 1]}` : ''}</small>
+        <small class="boonc__kind"><Facts items={[kindLine(id), from !== undefined ? `Tier ${TIERS[from - 1]} → ${TIERS[tier - 1]}` : null]} /></small>
         <span class="boonc__text"><Keyed text={from !== undefined ? raiseText(id, from, tier) : said.text} /></span>
         {b.hands && <small class="boonc__hand">Auto never plays it</small>}
       </span>

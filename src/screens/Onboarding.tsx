@@ -132,7 +132,7 @@ function Splash({ onDone }: { onDone: () => void }) {
         </svg>
       </div>
       <h1 class="wordmark" aria-label="Arise">ARISE</h1>
-      <p class="awaken__sub">Hunter Association · Awakening Assessment · Regional Office</p>
+      <p class="awaken__sub">Awakening Assessment, Hunter Association Regional Office</p>
       <div class="awaken__type"><p>{a.shown}</p><p>{b.shown}</p></div>
     </main>
   );

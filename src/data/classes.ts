@@ -1,6 +1,11 @@
 import type { Rank, Stat } from '@/core/types';
 
-/** A class is the System naming what your attributes have made you. */
+/**
+ * A class is the System naming what your attributes have made you. Its line is written as Fire Emblem and Final
+ * Fantasy Tactics write a class: what kind of fighter it is and how it fights, in a sentence or two, each rung of a
+ * line a step past the last (the owner's call: never `A class given to hunters who...`). A rung's line says nothing a
+ * hunter of that class could not do: where it stands (`ranks.byLead`) and what its leading stat gives.
+ */
 export interface ClassDef {
   id: string;
   name: string;
@@ -21,51 +26,51 @@ const LINES: { lead: Stat; rungs: [string, string, string][] }[] = [
   {
     lead: 'STR',
     rungs: [
-      ['brawler', 'Brawler', 'A class given to hunters who fight with their hands.'],
-      ['berserker', 'Berserker', 'A class given to hunters who strike harder when wounded.'],
-      ['warbreaker', 'Warbreaker', 'A class given to hunters who break armour.'],
-      ['juggernaut', 'Juggernaut', 'A class given to hunters who cannot be stopped once moving.'],
-      ['cataclysm', 'Infinite Cataclysm', 'A class given to hunters whose strength has no measured limit.'],
+      ['brawler', 'Brawler', 'A Front-row fighter who wins by force. Every blow they land is a heavy one.'],
+      ['berserker', 'Berserker', 'A fighter who hits harder the longer a fight runs, and keeps swinging when wounded.'],
+      ['warbreaker', 'Warbreaker', 'A fighter who breaks a foe’s guard first and the foe after.'],
+      ['juggernaut', 'Juggernaut', 'A fighter whose charge does not stop once it starts. It carries through a whole pack.'],
+      ['cataclysm', 'Infinite Cataclysm', 'Strength past any measured limit. One blow from them can end a fight.'],
     ],
   },
   {
     lead: 'AGI',
     rungs: [
-      ['skirmisher', 'Skirmisher', 'A class given to hunters who strike first, from the edge of a fight.'],
-      ['ranger', 'Ranger', 'A class given to hunters who cannot be caught.'],
-      ['bladedancer', 'Bladedancer', 'A class given to hunters who fight in rhythm.'],
-      ['tempest', 'Tempest', 'A class given to hunters who cannot be held.'],
-      ['afterimage', 'White Lightning', 'A class given to hunters who cross a battlefield faster than it can react.'],
+      ['skirmisher', 'Skirmisher', 'A Front-row fighter who strikes first. Their blades reach past the Front row to the foes behind it.'],
+      ['ranger', 'Ranger', 'A fighter too quick to pin down. Blows aimed at them often find only air.'],
+      ['bladedancer', 'Bladedancer', 'A fighter who moves in rhythm, each cut opening the way for the next.'],
+      ['tempest', 'Tempest', 'A fighter too fast to hold, who acts before most foes can and cuts through several.'],
+      ['afterimage', 'White Lightning', 'Agility past any measured limit. They cross a battlefield faster than it can react.'],
     ],
   },
   {
     lead: 'PER',
     rungs: [
-      ['scout', 'Scout', 'A class given to hunters who read terrain.'],
-      ['tracker', 'Observant', 'A class given to hunters who miss nothing.'],
-      ['farsight', 'Tracker', 'A class given to hunters who follow signs others cannot see.'],
-      ['truesight', 'Bloodhound', 'A class given to hunters who do not lose a trail.'],
-      ['allseer', 'All-Knowing Allseer', 'A class given to hunters from whom nothing is hidden.'],
+      ['scout', 'Scout', 'A Rear-row marksman whose shots reach any foe. What they aim at, they rarely miss.'],
+      ['tracker', 'Observant', 'A marksman who finds the weak point in every foe and strikes there.'],
+      ['farsight', 'Tracker', 'A marksman who marks a target and does not lose it.'],
+      ['truesight', 'Bloodhound', 'A marksman who finishes what others have wounded.'],
+      ['allseer', 'All-Knowing Allseer', 'Perception past any measured limit. Nothing on a battlefield is hidden from them.'],
     ],
   },
   {
     lead: 'VIT',
     rungs: [
-      ['warden', 'Warden', 'A class given to hunters who stand between the party and harm.'],
-      ['sentinel', 'Sentinel', 'A class given to hunters who take the first assault.'],
-      ['bulwark', 'Bulwark', 'A class given to hunters the party shelters behind.'],
-      ['immovable', 'Immovable', 'A class given to hunters who cannot be moved.'],
-      ['undying', 'Behemoth of Undeath', 'A class given to hunters who did not die when they should have.'],
+      ['warden', 'Warden', 'A Front-row guardian who stands between the party and harm.'],
+      ['sentinel', 'Sentinel', 'A guardian who meets the first assault so the party does not have to.'],
+      ['bulwark', 'Bulwark', 'A guardian built to outlast any fight. The party fights from behind them.'],
+      ['immovable', 'Immovable', 'A guardian who holds the line however hard it is struck.'],
+      ['undying', 'Behemoth of Undeath', 'Vitality past any measured limit. They stay standing after blows that should have ended them.'],
     ],
   },
   {
     lead: 'INT',
     rungs: [
-      ['adept', 'Attuned', 'A class given to hunters who sense mana.'],
-      ['tactician', 'Mage', 'A class given to hunters who shape mana into spells.'],
-      ['strategist', 'Wizard', 'A class given to hunters who command the deeper laws of magic.'],
-      ['grandmaster', 'Grandmaster', 'A class given to hunters who read a Gate before entering it.'],
-      ['mastermind', 'Lord of Spells', 'A class given to hunters who command every spell.'],
+      ['adept', 'Attuned', 'A Rear-row caster who senses mana and shapes it into spells that reach any foe.'],
+      ['tactician', 'Mage', 'A caster whose spells weaken and curse as well as wound.'],
+      ['strategist', 'Wizard', 'A caster who commands the deeper laws of magic and lays spells on a whole pack at once.'],
+      ['grandmaster', 'Grandmaster', 'A caster who reads a fight before it starts. The party moves on their call.'],
+      ['mastermind', 'Lord of Spells', 'Intelligence past any measured limit. Every spell answers them.'],
     ],
   },
 ];
@@ -77,6 +82,9 @@ export const CLASSES: ClassDef[] = LINES.flatMap((line) =>
 );
 
 const byId = new Map(CLASSES.map((c) => [c.id, c]));
+
+/** The class a class rises to at the next rank, as Fire Emblem's class screen names a promotion; none past S-Rank. */
+export const nextRung = (c: ClassDef): ClassDef | null => CLASSES.find((x) => x.lead === c.lead && x.tier === c.tier + 1) ?? null;
 export const classById = (id: string | null | undefined) => (id ? byId.get(id) ?? null : null);
 
 /** The class for a hunter's leading attribute at a given rank (null below D). */

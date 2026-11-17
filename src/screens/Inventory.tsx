@@ -27,7 +27,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { weekBest } from '@/core/spire';
 import * as system from '@/ui/system';
-import { Btn, Empty, GearArt, HpBar, useNow } from '@/ui/components';
+import { Btn, Empty, Facts, GearArt, HpBar, useNow } from '@/ui/components';
 import { Field, SysFrame } from '@/ui/frame';
 import { Tip, tipAt, type TipAt } from '@/ui/tip';
 import { buzz } from '@/ui/feedback';
@@ -41,6 +41,9 @@ import { Constellation, openSkills } from './Skills';
 
 /** The Skills window: kept under its old name for the screens that open it from a class. */
 export const openClass = openSkills;
+
+/** A line of the log as it reads now: an older save wrote `Iron Den: cleared`, and the Spire's and Rift's names with a middle dot. */
+const logName = (n: string) => n.replace(/ \u00b7 /g, ': ').replace(/: (cleared|withdrawn|defeated)$/, ', $1');
 
 export function Inventory() {
   const s = useSave();
@@ -105,7 +108,7 @@ function HunterHero({ s }: { s: Save }) {
           onClick={() => { sfx.tap(); openStatus(); }}>
           <span class="hhero__who">
             <Sigil rank={shown} size={42} />
-            <span class="hhero__name"><b>{s.hunter.name}</b><small>{cls?.name ?? 'Unclassified'} · {r.name}</small></span>
+            <span class="hhero__name"><b>{s.hunter.name}</b><small><Facts items={[cls?.name ?? 'Unclassified', r.name]} /></small></span>
           </span>
           <span class="hhero__bars">
             <MiniBar label="HP" cur={v.hp} max={v.hpMax} tone="hp" />
@@ -252,7 +255,7 @@ function Radar({ values, base, live }: { values: Record<Stat, number>; base?: Re
         return (
           <g key={`h${k}`} class={`ia-radar__hit ${on === k ? 'is-on' : ''}`}
             onMouseEnter={() => setOn(k)} onMouseLeave={() => setOn((x) => (x === k ? null : x))} onClick={() => setOn(k)}>
-            <title>{`${k} ${Math.round(values[k])}${base ? ` · Without gear ${Math.round(base[k])}` : ''}`}</title>
+            <title>{`${k} ${Math.round(values[k])}${base ? `, ${Math.round(base[k])} without gear` : ''}`}</title>
             <circle cx={px} cy={py} r={on === k ? 2.4 : 1.6} class="ia-radar__dot" />
             {/* A wide, invisible reach: the corner's label and the shape's point both answer a finger. */}
             <circle cx={(px + lx) / 2} cy={(py + ly) / 2} r="11" class="ia-radar__reach" />
@@ -398,7 +401,7 @@ export function VitalsBlock() {
     const dear = !have && s.wallet.shards < p.price;
     // One held shows how many, and is drunk before one is bought.
     return (
-      <button type="button" class={`pip ${idle ? 'is-idle' : dear ? 'is-dear' : 'is-live'} ${have ? 'is-held' : ''}`} aria-label={have ? `${p.name}, ${have} held` : `${p.name}, ${p.price} shards`} title={have ? `${p.name} · Held: ${have}` : `${p.name} · ${p.price}`}
+      <button type="button" class={`pip ${idle ? 'is-idle' : dear ? 'is-dear' : 'is-live'} ${have ? 'is-held' : ''}`} aria-label={have ? `${p.name}, ${have} held` : `${p.name}, ${p.price} shards`} title={have ? `${p.name}: ${have} held` : `${p.name}: ${p.price} Mana Shards`}
         onClick={() => drinkFlow(id)}>
         <Glyph name="potion" /><span class="num">{have ? `×${have}` : p.price}</span>
       </button>
@@ -409,7 +412,7 @@ export function VitalsBlock() {
     <div class="vitals" data-tour="vitals">
       <div class="vrow"><Glyph name="hp" /><span class="label">HP</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" />{pip('hp')}</div>
       <div class="vrow"><Glyph name="mp" /><span class="label">MP</span><HpBar cur={v.mp} max={v.mpMax} tone="mp" />{pip('mp')}</div>
-      <div class="vrow" title={`Stats ×${v.drag.toFixed(2)} · Fatigue -${vitals.FATIGUE_PER_HOUR} each hour`}>
+      <div class="vrow" title={`Stats ×${v.drag.toFixed(2)}. Fatigue -${vitals.FATIGUE_PER_HOUR} each hour.`}>
         <Glyph name="bolt" /><span class="label">FTG</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={ftone} />{pip('fatigue')}
       </div>
       {v.locked && <div class="vrow vrow--locked"><Glyph name="warn" /><small class="grow">Carried out. Fit to raid in {Math.ceil(v.lockedFor / 36e5)}h.</small>{pip('elixir')}</div>}
@@ -444,14 +447,15 @@ export async function drinkFlow(id: shop.PotionId, quick = false) {
       'Would you like to purchase?',
       system.tag(p.name, 'Item'),
       system.gain(p.effect),
-      `Price: ${group(p.price)} Mana Shards · Held: ${group(s.wallet.shards)}`,
+      `Price: ${group(p.price)} Mana Shards`,
+      `Held: ${group(s.wallet.shards)}`,
     ], 'gear', 'Buy and Drink', 'Cancel'));
   if (buy !== true) return;
   const moved = store.update((x) => shop.drink(x, id));
   if (moved == null) return toast('The potion was not used.', 'bad');
   sfx.success();
   buzz([16, 26, 22]);
-  toast(id === 'elixir' ? `${p.name} · lockout lifted` : id === 'fatigue' ? `${p.name} · Fatigue -${moved}` : `${p.name} · ${id.toUpperCase()} +${moved}`, 'xp');
+  toast(id === 'elixir' ? `${p.name}: lockout lifted.` : id === 'fatigue' ? `${p.name}: Fatigue -${moved}` : `${p.name}: ${id.toUpperCase()} +${moved}`, 'xp');
 }
 
 function Attributes() {
@@ -465,7 +469,8 @@ function Attributes() {
         title: `Stat: ${a.name}`, kind: 'system', typed: false, actions: [{ label: 'Close', value: null }],
         lines: [
           a.desc,
-          `Base: <strong>${s.hunter.attrs[k]}</strong>${total[k] !== s.hunter.attrs[k] ? ` · With class and gear: <strong>${Math.round(total[k])}</strong>` : ''}`,
+          `Base: <strong>${s.hunter.attrs[k]}</strong>`,
+          ...(total[k] !== s.hunter.attrs[k] ? [`With class and gear: <strong>${Math.round(total[k])}</strong>`] : []),
           `Limit: ${STAT_CAP} from Ability Points, ${BOOST_CAP} with class and gear.`,
         ],
       });
@@ -480,7 +485,7 @@ function Attributes() {
   const auto = async () => {
     const preview = structuredClone(s);
     autoAllocate(preview);
-    const plan = STATS.filter((k) => preview.hunter.attrs[k] > s.hunter.attrs[k]).map((k) => `<strong>${k} +${preview.hunter.attrs[k] - s.hunter.attrs[k]}</strong>`).join(' · ');
+    const plan = STATS.filter((k) => preview.hunter.attrs[k] > s.hunter.attrs[k]).map((k) => `<strong>${k} +${preview.hunter.attrs[k] - s.hunter.attrs[k]}</strong>`).join(', ');
     if (!(await confirm('Auto-Allocate', `${plan}. A third of the points go to your leading stat; the rest lift your weakest.`, 'Allocate'))) return;
     store.update(autoAllocate);
     sfx.levelUp();
@@ -568,7 +573,7 @@ export function openDossier() {
           <section class="dsec">
             <header class="exsec__head"><span class="label">Log</span><i aria-hidden="true" /><small class="num">{s.log.length}</small></header>
             {s.log.length
-              ? <ul class="syslog dossier__log">{s.log.slice(0, 40).map((e, i) => <li key={i}><span class="num">{e.day}</span><span>{e.name}</span><span class="num grant">{e.xp ? `+${e.xp}` : '·'}</span></li>)}</ul>
+              ? <ul class="syslog dossier__log">{s.log.slice(0, 40).map((e, i) => <li key={i}><span class="num">{e.day}</span><span>{logName(e.name)}</span><span class="num grant">{e.xp ? `+${e.xp}` : ''}</span></li>)}</ul>
               : <Empty>Nothing logged yet.</Empty>}
           </section>
         </div>

@@ -2987,6 +2987,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .ascdial__high { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .ascdial__high b { color: var(--gold); letter-spacing: 0; }
 .ascdial__jump { min-height: 32px; padding: 0 6px; border: 0; background: none; color: var(--gold); font: inherit; text-decoration: underline; cursor: pointer; }
+.ascdial__jumps { display: inline-flex; gap: 4px; margin-left: 8px; }
 /* The summit: the next level's challenge card, its road a track of two seals, Face The Trial once it stands open. */
 .ascsummit { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px 14px; border: 1px dashed color-mix(in srgb, var(--gold) 55%, transparent);
   background: radial-gradient(100% 120% at 0% 0%, rgba(255, 203, 92, 0.12), transparent 60%), rgba(12, 9, 3, 0.7); }
@@ -4488,6 +4489,10 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 /* A blessing's tooltip leads with its Path's mark (a Duo's two), in advancement's gold as its chip wears it. */
 .tip__mark--boon { width: auto; grid-auto-flow: column; gap: 2px; color: var(--gold); }
 
+/* An Association hunter's grade against the Gate's, beside their power: a gain's green above it, damage's red under it. */
+.bformation__vs { font-style: normal; }
+.bformation__vs.is-up { color: var(--verdant); }
+.bformation__vs.is-down { color: var(--blood); }
 /* An Association hunter in the brief's party: a tap opens their card (screens/Hunter.tsx). */
 .bformation__ally { cursor: pointer; }
 .bformation__ally:hover .bformation__face, .bformation__ally:focus-visible .bformation__face { border-color: color-mix(in srgb, var(--mana) 60%, transparent); }
@@ -4517,3 +4522,6 @@ button.huntercard__class.is-classed { color: var(--gold); }
 .hc-together__rows dd { margin: 0; color: var(--sys-ink); }
 .hc-together__rows dd small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .hc-together__none { margin: 0; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+
+/* The Settings foot: the version, the instructor and where the save lives, a line each. */
+.settings__foot { display: flex; flex-direction: column; align-items: center; gap: 2px; }

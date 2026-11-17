@@ -16,6 +16,7 @@ import { go, isOpen, route, type Route } from './router';
 import { openExchange } from '@/screens/Exchange';
 import { openSettings } from '@/screens/Settings';
 import { openStatus } from '@/screens/Inventory';
+import { Facts } from '@/ui/components';
 
 /** Drifting motes on a canvas, throttled, and off entirely under reduced motion. */
 function Motes() {
@@ -73,11 +74,11 @@ export function TopBar() {
         <Sigil rank={shown} size={44} />
       </button>
       <div class="topbar__mid">
-        <div class="topbar__name">{[s.hunter.name, cls?.name].filter(Boolean).join(' · ')}</div>
+        <div class="topbar__name"><Facts items={[s.hunter.name, cls?.name]} /></div>
         <div class="topbar__row">
           <div class="xpbar" role="progressbar" aria-label="XP" aria-valuenow={s.hunter.xp} aria-valuemax={need}>
             <div class="xpbar__fill" style={{ transform: `scaleX(${Math.min(1, s.hunter.xp / need)})` }} />
-            <span class="xpbar__label num">LV {s.hunter.level} · {s.hunter.xp} / {need}</span>
+            <span class="xpbar__label num"><Facts items={[`LV ${s.hunter.level}`, `${s.hunter.xp} / ${need}`]} /></span>
           </div>
           <button type="button" class="topbar__purse" aria-label={`${s.wallet.shards} Mana Shards. Open the Exchange`} onClick={() => { sfx.blip(); openExchange(); }}>
             <Shard size={15} /><span class="num">{compact(s.wallet.shards)}</span>
