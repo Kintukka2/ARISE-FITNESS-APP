@@ -17,11 +17,11 @@ export type MedalId = 'bronze' | 'silver' | 'gold';
  */
 export const PAR: Record<Rank, Record<FightKind, number>> = {
   E: { fight: 5.3, elite: 8.3, boss: 11.3 },
-  D: { fight: 3.6, elite: 7, boss: 10.4 },
-  C: { fight: 2.2, elite: 5.2, boss: 8.1 },
-  B: { fight: 3.1, elite: 5.1, boss: 7.1 },
+  D: { fight: 3.6, elite: 7.2, boss: 10.8 },
+  C: { fight: 2.2, elite: 5.3, boss: 8.4 },
+  B: { fight: 3.1, elite: 5.4, boss: 7.6 },
   A: { fight: 2.4, elite: 4.8, boss: 7.1 },
-  S: { fight: 3.4, elite: 4.5, boss: 5.6 },
+  S: { fight: 3.4, elite: 5.1, boss: 6.7 },
 };
 
 /**

@@ -41,13 +41,15 @@ describe('Kin and Formation, as data', () => {
 });
 
 describe('a squad’s make-up', () => {
-  it('counts each family and every distinct role, the auras summed', () => {
+  it('counts each family and every role, each role\'s bonus at the tier its count reaches, summed', () => {
     const m = kin.makeFrom([
       { family: 'Undead', role: 'Brute' }, { family: 'Undead', role: 'Caster' }, { family: 'Beast', role: 'Brute' },
     ]);
     expect(m.kin).toEqual([{ family: 'Undead', n: 2, tier: 1 }, { family: 'Beast', n: 1, tier: 0 }]);
     expect(m.roles).toEqual(['Brute', 'Caster']);
-    expect(m.aura).toEqual({ ...kin.FORMATION.Brute, ...kin.FORMATION.Caster });
+    expect(m.roleLines).toEqual([{ role: 'Brute', n: 2, tier: 2 }, { role: 'Caster', n: 1, tier: 1 }]);
+    // Two Brutes give the Brute's bonus twice over; one Caster its own.
+    expect(m.aura).toEqual({ ...kin.times(kin.FORMATION.Brute, 2), ...kin.FORMATION.Caster });
     expect(kin.kinBonusFor('Undead', m)).toEqual(kin.kinBoon('Undead', 1));
     expect(kin.kinBonusFor('Beast', m)).toEqual({});
   });
@@ -70,7 +72,17 @@ describe('a squad’s make-up', () => {
 describe('in a fight', () => {
   const d = dungeonById('DNG-016')!;
 
-  it('each Shadow takes its Kin’s boon, the hunter and every Shadow the auras, the Association’s hunters neither', () => {
+  it('a role\'s bonus grows with each of it deployed, to three times at three, and no further', () => {
+    const at = (n: number) => kin.makeFrom(Array.from({ length: n }, () => ({ family: 'Beast', role: 'Leader' }))).aura;
+    const one = kin.FORMATION.Leader;
+    expect(at(1)).toEqual(one);
+    expect(at(2)).toEqual(kin.times(one, 2));
+    expect(at(3)).toEqual(kin.times(one, 3));
+    expect(at(5)).toEqual(kin.times(one, 3));
+    expect(kin.ROLE_AT).toEqual([1, 2, 3]);
+  });
+
+  it('each Shadow takes its Kin’s boon, and the whole party the role bonuses, the Association’s hunters too', () => {
     const s = hunter(3);
     const orcs = of('Orc').slice(0, 2);
     const other = ALL_ENEMIES.find((e) => e.family !== kin.KIN_ALL && e.family !== 'Orc')!;
@@ -81,7 +93,9 @@ describe('in a fight', () => {
     const hero = specs.find((u) => u.tag === 'hero')!;
     const bare = raid.heroSpec(s, now);
     for (const [k, v] of Object.entries(m.aura)) expect((hero.bonus![k] ?? 0) - (bare.bonus![k] ?? 0)).toBeCloseTo(v, 6);
-    for (const a of specs.filter((u) => u.tag === 'ally')) expect(a.bonus ?? {}).toEqual({});
+    const allies = specs.filter((u) => u.tag === 'ally');
+    expect(allies.length).toBeGreaterThan(0);
+    for (const a of allies) expect(a.bonus ?? {}).toEqual(m.aura);
     for (const sp of specs.filter((u) => u.tag === 'shadow')) {
       const sh = s.shadows.army.find((x) => x.id === sp.ref)!;
       const want = kin.kinBonusOf(sh, m);

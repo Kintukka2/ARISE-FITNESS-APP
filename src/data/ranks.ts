@@ -2,9 +2,10 @@
  * Front and rear (docs/DESIGN.md, "Ranks — built"): each side of a fight stands in two, a front and a rear. A melee
  * hit reaches only the front while anyone stands in it; magic, a volley, a spread, a burst, a wild swing, a strike at
  * all, a throw, a ranged unit's shot and a reaching unit's lunge reach either. A melee hit struck from the rear lands
- * at half. Where a creature or a Shadow stands is its role's; an Association hunter's and the hunter's, by default,
- * their class's lead; the hunter may choose, and may move in a fight for their turn. Numbers here are rules; the screens
- * quote them.
+ * at half. Where a creature stands is its role's, and so is a Shadow's until the hunter moves it on a brief; an
+ * Association hunter's and the hunter's, by default, their class's lead; the hunter may choose, and may move in a
+ * fight for their turn. A role that stands in the rear is ranged, one that stands in front melee (`Melee` and
+ * `Ranged` on a Shadow's card). Numbers here are rules; the screens quote them.
  */
 import type { Stat } from '@/core/types';
 
@@ -19,8 +20,11 @@ export const ROLE_ROW: Record<string, Row> = {
   'Archer / Shooter': 'rear', Caster: 'rear', Leader: 'rear', 'Status Specialist': 'rear',
 };
 
-/** Roles whose physical hits are shots: they reach either rank, and lose nothing from the rear. */
-export const RANGED_ROLES = ['Archer / Shooter'];
+/**
+ * Roles whose physical hits are shots: they reach either rank, and lose nothing from the rear. Every role that stands
+ * in the rear fights from range, so where a creature stands and how it fights never disagree.
+ */
+export const RANGED_ROLES = Object.keys(ROLE_ROW).filter((r) => ROLE_ROW[r] === 'rear');
 /** Roles whose melee reaches past the front: an Assassin's lunge, a Flier's dive. */
 export const REACHING_ROLES = ['Assassin', 'Flier'];
 

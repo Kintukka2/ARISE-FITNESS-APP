@@ -154,6 +154,8 @@ export interface Shadow {
   stars?: number;
   /** The name the hunter bestowed on it, if any. Unset, it goes by what it was: `Shadow {creature}`. */
   name?: string;
+  /** Where the hunter has placed it, dragged on a Gate's brief. Unset, it stands where its role does (`ranks.byRole`). */
+  stand?: 'front' | 'rear';
 }
 
 export interface OpenRaid {

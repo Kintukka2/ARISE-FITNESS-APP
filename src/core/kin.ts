@@ -4,18 +4,20 @@
  * fight's stats: a Kin's boon on each Shadow of its family, the Formation's auras on the hunter and on
  * every Shadow. Auto Deploy weighs them (`shadows.bestSquad`). Never touches the DOM.
  */
-import { FORMATION, KIN, KIN_ALL, KIN_AT, WORTH } from '@/data/kin';
+import { FORMATION, KIN, KIN_ALL, KIN_AT, ROLE_AT, WORTH } from '@/data/kin';
 import { enemyById } from './gates';
 import { sumBonuses } from './gear';
 import type { Shadow } from './types';
 
-export { FORMATION, KIN, KIN_ALL, KIN_AT };
+export { FORMATION, KIN, KIN_ALL, KIN_AT, ROLE_AT };
 
 /** A family in the squad: how many count toward it (the one kin to every family included), and the tier reached, 0 for none. */
 export interface KinLine { family: string; n: number; tier: number }
 
 /** A squad's make-up: its Kin, how many of the family kin to every other it holds, its roles, and the auras they give. */
-export interface Make { kin: KinLine[]; wild: number; roles: string[]; aura: Record<string, number> }
+/** A role in a squad: how many of it are deployed, and the tier of its bonus they reach. */
+export interface RoleLine { role: string; n: number; tier: number }
+export interface Make { kin: KinLine[]; wild: number; roles: string[]; roleLines: RoleLine[]; aura: Record<string, number> }
 
 /** A bonus `n` times over. */
 export const times = (b: Record<string, number>, n: number): Record<string, number> =>
@@ -27,13 +29,19 @@ export const tierFor = (n: number) => KIN_AT.reduce((t, at) => (n >= at ? t + 1 
 /** A family's boon at a tier: tier II is tier I twice over. Nothing at 0, or for a family with none. */
 export const kinBoon = (family: string, tier: number) => (tier > 0 && KIN[family] ? times(KIN[family], tier) : {});
 
-/** The auras the roles give together. */
-export const auraOf = (roles: readonly string[]) => sumBonuses(...roles.map((r) => FORMATION[r] ?? {}));
+/** The tier of a role's bonus a count of its Shadows reaches: one, two or three, never more. */
+export const roleTierFor = (n: number) => ROLE_AT.reduce((t, at) => (n >= at ? t + 1 : t), 0);
+
+/** A role's bonus at a tier: tier I its own, tier N N times it. */
+export const roleBoon = (role: string, tier: number) => (tier > 0 && FORMATION[role] ? times(FORMATION[role], tier) : {});
+
+/** The bonuses the roles give together, each at the tier its count reaches. */
+export const auraOf = (lines: readonly RoleLine[]) => sumBonuses(...lines.map((l) => roleBoon(l.role, l.tier)));
 
 /**
  * The make-up of a squad, from its creatures' families and roles: each family counted (the family kin to
- * every other counted in each of them), the strongest tier first; every distinct role, in the order the
- * auras are listed.
+ * every other counted in each of them), the strongest tier first; every role deployed, in the order the
+ * bonuses are listed, with its count and the tier its count reaches; and the bonuses they give together.
  */
 export function makeFrom(members: readonly { family: string; role: string }[]): Make {
   const wild = members.filter((m) => m.family === KIN_ALL).length;
@@ -41,9 +49,11 @@ export function makeFrom(members: readonly { family: string; role: string }[]): 
   for (const m of members) if (m.family !== KIN_ALL) count.set(m.family, (count.get(m.family) ?? 0) + 1);
   const kin = [...count].map(([family, n]) => ({ family, n: n + wild, tier: tierFor(n + wild) }))
     .sort((a, b) => b.tier - a.tier || b.n - a.n || a.family.localeCompare(b.family));
-  const have = new Set(members.map((m) => m.role));
-  const roles = Object.keys(FORMATION).filter((r) => have.has(r));
-  return { kin, wild, roles, aura: auraOf(roles) };
+  const per = new Map<string, number>();
+  for (const m of members) per.set(m.role, (per.get(m.role) ?? 0) + 1);
+  const roles = Object.keys(FORMATION).filter((r) => per.has(r));
+  const roleLines = roles.map((role) => ({ role, n: per.get(role)!, tier: roleTierFor(per.get(role)!) }));
+  return { kin, wild, roles, roleLines, aura: auraOf(roleLines) };
 }
 
 /** The creature a Shadow is. */

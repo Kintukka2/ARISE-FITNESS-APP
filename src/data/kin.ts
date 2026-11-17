@@ -4,8 +4,9 @@
  * how hard a blow lands or how often it does, never what a creature means to do.
  *
  * Kin: two deployed Shadows of one family each take their family's boon; three or more take it twice
- * over. Formation: each distinct role in the squad adds its aura to the hunter and every Shadow.
- * Numbers here are rules; the Guide and the Army sheet quote them.
+ * over. The role bonus (`FORMATION`, the code's name for it): each role deployed gives its bonus to the whole
+ * party, the hunter, the Association's hunters and every Shadow; two of a role twice it, three three times
+ * (`ROLE_AT`). Numbers here are rules; the Guide and the Army sheet quote them.
  */
 
 /** The Shadows of one family a Kin's tiers ask for: tier I at the first, tier II at the second. */
@@ -36,7 +37,10 @@ export const KIN: Record<string, Record<string, number>> = {
  */
 export const KIN_ALL = 'Aberration';
 
-/** Each role's aura, given to the hunter and every Shadow while one Shadow of that role is deployed. */
+/** The Shadows of one role a role bonus's tiers ask for: tier I at one, tier II at two, tier III at three. Tier N is N times tier I. */
+export const ROLE_AT = [1, 2, 3] as const;
+
+/** Each role's bonus at tier I, given to the whole party (the hunter, the Association's hunters, every Shadow) while a Shadow of that role is deployed. */
 export const FORMATION: Record<string, Record<string, number>> = {
   Brute: { patk: 0.04 },
   Assassin: { crit: 3 },

@@ -22,10 +22,9 @@ import { SysAlert, SysFrame } from '@/ui/frame';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
-import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, roleTip } from '@/ui/kin';
+import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, ROLE_TIER, roleTip } from '@/ui/kin';
 import { InfoTag } from '@/ui/infotag';
-import { StandMark, standOf, standTip } from '@/ui/stand';
-import { ROW_NAME } from '@/data/ranks';
+import { STYLE_GLYPH, styleOf, styleTip } from '@/ui/stand';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
 import { claimAll, claimPromotion } from '@/app/flow';
@@ -94,7 +93,7 @@ function ArmyStage({ news }: { news: string[] }) {
   const m = kin.makeOf(squad);
   const lit = [
     ...m.kin.filter((k) => k.tier > 0).map((k) => ({ key: `kin:${k.family}`, family: k.family, role: undefined as string | undefined, n: k.n, name: `${k.family} ${KIN_TIER[k.tier - 1]}` })),
-    ...m.roles.map((r) => ({ key: `role:${r}`, family: undefined as string | undefined, role: r, n: squad.filter((x) => enemyById(x.enemyId)?.role === r).length, name: r })),
+    ...m.roleLines.map((l) => ({ key: `role:${l.role}`, family: undefined as string | undefined, role: l.role, n: l.n, name: `${l.role} ${ROLE_TIER[l.tier - 1]}` })),
   ];
   const call = waiting.length > 0 || shadows.freeSlots(s) > 0;
   const places = Array.from({ length: Math.min(n, FORMATION_AT.length) }, (_, i) => i);
@@ -144,7 +143,7 @@ function ArmyStage({ news }: { news: string[] }) {
         </span>
       </button>
       {lit.length > 0 && (
-        <ul class="armystage__traits" aria-label="Kin and Formation">
+        <ul class="armystage__traits" aria-label="Kin and role bonuses">
           {lit.map((t) => (
             <li key={t.key} title={t.name}>
               <KinHex family={t.family} role={t.role} on />
@@ -518,6 +517,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
   // The breakpoint its family's Kin reaches in the squad as it stands, lit in its tooltip.
   const make = kin.makeOf(squad);
   const kinTier = e.family === kin.KIN_ALL ? Math.max(0, ...make.kin.map((k) => k.tier)) : make.kin.find((k) => k.family === e.family)?.tier ?? 0;
+  const roleTier = make.roleLines.find((l) => l.role === e.role)?.tier ?? 0;
   const at = shadows.rankIndex(sh);
   const lv = shadows.levelOf(sh);
   const p = shadows.progress(sh);
@@ -560,10 +560,10 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           </dl>
           <span class="sp-head__tags">
             <RankPlate rank={e.rank} size={20} />
-            {/* Family and role tell what they are to the squad when tapped, and where it stands what that decides in a fight. */}
+            {/* Family and role tell what they are to the squad when tapped, and how it fights where it takes its place. */}
             <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
-            <InfoTag class="sp-tag" tip={roleTip(e.role)}>{e.role}</InfoTag>
-            <InfoTag class="sp-tag sp-tag--stand" tip={standTip(e.role)}><StandMark row={standOf(e.role)} />{ROW_NAME[standOf(e.role)]}</InfoTag>
+            <InfoTag class="sp-tag" tip={roleTip(e.role, roleTier)}>{e.role}</InfoTag>
+            <InfoTag class="sp-tag sp-tag--style" tip={styleTip(e.role)}><Glyph name={STYLE_GLYPH[styleOf(e.role)]} />{styleOf(e.role)}</InfoTag>
             <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Not deployed'}</span>
           </span>
         </div>

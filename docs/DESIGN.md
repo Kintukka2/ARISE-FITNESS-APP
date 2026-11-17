@@ -2646,33 +2646,155 @@ the Spire's keyword tips, Hades II's boons and their glossary, Darkest Dungeon, 
   is the role's wherever the Shadow stands, and a Shadow's role sets its rank), so the sentence is gone, as Teamfight
   Tactics' role tip says only what the role does.
 - **Left for later**: Hades II's and Slay the Spire's box for each keyword a tooltip names, and Teamfight Tactics'
-  tile for where a unit stands (since built: "Where a Shadow stands, on its card"). No tooltip yet names a word it does
-  not explain itself.
+  tile for where a unit stands (since built as `Melee` or `Ranged`: "Melee or Ranged, Shadows placed by hand, and role
+  bonuses for the whole party"). No tooltip yet names a word it does not explain itself.
 - **Balance.** Nothing a fight, a map or a reward reads changed: no calibration and no campaign.
 
-## Where a Shadow stands, on its card — built
+## Melee or Ranged, Shadows placed by hand, and role bonuses for the whole party — built
 
-The owner asked for the Shadow card to say where the Shadow stands, beside its role, once its role's tooltip
-stopped saying it (the rank decides nothing of the aura). It is Teamfight Tactics' tile for where a unit stands,
-left for later in "One tooltip, the fight's".
+The owner asked for four things on the Shadow card and the brief:
+- a `Melee` or `Ranged` tag in place of the Front or Rear tag, telling where a Shadow would rather fight;
+- the Shadows in the brief's party dragged between ranks as the hunter is, for deeper tactics;
+- `Formation` renamed, being more a bonus from the Shadow's role than a formation;
+- that bonus growing with two and three of a role, as a Kin grows, and reaching the whole party, the
+  Association's hunters too.
 
-- **A third info tag** after the family and the role (`ui/stand.tsx`): two lines, the one it stands in lit in the
-  Shadows' violet, the front on top as the brief's party faces the foes, and `Front` or `Rear`. Where it stands is
-  read from the engine's own placing, `ranks.byRole`, as `raid.shadowSpec` places a Shadow.
-- **Its tooltip** is the one tooltip, `Front` or `Rear` and `Where it stands`, saying only what standing there decides
-  in a fight, its share read from `REAR_MELEE`:
+What was built:
 
-  | Where | Who | Tooltip |
-  |---|---|---|
-  | Front | Brute, Guardian | `Melee hits reach it. While anyone stands in the Front, they cannot reach the Rear.` |
-  | Front | Assassin, Flier | the same, then `Its melee reaches the foes’ Rear as well.` |
-  | Rear | Caster, Leader, Status Specialist | `Melee hits cannot reach it while anyone stands in the Front. Its own melee hits land at 50%.` |
-  | Rear | Archer / Shooter | `Melee hits cannot reach it while anyone stands in the Front. Its shots reach either rank, and lose nothing from here.` |
+- **Every rear role is ranged** (`RANGED_ROLES` in `data/ranks.ts`, read from `ROLE_ROW`): Archer / Shooter, Caster,
+  Leader and Status Specialist now hit either rank and lose nothing from the rear, so a `Ranged` tag never lies.
+  Before, only Archers did; every Leader and Status Specialist and 12 of the 21 Casters open on a physical skill, which
+  landed at half from the rear. This reaches the foes as well: a rear creature now hits the party's rear.
+- **Melee or Ranged on the card** (`ui/stand.tsx`), a blade or an arrow before it, after the family and the role. Its
+  tooltip, `How it fights`: `Takes its place in the Rear. Its shots reach either rank, and lose nothing from there.`;
+  `Takes its place in the Front. Its melee hits reach only the foes’ Front while anyone stands in it, and land at 50%
+  from the Rear.` (an Assassin's and a Flier's reach the foes' Rear as well). The Front or Rear tag of the pass before
+  is gone.
+- **Shadows placed by hand**: on a Gate's brief each Shadow is dragged to the other rank, or tapped across, as the hunter
+  is, its grip in the Shadows' violet and its ghost its badge and name. It keeps that place in the save
+  (`Shadow.stand`, `shadows.setStand`, unset while it stands where its role does) and `raid.shadowSpec` stands it
+  there; how its hits reach stays its role's. An open run keeps the places it walked in with. Auto, the brief's
+  projection of an unmoved squad, calibration and the campaign never move a Shadow.
+- **The role bonus** (the code keeps `FORMATION`): `Kin & Role` over the Army's chips and the card's section,
+  `Role bonus · Leader` on the card, `Role bonus: Brute II, Caster I` under the brief's party. Not `Class`, which is
+  already the hunter's (the Class screen, Reclassification, the Stats sheet's `CLASS`) and an Association hunter's.
+- **Tiered at one, two and three of a role** (`ROLE_AT`, `kin.roleTierFor`, `kin.roleBoon`): tier N is N times tier I,
+  three the most. Five different roles give five bonuses at I; three of one give that bonus three times over, so a
+  squad's whole budget is about what it was, and stacking is a choice. The Army's role chips read `1 › 2 › 3`.
+- **For the whole party**: `raid.partySpecs` gives the role bonuses to the Association's hunters too
+  (`Deployed, Leader Shadows give the whole party Initiative, the Association’s hunters included.`). Kin stays its
+  family's own.
+- **Pars moved** (`data/par.ts`), where `npm run parstats` found the System's boss fights at the grade's middle level
+  longer than before, the rear now shooting: D's boss 10.4 → 10.8 (its Gatekeeper 7 → 7.2), C's 8.1 → 8.4 (5.2 → 5.3),
+  B's 7.1 → 7.6 (5.1 → 5.4), S's 5.6 → 6.7 (4.5 → 5.1). Every fight par, and E's and A's boss pars, stayed within 0.1
+  of the System's average and held.
 
-- On a phone the tag wraps under the family and role when the row is full, ahead of `Not deployed`.
-- **Held by tests**: the voice test holds every role's tooltip to its rank's name and what it decides, the rear's share
-  read from `REAR_MELEE`; the tour opens it on the Shadow card. The Guide's Kin and Formation says the tag opens.
-- **Balance.** Nothing a fight or a reward reads changed: no calibration and no campaign.
+### Calibration
+
+`npm run calibrate` held 100 of its 141 tunings and moved 41. The Gates and the Spire's blocks mostly eased, the rear
+now hitting harder; Ascension and the Trials mostly rose, `keptUpHunter`'s squad now giving its allies its role bonuses
+and stacking what it holds.
+
+A tuning multiplies the health and attack of the foes it covers: higher is harder.
+
+#### Gates (GATE_TUNE): 11 of 51 moved
+
+| Gate | Grade | Before | After | Change |
+|---|---|---:|---:|---|
+| DNG-007 The Shielded Ossuary | D | 1.02 | 0.96 | -5.9% easier |
+| DNG-013 Sporebound Conservatory | D | 1.75 | 1.65 | -5.7% easier |
+| DNG-015 Champion’s Burial March | C | 1.31 | 1.19 | -9.2% easier |
+| DNG-028 Mireblood Sanctuary | C | 1.21 | 1.13 | -6.6% easier |
+| DNG-032 Hellline Citadel | B | 0.59 | 0.56 | -5.1% easier |
+| DNG-035 Chimeric Menagerie | B | 0.54 | 0.52 | -3.7% easier |
+| DNG-040 Obsidian Coreworks | B | 1.22 | 1.11 | -9.0% easier |
+| DNG-048 Worldscale Caldera | S | 0.86 | 0.82 | -4.7% easier |
+| DNG-049 Dominion of the Hell Sovereign | S | 0.55 | 0.50 | -9.1% easier |
+| DNG-050 Eclipse at the End of Death | S | 0.65 | 0.58 | -10.8% easier |
+| DNG-HOLLOW The Hollow Throne | S | 0.48 | 0.40 | -16.7% easier |
+
+Average change by grade: E 0.0%, D -1.4%, C -1.1%, B -1.3%, A 0.0%, S -10.3%
+
+#### Pale Spire blocks, by the Gate whose shape they take (BLOCK_TUNE): 9 of 50 moved
+
+| Gate | Grade | Before | After | Change |
+|---|---|---:|---:|---|
+| DNG-007 The Shielded Ossuary | D | 1.35 | 1.32 | -2.2% easier |
+| DNG-013 Sporebound Conservatory | D | 1.62 | 1.54 | -4.9% easier |
+| DNG-034 The Beguiling Court | B | 1.03 | 1.00 | -2.9% easier |
+| DNG-040 Obsidian Coreworks | B | 1.30 | 1.38 | +6.2% harder |
+| DNG-045 Drake Lord’s Aerie | A | 0.58 | 0.55 | -5.2% easier |
+| DNG-046 Infernal Command Throne | A | 1.55 | 1.41 | -9.0% easier |
+| DNG-048 Worldscale Caldera | S | 1.06 | 1.00 | -5.7% easier |
+| DNG-049 Dominion of the Hell Sovereign | S | 1.22 | 1.15 | -5.7% easier |
+| DNG-050 Eclipse at the End of Death | S | 1.12 | 1.08 | -3.6% easier |
+
+Average change by grade: E 0.0%, D -0.9%, C 0.0%, B +0.2%, A -2.8%, S -5.0%
+
+#### Pale Spire floors (SPIRE_TUNE): 5 of 20 moved
+
+| | Before | After | Change |
+|---|---:|---:|---|
+| Floors 21-25 | 0.77 | 0.75 | -2.6% easier |
+| Floors 41-45 | 0.98 | 0.96 | -2.0% easier |
+| Floors 56-60 | 0.93 | 1.00 | +7.5% harder |
+| Floors 61-65 | 0.97 | 1.03 | +6.2% harder |
+| Floors 66-70 | 1.08 | 1.09 | +0.9% harder |
+
+#### Ascension (ASCENSION_TUNE): 6 of 10 moved
+
+| | Before | After | Change |
+|---|---:|---:|---|
+| Level 3 | 1.43 | 1.50 | +4.9% harder |
+| Level 4 | 1.49 | 1.58 | +6.0% harder |
+| Level 5 | 1.54 | 1.61 | +4.5% harder |
+| Level 6 | 1.57 | 1.66 | +5.7% harder |
+| Level 7 | 1.61 | 1.71 | +6.2% harder |
+| Level 10 | 1.76 | 1.83 | +4.0% harder |
+
+#### Trials (TRIAL_TUNE): 9 of 10 moved
+
+| | Before | After | Change |
+|---|---:|---:|---|
+| Ascension 0 | 1.31 | 1.37 | +4.6% harder |
+| Ascension 1 | 0.83 | 0.87 | +4.8% harder |
+| Ascension 2 | 0.72 | 0.75 | +4.2% harder |
+| Ascension 3 | 0.70 | 0.67 | -4.3% easier |
+| Ascension 4 | 0.64 | 0.61 | -4.7% easier |
+| Ascension 6 | 0.43 | 0.42 | -2.3% easier |
+| Ascension 7 | 0.40 | 0.39 | -2.5% easier |
+| Ascension 8 | 0.35 | 0.37 | +5.7% harder |
+| Ascension 9 | 0.32 | 0.34 | +6.3% harder |
+
+### Balance
+
+`npm run balance`, the typical hunter's clear rate at the floor, middle and top of each grade, before and after:
+
+| Grade | Before | After |
+|---|---|---|
+| E | 63% · 78% · 88% | 63% · 78% · 88% |
+| D | 56% · 76% · 77% | 58% · 77% · 76% |
+| C | 63% · 78% · 92% | 62% · 77% · 92% |
+| B | 62% · 78% · 80% | 61% · 76% · 81% |
+| A | 76% · 82% · 83% | 76% · 81% · 84% |
+| S | 64% · 81% · 99% | 63% · 88% · 100% |
+
+S's middle reads 88% here where calibration's own S Gates sit at 73-82% (and the Hollow Throne at 48%).
+
+### Campaign
+
+Run for run against this branch before the pass:
+
+| | Days to D, C, B, A, S, N | Cleared | Carried out | Ascension opened | Medals (Bronze, Silver, Gold) |
+|---|---|---|---|---|---|
+| One evening, before | 2, 8, 16, 29, 58, 112 | 96% | 10 | 7 | 41, 25, 17 |
+| One evening, after | 2, 6, 15, 29, 55, 113 | 97% | 9 | 6 | 42, 24, 12 |
+| Three sessions, before | 1, 5, 10, 17, 32, 63 | 93% | 30 | 25 | 39, 21, 12 |
+| Three sessions, after | 1, 4, 10, 17, 33, 64 | 93% | 28 | 25 | 41, 22, 12 |
+
+- **Held by tests**: every rear role ranged and every front role melee; a Shadow's place set, read by its spec, and
+  cleared back at its role's; a role's bonus at one, two, three and five of it; the allies taking the role bonuses; the
+  voice test's role and Melee or Ranged tooltips; the tour drags a Shadow on the brief and checks the save keeps it.
 
 ## What stays out
 

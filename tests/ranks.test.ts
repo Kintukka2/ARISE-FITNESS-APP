@@ -6,7 +6,8 @@ import { defaults } from '@/core/save';
 import type { Ability } from '@/core/types';
 import { rng } from '@/core/util';
 import { MOVE, PACK, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
-import { ALL_DUNGEONS, enemyById, isPractice } from '@/core/gates';
+import { ALL_DUNGEONS, ALL_ENEMIES, enemyById, isPractice } from '@/core/gates';
+import * as shadows from '@/core/shadows';
 import { build, mapSeed } from '@/core/map';
 
 const base = { STR: 10, AGI: 10, PER: 10, VIT: 10, INT: 10 };
@@ -30,6 +31,29 @@ describe('front and rear', () => {
     ranks.setStand(s, 'rear');
     expect(ranks.heroRow(s)).toBe('rear');
     expect(raid.heroSpec(s).row).toBe('rear');
+  });
+
+  it('every role that stands in the rear is ranged, and every role in front melee', () => {
+    for (const [role, row] of Object.entries(ROLE_ROW)) {
+      const st = ranks.byRole(role);
+      expect(st.row, role).toBe(row);
+      expect(!!st.ranged, role).toBe(row === 'rear');
+    }
+  });
+
+  it('a Shadow stands where the hunter placed it, its reach still its role\'s, and back at its role\'s place keeps no choice', () => {
+    const s = defaults();
+    const caster = ALL_ENEMIES.find((e) => e.role === 'Caster')!;
+    s.shadows.army.push({ id: 'sh1', enemyId: caster.id, boundAt: '2026-01-01', out: 0, kills: 0, bosses: 0, rank: 0, xp: 0 });
+    const sh = s.shadows.army[0];
+    expect(shadows.standOf(sh)).toBe('rear');
+    expect(raid.shadowSpec(sh, 0)).toMatchObject({ row: 'rear', ranged: true });
+    shadows.setStand(s, 'sh1', 'front');
+    expect(sh.stand).toBe('front');
+    expect(shadows.standOf(sh)).toBe('front');
+    expect(raid.shadowSpec(sh, 0)).toMatchObject({ row: 'front', ranged: true });
+    shadows.setStand(s, 'sh1', 'rear');
+    expect(sh.stand).toBeUndefined();
   });
 
   it('a melee hit reaches only the front while anyone stands in it; magic, a volley, a shot and a lunge reach either', () => {
