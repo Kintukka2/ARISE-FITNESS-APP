@@ -32,6 +32,8 @@ import { GRADES, verdict } from '@/core/raid';
 import type { Ev } from '@/core/combat';
 import { TOPICS } from '@/screens/Guide';
 import { familyTip, roleTip } from '@/ui/kin';
+import { standTip } from '@/ui/stand';
+import { REAR_MELEE, ROLE_ROW } from '@/data/ranks';
 import { FORMATION, KIN, KIN_ALL } from '@/data/kin';
 
 const plain = (html: string) => html.replace(/<[^>]+>/g, '');
@@ -295,6 +297,7 @@ describe('the tooltip', () => {
   const shadowTips = [
     ...[...Object.keys(KIN), KIN_ALL].map((f) => familyTip(f, 1)),
     ...Object.keys(FORMATION).map((r) => roleTip(r)),
+    ...Object.keys(ROLE_ROW).map((r) => standTip(r)),
   ];
   it('tells a Shadow\'s family and role in whole sentences, with no label inside them', () => {
     expect(shadowTips.length).toBeGreaterThan(10);
@@ -315,6 +318,15 @@ describe('the tooltip', () => {
       expect(t.lines, r).toHaveLength(1);
       expect(t.lines[0], r).toMatch(/^While an? .+ is deployed, you and every Shadow gain /);
       expect(t.lines[0], r).not.toMatch(/\b(Front|Rear|Stands|rank)\b/);
+    }
+  });
+
+  it('tells where a Shadow stands by what it decides in a fight, its share read from the rules', () => {
+    for (const [r, row] of Object.entries(ROLE_ROW)) {
+      const t = standTip(r);
+      expect(t.title, r).toBe(row === 'front' ? 'Front' : 'Rear');
+      expect(t.lines.join(' '), r).toMatch(/Melee hits/);
+      if (row === 'rear' && r !== 'Archer / Shooter') expect(t.lines.join(' '), r).toContain(`${Math.round(REAR_MELEE * 100)}%`);
     }
   });
 
