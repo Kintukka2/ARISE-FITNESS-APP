@@ -56,7 +56,7 @@ function Settings() {
         <section class="setsec">
           <Head label="Reminder" />
           <div class="toggles">
-            <Toggle label="Tell me when I am rested" note="One notification when fatigue reaches 0 or the Gate lockout ends." on={s.settings.reminders.on} onChange={async (v) => {
+            <Toggle label="Tell me when I am rested" note="One notification when fatigue reaches 0." on={s.settings.reminders.on} onChange={async (v) => {
               if (v && !(await askNotifications())) { sfx.alarm(); toast('Notifications are blocked for Arise. Allow them in Android settings.', 'warn'); return; }
               set((x) => { x.settings.reminders.on = v; });
               void syncReminders(store.get());

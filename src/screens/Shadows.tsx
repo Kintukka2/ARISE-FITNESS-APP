@@ -3,14 +3,14 @@
  * squad is made; and the Orders under it.
  */
 import { sfx } from '@/audio/audio';
-import { passiveText, ability, TACTICS } from '@/core/combat';
+import { ability, passiveFor, RESIST_STATUS, STATUS_TEXT, TACTICS } from '@/core/combat';
 import { dungeonById, enemyById } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
 import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Chip, Empty, Facts, RankPlate, Section } from '@/ui/components';
+import { Btn, Empty, Facts, RankPlate, Section } from '@/ui/components';
 import * as kin from '@/core/kin';
 import type { Enemy, Save, Shadow, Tactic } from '@/core/types';
 import { RANKS } from '@/core/types';
@@ -24,6 +24,8 @@ import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
 import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, ROLE_TIER, roleTip } from '@/ui/kin';
 import { InfoTag } from '@/ui/infotag';
+import { STATUS_MARK, StatusMark } from '@/ui/effects';
+import type { TipText } from '@/ui/tip';
 import { STYLE_GLYPH, styleOf, styleTip } from '@/ui/stand';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
@@ -540,7 +542,11 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
         </div>
         <div class="sp-head__who">
-          <span class="sp-head__was">{sh.name ? <Facts items={[e.name, e.shadow]} /> : e.name}</span>
+          <span class="sp-head__was">
+            <span class="sp-head__kind">{sh.name ? <Facts items={[e.name, e.shadow]} /> : e.name}</span>
+            {/* Whether it is in the squad, beside its name, as a game's unit card marks the units in the party. */}
+            <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Reserve'}</span>
+          </span>
           <dl class="sp-rows">
             <div class="sp-row">
               <dt>Rank</dt>
@@ -558,15 +564,15 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
               <dd class="sp-row__power num">{shadows.power(sh)}</dd>
             </div>
           </dl>
-          <span class="sp-head__tags">
-            <RankPlate rank={e.rank} size={20} />
-            {/* Family and role tell what they are to the squad when tapped, and how it fights where it takes its place. */}
-            <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
-            <InfoTag class="sp-tag" tip={roleTip(e.role, roleTier)}>{e.role}</InfoTag>
-            <InfoTag class="sp-tag sp-tag--style" tip={styleTip(e.role)}><Glyph name={STYLE_GLYPH[styleOf(e.role)]} />{styleOf(e.role)}</InfoTag>
-            <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Not deployed'}</span>
-          </span>
         </div>
+        {/* Under the badge and the rows, across the panel, so its four tags keep one line on a phone. */}
+        <span class="sp-head__tags">
+          <RankPlate rank={e.rank} size={20} />
+          {/* Family and role tell what they are to the squad when tapped, and how it fights where it takes its place. */}
+          <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
+          <InfoTag class="sp-tag" tip={roleTip(e.role, roleTier)}>{e.role}</InfoTag>
+          <InfoTag class="sp-tag sp-tag--style" tip={styleTip(e.role)}><Glyph name={STYLE_GLYPH[styleOf(e.role)]} />{styleOf(e.role)}</InfoTag>
+        </span>
       </section>
       <div class="row">
         <Btn kind={on ? undefined : 'primary'} class="grow" disabled={full} onClick={() => { store.update((x) => shadows.toggleDeploy(x, sh.id)); sfx.blip(); }}>
@@ -718,6 +724,40 @@ function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   );
 }
 
+/**
+ * A status a Shadow wards off, in the game's one tooltip, as the fight tells a status: its mark and name, `Immune` or
+ * `Resists` at the head's right, then what the ward does and what the status would have done.
+ */
+function wardTip(st: string, kind: 'Immune' | 'Resists'): TipText {
+  const does = STATUS_TEXT[st];
+  return {
+    title: st,
+    kind,
+    tone: 'shadow',
+    mark: STATUS_MARK[st] ? <span class="tip__mark tip__status"><StatusMark name={st} /></span> : undefined,
+    lines: [
+      kind === 'Immune' ? `${st} never lands on it, whatever inflicts it.` : `Against ${st}, it has Status Save +${RESIST_STATUS}.`,
+      ...(does ? [`${st}: ${does}.`] : []),
+    ],
+  };
+}
+
+/** The statuses it is immune to or resists, under their word, each a tag that tells what it wards off. */
+function Wards({ kind, list }: { kind: 'Immune' | 'Resists'; list: readonly string[] }) {
+  return (
+    <div class={`sp-ward is-${kind.toLowerCase()}`}>
+      <dt class="label">{kind}</dt>
+      <dd>
+        {list.map((st) => (
+          <InfoTag key={st} class="sp-tag sp-ward__tag" tip={wardTip(st, kind)}>
+            {STATUS_MARK[st] && <StatusMark name={st} size={12} />}{st}
+          </InfoTag>
+        ))}
+      </dd>
+    </div>
+  );
+}
+
 /** What it fights with: its skills, the second sealed until the rank that remembers it; and its traits. */
 function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
   const known = shadows.kitOf(sh);
@@ -749,14 +789,14 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
             {e.passive && (
               <div class="sp-skill is-passive">
                 <span class="sp-skill__ico"><Glyph name="star" /></span>
-                <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small>{passiveText(e.passive)}</small></span>
+                <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small>{passiveFor(e.passive, shadows.statsOf(sh))}</small></span>
               </div>
             )}
             {(e.imm.length > 0 || e.res.length > 0) && (
-              <div class="chips">
-                {e.imm.map((x) => <Chip key={x} tone="verdant">Immune: {x}</Chip>)}
-                {e.res.map((x) => <Chip key={x}>Resists: {x}</Chip>)}
-              </div>
+              <dl class="sp-wards">
+                {e.imm.length > 0 && <Wards kind="Immune" list={e.imm} />}
+                {e.res.length > 0 && <Wards kind="Resists" list={e.res} />}
+              </dl>
             )}
           </div>
         </Section>
@@ -765,13 +805,13 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
   );
 }
 
-/** What it has done: runs walked into, creatures and bosses it helped fell, and days served. */
+/** What it has done: the Gates it walked into, the creatures and bosses it helped defeat, and days served. */
 function Record({ sh }: { sh: Shadow }) {
   const days = Math.max(0, daysBetween(sh.boundAt, dayKey()));
   return (
     <Section title="Record">
       <div class="sp-record">
-        <span><b class="num">{sh.out}</b><small>Deployed</small></span>
+        <span><b class="num">{sh.out}</b><small>Gates</small></span>
         <span><b class="num">{sh.kills}</b><small>Defeated</small></span>
         <span><b class="num">{sh.bosses}</b><small>Bosses</small></span>
         <span><b class="num">{days}</b><small>Days served</small></span>

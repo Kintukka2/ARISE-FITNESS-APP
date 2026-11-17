@@ -995,6 +995,9 @@ try {
     if (await page.locator('.sheet.is-top .tip--inline').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
+  // Whether it is in the squad sits beside its name, never under its tags.
+  if (!(await page.locator('.sheet.is-top .sp-head__was .sp-head__state').count())) throw new Error('THE SHADOW CARD DOES NOT SAY BESIDE ITS NAME WHETHER IT IS DEPLOYED');
+  if (await page.locator('.sheet.is-top .sp-head__tags .sp-head__state').count()) throw new Error('THE DEPLOYED TAG STILL SITS UNDER THE SHADOW\'S TAGS');
   // The card's family and role tell what they are to the squad when tapped, and a tap away closes it.
   if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 3) throw new Error('THE SHADOW CARD\'S FAMILY, ROLE AND PLACE DO NOT TELL WHAT THEY ARE');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').first().hover(); await sleep(200);
@@ -1025,6 +1028,9 @@ try {
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
   if (!(await page.locator('.sheet.is-top .sp-auth', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');
+  // Who gains a role bonus is said once, never on every breakpoint.
+  if (await page.locator('.sheet.is-top .sp-auth .kintiers li', { hasText: 'for the whole party' }).count()) throw new Error('THE ROLE BONUS SAYS FOR THE WHOLE PARTY ON EVERY LINE');
+  if (await page.locator('.sheet.is-top .sp-skill', { hasText: 'Leading derived stat' }).count()) throw new Error('A PASSIVE STILL SAYS LEADING DERIVED STAT');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
   // Naming from the card: the System's line, the field across the window, and the two acts under it.
   await page.locator('.sheet.is-top .btn', { hasText: /^(Name|Rename)$/ }).click(); await sleep(400);
@@ -1035,6 +1041,26 @@ try {
   // The card gives no orders.
   if (await page.locator('.sheet.is-top .chip--btn', { hasText: 'Army Orders' }).count()) throw new Error('THE CARD STILL GIVES ORDERS');
   await close();
+  // A status a Shadow wards off is a tag that opens what it wards off, as the fight tells a status.
+  {
+    const rows = page.locator('.sheet.is-top .roster__row .roster__who');
+    let told = false;
+    for (let i = 0; i < Math.min(await rows.count(), 12) && !told; i++) {
+      await rows.nth(i).click(); await sleep(700);
+      const ward = page.locator('.sheet.is-top .sp-ward__tag').first();
+      if (await ward.count()) {
+        await ward.scrollIntoViewIfNeeded(); await sleep(300);
+        await ward.click(); await sleep(300);
+        if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: /Immune|Resists/i }).isVisible())) throw new Error('A WARD TAPPED DID NOT SAY WHAT IT WARDS OFF');
+        if (!(await page.locator('.tip.tip--shadow', { hasText: /never lands on it|Status Save \+\d+/ }).count())) throw new Error('A WARD\'S TOOLTIP DOES NOT SAY WHAT THE WARD DOES');
+        await snap('shadow-ward-tip');
+        await page.keyboard.press('Escape'); await sleep(250);
+        told = true;
+      }
+      await close(); await sleep(400);
+    }
+    if (!told) throw new Error('NO SHADOW IN THE VETERAN\'S ARMY WARDS OFF A STATUS TO TEST');
+  }
   // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, its card holds the promotion, and the hold plays it.
   if (!(await page.locator('.sheet.is-top .roster__row.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
   await page.locator('.sheet.is-top .roster__row.is-ready .roster__who').first().click(); await sleep(500);

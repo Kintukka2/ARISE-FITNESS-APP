@@ -1413,13 +1413,16 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     won: run.won, keeper: !!run.tally?.keeper, cleared, feats: met.length, rounds: run.tally?.rounds ?? 0, hp: v.hp / Math.max(1, v.hpMax),
     full: rift.fullMarks({ fights: road.filter((id) => m.byId[id]?.kind === 'fight').length, keeper: !!d.elite, feats: asked.length }),
   })) : null;
+  // Whoever carried them, the hunter walks out alive: their health never below `WIPE_HP`, once the Rift has read it.
+  if (!practice) vitals.standUp(s, now);
+  const out = vitals.read(s, now);
   s.gates.raid = null;
   s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}, ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, LOG_MAX);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
-    heroHp: v.hp, heroMax: v.hpMax, allies: allies.map((a) => a.name),
+    heroHp: out.hp, heroMax: out.hpMax, allies: allies.map((a) => a.name),
     seals: extra.seals.slice(), feats: { asked, met, fresh }, drops: kept ? extra.drops.length : 0,
     par: runPar > 0 ? { rounds: run.tally?.rounds ?? 0, par: par.whole(runPar), medal, best: par.bestOn(s, home), fresh: medals, ember: par.emberFor(d.rank, medals) } : null,
     ...(scored ? { rift: scored } : {}),

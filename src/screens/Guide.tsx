@@ -9,7 +9,7 @@ import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, GRADIENT, LABYRINTH, REST_CHANCE, WING, WINGS } from '@/core/map';
 import { CLOCK } from '@/core/clock';
-import { HELD, POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES } from '@/core/combat';
+import { HELD, POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES, RESIST_STATUS } from '@/core/combat';
 import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -17,7 +17,7 @@ import { OPEN_PER_DAY } from '@/core/gates';
 import { FORMATION, KIN, KIN_ALL, KIN_AT, ROLE_AT } from '@/data/kin';
 import { bonusText, setPieces } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
-import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
+import { drag, RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_HP } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_PASSIVES } from '@/data/tree';
 
@@ -171,6 +171,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A Capstone needs two of three named blessings of its Path.',
       `${Math.round(FONT_SHARE * 100)}% of shrines are Fonts. A Font raises one of up to ${FONT_OFFER} blessings you hold a tier, and with none to raise it blesses as a shrine does.`,
       'A status a blessing inflicts lands unless the foe is immune to it.',
+      `A creature or Shadow immune to a status never takes it. One that resists a status has Status Save +${RESIST_STATUS} against it.`,
       'Auto never Guards, Covers or throws, so the System never takes a blessing that needs them.',
       'The System takes the blessing with the highest tier it can play, a Capstone before a Duo before the rest. At a Font, it raises the lowest.',
       ...PATHS.flatMap((p) => BOON_LIST.filter((b) => b.kind === 'path' && b.paths[0] === p.key).map((b) => `${p.name}: ${boonLine(b)}`)),
@@ -232,7 +233,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear pays double, once.`,
       'A clear leaves materials for the Forge, and now and then a blueprint.',
-      `Being carried out locks you out of Gates for ${WIPE_LOCK / 36e5} hours.`,
+      `Being carried out leaves you on ${WIPE_HP} HP, with Fatigue at ${FATIGUE_MAX}: Stats ×${drag(FATIGUE_MAX).toFixed(2)} until it eases. Nothing locks you out of the Gates.`,
     ],
   },
   {
@@ -266,7 +267,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A Shadow stands where its creature would until you drag it to the other row on a Gate\'s brief, and an Association hunter where their class does.',
       `You stand where your class does (${Object.entries(LEAD_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(LEAD_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear) until you drag yourself to the other row on a Gate's brief, or tap yourself there. The choice is kept.`,
       'In a fight, Step Back or Step Forward moves you to the other row. It takes your turn, and lasts the fight.',
-      'A creature\'s intent lands where it showed, wherever its target stands by then. A creature\'s marked strike reaches its mark wherever it stands, and Cover and a taunt turn intents whatever rank the one covering stands in.',
+      'A creature\'s intent lands where it showed, wherever its target stands by then. A creature\'s marked strike reaches its mark wherever it stands, and Cover and a taunt turn intents whatever row the one covering stands in.',
     ],
   },
   {

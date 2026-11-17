@@ -262,7 +262,6 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   const sealed = taken.length > 0;
   const block = entryBlock(s, d);
   const open = s.gates.raid ? dungeonById(s.gates.raid.dungeonId) : undefined;
-  const hpNow = vitals.read(s);
   const cleared = s.gates.cleared.includes(d.id);
   const mark = markOf(s, d, contracts.named(s, day).has(d.id), day);
   const hasFeats = !practice && !tower && !trial;
@@ -328,8 +327,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
           ? <div class="row"><Btn onClick={abandon}>Abandon</Btn><Btn kind="primary" size="lg" class="grow" sound="gate" onClick={() => { closeAllSheets(); arena.set(d.id); }}>Go Back In</Btn></div>
           : <Btn block disabled>Finish or abandon {open?.name ?? 'the open run'} first</Btn>
           : block === 'spent' ? <Btn block disabled>{rifted ? 'You have played today’s Rift. Another opens at midnight.' : 'You have faced the Trial today. It opens again tomorrow.'}</Btn>
-          : block === 'locked' ? <Btn block disabled>Carried out. Fit to enter in {Math.ceil(hpNow.lockedFor / 36e5)}h</Btn>
-            : block === 'down' ? <Btn block disabled>Locked out until you recover.</Btn>
+            : block === 'down' ? <Btn block disabled>HP 0. It returns by the hour.</Btn>
               : (
                 <Btn kind={trial ? 'gold' : 'primary'} size="lg" block onClick={() => void enterGate(d, taken)} sound="none" tour="enter">
                   {trial ? 'Enter The Trial' : rifted ? 'Enter The Rift' : 'Enter The Gate'}

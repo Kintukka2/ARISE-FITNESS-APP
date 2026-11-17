@@ -1,6 +1,6 @@
 /**
  * A campaign: a hunter played from the licence desk through the real engine,
- * day by day, by a simple, sensible policy. The board, fatigue, lockouts,
+ * day by day, by a simple, sensible policy. The board, fatigue, being carried out,
  * contracts, the Spire's weeks, extraction, the Exchange, the Forge, upgrades
  * and the point spend all run as they do in the app. Where `npm run balance` models the
  * climb with a formula, this plays it. Asserts nothing.
@@ -338,7 +338,7 @@ function campaign(p: Profile) {
       tidy(s, now, t);
       for (let k = 0; k < p.perSession; k++) {
         const v = vitals.read(s, now);
-        if (v.locked || v.fatigue > TIRED || v.hp < v.hpMax * HURT) break;
+        if (v.fatigue > TIRED || v.hp < v.hpMax * HURT) break;
         // A block of the Spire first thing each day, once it is open and its brief reads three in four or better; gates otherwise.
         // The Trial, when it stands open and the brief gives it an even chance; then the Spire; then the board.
         const trial = asc.trialReady(s, dayKey(now)) && raid.project(s, asc.nextTrial(s), 8, now).rate >= PUSH ? asc.nextTrial(s) : null;

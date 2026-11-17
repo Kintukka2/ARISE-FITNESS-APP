@@ -611,14 +611,7 @@ export function Arena() {
     });
   }
 
-  /** Ask whether to rest where the hunter stands now: Rest opens its three ways; Not Yet keeps it for later. */
-  async function askRest() {
-    const yes = await sys(system.offer(['Would you like to rest now?'], 'system', 'Rest', 'Not Yet'));
-    if (yes) restPanel();
-    else toMap();
-  }
-
-  /** A rest found and not yet used, tapped on the plan: walk there, a move for each corridor, then ask. */
+  /** A rest found and not yet used, tapped on the plan: walk there, a move for each corridor, then its three ways. */
   function restAt(id: string) {
     void guarded(async () => {
       const r = store.get().gates.raid;
@@ -628,7 +621,7 @@ export function Arena() {
         if (!store.update((x) => raid.moveTo(d!, x.gates.raid!, id))) return;
         await tellClock(was);
       }
-      await askRest();
+      restPanel();
     });
   }
 
@@ -662,8 +655,8 @@ export function Arena() {
       if (!res) return;
       await tellClock(was);
       if (isFight(res.node)) return chamber();
-      // A rest found in a Gate asks whether to rest now; Auto keeps it for the boss, as the System does.
-      if (res.node.kind === 'rest' && !raid.mapOf(d!, store.get().gates.raid!).tower && !autoRef.current) return askRest();
+      // A rest found in a Gate opens its three ways at once, Later keeping it lit on the plan (the owner's call: the
+      // window that asked first said what Later says). Auto keeps it for the boss, as the System does.
       // Down the stairs: the next floor's plan, at once.
       if (res.node.kind === 'down') {
         const r = store.get().gates.raid!;
@@ -1609,7 +1602,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
       ? rifted ? 'Another Rift opens at midnight.' : d.floor ? `From the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.`
         : r.rooms ? `${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Step ${r.steps} of ${r.depth}. The Gate is still open.`
       : trial ? 'The Trial opens again tomorrow. Proven Gates stay proven.'
-        : `You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`;
+        : `You are on ${vitals.WIPE_HP} HP, with Fatigue at ${vitals.FATIGUE_MAX}.`;
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       {turn.flash}
@@ -1640,7 +1633,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         <div class="rcond">
           <span class="rcond__row"><Glyph name="hp" /><span class="label">Health</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" /></span>
           <span class="rcond__row"><Glyph name="bolt" /><span class="label">Fatigue</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold'} /></span>
-          <small>{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small>
+          <small>{`HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% and Fatigue -${vitals.FATIGUE_PER_HOUR} each hour`}</small>
         </div>
         {/* What the clear asked of the hand, after Helldivers 2's mission summary: one band, the medal against par first,
             then the Gate's Feats, a row to each, what each paid the first time at its right. */}

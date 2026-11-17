@@ -92,7 +92,7 @@ export function seal(s: Save, d: Dungeon, day = dayKey()) {
 /** Up to one grade above your own: the "taster". */
 export const licensedFor = (s: Save, d: Dungeon) => rankIdx(d.rank) <= rankIdx(licensedRank(s)) + 1;
 
-export type EntryBlock = 'licence' | 'open' | 'locked' | 'down' | 'spent';
+export type EntryBlock = 'licence' | 'open' | 'down' | 'spent';
 
 export function entryBlock(s: Save, d: Dungeon, now = Date.now()): EntryBlock | null {
   if (!licensedFor(s, d)) return 'licence';

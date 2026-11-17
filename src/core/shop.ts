@@ -105,7 +105,7 @@ export function buy(s: Save, index: number, day = dayKey()): boolean {
 
 // ------------------------------------------------------------------ potions
 
-export type PotionId = 'hp' | 'mp' | 'fatigue' | 'elixir';
+export type PotionId = 'hp' | 'mp' | 'fatigue';
 
 /** What the Health and Mana Potions restore, as a share of the maximum (the Health Potion's in a fight too), and what the Fatigue Potion takes off. */
 export const POTION_RESTORE = POTION_HEAL;
@@ -115,7 +115,6 @@ export const POTIONS: { id: PotionId; name: string; price: number; effect: strin
   { id: 'hp', name: 'Health Potion', price: 30, effect: `HP +${POTION_RESTORE * 100}%`, desc: 'A sealed field ration sold by the Hunter Association.' },
   { id: 'mp', name: 'Mana Potion', price: 30, effect: `MP +${POTION_RESTORE * 100}%`, desc: 'Distilled from Gate residue. Sold by the Hunter Association.' },
   { id: 'fatigue', name: 'Fatigue Potion', price: 45, effect: `Fatigue -${POTION_EASE}`, desc: 'A tonic that removes fatigue without rest.' },
-  { id: 'elixir', name: 'Elixir of Rejuvenation', price: 120, effect: 'Gate lockout lifted', desc: 'Accepted by the Hunter Association as proof of recovery.' },
 ];
 
 /** The potions carried rather than drunk on purchase: into a Gate, for its fights and between its rooms. */
@@ -249,8 +248,7 @@ export function potionIdle(s: Save, id: PotionId, now = Date.now()): string | nu
   const v = vitals.read(s, now);
   if (id === 'hp') return v.hp >= v.hpMax ? 'Full' : null;
   if (id === 'mp') return v.mp >= v.mpMax ? 'Full' : null;
-  if (id === 'fatigue') return v.fatigue <= 0 ? 'Rested' : null;
-  return v.locked ? null : 'Not locked';
+  return v.fatigue <= 0 ? 'Rested' : null;
 }
 
 /** Drink a potion: one held in stock first, else one bought at its price. Returns what it moved, or null. Mutates. */
@@ -261,6 +259,5 @@ export function drink(s: Save, id: PotionId, now = Date.now()): number | null {
   else if (!pay(s, p.price)) return null;
   if (id === 'hp') return vitals.heal(s, POTION_RESTORE, now);
   if (id === 'mp') return vitals.restore(s, POTION_RESTORE, now);
-  if (id === 'fatigue') return vitals.ease(s, POTION_EASE, now);
-  return vitals.unlock(s, now);
+  return vitals.ease(s, POTION_EASE, now);
 }

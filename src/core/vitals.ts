@@ -11,8 +11,12 @@ export const PCT_PER_HOUR = 0.05;
 export const FATIGUE_PER_HOUR = 5;
 export const FATIGUE_MAX = 100;
 export const RAID_FATIGUE: Record<string, number> = { E: 5, D: 8, C: 12, B: 16, A: 22, S: 30 };
-/** Carried out of a gate: the medics keep you this long. */
-export const WIPE_LOCK = 12 * HOUR;
+/**
+ * Carried out of a Gate: on your feet, barely. HP falls to this, never to 0, which is death, and Fatigue rises to its
+ * most, so the next Gate is fought at half strength until it eases (the owner's call: no lockout; the hunter decides
+ * when to go back in, and rests, or drinks, first).
+ */
+export const WIPE_HP = 1;
 
 export function maxima(s: Save) {
   const a = s.hunter.attrs;
@@ -37,7 +41,8 @@ export function settle(s: Save, now = Date.now()) {
   v.mp = Math.min(max.mp, v.mp + perHour(max.mp) * hours);
   v.fatigue = Math.max(0, v.fatigue - FATIGUE_PER_HOUR * hours);
   v.at = now;
-  if (v.lockedUntil && now >= v.lockedUntil) v.lockedUntil = null;
+  // There is no lockout any more: an older save's lifts as it is read.
+  v.lockedUntil = null;
   return v;
 }
 
@@ -49,7 +54,6 @@ export function read(s: Save, now = Date.now()) {
   const hp = v.hp === null ? max.hp : Math.min(max.hp, v.hp + perHour(max.hp) * hours);
   const mp = v.mp === null ? max.mp : Math.min(max.mp, v.mp + perHour(max.mp) * hours);
   const fatigue = Math.max(0, v.fatigue - FATIGUE_PER_HOUR * hours);
-  const locked = !!(v.lockedUntil && now < v.lockedUntil);
   return {
     hp: Math.floor(hp),
     hpMax: max.hp,
@@ -57,8 +61,6 @@ export function read(s: Save, now = Date.now()) {
     mpMax: max.mp,
     fatigue: Math.round(fatigue),
     drag: drag(fatigue),
-    locked,
-    lockedFor: locked ? v.lockedUntil! - now : 0,
   };
 }
 
@@ -110,18 +112,9 @@ export function ease(s: Save, n: number, now = Date.now()) {
   return Math.round(was - s.vitals.fatigue);
 }
 
-/** Lift the wipe lockout early. Returns the ms cut short. */
-export function unlock(s: Save, now = Date.now()) {
-  settle(s, now);
-  const until = s.vitals.lockedUntil;
-  if (!until || now >= until) return 0;
-  s.vitals.lockedUntil = null;
-  return until - now;
-}
-
-export function canRaid(s: Save, now = Date.now()): { ok: true } | { ok: false; why: 'locked' | 'down'; ms?: number } {
+/** Whether the hunter can walk into a Gate: only while they have HP. Nothing locks them out. */
+export function canRaid(s: Save, now = Date.now()): { ok: true } | { ok: false; why: 'down' } {
   const v = read(s, now);
-  if (v.locked) return { ok: false, why: 'locked', ms: v.lockedFor };
   if (v.hp <= 0) return { ok: false, why: 'down' };
   return { ok: true };
 }
@@ -138,9 +131,16 @@ export function setHpFraction(s: Save, frac: number, now = Date.now()) {
   s.vitals.hp = clamp(Math.round(maxima(s).hp * frac), 0, maxima(s).hp);
 }
 
-/** A party wipe: carried out, and locked out for a while. */
+/** A hunter who leaves a Gate leaves alive: their health never below `WIPE_HP`, downed in the last fight or not. Mutates. */
+export function standUp(s: Save, now = Date.now()) {
+  settle(s, now);
+  s.vitals.hp = Math.max(WIPE_HP, s.vitals.hp ?? maxima(s).hp);
+}
+
+/** A party wipe: carried out with `WIPE_HP`, Fatigue at its most, and nothing locked. Mutates. */
 export function wipe(s: Save, now = Date.now()) {
   settle(s, now);
-  s.vitals.hp = 0;
-  s.vitals.lockedUntil = now + WIPE_LOCK;
+  s.vitals.hp = WIPE_HP;
+  s.vitals.fatigue = FATIGUE_MAX;
+  s.vitals.lockedUntil = null;
 }

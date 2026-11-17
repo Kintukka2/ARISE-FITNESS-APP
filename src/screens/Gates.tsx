@@ -43,7 +43,8 @@ export { openBrief };
 
 function coachLine(s = store.get()) {
   const v = vitals.read(s);
-  if (v.locked) return GATES_LINE.locked;
+  // Carried out of the last one and still feeling it: below half health, or tired.
+  if (s.gates.last === 'defeated' && (v.fatigue > 50 || v.hp < v.hpMax / 2)) return GATES_LINE.carried;
   if (v.fatigue > 50) return GATES_LINE.tired;
   if (!s.gates.clears) return GATES_LINE.first;
   return GATES_LINE.settled;
@@ -190,7 +191,7 @@ function HunterRow({ s }: { s: Save }) {
 
 /**
  * The hunter's condition at a glance, under Valcorde's line: HP, MP and Fatigue, each with its potion
- * one tap away, held or bought, and the lockout with its elixir while it holds. The System's, so its frame.
+ * one tap away, held or bought. The System's, so its frame.
  */
 function Condition() {
   return <SysFrame class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
