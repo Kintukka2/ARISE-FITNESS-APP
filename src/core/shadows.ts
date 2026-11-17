@@ -10,6 +10,8 @@ import { AWAKENING, ECHO, ECHO_COST, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND
 import { powerOf } from './combat';
 import { ALL_ENEMIES, enemyById } from './gates';
 import * as kin from './kin';
+import * as ranks from './ranks';
+import type { Row } from '@/data/ranks';
 import { licensedRank } from './licence';
 import { MISSIONS } from './missions';
 import type { Attrs, Enemy, Rank, Save, Shadow } from './types';
@@ -253,6 +255,21 @@ export function statsOf(sh: Shadow): Attrs {
   const e = enemyById(sh.enemyId)!;
   const k = 1 + growth(sh);
   return Object.fromEntries(STATS.map((st) => [st, Math.round(e.base[st] * k)])) as Attrs;
+}
+
+/** Where a Shadow stands in a fight: where the hunter placed it, or its role's place. */
+export const standOf = (sh: Shadow): Row => sh.stand ?? ranks.byRole(enemyById(sh.enemyId)?.role ?? '').row;
+
+/**
+ * Place a Shadow in the front or the rear, as the hunter drags it on a Gate's brief. Its role's own place clears what
+ * was set, so a Shadow back where its role stands keeps no choice. An open run keeps the places it walked in with.
+ * Mutates.
+ */
+export function setStand(s: Save, id: string, row: Row) {
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return;
+  if (row === ranks.byRole(enemyById(sh.enemyId)?.role ?? '').row) delete sh.stand;
+  else sh.stand = row;
 }
 
 export function toggleDeploy(s: Save, id: string): boolean {

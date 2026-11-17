@@ -145,13 +145,14 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
 - Sight's Foresight (`FORESIGHT` in `data/tree.ts`) only shows a foe's numbers (`skilltree.foresees`).
   It is never a passive of the fight's build and Auto Assign never takes it, so it moves no tuning;
   keep it so, or recalibrate.
-- Kin and Formation (`data/kin.ts`, `core/kin.ts`) reach the fight only through `raid.partySpecs`: each
-  deployed Shadow's spec takes its Kin's boon, and the hunter's and every Shadow's the Formation's auras.
-  The Association's hunters take neither, and an open run keeps both in `run.party`. Auto Deploy
-  (`shadows.bestSquad`) weighs whole squads (`squadScore`, `WORTH`); the campaign deploys as it does.
-  Calibration's `keptUpHunter` fields a squad drawn from its grade's gates, no creature twice, and plays
-  whatever Kin it makes. Change a boon, an aura, `KIN_AT`, `WORTH` or how Auto Deploy weighs, and you must
-  recalibrate and rerun the campaign.
+- Kin and role bonuses (`data/kin.ts`, `core/kin.ts`; the code calls the role bonuses `FORMATION`, the player reads
+  `Role bonus`) reach the fight only through `raid.partySpecs`: each deployed Shadow's spec takes its Kin's boon, and
+  the whole party's, the hunter's, the Association's hunters' and every Shadow's, the role bonuses, each at the tier its
+  count reaches (`ROLE_AT`: one, two, three of a role, tier N N times tier I). The Association's hunters take no Kin.
+  An open run keeps both in `run.party`. Auto Deploy (`shadows.bestSquad`) weighs whole squads (`squadScore`, `WORTH`);
+  the campaign deploys as it does. Calibration's `keptUpHunter` fields a squad drawn from its grade's gates, no creature
+  twice, and plays whatever Kin and role tiers it makes. Change a boon, a role bonus, `KIN_AT`, `ROLE_AT`, `WORTH`, who
+  takes them or how Auto Deploy weighs, and you must recalibrate and rerun the campaign.
 - Engravings (`data/engravings.ts`, `core/engravings.ts`) reach the fight only through `raid.heroSpec`, as
   passives by name (`engravings.live`: a worn piece's engraving, the first of each kind in slot order), and
   the fight reads them by style (`engraved` in `core/combat.ts`). An open run keeps the hero it walked in
@@ -179,8 +180,11 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   choice or what the hunters carry and you must recalibrate; change what it costs and rerun the campaign, which tempers
   as `smith` in `scripts/campaign.ts` does.
 - Front and rear (`data/ranks.ts`, `core/ranks.ts`): every unit's spec carries where it stands (`UnitSpec.row`) and
-  how its hits reach (`ranged`, `reaching`): creatures and Shadows by role (`byRole`, a boss or a Chosen in front),
-  Association hunters by class (`byLead`), the hunter where they chose (`s.hunter.stand`) or by class (`heroStand`).
+  how its hits reach (`ranged`, `reaching`): creatures by role (`byRole`, a boss or a Chosen in front), Shadows by role
+  unless the hunter placed one on a brief (`Shadow.stand`, `shadows.setStand`, read by `raid.shadowSpec`; its reach
+  stays its role's), Association hunters by class (`byLead`), the hunter where they chose (`s.hunter.stand`) or by
+  class (`heroStand`). Every role that stands in the rear is ranged (`RANGED_ROLES`, read from `ROLE_ROW`), so a
+  Shadow's `Melee` or `Ranged` tag (`ui/stand.tsx`) and the rule never disagree; keep them so.
   The fight reads it only through `combat.reachable` (a melee hit reaches the front while anyone stands in it) and `blow`
   (a melee hit from the rear at `REAR_MELEE`); targets, a foe's intent, standing orders and the wheel all go through
   `reachable`. A foe's shown intent lands where it showed (`kept` in `targets`), whatever has moved since. Auto never

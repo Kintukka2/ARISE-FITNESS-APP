@@ -1,7 +1,7 @@
 # Tooltips
 
 References for the tips ARISE opens on a tap, gathered for redoing every tooltip on the fight tooltip's model, the
-Shadow card's first: its family's Kin and its role's rank and Formation aura. Not yet a step of the order to build in
+Shadow card's first: its family's Kin and its role's rank and role bonus (then called its Formation aura). Not yet a step of the order to build in
 [docs/DESIGN.md](../../../DESIGN.md#order-to-build).
 
 The fight tooltip is the model: a status's or a habit's mark and its name in bold on one line, then one short sentence,
@@ -89,7 +89,7 @@ Monster Train 2's status tip ('Pyregel', '+1 incoming damage per stack.') and Wi
 
 - **The mark and the name on one line, the name in bold, the body under it.** Teamfight Tactics' trait and role tips,
   Hades II's boxes and Solo Leveling: Arise's 'Bloodbound Oath' all lead so; Slay the Spire's tip has the name alone.
-  A Kin tip opens on the family's mark and name, a Formation tip on the role's.
+  A Kin tip opens on the family's mark and name, a role bonus's tip on the role's.
 - **One sentence, the trigger first, then what happens.** 'When your team loses 30% of their Health, call a
   Dreadsteed…' (Teamfight Tactics), 'After you take damage, automatically damage and Daze all foes in the vicinity.'
   (Hades II), 'Whenever you lose HP from a card, gain 1 Strength.' (Slay the Spire). Marvel Snap sets the trigger apart
@@ -106,7 +106,7 @@ Monster Train 2's status tip ('Pyregel', '+1 incoming damage per stack.') and Wi
 - **The kind small, at the head's right.** Hades II sets each boon's rarity at the right end of its head in the
   rarity's colour ('Duo', 'Rare', 'Legendary'); Darkest Dungeon's trinket and Solo Leveling: Arise's gear put theirs
   under the name ('Very Rare', 'Divine'). Teamfight Tactics' trait tip has none. ARISE took Hades II's place for it, and
-  every tooltip says one: `Kin`, `Formation`, `Habit`, `Status`, `Blessing`, `Stat`, `In a fight`, so that a Shadow's
+  every tooltip says one: `Kin`, `Role bonus`, `How it fights`, `Habit`, `Status`, `Blessing`, `Stat`, `In a fight`, so that a Shadow's
   two tips, and a habit's and a status's, are told apart at a glance.
 
 ARISE did not take, for now:
@@ -119,6 +119,8 @@ ARISE did not take, for now:
 - **Where a unit stands as a tile, not a sentence.** Teamfight Tactics' panel shows 'Back' over three hexes and '4 Hex'
   beside the ability, and its role's tip says only what the role does ('Casters gain 7 mana per attack.'); Darkest
   Dungeon II shows a skill's ranks as pips beside 'Ranged'. ARISE took the role's tip saying only what the role does:
-  a Shadow's Formation tip is its aura alone, since where the Shadow stands decides nothing of it. Then it took the
-  tile: a `Front` or `Rear` tag of its own beside the role on a Shadow's card, its two lines with the one it stands in
-  lit, and its tooltip what standing there decides in a fight.
+  a Shadow's role bonus tip is its bonus alone, since where the Shadow stands decides nothing of it. Then it took the
+  tile, first as a `Front` or `Rear` tag beside the role on a Shadow's card, then, the owner's call, as `Melee` or
+  `Ranged`, which says where the Shadow would rather fight and why: a blade or an arrow, and its tooltip where it takes
+  its place and how its hits reach from there. Teamfight Tactics' classes, which grow at two, four and six of a class,
+  are also the model for the role bonus's breakpoints (`1 › 2 › 3`).

@@ -572,7 +572,22 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
     buzz(12);
     store.update((x) => ranks.setStand(x, r));
   };
-  const drag = useDrag((_id, at) => { if (at === 'front' || at === 'rear') stand(at); });
+  // A Shadow is placed as the hunter is: dragged to a rank, or tapped across. It keeps its place for every Gate after.
+  const place = (id: string, r: Row) => {
+    const sh = store.get().shadows.army.find((x) => x.id === id);
+    if (!sh || r === shadows.standOf(sh)) return;
+    sfx.tap();
+    buzz(12);
+    store.update((x) => shadows.setStand(x, id, r));
+  };
+  const cross = (r: Row): Row => (r === 'front' ? 'rear' : 'front');
+  const drag = useDrag((id, at) => {
+    if (at !== 'front' && at !== 'rear') return;
+    if (id === 'you') stand(at);
+    else place(id, at);
+  });
+  const liftedShadow = drag.lifted && drag.lifted !== 'you' ? squad.find((x) => x.id === drag.lifted) : undefined;
+  const liftedRow: Row | null = drag.lifted === 'you' ? here : liftedShadow ? shadows.standOf(liftedShadow) : null;
   type Seat = { key: string; row: Row; el: preact.JSX.Element };
   const seats: Seat[] = [
     { key: 'you', row: here, el: (
@@ -588,8 +603,15 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
     ) })),
     ...squad.map((x) => {
       const e = enemyById(x.enemyId)!;
-      return { key: x.id, row: ranks.byRole(e.role).row, el: (
-        <li key={x.id} class="bformation__one is-shadow"><span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /></span><b>{shadows.nameOf(x).replace(/^Shadow /, '')}</b><small class="num">{shadows.power(x)}</small></li>
+      const row = shadows.standOf(x);
+      const name = shadows.nameOf(x).replace(/^Shadow /, '');
+      return { key: x.id, row, el: (
+        <li key={x.id} class={`bformation__one is-shadow is-drag ${drag.lifted === x.id ? 'is-lifted' : ''}`} {...drag.handle(x.id)}>
+          <button type="button" class="bformation__me" aria-label={`${name}, in the ${ROW_NAME[row]}. Tap to place it in the ${ROW_NAME[cross(row)]}, or drag to a rank.`}
+            onClick={() => place(x.id, cross(row))}>
+            <span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /><Glyph name="grip" class="bformation__grip" /></span><b>{name}</b><small class="num">{shadows.power(x)}</small>
+          </button>
+        </li>
       ) };
     }),
   ];
@@ -601,8 +623,8 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
         <span class="bformation__facing" aria-hidden="true"><Glyph name="up" />Facing the enemies</span>
         {ROWS.map((r) => {
           const on = seats.filter((x) => x.row === r);
-          // While the hunter is lifted, the rank they are not in waits for them, and lights under them.
-          const target = drag.lifted && r !== here ? `is-target ${drag.over === r ? 'is-over' : ''}` : '';
+          // While the hunter or a Shadow is lifted, the rank it is not in waits for it, and lights under it.
+          const target = liftedRow && r !== liftedRow ? `is-target ${drag.over === r ? 'is-over' : ''}` : '';
           return (
             <div key={r} data-drop={r} class={`bformation__rank is-${r} ${target}`}>
               <span class="bformation__label"><b>{ROW_NAME[r]}</b><small class="num">{on.length}</small></span>
@@ -617,13 +639,15 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
           );
         })}
       </div>
-      {/* Where the hunter stands: their class's place until they move, kept for every Gate after. */}
-      <p class="bstand__hint">Drag yourself to the Front or the Rear. A tap crosses over.</p>
+      {/* Where the hunter stands, their class's place until they move, and each Shadow, its role's until it is moved: kept for every Gate after. */}
+      <p class="bstand__hint">{squad.length ? 'Drag yourself or a Shadow to the Front or the Rear. A tap crosses over.' : 'Drag yourself to the Front or the Rear. A tap crosses over.'}</p>
       {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
       {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
       {createPortal(
-        <div class="dragghost dragghost--you" ref={drag.ghost} hidden={drag.lifted !== 'you'} aria-hidden="true">
-          <Sigil rank={licensedRank(s)} size={30} /><b>{s.hunter.name}</b>
+        <div class={`dragghost dragghost--you ${liftedShadow ? 'is-shadow' : ''}`} ref={drag.ghost} hidden={!liftedRow} aria-hidden="true">
+          {liftedShadow
+            ? (() => { const e = enemyById(liftedShadow.enemyId)!; return <><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(liftedShadow)} size={34} /><b>{shadows.nameOf(liftedShadow).replace(/^Shadow /, '')}</b></>; })()
+            : <><Sigil rank={licensedRank(s)} size={30} /><b>{s.hunter.name}</b></>}
         </div>,
         document.body,
       )}

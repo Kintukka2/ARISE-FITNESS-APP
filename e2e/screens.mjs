@@ -529,9 +529,9 @@ try {
   if (await page.locator('.sheet.is-top .dmap__key').count()) throw new Error('A TAP AWAY DID NOT FOLD THE MAP KEY');
   await page.locator('.sheet.is-top [aria-label="Close"]').first().click(); await sleep(400);
   if (!(await page.locator('.sheet.is-top .bfacts').count())) throw new Error('CLOSING THE MAP DID NOT RETURN TO THE BRIEF');
-  // The party lined up, the hunter first, and the squad's Formation under it.
+  // The party lined up, the hunter first, and the squad's role bonuses under it.
   if (!(await page.locator('.sheet.is-top .bformation__one.is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
-  if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Formation:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S FORMATION');
+  if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Role bonus:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S ROLE BONUSES');
   await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
   // Front and rear: every member's place on their face, and the hunter's own to choose; chosen, it is kept.
   // The party is a formation: a front rank and a rear rank, every member in the rank they stand in, the hunter among them.
@@ -555,8 +555,34 @@ try {
     await page.mouse.up(); await sleep(600);
     if ((await rankOfYou()) !== to) throw new Error('DRAGGING THE HUNTER DID NOT MOVE THEM TO THE OTHER RANK');
     await snap('brief-stand');
-    await page.locator('.sheet.is-top .bformation__me').click(); await sleep(600);
+    await page.locator('.sheet.is-top .bformation__one.is-you .bformation__me').click(); await sleep(600);
     if ((await rankOfYou()) !== was) throw new Error('A TAP ON THE HUNTER DID NOT CROSS THEM BACK');
+  }
+  {
+    // A Shadow is dragged to the other rank as the hunter is, kept in the save, and a tap crosses it back.
+    const shadow = page.locator('.sheet.is-top .bformation__one.is-shadow.is-drag').first();
+    if (!(await shadow.count())) throw new Error('NO SHADOW IN THE PARTY CAN BE DRAGGED');
+    const name = (await shadow.locator('b').innerText()).trim();
+    const seat = () => page.locator('.sheet.is-top .bformation__one.is-shadow', { hasText: name }).first();
+    const rankOf = () => seat().evaluate((el) => el.closest('.bformation__rank').classList.contains('is-rear') ? 'rear' : 'front');
+    const was = await rankOf();
+    const to = was === 'front' ? 'rear' : 'front';
+    const from = await seat().locator('.bformation__face').boundingBox();
+    const into = await page.locator(`.sheet.is-top .bformation__rank.is-${to} .bformation__seats`).boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 8, from.y + from.height / 2 + 8, { steps: 3 });
+    await page.mouse.move(into.x + into.width * 0.2, into.y + into.height / 2, { steps: 12 }); await sleep(150);
+    if (!(await page.locator(`.sheet.is-top .bformation__rank.is-${to}.is-over`).count())) throw new Error('THE RANK UNDER THE DRAGGED SHADOW DID NOT LIGHT');
+    if (!(await page.locator('.dragghost.is-shadow:not([hidden])').count())) throw new Error('THE DRAGGED SHADOW HAS NO GHOST');
+    await snap('brief-shadow-drag');
+    await page.mouse.up(); await sleep(600);
+    if ((await rankOf()) !== to) throw new Error('DRAGGING A SHADOW DID NOT MOVE IT TO THE OTHER RANK');
+    const kept = await page.evaluate((n) => (JSON.parse(localStorage.getItem('arise-rpg:save') ?? '{}').shadows?.army ?? []).some((x) => !!x.stand), name);
+    if (!kept) throw new Error('A SHADOW MOVED ON THE BRIEF WAS NOT KEPT IN THE SAVE');
+    await snap('brief-shadow-moved');
+    await seat().locator('.bformation__me').click(); await sleep(600);
+    if ((await rankOf()) !== was) throw new Error('A TAP ON A SHADOW DID NOT CROSS IT BACK');
   }
   // The enemies as portraits, the boss first and the Gatekeeper next: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
@@ -899,7 +925,7 @@ try {
   // The Army is one tile: the squad's slots over the reserve. There is no Squad tile beside it.
   if (await page.locator('.btile--squad').count()) throw new Error('THE SQUAD IS STILL A TILE OF ITS OWN');
   await page.locator('.armystage__stage').click(); await sleep(700); await snap('army'); await snap('army-full', true);
-  // Kin and Formation under the squad: a row to each family deployed, a chip to each role.
+  // Kin and role bonuses under the squad: a chip to each family deployed, and to each role with its breakpoints.
   {
     const squad = await page.locator('.sheet.is-top .roster__slot:not(.is-free)').count();
     const fams = await page.locator('.sheet.is-top .kinchip--kin, .sheet.is-top .kinchip--all').count();
@@ -926,19 +952,20 @@ try {
   await page.locator('.tipshade').click({ position: { x: 10, y: 10 } }); await sleep(250);
   if (await page.locator('.tip.tip--shadow').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE TAG\'S TOOLTIP');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').nth(1).click(); await sleep(300);
-  // A role's tooltip says what its Formation gives, and nothing that decides nothing: not where it stands.
-  if (!(await page.locator('.tip.tip--shadow', { hasText: 'you and every Shadow gain' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHAT ITS FORMATION GIVES');
+  // A role's tooltip says what its role bonus gives the whole party, and nothing that decides nothing: not where it stands.
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'give the whole party' }).isVisible())) throw new Error('A ROLE TAG TAPPED DID NOT SAY WHAT ITS ROLE BONUS GIVES');
   if (await page.locator('.tip.tip--shadow', { hasText: 'Stands in the' }).count()) throw new Error('A ROLE\'S TOOLTIP STILL SAYS WHERE IT STANDS');
-  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Formation' }).count())) throw new Error('THE ROLE\'S TOOLTIP DOES NOT NAME ITS KIND');
+  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Role bonus' }).count())) throw new Error('THE ROLE\'S TOOLTIP DOES NOT NAME ITS KIND');
+  if ((await page.locator('.tip.tip--shadow .tip__tiers li').count()) !== 3) throw new Error('THE ROLE\'S TOOLTIP DOES NOT LIST ITS THREE BREAKPOINTS');
   await snap('shadow-role-tip');
   await page.keyboard.press('Escape'); await sleep(250);
-  // Beside the role, where the Shadow stands: Front or Rear, its tooltip what that decides in a fight.
-  const stand = page.locator('.sheet.is-top .sp-head__tags .sp-tag--stand');
-  if (!/^(Front|Rear)\b/.test((await stand.innerText()).trim())) throw new Error('THE SHADOW CARD DOES NOT SAY WHERE IT STANDS');
-  await stand.click(); await sleep(300);
-  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Where it stands' }).isVisible())) throw new Error('THE PLACE TAG TAPPED DID NOT OPEN ITS TOOLTIP');
-  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Melee hits' }).count())) throw new Error('THE PLACE\'S TOOLTIP DOES NOT SAY WHAT IT DECIDES');
-  await snap('shadow-stand-tip');
+  // Beside the role, how the Shadow fights: Melee or Ranged, its tooltip where it takes its place and how its hits reach.
+  const style = page.locator('.sheet.is-top .sp-head__tags .sp-tag--style');
+  if (!/^(Melee|Ranged)\b/.test((await style.innerText()).trim())) throw new Error('THE SHADOW CARD DOES NOT SAY HOW IT FIGHTS');
+  await style.click(); await sleep(300);
+  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'How it fights' }).isVisible())) throw new Error('THE MELEE OR RANGED TAG TAPPED DID NOT OPEN ITS TOOLTIP');
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Takes its place in the' }).count())) throw new Error('THE MELEE OR RANGED TOOLTIP DOES NOT SAY WHERE IT TAKES ITS PLACE');
+  await snap('shadow-style-tip');
   await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');

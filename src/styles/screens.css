@@ -1978,11 +1978,8 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 /* A tag that tells what it is: unchanged at rest, a small ? under a resting pointer, a tooltip on a tap. */
 button.infotag { position: relative; margin: 0; font: inherit; color: inherit; cursor: help; touch-action: manipulation; }
 button.sp-tag.infotag { padding: 2px 7px; font-size: 0.66rem; font-weight: 600; }
-/* Where a Shadow stands: two lines, the one it stands in lit in the Shadows' violet (ui/stand.tsx). */
-.standmark { flex: none; }
-.standmark rect { fill: currentColor; opacity: 0.28; }
-.standmark rect.is-on { opacity: 1; fill: var(--arcane); }
-.sp-tag--stand .standmark rect.is-on { fill: color-mix(in srgb, var(--arcane) 70%, #fff); }
+/* How a Shadow fights: a blade for melee, an arrow for ranged, in the Shadows' violet (ui/stand.tsx). */
+.sp-tag--style svg { width: 12px; height: 12px; color: color-mix(in srgb, var(--arcane) 70%, #fff); }
 .infotag__q { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--win, var(--mana)); color: #0a0614; font-size: 0.56rem; font-weight: 800; line-height: 1; opacity: 0; transform: scale(0.6); transition: opacity 120ms, transform 120ms; pointer-events: none; }
 button.infotag:hover .infotag__q, button.infotag:focus-visible .infotag__q, button.infotag[aria-expanded="true"] .infotag__q { opacity: 1; transform: none; }
 .sp-tag.sp-head__state { border-style: dashed; border-color: var(--sys-hair); background: none; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
@@ -4457,11 +4454,13 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bformation__one.is-free .bformation__face { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
 .bformation__one.is-free b { color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
 .bformation__none { grid-column: 1 / -1; align-self: center; padding: 14px 4px; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
-/* The hunter's own face: picked up and dragged to a rank, or tapped to cross to the other. */
+/* The hunter's own face, and each Shadow's: picked up and dragged to a rank, or tapped to cross to the other. */
 .bformation__me { display: grid; justify-items: center; gap: 2px; width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: grab; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .bformation__me:active { cursor: grabbing; }
 .bformation__grip { position: absolute; right: -7px; bottom: -7px; width: 16px; height: 16px; padding: 2px; border: 1px solid color-mix(in srgb, var(--mana) 70%, transparent); background: #06101d; color: var(--mana); }
-.bformation__one.is-you.is-lifted { opacity: 0.3; }
+.bformation__one.is-you.is-lifted, .bformation__one.is-shadow.is-lifted { opacity: 0.3; }
+/* A Shadow's face is picked up as the hunter's is: its grip badge in the Shadows' violet. */
+.bformation__one.is-shadow .bformation__grip { border-color: color-mix(in srgb, var(--arcane) 70%, transparent); background: #0b0618; color: color-mix(in srgb, var(--arcane) 70%, #fff); }
 .bformation__rank { transition: background 160ms, box-shadow 160ms; }
 .bformation__rank.is-target { background: color-mix(in srgb, var(--mana) 6%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 45%, transparent); }
 .bformation__rank.is-target .bformation__none { color: color-mix(in srgb, var(--mana) 80%, transparent); }
@@ -4469,6 +4468,9 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bstand__hint { margin: 0; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); text-align: center; }
 .dragghost--you { border-color: color-mix(in srgb, var(--mana) 80%, #fff); background: rgba(4, 14, 28, 0.94); box-shadow: 0 0 22px rgba(79, 214, 255, 0.45), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--mana); }
 .dragghost--you b { color: var(--mana); }
+.dragghost--you.is-shadow { border-color: color-mix(in srgb, var(--arcane) 80%, #fff); background: rgba(11, 6, 24, 0.94); box-shadow: 0 0 22px var(--arcane-glow), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--arcane); }
+.dragghost--you.is-shadow b { color: #d9c6ff; }
+.dragghost--you.is-shadow .emblem { color: var(--arcane); }
 
 /* A tip on a habit or a status: its mark beside its name, as the word tapped wears it. */
 .tip__title { display: flex; align-items: center; gap: 7px; }

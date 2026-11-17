@@ -32,7 +32,7 @@ import { GRADES, verdict } from '@/core/raid';
 import type { Ev } from '@/core/combat';
 import { TOPICS } from '@/screens/Guide';
 import { familyTip, roleTip } from '@/ui/kin';
-import { standTip } from '@/ui/stand';
+import { styleTip } from '@/ui/stand';
 import { REAR_MELEE, ROLE_ROW } from '@/data/ranks';
 import { FORMATION, KIN, KIN_ALL } from '@/data/kin';
 
@@ -293,11 +293,11 @@ describe('the tooltip', () => {
   });
 
   // A tooltip says what a fight's tip says, as the fight's tip says it: a name over a sentence or two, the trigger
-  // then what happens, active, with no label inside the sentence (`Formation: while...`), and breakpoints name first.
+  // then what happens, active, with no label inside the sentence (`Kin: while...`), and breakpoints name first.
   const shadowTips = [
     ...[...Object.keys(KIN), KIN_ALL].map((f) => familyTip(f, 1)),
-    ...Object.keys(FORMATION).map((r) => roleTip(r)),
-    ...Object.keys(ROLE_ROW).map((r) => standTip(r)),
+    ...Object.keys(FORMATION).map((r) => roleTip(r, 1)),
+    ...Object.keys(ROLE_ROW).map((r) => styleTip(r)),
   ];
   it('tells a Shadow\'s family and role in whole sentences, with no label inside them', () => {
     expect(shadowTips.length).toBeGreaterThan(10);
@@ -312,21 +312,24 @@ describe('the tooltip', () => {
     }
   });
 
-  it('tells a role by its aura alone, never by where it stands, which decides nothing of it', () => {
+  it('tells a role by its bonus to the whole party and its breakpoints, never by where it stands', () => {
     for (const r of Object.keys(FORMATION)) {
-      const t = roleTip(r);
+      const t = roleTip(r, 2);
+      expect(t.kind, r).toBe('Role bonus');
       expect(t.lines, r).toHaveLength(1);
-      expect(t.lines[0], r).toMatch(/^While an? .+ is deployed, you and every Shadow gain /);
-      expect(t.lines[0], r).not.toMatch(/\b(Front|Rear|Stands|rank)\b/);
+      expect(t.lines[0], r).toMatch(/^Deployed, .+ Shadows give the whole party .+, the Association’s hunters included\.$/);
+      expect(t.lines[0], r).not.toMatch(/\b(Front|Rear|Stands|rank|Formation)\b/);
+      expect(t.tiers?.map((x) => x.at), r).toEqual([1, 2, 3]);
+      expect(t.tiers?.filter((x) => x.on).map((x) => x.at), r).toEqual([2]);
     }
   });
 
-  it('tells where a Shadow stands by what it decides in a fight, its share read from the rules', () => {
+  it('tells a Shadow as Melee or Ranged by where it takes its place, its rear share read from the rules', () => {
     for (const [r, row] of Object.entries(ROLE_ROW)) {
-      const t = standTip(r);
-      expect(t.title, r).toBe(row === 'front' ? 'Front' : 'Rear');
-      expect(t.lines.join(' '), r).toMatch(/Melee hits/);
-      if (row === 'rear' && r !== 'Archer / Shooter') expect(t.lines.join(' '), r).toContain(`${Math.round(REAR_MELEE * 100)}%`);
+      const t = styleTip(r);
+      expect(t.title, r).toBe(row === 'front' ? 'Melee' : 'Ranged');
+      expect(t.lines[0], r).toMatch(row === 'front' ? /^Takes its place in the Front\./ : /^Takes its place in the Rear\./);
+      if (row === 'front') expect(t.lines[0], r).toContain(`${Math.round(REAR_MELEE * 100)}%`);
     }
   });
 

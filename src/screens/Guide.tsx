@@ -14,7 +14,7 @@ import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
-import { FORMATION, KIN, KIN_ALL, KIN_AT } from '@/data/kin';
+import { FORMATION, KIN, KIN_ALL, KIN_AT, ROLE_AT } from '@/data/kin';
 import { bonusText, setPieces } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
 import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
@@ -253,8 +253,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A melee hit, a physical action at one foe or two, reaches only the front while anyone stands in it. Magic, a volley, a spread, a burst, a wild swing, a strike at every foe and a throw reach either.',
       `A melee hit struck from the rear lands at ${Math.round(REAR_MELEE * 100)}%.`,
       `Creatures stand by their role: ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear. A boss stands in front.`,
-      `${RANGED_ROLES.join(', ')} shoot: their hits reach either and lose nothing from the rear, as do a ${RANGED_LEADS.join(', ')} hunter's. ${REACHING_ROLES.join(' and ')} reach past the front, as does a ${REACHING_LEADS.join(', ')} hunter.`,
-      'A Shadow stands where its creature would, and an Association hunter where their class does.',
+      `Every role in the rear is ranged (${RANGED_ROLES.join(', ')}): its hits reach either and lose nothing from the rear, as do a ${RANGED_LEADS.join(', ')} hunter's.`,
+      `Every role in front is melee. ${REACHING_ROLES.join(' and ')} reach past the front, as does ${/^[AEIOU]/.test(REACHING_LEADS.join('')) ? 'an' : 'a'} ${REACHING_LEADS.join(', ')} hunter.`,
+      'A Shadow stands where its creature would until you drag it to the other rank on a Gate\'s brief, and an Association hunter where their class does.',
       `You stand where your class does (${Object.entries(LEAD_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(LEAD_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear) until you drag yourself to the other rank on a Gate's brief, or tap yourself there. The choice is kept.`,
       'In a fight, Step Back or Step Forward moves you to the other rank. It takes your turn, and lasts the fight.',
       'A creature\'s intent lands where it showed, wherever its target stands by then. A creature\'s marked strike reaches its mark wherever it stands, and Cover and a taunt turn intents whatever rank the one covering stands in.',
@@ -401,24 +402,26 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A newly bound Shadow fights with its creature’s first ability.',
       `At ${SHADOW_RANKS[SECOND_AT].name} it remembers a second, from its own kit or, if it had only one, from its kin.`,
       'Every Shadow follows the army’s standing orders.',
-      'Auto Deploy, on the Army, makes the squad that weighs most: each Shadow’s power, with what its Kin and the Formation add, and what the auras add to you.',
+      'Auto Deploy, on the Army, makes the squad that weighs most: each Shadow’s power, with what its Kin and the role bonuses add, and what the role bonuses add to you.',
+      'A Shadow’s card says how it fights. Melee takes its place in the Front, Ranged in the Rear.',
+      'On a Gate’s brief, drag a Shadow to the Front or the Rear, or tap it to cross over. It keeps that place for every Gate after.',
       'Drag a Shadow onto a slot to place it there, or onto another deployed Shadow to swap the two.',
       'Drop a deployed Shadow on the list to take it out. On a phone, hold it a moment first.',
       'You may bestow a name on a Shadow when it joins your army, or later from its card. It goes by that name everywhere.',
     ],
   },
   {
-    title: 'Kin and Formation',
+    title: 'Kin and role bonuses',
     lines: [
       `${KIN_AT[0]} deployed Shadows of one family make a Kin, and each of them takes its family’s boon. ${KIN_AT[1]} or more take it twice over.`,
       ...Object.entries(KIN).map(([f, b]) => `${f}: ${bonusText(b)} at ${KIN_AT[0]}.`),
       `${KIN_ALL} is kin to every family. One deployed counts as one of each family beside it, and takes the boon of every Kin it completes.`,
-      'Each role in the squad gives its aura to you and to every Shadow, once however many share it: the Formation.',
-      ...Object.entries(FORMATION).map(([r, b]) => `${r}: ${bonusText(b)}.`),
-      'The Association’s hunters take neither.',
-      'A Gate keeps the Kin and the Formation you walked in with until you leave it.',
-      'The Army shows each Kin your squad makes, its steps lit as they are reached, and each aura its roles give.',
-      'Tap a Shadow’s family or role on its card to see what it gives the squad, and its Front or Rear to see what standing there decides.',
+      `Each role deployed gives its role bonus to the whole party: you, the Association’s hunters and every Shadow. ${ROLE_AT[1]} of a role give it twice over, ${ROLE_AT[2]} three times.`,
+      ...Object.entries(FORMATION).map(([r, b]) => `${r}: ${bonusText(b)} at ${ROLE_AT[0]}.`),
+      'The Association’s hunters take no Kin.',
+      'A Gate keeps the Kin and the role bonuses you walked in with until you leave it.',
+      'The Army shows each Kin and each role your squad makes, its steps lit as they are reached.',
+      'Tap a Shadow’s family, role or Melee or Ranged on its card to see what it gives or how it fights.',
     ],
   },
   {
@@ -539,7 +542,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
 const TOPIC_GLYPH: Record<string, string> = {
   'Levels, ranks and stats': 'up', 'Classes and skills': 'star', 'The map': 'grid', Blessings: 'crown', Fighting: 'crossed',
   Gates: 'gates', 'Seals, Feats and special drops': 'lock', Par: 'timer', 'Front and rear': 'swap', Quests: 'quest', 'Association Quests': 'profile', 'Daily Quests': 'check',
-  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Tempering: 'hammer', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and Formation': 'roster',
+  Ascension: 'cert', 'Health, mana and fatigue': 'heart', 'Engravings and the Codex': 'engrave', Tempering: 'hammer', 'The Daily Rift': 'rift', Shadows: 'shadows', 'Kin and role bonuses': 'roster',
   'Equipment and the Exchange': 'bag', 'The Forge': 'forge', 'Your data': 'cog',
 };
 
