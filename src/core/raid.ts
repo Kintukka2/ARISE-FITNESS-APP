@@ -1369,7 +1369,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       if (!s.gates.met.includes(a.id)) s.gates.met.push(a.id);
       if (outcome === 'cleared') s.gates.together[a.id] = (s.gates.together[a.id] ?? 0) + 1;
     }
-    hunters.log(s, allies.map((a) => a.id), run.kills, run.day);
+    hunters.log(s, allies.map((a) => a.id), run.kills, run.day, outcome);
     for (const id of run.felled) {
       const fam = enemyById(id)?.family;
       if (fam) s.stats.killsByFamily[fam] = (s.stats.killsByFamily[fam] ?? 0) + 1;

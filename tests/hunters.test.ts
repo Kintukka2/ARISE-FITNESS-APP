@@ -58,16 +58,26 @@ describe('an Association hunter', () => {
       const r = hunters.recordOf(s, a.id);
       expect(r.runs).toBe(1);
       expect(r.cleared).toBe(won ? 1 : 0);
+      expect(r.carried).toBe(won ? 0 : 1);
       expect(r.first).toBe(day);
       expect(r.kills).toBeGreaterThanOrEqual(0);
+      expect(r.place).toBe(1);
+      expect(r.partners).toBe(party.length);
     }
     // Someone in the party helped defeat something.
     expect(party.reduce((n, a) => n + hunters.recordOf(s, a.id).kills, 0)).toBeGreaterThan(0);
-    hunters.log(s, [party[0].id], { [party[0].id]: { kills: 2, bosses: 1 } }, '2026-02-03');
+    hunters.log(s, [party[0].id], { [party[0].id]: { kills: 2, bosses: 1 } }, '2026-02-03', 'defeated');
     const again = hunters.recordOf(s, party[0].id);
     expect(again.runs).toBe(2);
+    expect(again.carried).toBe(won ? 1 : 2);
     expect(again.first).toBe(day);
     expect(again.last).toBe('2026-02-03');
+    // Partied with twice, they now stand first among your partners, and the rest after them.
+    expect(again.place).toBe(1);
+    if (party[1]) expect(hunters.recordOf(s, party[1].id).place).toBe(2);
+    // A save from before the parties were counted keeps its clears, and a hunter is never partied with fewer times than cleared with.
+    s.gates.together['HTR-OLD-1'] = 4;
+    expect(hunters.recordOf(s, 'HTR-OLD-1')).toMatchObject({ runs: 4, cleared: 4, first: null });
   });
 
   it('tells their class and how they fight in the game’s one tooltip, in whole sentences', () => {

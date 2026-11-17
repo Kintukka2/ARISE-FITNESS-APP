@@ -27,18 +27,33 @@ export const standOf = (a: Ally) => ranks.byLead(classOf(a)?.lead);
 /** Their power, as the brief's party reads it. */
 export const powerOfAlly = (a: Ally) => powerOf(a.base);
 
-/** Their record beside the hunter: Gates walked in together, Gates cleared together, what they helped defeat, and when they first met. */
+/**
+ * Their record beside the hunter, as their card's `Together` reads it: the parties you have made together (never
+ * fewer than the clears, which were kept before the parties were), the Gates cleared and the Gates you were carried
+ * out of together, what they helped defeat, when you first and last partied, and where they stand among every hunter
+ * you have partied with, by parties made (`place`, 1 the most; null until you have partied).
+ */
 export function recordOf(s: Save, id: string) {
-  const w = s.gates.walked?.[id];
-  return { runs: w?.runs ?? 0, cleared: s.gates.together[id] ?? 0, kills: w?.kills ?? 0, bosses: w?.bosses ?? 0, first: w?.first ?? null, last: w?.last ?? null };
+  const all = s.gates.walked ?? {};
+  const w = all[id];
+  const cleared = s.gates.together[id] ?? 0;
+  const runs = Math.max(w?.runs ?? 0, cleared);
+  const partners = new Set([...Object.keys(all), ...Object.keys(s.gates.together)]);
+  const partiesOf = (x: string) => Math.max(all[x]?.runs ?? 0, s.gates.together[x] ?? 0);
+  const place = runs ? 1 + [...partners].filter((x) => x !== id && partiesOf(x) > runs).length : null;
+  return {
+    runs, cleared, carried: w?.carried ?? 0, kills: w?.kills ?? 0, bosses: w?.bosses ?? 0,
+    first: w?.first ?? null, last: w?.last ?? null, place, partners: partners.size,
+  };
 }
 
 /** Write one run into each of its hunters' records, as `raid.finish` settles it. Mutates. */
-export function log(s: Save, ids: readonly string[], kills: Record<string, { kills: number; bosses: number }>, day: string) {
+export function log(s: Save, ids: readonly string[], kills: Record<string, { kills: number; bosses: number }>, day: string, outcome?: string) {
   const all = (s.gates.walked ??= {});
   for (const id of ids) {
     const w = (all[id] ??= { runs: 0, kills: 0, bosses: 0, first: day, last: day });
     w.runs++;
+    if (outcome === 'defeated') w.carried = (w.carried ?? 0) + 1;
     w.kills += kills[id]?.kills ?? 0;
     w.bosses += kills[id]?.bosses ?? 0;
     w.last = day;

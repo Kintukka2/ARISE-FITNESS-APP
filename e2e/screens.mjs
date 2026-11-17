@@ -34,6 +34,8 @@ async function phone(raw) {
   return p;
 }
 let page = await phone(save);
+/** The first Association hunter whose card the tour opens: a record with them is seeded later, to read their Together. */
+let metHunter = null;
 
 const sleep = (ms) => page.waitForTimeout(ms);
 /** Turn over every piece of loot on the results, and wait for the high grades to finish gathering themselves. */
@@ -589,14 +591,20 @@ try {
     // bonuses they take from the Shadows, their skills and their record beside you.
     const ally = page.locator('.sheet.is-top .bformation__ally').first();
     if (!(await ally.count())) throw new Error('NO ASSOCIATION HUNTER IN THE PARTY OPENS A CARD');
+    metHunter = await ally.getAttribute('data-hunter');
     await ally.click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
-    for (const head of ['Stats', 'From your Shadows', 'Skills', 'Record']) {
+    for (const head of ['Stats', 'Skills', 'Together']) {
       if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
     }
-    if (!(await page.locator('.sheet.is-top .huntercard .sp-row', { hasText: 'Class' }).count())) throw new Error('THE HUNTER CARD DOES NOT NAME THEIR CLASS');
+    // Shadows and hunters share nothing directly, so the card says nothing of the squad.
+    if (await page.locator('.sheet.is-top .huntercard .section', { hasText: 'From your Shadows' }).count()) throw new Error('THE HUNTER CARD STILL SPEAKS OF YOUR SHADOWS');
+    // The class is said once, in its row, and Strike is a skill like any other.
+    if ((await page.locator('.sheet.is-top .huntercard .huntercard__class').count()) !== 1) throw new Error('THE HUNTER CARD DOES NOT NAME THEIR CLASS ONCE');
+    if (!(await page.locator('.sheet.is-top .huntercard .sp-skill', { hasText: '[Skill: Strike]' }).count())) throw new Error('THE HUNTER CARD DOES NOT LIST STRIKE AMONG THEIR SKILLS');
+    if ((await page.locator('.sheet.is-top .huntercard .hc-stats li').count()) !== 5) throw new Error('THE HUNTER CARD DOES NOT SET OUT FIVE STATS');
     await snap('hunter-card');
-    await page.locator('.sheet.is-top .huntercard .sp-head__tags .infotag').first().click(); await sleep(300);
+    await page.locator('.sheet.is-top .huntercard .huntercard__class').click(); await sleep(300);
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Class' }).isVisible())) throw new Error('A HUNTER\'S CLASS TAG DID NOT OPEN ITS TOOLTIP');
     await snap('hunter-class-tip');
     await page.keyboard.press('Escape'); await sleep(250);
@@ -1131,6 +1139,28 @@ try {
   await page.locator('.sheet.is-top .guide__find input').fill('fatigue'); await sleep(300);
   if (!(await page.locator('.sheet.is-top .guide mark').count())) throw new Error('THE GUIDE FOUND NOTHING FOR A WORD IT HOLDS');
   await snap('guide-find');
+
+  // ---------------------------------------------------------------- a hunter partied with before
+  // The same hunter, met again on the same Gate, with a record behind them: their card's Together tells it.
+  {
+    const seeded = JSON.parse(save);
+    seeded.gates.walked = { ...(seeded.gates.walked ?? {}), [metHunter]: { runs: 7, carried: 1, kills: 23, bosses: 4, first: '2026-01-02', last: '2026-01-20' } };
+    seeded.gates.together = { ...(seeded.gates.together ?? {}), [metHunter]: 5 };
+    page = await phone(JSON.stringify(seeded));
+    await page.goto(`http://localhost:${PORT}/`);
+    await sleep(1200);
+    await drain();
+    await nav('gates');
+    await page.locator('.gradar__all').click(); await sleep(600);
+    await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800);
+    await drain();
+    await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
+    await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"]`).click(); await sleep(700);
+    if (!(await page.locator('.sheet.is-top .hc-together__lead', { hasText: '7' }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THEIR PARTIES');
+    if (!(await page.locator('.sheet.is-top .hc-together__rows', { hasText: /Most often|The only one/ }).count())) throw new Error('THE MOST FREQUENT PARTNER IS NOT SAID TO BE');
+    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'Together' }).scrollIntoViewIfNeeded(); await sleep(400);
+    await snap('hunter-card-together');
+  }
 
   // ---------------------------------------------------------------- the ascended hunter: S-Rank, three levels open
   page = await phone(ascended);

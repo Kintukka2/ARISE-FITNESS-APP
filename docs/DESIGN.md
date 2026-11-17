@@ -2799,28 +2799,37 @@ Run for run against this branch before the pass:
 ## A card for the Association's hunters — built
 
 The owner asked for a hunter card like the Shadow card, opened by tapping a hunter in a Gate's brief's party, with their
-rank, power, class, skills, stats, traits and a record of their own.
+rank, power, class, skills, stats, traits and a record of their own; then, on seeing it, for an overhaul: the class
+said twice, a tooltip on the class that spoke of Strike, Strike written as a sentence instead of a skill, a section on
+the squad's Shadows that has no place on a hunter's card, and a record that should be the partnership's.
 
 - **Who they are** (`core/hunters.ts`): a hunter's id fixes their name, grade and stats (`gates.hunter`), so the same
   hunter met on another Gate is the same file. Their class is worked out as the hunter's own is, from their leading stat
   and their grade (`classFor`; none below D-Rank); their kit is every rung's first option (`kitFor`), and where they
   stand is their lead's (`ranks.byLead`), exactly as `raid.allySpec` fights them.
 - **Their record**: each run's hunters are written in `raid.finish` (`hunters.log`, `s.gates.walked`, a field with a
-  default): Gates walked into together, the creatures they helped defeat and the bosses, and the days first and last
-  walked with. A fight now credits an Association hunter who landed a hit on a creature, as it credits a Shadow, in
-  the run's tally (`run.kills`); nothing that pays reads their entries. Clears together were already kept
-  (`s.gates.together`, which two Secret Quests read).
-- **The card** (`screens/Hunter.tsx`), `HUNTER: {name}` in the System's cyan, the Shadow card's layout: their grade's
-  plate in a ring, `Registration` (and `Escort` or `Your instructor`), `Rank`, `Class` and `Power`; their class and how
-  they fight as info tags, the one tooltip each (a hunter's Melee or Ranged by their lead: an INT hunter's spells reach
-  either rank, a PER hunter's shots, an AGI hunter's melee past the front); where their grade stands against the Gate's;
-  `Stats`, the lead marked; `From your Shadows`, the role bonuses they take as the squad stands; `Skills` and `Traits`;
-  and `Record`, `Gates`, `Cleared`, `Defeated`, `Bosses`, over how long since you first walked in together.
+  default): parties made together, the Gates you were carried out of together, the creatures they helped defeat and the
+  bosses, and the days first and last partied. A fight now credits an Association hunter who landed a hit on a
+  creature, as it credits a Shadow, in the run's tally (`run.kills`); nothing that pays reads their entries. Clears
+  together were already kept (`s.gates.together`, which two Secret Quests read), so a save from before counts a hunter's
+  parties as at least their clears. `hunters.recordOf` also places them among every hunter you have partied with.
+- **The card** (`screens/Hunter.tsx`), `HUNTER: {name}` in the System's cyan, reading who they are, what they fight
+  with, and what you have done together:
+  - the head: their grade's plate in a ring, `Registration` (with `Escort` or `Your instructor`), `Rank`, `Class` and
+    `Power`, the class said once, its value the info tag; how they fight (`Melee` or `Ranged`, by their lead: an INT
+    hunter's spells reach either rank, a PER hunter's shots, an AGI hunter's melee past the front) and where their grade
+    stands against the Gate's;
+  - `Stats`, the five in one row, the lead under a gold `Lead` flag;
+  - `Skills`, Strike first, then their class's, and `Traits`;
+  - `Together`: the parties made, large, over `Cleared`, `Carried out`, `Defeated`, `Bosses`, then `First partied`,
+    `Last partied` and `Among your partners` (`Most often of 14`).
+  Nothing on it speaks of the squad's Shadows.
 - **The lineup**: a tap on an Association hunter in the brief's party opens their card. They are not dragged: they are
   no one's to place.
 - **Held by tests**: a hunter's class, kit and place agree with the fight's; their record is settled by a Gate played to
-  its end and grows when they are met again; their tooltips are whole sentences. The tour opens a hunter's card from the
-  brief and its class and Melee or Ranged tooltips.
+  its end, counts a party carried out, grows when they are met again and places them among your partners; their
+  tooltips are whole sentences. The tour opens a hunter's card, checks the class is said once, Strike is a skill and
+  the Shadows are not spoken of, opens both tooltips, and seeds a hunter partied with before to read their Together.
 - **Balance.** Nothing a fight decides or a reward pays changed: the kills credited to the Association's hunters are a
   record, read by their card alone. No calibration and no campaign.
 

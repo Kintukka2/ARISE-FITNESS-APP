@@ -602,7 +602,7 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
     // An Association hunter opens their card when tapped: their class, kit, stats and record beside you.
     ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
       <li key={a.id} class="bformation__one is-ally">
-        <button type="button" class="bformation__me bformation__ally" aria-label={`${a.name}, ${a.rank}-Rank. Open their card.`} onClick={() => { sfx.tap(); openHunter(a, d); }}>
+        <button type="button" class="bformation__me bformation__ally" data-hunter={a.id} aria-label={`${a.name}, ${a.rank}-Rank. Open their card.`} onClick={() => { sfx.tap(); openHunter(a, d); }}>
           <span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small>
         </button>
       </li>

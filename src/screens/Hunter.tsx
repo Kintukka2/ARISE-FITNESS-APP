@@ -1,18 +1,17 @@
 /**
  * HUNTER: an Association hunter's card, opened by tapping them in a Gate's brief's party, after the Shadow card
  * (`screens/Shadows.tsx`) and the info panel of Solo Leveling: Arise, in the System's cyan: what the System sees of a
- * hunter beside you. Its head is their grade's plate in a ring, their registration, `Rank`, `Class` and `Power`,
- * and their class and how they fight as info tags, with where they stand against the Gate's grade; then their stats,
- * the lead marked; the role bonuses they take from your Shadows; their skills and traits, as their class gives them;
- * and their record beside you, which follows them from Gate to Gate (`hunters.recordOf`). Every number is the
- * engine's: their class from `hunters.classOf`, their kit from `hunters.kitOf`, as the fight builds them.
+ * hunter beside you. Top to bottom it reads who they are, what they fight with, and what you have done together:
+ * their grade's plate in a ring, their registration, `Rank`, `Class` (the class itself tells what it is when tapped)
+ * and `Power`, how they fight and where their grade stands against the Gate's; their stats in one row; their skills,
+ * Strike first, and their traits, as their class gives them; and `Together`, your record with them alone, which
+ * follows them from Gate to Gate (`hunters.recordOf`). Every number is the engine's: their class from
+ * `hunters.classOf`, their kit from `hunters.kitOf`, as the fight builds them.
  */
-import { ability, passiveText } from '@/core/combat';
-import { rankIdx, regNo, isPractice, type Ally } from '@/core/gates';
+import { ability, passiveText, STRIKE } from '@/core/combat';
+import { rankIdx, regNo, type Ally } from '@/core/gates';
 import * as hunters from '@/core/hunters';
-import * as kin from '@/core/kin';
 import { ATTRS } from '@/core/progression';
-import * as shadows from '@/core/shadows';
 import type { Dungeon, Stat } from '@/core/types';
 import { daysBetween, dayKey } from '@/core/util';
 import { useSave } from '@/store';
@@ -20,7 +19,6 @@ import { skillLine } from './Skills';
 import { RankPlate, Section } from '@/ui/components';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { InfoTag } from '@/ui/infotag';
-import { ROLE_GLYPH, ROLE_TIER, roleText } from '@/ui/kin';
 import { openSheet } from '@/ui/overlays';
 import { hunterStyleTip, STYLE_GLYPH, styleOfLead } from '@/ui/stand';
 import type { TipText } from '@/ui/tip';
@@ -39,7 +37,7 @@ export function openHunter(a: Ally, d: Dungeon) {
 /** A class in the game's one tooltip: its name and `Class`, what it is given for, and the stat it leads with. */
 export function classTip(a: Ally): TipText {
   const c = hunters.classOf(a);
-  if (!c) return { title: 'Unclassified', kind: 'Class', tone: 'system', lines: ['No class is given below D-Rank.', 'Fights with Strike alone.'] };
+  if (!c) return { title: 'Unclassified', kind: 'Class', tone: 'system', lines: ['No class is given below D-Rank. At D-Rank one comes from their leading stat.'] };
   const stat = ATTRS.find((x) => x.key === c.lead)?.name ?? c.lead;
   return {
     title: c.name,
@@ -55,17 +53,16 @@ function HunterCard({ a, d }: { a: Ally; d: Dungeon }) {
     <div class="stack shadowcard huntercard">
       <Head a={a} d={d} />
       <Stats a={a} />
-      <Taken d={d} />
       <Kit a={a} />
-      <Record a={a} />
+      <Together a={a} />
     </div>
   );
 }
 
 /**
  * The head, as the Shadow card's: their grade's plate inside a ring, their registration small over the rows
- * `Rank │ D-Rank`, `Class │ Brawler` and `Power │ 26`; under them their class and how they fight, each a tag that
- * tells what it is, and where their grade stands against the Gate's.
+ * `Rank │ D-Rank`, `Class │ Brawler` (the class itself the tag that tells what it is, so it is said once) and
+ * `Power │ 26`; under them how they fight, and where their grade stands against the Gate's.
  */
 function Head({ a, d }: { a: Ally; d: Dungeon }) {
   const c = hunters.classOf(a);
@@ -85,11 +82,13 @@ function Head({ a, d }: { a: Ally; d: Dungeon }) {
         <span class="sp-head__was">{a.note ? `${a.note} · ` : ''}Registration {regNo(a.id)}</span>
         <dl class="sp-rows">
           <div class="sp-row"><dt>Rank</dt><dd>{a.rank}-Rank</dd></div>
-          <div class="sp-row"><dt>Class</dt><dd class={c ? 'huntercard__class' : ''}>{c?.name ?? 'Unclassified'}</dd></div>
+          <div class="sp-row">
+            <dt>Class</dt>
+            <dd><InfoTag class={`huntercard__class ${c ? 'is-classed' : ''}`} tip={classTip(a)}>{c?.name ?? 'Unclassified'}</InfoTag></dd>
+          </div>
           <div class="sp-row"><dt>Power</dt><dd class="sp-row__power num">{hunters.powerOfAlly(a)}</dd></div>
         </dl>
         <span class="sp-head__tags">
-          <InfoTag class="sp-tag" tip={classTip(a)}>{c ? <Glyph name={STAT_ICON[c.lead] ?? 'star'} /> : null}{c?.name ?? 'Unclassified'}</InfoTag>
           <InfoTag class="sp-tag sp-tag--style" tip={hunterStyleTip(c?.lead)}><Glyph name={STYLE_GLYPH[style]} />{style}</InfoTag>
           <span class={`sp-tag sp-head__state ${vs > 0 ? 'is-on' : ''}`}>{vs > 0 ? 'Above the Gate' : vs < 0 ? 'Under the Gate' : 'At the Gate’s grade'}</span>
         </span>
@@ -98,18 +97,18 @@ function Head({ a, d }: { a: Ally; d: Dungeon }) {
   );
 }
 
-/** Their stats, a row each as the Shadow card's, the stat their class leads with marked. */
+/** Their stats in one row of five, as a party member's sheet sets them side by side, the stat their class leads with lit. */
 function Stats({ a }: { a: Ally }) {
   const c = hunters.classOf(a);
   return (
-    <Section title="Stats" right={c ? <span>Lead <b class="gold">{c.lead}</b></span> : undefined}>
-      <ul class="sp-statrows">
+    <Section title="Stats">
+      <ul class="hc-stats">
         {ORDER.map((k) => (
-          <li key={k} class={c?.lead === k ? 'is-lead' : ''}>
+          <li key={k} class={`sysbox ${c?.lead === k ? 'is-lead' : ''}`} aria-label={`${k} ${a.base[k]}${c?.lead === k ? ', their lead' : ''}`}>
             <Glyph name={STAT_ICON[k] ?? 'star'} />
-            <span class="sp-statrows__name">{k}</span>
             <b class="num">{a.base[k]}</b>
-            <small class="gold">{c?.lead === k ? 'Lead' : ''}</small>
+            <small>{k}</small>
+            {c?.lead === k && <i class="hc-stats__lead">Lead</i>}
           </li>
         ))}
       </ul>
@@ -117,48 +116,23 @@ function Stats({ a }: { a: Ally }) {
   );
 }
 
-/** The role bonuses they take from your Shadows as the squad stands, each at its tier; they take no Kin. */
-function Taken({ d }: { d: Dungeon }) {
-  const s = useSave();
-  const squad = isPractice(d) ? [] : shadows.squad(s);
-  const lines = kin.makeOf(squad).roleLines;
-  return (
-    <Section title="From your Shadows">
-      {lines.length
-        ? (
-          <div class="sp-auth">
-            {lines.map((l) => (
-              <div key={l.role} class="sp-auth__row">
-                <span class="sp-auth__name"><Glyph name={ROLE_GLYPH[l.role] ?? 'shadows'} />Role bonus · {l.role} {ROLE_TIER[l.tier - 1]}</span>
-                <p class="is-on">{roleText(l.role, l.tier)}</p>
-              </div>
-            ))}
-            <small class="muted">They take no Kin.</small>
-          </div>
-        )
-        : <small class="muted">{isPractice(d) ? 'The Practice Gate takes no Shadows.' : 'No Shadow is deployed.'}</small>}
-    </Section>
-  );
-}
-
-/** What they fight with: their class's skills and its passives, every rung's first, as the fight builds them. */
+/** What they fight with: Strike, as everyone does, then their class's skills; and its passives, every rung's first, as the fight builds them. */
 function Kit({ a }: { a: Ally }) {
   const k = hunters.kitOf(a);
+  const skills = [STRIKE.name, ...k.kit];
   return (
     <>
       <Section title="Skills">
         <div class="sp-skills">
-          {k.kit.length
-            ? k.kit.map((n) => {
-              const ab = ability(n);
-              return (
-                <div key={n} class="sp-skill">
-                  <span class="sp-skill__ico"><Glyph name={ab?.type === 'magic' ? 'bolt' : 'fist'} /></span>
-                  <span class="sp-skill__body"><b>[Skill: {n}]</b><small>{ab ? skillLine(ab) : ''}</small></span>
-                </div>
-              );
-            })
-            : <small class="muted">Fights with Strike alone.</small>}
+          {skills.map((n) => {
+            const ab = n === STRIKE.name ? STRIKE : ability(n);
+            return (
+              <div key={n} class="sp-skill">
+                <span class="sp-skill__ico"><Glyph name={ab?.type === 'magic' ? 'bolt' : 'fist'} /></span>
+                <span class="sp-skill__body"><b>[Skill: {n}]</b><small>{ab ? skillLine(ab) : ''}</small></span>
+              </div>
+            );
+          })}
         </div>
       </Section>
       {k.passives.length > 0 && (
@@ -177,23 +151,43 @@ function Kit({ a }: { a: Ally }) {
   );
 }
 
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+const ago = (day: string) => {
+  const n = Math.max(0, daysBetween(day, dayKey()));
+  return n === 0 ? 'Today' : n === 1 ? 'Yesterday' : `${n} days ago`;
+};
+
 /**
- * Their record beside you, as the Shadow card's: Gates walked into together, Gates cleared together, the creatures
- * they helped defeat and the bosses, and how many days since you first walked in together.
+ * Your record together, the hunter's own and nobody else's: the parties you have made, large, then the Gates cleared
+ * and those you were carried out of together, the creatures they defeated beside you and the bosses, when you first
+ * and last partied, and where they stand among every hunter you have partied with.
  */
-function Record({ a }: { a: Ally }) {
+function Together({ a }: { a: Ally }) {
   const s = useSave();
   const r = hunters.recordOf(s, a.id);
-  const days = r.first ? Math.max(0, daysBetween(r.first, dayKey())) : null;
   return (
-    <Section title="Record">
-      <div class="sp-record">
-        <span><b class="num">{r.runs}</b><small>Gates</small></span>
-        <span><b class="num">{r.cleared}</b><small>Cleared</small></span>
-        <span><b class="num">{r.kills}</b><small>Defeated</small></span>
-        <span><b class="num">{r.bosses}</b><small>Bosses</small></span>
-      </div>
-      <small class="muted huntercard__met">{days === null ? 'You have not walked into a Gate together.' : days === 0 ? 'First walked in with you today.' : `First walked in with you ${days} ${days === 1 ? 'day' : 'days'} ago.`}</small>
+    <Section title="Together">
+      {r.runs === 0
+        ? <p class="hc-together__none">You have not partied together yet.</p>
+        : (
+          <div class="hc-together">
+            <div class="hc-together__lead">
+              <b class="num">{r.runs}</b>
+              <span>{r.runs === 1 ? 'Party together' : 'Parties together'}</span>
+            </div>
+            <div class="sp-record">
+              <span><b class="num">{r.cleared}</b><small>Cleared</small></span>
+              <span><b class="num">{r.carried}</b><small>Carried out</small></span>
+              <span><b class="num">{r.kills}</b><small>Defeated</small></span>
+              <span><b class="num">{r.bosses}</b><small>Bosses</small></span>
+            </div>
+            <dl class="hc-together__rows">
+              {r.first && <div><dt>First partied</dt><dd>{ago(r.first)}</dd></div>}
+              {r.last && <div><dt>Last partied</dt><dd>{ago(r.last)}</dd></div>}
+              {r.place && <div><dt>Among your partners</dt><dd>{r.partners === 1 ? 'The only one' : <>{r.place === 1 ? 'Most often' : `${ordinal(r.place)} most often`}<small class="num"> of {r.partners}</small></>}</dd></div>}
+            </dl>
+          </div>
+        )}
     </Section>
   );
 }
