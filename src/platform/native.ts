@@ -4,7 +4,7 @@
  *
  *   - Billing: cordova-plugin-purchase, exposed as `window.CdvPurchase`.
  *   - Reminders: @capacitor/local-notifications, at `Capacitor.Plugins.LocalNotifications`.
- *     One kind only: when fatigue has faded, or the lockout after a wipe lifts.
+ *     One kind only: when fatigue has faded.
  */
 import { setStoreAvailable, grantLicence } from '@/core/licence';
 import { deposit } from '@/core/shop';
@@ -99,7 +99,6 @@ const READY_ID = 1000;
 export function plan(s: Save, now = Date.now()) {
   if (!s.settings.reminders.on || !s.onboarded) return [];
   const v = read(s, now);
-  if (v.locked) return [{ id: READY_ID, title: 'Fit To Raid', body: 'The Association medics have signed you off. The Gates are open to you again.', at: new Date(now + v.lockedFor) }];
   if (v.fatigue <= 0) return [];
   return [{ id: READY_ID, title: 'Rested', body: 'Your fatigue has faded. You will fight at full strength.', at: new Date(now + (v.fatigue / FATIGUE_PER_HOUR) * 36e5) }];
 }

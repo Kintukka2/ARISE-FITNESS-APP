@@ -111,7 +111,6 @@
 .vrow { display: flex; align-items: center; gap: 8px; }
 .vrow > .ico { width: 18px; height: 18px; color: var(--ink-2); }
 .vrow > .label { width: 30px; }
-.vrow--locked { color: var(--blood); font-size: 0.84rem; }
 .pip { display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: 0 8px; border: 1px dashed var(--edge); border-radius: 99px; font-size: 0.76rem; color: var(--ink-3); flex: none; }
 .pip .ico { width: 14px; height: 14px; }
 .pip.is-live { border-style: solid; border-color: rgba(72, 245, 168, 0.55); color: var(--verdant); }
@@ -155,7 +154,7 @@
 .potion .ico { width: 30px; height: 30px; }
 .shopsurvey { display: grid; place-items: center; width: 44px; height: 44px; flex: none; color: var(--ember); }
 .shopsurvey .ico { width: 30px; height: 30px; }
-.potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--elixir { color: var(--arcane); } .potion--revive { color: var(--verdant); }
+.potion--hp { color: #dff4ff; } .potion--mp { color: var(--mana); } .potion--fatigue { color: var(--gold); } .potion--revive { color: var(--verdant); }
 
 /* ------------------------------------------------------------------ gates */
 

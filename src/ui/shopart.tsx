@@ -2,11 +2,11 @@
  * The Exchange's goods, drawn: each its own bottle, scroll or cord, lit in its colour, after the item
  * art of the shops in Genshin Impact and Honkai: Star Rail, where every good is a picture of the thing
  * rather than a glyph. The colours are the app's own: a Health Potion white as the HP bar is, mana blue,
- * fatigue gold, the Elixir arcane; the Gates' goods in their orange and ember.
+ * fatigue gold; the Gates' goods in their orange and ember.
  */
 import { useMemo } from 'preact/hooks';
 
-export type ShopArtId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'flash' | 'cord' | 'ember' | 'revive';
+export type ShopArtId = 'hp' | 'mp' | 'fatigue' | 'survey' | 'flash' | 'cord' | 'ember' | 'revive';
 
 let seq = 0;
 
@@ -25,7 +25,6 @@ export function ShopArt({ id, size = 56 }: { id: ShopArtId; size?: number }) {
     hp: ['#cfeaff', '#ffffff', '#8ccfff'],
     mp: ['#4fd6ff', '#a8f2ff', '#2a6bff'],
     fatigue: ['#ffcb5c', '#fff3b0', '#ff9a1f'],
-    elixir: ['#b98bff', '#ecd9ff', '#7a33ff'],
     survey: ['#ff9a3c', '#f6deaa', '#c99650'],
     flash: ['#fff1a8', '#ffffff', '#ffd84a'],
     cord: ['#e0a05a', '#f0c48a', '#a8692e'],
@@ -129,23 +128,6 @@ export function ShopArt({ id, size = 56 }: { id: ShopArtId; size?: number }) {
           <Cork x={25.5} y={9} w={13} id={u} />
           <path d="M34 35 L27.5 45 H32.5 L30.5 53 L37.5 42 H32.5 Z" fill="#5a3200" stroke="#fff3c4" stroke-width="1" stroke-linejoin="round" />
           <path d="M23.5 31 V44" stroke="#fff" stroke-opacity=".7" stroke-width="2" stroke-linecap="round" />
-        </>
-      );
-      break;
-    case 'elixir':
-      // A teardrop of a bottle under a gold stopper, sparks around it.
-      body = (
-        <>
-          <clipPath id={`${u}-clip`}><path d="M32 20 C39.5 27.5 45 33.8 45 42 A13 13 0 0 1 19 42 C19 33.8 24.5 27.5 32 20 Z" /></clipPath>
-          <path d="M32 18 C40 26 46 33 46 42 A14 14 0 0 1 18 42 C18 33 24 26 32 18 Z" fill={glass} />
-          <path clip-path={`url(#${u}-clip)`} d="M14 36 Q23 31 32 36 T50 36 V64 H14 Z" fill={liq} />
-          <path d="M32 18 C40 26 46 33 46 42 A14 14 0 0 1 18 42 C18 33 24 26 32 18 Z" fill="none" stroke={rim} stroke-width="1.6" />
-          <rect x="29" y="11" width="6" height="9" rx="1.2" fill={glass} stroke={rim} stroke-width="1.3" />
-          <path d="M32 2 L37 7.5 L32 12 L27 7.5 Z" fill={`url(#${u}-gold)`} stroke="#8a5a10" stroke-width=".9" />
-          <path d="M23 38 A10 10 0 0 1 27 30" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2" stroke-linecap="round" />
-          {[[12, 22, 3.2], [52, 26, 2.6], [50, 52, 2.2], [14, 50, 2]].map(([x, y, k], i) => (
-            <path key={i} d={`M${x} ${y - k * 1.6} L${x + k * 0.45} ${y - k * 0.45} L${x + k * 1.6} ${y} L${x + k * 0.45} ${y + k * 0.45} L${x} ${y + k * 1.6} L${x - k * 0.45} ${y + k * 0.45} L${x - k * 1.6} ${y} L${x - k * 0.45} ${y - k * 0.45} Z`} fill="#f2e4ff" opacity=".9" />
-          ))}
         </>
       );
       break;

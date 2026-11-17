@@ -31,7 +31,7 @@ export const NAME_PROMPT = 'Right. What name goes on the licence? Spell it prope
 
 /** Valcorde on the Gates screen: one line, picked by how the hunter is doing. */
 export const GATES_LINE = {
-  locked: 'You were carried out of the last one. Rest up. The board’ll turn over before you’re fit anyway.',
+  carried: 'You were carried out of the last one, and it shows. Sleep it off, or drink something, before you pick the next.',
   tired: 'You’re running on empty. Your call, but I’d rest before the next one.',
   first: 'Pick something at your own grade, and take a party with you.',
   settled: 'Check your fatigue before every Gate. I still check mine.',
@@ -130,7 +130,7 @@ export const BEATS: Beat[] = [
     id: 'first_defeat', when: (s) => s.gates.fails >= 1, kind: 'coach', title: 'Valcorde',
     lines: [
       'The party couldn’t hold. The ones still standing dragged you out.',
-      'The medics won’t let you back in until they’re satisfied. Let them.',
+      'You’re on your feet, just. Nobody will stop you going back in like that. I would, if I could.',
       'I’ve been carried out too. More than once.',
     ],
   },

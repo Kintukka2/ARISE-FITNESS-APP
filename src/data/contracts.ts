@@ -18,7 +18,7 @@ export type ContractKind = 'clear' | 'fell' | 'shadows' | 'tired' | 'gatekeeper'
 /**
  * How often each kind is drawn. A kind the hunter cannot do today is left out of the draw.
  * Nothing asks for a gate above the hunter's grade: they clear about one in ten, and being
- * carried out of one would cost them the rest of the day.
+ * carried out of one leaves them on 1 HP and worn out for the rest of the day.
  */
 export const CONTRACT_KINDS: { kind: ContractKind; w: number }[] = [
   { kind: 'clear', w: 28 }, { kind: 'fell', w: 24 }, { kind: 'offroad', w: 14 }, { kind: 'gatekeeper', w: 14 },

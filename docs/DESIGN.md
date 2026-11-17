@@ -2916,6 +2916,43 @@ The owner read the Shadow card and asked to move `Deployed` or `Not deployed` be
 - **Balance.** Nothing a fight decides changed: `RESIST_STATUS` and `IDENTITY_GAIN` are the numbers the fight already
   played (15 and 10%). No calibration and no campaign.
 
+## Carried out on your feet: no lockout — built
+
+Being carried out of a Gate used to lock the hunter out of every Gate for 12 hours, and the Exchange sold an Elixir of
+Rejuvenation to lift the lock. The owner asked to drop the lockout: being carried out now leaves the hunter on 1 HP,
+never 0, which would mean dead, and at Fatigue 100. The Elixir is gone.
+
+- **The rule** (`vitals.wipe`): HP `WIPE_HP` (1), Fatigue `FATIGUE_MAX` (100), nothing locked. At Fatigue 100 the hunter
+  fights at Stats ×0.50 until it eases (`FATIGUE_PER_HOUR` an hour, or a Fatigue Potion), and their HP returns by the
+  hour as it always has. They choose when to go back in. A hunter downed in a Gate their party went on to clear walks
+  out alive too (`vitals.standUp`, at the end of `raid.finish`, after the Rift has read their health). An older save's
+  lockout lifts the moment it is read; the save keeps its `lockedUntil` field, always null.
+- **What says it:**
+  - the results: `Carried Out` over `You are on 1 HP, with Fatigue at 100.`, then the bars and `HP +5% and Fatigue -5
+    each hour`;
+  - Ryn's first word on it: `You’re on your feet, just. Nobody will stop you going back in like that. I would, if I
+    could.`;
+  - his Gates line while it still shows: `You were carried out of the last one, and it shows. Sleep it off, or drink
+    something, before you pick the next.`;
+  - the Guide: `Being carried out leaves you on 1 HP, with Fatigue at 100: Stats ×0.50 until it eases. Nothing locks
+    you out of the Gates.`
+  The Condition strip's lockout row, the brief's `Fit to enter in` and the phone's `Fit To Raid` notification are gone.
+- **The Exchange** sells three potions: Health, Mana and Fatigue.
+- **Held by tests.** `tests/vitals.test.ts`: a wipe leaves 1 HP and Fatigue 100 and locks nothing; an hour eases both;
+  an older save's lockout lifts; a hunter downed leaves alive; no potion lifts a lockout. `tests/gates.test.ts` holds
+  it for a Gate lost.
+- **Balance.** Nothing a fight decides changed: no calibration. The campaign, run for run against the commit before:
+
+  | | Days to D, C, B, A, S, N | Runs | Cleared | Carried out | Ascension opened |
+  |---|---|---|---|---|---|
+  | One evening, before and after | 2, 6, 15, 29, 55, 113 | 276 | 97% | 9 | 6 |
+  | Three sessions, before | 1, 4, 10, 17, 33, 64 | 418 | 93% | 28 | 25 |
+  | Three sessions, after | 1, 4, 9, 15, 30, 63 | 418 | 94% | 26 | 23 |
+
+  The evening hunter does not feel it: a day passes between sessions either way. The hunter who plays three times a
+  day reaches B to S a day to three sooner, as a wipe now costs the hours it takes to rest (Fatigue 100 to the
+  campaign's 45 is 11), not a fixed 12.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

@@ -1602,7 +1602,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
       ? rifted ? 'Another Rift opens at midnight.' : d.floor ? `From the rest on Floor ${d.floor + r.steps - 1}. These floors stay as they are until Monday.`
         : r.rooms ? `${r.steps} of ${r.rooms} rooms cleared. The Gate is still open.` : `Step ${r.steps} of ${r.depth}. The Gate is still open.`
       : trial ? 'The Trial opens again tomorrow. Proven Gates stay proven.'
-        : `You are locked out of Gates for ${vitals.WIPE_LOCK / 36e5} hours.`;
+        : `You are on ${vitals.WIPE_HP} HP, with Fatigue at ${vitals.FATIGUE_MAX}.`;
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
       {turn.flash}
@@ -1633,7 +1633,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         <div class="rcond">
           <span class="rcond__row"><Glyph name="hp" /><span class="label">Health</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" /></span>
           <span class="rcond__row"><Glyph name="bolt" /><span class="label">Fatigue</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold'} /></span>
-          <small>{v.locked ? `Locked out: ${Math.ceil(v.lockedFor / 36e5)}h` : `HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% each hour`}</small>
+          <small>{`HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% and Fatigue -${vitals.FATIGUE_PER_HOUR} each hour`}</small>
         </div>
         {/* What the clear asked of the hand, after Helldivers 2's mission summary: one band, the medal against par first,
             then the Gate's Feats, a row to each, what each paid the first time at its right. */}

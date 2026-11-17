@@ -48,7 +48,7 @@ Everything runs on the device. There is no server, no account and no network: th
 | **The Pale Spire** | The one Gate that never closed, a Weekly Quest on the Quests screen. It is climbed five floors at a time (three of choices, a rest, a boss), each block costing and paying like a Gate of its grade; a block taken offers Climb On, straight into the next five floors. Floor N is built for Level N up to Floor 100, and it keeps getting harder above that. Your best floor this week is kept; on Monday the week pays by the grade of your highest floor, the floors rearrange, and everyone climbs again |
 | **Ascension** | What comes after the climb: it opens at S-Rank, for a hunter the board no longer troubles, and is a ladder with no top. The first ten levels each make every foe stronger and add a rule of their own on top of the ones below, from thinner rests to bosses you must fight by hand; past them every level is stronger again. Each pays more. A level opens when you prove the one below it and win its Trial, the System's own: a run of named Chosen bosses with no rest between them, which no Association hunter walks into with you. Every level opened earns a mark, a lasting bonus you choose, lets your gear be upgraded a step past perfect, and sends its Trial's last Chosen out into the Gates, where it holds a Gate a day and leaves a masterwork the first time it falls. You choose the level before every Gate, on the Ascension tile, which walks you through itself the first time and shows what the next level asks |
 | **Daily Quests** | The System issues three a day for your grade: clear so many Gates, defeat so many of one family, beat a gatekeeper, walk off the marked road, clear one on tired legs. Each pays a clear's shards and a tenth of its XP, all three pay a bonus, and one left undone lapses at midnight for nothing |
-| **XP** | Every Gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and locks you out for twelve hours |
+| **XP** | Every Gate pays by its grade, double on the first clear. Withdrawing pays a share of how far you got; being carried out pays a little and leaves you on 1 HP with Fatigue at 100, fighting at half strength until you rest; nothing locks you out |
 | **Fatigue** | Each Gate adds fatigue, and fatigue drags every stat down until it fades, about five each hour. It is the only limit on how much you raid |
 | **Levels and ranks** | One ladder: E → D (Level 10) → C (20) → B (35) → A (50) → S (70) → Sovereign (100). A level only qualifies you for a rank: you claim it from its Reclassification quest, and the rank-up plays. Three Ability Points per level, five per rank, spent by you |
 | **Classes** | From D-Rank the System assigns a class from your highest stat (25 classes in five lines). Each says what kind of fighter it makes you, where you stand and how you fight, and its tooltip names the class it rises to. A class adds flat points to that stat |
@@ -178,7 +178,7 @@ classes, Shadows) is unaffected. Shard packs are also sold. On the web there is 
 game is fully open, and so is the debug APK, which is built with billing off because a sideloaded
 app has no Play listing to buy from. Product ids `licence`, `shards_small` and `shards_large` live
 in `src/platform/native.ts`. The same file schedules the one local notification: when your fatigue
-has faded, or the lockout after a wipe has lifted.
+has faded.
 
 ## What changed from v6
 

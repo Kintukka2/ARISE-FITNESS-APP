@@ -3,6 +3,7 @@ import { defaults } from '@/core/save';
 import { board, allies, dungeonById, entryBlock, mapKnown, seal, PRACTICE_GATE } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shop from '@/core/shop';
+import * as vitals from '@/core/vitals';
 import { grant, autoEquip, ofRank, upgradeCount, power } from '@/core/gear';
 import { totalXpFor, grantXP, autoAllocate, GATE_XP, PRACTICE_LEVEL, reclassifyAll } from '@/core/progression';
 import type { Dungeon, Save } from '@/core/types';
@@ -100,7 +101,11 @@ describe('a raid', () => {
       expect(s.gates.clears).toBe(1);
       expect(board(s, dayKeyOf(now)).map((x) => x.id)).not.toContain(d.id);
     } else {
-      expect(s.vitals.lockedUntil).toBeGreaterThan(now);
+      // Carried out: on 1 HP, Fatigue at its most, and nothing locked.
+      expect(s.vitals.hp).toBe(vitals.WIPE_HP);
+      expect(s.vitals.fatigue).toBe(vitals.FATIGUE_MAX);
+      expect(s.vitals.lockedUntil).toBeNull();
+      expect(vitals.canRaid(s, now).ok).toBe(true);
     }
     expect(s.gates.raid).toBeNull();
     expect(s.vitals.fatigue).toBeGreaterThan(0);

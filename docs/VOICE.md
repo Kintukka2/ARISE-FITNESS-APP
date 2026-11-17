@@ -360,7 +360,7 @@ for advancement, orange for Gates. The text inside follows these:
   `ui/bento.tsx`). Otherwise a tile keeps its screen's colour: Skills, Reclassification, the Trial,
   the Chosen and Ascension are not gold at rest, though the windows they open are advancement's.
   Ryn's card turns gold the same way when a job is done. The breathing frame (`hot`) is kept for
-  what to look at but not act on: a lockout, a licence to buy.
+  what to look at but not act on: a licence to buy.
 - **The Forge's anvil, in its ember, marks a tracked material:** the hunter tags a material by
   tapping it in a recipe or in the Forge's Materials, and the anvil stays on it, on every Gate on the
   board that leaves it, and in that Gate's brief, until it is tapped again. It is the hunter's own
@@ -870,8 +870,7 @@ its corner (`×2`), ▲ in gold where it beats what is worn, its name under it, 
 red while the shards fall short. One that cannot be bought is stamped across with why (`Bought`, `Known`,
 `Satchel full`, `Bag full`, `Not locked`, `Full`, `Rested`) and its price reads `--`. Every good is drawn
 as itself, not a glyph (`ui/shopart.tsx`): a Health Potion a round flask, white with a heart; a Mana Potion
-a tall blue vial with a crystal; a Fatigue Potion a squat gold tonic with a bolt; the Elixir a violet
-teardrop under a gold stopper; the Gate Survey a map between two rods, the way through dotted in orange;
+a tall blue vial with a crystal; a Fatigue Potion a squat gold tonic with a bolt; the Gate Survey a map between two rods, the way through dotted in orange;
 a Flash Vial a small flask in a burst; a Binding Cord a coil; an Ember Flask an orange flask with a flame
 over its cork; a Revival Potion a round green flask, an arrow rising on its glass and wings at its shoulders; a
 material its own mark, as the Inventory draws it. The Materials counter sells bundles (`Mana Silver ×5`, kind
@@ -1171,7 +1170,7 @@ people.
 - **Lively and sarcastic, warm underneath.** He jokes about himself, the Association and the
   situation, never about the hunter.
 - **He cares, and it shows in what he does:** he signs you in, he stands in front, he tells you to
-  let the medics do their job.
+  rest before you go back in, and would stop you if he could.
 - **He prefers a plan** (read the brief) and knows hunters go in anyway.
 - **He never forces.** He gives his judgement and leaves the call: "Your call, but I'd rest before
   the next one."
@@ -1253,8 +1252,8 @@ out of the way. The art, the System and Valcorde carry the mood.
    2/3.", "Health Potion: HP +120".
 4. **A hint says what to do in one line:** "Tap a step that glows." A rule longer than a line goes
    in the Guide.
-5. **A refusal or limit is a fact:** "Your licence does not cover C-Rank yet." "Locked out until you
-   recover." No character speaks in a toast.
+5. **A refusal or limit is a fact:** "Your licence does not cover C-Rank yet." "HP 0. It returns by the
+   hour." No character speaks in a toast.
 6. **Buttons name the act:** "Enter The Gate", "Recycle", "Buy". Title Case in the code; the style
    sets the capitals on screen.
 7. **The interface may name the System as a thing:** "The System ran this Gate 24 times."
@@ -1276,7 +1275,7 @@ out of the way. The art, the System and Valcorde carry the mood.
 | Was | Is |
 |---|---|
 | Goblin Embercamp cleared. The Gate begins to close, and another of its grade opens on the board. | Goblin Embercamp is closed. A new D-Rank Gate has opened on the board. |
-| The party was carried out. The Association medics will not let you back in for a while. | `Carried Out` over `You are locked out of Gates for 12 hours.` |
+| The party was carried out, the hunter on their feet, barely, and worn out. | `Carried Out` over `You are on 1 HP, with Fatigue at 100.` Nothing locks them out (the owner's call): they choose when to go back in. |
 | No Shadows have followed you home yet. Keep clearing Gates. An extraction is rare, and rarer still if you are out of mana when it offers. | No Shadows yet. |
 | `+40 Mana Shards.` | `Mana Shards +40` |
 | Licence issued. The Association reads your real grade now. | Licence issued. Gates above D-Rank are open. |

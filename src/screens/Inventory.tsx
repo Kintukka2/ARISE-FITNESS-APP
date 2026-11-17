@@ -415,7 +415,6 @@ export function VitalsBlock() {
       <div class="vrow" title={`Stats ×${v.drag.toFixed(2)}. Fatigue -${vitals.FATIGUE_PER_HOUR} each hour.`}>
         <Glyph name="bolt" /><span class="label">FTG</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={ftone} />{pip('fatigue')}
       </div>
-      {v.locked && <div class="vrow vrow--locked"><Glyph name="warn" /><small class="grow">Carried out. Fit to raid in {Math.ceil(v.lockedFor / 36e5)}h.</small>{pip('elixir')}</div>}
     </div>
   );
 }
@@ -426,7 +425,7 @@ export async function drinkFlow(id: shop.PotionId, quick = false) {
   const p = shop.POTIONS.find((x) => x.id === id)!;
   const idle = shop.potionIdle(s, id);
   if (idle) {
-    const why = { hp: 'HP is full.', mp: 'MP is full.', fatigue: 'Fatigue is 0.', elixir: 'There is no lockout.' }[id];
+    const why = { hp: 'HP is full.', mp: 'MP is full.', fatigue: 'Fatigue is 0.' }[id];
     await sys(system.refuse([why, `${system.tag(p.name, 'Item')} is not available.`], 'gear'));
     return;
   }
@@ -455,7 +454,7 @@ export async function drinkFlow(id: shop.PotionId, quick = false) {
   if (moved == null) return toast('The potion was not used.', 'bad');
   sfx.success();
   buzz([16, 26, 22]);
-  toast(id === 'elixir' ? `${p.name}: lockout lifted.` : id === 'fatigue' ? `${p.name}: Fatigue -${moved}` : `${p.name}: ${id.toUpperCase()} +${moved}`, 'xp');
+  toast(id === 'fatigue' ? `${p.name}: Fatigue -${moved}` : `${p.name}: ${id.toUpperCase()} +${moved}`, 'xp');
 }
 
 function Attributes() {

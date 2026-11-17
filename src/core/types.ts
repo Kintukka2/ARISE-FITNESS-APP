@@ -311,7 +311,7 @@ export interface Settings {
   music: boolean;
   haptics: boolean;
   fastText: boolean;
-  /** A phone notification when fatigue has faded or the lockout has lifted. */
+  /** A phone notification when fatigue has faded. */
   reminders: { on: boolean };
   /** Purchases and uses the hunter has asked not to be asked about again, by key (`buy:hp`, `drink:mp`, `buy:shelf`). */
   skipAsk: string[];
@@ -322,7 +322,7 @@ export interface Settings {
 /** What can be held in stock: the four potions, the Association's Gate Survey, and what the hunter throws. */
 /** What the hunter throws, by kind (`combat.THROWABLES`). */
 export type ThrowKind = 'flash' | 'cord' | 'ember';
-export type StockId = 'hp' | 'mp' | 'fatigue' | 'elixir' | 'survey' | 'revive' | ThrowKind;
+export type StockId = 'hp' | 'mp' | 'fatigue' | 'survey' | 'revive' | ThrowKind;
 
 export interface Stats {
   xpTotal: number;

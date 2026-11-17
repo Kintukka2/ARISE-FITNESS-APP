@@ -17,7 +17,7 @@ import { OPEN_PER_DAY } from '@/core/gates';
 import { FORMATION, KIN, KIN_ALL, KIN_AT, ROLE_AT } from '@/data/kin';
 import { bonusText, setPieces } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
-import { RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_LOCK } from '@/core/vitals';
+import { drag, RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_HP } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_PASSIVES } from '@/data/tree';
 
@@ -233,7 +233,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
       `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear pays double, once.`,
       'A clear leaves materials for the Forge, and now and then a blueprint.',
-      `Being carried out locks you out of Gates for ${WIPE_LOCK / 36e5} hours.`,
+      `Being carried out leaves you on ${WIPE_HP} HP, with Fatigue at ${FATIGUE_MAX}: Stats ×${drag(FATIGUE_MAX).toFixed(2)} until it eases. Nothing locks you out of the Gates.`,
     ],
   },
   {
