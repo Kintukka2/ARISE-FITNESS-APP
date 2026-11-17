@@ -100,6 +100,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Auto Assign spends every point as the System would, in your class’s Path first.',
       `A reset hands every point back. The first is free, then each costs the Mana Shards of ${RESET.share === 1 ? 'a clear' : `${RESET.share} clears`} at your grade.`,
       'The Association’s hunters fight with each class line’s first skills and passives.',
+      'An Association hunter’s class is worked out as yours is, from their leading stat and their grade. Below D-Rank they have none.',
+      'Tap an Association hunter in a Gate’s brief to open their card: their class, stats, skills and record beside you.',
+      'A hunter’s record follows them. The same hunter met on another Gate keeps the Gates, clears and defeats they shared with you.',
     ],
   },
   {

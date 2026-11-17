@@ -65,6 +65,7 @@ import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
 import { Keyed } from '@/ui/keyed';
+import { openHunter } from './Hunter';
 import { ModRows, SealArt } from '@/ui/seals';
 import { ParCard } from '@/ui/par';
 import { drinkFlow } from './Inventory';
@@ -598,8 +599,13 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
         </button>
       </li>
     ) },
+    // An Association hunter opens their card when tapped: their class, kit, stats and record beside you.
     ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
-      <li key={a.id} class="bformation__one is-ally"><span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></li>
+      <li key={a.id} class="bformation__one is-ally">
+        <button type="button" class="bformation__me bformation__ally" aria-label={`${a.name}, ${a.rank}-Rank. Open their card.`} onClick={() => { sfx.tap(); openHunter(a, d); }}>
+          <span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small>
+        </button>
+      </li>
     ) })),
     ...squad.map((x) => {
       const e = enemyById(x.enemyId)!;

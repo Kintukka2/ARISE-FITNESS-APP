@@ -50,7 +50,7 @@ export function defaults(): Save {
     tracked: [],
     gates: {
       clears: 0, fails: 0, withdrawn: 0, cleared: [], sealed: { day: null, ids: [] },
-      runs: {}, raid: null, met: [], together: {}, bosses: [], entered: [], surveyed: [], seen: {},
+      runs: {}, raid: null, met: [], together: {}, walked: {}, bosses: [], entered: [], surveyed: [], seen: {},
       last: null, unbroken: 0, bestUnbroken: 0, tactic: 'default',
     },
     shadows: { army: [], squad: [], fresh: [], essence: 0 },

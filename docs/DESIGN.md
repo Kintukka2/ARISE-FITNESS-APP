@@ -2796,6 +2796,34 @@ Run for run against this branch before the pass:
   cleared back at its role's; a role's bonus at one, two, three and five of it; the allies taking the role bonuses; the
   voice test's role and Melee or Ranged tooltips; the tour drags a Shadow on the brief and checks the save keeps it.
 
+## A card for the Association's hunters — built
+
+The owner asked for a hunter card like the Shadow card, opened by tapping a hunter in a Gate's brief's party, with their
+rank, power, class, skills, stats, traits and a record of their own.
+
+- **Who they are** (`core/hunters.ts`): a hunter's id fixes their name, grade and stats (`gates.hunter`), so the same
+  hunter met on another Gate is the same file. Their class is worked out as the hunter's own is, from their leading stat
+  and their grade (`classFor`; none below D-Rank); their kit is every rung's first option (`kitFor`), and where they
+  stand is their lead's (`ranks.byLead`), exactly as `raid.allySpec` fights them.
+- **Their record**: each run's hunters are written in `raid.finish` (`hunters.log`, `s.gates.walked`, a field with a
+  default): Gates walked into together, the creatures they helped defeat and the bosses, and the days first and last
+  walked with. A fight now credits an Association hunter who landed a hit on a creature, as it credits a Shadow, in
+  the run's tally (`run.kills`); nothing that pays reads their entries. Clears together were already kept
+  (`s.gates.together`, which two Secret Quests read).
+- **The card** (`screens/Hunter.tsx`), `HUNTER: {name}` in the System's cyan, the Shadow card's layout: their grade's
+  plate in a ring, `Registration` (and `Escort` or `Your instructor`), `Rank`, `Class` and `Power`; their class and how
+  they fight as info tags, the one tooltip each (a hunter's Melee or Ranged by their lead: an INT hunter's spells reach
+  either rank, a PER hunter's shots, an AGI hunter's melee past the front); where their grade stands against the Gate's;
+  `Stats`, the lead marked; `From your Shadows`, the role bonuses they take as the squad stands; `Skills` and `Traits`;
+  and `Record`, `Gates`, `Cleared`, `Defeated`, `Bosses`, over how long since you first walked in together.
+- **The lineup**: a tap on an Association hunter in the brief's party opens their card. They are not dragged: they are
+  no one's to place.
+- **Held by tests**: a hunter's class, kit and place agree with the fight's; their record is settled by a Gate played to
+  its end and grows when they are met again; their tooltips are whole sentences. The tour opens a hunter's card from the
+  brief and its class and Melee or Ranged tooltips.
+- **Balance.** Nothing a fight decides or a reward pays changed: the kills credited to the Association's hunters are a
+  record, read by their card alone. No calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

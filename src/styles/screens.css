@@ -4487,3 +4487,13 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .benemy__crown { top: -9px; width: 18px; height: 18px; }
 /* A blessing's tooltip leads with its Path's mark (a Duo's two), in advancement's gold as its chip wears it. */
 .tip__mark--boon { width: auto; grid-auto-flow: column; gap: 2px; color: var(--gold); }
+
+/* An Association hunter in the brief's party: a tap opens their card (screens/Hunter.tsx). */
+.bformation__ally { cursor: pointer; }
+.bformation__ally:hover .bformation__face, .bformation__ally:focus-visible .bformation__face { border-color: color-mix(in srgb, var(--mana) 60%, transparent); }
+/* A hunter's card: the Shadow card's layout in the System's cyan, their grade's plate where a Shadow's badge stands. */
+.huntercard .sp-head__badge > .rankplate { position: relative; display: grid; place-items: center; filter: drop-shadow(0 0 10px var(--win-glow)); }
+.huntercard__class { color: var(--gold); }
+.huntercard .sp-tag--style svg { color: var(--mana); }
+.sp-statrows li.is-lead b { color: var(--gold); }
+.huntercard__met { display: block; margin-top: 6px; text-align: center; }

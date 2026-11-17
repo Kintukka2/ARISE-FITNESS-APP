@@ -584,6 +584,29 @@ try {
     await seat().locator('.bformation__me').click(); await sleep(600);
     if ((await rankOf()) !== was) throw new Error('A TAP ON A SHADOW DID NOT CROSS IT BACK');
   }
+  {
+    // An Association hunter in the party opens their card: rank, class and power, how they fight, stats, the role
+    // bonuses they take from the Shadows, their skills and their record beside you.
+    const ally = page.locator('.sheet.is-top .bformation__ally').first();
+    if (!(await ally.count())) throw new Error('NO ASSOCIATION HUNTER IN THE PARTY OPENS A CARD');
+    await ally.click(); await sleep(700);
+    if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
+    for (const head of ['Stats', 'From your Shadows', 'Skills', 'Record']) {
+      if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
+    }
+    if (!(await page.locator('.sheet.is-top .huntercard .sp-row', { hasText: 'Class' }).count())) throw new Error('THE HUNTER CARD DOES NOT NAME THEIR CLASS');
+    await snap('hunter-card');
+    await page.locator('.sheet.is-top .huntercard .sp-head__tags .infotag').first().click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Class' }).isVisible())) throw new Error('A HUNTER\'S CLASS TAG DID NOT OPEN ITS TOOLTIP');
+    await snap('hunter-class-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+    await page.locator('.sheet.is-top .huntercard .sp-head__tags .sp-tag--style').click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'How they fight' }).isVisible())) throw new Error('A HUNTER\'S MELEE OR RANGED TAG DID NOT OPEN ITS TOOLTIP');
+    await page.keyboard.press('Escape'); await sleep(250);
+    await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(500); await snap('hunter-card-2');
+    await close(); await sleep(400);
+    if (await page.locator('.sheet.is-top .huntercard').count()) throw new Error('THE HUNTER CARD DID NOT CLOSE');
+  }
   // The enemies as portraits, the boss first and the Gatekeeper next: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
   if (await page.locator('.sheet.is-top .benemy.is-elite').count()) {

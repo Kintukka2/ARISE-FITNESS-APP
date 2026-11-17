@@ -41,7 +41,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `core/` so it can be tested, not in a screen.
 - Every reward from a raid (experience, shards, materials, blueprints, pieces found whole, weapon
   Familiarity, records, Daily Quests) is settled in one engine call, `raid.finish`. Nothing pays out on a
-  tap that can be undone.
+  tap that can be undone. The records include each Association hunter's beside you (`hunters.log`, kept in
+  `s.gates.walked` by the hunter's id, which fixes who they are), read by their card (`screens/Hunter.tsx`).
 - The day's Daily Quests (`contracts` in code) are written to the save the first time they are shown (`contracts.issue`),
   so nothing redraws them that day. Change what they pay and rerun `npm run balance`; its
   days-to-rank count them.
