@@ -24,6 +24,8 @@ import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
 import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, roleTip } from '@/ui/kin';
 import { InfoTag } from '@/ui/infotag';
+import { StandMark, standOf, standTip } from '@/ui/stand';
+import { ROW_NAME } from '@/data/ranks';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
 import { claimAll, claimPromotion } from '@/app/flow';
@@ -558,9 +560,10 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
           </dl>
           <span class="sp-head__tags">
             <RankPlate rank={e.rank} size={20} />
-            {/* Family and role tell what they are to the squad when tapped. */}
+            {/* Family and role tell what they are to the squad when tapped, and where it stands what that decides in a fight. */}
             <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
             <InfoTag class="sp-tag" tip={roleTip(e.role)}>{e.role}</InfoTag>
+            <InfoTag class="sp-tag sp-tag--stand" tip={standTip(e.role)}><StandMark row={standOf(e.role)} />{ROW_NAME[standOf(e.role)]}</InfoTag>
             <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Not deployed'}</span>
           </span>
         </div>

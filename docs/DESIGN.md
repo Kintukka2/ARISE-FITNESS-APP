@@ -2646,9 +2646,33 @@ the Spire's keyword tips, Hades II's boons and their glossary, Darkest Dungeon, 
   is the role's wherever the Shadow stands, and a Shadow's role sets its rank), so the sentence is gone, as Teamfight
   Tactics' role tip says only what the role does.
 - **Left for later**: Hades II's and Slay the Spire's box for each keyword a tooltip names, and Teamfight Tactics'
-  tile for where a unit stands. No tooltip yet names a word it does not explain itself, and a Shadow's card now shows
-  its rank nowhere.
+  tile for where a unit stands (since built: "Where a Shadow stands, on its card"). No tooltip yet names a word it does
+  not explain itself.
 - **Balance.** Nothing a fight, a map or a reward reads changed: no calibration and no campaign.
+
+## Where a Shadow stands, on its card — built
+
+The owner asked for the Shadow card to say where the Shadow stands, beside its role, once its role's tooltip
+stopped saying it (the rank decides nothing of the aura). It is Teamfight Tactics' tile for where a unit stands,
+left for later in "One tooltip, the fight's".
+
+- **A third info tag** after the family and the role (`ui/stand.tsx`): two lines, the one it stands in lit in the
+  Shadows' violet, the front on top as the brief's party faces the foes, and `Front` or `Rear`. Where it stands is
+  read from the engine's own placing, `ranks.byRole`, as `raid.shadowSpec` places a Shadow.
+- **Its tooltip** is the one tooltip, `Front` or `Rear` and `Where it stands`, saying only what standing there decides
+  in a fight, its share read from `REAR_MELEE`:
+
+  | Where | Who | Tooltip |
+  |---|---|---|
+  | Front | Brute, Guardian | `Melee hits reach it. While anyone stands in the Front, they cannot reach the Rear.` |
+  | Front | Assassin, Flier | the same, then `Its melee reaches the foes’ Rear as well.` |
+  | Rear | Caster, Leader, Status Specialist | `Melee hits cannot reach it while anyone stands in the Front. Its own melee hits land at 50%.` |
+  | Rear | Archer / Shooter | `Melee hits cannot reach it while anyone stands in the Front. Its shots reach either rank, and lose nothing from here.` |
+
+- On a phone the tag wraps under the family and role when the row is full, ahead of `Not deployed`.
+- **Held by tests**: the voice test holds every role's tooltip to its rank's name and what it decides, the rear's share
+  read from `REAR_MELEE`; the tour opens it on the Shadow card. The Guide's Kin and Formation says the tag opens.
+- **Balance.** Nothing a fight or a reward reads changed: no calibration and no campaign.
 
 ## What stays out
 

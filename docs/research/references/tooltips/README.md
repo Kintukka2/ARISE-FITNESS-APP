@@ -119,5 +119,6 @@ ARISE did not take, for now:
 - **Where a unit stands as a tile, not a sentence.** Teamfight Tactics' panel shows 'Back' over three hexes and '4 Hex'
   beside the ability, and its role's tip says only what the role does ('Casters gain 7 mana per attack.'); Darkest
   Dungeon II shows a skill's ranks as pips beside 'Ranged'. ARISE took the role's tip saying only what the role does:
-  a Shadow's Formation tip is its aura alone, since where the Shadow stands decides nothing of it. It has not yet
-  taken the tile, so a Shadow's card does not show its rank.
+  a Shadow's Formation tip is its aura alone, since where the Shadow stands decides nothing of it. Then it took the
+  tile: a `Front` or `Rear` tag of its own beside the role on a Shadow's card, its two lines with the one it stands in
+  lit, and its tooltip what standing there decides in a fight.

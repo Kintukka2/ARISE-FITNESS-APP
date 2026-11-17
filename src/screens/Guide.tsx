@@ -418,7 +418,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'The Association’s hunters take neither.',
       'A Gate keeps the Kin and the Formation you walked in with until you leave it.',
       'The Army shows each Kin your squad makes, its steps lit as they are reached, and each aura its roles give.',
-      'Tap a Shadow’s family or role on its card to see what it gives the squad.',
+      'Tap a Shadow’s family or role on its card to see what it gives the squad, and its Front or Rear to see what standing there decides.',
     ],
   },
   {

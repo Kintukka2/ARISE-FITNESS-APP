@@ -915,7 +915,7 @@ try {
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
   // The card's family and role tell what they are to the squad when tapped, and a tap away closes it.
-  if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 2) throw new Error('THE SHADOW CARD\'S FAMILY AND ROLE DO NOT TELL WHAT THEY ARE');
+  if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 3) throw new Error('THE SHADOW CARD\'S FAMILY, ROLE AND PLACE DO NOT TELL WHAT THEY ARE');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').first().hover(); await sleep(200);
   await page.locator('.sheet.is-top .sp-head__tags .infotag').first().click(); await sleep(300);
   // The game's one tooltip, as a fight's: its mark and name, its kind, a sentence coloured by its keywords.
@@ -931,6 +931,14 @@ try {
   if (await page.locator('.tip.tip--shadow', { hasText: 'Stands in the' }).count()) throw new Error('A ROLE\'S TOOLTIP STILL SAYS WHERE IT STANDS');
   if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Formation' }).count())) throw new Error('THE ROLE\'S TOOLTIP DOES NOT NAME ITS KIND');
   await snap('shadow-role-tip');
+  await page.keyboard.press('Escape'); await sleep(250);
+  // Beside the role, where the Shadow stands: Front or Rear, its tooltip what that decides in a fight.
+  const stand = page.locator('.sheet.is-top .sp-head__tags .sp-tag--stand');
+  if (!/^(Front|Rear)\b/.test((await stand.innerText()).trim())) throw new Error('THE SHADOW CARD DOES NOT SAY WHERE IT STANDS');
+  await stand.click(); await sleep(300);
+  if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Where it stands' }).isVisible())) throw new Error('THE PLACE TAG TAPPED DID NOT OPEN ITS TOOLTIP');
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Melee hits' }).count())) throw new Error('THE PLACE\'S TOOLTIP DOES NOT SAY WHAT IT DECIDES');
+  await snap('shadow-stand-tip');
   await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
