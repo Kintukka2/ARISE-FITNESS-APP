@@ -249,6 +249,8 @@ strong { color: var(--ink); font-weight: 700; }
 .btn:active { transform: scale(0.97); }
 .btn[disabled] { opacity: 0.4; pointer-events: none; }
 .btn.is-dim { opacity: 0.55; }
+/* What a button costs or holds, beside its verb and set apart from it, never joined by a dot: `Forge  ⬡ 120`. */
+.btn__aside { display: inline-flex; align-items: center; gap: 3px; margin-left: 0.6em; padding-left: 0.6em; border-left: 1px solid color-mix(in srgb, currentColor 28%, transparent); font-size: 0.9em; opacity: 0.82; font-weight: 600; letter-spacing: 0.02em; }
 @keyframes sheen { to { transform: translateX(120%); } }
 .btn--primary { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, white 8%), color-mix(in srgb, var(--accent) 60%, black)); color: #02121e; border-color: color-mix(in srgb, var(--accent) 50%, white); box-shadow: 0 0 22px var(--accent-glow); }
 .btn--primary.is-ready { animation: ready 1.6s ease-in-out infinite; }

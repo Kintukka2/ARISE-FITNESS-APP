@@ -67,6 +67,18 @@ export function Card({ children, class: cls, tour, hot, tone, onClick }: { child
   );
 }
 
+/**
+ * Short facts set side by side, as a game's item header sets its kind, its quality and where it is worn: each its own
+ * span, spaced, never joined by a middle dot (docs/VOICE.md, "No middle dots"). Empty facts are left out.
+ */
+export function Facts({ items, class: cls = '' }: { items: ComponentChildren[]; class?: string }) {
+  const shown = items.filter((x) => x !== null && x !== undefined && x !== false && x !== '');
+  return <span class={`facts ${cls}`}>{shown.map((x, i) => <span key={i} class="facts__one">{x}</span>)}</span>;
+}
+
+/** A count beside a tab's name, as a game's tab carries how many it holds: `Items 42`. */
+export const Count = ({ n }: { n: ComponentChildren }) => <span class="tabcount num">{n}</span>;
+
 export function Section({ title, right, children }: { title: string; right?: ComponentChildren; children?: ComponentChildren }) {
   return (
     <div class="section">
@@ -142,7 +154,7 @@ export function CoachHead({ speaking = false, size = 40 }: { speaking?: boolean;
   return (
     <header class="coachhead">
       <span class="coachface"><CoachPortrait size={size} /></span>
-      <span class="coachhead__who"><b class="coachname">Ryn Valcorde</b><small class="coachrole">Instructor · Hunter Training</small></span>
+      <span class="coachhead__who"><b class="coachname">Ryn Valcorde</b><small class="coachrole">Hunter Training Instructor</small></span>
       <Signal live={speaking} />
     </header>
   );

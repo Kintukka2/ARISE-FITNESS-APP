@@ -30,6 +30,8 @@
 }
 .topbar__rank { flex: none; display: grid; place-items: center; }
 .topbar__mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; max-width: 520px; margin: 0 auto; }
+.topbar__name .facts { flex-wrap: nowrap; }
+.topbar__name .facts__one + .facts__one { opacity: 0.7; }
 .topbar__name { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar__row { display: flex; align-items: center; gap: 6px; }
 .xpbar { position: relative; flex: 1; min-width: 0; height: 26px; border: 1px solid var(--edge); border-radius: var(--r-sm); background: rgba(4, 10, 24, 0.8); overflow: hidden; }
@@ -104,7 +106,7 @@
 .syswin.sysframe .syswin__line { color: var(--sys-ink); font-size: 0.94rem; line-height: 1.55; }
 .syswin.sysframe .syswin__foot { padding: 2px 8px 2px; gap: 12px; }
 .syswin.sysframe .syswin__foot .btn { flex: 1 1 0; max-width: 176px; padding-inline: 10px; text-align: center; }
-/* A question's two answers keep a line each, a costly Yes with its cost (`Yes · HP -289`), side by side as every other. */
+/* A question's two answers keep a line each, a costly Yes with its cost (`Break The Seal` over the window's `HP -289`), side by side as every other. */
 .syswin.sysframe .syswin__foot .btn:first-child:nth-last-child(2), .syswin.sysframe .syswin__foot .btn:nth-child(2):last-child { white-space: nowrap; }
 
 /* Valcorde's window, the app's, and the other voices': a plain frame of their own. */
@@ -260,6 +262,11 @@
   background: rgba(10, 22, 46, 0.6);
   white-space: nowrap;
 }
+/* Short facts side by side, spaced and never dotted (ui/components.tsx, Facts). */
+.facts { display: inline-flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.85em; row-gap: 1px; }
+.facts__one { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+/* A tab's count, small and dimmer than its name. */
+.tabcount { margin-left: 6px; font-size: 0.82em; opacity: 0.62; font-weight: 600; }
 .chip--btn { min-height: 34px; padding: 5px 12px; transition: all 160ms; }
 /* Standing orders: equal rectangles, two to a row. An odd one out (a Shadow's "Party's orders") takes the top row. */
 .chip--btn.is-on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }

@@ -2796,6 +2796,86 @@ Run for run against this branch before the pass:
   cleared back at its role's; a role's bonus at one, two, three and five of it; the allies taking the role bonuses; the
   voice test's role and Melee or Ranged tooltips; the tour drags a Shadow on the brief and checks the save keeps it.
 
+## A card for the Association's hunters — built
+
+The owner asked for a hunter card like the Shadow card, opened by tapping a hunter in a Gate's brief's party, with their
+rank, power, class, skills, stats, traits and a record of their own; then, on seeing it, for an overhaul: the class
+said twice, a tooltip on the class that spoke of Strike, Strike written as a sentence instead of a skill, a section on
+the squad's Shadows that has no place on a hunter's card, and a record that should be the partnership's.
+
+- **Who they are** (`core/hunters.ts`): a hunter's id fixes their name, grade and stats (`gates.hunter`), so the same
+  hunter met on another Gate is the same file. Their class is worked out as the hunter's own is, from their leading stat
+  and their grade (`classFor`; none below D-Rank); their kit is every rung's first option (`kitFor`), and where they
+  stand is their lead's (`ranks.byLead`), exactly as `raid.allySpec` fights them.
+- **Their record**: each run's hunters are written in `raid.finish` (`hunters.log`, `s.gates.walked`, a field with a
+  default): parties made together, the Gates you were carried out of together, the creatures they helped defeat and the
+  bosses, and the days first and last partied. A fight now credits an Association hunter who landed a hit on a
+  creature, as it credits a Shadow, in the run's tally (`run.kills`); nothing that pays reads their entries. Clears
+  together were already kept (`s.gates.together`, which two Secret Quests read), so a save from before counts a hunter's
+  parties as at least their clears. `hunters.recordOf` also places them among every hunter you have partied with.
+- **The card** (`screens/Hunter.tsx`), `HUNTER: {name}` in the System's cyan, reading who they are, what they fight
+  with, and what you have done together:
+  - the head: their grade's plate in a ring, `Registration` (with `Escort` or `Your instructor`), `Rank`, `Class` and
+    `Power`, the class said once, its value the info tag; how they fight (`Melee` or `Ranged`, by their lead: an INT
+    hunter's spells reach either row, a PER hunter's shots, an AGI hunter's melee past the front). Where their grade
+    stands against the Gate's is the brief's alone (below);
+  - `Stats`, the five in one row, the lead under a gold `Lead` flag;
+  - `Skills`, Strike first, then their class's, and `Traits`;
+  - `Together`: the parties made, large, over `Cleared`, `Carried out`, `Defeated`, `Bosses`, then `First partied`,
+    `Last partied` and `Among your partners` (`Most often of 14`).
+  Nothing on it speaks of the squad's Shadows.
+- **The lineup**: a tap on an Association hunter in the brief's party opens their card. They are not dragged: they are
+  no one's to place.
+- **Held by tests**: a hunter's class, kit and place agree with the fight's; their record is settled by a Gate played to
+  its end, counts a party carried out, grows when they are met again and places them among your partners; their
+  tooltips are whole sentences. The tour opens a hunter's card, checks the class is said once, Strike is a skill and
+  the Shadows are not spoken of, opens both tooltips, and seeds a hunter partied with before to read their Together.
+- **Balance.** Nothing a fight decides or a reward pays changed: the kills credited to the Association's hunters are a
+  record, read by their card alone. No calibration and no campaign.
+
+## Rows, not ranks; no middle dots; classes rewritten — built
+
+The owner read the hunter card and the tooltips and asked for four things: drop the card's grade tag, since the brief's
+arrows already say it; stop calling a row a rank, since `Their shots reach either rank` reads as `C-Rank`; take the
+middle dot out of every screen, since `Physical ×1.6 · One target · Cooldown 2 · Inflicts Marked` reads as made by a
+machine; and rewrite the class lines, after how other games write a class.
+
+- **The grade, on the brief alone.** The hunter card no longer says `Above the Gate`, `Under the Gate` or
+  `At the Gate’s grade`. The brief's party keeps its arrow beside each hunter's face: ▲ in green when their grade is
+  above the Gate's, ▼ in red when it is below.
+- **Rows.** Front and Rear are rows, as Etrian Odyssey and Final Fantasy stand a party in a front row and a back row. A
+  rank is only ever a hunter's grade. The Melee and Ranged tooltips open on where the unit fights best, as Etrian
+  Odyssey's skill text names the row a skill wants: `Fights best from the Rear row. Its shots reach any foe, Front or
+  Rear, at full strength.`; `Fights best from the Front row. Its melee hits reach only the foes’ Front row while anyone
+  stands in it, and land at 50% from the Rear row.` The brief's lineup says `drag to a row`, and the Guide says a rank
+  is a grade, never a row.
+- **No middle dots.** Nothing a player reads joins facts with a middle dot. Each kind of line takes the shape the
+  reference games give it:
+  - a skill is told in sentences, as Honkai: Star Rail and Slay the Spire tell one: `Physical ×1.6 against one target.
+    Inflicts Marked. Cooldown 2.`;
+  - a list of stats or gains joins with commas (`gear.bonusText`, now `gear.bonusParts` joined; `bundleText`);
+  - a card's short facts sit side by side, spaced, as a game's item header sets a kind beside a quality (`Facts` in
+    `ui/components.tsx`);
+  - a tab's count follows its name, smaller and dimmer (`Count`: `Items 28`);
+  - a button's price sits after its verb behind a hairline (`btn__aside`);
+  - a System window gives `Price:` and `Held:` a line each;
+  - a toast is a sentence (`Ember Flask readied.`);
+  - a name with a part of it takes a colon: `The Pale Spire: Floors 26-30`, `Daily Rift: Iron Den`.
+  The log keeps what older saves wrote, read through `logName`. A costly question's Yes says what it does,
+  **Break The Seal**, and its cost stays in the window's red line.
+- **Classes.** Every class line is written as Fire Emblem and Final Fantasy Tactics write a class: what kind of fighter
+  it is and how it fights, each rung a step past the last. The top rung of every line reads `{Stat} past any measured
+  limit.` A line says only what any hunter of that class can do: where it stands and what its lead gives, never a skill
+  of its kit, since the hunter's own skills come from the skill tree. The class tooltip's second line names the lead and
+  the rung it rises to, as Fire Emblem's class screen shows a promotion: `Leads with Strength. Rises to Berserker at
+  C-Rank.` (`The highest class of its line.` at S-Rank).
+- **Held by tests.** The voice test fails on a middle dot anywhere in the source outside a comment, and on a Melee or
+  Ranged line that does not open `Fights best from the`. It holds every class line to one or two sentences, never `A class given
+  to`; a row it names is the row the fight stands that class in; every rung below S rises to the next of its own line. The tour reads every screen it shoots for a middle dot. It
+  opens a hunter's Melee or Ranged tooltip and fails on `rank` in it, and opens a classed hunter's class tooltip for its
+  lead and next rung.
+- **Balance.** Words only. Nothing a fight decides or a reward pays changed: no calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

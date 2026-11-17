@@ -93,7 +93,7 @@ export function TemperBlock({ it }: { it: Item }) {
           ) : (
             <span class="temperslot__text">
               <b>Empty</b>
-              <small class="temperslot__can">{temper.statsFor(it).map(nameOf).join(' · ')}</small>
+              <small class="temperslot__can">{temper.statsFor(it).map(nameOf).join(', ')}</small>
             </span>
           )}
         </div>

@@ -16,7 +16,7 @@ import { group } from '@/core/util';
 import { setById } from '@/data/sets';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Empty, GearArt, Section, SetMark, Shards } from '@/ui/components';
+import { Btn, Count, Empty, Facts, GearArt, Section, SetMark, Shards } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { CostGrid, MatArt, TrackMark, bundleText, track } from '@/ui/forge';
 import { Glyph, Shard, STAT_ICON } from '@/ui/icons';
@@ -60,8 +60,8 @@ function Forge({ initial }: { initial: View }) {
         <span class="forgehearth__shards"><Shards n={s.wallet.shards} /></span>
       </section>
       <div class="seg bag__views" role="tablist" aria-label="View">
-        <button type="button" role="tab" aria-selected={view === 'blueprints'} class={`seg__btn ${view === 'blueprints' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('blueprints'); }}>Blueprints · {known.length}</button>
-        <button type="button" role="tab" aria-selected={view === 'materials'} class={`seg__btn ${view === 'materials' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('materials'); }}>Materials · {kinds}</button>
+        <button type="button" role="tab" aria-selected={view === 'blueprints'} class={`seg__btn ${view === 'blueprints' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('blueprints'); }}>Blueprints<Count n={known.length} /></button>
+        <button type="button" role="tab" aria-selected={view === 'materials'} class={`seg__btn ${view === 'materials' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('materials'); }}>Materials<Count n={kinds} /></button>
       </div>
       {view === 'blueprints' ? <Blueprints /> : <Materials />}
     </div>
@@ -136,7 +136,7 @@ function BlueprintRow({ d, better }: { d: GearDef; better: boolean }) {
       <span class="bprow__art"><GearArt defId={d.id} size={48} /></span>
       <span class="bprow__text">
         <b>{d.name}</b>
-        <small>{rarity(d.rank)} {d.slot}{made ? ` · Held: ${made}` : ''}</small>
+        <small><Facts items={[`${rarity(d.rank)} ${d.slot}`, made ? `${made} held` : null]} /></small>
         <span class="bprow__mats" aria-hidden="true">
           {lines.map((x) => (
             <span key={x.id} class={`bprow__mat ${x.have >= x.need ? 'is-ok' : 'is-short'}`}>
@@ -251,7 +251,7 @@ function Recipe({ defId }: { defId: string }) {
         )}
         <span class="forgealtar__burst" key={strikes} aria-hidden="true">{strikes > 0 && <>{[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <i key={i} style={`--k: ${i}`} />)}</>}</span>
         <Btn kind="gold" block class="forgebtn" disabled={!known || !ok} sound="success" onClick={go}>
-          {!known ? 'Blueprint not known' : ok ? <><Glyph name="forge" /> Forge · <Shards n={cost.shards} /></> : s.wallet.shards < cost.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(cost.shards)}` : 'Materials missing'}
+          {!known ? 'Blueprint not known' : ok ? <><Glyph name="forge" /> Forge<span class="btn__aside"><Shards n={cost.shards} /></span></> : s.wallet.shards < cost.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(cost.shards)}` : 'Materials missing'}
         </Btn>
       </section>
       {mine.length > 0 && (
@@ -280,7 +280,7 @@ function TrackMissing({ c }: { c: forge.Cost }) {
   };
   return (
     <Btn kind="ghost" size="sm" block class={`trackall ${all ? 'is-on' : ''}`} onClick={go}>
-      <Glyph name="forge" /> {all ? 'Stop Tracking' : `Track Missing · ${short.length}`}
+      <Glyph name="forge" /> {all ? 'Stop Tracking' : <>Track Missing<Count n={short.length} /></>}
     </Btn>
   );
 }
@@ -339,7 +339,7 @@ function HeldRow({ it }: { it: Item }) {
     const got = store.update((x) => forge.recycle(x, it.id));
     if (!got) return;
     sfx.success();
-    toast(`Recycled · ${bundleText(got)}`, 'good');
+    toast(`Recycled: ${bundleText(got)}`, 'good');
   };
   return (
     <div class="sysbox heldrow" data-rarity={gear.defOf(it)?.rank}>
@@ -369,7 +369,7 @@ export function Familiarity({ defId }: { defId: string }) {
         <Pips n={f.rank} />
         <i class="famcard__bar" aria-hidden="true"><i style={`width: ${Math.round(share * 100)}%`} /></i>
         <small class="num">{f.next ? `Familiarity points: ${group(f.points)}/${group(f.next)}` : `Familiarity points: ${group(f.points)}`}</small>
-        <small>Attack and magic <b class="num grant">+{bonus}%</b> · Forged quality from <b class="num grant">{Math.round(forge.floorOf(s, defId) * 100)}%</b></small>
+        <small><Facts items={[<>Attack and magic <b class="num grant">+{bonus}%</b></>, <>Forged quality from <b class="num grant">{Math.round(forge.floorOf(s, defId) * 100)}%</b></>]} /></small>
       </div>
     </Section>
   );

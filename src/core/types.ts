@@ -406,6 +406,12 @@ export interface Save {
     /** Distinct NPC hunter ids raided beside, and clears shared with each. */
     met: string[];
     together: Record<string, number>;
+    /**
+     * Each Association hunter's record beside the hunter, by their id, settled in `raid.finish` (`hunters.log`):
+     * Gates walked in together, those you were carried out of together, creatures they helped defeat, bosses, and
+     * the days first and last walked with. Clears together are `together`.
+     */
+    walked: Record<string, { runs: number; carried?: number; kills: number; bosses: number; first: string; last: string }>;
     bosses: string[];
     /** Every Gate the hunter has walked into: the brief shows its map from then on (`gates.mapKnown`). */
     entered: string[];

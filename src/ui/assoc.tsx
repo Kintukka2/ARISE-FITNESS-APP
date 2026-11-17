@@ -16,7 +16,7 @@ import { ASSOC_BRIEF, ASSOC_FIRST, ASSOC_PAID } from '@/data/narrative';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { useState } from 'preact/hooks';
-import { Bar } from './components';
+import { Bar, Facts } from './components';
 import { sfx } from '@/audio/audio';
 import { CoachPortrait, Glyph } from './icons';
 import { sys } from './overlays';
@@ -76,7 +76,7 @@ export function AssocCard() {
   const pay = rewardText(q.reward);
   const head = (
     <header class="assoccard__head">
-      <span class="assoccard__label">Association Quest · No. {q.n + 1}</span>
+      <span class="assoccard__label">Association Quest No. {q.n + 1}</span>
       <span class="assoccard__who">Ryn Valcorde</span>
     </header>
   );
@@ -96,7 +96,7 @@ export function AssocCard() {
           <span class="assoccard__report">
             <i class="assoccard__sweep" aria-hidden="true" />
             <b>Report To Ryn</b>
-            <span class="assoccard__reportpay">XP <span class="num">+{q.xp}</span>{pay ? <> · {pay}</> : null}</span>
+            <span class="assoccard__reportpay"><Facts items={[<>XP <span class="num">+{q.xp}</span></>, pay]} /></span>
             <Glyph name="chevron" />
           </span>
         </button>
@@ -174,7 +174,7 @@ export async function reportAssoc() {
       : w?.kind === 'blueprint' || w?.kind === 'alloy' ? [paid.blueprint ? `Blueprint: ${gearDef(paid.blueprint)?.name}` : null, Object.keys(paid.mats).length ? bundleText(paid.mats) : null]
       : [rewardText(w)]),
   ].filter((x): x is string => !!x);
-  await sys({ title: 'Valcorde', kind: 'coach', lines: [line, `<em>Received:</em> ${got.join(' · ')}`], actions: [{ label: 'Next Job', value: null, primary: true }] });
+  await sys({ title: 'Valcorde', kind: 'coach', lines: [line, `<em>Received:</em> ${got.join(', ')}`], actions: [{ label: 'Next Job', value: null, primary: true }] });
   await rewardChain(paid.xp);
   if (paid.next) await sys({ title: 'Valcorde', kind: 'coach', lines: [briefOf(paid.next)], actions: [{ label: 'On It', value: null, primary: true }] });
 }

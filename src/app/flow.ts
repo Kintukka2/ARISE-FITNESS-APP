@@ -212,7 +212,8 @@ export async function claimAll(badge: Element | null) {
   const lines = (got: shadows.Claimed) => [
     ...got.promoted.flatMap((p) => [
       `${system.tag(nameOf(p.id))} has been promoted.`,
-      `${system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`)} · Level cap: ${system.change(R[p.from].cap, system.gain(R[p.to].cap))}`,
+      system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`),
+      `Level cap: ${system.change(R[p.from].cap, system.gain(R[p.to].cap))}`,
       ...(p.second ? [`Skill learned: ${system.tag(p.second)}`] : []),
     ]),
     ...got.awakened.map((w) => `${system.tag(nameOf(w.id))} has awakened. ${system.gain(`Awakening ${'★'.repeat(w.to)}`)}`),
@@ -325,7 +326,7 @@ export async function catchUp() {
 export function surveyNow(d: Dungeon): boolean {
   if (!store.update((x) => raid.survey(x, d))) return false;
   sfx.success();
-  toast(`${SURVEY.name} · ${d.name} charted.`, 'good');
+  toast(`${d.name} charted. ${SURVEY.name} used.`, 'good');
   return true;
 }
 
@@ -336,7 +337,7 @@ export function drinkHeld(id: 'hp' | 'mp'): boolean {
   const moved = store.update((x) => shop.drink(x, id));
   if (moved == null) return false;
   sfx.success();
-  toast(`${p.name} · ${id.toUpperCase()} +${moved}`, 'xp');
+  toast(`${p.name}: ${id.toUpperCase()} +${moved}`, 'xp');
   return true;
 }
 
@@ -344,7 +345,7 @@ export function drinkHeld(id: 'hp' | 'mp'): boolean {
 export function readyThrow(id: ThrowId) {
   if (!store.update((x) => shop.ready(x, id))) return;
   sfx.blip();
-  toast(`${THROWABLES.find((k) => k.id === id)!.name} · Readied`, 'good');
+  toast(`${THROWABLES.find((k) => k.id === id)!.name} readied.`, 'good');
 }
 
 /**
@@ -368,7 +369,7 @@ export async function reviveNow(d: Dungeon): Promise<boolean> {
   const hp = store.update((x) => raid.revive(x, d, x.gates.raid!, uid!));
   if (!hp) return false;
   sfx.success();
-  toast(`${shop.REVIVE.name} · ${who} stands again. HP ${hp}.`, 'good');
+  toast(`${who} stands again. HP ${hp}.`, 'good');
   return true;
 }
 
@@ -419,7 +420,7 @@ export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
       const readied = run ? (run.throw ?? k.id) === k.id : shop.readied(s) === k.id;
       return {
         id: k.id, name: k.name, glyph: THROW_GLYPH[k.id], count: n, held: `${n}/${shop.THROW_MAX}`,
-        effect: `${k.status} · ${k.reach > 1 ? `Up to ${k.reach} foes` : 'One foe'}`,
+        effect: `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`,
         off: n <= 0 ? 'None held' : run ? (readied ? 'In a fight' : 'Not readied') : readied ? 'Readied' : undefined,
         act: 'Ready', use: () => readyThrow(k.id),
       };

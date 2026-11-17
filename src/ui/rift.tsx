@@ -16,6 +16,7 @@ import type { SealId } from '@/data/seals';
 import { MatArt } from './forge';
 import { Glyph } from './icons';
 import { SealArt } from './seals';
+import { Facts } from './components';
 
 const DAY = 864e5;
 const noon = (day: string) => Date.parse(`${day}T12:00:00`);
@@ -133,11 +134,11 @@ export function RiftResults({ d, r, title, line, xp, shards, ember, mods }: {
     <section class={`riftres ${r.newBest ? 'is-best' : ''}`} style={`--rr: var(--rank-${rating})`}>
       <header class="riftres__title">
         <span class="riftres__tear" aria-hidden="true"><RiftTear size={96} /></span>
-        <small class="label">{RIFT_NAME} · {riftDate(rift.riftDay(d))}</small>
+        <small class="label"><Facts items={[RIFT_NAME, riftDate(rift.riftDay(d))]} /></small>
         <h2>{title}</h2>
         <i class="rhead__rule" aria-hidden="true" />
         <span class="riftres__gate">
-          <b>{d.name.replace(`${RIFT_NAME} · `, '')}</b>
+          <b>{d.name.replace(`${RIFT_NAME}: `, '')}</b>
           {mods.map((id) => <SealArt key={id} id={id} size={20} class="is-on" />)}
         </span>
         {line && <p class="muted">{line}</p>}

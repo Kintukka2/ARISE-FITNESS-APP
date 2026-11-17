@@ -13,6 +13,7 @@ import { EMBER } from '@/data/forge';
 import { MEDAL_PAY, MEDALS, PAR_EMBER, type MedalId } from '@/data/par';
 import { MatArt } from './forge';
 import { glyphPath } from './icons';
+import { Facts } from './components';
 
 /** The medals worst first, as they are reached. */
 const UP: MedalId[] = ['bronze', 'silver', 'gold'];
@@ -113,7 +114,7 @@ export function ParRow({ r }: { r: NonNullable<RaidResult['par']> }) {
       <span class="rchal__body">
         <b>{r.medal ? `${NAME[r.medal]} medal` : 'No medal'}</b>
         <small class="num">
-          {r.rounds} rounds · par {r.par} · <span class={diff <= 0 ? 'rchal__under' : 'rchal__over'}>{diff < 0 ? `${-diff} under` : diff > 0 ? `${diff} over` : 'level'}</span>
+          <Facts items={[`${r.rounds} rounds`, `Par ${r.par}`, <span class={diff <= 0 ? 'rchal__under' : 'rchal__over'}>{diff < 0 ? `${-diff} under` : diff > 0 ? `${diff} over` : 'level'}</span>]} />
         </small>
       </span>
       <span class="rchal__side">

@@ -34,6 +34,8 @@ async function phone(raw) {
   return p;
 }
 let page = await phone(save);
+/** The first Association hunter whose card the tour opens: a record with them is seeded later, to read their Together. */
+let metHunter = null;
 
 const sleep = (ms) => page.waitForTimeout(ms);
 /** Turn over every piece of loot on the results, and wait for the high grades to finish gathering themselves. */
@@ -41,7 +43,13 @@ async function revealLoot() {
   for (let n = 0; n < 12 && (await page.locator('.flip.is-down').count()); n++) { await page.locator('.flip.is-down').first().click(); await page.waitForTimeout(80); }
   await page.waitForFunction(() => !document.querySelector('.flip.is-charging, .flip.is-down'), null, { timeout: 8000 });
 }
-const snap = (name, full = false) => page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
+// Every screen shot is read for a middle dot first: nothing a player reads joins facts with one (VOICE.md, "No middle dots").
+const dotted = [];
+const snap = async (name, full = false) => {
+  const said = await page.evaluate(() => document.body.innerText).catch(() => '');
+  for (const line of said.split('\n')) if (line.includes('\u00b7')) dotted.push(`${name}: ${line.trim()}`);
+  return page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
+};
 /** The arena's pace and Auto sit behind one button in its head: open its menu and choose. */
 async function setPace(which) {
   await page.locator('.pacebtn').click();
@@ -489,7 +497,7 @@ try {
   await page.locator('.bagwheel__slot[aria-label^="Ember Flask"]').click(); await sleep(300);
   await snap('brief-bag');
   await page.locator('.bagwheel__hub .btn', { hasText: /^Ready$/ }).click(); await sleep(400);
-  if (!(await page.locator('.toast', { hasText: 'Ember Flask · Readied' }).count())) throw new Error('THE BAG ON THE BRIEF DID NOT READY THE THROWABLE');
+  if (!(await page.locator('.toast', { hasText: 'Ember Flask readied.' }).count())) throw new Error('THE BAG ON THE BRIEF DID NOT READY THE THROWABLE');
   // Seals: pressed on the brief itself, a tap each; one pressed adds its Ember and says what it does.
   if (!(await page.locator('.sheet.is-top .bseal').count())) throw new Error('THE BRIEF OFFERS NO SEALS');
   if (await page.locator('.sheet.is-top .bsealbtn').count()) throw new Error('THE SEALS STILL HIDE BEHIND A BUTTON');
@@ -583,6 +591,54 @@ try {
     await snap('brief-shadow-moved');
     await seat().locator('.bformation__me').click(); await sleep(600);
     if ((await rankOf()) !== was) throw new Error('A TAP ON A SHADOW DID NOT CROSS IT BACK');
+  }
+  {
+    // An Association hunter in the party opens their card: rank, class and power, how they fight, stats, the role
+    // bonuses they take from the Shadows, their skills and their record beside you.
+    const ally = page.locator('.sheet.is-top .bformation__ally').first();
+    if (!(await ally.count())) throw new Error('NO ASSOCIATION HUNTER IN THE PARTY OPENS A CARD');
+    metHunter = await ally.getAttribute('data-hunter');
+    await ally.click(); await sleep(700);
+    if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
+    for (const head of ['Stats', 'Skills', 'Together']) {
+      if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
+    }
+    // Shadows and hunters share nothing directly, so the card says nothing of the squad.
+    if (await page.locator('.sheet.is-top .huntercard .section', { hasText: 'From your Shadows' }).count()) throw new Error('THE HUNTER CARD STILL SPEAKS OF YOUR SHADOWS');
+    // The class is said once, in its row, and Strike is a skill like any other.
+    if ((await page.locator('.sheet.is-top .huntercard .huntercard__class').count()) !== 1) throw new Error('THE HUNTER CARD DOES NOT NAME THEIR CLASS ONCE');
+    if (!(await page.locator('.sheet.is-top .huntercard .sp-skill', { hasText: '[Skill: Strike]' }).count())) throw new Error('THE HUNTER CARD DOES NOT LIST STRIKE AMONG THEIR SKILLS');
+    if ((await page.locator('.sheet.is-top .huntercard .hc-stats li').count()) !== 5) throw new Error('THE HUNTER CARD DOES NOT SET OUT FIVE STATS');
+    await snap('hunter-card');
+    await page.locator('.sheet.is-top .huntercard .huntercard__class').click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Class' }).isVisible())) throw new Error('A HUNTER\'S CLASS TAG DID NOT OPEN ITS TOOLTIP');
+    await snap('hunter-class-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+    await page.locator('.sheet.is-top .huntercard .sp-head__tags .sp-tag--style').click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'How they fight' }).isVisible())) throw new Error('A HUNTER\'S MELEE OR RANGED TAG DID NOT OPEN ITS TOOLTIP');
+    // Front and Rear are rows: a rank is only ever a hunter's grade.
+    if (await page.locator('.tip.tip--system', { hasText: /\branks?\b/ }).count()) throw new Error('THE MELEE OR RANGED TOOLTIP CALLS A ROW A RANK');
+    await snap('hunter-style-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+    await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(500); await snap('hunter-card-2');
+    await close(); await sleep(400);
+    if (await page.locator('.sheet.is-top .huntercard').count()) throw new Error('THE HUNTER CARD DID NOT CLOSE');
+    // A classed hunter's class tooltip: what kind of fighter it is, then its lead and the rung it rises to.
+    const allies = page.locator('.sheet.is-top .bformation__ally');
+    for (let i = 0; i < (await allies.count()); i++) {
+      await allies.nth(i).click(); await sleep(600);
+      const tag = page.locator('.sheet.is-top .huntercard .huntercard__class.is-classed');
+      if (await tag.count()) {
+        await tag.click(); await sleep(300);
+        if (!(await page.locator('.tip.tip--system', { hasText: /Leads with \w+\. (Rises to .+ at [A-Z]-Rank|The highest class of its line)\./ }).count())) throw new Error('A CLASS TOOLTIP DOES NOT SAY ITS LEAD AND ITS NEXT RUNG');
+        if (await page.locator('.tip.tip--system', { hasText: 'A class given to' }).count()) throw new Error('A CLASS STILL READS AS THE OLD LINE');
+        await snap('hunter-classed-tip');
+        await page.keyboard.press('Escape'); await sleep(250);
+        await close(); await sleep(400);
+        break;
+      }
+      await close(); await sleep(400);
+    }
   }
   // The enemies as portraits, the boss first and the Gatekeeper next: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
@@ -899,7 +955,6 @@ try {
   await page.locator('.sheet.is-top .btn', { hasText: 'Brief: Daily Rift' }).click(); await sleep(1000);
   await page.locator('.sheet.is-top .brmods').scrollIntoViewIfNeeded().catch(() => {});
   if ((await page.locator('.sheet.is-top .brmods .modrow').count()) !== 2) throw new Error('THE RIFT BRIEF DOES NOT SHOW ITS MODIFIERS A ROW TO EACH');
-  if (await page.locator('.sheet.is-top .breward__name', { hasText: /· Boss|· once/ }).count()) throw new Error('THE BRIEF STILL QUALIFIES A REWARD WITH · BOSS OR · ONCE');
   if (!(await page.locator('.sheet.is-top .brift').count())) throw new Error('THE RIFT BRIEF DOES NOT SAY HOW IT IS SCORED');
   if (await page.locator('.sheet.is-top .gtag', { hasText: 'Never cleared' }).count()) throw new Error('THE RIFT BRIEF CALLS IT NEVER CLEARED');
   await snap('rift-brief', true);
@@ -964,7 +1019,7 @@ try {
   if (!/^(Melee|Ranged)\b/.test((await style.innerText()).trim())) throw new Error('THE SHADOW CARD DOES NOT SAY HOW IT FIGHTS');
   await style.click(); await sleep(300);
   if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'How it fights' }).isVisible())) throw new Error('THE MELEE OR RANGED TAG TAPPED DID NOT OPEN ITS TOOLTIP');
-  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Takes its place in the' }).count())) throw new Error('THE MELEE OR RANGED TOOLTIP DOES NOT SAY WHERE IT TAKES ITS PLACE');
+  if (!(await page.locator('.tip.tip--shadow', { hasText: 'Fights best from the' }).count())) throw new Error('THE MELEE OR RANGED TOOLTIP DOES NOT SAY WHERE IT TAKES ITS PLACE');
   await snap('shadow-style-tip');
   await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
@@ -1109,6 +1164,28 @@ try {
   if (!(await page.locator('.sheet.is-top .guide mark').count())) throw new Error('THE GUIDE FOUND NOTHING FOR A WORD IT HOLDS');
   await snap('guide-find');
 
+  // ---------------------------------------------------------------- a hunter partied with before
+  // The same hunter, met again on the same Gate, with a record behind them: their card's Together tells it.
+  {
+    const seeded = JSON.parse(save);
+    seeded.gates.walked = { ...(seeded.gates.walked ?? {}), [metHunter]: { runs: 7, carried: 1, kills: 23, bosses: 4, first: '2026-01-02', last: '2026-01-20' } };
+    seeded.gates.together = { ...(seeded.gates.together ?? {}), [metHunter]: 5 };
+    page = await phone(JSON.stringify(seeded));
+    await page.goto(`http://localhost:${PORT}/`);
+    await sleep(1200);
+    await drain();
+    await nav('gates');
+    await page.locator('.gradar__all').click(); await sleep(600);
+    await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800);
+    await drain();
+    await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
+    await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"]`).click(); await sleep(700);
+    if (!(await page.locator('.sheet.is-top .hc-together__lead', { hasText: '7' }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THEIR PARTIES');
+    if (!(await page.locator('.sheet.is-top .hc-together__rows', { hasText: /Most often|The only one/ }).count())) throw new Error('THE MOST FREQUENT PARTNER IS NOT SAID TO BE');
+    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'Together' }).scrollIntoViewIfNeeded(); await sleep(400);
+    await snap('hunter-card-together');
+  }
+
   // ---------------------------------------------------------------- the ascended hunter: S-Rank, three levels open
   page = await phone(ascended);
   await page.goto(`http://localhost:${PORT}/`);
@@ -1228,7 +1305,8 @@ try {
   await snap('trial-brief-party');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));
-  console.log(`screens green · ${OUT}/`);
+  if (dotted.length) throw new Error(`A SCREEN JOINS FACTS WITH A MIDDLE DOT:\n${[...new Set(dotted)].join('\n')}`);
+console.log(`screens green: ${OUT}/`);
 } catch (e) {
   await snap('failure').catch(() => {});
   console.error(e);

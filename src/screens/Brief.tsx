@@ -43,7 +43,7 @@ import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
 import * as store from '@/store';
 import { createStore, useSave } from '@/store';
-import { Btn, RankPlate, useNow } from '@/ui/components';
+import { Btn, Facts as Spaced, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { useDrag } from '@/ui/drag';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
@@ -65,6 +65,7 @@ import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
 import { Keyed } from '@/ui/keyed';
+import { openHunter } from './Hunter';
 import { ModRows, SealArt } from '@/ui/seals';
 import { ParCard } from '@/ui/par';
 import { drinkFlow } from './Inventory';
@@ -229,7 +230,7 @@ function Banner({ d }: { d: Dungeon }) {
         <span class="sysbox bbanner__sigil"><Sigil rank={licensedRank(s)} size={30} /></span>
         <span class="bbanner__name">
           <b>{s.hunter.name}</b>
-          <small>Level <span class="num">{s.hunter.level}</span> · {licensedRank(s)}-Rank Hunter</small>
+          <small><Spaced items={[<>Level <span class="num">{s.hunter.level}</span></>, `${licensedRank(s)}-Rank Hunter`]} /></small>
         </span>
         {/* The bag: the potions, a Gate Survey, and the throwable to ready for the Gate; a run's own while one is open on it. */}
         <span class="bbanner__bag"><ItemsMark items={bagFor(s, d)} /></span>
@@ -302,7 +303,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         </span>
         <File d={d} />
         {level > 0 && (
-          <p class="basc"><Glyph name="crown" /><span>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? ` · Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''}</span></p>
+          <p class="basc"><Glyph name="crown" /><span>Ascension {level}: {ascension.rulesAt(level).map((r) => r.name).join(', ')}{ascension.beyond(level) ? `, Foe strength +${Math.round((BEYOND.growth ** ascension.beyond(level) - 1) * 100)}%` : ''}</span></p>
         )}
       </header>
 
@@ -402,9 +403,9 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
   );
   return (
     <section class="bbox" aria-label="Rewards">
-      <span class="label bbox__head">Rewards{level > 0 && <small class="grant"> · Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
+      <span class="label bbox__head">Rewards{level > 0 && <small class="grant bbox__aside">Ascension {level}: pay +{Math.round((pay - 1) * 100)}%</small>}</span>
       <ul class="brewards">
-        {tile('xp', 'is-xp', <span class="breward__xp">XP</span>, practice ? `Gate clear · Level ${PRACTICE_LEVEL}` : 'Gate clear', `+${xp}`, `Gate clear: XP +${xp}`)}
+        {tile('xp', 'is-xp', <span class="breward__xp">XP</span>, practice ? `Gate clear at Level ${PRACTICE_LEVEL}` : 'Gate clear', `+${xp}`, `Gate clear: XP +${xp}`)}
         {!practice && tile('shards', 'is-shard', <Shard size={26} />, 'Gate clear', `+${sh}`, `Gate clear: Mana Shards +${sh}`)}
         {first && tile('bounty', 'is-bounty', <Shard size={26} />, 'Bounty', `+${sh * 2}`, `Bounty: XP +${xp}, Mana Shards +${sh * 2}, one-time reward`)}
         {trial && tile('victory', 'is-victory', <Glyph name="crown" />, `Ascension ${s.ascension.unlocked + 1} opens`)}
@@ -414,7 +415,7 @@ function RewardTiles({ d, level, taken }: { d: Dungeon; level: number; taken: Se
         {mats.map((id) => tile(id, `is-mat ${tracked.has(id) ? 'is-tracked' : ''}`, <><MatArt id={id} size={30} />{tracked.has(id) && <TrackMark class="breward__track" />}</>, forge.materialById(id)?.name ?? id))}
         {/* A blueprint is a chance, never a promise: a first clear's odds before the Gate is cleared, a clear's after. */}
         {tile('print', 'is-print', practice ? <Glyph name="Ring" /> : <Glyph name="blueprint" />,
-          practice ? 'Ring' : sets.length ? `Blueprint · ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint',
+          practice ? 'Ring' : sets.length ? `Blueprint: ${sets.map((x) => x.id).join(' or ')}` : 'Blueprint',
           practice ? '×1' : `${Math.round((first ? BLUEPRINTS.first : sets.length ? BLUEPRINTS.home : BLUEPRINTS.clear) * 100)}%`,
           practice ? undefined : `Blueprint: ${Math.round((first ? BLUEPRINTS.first : sets.length ? BLUEPRINTS.home : BLUEPRINTS.clear) * 100)}% on a clear`)}
         {/* The engraving the boss, and the Gatekeeper, can leave on a piece found whole, at their odds. */}
@@ -492,7 +493,7 @@ function RiftScoring() {
   ];
   return (
     <section class="bbox brift" aria-label="Score">
-      <span class="label bbox__head">Score{best > 0 && <small> · Best <b class="num">{group(best)}</b></small>}</span>
+      <span class="label bbox__head">Score{best > 0 && <small class="bbox__aside">Best <b class="num">{group(best)}</b></small>}</span>
       <ul class="brift__lines">
         {lines.map(([g, k, v]) => <li key={k}><span class="riftres__mark"><Glyph name={g} /></span><span>{k}</span><b class="num">{v}</b></li>)}
       </ul>
@@ -592,14 +593,19 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
   const seats: Seat[] = [
     { key: 'you', row: here, el: (
       <li key="you" class={`bformation__one is-you is-drag ${drag.lifted === 'you' ? 'is-lifted' : ''}`} {...drag.handle('you')}>
-        <button type="button" class="bformation__me" aria-label={`${s.hunter.name}, in the ${ROW_NAME[here]}. Tap to stand in the ${ROW_NAME[other]}, or drag to a rank.`}
+        <button type="button" class="bformation__me" aria-label={`${s.hunter.name}, in the ${ROW_NAME[here]}. Tap to stand in the ${ROW_NAME[other]}, or drag to a row.`}
           onClick={() => stand(other)}>
           <span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /><Glyph name="grip" class="bformation__grip" /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small>
         </button>
       </li>
     ) },
+    // An Association hunter opens their card when tapped: their class, kit, stats and record beside you.
     ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
-      <li key={a.id} class="bformation__one is-ally"><span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? ' ▲' : rankIdx(a.rank) < rankIdx(d.rank) ? ' ▼' : ''}</small></li>
+      <li key={a.id} class="bformation__one is-ally">
+        <button type="button" class="bformation__me bformation__ally" data-hunter={a.id} aria-label={`${a.name}, ${a.rank}-Rank. Open their card.`} onClick={() => { sfx.tap(); openHunter(a); }}>
+          <span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? <i class="bformation__vs is-up" aria-label="above the Gate's grade"> ▲</i> : rankIdx(a.rank) < rankIdx(d.rank) ? <i class="bformation__vs is-down" aria-label="under the Gate's grade"> ▼</i> : null}</small>
+        </button>
+      </li>
     ) })),
     ...squad.map((x) => {
       const e = enemyById(x.enemyId)!;
@@ -607,7 +613,7 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
       const name = shadows.nameOf(x).replace(/^Shadow /, '');
       return { key: x.id, row, el: (
         <li key={x.id} class={`bformation__one is-shadow is-drag ${drag.lifted === x.id ? 'is-lifted' : ''}`} {...drag.handle(x.id)}>
-          <button type="button" class="bformation__me" aria-label={`${name}, in the ${ROW_NAME[row]}. Tap to place it in the ${ROW_NAME[cross(row)]}, or drag to a rank.`}
+          <button type="button" class="bformation__me" aria-label={`${name}, in the ${ROW_NAME[row]}. Tap to place it in the ${ROW_NAME[cross(row)]}, or drag to a row.`}
             onClick={() => place(x.id, cross(row))}>
             <span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /><Glyph name="grip" class="bformation__grip" /></span><b>{name}</b><small class="num">{shadows.power(x)}</small>
           </button>
@@ -641,7 +647,7 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
       </div>
       {/* Where the hunter stands, their class's place until they move, and each Shadow, its role's until it is moved: kept for every Gate after. */}
       <p class="bstand__hint">{squad.length ? 'Drag yourself or a Shadow to the Front or the Rear. A tap crosses over.' : 'Drag yourself to the Front or the Rear. A tap crosses over.'}</p>
-      {squad.length > 0 && makeLine(squad) && <p class="bparty__kin">{makeLine(squad)}</p>}
+      {squad.length > 0 && makeLine(squad).length > 0 && <p class="bparty__kin"><Spaced items={makeLine(squad)} /></p>}
       {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
       {createPortal(
         <div class={`dragghost dragghost--you ${liftedShadow ? 'is-shadow' : ''}`} ref={drag.ghost} hidden={!liftedRow} aria-hidden="true">
@@ -758,7 +764,7 @@ function Vitals() {
           <small class="label">{name}</small>
           <button type="button" class={`bvital__drink ${have ? 'is-held' : ''}`} disabled={!!idle}
             aria-label={idle ? `${p.name}: ${idle}` : have ? `Drink a ${p.name}, ${have} held` : `Buy and drink a ${p.name}, ${p.price} shards`}
-            title={idle ? `${p.name} · ${idle}` : have ? `${p.name} · Held: ${have}` : `${p.name} · ${p.price}`}
+            title={idle ? `${p.name}: ${idle}` : have ? `${p.name}: ${have} held` : `${p.name}: ${p.price} Mana Shards`}
             onClick={() => void drinkFlow(id, true)}>
             <Glyph name="plus" />
             {have > 0 ? <span class="num">{have}</span> : !idle && <span class="num"><Shard size={8} />{p.price}</span>}
@@ -898,7 +904,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
         <span class="bspot__art"><Portrait id={id} size={50} tone="red" /></span>
         <span class="label">{boss ? 'Gate boss' : id === d.elite ? 'Gatekeeper' : 'Creature'}</span>
         <b class="bspot__name">{e.name}</b>
-        <small class="bspot__line">{e.rank}-Rank {e.family} · {e.role} · Power {powerOf(e.base)}</small>
+        <small class="bspot__line"><Spaced items={[`${e.rank}-Rank ${e.family}`, e.role, `Power ${powerOf(e.base)}`]} /></small>
         {shadows.isBound(s, id) && <span class="gtag is-shadow"><Glyph name="shadows" />Serves as a Shadow</span>}
       </section>
       {habits.length > 0 && (
@@ -939,7 +945,7 @@ function ChosenLine({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: num
         <b class="warn">[{w.name}]</b>
         <small>{level >= w.level ? `In the boss’s place at Ascension ${level}.` : `Appears at Ascension ${w.level} or higher.`}</small>
         <small>{beaten ? <>Bounty: Mana Shards <span class="grant">+{shop.gateShards(d.rank, WALKERS.bounty * pay)}</span></>
-          : <>Masterwork: {RARITY[d.rank as Rank].name} {walkers.slotOf(w.level)} · Perfect +{w.level}</>}</small>
+          : <>Masterwork: {RARITY[d.rank as Rank].name} {walkers.slotOf(w.level)}, Perfect +{w.level}</>}</small>
       </span>
     </div>
   );

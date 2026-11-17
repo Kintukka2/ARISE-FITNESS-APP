@@ -356,8 +356,8 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 /** Pairs that read as one when they are equal. */
 const PAIRS: [string, string][] = [['patk', 'mpow'], ['defense', 'resist']];
 
-/** A bonus in words, name then value, read from its numbers: "Attack and magic +8%", "Crit chance +6". */
-export function bonusText(b: Record<string, number>): string {
+/** A bonus in words, each part name then value, read from its numbers: `["Attack and magic +8%", "Crit chance +6"]`. */
+export function bonusParts(b: Record<string, number>): string[] {
   const amount = (k: string, v: number) => (FRACTION.has(k) ? `+${Math.round(v * 100)}%` : `+${Math.round(v * 10) / 10}`);
   const left = { ...b };
   const parts: string[] = [];
@@ -368,8 +368,11 @@ export function bonusText(b: Record<string, number>): string {
     delete left[y];
   }
   for (const [k, v] of Object.entries(left)) parts.push(`${cap(BONUS_NAMES[k] ?? k)} ${amount(k, v)}`);
-  return parts.join(' · ');
+  return parts;
 }
+
+/** A bonus in words, its parts in a list (docs/VOICE.md, "No middle dots"): "Attack and magic +8%, Crit chance +6". */
+export const bonusText = (b: Record<string, number>): string => bonusParts(b).join(', ');
 
 /** Each bonus as a tooltip names it, a keyword capitalised so the tip's colours find it: `Attack`, `Max HP`, `Status Save`. */
 export const STAT_WORDS: Record<string, string> = {
@@ -520,5 +523,5 @@ export function coreLines(it: Item): [Stat, string][] {
 }
 
 export function coreText(it: Item): string {
-  return coreLines(it).map(([, t]) => t).join(' · ');
+  return coreLines(it).map(([, t]) => t).join(', ');
 }

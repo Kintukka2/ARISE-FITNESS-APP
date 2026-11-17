@@ -21,7 +21,7 @@ export const ROLE_ROW: Record<string, Row> = {
 };
 
 /**
- * Roles whose physical hits are shots: they reach either rank, and lose nothing from the rear. Every role that stands
+ * Roles whose physical hits are shots: they reach either row, and lose nothing from the rear. Every role that stands
  * in the rear fights from range, so where a creature stands and how it fights never disagree.
  */
 export const RANGED_ROLES = Object.keys(ROLE_ROW).filter((r) => ROLE_ROW[r] === 'rear');

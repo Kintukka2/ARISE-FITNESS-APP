@@ -55,8 +55,8 @@ export function MatList({ b, gain }: { b: forge.Bundle; gain?: boolean }) {
   return <span class="matlist">{list.map(([id, n]) => <MatChip key={id} id={id} n={n} gain={gain} />)}</span>;
 }
 
-/** A bundle in words, for a toast or a System line: `Iron Scrap +3 · Monster Hide +1`. */
-export const bundleText = (b: forge.Bundle) => ordered(b).map(([id, n]) => `${forge.materialById(id)?.name ?? id} +${n}`).join(' · ');
+/** A bundle in words, for a toast or a System line: `Iron Scrap +3, Monster Hide +1`. */
+export const bundleText = (b: forge.Bundle) => ordered(b).map(([id, n]) => `${forge.materialById(id)?.name ?? id} +${n}`).join(', ');
 
 /** Tag a material to find, or untag it: the board marks the Gates that leave it. */
 export function track(id: string) {

@@ -22,9 +22,9 @@ import { classById } from '@/data/classes';
 import { NODES, nodeById, PATHS, pathOf, TIER_GATE, TIER_RANKS, type SkillUp } from '@/data/tree';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn } from '@/ui/components';
+import { Btn, Facts } from '@/ui/components';
 import { buzz, flash as glow } from '@/ui/feedback';
-import { Glyph, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
+import { Glyph, Shard, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
 
@@ -36,22 +36,21 @@ export function openSkills() {
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
-/** What a skill does at a level: its type, force, reach, cooldown and what it inflicts. */
+/**
+ * What a skill does at a level, in sentences, as Honkai: Star Rail and Slay the Spire tell a skill: its force and
+ * reach (`Physical ×1.6 against one target.`), what it inflicts, then its cooldown, never facts joined by a middle dot.
+ */
 export function skillLine(a: Ability): string {
-  const cd = a.cd ? ` · Cooldown ${a.cd}` : '';
+  const cd = a.cd ? ` Cooldown ${a.cd}.` : '';
   if (a.profile === 'support') {
-    if (a.heal) return `The whole party: HP +${Math.round(a.heal * 100)}%${cd}`;
-    if (a.grant) return `The whole party: ${a.grant}${STATUS_TEXT[a.grant] ? ` (${STATUS_TEXT[a.grant]})` : ''}${cd}`;
-    return `Rallies the whole party${cd}`;
+    if (a.heal) return `The whole party: HP +${Math.round(a.heal * 100)}%.${cd}`;
+    if (a.grant) return `The whole party: ${a.grant}${STATUS_TEXT[a.grant] ? ` (${STATUS_TEXT[a.grant]})` : ''}.${cd}`;
+    return `Rallies the whole party.${cd}`;
   }
-  if (a.profile === 'taunt') return `Every foe's next action goes at you. You guard until your next turn${cd}`;
-  if (a.mult === 0) return `${cap(REACH_TEXT[a.profile] ?? 'one target')} · Inflicts ${a.inflicts.join(' and ')} · No damage. Never misses${cd}`;
-  return [
-    `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult}`,
-    cap(REACH_TEXT[a.profile] ?? 'one target'),
-    a.cd ? `Cooldown ${a.cd}` : '',
-    a.inflicts.length ? `Inflicts ${a.inflicts.join(' and ')}` : '',
-  ].filter(Boolean).join(' · ');
+  if (a.profile === 'taunt') return `Every foe's next action goes at you. You guard until your next turn.${cd}`;
+  const inflicts = a.inflicts.length ? ` Inflicts ${a.inflicts.join(' and ')}.` : '';
+  if (a.mult === 0) return `Inflicts ${a.inflicts.join(' and ')} on ${REACH_TEXT[a.profile] ?? 'one target'}. No damage, and never misses.${cd}`;
+  return `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult} against ${REACH_TEXT[a.profile] ?? 'one target'}.${inflicts}${cd}`;
 }
 
 /** What the next level adds, as the changes it makes. */
@@ -64,14 +63,14 @@ function upLine(n: TreeNode, level: number): string {
   if (up.cd) parts.push(`Cooldown ${now.cd}`);
   if (up.profile) parts.push(cap(REACH_TEXT[now.profile] ?? 'one target'));
   if (up.inflicts) parts.push(`Inflicts ${up.inflicts.join(' and ')}`);
-  return parts.join(' · ');
+  return parts.join(', ');
 }
 
 /** A stat node's bonus at a number of ranks. */
 function statLine(n: TreeNode, k: number): string {
   const attrs = Object.entries(n.attrs ?? {}).map(([a, v]) => `${a} +${v * k}`);
   const bonus = n.bonus ? bonusText(Object.fromEntries(Object.entries(n.bonus).map(([b, v]) => [b, Math.round(v * k * 1000) / 1000]))) : '';
-  return [...attrs, bonus].filter(Boolean).join(' · ');
+  return [...attrs, bonus].filter(Boolean).join(', ');
 }
 
 const KIND_WORD: Record<TreeNode['kind'], string> = { skill: 'Skill', passive: 'Passive', stat: 'Stat' };
@@ -224,7 +223,7 @@ export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?
               return (
                 <g class="st-sky__label">
                   <text x={lx} y={ly - 3} class="st-sky__name">{p.name}</text>
-                  <text x={lx} y={ly + 10} class={`st-sky__count num ${calls ? 'is-call' : ''}`}>{p.key} · {n}</text>
+                  <text x={lx} y={ly + 10} class={`st-sky__count num ${calls ? 'is-call' : ''}`}>{p.key} {n}</text>
                 </g>
               );
             })()}
@@ -367,7 +366,7 @@ function NodeCard({ s, id, flash, onLearn, onEquip }: { s: Save; id: string | nu
     <section class={`st-card sysbox ${why === null ? 'is-can' : ''}`} aria-live="polite">
       <header class="st-card__head">
         <span class="st-card__icon"><SkillMark n={n} level={k} /></span>
-        <span class="st-card__title"><small>{word.toUpperCase()} · {p.name} · {TIER_RANKS[n.tier]}-Rank</small><b>{n.name}</b></span>
+        <span class="st-card__title"><small><Facts items={[word.toUpperCase(), p.name, `${TIER_RANKS[n.tier]}-Rank`]} /></small><b>{n.name}</b></span>
         <span class="st-card__lv num">{n.max > 1 ? `Lv.${k}/${n.max}` : k ? 'Learned' : 'Lv.0/1'}</span>
       </header>
       <p class="st-card__now">{k === 0 && n.max > 1 ? <span class="st-card__at">Lv.1: </span> : null}{now}</p>
@@ -491,7 +490,7 @@ function SkillsSheet() {
     const yes = await sys(system.offer([
       'Reset the skill tree?',
       `Skill Points returned: ${spent}`,
-      cost ? `Price: ${group(cost)} Mana Shards · Held: ${group(s.wallet.shards)}` : 'Price: none. The first reset is free.',
+      ...(cost ? [`Price: ${group(cost)} Mana Shards`, `Held: ${group(s.wallet.shards)}`] : ['Price: none. The first reset is free.']),
     ], 'system', 'Reset', 'Cancel'));
     if (yes !== true) return;
     if (cost > store.get().wallet.shards) {
@@ -538,7 +537,7 @@ function SkillsSheet() {
 
       <div class="st-foot">
         {due && <Btn kind="gold" onClick={() => void auto()}>Auto Assign</Btn>}
-        {spent > 0 && <Btn onClick={() => void reset()}>Reset{tree.resetCost(s) ? ` · ${group(tree.resetCost(s))}` : ''}</Btn>}
+        {spent > 0 && <Btn onClick={() => void reset()}>Reset{tree.resetCost(s) ? <span class="btn__aside"><Shard size={12} /><span class="num">{group(tree.resetCost(s))}</span></span> : null}</Btn>}
       </div>
     </div>
   );

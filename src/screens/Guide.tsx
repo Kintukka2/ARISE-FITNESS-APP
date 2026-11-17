@@ -30,7 +30,7 @@ import { LOADOUTS, SETS, UPGRADE } from '@/data/sets';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, MASTERWORK_SLOTS, OVERCHARGE, PROOF, TRIAL, WALKERS } from '@/data/ascension';
 import { markText, MARKS_MOST } from '@/core/marks';
 import { rulesAt } from '@/core/ascension';
-import { RANKS } from '@/core/types';
+import { RANKS, STATS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
 import { GRADES } from '@/core/raid';
 import { SEAL_IDS, sealEmber, SEALS, SEALS_FROM, SEALS_PER_GATE } from '@/data/seals';
@@ -43,6 +43,9 @@ import { useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import { Glyph } from '@/ui/icons';
 import { openSheet } from '@/ui/overlays';
+
+/** A list as a sentence says it: `STR, AGI and VIT`. */
+const andList = (xs: readonly string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
 
 /**
  * A blessing's line across its tiers, read from its own text: the number that moves with the tier as a
@@ -87,6 +90,8 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       `From D-Rank the System assigns a class from your highest stat: ${CLASSES.length} classes in five lines.`,
       'Your class is reassigned at every rank, and follows your highest stat. It adds flat points to that stat.',
+      `${andList(STATS.filter((k) => LEAD_ROW[k] === 'front'))} classes stand in the Front row, ${andList(STATS.filter((k) => LEAD_ROW[k] === 'rear'))} classes in the Rear, until you choose another row on a Gate’s brief.`,
+      'A class’s tooltip names the class it rises to at the next rank.',
       `Skill Points: ${SKILL_POINTS.level} each level, and ${SKILL_POINTS.rank} more for each rank you claim. Spend them on the Skills screen.`,
       `The skill tree has ${PATHS.length} Paths, one for each stat: ${PATHS.map((p) => `${p.name} (${p.key})`).join(', ')}.`,
       'You can spend in any Path, whatever your class. The skills of a Path grow stronger with its stat.',
@@ -100,6 +105,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Auto Assign spends every point as the System would, in your class’s Path first.',
       `A reset hands every point back. The first is free, then each costs the Mana Shards of ${RESET.share === 1 ? 'a clear' : `${RESET.share} clears`} at your grade.`,
       'The Association’s hunters fight with each class line’s first skills and passives.',
+      'An Association hunter’s class is worked out as yours is, from their leading stat and their grade. Below D-Rank they have none.',
+      'Tap an Association hunter in a Gate’s brief to open their card: their class, stats, skills and record beside you.',
+      'A hunter’s record follows them. The same hunter met on another Gate keeps the Gates, clears and defeats they shared with you.',
     ],
   },
   {
@@ -248,16 +256,16 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Front and rear',
     lines: [
-      'Each side of a fight stands in two: a front and a rear.',
+      'Each side of a fight stands in two rows: the Front and the Rear. A rank is a hunter’s grade, never a row.',
       `A Gate's fight holds ${PACK.min}-${PACK.max} creatures, in front and in the rear where its creatures stand in both. A Gatekeeper and a boss stand with ${PACK.retinue === 1 ? 'one creature' : `${PACK.retinue} creatures`} of the Gate behind them.`,
       'A melee hit, a physical action at one foe or two, reaches only the front while anyone stands in it. Magic, a volley, a spread, a burst, a wild swing, a strike at every foe and a throw reach either.',
       `A melee hit struck from the rear lands at ${Math.round(REAR_MELEE * 100)}%.`,
       `Creatures stand by their role: ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear. A boss stands in front.`,
       `Every role in the rear is ranged (${RANGED_ROLES.join(', ')}): its hits reach either and lose nothing from the rear, as do a ${RANGED_LEADS.join(', ')} hunter's.`,
       `Every role in front is melee. ${REACHING_ROLES.join(' and ')} reach past the front, as does ${/^[AEIOU]/.test(REACHING_LEADS.join('')) ? 'an' : 'a'} ${REACHING_LEADS.join(', ')} hunter.`,
-      'A Shadow stands where its creature would until you drag it to the other rank on a Gate\'s brief, and an Association hunter where their class does.',
-      `You stand where your class does (${Object.entries(LEAD_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(LEAD_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear) until you drag yourself to the other rank on a Gate's brief, or tap yourself there. The choice is kept.`,
-      'In a fight, Step Back or Step Forward moves you to the other rank. It takes your turn, and lasts the fight.',
+      'A Shadow stands where its creature would until you drag it to the other row on a Gate\'s brief, and an Association hunter where their class does.',
+      `You stand where your class does (${Object.entries(LEAD_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(LEAD_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear) until you drag yourself to the other row on a Gate's brief, or tap yourself there. The choice is kept.`,
+      'In a fight, Step Back or Step Forward moves you to the other row. It takes your turn, and lasts the fight.',
       'A creature\'s intent lands where it showed, wherever its target stands by then. A creature\'s marked strike reaches its mark wherever it stands, and Cover and a taunt turn intents whatever rank the one covering stands in.',
     ],
   },

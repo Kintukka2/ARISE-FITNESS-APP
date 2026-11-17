@@ -2987,6 +2987,7 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .ascdial__high { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .ascdial__high b { color: var(--gold); letter-spacing: 0; }
 .ascdial__jump { min-height: 32px; padding: 0 6px; border: 0; background: none; color: var(--gold); font: inherit; text-decoration: underline; cursor: pointer; }
+.ascdial__jumps { display: inline-flex; gap: 4px; margin-left: 8px; }
 /* The summit: the next level's challenge card, its road a track of two seals, Face The Trial once it stands open. */
 .ascsummit { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px 14px; border: 1px dashed color-mix(in srgb, var(--gold) 55%, transparent);
   background: radial-gradient(100% 120% at 0% 0%, rgba(255, 203, 92, 0.12), transparent 60%), rgba(12, 9, 3, 0.7); }
@@ -4487,3 +4488,40 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .benemy__crown { top: -9px; width: 18px; height: 18px; }
 /* A blessing's tooltip leads with its Path's mark (a Duo's two), in advancement's gold as its chip wears it. */
 .tip__mark--boon { width: auto; grid-auto-flow: column; gap: 2px; color: var(--gold); }
+
+/* An Association hunter's grade against the Gate's, beside their power: a gain's green above it, damage's red under it. */
+.bformation__vs { font-style: normal; }
+.bformation__vs.is-up { color: var(--verdant); }
+.bformation__vs.is-down { color: var(--blood); }
+/* An Association hunter in the brief's party: a tap opens their card (screens/Hunter.tsx). */
+.bformation__ally { cursor: pointer; }
+.bformation__ally:hover .bformation__face, .bformation__ally:focus-visible .bformation__face { border-color: color-mix(in srgb, var(--mana) 60%, transparent); }
+/* A hunter's card: the Shadow card's layout in the System's cyan, their grade's plate where a Shadow's badge stands. */
+.huntercard .sp-head__badge > .rankplate { position: relative; display: grid; place-items: center; filter: drop-shadow(0 0 10px var(--win-glow)); }
+/* The class, said once, in its row: the row's value is the tag that tells what it is. */
+button.huntercard__class.infotag { padding: 0 2px 0 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline dotted color-mix(in srgb, var(--sys-ink) 45%, transparent); text-underline-offset: 4px; }
+button.huntercard__class.is-classed { color: var(--gold); }
+.huntercard .sp-tag--style svg { color: var(--mana); }
+/* Their stats in one row of five, the lead lit in advancement's gold. */
+.hc-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hc-stats li { position: relative; display: grid; justify-items: center; gap: 2px; padding: 9px 2px 7px; }
+.hc-stats li .ico { width: 16px; height: 16px; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.hc-stats li b { font-size: 1.15rem; line-height: 1.1; }
+.hc-stats li small { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.hc-stats li.is-lead { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: inset 0 0 14px color-mix(in srgb, var(--gold) 14%, transparent); }
+.hc-stats li.is-lead b, .hc-stats li.is-lead .ico { color: var(--gold); }
+.hc-stats__lead { position: absolute; top: -7px; padding: 0 5px; background: #06101d; color: var(--gold); font-size: 0.52rem; font-style: normal; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+/* Your record together: the parties made large, the rest under it. */
+.hc-together { display: grid; gap: 10px; }
+.hc-together__lead { display: flex; align-items: baseline; gap: 8px; }
+.hc-together__lead b { font-size: 2rem; line-height: 1; color: #fff; text-shadow: 0 0 12px var(--win-glow); }
+.hc-together__lead span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.hc-together__rows { display: grid; gap: 0; margin: 0; }
+.hc-together__rows div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.78rem; }
+.hc-together__rows dt { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.hc-together__rows dd { margin: 0; color: var(--sys-ink); }
+.hc-together__rows dd small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.hc-together__none { margin: 0; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+
+/* The Settings foot: the version, the instructor and where the save lives, a line each. */
+.settings__foot { display: flex; flex-direction: column; align-items: center; gap: 2px; }

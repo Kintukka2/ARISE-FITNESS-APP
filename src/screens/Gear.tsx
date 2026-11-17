@@ -26,7 +26,7 @@ import { checkAwards } from '@/app/flow';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import * as system from '@/ui/system';
-import { Btn, Empty, GearArt, IconBtn, RankPlate, Section, SetMark, Shards } from '@/ui/components';
+import { Btn, Count, Empty, Facts, GearArt, IconBtn, RankPlate, Section, SetMark, Shards } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { CostGrid, MatList, bundleText } from '@/ui/forge';
 import { Glyph, STAT_ICON } from '@/ui/icons';
@@ -70,8 +70,8 @@ function Bag({ initial }: { initial: View }) {
     <div class="stack bag">
       <BagHead />
       <div class="seg bag__views" role="tablist" aria-label="View">
-        <button type="button" role="tab" aria-selected={view === 'items'} class={`seg__btn ${view === 'items' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('items'); }}>Items · {s.items.length}</button>
-        <button type="button" role="tab" aria-selected={view === 'sets'} class={`seg__btn ${view === 'sets' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('sets'); }}>Sets · {complete}/{SETS.length}</button>
+        <button type="button" role="tab" aria-selected={view === 'items'} class={`seg__btn ${view === 'items' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('items'); }}>Items<Count n={s.items.length} /></button>
+        <button type="button" role="tab" aria-selected={view === 'sets'} class={`seg__btn ${view === 'sets' ? 'is-on' : ''}`} onClick={() => { sfx.tap(); setView('sets'); }}>Sets<Count n={`${complete}/${SETS.length}`} /></button>
       </div>
       {view === 'items' ? <Items /> : <Codex />}
     </div>
@@ -156,7 +156,7 @@ function Items() {
     if (ok !== true) return;
     const r = store.update((x) => forge.recycleSome(x, chosen.map((c) => c.id)));
     sfx.success();
-    toast(`Recycled: ${r.count} · ${bundleText(r.got)}`, 'good');
+    toast(`${r.count} recycled: ${bundleText(r.got)}`, 'good');
     setPicked([]);
     setPicking(false);
   };
@@ -303,7 +303,7 @@ function Peek({ id, onClose }: { id: string; onClose: () => void }) {
       <button type="button" class="bagpeek__art" aria-label={`${d.name}: open`} onClick={() => { sfx.tap(); openItem(id); }}><GearArt item={it} size={64} plain /></button>
       <span class="bagpeek__text">
         <b>{d.name}</b>
-        <small><span class="bagpeek__kind">{rarity(d.rank)} {d.slot}</span> · Quality {gear.qualityText(it)}{worn ? ` · Worn: ${gear.SLOTS.find((x) => x.key === worn)?.name}` : ''}</small>
+        <small><Facts items={[<span class="bagpeek__kind">{rarity(d.rank)} {d.slot}</span>, `Quality ${gear.qualityText(it)}`, worn ? `Worn: ${gear.SLOTS.find((x) => x.key === worn)?.name}` : null]} /></small>
         <Gains parts={statParts(it)} class="gains--stats" />
       </span>
       <span class="bagpeek__score">
@@ -465,7 +465,7 @@ export function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
       {!compact && (
         <header class="setcard__head">
           <span class="setcard__name"><SetMark id={set.id} /><strong>[Set: {set.id}]</strong></span>
-          <span class="num">{held.size}/{pieces.length}{worn ? ` · Worn ${worn}` : ''}</span>
+          <span class="num"><Facts items={[`${held.size}/${pieces.length}`, worn ? `Worn ${worn}` : null]} /></span>
         </header>
       )}
       <div class="setcard__pieces">
@@ -485,7 +485,7 @@ export function SetCard({ set, compact }: { set: GearSet; compact?: boolean }) {
         })}
       </div>
       <SetTiers set={set} n={worn} />
-      {home && <small class="setcard__home"><Glyph name="gates" /> {home.name} · {home.rank}-Rank</small>}
+      {home && <small class="setcard__home"><Glyph name="gates" /> <Facts items={[home.name, `${home.rank}-Rank`]} /></small>}
     </div>
   );
 }
@@ -562,7 +562,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
     const got = store.update((x) => forge.recycle(x, it.id));
     if (!got) return;
     sfx.success();
-    toast(`${d.name} recycled · ${bundleText(got)}`, 'good');
+    toast(`${d.name} recycled: ${bundleText(got)}`, 'good');
     if (kept) toast(`[Engraving: ${kept.name}] kept in the Codex.`, 'good');
     close();
   };
@@ -570,7 +570,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
     <div class="stack itemcard" data-rarity={d.rank}>
       <PieceHero d={d} art={<GearArt item={it} size={104} />}
         tags={<>
-          {worn && <span class="itag is-worn">Worn · {gear.SLOTS.find((x) => x.key === worn)?.name}</span>}
+          {worn && <span class="itag is-worn">Worn: {gear.SLOTS.find((x) => x.key === worn)?.name}</span>}
           {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
           {tag === 'perfect' && <span class="itag is-perfect">✦ Perfect{it.over ? ` +${it.over}` : ''}</span>}
           {tag === 'peak' && <span class="itag is-perfect">✧ Perfect quality</span>}
@@ -635,7 +635,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
       <TemperBlock it={it} />
       {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {set && (
-        <Section title={`Set: ${set.id}`} right={<span class="num">{gear.heldOf(s, set.id).size}/{gear.setPieces(set.id).length}{gear.setsIn(gear.worn(s)).get(set.id) ? ` · Worn ${gear.setsIn(gear.worn(s)).get(set.id)}` : ''}</span>}>
+        <Section title={`Set: ${set.id}`} right={<span class="num"><Facts items={[`${gear.heldOf(s, set.id).size}/${gear.setPieces(set.id).length}`, gear.setsIn(gear.worn(s)).get(set.id) ? `Worn ${gear.setsIn(gear.worn(s)).get(set.id)}` : null]} /></span>}>
           <SetCard set={set} compact />
         </Section>
       )}
@@ -698,7 +698,7 @@ function Upgrade({ it }: { it: Item }) {
           buzz([14, 24]);
           toast(`${gear.defOf(it)?.name} upgraded.`, 'good');
           void checkAwards();
-        }}>{ok ? <>Upgrade · <Shards n={cost.shards} /></> : s.wallet.shards < cost.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(cost.shards)}` : 'Materials missing'}</Btn>
+        }}>{ok ? <>Upgrade<span class="btn__aside"><Shards n={cost.shards} /></span></> : s.wallet.shards < cost.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(cost.shards)}` : 'Materials missing'}</Btn>
       </div>
     </Section>
   );
@@ -761,7 +761,7 @@ export function Gains({ parts, class: cls }: { parts: string[]; class?: string }
   return <span class={`gains ${cls ?? ''}`}>{parts.map((p, i) => <span key={i}>{p}</span>)}</span>;
 }
 const statParts = (it: Item) => gear.coreLines(it).map(([, t]) => t);
-const bonusParts = (b: Record<string, number>) => gear.bonusText(b).split(' · ');
+const bonusParts = (b: Record<string, number>) => gear.bonusParts(b);
 
 /** A bonus in words, its name and its value apart: `Effect chance +26.7` is `Effect chance` and `+26.7`. */
 const nameAndValue = (t: string): [string, string] => {
@@ -777,7 +777,7 @@ function Equipment() {
   const items = gear.worn(s);
   const core = gear.boosted({ STR: 0, VIT: 0, AGI: 0, INT: 0, PER: 0 }, items, {}, 999);
   const extra = gear.sumBonuses(gear.rollBonuses(items), gear.setBonuses(items));
-  const props = Object.keys(extra).length ? gear.bonusText(extra).split(' · ').map(nameAndValue) : [];
+  const props = Object.keys(extra).length ? gear.bonusParts(extra).map(nameAndValue) : [];
   const sets = [...gear.setsIn(items)].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const paying = new Set(sets.filter(([, n]) => n >= 2).map(([id]) => id));
   const [hot, setHot] = useState<SlotKey | null>(null);
@@ -917,7 +917,7 @@ function Loadouts() {
     const n = store.update((x) => gear.wearLoadout(x, i));
     sfx.success();
     buzz([12, 30, 18]);
-    toast(n ? `Loadout ${marks[i]} worn · Slots changed: ${n}` : `Loadout ${marks[i]} worn.`, 'good');
+    toast(n ? `Loadout ${marks[i]} worn. Slots changed: ${n}.` : `Loadout ${marks[i]} worn.`, 'good');
     void checkAwards();
   };
   return (
@@ -936,7 +936,7 @@ function Loadouts() {
                 {l && held ? (
                   <>
                     <span class="loadrow__pips" aria-hidden="true">{gear.SLOTS.map((sl) => <i key={sl.key} class={held.held[sl.key] ? 'is-on' : l.slots[sl.key] ? 'is-gone' : ''} />)}</span>
-                    <small class="num">Score {Math.round(score)}{held.missing ? ` · Missing: ${held.missing}` : ''}</small>
+                    <small class="num"><Facts items={[`Score ${Math.round(score)}`, held.missing ? `Missing: ${held.missing}` : null]} /></small>
                   </>
                 ) : <small class="muted">-- --</small>}
               </span>
@@ -992,7 +992,7 @@ function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
               <GearArt item={on} size={64} />
               <span class="slotworn__text">
                 <b>{d.name}</b>
-                <small>{rarity(d.rank)} {d.slot} · Quality {gear.qualityText(on)}</small>
+                <small><Facts items={[`${rarity(d.rank)} ${d.slot}`, `Quality ${gear.qualityText(on)}`]} /></small>
                 <Gains parts={statParts(on)} class="gains--stats" />
               </span>
               <Glyph name="chevron" class="slotworn__go" />
@@ -1014,7 +1014,7 @@ function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
                     <GearArt item={it} size={48} equipped={!!elsewhere} />
                     <span class="slotrow__text">
                       <b>{pd.name}{s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}</b>
-                      <small>{rarity(pd.rank)} · Quality {gear.qualityText(it)}</small>
+                      <small><Facts items={[rarity(pd.rank), `Quality ${gear.qualityText(it)}`]} /></small>
                       <Gains parts={statParts(it)} class="gains--stats" />
                     </span>
                     <span class="slotrow__score">

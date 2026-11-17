@@ -41,7 +41,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   `core/` so it can be tested, not in a screen.
 - Every reward from a raid (experience, shards, materials, blueprints, pieces found whole, weapon
   Familiarity, records, Daily Quests) is settled in one engine call, `raid.finish`. Nothing pays out on a
-  tap that can be undone.
+  tap that can be undone. The records include each Association hunter's beside you (`hunters.log`, kept in
+  `s.gates.walked` by the hunter's id, which fixes who they are), read by their card (`screens/Hunter.tsx`).
 - The day's Daily Quests (`contracts` in code) are written to the save the first time they are shown (`contracts.issue`),
   so nothing redraws them that day. Change what they pay and rerun `npm run balance`; its
   days-to-rank count them.
@@ -220,6 +221,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   the rules it would explain go in the Guide. `tests/voice.test.ts` checks what it can. A wording
   decision that will come up again goes into VOICE.md in the same change. A creature is defeated, never
   felled, in every line a player reads (the voice test holds it); keys the save holds keep their names.
+  Nothing a player reads joins facts with a middle dot: a list takes commas, a card's short facts `Facts`
+  (`ui/components.tsx`), a tab's count `Count`, a button's price `btn__aside` (VOICE.md, "No middle dots"); the voice
+  test fails on one in the source and the tour on one on any screen. Front and Rear are rows; a rank is only a grade.
 - The look follows the speaker (VOICE.md, "The look"). Anything the System shows is drawn in its
   frame from `src/ui/frame.tsx`, or `sys()` with a System kind, or a sheet opened with `system`, and
   set in Montserrat. Nothing else uses that frame or that type.

@@ -52,7 +52,7 @@ import { arena } from '@/app/router';
 import * as store from '@/store';
 import * as system from '@/ui/system';
 import { useSave } from '@/store';
-import { Bar, Btn, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
+import { Bar, Btn, Facts, GearArt, HpBar, RankPlate, Shards } from '@/ui/components';
 import { QuestLines } from '@/ui/contracts';
 import { AssocStrip } from '@/ui/assoc';
 import * as association from '@/core/association';
@@ -320,7 +320,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
         <div class={`actwheel__hub actwheel__hub--${kind(shown)}`} aria-live="polite">
           <b class="actwheel__name">{shown.name}</b>
           {/* A skill not ready says so at the hub's foot, in red: its level alone here. */}
-          {(st.level || st.ready) && <small class="actwheel__ready">{[st.level, shown.off ? null : st.ready].filter(Boolean).join(' · ')}</small>}
+          {(st.level || st.ready) && <small class="actwheel__ready"><Facts items={[st.level, shown.off ? null : st.ready]} /></small>}
           {shown.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
           {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May defeat it' : 'Defeats it'}</span>}
           <small class={`actwheel__foot ${(over !== undefined ? dragged?.off : chosen.off) ? 'is-off' : ''}`}>{foot}</small>
@@ -600,7 +600,7 @@ export function Arena() {
         return;
       }
       // The System's window, as every window the plan opens: the Gates' frame, the cost in red.
-      const yes = await sys(system.offer(['Would you like to break the seal and open the room?', system.red(`HP -${cost}`)], 'gates', `Yes · HP -${cost}`, 'No', true));
+      const yes = await sys(system.offer(['Would you like to break the seal and open the room?', system.red(`HP -${cost}`)], 'gates', 'Break The Seal', 'No', true));
       if (!yes) return;
       const was = clockNow();
       if (!store.update((x) => raid.payToll(x, d!, x.gates.raid!, door.far))) return;
@@ -867,7 +867,7 @@ export function Arena() {
   // The step underway, or about to be taken; a rest or cache already done still counts as where you stand.
   const here = !run ? 1 : Math.min(depth, raid.pending(d, run) || phase !== 'node' ? run.at + 1 : run.at);
   // The Spire's block goes by its floors under the Spire's name; anything else by its own name.
-  const head = phase === 'node' && panel ? nodeName(panel.node, run) : onMap ? (spire.isSpire(d) ? d.name.split(' · ').slice(1).join(' · ') || d.name : d.name) : room?.label ?? '…';
+  const head = phase === 'node' && panel ? nodeName(panel.node, run) : onMap ? (spire.isSpire(d) ? d.name.split(': ').slice(1).join(': ') || d.name : d.name) : room?.label ?? '…';
   // On the map, the head is the Gate's title card, as Persona 3 Reload names a floor as the party steps onto it:
   // what kind of Gate it is and where in it the hunter stands, small, over its name.
   const stand = run && m && !m.tower ? raid.standing(d, run) : null;
@@ -876,12 +876,12 @@ export function Arena() {
   const kind = isTrial(d) ? '' : spire.isSpire(d) ? 'The Pale Spire' : `${d.rank}-Rank Gate`;
   const where = d.floor ? `Floor ${d.floor + here - 1} of ${d.floor + depth - 1}` : floors > 1 ? `Floor ${(stand?.floor ?? 0) + 1} of ${floors}` : rooms ? '' : `Step ${here} of ${depth}`;
   // A Red Gate says so in place of what kind of Gate it is.
-  const kicker = [clock?.red ? '' : onMap && phase === 'map' ? kind : d.name, run && ascension.levelOf(run) ? `Ascension ${ascension.levelOf(run)}` : '', where].filter(Boolean).join(' · ');
+  const kicker = [clock?.red ? '' : onMap && phase === 'map' ? kind : d.name, run && ascension.levelOf(run) ? `Ascension ${ascension.levelOf(run)}` : '', where].filter(Boolean);
   return (
     <div class={`arena ${room?.boss && !onMap ? 'is-boss' : ''} ${clock?.red ? 'is-redgate' : ''}`} role="dialog" aria-label={`${d.name}${clock?.red ? ', a Red Gate' : ''}, in progress`}>
       <header class={`arena__head ${onMap && phase === 'map' ? 'is-card' : ''}`}>
         <RankPlate rank={d.rank} size={34} />
-        <div><span class="label">{clock?.red ? <><span class="arena__red">Red Gate</span>{kicker ? ` · ${kicker}` : ''}</> : kicker}</span><b>{head}</b></div>
+        <div><span class="label"><Facts items={[clock?.red ? <span class="arena__red">Red Gate</span> : null, ...kicker]} /></span><b>{head}</b></div>
         {phase !== 'decide' && <PaceMenu pace={pace} setPace={setPace} auto={auto} toggleAuto={toggleAuto} />}
       </header>
       {onMap && run && m ? (
@@ -1249,7 +1249,7 @@ function RestChoice({ s, run, onRest }: { s: ReturnType<typeof useSave>; run: No
   const ways: { key: raid.RestPick['kind']; glyph: string; name: string; gives: string; why?: string; go: () => void }[] = [
     { key: 'heal', glyph: 'heart', name: 'Heal', gives: `Party HP +${heal}%`, why: heal > 0 ? undefined : 'Sealed: Lightless', go: () => onRest({ kind: 'heal' }) },
     { key: 'hone', glyph: 'forge', name: 'Hone', gives: `A skill +${HONE_LEVELS} level`, why: o.hone.length ? undefined : 'No skill equipped', go: () => setHoning(true) },
-    { key: 'steady', glyph: 'shield', name: 'Steady', gives: o.potions ? `Debuffs cleared · Health Potion +${o.potions}` : 'Debuffs cleared', go: () => onRest({ kind: 'steady' }) },
+    { key: 'steady', glyph: 'shield', name: 'Steady', gives: o.potions ? `Debuffs cleared, Health Potion +${o.potions}` : 'Debuffs cleared', go: () => onRest({ kind: 'steady' }) },
   ];
   return (
     <div class="restways" role="group" aria-label="Rest">
@@ -1268,8 +1268,8 @@ function RestChoice({ s, run, onRest }: { s: ReturnType<typeof useSave>; run: No
 function RestDone({ pick, potions, run }: { pick: raid.RestPick; potions: number; run: ReturnType<typeof useSave>['gates']['raid'] }) {
   const heal = run ? Math.round(raid.healShare(ascension.levelOf(run), sealing.of(run)) * 100) : 0;
   if (pick.kind === 'heal') return <><p>The party catches its breath.</p><p class="muted"><span class="grant">Party HP +{heal}%</span></p></>;
-  if (pick.kind === 'steady') return <><p>You check your straps and bind what is still bleeding.</p><p class="muted"><span class="grant">Debuffs cleared</span>{potions > 0 && <> · <span class="grant">Health Potion +{potions}</span></>}</p></>;
-  return <><p>You run through the motions until they come without thinking.</p><p class="muted"><span class="grant">{pick.skill} +{HONE_LEVELS} level</span> · Until you leave the Gate</p></>;
+  if (pick.kind === 'steady') return <><p>You check your straps and bind what is still bleeding.</p><p class="muted"><Facts items={[<span class="grant">Debuffs cleared</span>, potions > 0 ? <span class="grant">Health Potion +{potions}</span> : null]} /></p></>;
+  return <><p>You run through the motions until they come without thinking.</p><p class="muted"><span class="grant">{pick.skill} +{HONE_LEVELS} level</span> until you leave the Gate.</p></>;
 }
 
 /** A skill's top level, from the tree. */
@@ -1315,13 +1315,13 @@ function Intent({ intent, threat, self, sight, tell }: { intent: IntentView; thr
   const pips = !!(intent.wind && !intent.broken && intent.max);
   const channel = pips && intent.mult === TRICK.channel.mult;
   // A behaviour reads as what it does; a move by its name, and a wind-up as one.
-  const what = intent.broken ? `${intent.ab} · Broken`
+  const what = intent.broken ? `${intent.ab}, broken`
     : intent.kind === 'shield' ? `Shields ${ally?.name ?? 'an ally'}`
       : intent.kind === 'rally' ? 'Rallies the pack'
         : intent.kind === 'mark' ? 'Marks a target'
-          : intent.kind === 'drink' ? `${intent.ab} · HP +${Math.round(TRICK.secondwind.heal * 100)}%`
+          : intent.kind === 'drink' ? `${intent.ab}: HP +${Math.round(TRICK.secondwind.heal * 100)}%`
             : pips ? `${channel ? 'Channelling' : 'Charging'} ${intent.ab}`
-              : `${intent.ab}${a?.profile === 'support' ? ' · rallies its side' : a?.profile === 'all' ? ' · everyone' : ''}`;
+              : `${intent.ab}${a?.profile === 'support' ? ' on its side' : a?.profile === 'all' ? ' at everyone' : ''}`;
   const hit = intent.broken ? null : threat?.hit;
   const when = threat ? (threat.soon ? `Acts ${ordinal(threat.order)}` : `Acts ${ordinal(threat.order)}, after your next turn`) : '';
   const inflicts = !intent.kind ? (a?.inflicts ?? []).filter((st) => STATUS_TEXT[st]) : [];
@@ -1510,7 +1510,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
             <p class="warn">Not enough MP. ({v.mp}/{cost})</p>
             {/* Short of mana with the Shadow still lingering: a Mana Potion, held or bought, drunk here, without leaving. */}
             <Btn size="sm" block onClick={() => void drinkFlow('mp')}>
-              <Glyph name="potion" /> {shop.held(s, 'mp') ? <>Drink {MANA.name} · Held: {shop.held(s, 'mp')}</> : <>Buy {MANA.name} · <Shard size={12} /> <span class="num">{MANA.price}</span></>}
+              <Glyph name="potion" /> {shop.held(s, 'mp') ? <>Drink {MANA.name} <span class="btn__aside num">{shop.held(s, 'mp')} held</span></> : <>Buy {MANA.name} <span class="btn__aside"><Shard size={12} /> <span class="num">{MANA.price}</span></span></>}
             </Btn>
           </>}
         {out?.res === 'failed' && <Btn block onClick={close}>Close</Btn>}
@@ -1524,7 +1524,7 @@ function Extraction({ l, close, onResult }: { l: raid.Lingering; close: () => vo
       {out?.res === 'essence' && <>
         <p class="grant">Extraction successful.</p>
         <p><strong>[{e.shadow}]</strong> has become Shadow Essence.</p>
-        <p class="extract__essence"><EssenceMark size={18} /> Shadow Essence <span class="grant">+{l.essence}</span> · Held: <span class="num">{s.shadows.essence}</span></p>
+        <p class="extract__essence"><EssenceMark size={18} /> <Facts items={[<>Shadow Essence <span class="grant">+{l.essence}</span></>, <>Held: <span class="num">{s.shadows.essence}</span></>]} /></p>
         <Btn block onClick={close}>Close</Btn>
       </>}
       {out?.res === 'lost' && <>
@@ -1758,7 +1758,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
             )}
             {r.ascended !== null && (
               <SysAlert kind="gold" fyi delay={600} class="is-ascended" icon={<Glyph name="up" />}
-                sub={<>[Ascension {r.ascended}: {ascension.levelInfo(r.ascended).name}] · Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span> · Marks <span class="grant">+1</span></>}>
+                sub={<Facts items={[`[Ascension ${r.ascended}: ${ascension.levelInfo(r.ascended).name}]`, <>Upgrade limit: Perfect <span class="grant">+{r.ascended * OVERCHARGE.per}</span></>, <>Marks <span class="grant">+1</span></>]} />}>
                 <span class="grant">ACCESS GRANTED: ASCENSION {r.ascended}</span>
               </SysAlert>
             )}
@@ -1769,7 +1769,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         {r.assoc && association.current(s) && <AssocStrip q={association.current(s)!} move={r.assoc} />}
         {climb && block !== null && (
           <Btn kind="primary" size="lg" block class="climb" onClick={() => void leave(climb)} sound="tap">
-            <Glyph name="up" /> Climb On · Floors {spire.firstFloor(block)}-{spire.lastFloor(block)}
+            <Glyph name="up" /> Climb On <span class="btn__aside">Floors {spire.firstFloor(block)}-{spire.lastFloor(block)}</span>
           </Btn>
         )}
         <Btn kind={climb ? undefined : 'primary'} size="lg" block onClick={() => void leave()} sound="tap"><Glyph name="exit" /> Leave The Gate</Btn>

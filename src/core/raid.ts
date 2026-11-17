@@ -46,6 +46,7 @@ import { FEAT_PAY, type FeatId } from '@/data/feats';
 import * as feats from './feats';
 import * as par from './par';
 import * as ranks from './ranks';
+import * as hunters from './hunters';
 import type { Row } from '@/data/ranks';
 import type { MedalId } from '@/data/par';
 import { LOG_MAX } from './save';
@@ -235,10 +236,10 @@ export function openChamber(d: Dungeon, seed: string, index: number, party: Unit
       const met = (!k.status || !!victim.status[k.status]) && (!k.rounds || round <= k.rounds) && (!k.by || killer?.tag === k.by);
       if (met) { drops.push({ ref: victim.ref, boss }); log.push({ t: 'drop', v: victim.uid }); }
     }
-    // Every Shadow that landed a hit helped fell it, whoever landed the last.
+    // Every Shadow and Association hunter that landed a hit helped defeat it, whoever landed the last.
     const helped = new Set([...victim.hurtBy, ...(killer ? [killer] : [])]);
     for (const u of helped) {
-      if (u.tag !== 'shadow' || !u.ref) continue;
+      if ((u.tag !== 'shadow' && u.tag !== 'ally') || !u.ref) continue;
       const t = (kills[u.ref] ??= { kills: 0, bosses: 0 });
       t.kills++;
       if (c.boss && victim === foes[0]) t.bosses++;
@@ -1368,6 +1369,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
       if (!s.gates.met.includes(a.id)) s.gates.met.push(a.id);
       if (outcome === 'cleared') s.gates.together[a.id] = (s.gates.together[a.id] ?? 0) + 1;
     }
+    hunters.log(s, allies.map((a) => a.id), run.kills, run.day, outcome);
     for (const id of run.felled) {
       const fam = enemyById(id)?.family;
       if (fam) s.stats.killsByFamily[fam] = (s.stats.killsByFamily[fam] ?? 0) + 1;
@@ -1412,7 +1414,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     full: rift.fullMarks({ fights: road.filter((id) => m.byId[id]?.kind === 'fight').length, keeper: !!d.elite, feats: asked.length }),
   })) : null;
   s.gates.raid = null;
-  s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}: ${outcome}`, xp: xp?.gained ?? 0 });
+  s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}, ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, LOG_MAX);
   return {
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,

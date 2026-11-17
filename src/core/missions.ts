@@ -115,7 +115,7 @@ export function grantText(m: Mission): string {
   if (m.grant.slot) return `Shadow slots +${m.grant.slot}`;
   if (m.grant.free) return `Ability Points +${m.grant.free}`;
   if (m.grant.all) return `All stats +${m.grant.all}`;
-  return Object.entries(deltaOf(m)).map(([k, v]) => `${k} ${v! < 0 ? '' : '+'}${v}`).join(' · ');
+  return Object.entries(deltaOf(m)).map(([k, v]) => `${k} ${v! < 0 ? '' : '+'}${v}`).join(', ');
 }
 
 /** What every Secret Quest the hunter holds has paid, added up: stats, free Ability Points and Shadow slots. */

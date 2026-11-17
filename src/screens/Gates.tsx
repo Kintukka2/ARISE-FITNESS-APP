@@ -27,7 +27,7 @@ import { arena } from '@/app/router';
 import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, Shards, useNow, Voice } from '@/ui/components';
+import { Btn, Facts, Shards, useNow, Voice } from '@/ui/components';
 import { SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
 import { Glyph, Sigil } from '@/ui/icons';
@@ -268,7 +268,7 @@ function GradeBand({ s, r, gates, marks, k }: { s: Save; r: Rank; gates: Dungeon
       {/* A grade is a divider, not a box: its letter in its colour, what a clear pays, how many stand open, a rule in its colour. */}
       <header class="gband__head">
         <b class="gband__rank"><span class="gband__letter">{r}</span>-Rank</b>
-        <small class="gband__pay">Clear: XP <b class="num">{Math.round(GATE_XP[r] * pay)}</b> · <Shards n={shop.gateShards(r, pay)} /></small>
+        <small class="gband__pay">Clear: <Facts items={[<>XP <b class="num">{Math.round(GATE_XP[r] * pay)}</b></>, <Shards n={shop.gateShards(r, pay)} />]} /></small>
         <span class="gband__count">{shut ? <><Glyph name="lock" /> Licence</> : <><b class="num">{gates.length}</b> {gates.length === 1 ? 'Gate' : 'Gates'}</>}</span>
       </header>
       <ul class="glist">
@@ -395,7 +395,7 @@ function openGrade() {
           {licenceHolding(s) && <p class="hint">Gate grade held at {mine}-Rank.</p>}
           {licenceRequired(s) && licenceHolding(s) && storeReady() && (
             <Btn kind="primary" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
-              Association Licence · {priceOf('licence') ?? 'Buy'}
+              Association Licence<span class="btn__aside">{priceOf('licence') ?? 'Buy'}</span>
             </Btn>
           )}
         </div>
@@ -463,7 +463,7 @@ function AscensionSheet() {
           <span class={foes ? 'warn' : ''}>Foe strength {foes ? `+${foes}%` : 'as the board'}</span>
           <span class={pay ? 'grant' : ''}>Gate pay {pay ? `+${pay}%` : 'as the board'}</span>
         </span>
-        <small class="ascdial__high">Highest opened <b class="num">{a.unlocked}</b>{a.unlocked > ASCENSION_RULED && <> · <button type="button" class="ascdial__jump" onClick={() => choose(0)}>0</button> · <button type="button" class="ascdial__jump" onClick={() => choose(a.unlocked)}>Highest</button></>}</small>
+        <small class="ascdial__high">Highest opened <b class="num">{a.unlocked}</b>{a.unlocked > ASCENSION_RULED && <span class="ascdial__jumps"><button type="button" class="ascdial__jump" onClick={() => choose(0)}>0</button><button type="button" class="ascdial__jump" onClick={() => choose(a.unlocked)}>Highest</button></span>}</small>
       </section>
 
       {/* The marks have a window of their own; the way to it stands under the dial, gold while one waits to be set. */}
@@ -480,7 +480,7 @@ function AscensionSheet() {
           {a.unlocked > ASCENSION_RULED && (
             <li class={`ascfloor is-beyond ${a.level > ASCENSION_RULED ? 'is-on is-here' : ''}`}>
               <span class="ascfloor__num num">{ASCENSION_RULED + 1}+</span>
-              <span class="ascfloor__body"><b>[{BEYOND.name}]</b><small>Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level{ascension.beyond(a.level) > 0 ? ` · +${Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here` : ''}</small></span>
+              <span class="ascfloor__body"><b>[{BEYOND.name}]</b><small>Foe strength +{Math.round((BEYOND.growth - 1) * 100)}% each level{ascension.beyond(a.level) > 0 ? `, +${Math.round((BEYOND.growth ** ascension.beyond(a.level) - 1) * 100)}% here` : ''}</small></span>
               {a.level > ASCENSION_RULED && <span class="ascfloor__you">You</span>}
             </li>
           )}
@@ -518,7 +518,7 @@ function MarksCard() {
       <span class="ascmarks__seals" aria-hidden="true">{MARKS.map((m) => <MarkSeal key={m.id} m={m} n={marks.setOn(s, m.id)} />)}</span>
       <span class="ascmarks__text">
         <b>Marks</b>
-        <small>Set <b class="num">{setAll}</b>/{marks.MARKS_MOST} · Upgrade limit: Perfect +{ascension.overCap(s)}</small>
+        <small><Facts items={[<>Set <b class="num">{setAll}</b>/{marks.MARKS_MOST}</>, `Upgrade limit: Perfect +${ascension.overCap(s)}`]} /></small>
       </span>
       {waiting > 0 && <span class="marks__waiting">{waiting} to set</span>}
       <Glyph name="chevron" class="ascmarks__go" />
@@ -611,7 +611,8 @@ function MarkList() {
         'Would you like to set this mark?',
         system.tag(m.name),
         system.gain(marks.markText(m)),
-        `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)} · Marks to set: ${marks.unset(store.get())}`,
+        `Set: ${system.change(`${n}/${MARK_MAX}`, `${n + 1}/${MARK_MAX}`)}`,
+        `Marks to set: ${marks.unset(store.get())}`,
         system.red('A mark cannot be moved once set.'),
       ], 'gold', 'Set', 'Cancel'),
       body: () => <div class="markstamp"><MarkSeal m={m} n={n} /><Glyph name="chevron" class="markstamp__to" /><MarkSeal m={m} n={n + 1} lit={n} /></div>,
