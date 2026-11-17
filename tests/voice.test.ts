@@ -14,7 +14,9 @@ import * as marks from '@/core/marks';
 import { grantText, MISSIONS, TIER_NAMES } from '@/core/missions';
 import { ATTRS, RANK_LADDER } from '@/core/progression';
 import { POTIONS } from '@/core/shop';
-import { STATUS_TEXT, TACTICS } from '@/core/combat';
+import { IDENTITY_GAIN, passiveFor, passiveText, STATUS_TEXT, TACTICS } from '@/core/combat';
+import { STATS, type Attrs } from '@/core/types';
+import { PASSIVES } from '@/data/abilities';
 import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASS_RANKS, CLASSES, nextRung } from '@/data/classes';
 import { byLead } from '@/core/ranks';
@@ -169,6 +171,21 @@ describe('the words', () => {
     }
     // The first rung of each line says where it stands.
     for (const c of CLASSES.filter((x) => x.tier === 0)) expect(c.desc, c.name).toMatch(/\b(Front|Rear)-row\b/);
+  });
+
+  it('tells a creature\'s identity passive by the stat it raises, never as a leading derived stat', () => {
+    const identity = PASSIVES.filter((p) => p.style === 'identity');
+    expect(identity.length).toBeGreaterThan(0);
+    for (const p of identity) {
+      for (const lead of STATS) {
+        const base = Object.fromEntries(STATS.map((k) => [k, k === lead ? 50 : 10])) as unknown as Attrs;
+        const t = passiveFor(p.name, base);
+        expect(t, `${p.name} ${lead}`).toMatch(new RegExp(`^[A-Z][A-Za-z ]+ \\+${Math.round(IDENTITY_GAIN * 100)}%, from ${lead}, its highest stat\\.$`));
+      }
+    }
+    // Any other passive reads as written.
+    const other = PASSIVES.find((p) => p.style !== 'identity')!;
+    expect(passiveFor(other.name, { STR: 1, AGI: 1, PER: 1, VIT: 1, INT: 1 } as Attrs)).toBe(passiveText(other.name));
   });
 
   it('says defeat, never fell, and special drop, never condition drop: in every string, template and line of markup a player can read', () => {

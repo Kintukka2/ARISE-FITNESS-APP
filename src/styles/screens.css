@@ -1969,9 +1969,14 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 .sp-head__who { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .sp-head__rank { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #d9c6ff; text-shadow: 0 0 8px var(--win-glow); }
 .sp-head__rank .insignia { color: #d9c6ff; }
-.sp-head__was { font-size: 0.78rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.sp-head__was { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; min-width: 0; font-size: 0.78rem; line-height: 1.3; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.sp-head__kind { min-width: 0; }
+/* Whether a Shadow is in the squad, beside its name at the head's right (the owner's call). */
+.sp-head__was .sp-head__state { flex: none; padding: 1px 6px; font-size: 0.54rem; }
 .sp-head__was .label { margin-right: 4px; font-size: 0.56rem; }
 .sp-head__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+/* The Shadow card's tags run across the panel under the badge and the rows. */
+.sp-head > .sp-head__tags { grid-column: 1 / -1; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
 .sp-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--win) 45%, transparent); background: color-mix(in srgb, var(--win) 10%, transparent); font-size: 0.66rem; font-weight: 600; }
 .sp-head__power { display: flex; align-items: baseline; gap: 8px; }
 .sp-head__power b { font-size: 1.7rem; font-weight: 800; line-height: 1; letter-spacing: 0.02em; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 16px var(--win-glow); }
@@ -2655,9 +2660,11 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .kinsteps b { font-weight: 600; }
 .kinsteps b.is-on { color: #fff; text-shadow: 0 0 6px var(--win-glow); }
 .kintiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.78rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
-.kintiers b { margin-right: 4px; font-weight: 700; }
-.kintiers li.is-on { color: var(--verdant); }
-.kintiers li.is-on b { color: #fff; }
+.kintiers li > b.num { margin-right: 4px; font-weight: 700; }
+/* As the tooltip's breakpoints: the one reached lit, the rest dimmed, every stat coloured by Keyed. */
+.kintiers li { opacity: 0.45; }
+.kintiers li.is-on { opacity: 1; color: var(--sys-ink); }
+.kintiers li.is-on > b.num { color: #fff; }
 
 /* What a Shadow brings to a squad, on its card, as Solo Leveling: Arise sets its Shadow's Authority: a name
    over one line, a hairline between; lit in a gain's green while its squad has it. */
@@ -2667,6 +2674,20 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .sp-auth__name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .sp-auth__name svg { width: 13px; height: 13px; }
 .sp-auth__row p { margin: 0; font-size: 0.84rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+/* A block headed as the tooltip is: its mark and name, its kind small at the right, who gains it under. */
+.sp-auth__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sp-auth__head .sp-auth__name { color: var(--sys-ink); font-size: 0.78rem; }
+.sp-auth__kind { color: var(--ink-3); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.sp-auth__row p.sp-auth__who { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.sp-auth__row p.sp-auth__who.is-on { color: var(--verdant); }
+/* The statuses a Shadow wards off, under their word, each a tag that opens what it wards off. */
+.sp-wards { display: grid; gap: 6px; margin: 4px 0 0; }
+.sp-ward { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 8px; }
+.sp-ward dt { margin: 0; font-size: 0.58rem; }
+.sp-ward dd { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.sp-ward__tag .status-mark, .sp-ward__tag svg { width: 12px; height: 12px; }
+.sp-ward.is-immune .sp-ward__tag { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); background: color-mix(in srgb, var(--verdant) 8%, transparent); }
+.sp-ward.is-immune dt { color: var(--verdant); }
 .sp-auth__row p.is-on { color: var(--verdant); }
 
 /* The card's head, as the panel's rows: a label, a hairline and the value, an arrow at the end of Rank's while a promotion waits. */

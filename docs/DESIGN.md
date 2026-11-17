@@ -2876,6 +2876,46 @@ machine; and rewrite the class lines, after how other games write a class.
   lead and next rung.
 - **Balance.** Words only. Nothing a fight decides or a reward pays changed: no calibration and no campaign.
 
+## The Shadow card tidied, and a rest that opens at once — built
+
+The owner read the Shadow card and asked to move `Deployed` or `Not deployed` beside the name, to give `Immune` and
+`Resists` a tooltip, and to fix anything else on the card that looked off. They also asked to drop the window
+`Would you like to rest now?`: the rest's own **Later** already keeps it.
+
+- **The rest.** Stepping into a rest, or tapping one found and not yet used on the plan (walked back to first, its
+  moves counted), opens its three ways at once; **Later** keeps it lit on the plan, as **Not Yet** did. Auto keeps its
+  rest for the boss as before. This supersedes "A rest asks" above.
+- **The head.** `Deployed` (lit) or `Reserve` (dashed) sits at the right of the line that names what the Shadow
+  was, beside the name, as a game's unit card marks the units in the party. `Reserve` is the Army's own word for a
+  Shadow outside the squad, and short enough to sit beside a long name; on a narrow phone it wraps under the name
+  rather than cutting it. Grade, family, role and `Melee` or
+  `Ranged` run across the panel under the badge and the rows, a hairline over them, so the four keep one line on a
+  phone; beside the badge they wrapped, `Melee` alone on a second line.
+- **Its buttons in violet.** Inside a System frame a button lights in the frame's own colour, under a resting pointer
+  and in a keyboard's focus ring, and a Shadow frame's primary button is violet wherever the card is opened. Before,
+  Deploy, Recall and Name lit in the System's cyan inside the violet frame.
+- **Kin and Role, as the tooltip heads itself.** Each block is the mark and name with its kind at the right
+  (`Role bonus`, `Kin`), one line of who gains it, said once (`The whole party gains it.`, `Each Undead Shadow
+  deployed gains it.`), then its breakpoints. Their stats are spelt and coloured as the tooltip's are (`Effect Chance
+  +6`, `Max HP +8%, Status Save +8`). Before, every breakpoint repeated `for the whole party`, in lower case. As in the tooltip, the breakpoint reached
+  is lit and the rest dimmed.
+- **Wards.** `Immune` and `Resists` are each a word over their statuses. Each status is a tag with its mark that opens
+  the one tooltip, the status by name with `Immune` or `Resists` at the right:
+  - `Bleeding never lands on it, whatever inflicts it.`
+  - `Against Cursed, it has Status Save +15.` The figure is `RESIST_STATUS`, which the fight already took off a
+    resisted status's chance; it is now a named constant, so the copy reads it.
+  - then what the status does: `Bleeding: HP -6% each round.`
+- **The identity passive.** A creature's identity passive read `Leading derived stat +10%.`. It now names what it
+  raises for that Shadow, from its stats (`combat.passiveFor`): `Accuracy +10%, from PER, its highest stat.`. The
+  fight's rule is unchanged; its 10% is now `IDENTITY_GAIN`.
+- **The Record** counts `Gates`, the Gates the Shadow walked into, never `Deployed`, which is the head's tag.
+- **Held by tests.** The voice test tells every creature's identity passive by its stat for every lead. The tour
+  checks the state tag sits beside the name and not under the tags, that no breakpoint repeats `for the whole party`,
+  and that no passive says `Leading derived stat`. It finds a Shadow that wards off a status and opens the ward's
+  tooltip. The smoke test fails if a rest asks in a window, and keeps the practice rest with **Later**.
+- **Balance.** Nothing a fight decides changed: `RESIST_STATUS` and `IDENTITY_GAIN` are the numbers the fight already
+  played (15 and 10%). No calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

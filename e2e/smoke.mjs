@@ -129,13 +129,16 @@ async function raidGate(row, name, auto = false) {
   for (let i = 0; i < 600; i++) {
     await page.waitForSelector('.arena__foot .btn, .turnbar, .syswin, .arena--results, button.gnode.is-next, .nodepanel', { timeout: 20000 });
     if (await visible('.arena--results')) break;
-    // A rest found asks whether to rest now: the practice Gate keeps its rest for later, every other rests at once.
-    if (await visible('.syswin:has-text("Would you like to rest now?")')) {
+    // A rest found opens its three ways at once, never a window asking first: the practice Gate keeps its rest for
+    // later, every other rests at once.
+    if (await visible('.syswin:has-text("rest now")')) throw new Error('A REST FOUND STILL ASKS IN A WINDOW');
+    if (!auto && await visible('.nodepanel >> text=Later')) {
+      if ((await page.locator('.nodepanel .restway').count()) !== 3) throw new Error('A REST DID NOT OFFER HEAL, HONE AND STEADY');
       if (name === 'practice' && !kept) {
         kept = true;
         await snap('practice-rest-found');
-        await page.locator('.syswin__foot .btn', { hasText: /^Not Yet$/ }).click();
-      } else await page.locator('.syswin__foot .btn', { hasText: /^Rest$/ }).click();
+        await page.locator('.nodepanel >> text=Later').click();
+      } else await page.locator('.nodepanel .restway--heal').click();
       await sleep(400);
       continue;
     }
@@ -215,12 +218,10 @@ async function raidGate(row, name, auto = false) {
     if (name === 'practice' && kept && !restedBack && await visible('.dmap button.gnode--boss.is-next')) {
       // Walk away to the entrance, then back to the rest kept for later, and use it, once.
       await page.locator('.dmap button.gnode--entrance').click(); await sleep(600);
-      // No button under the plan: the rest found is tapped on the plan, and asks.
+      // No button under the plan: the rest found is tapped on the plan, and opens its three ways at once.
       if (await page.locator('.arena__map .btn, .mapdock .btn', { hasText: /^Rest$/ }).count()) throw new Error('A REST STILL HAS A BUTTON UNDER THE PLAN');
       await page.locator('.dmap button.droom.gnode--rest.is-restable').click(); await sleep(600);
-      if (!(await visible('.syswin:has-text("Would you like to rest now?")'))) throw new Error('A REST FOUND AND KEPT DID NOT ASK WHEN TAPPED');
-      await snap('practice-rest-ask');
-      await page.locator('.syswin__foot .btn', { hasText: /^Rest$/ }).click(); await sleep(500);
+      if (await visible('.syswin:has-text("rest now")')) throw new Error('A REST FOUND AND KEPT STILL ASKS IN A WINDOW');
       // Its three ways, side by side: Heal, Hone and Steady.
       if ((await page.locator('.nodepanel .restway').count()) !== 3) throw new Error('A REST DID NOT OFFER HEAL, HONE AND STEADY');
       await snap('practice-rest-ways');

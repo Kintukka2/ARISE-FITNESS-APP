@@ -18,6 +18,7 @@ import { ENGRAVE, ENGRAVE_PASSIVES, engravingById, engraveStyle, type EngravingI
 import { at as byGrade, TRICK, TRICKS, type TrickId } from '@/data/tricks';
 import { MOVE, REAR_MELEE, type Row } from '@/data/ranks';
 import type { Ability, Attrs, Order, Tactic } from './types';
+import { STAT_WORDS } from './gear';
 import { clamp, type Rand } from './util';
 
 export interface Derived {
@@ -176,6 +177,22 @@ const BASE_STATUS = 35;
 const SWING = 0.15;
 export const ROUND_CAP = 40;
 const SIGNATURE: Record<string, keyof Derived> = { STR: 'patk', AGI: 'evasion', PER: 'accuracy', VIT: 'maxHp', INT: 'mpow' };
+/** What an identity passive adds to the stat its unit's highest attribute leads to. */
+export const IDENTITY_GAIN = 0.1;
+/** What a resistance takes off the chance of its status landing, in points. */
+export const RESIST_STATUS = 15;
+/** The attribute a unit of these stats leads with, as its identity passive reads it. */
+const leadAttr = (base: Attrs) => (Object.keys(SIGNATURE) as (keyof Attrs)[]).reduce((a, b) => (base[b] > base[a] ? b : a));
+
+/**
+ * What a passive does for a unit of these stats, as a card tells it: an identity passive names the stat it raises
+ * (`Accuracy +10%, from PER, its highest stat.`); every other passive reads as it is written.
+ */
+export function passiveFor(n: string, base: Attrs): string {
+  if (passiveMap.get(n) !== 'identity' || PASSIVES.every((p) => p.name !== n)) return passiveText(n);
+  const lead = leadAttr(base);
+  return `${STAT_WORDS[SIGNATURE[lead]]} +${Math.round(IDENTITY_GAIN * 100)}%, from ${lead}, its highest stat.`;
+}
 
 export interface UnitSpec {
   uid: string;
@@ -278,9 +295,8 @@ export class Unit {
     this.atkMult = sp.atkMult ?? 1;
     const d = applyBonuses(derive(sp.base), sp.bonus ?? {});
     if (this.has('identity')) {
-      const lead = (Object.keys(SIGNATURE) as (keyof Attrs)[]).reduce((a, b) => (sp.base[b] > sp.base[a] ? b : a));
-      const key = SIGNATURE[lead];
-      d[key] = d[key] * 1.1;
+      const key = SIGNATURE[leadAttr(sp.base)];
+      d[key] = d[key] * (1 + IDENTITY_GAIN);
     }
     if (this.has('brace')) d.defense *= 1.2;
     if (this.has('arcane')) d.resist += 15;
@@ -466,7 +482,7 @@ function statusLands(src: Unit, t: Unit, st: string) {
   if (src.does('virulent') && !t.imm.includes(st)) return 100;
   if (t.imm.includes(st)) return 0;
   let c = BASE_STATUS + src.d.statusChance - Math.round(t.d.resist / 5) - t.d.statusSave;
-  if (t.res.includes(st)) c -= 15;
+  if (t.res.includes(st)) c -= RESIST_STATUS;
   return Math.max(5, c);
 }
 

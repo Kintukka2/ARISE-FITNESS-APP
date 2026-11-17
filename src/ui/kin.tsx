@@ -15,6 +15,7 @@ import type { Shadow } from '@/core/types';
 import { Section } from './components';
 import { FamilyGlyph } from './emblems';
 import { Glyph } from './icons';
+import { Keyed } from './keyed';
 import { TipBody, type TipText } from './tip';
 
 /** Each role's mark. */
@@ -103,12 +104,15 @@ export function Steps({ n, at: steps = kin.KIN_AT }: { n: number; at?: readonly 
   );
 }
 
-/** Each breakpoint and what it gives, as a trait's tooltip lists them: `(2) Attack +10%`, the one reached lit. */
+/**
+ * Each breakpoint and what it gives, as a trait's tooltip lists them: `(2) Attack +10%`, the one reached lit, its stats
+ * spelt and coloured as the tooltip's are (`tipStats`, `Keyed`).
+ */
 function Tiers({ steps, text, tier }: { steps: readonly number[]; text: (tier: number) => string; tier: number }) {
   return (
     <ul class="kintiers">
       {steps.map((at, i) => (
-        <li key={at} class={tier === i + 1 ? 'is-on' : ''}><b class="num">({at})</b> {text(i + 1)}</li>
+        <li key={at} class={tier === i + 1 ? 'is-on' : ''}><b class="num">({at})</b> <Keyed text={text(i + 1)} /></li>
       ))}
     </ul>
   );
@@ -164,9 +168,9 @@ export function KinTracker({ squad }: { squad: readonly Shadow[] }) {
 
 /**
  * What a Shadow brings to a squad, on its card, as Solo Leveling: Arise sets a Shadow's aura under its
- * stats: a name over its breakpoints, hairlines between. Its role's bonus under `Leader Role bonus`, for the
- * whole party; its family's Kin under `Orc Kin`; each breakpoint and what it gives, the one its squad reaches lit
- * while it is deployed.
+ * stats, each block headed as the tooltip is: the mark and name, its kind at the right (`Role bonus`, `Kin`), one line
+ * of who gains it, said once (`The whole party gains it.`), then each breakpoint and what it gives, the one its squad
+ * reaches lit while it is deployed. Hairlines between.
  */
 export function KinOfShadow({ sh, family, role, squad }: { sh: Shadow; family: string; role: string; squad: readonly Shadow[] }) {
   const on = squad.includes(sh);
@@ -177,14 +181,18 @@ export function KinOfShadow({ sh, family, role, squad }: { sh: Shadow; family: s
     <Section title="Kin & Role">
     <div class="sp-auth">
       <div class="sp-auth__row">
-        <span class="sp-auth__name"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} />{role} Role bonus</span>
-        <Tiers steps={kin.ROLE_AT} text={(t) => `${roleText(role, t)} for the whole party`} tier={roleTier} />
+        <span class="sp-auth__head"><span class="sp-auth__name"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} />{role}</span><small class="sp-auth__kind">Role bonus</small></span>
+        <p class="sp-auth__who">The whole party gains it.</p>
+        <Tiers steps={kin.ROLE_AT} text={(t) => tipStats(kin.roleBoon(role, t))} tier={roleTier} />
       </div>
       <div class="sp-auth__row">
-        <span class="sp-auth__name"><FamilyGlyph family={family} size={13} />{family} Kin</span>
+        <span class="sp-auth__head"><span class="sp-auth__name"><FamilyGlyph family={family} size={13} />{family}</span><small class="sp-auth__kind">Kin</small></span>
         {family === kin.KIN_ALL
-          ? <p class={tier ? 'is-on' : ''}>Kin to every family</p>
-          : <Tiers steps={kin.KIN_AT} text={(t) => kinText(family, t)} tier={tier} />}
+          ? <p class={`sp-auth__who ${tier ? 'is-on' : ''}`}>Kin to every family: it adds to each Kin beside it.</p>
+          : <>
+            <p class="sp-auth__who">Each {family} Shadow deployed gains it.</p>
+            <Tiers steps={kin.KIN_AT} text={(t) => tipStats(kin.kinBoon(family, t))} tier={tier} />
+          </>}
       </div>
     </div>
     </Section>
