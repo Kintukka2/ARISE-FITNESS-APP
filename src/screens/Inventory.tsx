@@ -16,10 +16,11 @@ import { ATTRS, autoAllocate, BOOST_CAP, classBonus, rankOf, spendPoint, STAT_CA
 import * as skilltree from '@/core/skilltree';
 import { CRIT, HIT, Unit } from '@/core/combat';
 import { heroSpec } from '@/core/raid';
-import { licenceHolding, licensedRank } from '@/core/licence';
+import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
+import { buyLicence, priceOf, storeReady } from '@/platform/native';
 import * as shop from '@/core/shop';
 import type { Save, Stat } from '@/core/types';
-import { STATS } from '@/core/types';
+import { RANKS, STATS } from '@/core/types';
 import { group, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { checkAwards } from '@/app/flow';
@@ -42,8 +43,8 @@ import { Constellation, openSkills } from './Skills';
 /** The Skills window: kept under its old name for the screens that open it from a class. */
 export const openClass = openSkills;
 
-/** A line of the log as it reads now: an older save wrote `Iron Den: cleared`, and the Spire's and Rift's names with a middle dot. */
-const logName = (n: string) => n.replace(/ \u00b7 /g, ': ').replace(/: (cleared|withdrawn|defeated)$/, ', $1');
+/** A line of the log as it reads now: older saves wrote `Iron Den: cleared` or the outcome after a dash, and the Spire's and Rift's names with a middle dot. */
+const logName = (n: string) => n.replace(/ \u00b7 /g, ': ').replace(/(?::| \u2014) (cleared|withdrawn|defeated)$/, ', $1');
 
 export function Inventory() {
   const s = useSave();
@@ -528,22 +529,29 @@ export function openDossier() {
       const s = store.get();
       const felled = Object.values(s.stats.killsByFamily).reduce((a, b) => a + b, 0);
       const mine = rankOf(s).key === 'N' ? 'N' : licensedRank(s);
-      // The lifetime record, a figure to each, the most telling first; what qualifies a figure goes under it.
-      const record: [string, ComponentChildren, string?][] = [
-        ['Gates cleared', group(s.gates.clears), `${s.gates.cleared.length} distinct`],
+      // The lifetime record, a figure to each, the most telling first, and every figure a record of its own (the owner's
+      // call: nothing sits under another): the Gates, then the quests and climbs, then what the hunter has gathered.
+      const record: [string, ComponentChildren][] = [
+        ['Gates cleared', group(s.gates.clears)],
+        ['Different Gates cleared', s.gates.cleared.length],
         ['Best run unbroken', s.gates.bestUnbroken],
         ['Bosses faced', s.gates.bosses.length],
         ['Withdrawn', s.gates.withdrawn],
         ['Carried out', s.gates.fails],
         ['Cleared above grade', s.stats.reachClears],
-        ['Daily Quests', group(s.stats.contracts), `${s.stats.contractDays} full days`],
+        ['Daily Quests', group(s.stats.contracts)],
+        ['Full days of Daily Quests', s.stats.contractDays],
         ['Ascension', s.ascension.best ? `Level ${s.ascension.best}` : '-- --'],
-        ['The Pale Spire', s.spire.top ? `Floor ${s.spire.top}` : '-- --', weekBest(s) ? `This week ${weekBest(s)}` : undefined],
+        ['The Pale Spire', s.spire.top ? `Floor ${s.spire.top}` : '-- --'],
+        ['The Spire this week', weekBest(s) ? `Floor ${weekBest(s)}` : '-- --'],
         ['Creatures defeated', group(felled)],
-        ['Shadows bound', s.shadows.army.length, `Extractions ${s.stats.extractionsWon}/${s.stats.extractions}`],
+        ['Shadows bound', s.shadows.army.length],
+        ['Extractions', `${s.stats.extractionsWon}/${s.stats.extractions}`],
         ['XP earned', group(s.stats.xpTotal)],
         ['Mana Shards earned', group(s.wallet.earned)],
       ];
+      const grade = licensedRank(s);
+      const issued = licenceRequired(s) ? (s.licence.granted ? 'Issued' : '-- --') : 'Issued';
       return (
         <div class="stack dossier">
           {/* The licence as the Association issues it, as the Licence window draws it: the grade's seal, the number, when the hunter woke. */}
@@ -557,14 +565,27 @@ export function openDossier() {
               <b>{new Date(s.createdAt).toLocaleDateString()}</b>
             </span>
           </div>
+          {/* What the grade opens, as the Licence window gave it before the Gates screen's licence opened this page; the grade
+              itself is the seal's, once (the owner's call). The hunter's own rank only where it differs (held by the licence, or
+              Sovereign), the Association Licence only where there is one to hold, and its purchase while it waits. */}
+          <dl class="bfacts glicence__facts">
+            <div><dt>Gates open</dt><dd>Up to {RANKS[Math.min(5, RANKS.indexOf(grade) + 1)]}-Rank</dd></div>
+            {rankOf(s).name !== `${grade}-Rank` && <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>}
+            {(licenceRequired(s) || s.licence.granted) && <div><dt>Association Licence</dt><dd>{issued}</dd></div>}
+          </dl>
+          {licenceHolding(s) && <p class="hint">Gate grade held at {grade}-Rank.</p>}
+          {licenceRequired(s) && licenceHolding(s) && storeReady() && (
+            <Btn kind="primary" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
+              Association Licence<span class="btn__aside">{priceOf('licence') ?? 'Buy'}</span>
+            </Btn>
+          )}
           <section class="dsec">
             <header class="exsec__head"><span class="label">Record</span><i aria-hidden="true" /></header>
             <div class="drecord">
-              {record.map(([k, v, sub]) => (
+              {record.map(([k, v]) => (
                 <div key={k} class="drecord__one">
                   <b class="num">{v}</b>
                   <small>{k}</small>
-                  {sub && <i>{sub}</i>}
                 </div>
               ))}
             </div>

@@ -2953,6 +2953,38 @@ never 0, which would mean dead, and at Fatigue 100. The Elixir is gone.
   day reaches B to S a day to three sooner, as a wipe now costs the hours it takes to rest (Fatigue 100 to the
   campaign's 45 is 11), not a fixed 12.
 
+## One licence on the Gates screen, wards told on both cards, every record its own — built
+
+The owner asked for three things:
+- merge the Gates screen's grade card and record row, which both led to the licence, into one button with the
+  licence's look (licence number, rank, the rank's icon, the hunter's name) that opens their page
+- give the creature card's statuses a tooltip as the Shadow card's have, the two lists laid out alike after the
+  creature card's, each word itself tapped rather than a pill
+- give the Hunter page's qualifying lines (`12 distinct`, `2 full days`, `Extractions 5/10`) records of their own
+
+What changed:
+- **The licence on the Gates screen** (`HunterRow` in `screens/Gates.tsx`). One card, drawn as the Licence window drew
+  the licence: the grade's seal in a ring, `Hunter` over the name and `Licence` over the number, the grade's crest
+  faint behind, and at its right `Grade` over `C-Rank` and `Gates up to B-Rank`, a chevron at its end. It is gold
+  while the Association Licence waits to be bought, and it opens the hunter's page. The record row (`Entered`,
+  `Cleared`, `Taken`, `Unbroken`) and the grade card are gone; Ascension's card stands under the licence.
+- **The Licence window is gone.** What only it said now stands on the hunter's page (`openDossier`), under the
+  licence: `Gates open`, `Rank` where the hunter's own differs, `Association Licence` where there is one to hold, and
+  its purchase while it waits. The grade is the seal's, once, as before.
+- **Every record its own.** The page's record gives each figure a cell: `Different Gates cleared`, `Full days of Daily
+  Quests`, `The Spire this week` and `Extractions` beside the records they used to sit under. An older save's
+  dashed or coloned log lines read `Iron Den, cleared`.
+- **Wards, told alike** (`ui/wards.tsx`). The creature card's `Immune: Bleeding, Poisoned` and `Resists: Cursed`, a
+  line each, now open the one tooltip from the word itself, a dotted rule under it and no pill. The tooltip gives the
+  status with `Immune` or `Resists` at its right, then what the ward does and what the status would have done. The
+  Shadow card lists its wards the same way, in its own violet, where it used to show pills under `Immune` and
+  `Resists`.
+- **Held by tests.** The tour:
+  - checks the Gates screen holds one licence card, with the name, number and grade, and no record row or grade card
+  - opens the licence onto the hunter's page, with `Gates open` and no record sitting under another
+  - opens a ward's word on a creature's card and on a Shadow's, and fails on a status drawn as a pill
+- **Balance.** Words and layout only: no calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

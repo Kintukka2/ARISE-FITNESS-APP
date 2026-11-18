@@ -422,9 +422,11 @@ try {
   await nav('gates');
   await snap('gates', true);
   if (await page.locator('.ghcard.is-ascension').count()) throw new Error('THE ASCENSION CARD SHOWED BELOW S-RANK');
-  // The day's Gates as a radar: a portal to each grade round the count, the record as facts under it.
+  // The day's Gates as a radar: a portal to each grade round the count, the hunter's licence under it, one card.
   if ((await page.locator('.gradar__gate').count()) !== 6) throw new Error('THE RADAR DOES NOT HOLD A PORTAL TO EACH GRADE');
-  if ((await page.locator('.ghrecord > span').count()) !== 4) throw new Error('THE RECORD IS NOT FOUR FACTS');
+  if (await page.locator('.ghrecord, .ghcard.is-licence').count()) throw new Error('THE GATES SCREEN STILL HAS A GRADE CARD AND A RECORD ROW');
+  if ((await page.locator('.ghlicence').count()) !== 1) throw new Error('THE GATES SCREEN DOES NOT SHOW THE HUNTER\'S LICENCE');
+  if (!(await page.locator('.ghlicence .glicence__who', { hasText: /Licence/i }).count()) || !(await page.locator('.ghlicence .ghlicence__grade', { hasText: /-Rank/ }).count())) throw new Error('THE LICENCE CARD DOES NOT GIVE THE NAME, NUMBER AND GRADE');
   if (await page.evaluate(() => document.querySelector('.app, body').scrollWidth > window.innerWidth)) throw new Error('THE GATES SCREEN SCROLLS SIDEWAYS');
   // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
   if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
@@ -433,8 +435,13 @@ try {
   if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
   await snap('gates-potion');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
-  await page.locator('.ghcard.is-licence').click(); await sleep(400);
-  if (!(await page.locator('.sheet.is-top .glicence__card').count())) throw new Error('THE GRADE CARD DID NOT OPEN THE LICENCE');
+  await page.locator('.ghlicence').click(); await sleep(500);
+  // The licence opens the hunter's page: the licence, the grade, every figure a record of its own, and the log.
+  if (!(await page.locator('.sheet.is-top .dossier .glicence__facts').count())) throw new Error('THE LICENCE DID NOT OPEN THE HUNTER\'S PAGE WITH THEIR GRADE');
+  if (await page.locator('.sheet.is-top .drecord__one i').count()) throw new Error('A RECORD ON THE HUNTER\'S PAGE STILL SITS UNDER ANOTHER');
+  for (const k of ['Different Gates cleared', 'Full days of Daily Quests', 'Extractions']) {
+    if (!(await page.locator('.sheet.is-top .drecord__one small', { hasText: new RegExp(`^${k}$`, 'i') }).count())) throw new Error(`THE HUNTER'S PAGE HAS NO RECORD OF ${k.toUpperCase()}`);
+  }
   await snap('grade'); await close();
   // A grade's portal opens the board on that grade alone.
   await page.locator('.gradar__gate:not(.is-none):not(.is-shut)').first().click(); await sleep(600);
@@ -655,6 +662,17 @@ try {
   if (!(await page.locator('.sheet.is-top .bcreature .bbox__head', { hasText: 'Special drop' }).count())) throw new Error('THE CREATURE CARD DOES NOT SAY SPECIAL DROP');
   if (await page.locator('.sheet.is-top .bcreature', { hasText: /by grade/ }).count()) throw new Error('A CREATURE CARD GIVES A HABIT BY GRADE, NOT ITS OWN NUMBERS');
   await snap('brief-creature');
+  // Its statuses are words, never pills, and each word opens what the ward does.
+  if (await page.locator('.sheet.is-top .bcreature [aria-label="Statuses"] .sp-tag, .sheet.is-top .bcreature [aria-label="Statuses"] .chip').count()) throw new Error('A CREATURE\'S STATUSES ARE PILLS');
+  {
+    const word = page.locator('.sheet.is-top .bcreature .bwards .wardword').first();
+    if (await word.count()) {
+      await word.scrollIntoViewIfNeeded(); await word.click(); await sleep(300);
+      if (!(await page.locator('.tip.tip--gate .tip__kind', { hasText: /Immune|Resists/i }).isVisible())) throw new Error('A CREATURE\'S STATUS TAPPED DID NOT SAY WHAT IT WARDS OFF');
+      await snap('brief-creature-ward');
+      await page.keyboard.press('Escape'); await sleep(250);
+    }
+  }
   await close(); await sleep(400);
   await page.locator('.sheet.is-top .benemy.is-boss.is-tap').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .bcreature', { hasText: 'Gate boss' }).count())) throw new Error('THE BOSS’S PORTRAIT OPENED NO CARD');
@@ -1047,7 +1065,7 @@ try {
     let told = false;
     for (let i = 0; i < Math.min(await rows.count(), 12) && !told; i++) {
       await rows.nth(i).click(); await sleep(700);
-      const ward = page.locator('.sheet.is-top .sp-ward__tag').first();
+      const ward = page.locator('.sheet.is-top .bwards .wardword').first();
       if (await ward.count()) {
         await ward.scrollIntoViewIfNeeded(); await sleep(300);
         await ward.click(); await sleep(300);

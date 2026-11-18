@@ -3,7 +3,7 @@
  * squad is made; and the Orders under it.
  */
 import { sfx } from '@/audio/audio';
-import { ability, passiveFor, RESIST_STATUS, STATUS_TEXT, TACTICS } from '@/core/combat';
+import { ability, passiveFor, TACTICS } from '@/core/combat';
 import { dungeonById, enemyById } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
@@ -24,8 +24,6 @@ import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
 import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, ROLE_TIER, roleTip } from '@/ui/kin';
 import { InfoTag } from '@/ui/infotag';
-import { STATUS_MARK, StatusMark } from '@/ui/effects';
-import type { TipText } from '@/ui/tip';
 import { STYLE_GLYPH, styleOf, styleTip } from '@/ui/stand';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
 import { buzz, flash } from '@/ui/feedback';
@@ -33,6 +31,7 @@ import { claimAll, claimPromotion } from '@/app/flow';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { useDrag } from '@/ui/drag';
+import { WardLines } from '@/ui/wards';
 
 export function Shadows() {
   const s = useSave();
@@ -724,40 +723,6 @@ function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   );
 }
 
-/**
- * A status a Shadow wards off, in the game's one tooltip, as the fight tells a status: its mark and name, `Immune` or
- * `Resists` at the head's right, then what the ward does and what the status would have done.
- */
-function wardTip(st: string, kind: 'Immune' | 'Resists'): TipText {
-  const does = STATUS_TEXT[st];
-  return {
-    title: st,
-    kind,
-    tone: 'shadow',
-    mark: STATUS_MARK[st] ? <span class="tip__mark tip__status"><StatusMark name={st} /></span> : undefined,
-    lines: [
-      kind === 'Immune' ? `${st} never lands on it, whatever inflicts it.` : `Against ${st}, it has Status Save +${RESIST_STATUS}.`,
-      ...(does ? [`${st}: ${does}.`] : []),
-    ],
-  };
-}
-
-/** The statuses it is immune to or resists, under their word, each a tag that tells what it wards off. */
-function Wards({ kind, list }: { kind: 'Immune' | 'Resists'; list: readonly string[] }) {
-  return (
-    <div class={`sp-ward is-${kind.toLowerCase()}`}>
-      <dt class="label">{kind}</dt>
-      <dd>
-        {list.map((st) => (
-          <InfoTag key={st} class="sp-tag sp-ward__tag" tip={wardTip(st, kind)}>
-            {STATUS_MARK[st] && <StatusMark name={st} size={12} />}{st}
-          </InfoTag>
-        ))}
-      </dd>
-    </div>
-  );
-}
-
 /** What it fights with: its skills, the second sealed until the rank that remembers it; and its traits. */
 function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
   const known = shadows.kitOf(sh);
@@ -792,12 +757,8 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
                 <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small>{passiveFor(e.passive, shadows.statsOf(sh))}</small></span>
               </div>
             )}
-            {(e.imm.length > 0 || e.res.length > 0) && (
-              <dl class="sp-wards">
-                {e.imm.length > 0 && <Wards kind="Immune" list={e.imm} />}
-                {e.res.length > 0 && <Wards kind="Resists" list={e.res} />}
-              </dl>
-            )}
+            {/* Listed as the creature card lists them, each status's word opening what the ward does (ui/wards.tsx). */}
+            <WardLines imm={e.imm} res={e.res} tone="shadow" />
           </div>
         </Section>
       )}

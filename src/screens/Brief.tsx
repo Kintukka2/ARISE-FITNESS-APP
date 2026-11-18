@@ -47,7 +47,7 @@ import { Btn, Facts as Spaced, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
 import { useDrag } from '@/ui/drag';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
-import { HabitMark, StatusMark } from '@/ui/effects';
+import { HabitMark } from '@/ui/effects';
 import { ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
 import { makeLine } from '@/ui/kin';
@@ -69,6 +69,7 @@ import { openHunter } from './Hunter';
 import { ModRows, SealArt } from '@/ui/seals';
 import { ParCard } from '@/ui/par';
 import { drinkFlow } from './Inventory';
+import { WardLines } from '@/ui/wards';
 
 /**
  * The Seal button's line while none is taken: what Sealing does, the interface's, at the owner's call
@@ -549,11 +550,6 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
   );
 }
 
-/** Statuses named in a line, each with its mark, as a fight's card shows them. */
-function StatusList({ names }: { names: string[] }) {
-  return <>{names.map((x, i) => <span key={x} class="bstatus"><span class="tag__mark"><StatusMark name={x} /></span>{x}{i < names.length - 1 ? ',' : ''}</span>)}</>;
-}
-
 /**
  * The party as a formation, after Idle Heroes' Hero Deployment: a board facing the enemies above it,
  * the front rank at its head and the rear under it, each member a face in the rank they stand in, the hunter's own
@@ -914,10 +910,8 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {(e.imm.length > 0 || e.res.length > 0) && (
         <section class="bbox" aria-label="Statuses">
           <span class="label bbox__head">Statuses</span>
-          <ul class="blist">
-            {e.imm.length > 0 && <Line cls="is-imm"><b>Immune:</b> <StatusList names={e.imm} /></Line>}
-            {e.res.length > 0 && <Line cls="is-res"><b>Resists:</b> <StatusList names={e.res} /></Line>}
-          </ul>
+          {/* Each status's word opens what the ward does, in the one tooltip, never a pill (ui/wards.tsx). */}
+          <WardLines imm={e.imm} res={e.res} tone="gate" />
         </section>
       )}
       {cond && (
