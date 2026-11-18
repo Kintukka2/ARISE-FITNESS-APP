@@ -1676,6 +1676,12 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 /* A status named on the creature card: its mark in a tile, then its name, as on a fight's card. */
 .bstatus { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; white-space: nowrap; }
 .bstatus .tag__mark { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+/* A ward's word is what is tapped (ui/wards.tsx): the word as the line sets it, a dotted rule under it, never a pill. */
+.bstatus.is-ward { gap: 0; }
+button.wardword.infotag { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; text-decoration: underline dotted color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 3px; }
+button.wardword.infotag:hover, button.wardword.infotag[aria-expanded="true"] { color: #fff; text-decoration-color: currentColor; }
+/* On the Shadow card, under its passive, the wards keep the creature card's lines. */
+.sp-traits .bwards { margin-top: 6px; }
 .bhabit + .bhabit { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--sys-hair); }
 .bline.is-ember { animation: lineIn 460ms var(--ease) both; }
 .bline.is-ember .bline__mark > i { background: var(--ember); box-shadow: 0 0 6px var(--ember-glow); }
@@ -2679,14 +2685,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .sp-auth__kind { color: var(--ink-3); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .sp-auth__row p.sp-auth__who { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .sp-auth__row p.sp-auth__who.is-on { color: var(--verdant); }
-/* The statuses a Shadow wards off, under their word, each a tag that opens what it wards off. */
-.sp-wards { display: grid; gap: 6px; margin: 4px 0 0; }
-.sp-ward { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 8px; }
-.sp-ward dt { margin: 0; font-size: 0.58rem; }
-.sp-ward dd { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
-.sp-ward__tag .status-mark, .sp-ward__tag svg { width: 12px; height: 12px; }
-.sp-ward.is-immune .sp-ward__tag { border-color: color-mix(in srgb, var(--verdant) 55%, transparent); background: color-mix(in srgb, var(--verdant) 8%, transparent); }
-.sp-ward.is-immune dt { color: var(--verdant); }
 .sp-auth__row p.is-on { color: var(--verdant); }
 
 /* The card's head, as the panel's rows: a label, a hairline and the value, an arrow at the end of Rank's while a promotion waits. */
@@ -2964,14 +2962,21 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .ghcard.is-ascension .ghcard__art b { margin-top: 12px; font-size: 1.5rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
 .ghcard.is-call, .ghcard.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-mix(in srgb, var(--gold) 30%, transparent); }
 .ghcard.is-call .ghcard__text > b { color: var(--gold); }
-.ghrecord { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 14px; align-items: center; width: 100%; min-height: 56px; padding: 6px 8px 6px 2px; border: 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); background: none; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
-.ghrecord > span { display: grid; justify-items: center; gap: 2px; }
-.ghrecord > span + span { border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); }
-.ghrecord small { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
-.ghrecord b { font-size: 1.02rem; font-weight: 800; color: var(--ink); }
-.ghrecord__go { width: 12px; height: 12px; color: var(--ink-3); }
-.ghrecord:active { background: rgba(255, 255, 255, 0.04); }
-.ghrecord:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+/* The hunter's licence on the Gates screen, drawn as the Association issues it (the licence card's look) and opening their
+   page: the grade's seal, the name and number, the grade and what it opens at the right, a chevron at the end. */
+button.ghlicence { width: 100%; grid-template-columns: 58px minmax(0, 1fr) auto 12px; gap: 12px; padding: 12px; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: box-shadow 160ms; }
+.ghlicence .glicence__seal { width: 58px; height: 58px; }
+.ghlicence .glicence__who b { font-size: 0.98rem; }
+.ghlicence .glicence__who b + .label { margin-top: 4px; }
+.ghlicence__grade { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
+.ghlicence__grade .label { font-size: 0.54rem; }
+.ghlicence__grade b { font-size: 1.05rem; font-weight: 800; color: color-mix(in srgb, var(--rc) 55%, #fff); }
+.ghlicence__grade small:not(.label) { font-size: 0.62rem; color: var(--ink-3); white-space: nowrap; }
+.ghlicence__go { position: relative; width: 12px; height: 12px; color: var(--ink-3); }
+button.ghlicence:active { box-shadow: inset 0 0 40px color-mix(in srgb, var(--rc) 24%, transparent); }
+button.ghlicence:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+/* Gold while the Association Licence waits to be bought on the page it opens. */
+button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-mix(in srgb, var(--gold) 30%, transparent); }
 
 /* The licence, as the Association issues it: the grade's seal, the hunter and their number, the letter behind. */
 .glicence__card { --rc: var(--ember); position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 14px; overflow: hidden; padding: 16px 14px;
@@ -2989,6 +2994,8 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .glicence__facts > div:nth-child(odd) { border-left: 0; }
 .glicence__facts > div:nth-child(n + 3) { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
 .glicence__facts dd { font-size: 0.92rem; text-align: center; }
+/* On the hunter's page the grade's facts share the row, one fact the whole of it. */
+.dossier .glicence__facts { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
 /* ------------------------------------------------------------------ Ascension, rebuilt
    The dial after Slay the Spire's Ascension select, the climb after Hades' heat gauge, the marks as diamonds. */
 .ascension { gap: 18px; }

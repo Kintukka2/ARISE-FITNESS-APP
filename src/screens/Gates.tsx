@@ -8,7 +8,7 @@ import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
 import * as gear from '@/core/gear';
 import { SETS } from '@/data/sets';
 import * as forge from '@/core/forge';
-import { GATE_XP, rankOf } from '@/core/progression';
+import { GATE_XP } from '@/core/progression';
 import * as contracts from '@/core/contracts';
 import * as ascension from '@/core/ascension';
 import { ASCENSION_FROM, ASCENSION_PAY, ASCENSION_RULED, BEYOND, MARK_MAX, MARKS, OVERCHARGE, PROOF, type Mark } from '@/data/ascension';
@@ -24,7 +24,7 @@ import { RANKS } from '@/core/types';
 import { dayKey, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
-import { buyLicence, priceOf, storeReady } from '@/platform/native';
+import { storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Facts, Shards, useNow, Voice } from '@/ui/components';
@@ -143,8 +143,10 @@ function GateRadar({ s, gates }: { s: Save; gates: Dungeon[] }) {
 }
 
 /**
- * The hunter under the radar: their grade with the Association and, from Ascension's grade, their Ascension, as
- * two cards; their record as facts in one row that opens the dossier.
+ * The hunter under the radar: their licence, drawn as the Association issues it, the grade's seal, their name, their
+ * number and their grade with what it opens, one button that opens the hunter's page (the dossier: the licence, the
+ * grade, the record and the log; the owner's call: one card where a grade card and a record row stood, the licence's
+ * look kept). From Ascension's grade, their Ascension under it.
  */
 function HunterRow({ s }: { s: Save }) {
   const mine = licensedRank(s);
@@ -152,19 +154,29 @@ function HunterRow({ s }: { s: Save }) {
   const a = s.ascension;
   const unset = marks.unset(s);
   const told = story.seen(s, 'ascension-told');
-  const entered = s.gates.clears + s.gates.fails + s.gates.withdrawn;
+  const opens = holding ? `Held at ${mine}-Rank` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank`;
   return (
     <section class="ghunter" aria-label="Hunter">
+      {/* Gold while the Association Licence waits to be bought, on the page it opens. */}
+      <button type="button" class={`glicence__card ghlicence ${holding && licenceRequired(s) && storeReady() ? 'is-hot' : ''}`} data-tour="licence" style={`--rc: var(--rank-${mine})`}
+        aria-label={`Hunter ${s.hunter.name}, licence ${s.hunter.regNo || 'none'}, ${mine}-Rank, ${opens}. Open your page`}
+        onClick={() => { sfx.tap(); openDossier(); }}>
+        <RankCrest rank={mine} class="glicence__crest" />
+        <span class="glicence__seal"><Sigil rank={mine} size={44} /></span>
+        <span class="glicence__who">
+          <small class="label">Hunter</small>
+          <b>{s.hunter.name}</b>
+          <small class="label">Licence</small>
+          <b class="num">{s.hunter.regNo || '-- --'}</b>
+        </span>
+        <span class="ghlicence__grade">
+          <small class="label">Grade</small>
+          <b>{mine}-Rank</b>
+          <small>{opens}</small>
+        </span>
+        <Glyph name="chevron" class="ghlicence__go" />
+      </button>
       <div class="ghunter__cards">
-        <button type="button" class={`ghcard is-licence ${holding && licenceRequired(s) && storeReady() ? 'is-hot' : ''}`} data-tour="licence" style={`--rc: var(--rank-${mine})`}
-          onClick={() => { sfx.tap(); openGrade(); }}>
-          <span class="ghcard__art"><Sigil rank={mine} size={36} /></span>
-          <span class="ghcard__text">
-            <small class="label">Grade</small>
-            <b>{mine}-Rank</b>
-            <small>{holding ? `Held at ${mine}-Rank.` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank.`}</small>
-          </span>
-        </button>
         {ascension.ascensionOpen(s) && (
           // Gold only while something waits: a mark to set, or the card not yet opened.
           <button type="button" class={`ghcard is-ascension ${unset > 0 || !told ? 'is-call' : ''}`} onClick={() => { sfx.tap(); openAscension(); }}>
@@ -177,14 +189,6 @@ function HunterRow({ s }: { s: Save }) {
           </button>
         )}
       </div>
-      <button type="button" class="ghrecord" aria-label={`Record: entered ${entered}, cleared ${s.gates.clears}, taken ${s.gates.cleared.filter((id) => id !== 'DNG-000').length}. Open the dossier`}
-        onClick={() => { sfx.tap(); openDossier(); }}>
-        <span><small>Entered</small><b class="num">{entered}</b></span>
-        <span><small>Cleared</small><b class="num">{s.gates.clears}</b></span>
-        <span><small>Taken</small><b class="num">{s.gates.cleared.filter((id) => id !== 'DNG-000').length}</b></span>
-        <span><small>Unbroken</small><b class="num">{s.gates.bestUnbroken}</b></span>
-        <Glyph name="chevron" class="ghrecord__go" />
-      </button>
     </section>
   );
 }
@@ -361,48 +365,6 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
       </button>
     </li>
   );
-}
-
-/** The hunter's grade with the Association: what it opens, and the licence that lifts the hold, where there is one to buy. */
-function openGrade() {
-  openSheet({
-    // Its number and its seal are on the licence itself, so the head names the window only and holds no icon (the owner's call).
-    title: 'Licence', system: { icon: null, kind: 'gates' },
-    render: () => {
-      const s = store.get();
-      const mine = licensedRank(s);
-      const issued = licenceRequired(s) ? (s.licence.granted ? 'Issued' : '-- --') : 'Issued';
-      return (
-        <div class="stack glicence">
-          {/* The licence itself, as the Association issues it: the grade's seal, the hunter, their number, the grade's letter behind. */}
-          <div class="glicence__card" style={`--rc: var(--rank-${mine})`}>
-            <RankCrest rank={mine} class="glicence__crest" />
-            <span class="glicence__seal"><Sigil rank={mine} size={58} /></span>
-            <span class="glicence__who">
-              <small class="label">Hunter</small>
-              <b>{s.hunter.name}</b>
-              <small class="label">Licence</small>
-              <b class="num">{s.hunter.regNo || '-- --'}</b>
-            </span>
-          </div>
-          {/* The grade the board answers to; the hunter's own rank only where it differs from it (held by the licence, or Sovereign),
-              and the Association Licence only where there is one to hold. */}
-          <dl class="bfacts glicence__facts">
-            <div><dt>Association grade</dt><dd>{mine}-Rank</dd></div>
-            <div><dt>Gates open</dt><dd>Up to {RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank</dd></div>
-            {rankOf(s).name !== `${mine}-Rank` && <div><dt>Rank</dt><dd>{rankOf(s).name}</dd></div>}
-            {(licenceRequired(s) || s.licence.granted) && <div><dt>Association Licence</dt><dd>{issued}</dd></div>}
-          </dl>
-          {licenceHolding(s) && <p class="hint">Gate grade held at {mine}-Rank.</p>}
-          {licenceRequired(s) && licenceHolding(s) && storeReady() && (
-            <Btn kind="primary" block onClick={async () => { if (await buyLicence()) { sfx.rankUp(); toast('Licence issued. Gates above D-Rank are open.', 'good'); } }}>
-              Association Licence<span class="btn__aside">{priceOf('licence') ?? 'Buy'}</span>
-            </Btn>
-          )}
-        </div>
-      );
-    },
-  });
 }
 
 /** Ascension: the level the next run is entered at, what it does, the road to the next, and the marks. Advancement, so gold. */
