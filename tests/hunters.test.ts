@@ -72,7 +72,14 @@ describe('an Association hunter', () => {
     expect(again.carried).toBe(won ? 1 : 2);
     expect(again.first).toBe(day);
     expect(again.last).toBe('2026-02-03');
-    // Partied with twice, they now stand first among your partners, and the rest after them.
+    // A Gate withdrawn from is what the clears and the carry-outs leave of the Gates walked together.
+    expect(again.withdrawn).toBe(0);
+    hunters.log(s, [party[0].id], {}, '2026-02-04', 'withdrawn');
+    const third = hunters.recordOf(s, party[0].id);
+    expect(third.runs).toBe(3);
+    expect(third.withdrawn).toBe(1);
+    expect(third.cleared + third.carried + third.withdrawn).toBe(third.runs);
+    // Partied with most, they now stand first among your partners, and the rest after them.
     expect(again.place).toBe(1);
     if (party[1]) expect(hunters.recordOf(s, party[1].id).place).toBe(2);
     // A save from before the parties were counted keeps its clears, and a hunter is never partied with fewer times than cleared with.

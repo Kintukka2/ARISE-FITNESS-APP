@@ -3,9 +3,9 @@
  * (`screens/Shadows.tsx`) and the info panel of Solo Leveling: Arise, in the System's cyan: what the System sees of a
  * hunter beside you. Top to bottom it reads who they are, what they fight with, and what you have done together:
  * their grade's plate in a ring, their registration, `Rank`, `Class` (the class itself tells what it is when tapped)
- * and `Power`, and how they fight; their stats in one row; their skills,
- * Strike first, and their traits, as their class gives them; and `Together`, your record with them alone, which
- * follows them from Gate to Gate (`hunters.recordOf`). Every number is the engine's: their class from
+ * and `Power`, and how they fight; their stats, a row to each as the Status sheet sets the hunter's own; their skills,
+ * Strike first, and their traits, as their class gives them; and `History`, your record with them alone, which
+ * follows them from Gate to Gate (`hunters.recordOf`). Each section opens on its label and a hairline. Every number is the engine's: their class from
  * `hunters.classOf`, their kit from `hunters.kitOf`, as the fight builds them.
  */
 import { ability, passiveText, STRIKE } from '@/core/combat';
@@ -21,10 +21,12 @@ import { sfx } from '@/audio/audio';
 import { skillLine } from './Skills';
 import { Facts, RankPlate, Section } from '@/ui/components';
 import { Glyph, STAT_ICON } from '@/ui/icons';
+import { StatRow } from '@/ui/statrow';
+import { Tip, tipAt, type TipAt, type TipText } from '@/ui/tip';
 import { InfoTag } from '@/ui/infotag';
 import { openSheet } from '@/ui/overlays';
 import { hunterStyleTip, STYLE_GLYPH, styleOfLead } from '@/ui/stand';
-import type { TipText } from '@/ui/tip';
+import { useState } from 'preact/hooks';
 import { statTip } from '@/ui/stattip';
 import { KeyedTips } from '@/ui/wards';
 
@@ -80,7 +82,7 @@ function HunterCard({ a }: { a: Ally }) {
       <Head a={a} />
       <Stats a={a} />
       <Kit a={a} />
-      <Together a={a} />
+      <History a={a} />
     </div>
   );
 }
@@ -123,25 +125,23 @@ function Head({ a }: { a: Ally }) {
 }
 
 /**
- * Their stats in one row of five, as a party member's sheet sets them side by side, the stat their class leads with lit
- * under `Best`. Each opens the one tooltip the Status and Stats sheets open for the hunter's own (`ui/stattip.tsx`).
+ * Their stats, a row to each, as the Status sheet sets the hunter's own (`ui/statrow.tsx`): the mark in the System's
+ * cyan, the key, a bar toward the Ability Points' limit and the figure, the stat their class leads with lit in gold
+ * under `Best`. Each opens the one stat tooltip, anchored to its row as the Status sheet's are (`ui/stattip.tsx`).
  */
 function Stats({ a }: { a: Ally }) {
   const c = hunters.classOf(a);
+  const [why, setWhy] = useState<{ k: Stat; at: TipAt } | null>(null);
   return (
     <Section title="Stats">
-      <ul class="hc-stats">
+      <div class="statrows">
         {ORDER.map((k) => (
-          <li key={k} class={`sysbox ${c?.lead === k ? 'is-lead' : ''}`}>
-            <InfoTag class="hc-stats__tip" tip={statTip(k, { best: c?.lead === k })}>
-              <Glyph name={STAT_ICON[k] ?? 'star'} />
-              <b class="num">{a.base[k]}</b>
-              <small>{k}</small>
-            </InfoTag>
-            {c?.lead === k && <i class="hc-stats__lead">Best</i>}
-          </li>
+          <StatRow key={k} k={k} value={a.base[k]} bar={a.base[k]} best={c?.lead === k} open={why?.k === k}
+            aside={c?.lead === k ? 'Best' : undefined} label={`${k} ${a.base[k]}${c?.lead === k ? ', their best' : ''}`}
+            onTap={(el) => { sfx.blip(); setWhy(why?.k === k ? null : { k, at: tipAt(el) }); }} />
         ))}
-      </ul>
+      </div>
+      {why && <Tip tip={statTip(why.k, { base: a.base[why.k], best: c?.lead === why.k })} at={why.at} close={() => setWhy(null)} />}
     </Section>
   );
 }
@@ -187,34 +187,57 @@ const ago = (day: string) => {
   return n === 0 ? 'Today' : n === 1 ? 'Yesterday' : `${n} days ago`;
 };
 
+/** Where they stand among the hunters you have walked Gates with, said plainly (the owner's call, where it read `Among your partners`). */
+function partnerLine(place: number, partners: number): string {
+  if (partners <= 1) return 'Your only partner so far.';
+  if (place === 1) return `Your most frequent partner, of ${partners}.`;
+  return `Your ${ordinal(place)} most frequent partner, of ${partners}.`;
+}
+
 /**
- * `Partnership`, your record with this hunter and nobody else's (the owner's call, where it read `Together`): the
- * parties you have made, large, then the Gates cleared and those you were carried out of together, the creatures they
- * defeated beside you and the bosses, when you first and last partied, and where they stand among your partners.
+ * `History`, your record with this hunter and nobody else's (the owner's call, where it read `Partnership` and before
+ * that `Together`), in four groups:
+ * - the Gates walked together, large, with where they stand among your partners under it;
+ * - how those Gates ended, as one bar split cleared, carried out and withdrawn from, its counts under it;
+ * - what they defeated beside you, the creatures and the bosses;
+ * - when you first and last walked a Gate together.
  */
-function Together({ a }: { a: Ally }) {
+function History({ a }: { a: Ally }) {
   const s = useSave();
   const r = hunters.recordOf(s, a.id);
+  const ends = [
+    { k: 'cleared', n: r.cleared, label: 'Cleared' },
+    { k: 'carried', n: r.carried, label: 'Carried out' },
+    { k: 'withdrawn', n: r.withdrawn, label: 'Withdrawn' },
+  ].filter((x) => x.n > 0 || x.k === 'cleared');
   return (
-    <Section title="Partnership">
+    <Section title="History">
       {r.runs === 0
-        ? <p class="hc-together__none">You have not partied together yet.</p>
+        ? <p class="hc-history__none">No Gates together yet.</p>
         : (
-          <div class="hc-together">
-            <div class="hc-together__lead">
+          <div class="hc-history">
+            <div class="hc-history__lead">
               <b class="num">{r.runs}</b>
-              <span>{r.runs === 1 ? 'Party together' : 'Parties together'}</span>
+              <span class="hc-history__what">
+                <span>{r.runs === 1 ? 'Gate together' : 'Gates together'}</span>
+                {r.place && <small class={r.place === 1 && r.partners > 1 ? 'is-first' : ''}>{partnerLine(r.place, r.partners)}</small>}
+              </span>
             </div>
-            <div class="sp-record">
-              <span><b class="num">{r.cleared}</b><small>Cleared</small></span>
-              <span><b class="num">{r.carried}</b><small>Carried out</small></span>
-              <span><b class="num">{r.kills}</b><small>Defeated</small></span>
-              <span><b class="num">{r.bosses}</b><small>Bosses</small></span>
+            <div class="hc-history__ends">
+              <i class="hc-history__bar" aria-hidden="true">
+                {ends.map((x) => <i key={x.k} class={`is-${x.k}`} style={`flex-grow: ${x.n}`} />)}
+              </i>
+              <ul class="hc-history__legend">
+                {ends.map((x) => <li key={x.k} class={`is-${x.k}`}><i aria-hidden="true" /><b class="num">{x.n}</b> {x.label}</li>)}
+              </ul>
             </div>
-            <dl class="hc-together__rows">
-              {r.first && <div><dt>First partied</dt><dd>{ago(r.first)}</dd></div>}
-              {r.last && <div><dt>Last partied</dt><dd>{ago(r.last)}</dd></div>}
-              {r.place && <div><dt>Among your partners</dt><dd>{r.partners === 1 ? 'The only one' : <>{r.place === 1 ? 'Most often' : `${ordinal(r.place)} most often`}<small class="num"> of {r.partners}</small></>}</dd></div>}
+            <div class="hc-history__figs">
+              <span><b class="num">{r.kills}</b><small>Creatures defeated</small></span>
+              <span><b class="num">{r.bosses}</b><small>Bosses defeated</small></span>
+            </div>
+            <dl class="hc-history__rows">
+              {r.first && <div><dt>First Gate together</dt><dd>{ago(r.first)}</dd></div>}
+              {r.last && <div><dt>Last Gate together</dt><dd>{ago(r.last)}</dd></div>}
             </dl>
           </div>
         )}

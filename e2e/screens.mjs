@@ -127,9 +127,12 @@ try {
   await snap('inventory');
   await snap('inventory-full', true);
   await page.locator('[data-hub="status"]').click(); await sleep(400); await snap('status', true);
+  // The climb to the next rank: a notch to each level from C-Rank's 20 to B-Rank's 35, the level pinned on it.
+  if ((await page.locator('.sheet.is-top .stclimb__next .rclclimb__notches > i').count()) !== 15) throw new Error('THE STATUS SHEET DOES NOT DRAW THE CLIMB TO THE NEXT RANK');
+  if (!(await page.locator('.sheet.is-top .stclimb__next .rclclimb__pin', { hasText: 'Level 32' }).count())) throw new Error('THE CLIMB DOES NOT PIN THE HUNTER\'S LEVEL');
   // With no point to spend, a stat tapped tells what it is in the one tooltip, never a window.
   if ((await page.locator('.sheet.is-top .attrs__head b').innerText()).trim() === '0') {
-    await page.locator('.sheet.is-top .attr').first().click(); await sleep(300);
+    await page.locator('.sheet.is-top .statrow').first().click(); await sleep(300);
     if (await page.locator('.syswin', { hasText: /Stat:/i }).count()) throw new Error('A STAT ON THE STATUS SHEET STILL OPENS A WINDOW');
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A STAT ON THE STATUS SHEET DID NOT OPEN ITS TOOLTIP');
     await snap('status-stat-tip');
@@ -451,6 +454,8 @@ try {
   await nav('inventory');
   await page.locator('[data-hub="status"]').click(); await sleep(500);
   if (!(await page.locator('.sheet.is-top .stclimb__go').isVisible())) throw new Error('THE STATUS SHEET DOES NOT OFFER THE RANK WAITING');
+  // One arrow on it: the up mark, no chevron beside it.
+  if ((await page.locator('.sheet.is-top .stclimb__go .ico').count()) !== 1) throw new Error('THE STATUS SHEET\'S RANK BUTTON CARRIES TWO ARROWS');
   await snap('status-rank-ready');
   await page.locator('.sheet.is-top .stclimb__go').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .quest-rank.is-ready').isVisible())) throw new Error('THE STATUS SHEET\'S RANK DID NOT OPEN ITS WINDOW');
@@ -646,7 +651,7 @@ try {
     metHunter = await ally.getAttribute('data-hunter');
     await ally.click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
-    for (const head of ['Stats', 'Skills', 'Partnership']) {
+    for (const head of ['Stats', 'Skills', 'History']) {
       if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
     }
     // Shadows and hunters share nothing directly, so the card says nothing of the squad.
@@ -654,7 +659,10 @@ try {
     // The class is said once, in its row, and Strike is a skill like any other.
     if ((await page.locator('.sheet.is-top .huntercard .huntercard__class').count()) !== 1) throw new Error('THE HUNTER CARD DOES NOT NAME THEIR CLASS ONCE');
     if (!(await page.locator('.sheet.is-top .huntercard .sp-skill', { hasText: '[Skill: Strike]' }).count())) throw new Error('THE HUNTER CARD DOES NOT LIST STRIKE AMONG THEIR SKILLS');
-    if ((await page.locator('.sheet.is-top .huntercard .hc-stats li').count()) !== 5) throw new Error('THE HUNTER CARD DOES NOT SET OUT FIVE STATS');
+    if ((await page.locator('.sheet.is-top .huntercard .statrows .statrow').count()) !== 5) throw new Error('THE HUNTER CARD DOES NOT SET OUT FIVE STATS');
+    // A hunter's stats are set out as the Status sheet sets the hunter's own: rows, open, no box round each.
+    if (await page.locator('.sheet.is-top .huntercard .statrows .sysbox, .sheet.is-top .huntercard .hc-stats').count()) throw new Error('THE HUNTER CARD STILL BOXES ITS STATS');
+    if (await page.locator('.sheet.is-top .huntercard', { hasText: /Partnership|Parties together|Among your partners/i }).count()) throw new Error('THE HUNTER CARD STILL SPEAKS OF PARTIES OR PARTNERSHIP');
     await snap('hunter-card');
     await page.locator('.sheet.is-top .huntercard .huntercard__class').click(); await sleep(300);
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Class' }).isVisible())) throw new Error('A HUNTER\'S CLASS TAG DID NOT OPEN ITS TOOLTIP');
@@ -667,11 +675,13 @@ try {
     await snap('hunter-style-tip');
     await page.keyboard.press('Escape'); await sleep(250);
     // Each stat opens the one stat tooltip, the same the Status and Stats sheets open; the best is flagged `Best`.
-    await page.locator('.sheet.is-top .huntercard .hc-stats__tip').nth(1).click(); await sleep(300);
+    await page.locator('.sheet.is-top .huntercard .statrow').nth(1).click(); await sleep(300);
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A HUNTER\'S STAT TAPPED DID NOT OPEN ITS TOOLTIP');
+    // The same tooltip as the Status sheet's: what the stat does, then the figure.
+    if (!(await page.locator('.tip.tip--system', { hasText: /Base \d+/ }).count())) throw new Error('A HUNTER\'S STAT TOOLTIP DOES NOT GIVE ITS FIGURE AS STATUS DOES');
     await snap('hunter-stat-tip');
     await page.keyboard.press('Escape'); await sleep(250);
-    if (await page.locator('.sheet.is-top .hc-stats__lead', { hasText: /^Lead$/i }).count()) throw new Error('THE HUNTER CARD STILL FLAGS A STAT LEAD');
+    if (await page.locator('.sheet.is-top .huntercard .statrow__aside', { hasText: /^Lead$/i }).count()) throw new Error('THE HUNTER CARD STILL FLAGS A STAT LEAD');
     // The favourite star stands at the far right of the name; starred, their face in the party wears it.
     const star = page.locator('.sheet.is-top .syshead__extra .favstar');
     if (!(await star.count())) throw new Error('THE HUNTER CARD HAS NO FAVOURITE STAR IN ITS NAME');
@@ -1295,9 +1305,11 @@ try {
     await drain();
     await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
     await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"]`).click(); await sleep(700);
-    if (!(await page.locator('.sheet.is-top .hc-together__lead', { hasText: '7' }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THEIR PARTIES');
-    if (!(await page.locator('.sheet.is-top .hc-together__rows', { hasText: /Most often|The only one/ }).count())) throw new Error('THE MOST FREQUENT PARTNER IS NOT SAID TO BE');
-    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'Partnership' }).scrollIntoViewIfNeeded(); await sleep(400);
+    if (!(await page.locator('.sheet.is-top .hc-history__lead', { hasText: /7\s*Gates together/i }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THE GATES WALKED TOGETHER');
+    if (!(await page.locator('.sheet.is-top .hc-history__lead', { hasText: /most frequent partner|only partner/ }).count())) throw new Error('WHERE THEY STAND AMONG YOUR PARTNERS IS NOT SAID PLAINLY');
+    // How the Gates ended, one bar split cleared, carried out and withdrawn from: 5, 1 and 1 of the 7.
+    if ((await page.locator('.sheet.is-top .hc-history__bar > i').count()) !== 3) throw new Error('THE HISTORY DOES NOT SPLIT HOW THE GATES ENDED');
+    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'History' }).scrollIntoViewIfNeeded(); await sleep(400);
     await snap('hunter-card-together');
   }
 
@@ -1311,7 +1323,12 @@ try {
     await nav('inventory'); await sleep(600);
     await page.locator('[data-hub="status"]').click(); await sleep(400);
     if ((await page.locator('.sheet.is-top .attrs__head b').innerText()).trim() !== '0') throw new Error('THE ASCENDED FIXTURE HAS POINTS TO SPEND');
-    await page.locator('.sheet.is-top .attr').first().click(); await sleep(300);
+    // At S-Rank the climb runs to Sovereign: a notch to each level from 70 to 100, every tenth marked under it.
+    if ((await page.locator('.sheet.is-top .stclimb__next .rclclimb__notches > i').count()) !== 30) throw new Error('THE CLIMB TO SOVEREIGN DOES NOT NOTCH EACH LEVEL FROM 70');
+    if ((await page.locator('.sheet.is-top .stclimb__next .rclclimb__marks > small').allInnerTexts()).join() !== '80,90') throw new Error('THE CLIMB TO SOVEREIGN DOES NOT MARK EVERY TENTH LEVEL');
+    await page.locator('.sheet.is-top .stclimb__next').screenshot({ path: `${OUT}/status-sovereign-climb.png` });
+    await snap('status-sovereign');
+    await page.locator('.sheet.is-top .statrow').first().click(); await sleep(300);
     if (await page.locator('.syswin', { hasText: /Stat:/i }).count()) throw new Error('A STAT ON THE STATUS SHEET STILL OPENS A WINDOW');
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A STAT ON THE STATUS SHEET DID NOT OPEN ITS TOOLTIP');
     if (!(await page.locator('.tip.tip--system', { hasText: 'Ability Points take it to' }).count())) throw new Error('THE STATUS SHEET\'S STAT TOOLTIP IS NOT THE STATS SHEET\'S');

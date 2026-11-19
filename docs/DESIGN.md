@@ -3107,6 +3107,58 @@ What changed:
     paid shows its art; the smoke run keeps four frames of the strike.
 - **Balance.** Display only; the spoils draw as before. No calibration, no campaign.
 
+## The hunter card tidied, one stat row, the climb on Status — built
+
+The owner asked for:
+- **The hunter card:**
+  - Clean up its spacing, groups and sections.
+  - `Partnership` renamed `History` and tidied: `7 Gates together`, not parties.
+  - `Among your partners` replaced, since it said nothing.
+- **Stats:** the hunter card's and the Status sheet's set out alike: the same icon colour, the same direction, no box
+  round each stat. Their tooltips aligned too.
+- **Status:** the `Level 100 for Sovereign.` line and its thin bar made an impressive level bar that shows the progress.
+- **The Status rank button:** one arrow, not an up mark and a chevron.
+- **Gate cleared:** the blueprint's box in a Challenge's row made smaller.
+
+What changed:
+- **One stat row** (`ui/statrow.tsx`, `.statrow`). Status and the hunter card draw the same row:
+  - its mark in the System's cyan, its key;
+  - a bar toward the Ability Points' limit;
+  - beside the figure, the hunter's own points in brackets, or `Best` in gold on a hunter's card;
+  - the figure, and Status's + while a point can go there.
+  - It is open, a hairline between rows, no box round a stat.
+  - A tap opens the one stat tooltip under the row on both. A hunter's tooltip now gives its figure as Status's does
+    (`Base 9.`), then `Their best stat…` on their best.
+  - The Status sheet's old `.attr` cells and the card's five tiles, with their layered rules, are gone, and so is a
+    dead `.statrow` rule of an older Stats sheet that spaced the new rows apart.
+- **The hunter card.** Every section opens on its label and a hairline, with 18px between them.
+- **History.** Four groups:
+  - `7` beside `Gates together`, and under it where they stand among your partners, said plainly: `Your most frequent
+    partner, of 14.` in gold, `Your 3rd most frequent partner, of 14.`, or `Your only partner so far.`.
+  - How those Gates ended: one bar split green, red and grey, with `5 Cleared`, `1 Carried out` and `1 Withdrawn`
+    under it. `hunters.recordOf` now returns `withdrawn`, what the clears and carry-outs leave of the Gates walked.
+  - `Creatures defeated` and `Bosses defeated`, a figure each.
+  - `First Gate together` and `Last Gate together`.
+  - Before any: `No Gates together yet.`
+- **The climb** (`ui/climb.tsx`, `RankClimb`), one bar for the Reclassification window's GOAL and the Status sheet.
+  - A notch to each level from where the rank held starts, lit as far as the hunter stands. The level under way fills
+    by its XP, and a light runs along what is lit.
+  - Every fifth level is marked under it, every tenth on the long climb to Sovereign (`80`, `90`), and those notches
+    stand taller. The two ranks' plates and levels sit at its ends, and the hunter's level is pinned on it.
+  - On Status it stands under `Next rank` and `[Reclassification: Sovereign]`, over `Reach Level 100.` and
+    `XP needed`. The whole block opens the window.
+  - Once the rank waits, the gold button stands in its place. Its up mark is now its one arrow.
+- **A Challenge's find** is a 34px box beside the material's art, not 44px. Its blueprint badge and its light are
+  scaled to it.
+- **Held by tests.** The tour checks:
+  - the hunter's five stats are rows with no box, and the card says nothing of parties or partnership;
+  - a hunter's stat tooltip gives `Base`;
+  - `7 Gates together`, the plain partner line, and the three-way bar of how the Gates ended;
+  - Status draws 15 notches from C-Rank to B-Rank with `Level 32` pinned, and 30 from S-Rank to Sovereign with `80`
+    and `90` marked;
+  - the ready rank button carries one mark.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

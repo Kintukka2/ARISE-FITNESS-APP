@@ -107,7 +107,7 @@ export function LootCell({ loot, i, state, onTap, onOpen, small }: { loot: Loot;
           {Array.from({ length: sparks }, (_, k) => <i key={k} class="aura__spark" style={`--a:${(k * 137.5) % 360}deg;--d:${30 + (k % 4) * 10 + (rank === 'S' ? 18 : rank === 'A' ? 10 : 0)}px;--t:${(k % 5) * 22}ms`} />)}
           {state === 'open' && (rank === 'A' || rank === 'S') && <><i class="aura__orbit" /><i class="aura__orbit aura__orbit--2" /></>}
         </span>
-        {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={small ? 42 : 56} /> : <GearArt defId={loot.defId} size={small ? 42 : 56} />) : <span class="flip__back">?</span>}
+        {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={small ? 32 : 56} /> : <GearArt defId={loot.defId} size={small ? 32 : 56} />) : <span class="flip__back">?</span>}
         {state === 'open' && bp && <span class="haul__bp" aria-hidden="true"><Glyph name="blueprint" /></span>}
         {state === 'open' && engraving && <span class="haul__engr" style={`--rh: ${RUNE[engraving.id].hue}`} aria-hidden="true"><RuneGlyph e={engraving} size={14} /></span>}
       </span>

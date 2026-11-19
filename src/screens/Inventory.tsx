@@ -40,7 +40,9 @@ import { openForge } from './Forge';
 import { Avatar, openEquipment, openInventory } from './Gear';
 import { Constellation, openSkills } from './Skills';
 import { openReclassification } from './Quests';
+import { RankClimb } from '@/ui/climb';
 import { statTip } from '@/ui/stattip';
+import { StatRow } from '@/ui/statrow';
 
 /** The Skills window: kept under its old name for the screens that open it from a class. */
 export const openClass = openSkills;
@@ -292,17 +294,25 @@ function StatusSheet() {
         </dl>
       </header>
       <div class={`stclimb ${rc?.ready ? 'is-ready' : ''}`}>
-        {/* A rank waiting is a gold button that opens its window, where the hold is. */}
+        {/* A rank waiting is a gold button that opens its window, where the hold is: its up mark the one arrow on it. Until
+            then the climb to it (ui/climb.tsx), the same bar the window's GOAL draws, opening the same window. */}
         {rc?.ready
           ? (
             <button type="button" class="stclimb__go" onClick={() => { sfx.tap(); openReclassification(); }}>
               <span class="stclimb__mark" aria-hidden="true"><Glyph name="up" /></span>
               <span class="stclimb__text"><small>Requirements met</small><strong>[Reclassification: {rc.to.name}]</strong></span>
-              <Glyph name="chevron" class="stclimb__chev" />
             </button>
           )
-          : <small>{rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}</small>}
-        {rc && !rc.ready && <i class="stclimb__bar" aria-hidden="true"><i style={`width: ${Math.round(rc.share * 100)}%`} /></i>}
+          : rc
+            ? (
+              <button type="button" class="stclimb__next" onClick={() => { sfx.tap(); openReclassification(); }}
+                aria-label={`Next rank: ${rc.to.name}, at Level ${rc.to.min}. Open the Reclassification.`}>
+                <span class="stclimb__head"><span class="label">Next rank</span><i aria-hidden="true" /><strong>[Reclassification: {rc.to.name}]</strong></span>
+                <RankClimb q={rc} level={s.hunter.level} xp={s.hunter.xp} />
+                <span class="stclimb__foot"><span>Reach Level {rc.to.min}.</span><span>XP needed: <b class="num">{group(rc.left)}</b></span></span>
+              </button>
+            )
+            : <small>Further ranks: none.</small>}
         {licenceHolding(s) && <small class="muted">Gate grade: {licensedRank(s)}-Rank without the Association Licence.</small>}
       </div>
       <VitalsBlock />
@@ -502,18 +512,16 @@ function Attributes() {
         <b class="num">{s.hunter.points}</b>
         {s.hunter.points > 0 && <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate</Btn>}
       </div>
-      {order.map((k) => (
-        <button type="button" key={k} class={`attr ${why?.k === k ? 'is-open' : ''}`} onClick={(e) => spend(k, e.currentTarget as Element)} aria-expanded={s.hunter.points ? undefined : why?.k === k}
-          aria-label={`${k} ${Math.round(total[k])}${s.hunter.points ? ', spend a point' : ''}`}>
-          <Glyph name={STAT_ICON[k]} />
-          <span class="attr__k">{k}</span>
-          {/* How far its points have taken it toward their limit. */}
-          <i class="attr__bar" aria-hidden="true"><i style={`width: ${Math.round(Math.min(1, s.hunter.attrs[k] / STAT_CAP) * 100)}%`} /></i>
-          <small class="attr__base num">{total[k] !== s.hunter.attrs[k] ? `(${s.hunter.attrs[k]})` : ''}</small>
-          <b class="attr__v num">{Math.round(total[k])}</b>
-          {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP ? <span class="attr__plus"><Glyph name="plus" /></span> : <span class="attr__plus is-none" />}
-        </button>
-      ))}
+      {/* A row to each stat, the one look an Association hunter's card shares (ui/statrow.tsx): its bar how far its points
+          have taken it toward their limit, its own points beside the figure when class, skills or gear add to them. */}
+      <div class="statrows">
+        {order.map((k) => (
+          <StatRow key={k} k={k} value={total[k]} bar={s.hunter.attrs[k]} open={why?.k === k}
+            aside={Math.round(total[k]) !== s.hunter.attrs[k] ? `(${s.hunter.attrs[k]})` : undefined}
+            plus={s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP}
+            label={`${k} ${Math.round(total[k])}${s.hunter.points ? ', spend a point' : ''}`} onTap={(el) => spend(k, el)} />
+        ))}
+      </div>
       {why && <Tip tip={statTip(why.k, { base: s.hunter.attrs[why.k], total: total[why.k], limits: true })} at={why.at} close={() => setWhy(null)} />}
     </div>
   );

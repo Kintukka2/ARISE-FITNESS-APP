@@ -28,10 +28,10 @@ export const standOf = (a: Ally) => ranks.byLead(classOf(a)?.lead);
 export const powerOfAlly = (a: Ally) => powerOf(a.base);
 
 /**
- * Their record beside the hunter, as their card's `Together` reads it: the parties you have made together (never
- * fewer than the clears, which were kept before the parties were), the Gates cleared and the Gates you were carried
- * out of together, what they helped defeat, when you first and last partied, and where they stand among every hunter
- * you have partied with, by parties made (`place`, 1 the most; null until you have partied).
+ * Their record beside the hunter, as their card's `History` reads it: the Gates walked together (never fewer than the
+ * clears, which were kept before the runs were), the Gates cleared, carried out of and withdrawn from together, what
+ * they helped defeat, when you first and last walked one together, and where they stand among every hunter you have
+ * walked with, by Gates walked (`place`, 1 the most often; null until you have walked one).
  */
 export function recordOf(s: Save, id: string) {
   const all = s.gates.walked ?? {};
@@ -41,8 +41,10 @@ export function recordOf(s: Save, id: string) {
   const partners = new Set([...Object.keys(all), ...Object.keys(s.gates.together)]);
   const partiesOf = (x: string) => Math.max(all[x]?.runs ?? 0, s.gates.together[x] ?? 0);
   const place = runs ? 1 + [...partners].filter((x) => x !== id && partiesOf(x) > runs).length : null;
+  const carried = w?.carried ?? 0;
   return {
-    runs, cleared, carried: w?.carried ?? 0, kills: w?.kills ?? 0, bosses: w?.bosses ?? 0,
+    // Every Gate walked together ends cleared, carried out or withdrawn from: the last is what the other two leave.
+    runs, cleared, carried, withdrawn: Math.max(0, runs - cleared - carried), kills: w?.kills ?? 0, bosses: w?.bosses ?? 0,
     first: w?.first ?? null, last: w?.last ?? null, place, partners: partners.size,
   };
 }

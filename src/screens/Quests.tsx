@@ -23,7 +23,7 @@ import { licensedRank } from '@/core/licence';
 import { MARKS_MOST } from '@/core/marks';
 import { earned, grantText, MISSIONS, TIER_NAMES, type Mission, type MissionTier } from '@/core/missions';
 import { reclassification, type Reclass } from '@/core/quests';
-import { xpToNext } from '@/core/progression';
+import { RankClimb } from '@/ui/climb';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
 import * as rift from '@/core/rift';
@@ -391,11 +391,6 @@ function RankBody() {
   const q = reclassification(s);
   if (!q) return null;
   const lv = s.hunter.level;
-  const span = Math.max(1, q.to.min - q.from.min);
-  // How far into the level now: its XP over what the level asks, until the level asked is reached.
-  const into = lv >= q.to.min ? 0 : Math.max(0, Math.min(1, s.hunter.xp / xpToNext(lv)));
-  const notch = (i: number) => { const at = q.from.min + i; return lv > at ? 1 : lv === at ? into : 0; };
-  const pin = Math.min(1, (Math.min(lv, q.to.min) - q.from.min + into) / span);
   const access: ComponentChildren[] = [];
   if (q.cls && !q.cls.was) access.push('Class');
   if (q.skills.tier) access.push(`${q.skills.tier}-Rank Skills`);
@@ -427,16 +422,7 @@ function RankBody() {
         <span class="label questinfo__head">Goal</span>
         <div class="rclgoal">
           <p class="rclgoal__line"><b>Reach Level {q.to.min}.</b><span class="num">{Math.min(lv, q.to.min)}/{q.to.min}</span></p>
-          <div class="rclclimb" style={`--pin: ${pin}`} role="img" aria-label={`Level ${lv} of ${q.to.min}`}>
-            <span class="rclclimb__notches" style={`--n: ${span}`}>
-              {Array.from({ length: span }, (_, i) => { const f = notch(i); return <i key={i} class={f >= 1 ? 'is-on' : f > 0 ? 'is-part' : ''} style={`--f: ${f}; --i: ${i}`} />; })}
-            </span>
-            {!q.ready && <span class="rclclimb__pin"><b class="num">Level {lv}</b></span>}
-            <span class="rclclimb__ends">
-              <small><Sigil rank={q.from.key} size={14} /><span class="num">{q.from.min}</span></small>
-              <small><span class="num">{q.to.min}</span><Sigil rank={q.to.key} size={14} /></small>
-            </span>
-          </div>
+          <RankClimb q={q} level={lv} xp={s.hunter.xp} />
           {q.ready
             ? <p class="rclgoal__met"><Glyph name="check" />Requirements met.</p>
             : <small class="rclgoal__hint">XP needed: <b class="num">{group(q.left)}</b></small>}
