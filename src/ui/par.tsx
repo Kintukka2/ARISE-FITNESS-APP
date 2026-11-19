@@ -2,22 +2,20 @@
  * Par on screen (`core/par.ts`), the System's, in the Gates' orange with each medal in its metal: a medal struck
  * with the hourglass of rounds; the brief's Par card, after Honkai: Star Rail's star conditions and Rogue Legacy 2's
  * Scars, the road's par large and the three medals beside the rounds each allows, what each pays the first time and
- * how often the System reached it today; the first row of the results' Challenges, the medal struck beside the
- * rounds against the par; and the medal held on a Gate's row of the board.
+ * how often the System reached it today; and the medal held on a Gate's row of the board. The results' Challenges
+ * strike it beside the rounds against the par (`ui/challenges.tsx`).
  */
-import { group } from '@/core/util';
+import { useId } from 'preact/hooks';
 import * as par from '@/core/par';
-import type { RaidResult } from '@/core/raid';
 import type { Dungeon } from '@/core/types';
 import { EMBER } from '@/data/forge';
 import { MEDAL_PAY, MEDALS, PAR_EMBER, type MedalId } from '@/data/par';
 import { MatArt } from './forge';
 import { glyphPath } from './icons';
-import { Facts } from './components';
 
 /** The medals worst first, as they are reached. */
 const UP: MedalId[] = ['bronze', 'silver', 'gold'];
-const NAME: Record<MedalId, string> = Object.fromEntries(MEDALS.map((x) => [x.id, x.name])) as Record<MedalId, string>;
+export const NAME: Record<MedalId, string> = Object.fromEntries(MEDALS.map((x) => [x.id, x.name])) as Record<MedalId, string>;
 
 /** The rim of a medal: a disc milled at its edge, twenty-four teeth. */
 const RIM = (() => {
@@ -32,16 +30,22 @@ const RIM = (() => {
 
 /**
  * A medal: a milled disc in its metal, a ring inside, the hourglass of rounds at its heart. `on` false draws it
- * unearned: its outline dashed, no metal.
+ * unearned: its outline dashed, no metal. `shine` sends a glint across a medal earned, every few seconds, as the
+ * results' Challenges strike it.
  */
-export function Medal({ id, size = 24, on = true, class: cls }: { id: MedalId; size?: number; on?: boolean; class?: string }) {
+export function Medal({ id, size = 24, on = true, shine, class: cls }: { id: MedalId; size?: number; on?: boolean; shine?: boolean; class?: string }) {
   const mark = glyphPath('timer');
+  const clip = `medal-${useId()}`;
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} class={`medal is-${id} ${on ? 'is-on' : 'is-off'} ${cls ?? ''}`} role="img" aria-label={`${NAME[id]}${on ? '' : ', not reached'}`}>
       <path class="medal__rim" d={RIM} />
       <circle class="medal__face" cx="12" cy="12" r="8.4" />
       <circle class="medal__ring" cx="12" cy="12" r="7.1" />
       {mark && <path class="medal__mark" d={mark} transform="translate(7.2 7.2) scale(0.4)" />}
+      {shine && on && <>
+        <clipPath id={clip}><path d={RIM} /></clipPath>
+        <g clip-path={`url(#${clip})`}><rect class="shine" x="-6" y="-6" width="5" height="36" /></g>
+      </>}
     </svg>
   );
 }
@@ -97,31 +101,5 @@ export function ParCard({ d, best, road, rounds, medals, runs }: {
       </ol>
       <small class="bpar__note">A fight won off the road adds its own par.</small>
     </section>
-  );
-}
-
-/**
- * The clear against its par, as the first row of the results' Challenges: the medal struck, its name, the rounds
- * against the par and the difference (under in green, over in red); at its right, `New` and the Ember it paid the
- * first time, or the best the Gate holds.
- */
-export function ParRow({ r }: { r: NonNullable<RaidResult['par']> }) {
-  const diff = r.rounds - r.par;
-  const fresh = r.fresh.length > 0;
-  return (
-    <li class={`rchal__row rchal__par ${r.medal ? `is-met is-${r.medal}` : 'is-missed'}`}>
-      <span class="rchal__mark rchal__medal"><Medal id={r.medal ?? 'bronze'} size={40} on={!!r.medal} /></span>
-      <span class="rchal__body">
-        <b>{r.medal ? `${NAME[r.medal]} medal` : 'No medal'}</b>
-        <small class="num">
-          <Facts items={[`${r.rounds} rounds`, `Par ${r.par}`, <span class={diff <= 0 ? 'rchal__under' : 'rchal__over'}>{diff < 0 ? `${-diff} under` : diff > 0 ? `${diff} over` : 'level'}</span>]} />
-        </small>
-      </span>
-      <span class="rchal__side">
-        {fresh
-          ? <><i class="rnew">New</i><small class="rchal__ember"><MatArt id={EMBER.id} size={14} /><span class="num">+{group(r.ember)}</span></small></>
-          : <small class="muted">{r.best ? `Best: ${NAME[r.best]}` : 'Par'}</small>}
-      </span>
-    </li>
   );
 }

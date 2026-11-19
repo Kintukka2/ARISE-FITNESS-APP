@@ -31,11 +31,14 @@ export function Bang() {
 const CARD = /^([A-Z][A-Za-z ]*): (.+)$/;
 const isCard = (title: string) => CARD.test(title);
 
+/** A head too long to stand centred between the icon and the tools at the usual size: `RECLASSIFICATION`. */
+const long = (title: string) => !CARD.test(title) && title.length > 12;
+
 export function HeadBox({ title }: { title: string }) {
   const card = CARD.exec(title);
   return card
     ? <h2 class="sysbox syshead__title is-card"><small>{card[1]}:</small> {card[2]}</h2>
-    : <h2 class="sysbox syshead__title">{title}</h2>;
+    : <h2 class={`sysbox syshead__title ${long(title) ? 'is-long' : ''}`}>{title}</h2>;
 }
 
 /**
@@ -44,7 +47,7 @@ export function HeadBox({ title }: { title: string }) {
  */
 export function SysHead({ title, icon, tools, extra }: { title: string; icon?: ComponentChildren; tools?: ComponentChildren; extra?: ComponentChildren }) {
   return (
-    <header class={`syshead ${tools ? 'has-tools' : ''} ${isCard(title) ? 'is-card' : ''}`}>
+    <header class={`syshead ${tools ? 'has-tools' : ''} ${isCard(title) ? 'is-card' : ''} ${long(title) ? 'is-long' : ''}`}>
       {icon !== null && <span class="sysbox syshead__icon">{icon ?? <Bang />}</span>}
       {extra
         ? <span class="syshead__boxwrap"><HeadBox title={title} /><span class="syshead__extra">{extra}</span></span>

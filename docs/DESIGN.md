@@ -3034,6 +3034,79 @@ What changed:
     sheet as a tooltip, never a window.
 - **Balance.** Words and layout only: no calibration and no campaign.
 
+## A rank waiting, made an event; Challenges struck one by one — built
+
+The owner asked for:
+- **Status:** `Requirements met: [Reclassification: C-Rank]` made a button that takes the hunter there.
+- **Advancement:** the card overhauled once a rank waits. It felt dead, and ranking up is the biggest moment in the
+  game: anticipation and an aura around it, demanding focus.
+- **Reclassification's window:** overhauled. Why was it called QUEST INFO? The rewards read as an awkward mess, and
+  even the goal, `Reach Level 20`, was boring.
+- **The results' Challenges:**
+  - What the run met animates one by one: gold, a flash, then the reward shown at the right.
+  - `New` goes.
+  - The stars and medals shimmer.
+  - A material or currency is its icon and `+6`, Iron Scrap's art as Ember's.
+  - A Feat's blueprint is its `?` box in the row, not at the foot among the Spoils.
+
+What changed:
+- **Status.** While a rank waits, the climb's line is a gold button: an up mark, `Requirements met` over
+  `[Reclassification: B-Rank]` and a chevron, breathing, a light crossing it. It opens the rank's window over Status
+  (`openReclassification`, exported from `screens/Quests.tsx`).
+- **The Advancement card, a rank waiting** (`RankCall`):
+  - The frame turns gold, its glow breathing out and its rails flaring.
+  - The row becomes the rank's own stage: the rank held small and dim, chevrons pulling one after another toward the
+    rank above. The rank above is large in its own light: rays turning behind it, a halo breathing, rings going out
+    and motes rising.
+  - Under the stage: `Requirements met` in spaced gold capitals, then `[Reclassification: B-Rank]` large.
+  - Then what the rank brings as plain gains, and **Reclassify**: a full-width gold bar, breathing, a light crossing
+    it. It opens the window; the hold stays there.
+  - Before the level is reached, the row is the plain row it was.
+- **RECLASSIFICATION, the window** (`RankBody`):
+  - **Its head** names what it is, not QUEST INFO. A head too long to centre between the icon and the close now sets
+    smaller and takes the room left of the tools (`is-long`, `ui/frame.tsx`).
+  - **The stage.** The rank held and the rank above, named under each. Once the rank waits, the one above is alight
+    as on the card, with chevrons pulling along the way between.
+  - **GOAL is the climb.** It reads `Reach Level 35.` and `32/35`. Under that is a notch to each level from where the
+    rank held starts (15 from C to B), lit as far as the hunter stands, with the level under way filling by its XP.
+    `Level 32` is pinned on it and the two ranks' levels stand at its ends. It ends on `XP needed: 7,073`, or once
+    met on `Requirements met.` in gold, every notch gold with a light running along them.
+  - **REWARDS is set out by kind** in place of the numbered boxed list. First the figures side by side:
+    `+5 Ability Points`, `+2 Skill Points`, `+3 Epic blueprints` in the rarity's colour. Then what changes, as was and
+    becomes: the class and its stat, Skill slots, Shadow slots. Then what opens, in green under `Access granted`.
+  - **Hold To Reclassify**, gold and breathing as a Shadow's promotion's. `claimRank` still lifts the held rank's plate
+    off the window.
+- **The Challenges** (`ui/challenges.tsx`; `ParRow` moved there from `ui/par.tsx`):
+  - **Struck one row after another.** What was met is struck, the medal first, then each Feat met, 650 ms after the
+    results land and 720 ms apart.
+    - The star or medal lands in its metal with a flash, a ring and eight sparks.
+    - A light crosses the row and leaves it washed in gold (the medal's own metal for silver and bronze).
+    - Its name turns gold, and a chime rises a step with each (`sfx.strike`).
+    - Then its pay slides in at its right.
+  - **The glint.** A struck star or medal keeps a glint crossing it every few seconds (a clipped bar in the SVG;
+    `Medal` takes `shine`). The Feat's star is drawn to fill now, gold graded from pale to deep.
+  - **The pay** is its art and the figure: Ember's art and `+12` for a medal, the alloy's and `+10` for a Feat. The
+    figure is green, Ember's in ember.
+  - **The blueprint Feat's blueprint** is its box, face down, in the row. It turns over there and opens its card, and
+    leaving with it face down is caught as any find is.
+  - **The Spoils** are what the run left besides: the Feats' alloy and blueprint are taken out of them.
+  - Unmet rows stand dim from the start. Without motion every row is struck at once.
+- **The engine records each Feat's pay.** `raid.finish` now records what each Feat met for the first time paid
+  (`RaidResult.feats.pay`, `FeatPay`): the Gate's alloy, or the blueprint Feat's blueprint, or the alloy it pays
+  instead once every blueprint of the grade is known. `spoils` draws the blueprint with the same roll it always did,
+  so nothing a run leaves moves.
+- **Held by tests.**
+  - `tests/seals.test.ts`: each Feat met for the first time has its pay on the result, the alloy or the blueprint, and
+    what it paid is in what the run left.
+  - The tour lifts the veteran to Level 35. It checks:
+    - the Advancement card turns gold with the rank's stage, not a row;
+    - the window is headed RECLASSIFICATION, with no numbered list;
+    - the climb has a notch to each of the 15 levels, all lit, and the hold;
+    - the Status button opens the same window.
+  - The tour and the smoke run check that every Challenge met is struck, that none says `New`, and that every material
+    paid shows its art; the smoke run keeps four frames of the strike.
+- **Balance.** Display only; the spoils draw as before. No calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

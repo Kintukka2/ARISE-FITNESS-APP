@@ -683,6 +683,9 @@ button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
 .favstar.is-on .ico { fill: currentColor; opacity: 1; filter: drop-shadow(0 0 6px var(--win-glow)); }
 .favstar:active .ico { transform: scale(0.85); }
 .favstar:focus-visible { outline: 2px solid var(--win); outline-offset: 1px; border-radius: 50%; }
+/* A long head beside the tools (`RECLASSIFICATION`) sets smaller and tighter, and takes the room left of them instead of centring. */
+.syshead.has-tools .syshead__title.is-long { flex: 1; justify-content: center; padding: 6px 10px; font-size: 0.88rem; letter-spacing: 0.08em; }
+.syshead.has-tools.is-long:not(.is-card) { padding-left: 0; }
 .syshead__title.is-card { flex: 1; flex-wrap: wrap; column-gap: 7px; row-gap: 0; padding: 6px 12px; font-size: 1rem; letter-spacing: 0.02em; text-transform: none; }
 .syshead__title.is-card small { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
 .syshead__tools { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; }

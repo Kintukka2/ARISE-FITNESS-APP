@@ -429,6 +429,35 @@ try {
   await page.evaluate((was) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.contracts = JSON.parse(was); localStorage.setItem(k, JSON.stringify(x)); }, dailies);
   await page.reload(); await sleep(1400); await drain();
 
+  // A rank waiting: the Advancement card turns gold and alight, its window is RECLASSIFICATION, and the Status sheet's
+  // line is a button to it. The veteran is lifted to the level B-Rank asks, and set back after.
+  await sleep(1500);
+  const levelWas = await page.evaluate(() => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); const was = { level: x.hunter.level, xp: x.hunter.xp }; x.hunter.level = 35; x.hunter.xp = 0; localStorage.setItem(k, JSON.stringify(x)); return was; });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('quests'); await sleep(900);
+  if (!(await page.locator('.sysframe--gold.qsec--ascend .qascend').count())) throw new Error('A RANK WAITING DID NOT TURN THE ADVANCEMENT CARD GOLD');
+  if (await page.locator('.qsec--ascend .qrow--rank .qrank').count()) throw new Error('A RANK WAITING IS STILL A PLAIN ROW');
+  await page.locator('.qascend').scrollIntoViewIfNeeded(); await sleep(1200); await snap('quests-rank-ready');
+  await page.locator('.qascend').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .quest-rank.is-ready').isVisible())) throw new Error('THE READY RANK DID NOT OPEN ITS WINDOW');
+  if (!(await page.locator('.sheet.is-top .syshead', { hasText: 'Reclassification' }).count()) || await page.locator('.sheet.is-top .syshead', { hasText: 'Quest Info' }).count()) throw new Error('THE RANK\'S WINDOW IS NOT HEADED RECLASSIFICATION');
+  if (await page.locator('.sheet.is-top .quest-rank .sysrewards').count()) throw new Error('THE RANK\'S REWARDS ARE STILL A NUMBERED LIST');
+  if ((await page.locator('.sheet.is-top .rclclimb__notches > i').count()) !== 15) throw new Error('THE CLIMB DOES NOT NOTCH EACH LEVEL FROM C-RANK TO B-RANK');
+  if ((await page.locator('.sheet.is-top .rclclimb__notches > i.is-on').count()) !== 15) throw new Error('THE CLIMB IS NOT LIT ONCE THE LEVEL IS REACHED');
+  if (!(await page.locator('.sheet.is-top .rankclaim .holdbtn').count())) throw new Error('THE READY RANK HAS NO HOLD');
+  await snap('quest-rank-ready');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(400); await snap('quest-rank-ready-foot');
+  await close(); await sleep(300);
+  await nav('inventory');
+  await page.locator('[data-hub="status"]').click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .stclimb__go').isVisible())) throw new Error('THE STATUS SHEET DOES NOT OFFER THE RANK WAITING');
+  await snap('status-rank-ready');
+  await page.locator('.sheet.is-top .stclimb__go').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .quest-rank.is-ready').isVisible())) throw new Error('THE STATUS SHEET\'S RANK DID NOT OPEN ITS WINDOW');
+  await close(); await sleep(250); await close(); await sleep(250);
+  await page.evaluate((was) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.hunter.level = was.level; x.hunter.xp = was.xp; localStorage.setItem(k, JSON.stringify(x)); }, levelWas);
+  await page.reload(); await sleep(1400); await drain();
+
   await nav('gates');
   await snap('gates', true);
   if (await page.locator('.ghcard.is-ascension').count()) throw new Error('THE ASCENSION CARD SHOWED BELOW S-RANK');
@@ -935,6 +964,15 @@ try {
     if ((await page.locator('.arena--results .rchal .rchal__row').first().getAttribute('class')).indexOf('rchal__par') < 0) throw new Error('THE CHALLENGES DO NOT OPEN ON PAR');
     // Ember is paid beside the XP and the shards, never again among the materials.
     if (await page.locator('.arena--results .spoils .rmat', { hasText: 'Ascendant Ember' }).count()) throw new Error('EMBER IS COUNTED AMONG THE MATERIALS');
+    // What was met is struck, one row after another, and pays at its right with no New beside it: a material as its
+    // art and figure, a blueprint as its box in the row, not among the Spoils.
+    if (await page.locator('.arena--results .rnew').count()) throw new Error('A CHALLENGE STILL SAYS NEW');
+    if ((await page.locator('.arena--results .rchal__row.is-met').count()) !== (await page.locator('.arena--results .rchal__row.is-lit').count())) throw new Error('A CHALLENGE MET WAS NOT STRUCK');
+    for (const g of await page.locator('.arena--results .rchal__gain').all()) {
+      if (!(await g.locator('.matart').count())) throw new Error('A CHALLENGE PAID A MATERIAL WITHOUT ITS ART');
+    }
+    // A find's light at a row's edge never scrolls the results sideways.
+    if (await page.locator('.arena--results').evaluate((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollLeft > 0)) throw new Error('THE RESULTS SCROLL SIDEWAYS');
     await page.locator('.arena--results .rchal').scrollIntoViewIfNeeded(); await sleep(1000); await snap('raid-results-par');
   }
   {

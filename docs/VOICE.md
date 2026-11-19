@@ -565,9 +565,22 @@ Spire's storeys lit to the week's best; the Chosen's crown in red; a cell to eac
 once done), its bracketed name and count, one line of where it stands (`Reach Level 35` beside `XP needed:
 7,073`), a bar, and its pay as plain gains with space between them (`Ability Points +5`, `Reward
 tier: B-Rank`, `Masterwork: Legendary Off-Hand`). A row waiting on the hunter (a rank to claim, the
-Trial open) is gold, a gold edge down its side and its count on gold. Tapping a row opens the quest's
-QUEST INFO window in a sheet, gold
-for advancement. Every quest's name wears its type, and these are the names:
+Trial open) is gold, a gold edge down its side and its count on gold. A rank waiting to be claimed is more than a
+row: it turns the whole `Advancement` card gold, its frame breathing light and its rails flaring, and the card is the
+rank's own (the owner's call: the biggest moment in the game, so it demands the eye): the rank held small and dim,
+chevrons pulling toward the rank above, large in its own light with rays turning behind it, rings going out and motes
+rising; `Requirements met` in gold over `[Reclassification: B-Rank]`; what it brings as plain gains; and
+**Reclassify** in gold, breathing, which opens its window. The Status sheet's line is the same gold button while the
+rank waits, `Requirements met` over `[Reclassification: B-Rank]`, opening the same window. Tapping a row opens the
+quest's QUEST INFO window in a sheet, gold for advancement. The rank's window alone is headed RECLASSIFICATION, the
+name of what it is, never QUEST INFO (the owner's call): its name; the rank held and the rank above as a stage, the
+one above alight once it waits; `Goal` as the climb, `Reach Level 35.` and `32/35` over a notch to each level from
+where the rank held starts, lit as far as the hunter stands, `Level 32` pinned on it and the two ranks' levels at its
+ends, then `XP needed: 7,073` or, once met, `Requirements met.` in gold; `Rewards` by kind, never a numbered list:
+`+5` over `Ability Points`, `+2` over `Skill Points` and `+3` over `Epic blueprints` side by side, then what changes,
+`Class`, `Berserker` and a chevron to `[Class: Warbreaker]` with `STR +10`, `Skill slots` and `Shadow slots` as
+`3` to `4`, then `Access granted` over what it opens (`B-Rank Skills`, `The Hollow Throne`, `Ascension`, `Class`);
+and once the level is reached **Hold To Reclassify**. Every quest's name wears its type, and these are the names:
 
 | Quest | Name | Goals |
 |---|---|---|
@@ -944,15 +957,18 @@ reached it (`System 14/24`), and its Ember the first time (`+5`), or `Earned` in
 fight won off the road adds its own par.` A Gate's row on the board carries the best medal earned, dashed while none
 is. In a run the HUD counts `Rounds` until a fight is won, then `12/15` over `Par`, its mark the medal the rounds are on
 pace for. On the results the medal is the first row of `Challenges`, the Feats under it in the same rows: the medal
-struck and `Gold medal` (or `No medal`), under it `7 rounds`, `Par 24` and `17 under` side by side (under in green, over in red, or
-`level`), and at its right `New` in green over the Ember it paid, or `Best: Gold`. A Feat's row ends `New` over
-the Gate's alloy it paid (`Mana Silver +10`) or `Blueprint +1`, `Met`, or `Not met`. A medal is earned or reached, never won or unlocked; par is `Par`, never a target or
-a goal.
+and `Gold medal` (or `No medal`), under it `7 rounds`, `Par 24` and `17 under` side by side (under in green, over in red, or
+`level`). What the clear met is struck one row after another, the medal first: its star or medal lands in its metal
+with a flash and sparks, a light crosses the row, and what it paid the first time slides in at its right. The pay is
+its art and the figure, never its name and never `New` (the owner's call): Ember's art and `+12`, the alloy's art and
+`+10`; a blueprint is its box face down in the row, turned over and opened there, and not among the Spoils. A row met
+before says `Met`, the medal `Best: Gold`; a row not met stands dim, `Not met`. A struck star or medal keeps a glint
+crossing it. A medal is earned or reached, never won or unlocked; par is `Par`, never a target or a goal.
 
 **The results, in bands.** A run's results read top to bottom in this order, after Helldivers 2's mission summary: the
 title card; what it paid, `XP`, `Shards` and `Ember` side by side (Ember is never counted again among the materials);
-the hunter's health and fatigue; `Challenges`, the medal against par then the Feats; `Spoils`, the materials then the
-finds, `Tap a find for its card` at the head's right; then the System's reports, each in its frame; and the way out.
+`Challenges`, the medal against par then the Feats; `Spoils`, the materials then the finds the Challenges did not
+pay, `Tap a find for its card` at the head's right; then the System's reports, each in its frame; and the way out.
 Each band opens on its label and hairline, with the same room above and below every band.
 
 **Tempering.** The System's, in the gear's cyan, its results in advancement's gold. A perfect piece of C-Rank or

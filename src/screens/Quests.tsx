@@ -2,8 +2,9 @@
  * Quests: everything the System has set the hunter, as a log on one page. Ryn's job first; then a rail
  * of rings, one to each quest, held under the top bar, that jumps to it and marks the one in view; then
  * the quests in their frames: the day's as the hero, with its track to the bonus; the climbs, the week's
- * and the record, a row to each with its picture, its bar and what it pays. A row opens its
- * QUEST INFO window in a sheet. Nothing here pays: each quest is settled where it always was (Daily Quests in `raid.finish`,
+ * and the record, a row to each with its picture, its bar and what it pays. A rank waiting to be claimed
+ * turns the Advancement card over to it, gold and alight. A row opens its QUEST INFO window in a sheet;
+ * the rank's is RECLASSIFICATION. Nothing here pays: each quest is settled where it always was (Daily Quests in `raid.finish`,
  * a rank in `grantXP`, the Spire's week in `spire.settle`, a Trial and the Chosen in `raid.finish`).
  * This screen only says where each one stands.
  */
@@ -21,7 +22,8 @@ import { overCap } from '@/core/ascension';
 import { licensedRank } from '@/core/licence';
 import { MARKS_MOST } from '@/core/marks';
 import { earned, grantText, MISSIONS, TIER_NAMES, type Mission, type MissionTier } from '@/core/missions';
-import { reclassification } from '@/core/quests';
+import { reclassification, type Reclass } from '@/core/quests';
+import { xpToNext } from '@/core/progression';
 import * as shop from '@/core/shop';
 import * as spire from '@/core/spire';
 import * as rift from '@/core/rift';
@@ -48,8 +50,11 @@ import { HoldButton, openSheet, toast } from '@/ui/overlays';
 import { openBrief } from './Gates';
 
 /** Open a quest's QUEST INFO window, in the System's frame, or gold for advancement. */
-const openQuest = (Body: FunctionComponent<{ close: () => void }>, kind: FrameKind = 'system') =>
-  openSheet({ title: 'Quest Info', system: { kind }, render: (close) => <Body close={close} /> });
+const openQuest = (Body: FunctionComponent<{ close: () => void }>, kind: FrameKind = 'system', title = 'Quest Info') =>
+  openSheet({ title, system: { kind }, render: (close) => <Body close={close} /> });
+
+/** The next rank's window, headed RECLASSIFICATION, in advancement's gold: from its card here, or from Status while it waits. */
+export const openReclassification = () => openQuest(RankBody, 'gold', 'Reclassification');
 
 /** The Pale Spire's storeys on its row, lit from the ground to the week's best. */
 const STOREYS = 6;
@@ -94,7 +99,8 @@ export function Quests() {
       {daily && <DailySection s={s} day={day} />}
       {riftE && <RiftSection s={s} day={day} />}
       {(rank || trial || chosen) && (
-        <SysFrame class="qsec" label="Advancement">
+        // A rank waiting to be claimed turns the whole card gold and lights it (`RankCall`).
+        <SysFrame class={`qsec ${rank?.call ? 'qsec--ascend' : ''}`} kind={rank?.call ? 'gold' : 'system'} label="Advancement">
           <QHead label="Advancement" />
           {rank && <RankRow s={s} />}
           {trial && <TrialRow s={s} day={day} />}
@@ -308,14 +314,21 @@ function rankEntry(s: Save): Entry | null {
   return { key: 'rank', label: 'Rank', icon: 'up', kind: 'system', p: q.share, count: q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`, call: q.ready };
 }
 
-/** The next rank: the rank held and the one above it, the level it asks, and what claiming it brings. A choice of rank is advancement, so its window is gold. */
-function RankRow({ s }: { s: Save }) {
-  const q = reclassification(s)!;
+/** What a rank brings, as plain gains for its card. */
+function rankPay(q: Reclass): ComponentChildren[] {
   const pay: ComponentChildren[] = [<>Ability Points <b class="grant num">+{q.points}</b></>, <>Skill Points <b class="grant num">+{q.skills.points}</b></>];
   if (q.cls && !q.cls.was) pay.push(<span class="grant">Class</span>);
   if (q.slots) pay.push(<>Shadow slots <b class="grant num">+{q.slots[1] - q.slots[0]}</b></>);
   pay.push(<>{RARITY[q.blueprints.rank].name} blueprints <b class="grant num">+{q.blueprints.n}</b></>);
   if (q.ascension) pay.push(<span class="grant">Ascension</span>);
+  return pay;
+}
+
+/** The next rank: the rank held and the one above it, the level it asks, and what claiming it brings. A choice of rank is advancement, so its window is gold. */
+function RankRow({ s }: { s: Save }) {
+  const q = reclassification(s)!;
+  if (q.ready) return <RankCall q={q} />;
+  const pay = rankPay(q);
   return (
     <QuestRow id="rank" name={`Reclassification: ${q.to.name}`} call={q.ready} count={q.ready ? 'Ready' : `${s.hunter.level}/${q.to.min}`}
       art={(
@@ -326,13 +339,50 @@ function RankRow({ s }: { s: Save }) {
         </span>
       )}
       sub={q.ready ? 'Requirements met.' : <Facts items={[`Reach Level ${q.to.min}`, <>XP needed: <b class="num">{group(q.left)}</b></>]} />}
-      p={q.share} pay={pay} onOpen={() => openQuest(RankBody, 'gold')} />
+      p={q.share} pay={pay} onOpen={openReclassification} />
+  );
+}
+
+/** Motes rising off the rank above, each its own place, size and moment. */
+const MOTES = Array.from({ length: 12 }, (_, k) => ({ x: 8 + ((k * 41) % 84), s: 2 + (k % 3), d: ((k * 0.61) % 3.4).toFixed(2), t: (2.6 + (k % 4) * 0.35).toFixed(2) }));
+
+/**
+ * A rank waiting to be claimed: the Advancement card turned over to it, gold, its frame breathing light, the loudest
+ * thing on the log. The rank held, dim, and a run of chevrons pulling toward the rank above, large in its own light,
+ * rays turning behind it, rings going out from it and motes rising off it; `Requirements met` over its bracketed name;
+ * what it brings as plain gains; and **Reclassify** in gold, breathing, a light crossing it. The card opens the window,
+ * where the hold is.
+ */
+function RankCall({ q }: { q: Reclass }) {
+  return (
+    <button type="button" id="quest-rank" class="qascend qrow--rank is-call" onClick={() => { sfx.tap(); openReclassification(); }}
+      aria-label={`Reclassification: ${q.to.name}. Requirements met. Open it.`}>
+      <span class="qascend__stage" aria-hidden="true">
+        <span class="qascend__from"><Sigil rank={q.from.key} size={36} /></span>
+        <span class="qascend__pull">{[0, 1, 2].map((k) => <i key={k} style={`--k: ${k}`} />)}</span>
+        <span class="qascend__to">
+          <i class="qascend__rays" />
+          <i class="qascend__halo" />
+          <i class="qascend__ring" /><i class="qascend__ring is-2" />
+          {MOTES.map((m, k) => <i key={k} class="qascend__mote" style={`--x: ${m.x}%; --s: ${m.s}px; --d: ${m.d}s; --t: ${m.t}s`} />)}
+          <Sigil rank={q.to.key} size={88} />
+        </span>
+      </span>
+      <span class="qascend__met">Requirements met</span>
+      <b class="qascend__name">[Reclassification: {q.to.name}]</b>
+      <span class="qascend__pay">{rankPay(q).map((x, i) => <span key={i} class="qpay">{x}</span>)}</span>
+      <span class="qascend__cta">Reclassify<Glyph name="chevron" /></span>
+    </button>
   );
 }
 
 /**
- * The Reclassification window: the rank held and the one above it, as plates; the level it asks; what
- * claiming it brings. Once the level is reached, a hold claims it, and the rank-up lifts the plate
+ * The Reclassification window, headed RECLASSIFICATION, in advancement's gold. Its name; the rank held and the rank
+ * above as a stage, the one above lit and alight once the level reaches it; GOAL as the climb itself, a notch to each
+ * level from where the rank held starts to the level asked, lit as far as the hunter stands, the hunter's level
+ * pinned on it, then the XP still needed or `Requirements met.`; REWARDS set out by kind: the points and blueprints as
+ * figures side by side, then what changes (the class, the slots) as was and becomes, then what it opens, each under
+ * `Access granted`; and once the level is reached, the hold that claims it. The rank-up lifts the held rank's plate
  * off this window (`claimRank`).
  */
 function RankBody() {
@@ -340,39 +390,91 @@ function RankBody() {
   const plate = useRef<HTMLSpanElement>(null);
   const q = reclassification(s);
   if (!q) return null;
-  const to = q.to.key === 'N' ? q.to.name : q.to.key;
-  const rewards: ComponentChildren[] = [
-    <>Rank: {q.from.key} → {to}</>,
-    <>Ability Points <b class="num grant">+{q.points}</b></>,
-    <>Skill Points <b class="num grant">+{q.skills.points}</b></>,
-  ];
-  if (q.cls && !q.cls.was) rewards.push(<span class="grant">ACCESS GRANTED: CLASS</span>);
-  if (q.cls?.was) rewards.push(<>Class: {q.cls.was} → <strong>[Class: {q.cls.is}]</strong>, {q.cls.lead} <b class="num grant">+{q.cls.bonus}</b></>);
-  if (q.skills.tier) rewards.push(<span class="grant">ACCESS GRANTED: {q.skills.tier}-RANK SKILLS</span>);
-  if (q.skills.slots) rewards.push(<>Skill slots: {q.skills.slots[0]} → {q.skills.slots[1]}</>);
-  if (q.slots) rewards.push(<>Shadow slots: {q.slots[0]} → {q.slots[1]}</>);
-  rewards.push(<>{RARITY[q.blueprints.rank].name} blueprints <b class="num grant">+{q.blueprints.n}</b></>);
-  if (q.throne) rewards.push(<span class="grant">ACCESS GRANTED: THE HOLLOW THRONE</span>);
-  if (q.ascension) rewards.push(<span class="grant">ACCESS GRANTED: ASCENSION</span>);
+  const lv = s.hunter.level;
+  const span = Math.max(1, q.to.min - q.from.min);
+  // How far into the level now: its XP over what the level asks, until the level asked is reached.
+  const into = lv >= q.to.min ? 0 : Math.max(0, Math.min(1, s.hunter.xp / xpToNext(lv)));
+  const notch = (i: number) => { const at = q.from.min + i; return lv > at ? 1 : lv === at ? into : 0; };
+  const pin = Math.min(1, (Math.min(lv, q.to.min) - q.from.min + into) / span);
+  const access: ComponentChildren[] = [];
+  if (q.cls && !q.cls.was) access.push('Class');
+  if (q.skills.tier) access.push(`${q.skills.tier}-Rank Skills`);
+  if (q.throne) access.push('The Hollow Throne');
+  if (q.ascension) access.push('Ascension');
+  const changes: { k: string; was: ComponentChildren; is: ComponentChildren; plus?: ComponentChildren }[] = [];
+  if (q.cls?.was) changes.push({ k: 'Class', was: q.cls.was, is: <strong>[Class: {q.cls.is}]</strong>, plus: <>{q.cls.lead} <b class="num grant">+{q.cls.bonus}</b></> });
+  if (q.skills.slots) changes.push({ k: 'Skill slots', was: <span class="num">{q.skills.slots[0]}</span>, is: <b class="num grant">{q.skills.slots[1]}</b> });
+  if (q.slots) changes.push({ k: 'Shadow slots', was: <span class="num">{q.slots[0]}</span>, is: <b class="num grant">{q.slots[1]}</b> });
   return (
-    <QuestWindow bare name={`Reclassification: ${q.to.name}`} class={`quest-rank ${q.ready ? 'is-ready' : ''}`}
-      lead={(
-        <div class="rankplates" aria-label={`${q.from.name} to ${q.to.name}`}>
-          <span class="rankplates__from" ref={plate}><Sigil rank={q.from.key} size={58} /></span>
-          <span class="rankplates__path" style={`--p: ${q.share}`} aria-hidden="true"><i /></span>
-          <span class="rankplates__to"><Sigil rank={q.to.key} size={58} /></span>
+    <div class={`questinfo questinfo--bare quest-rank rcl ${q.ready ? 'is-ready' : ''}`} aria-label={`Reclassification: ${q.to.name}`}>
+      <p class="questinfo__name"><strong>[Reclassification: {q.to.name}]</strong></p>
+      <div class="rclstage" aria-label={`${q.from.name} to ${q.to.name}`}>
+        <span class="rclstage__rank is-from">
+          <span class="rclstage__plate" ref={plate}><Sigil rank={q.from.key} size={56} /></span>
+          <small>{q.from.name}</small>
+        </span>
+        <span class="rclstage__pull" style={`--p: ${q.share}`} aria-hidden="true"><i class="rclstage__bar"><i /></i>{[0, 1, 2].map((k) => <b key={k} style={`--k: ${k}`} />)}</span>
+        <span class="rclstage__rank is-to">
+          <span class="rclstage__plate">
+            {q.ready && <><i class="rclstage__rays" aria-hidden="true" /><i class="rclstage__halo" aria-hidden="true" /></>}
+            <Sigil rank={q.to.key} size={84} />
+          </span>
+          <small>{q.to.name}</small>
+        </span>
+      </div>
+
+      <section class="rclsec" aria-label="Goal">
+        <span class="label questinfo__head">Goal</span>
+        <div class="rclgoal">
+          <p class="rclgoal__line"><b>Reach Level {q.to.min}.</b><span class="num">{Math.min(lv, q.to.min)}/{q.to.min}</span></p>
+          <div class="rclclimb" style={`--pin: ${pin}`} role="img" aria-label={`Level ${lv} of ${q.to.min}`}>
+            <span class="rclclimb__notches" style={`--n: ${span}`}>
+              {Array.from({ length: span }, (_, i) => { const f = notch(i); return <i key={i} class={f >= 1 ? 'is-on' : f > 0 ? 'is-part' : ''} style={`--f: ${f}; --i: ${i}`} />; })}
+            </span>
+            {!q.ready && <span class="rclclimb__pin"><b class="num">Level {lv}</b></span>}
+            <span class="rclclimb__ends">
+              <small><Sigil rank={q.from.key} size={14} /><span class="num">{q.from.min}</span></small>
+              <small><span class="num">{q.to.min}</span><Sigil rank={q.to.key} size={14} /></small>
+            </span>
+          </div>
+          {q.ready
+            ? <p class="rclgoal__met"><Glyph name="check" />Requirements met.</p>
+            : <small class="rclgoal__hint">XP needed: <b class="num">{group(q.left)}</b></small>}
         </div>
-      )}
-      goals={<QuestGoal id="rank" text={`Reach Level ${q.to.min}.`} hint={`XP needed: ${group(q.left)}`}
-        got={Math.min(s.hunter.level, q.to.min)} need={q.to.min} done={q.ready} pct={q.share} />}
-      rewards={rewards}>
+      </section>
+
+      <section class="rclsec" aria-label="Rewards">
+        <span class="label questinfo__head">Rewards</span>
+        <ul class="rclgains">
+          <li><Glyph name="plus" /><b class="num">+{q.points}</b><small>Ability Points</small></li>
+          <li><Glyph name="spark" /><b class="num">+{q.skills.points}</b><small>Skill Points</small></li>
+          <li data-rarity={q.blueprints.rank}><Glyph name="blueprint" /><b class="num">+{q.blueprints.n}</b><small>{RARITY[q.blueprints.rank].name} blueprints</small></li>
+        </ul>
+        {changes.length > 0 && (
+          <dl class="rclchanges">
+            {changes.map((c) => (
+              <div key={c.k}>
+                <dt>{c.k}</dt>
+                <dd><span class="rclchanges__was">{c.was}</span><Glyph name="chevron" /><span class="rclchanges__is">{c.is}</span>{c.plus && <span class="rclchanges__plus">{c.plus}</span>}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {access.length > 0 && (
+          <div class="rclaccess">
+            <span class="rclaccess__head">Access granted</span>
+            <ul>{access.map((a, i) => <li key={i}><Glyph name="unlock" />{a}</li>)}</ul>
+          </div>
+        )}
+      </section>
+
       {q.ready && (
         <div class="rankclaim" key={q.to.key}>
           <HoldButton hold={{ label: 'Hold To Reclassify', ms: 2400, ticks: 6, holding: 'Reclassifying…', done: 'Reclassified', after: 260 }}
             onFire={() => void claimRank(plate.current?.querySelector('svg') ?? plate.current)} />
         </div>
       )}
-    </QuestWindow>
+    </div>
   );
 }
 

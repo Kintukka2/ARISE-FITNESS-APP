@@ -39,6 +39,7 @@ import { openExchange } from './Exchange';
 import { openForge } from './Forge';
 import { Avatar, openEquipment, openInventory } from './Gear';
 import { Constellation, openSkills } from './Skills';
+import { openReclassification } from './Quests';
 import { statTip } from '@/ui/stattip';
 
 /** The Skills window: kept under its old name for the screens that open it from a class. */
@@ -291,7 +292,16 @@ function StatusSheet() {
         </dl>
       </header>
       <div class={`stclimb ${rc?.ready ? 'is-ready' : ''}`}>
-        <small>{rc?.ready ? <span class="apdue">Requirements met: <strong>[Reclassification: {rc.to.name}]</strong></span> : rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}</small>
+        {/* A rank waiting is a gold button that opens its window, where the hold is. */}
+        {rc?.ready
+          ? (
+            <button type="button" class="stclimb__go" onClick={() => { sfx.tap(); openReclassification(); }}>
+              <span class="stclimb__mark" aria-hidden="true"><Glyph name="up" /></span>
+              <span class="stclimb__text"><small>Requirements met</small><strong>[Reclassification: {rc.to.name}]</strong></span>
+              <Glyph name="chevron" class="stclimb__chev" />
+            </button>
+          )
+          : <small>{rc ? `Level ${rc.to.min} for ${rc.to.name}.` : 'Further ranks: none.'}</small>}
         {rc && !rc.ready && <i class="stclimb__bar" aria-hidden="true"><i style={`width: ${Math.round(rc.share * 100)}%`} /></i>}
         {licenceHolding(s) && <small class="muted">Gate grade: {licensedRank(s)}-Rank without the Association Licence.</small>}
       </div>

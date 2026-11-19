@@ -397,6 +397,15 @@ export const sfx = {
       noise(0.05, 0.5, 0.05, 5200);
     }
   },
+  /** A challenge met, struck on the results one after another: a bright chime a step higher each time, a shimmer over it. */
+  strike: (step: number) => {
+    if (!on()) return;
+    const root = 784 * Math.pow(2, [0, 4, 7, 12, 16, 19][Math.min(step, 5)] / 12);
+    tone(root, 0, 0.16, 'sine', 0.2);
+    tone(root * 1.5, 0.05, 0.3, 'sine', 0.13);
+    tone(root * 2, 0.1, 0.42, 'triangle', 0.06);
+    noise(0.03, 0.4, 0.035, 6400, 'highpass');
+  },
   rankUp: () => {
     if (!on()) return;
     tone(110, 0, 1.5, 'sawtooth', 0.1, 220);

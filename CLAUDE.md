@@ -128,7 +128,8 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   The brief (`screens/Brief.tsx`) presses them in place; its head and its Seals share the Seals set and the projections made for them.
   Calibration plays no Seals; the campaign takes a Gate's while the brief reads 75% or better.
 - Feats (`data/feats.ts`, `core/feats.ts`) are judged from the run's tally, counted in `raid.record`,
-  and pay once each per Gate (`s.gates.feats`). Special drops (`data/drops.ts`) are read at the kill
+  and pay once each per Gate (`s.gates.feats`); what each paid is on the result (`feats.pay`), for its row of the
+  results' Challenges (`ui/challenges.tsx`), and the Spoils show what the run left besides. Special drops (`data/drops.ts`) are read at the kill
   in `openChamber` and banked on the run (`run.drops`). Neither touches a fight, so neither moves a
   tuning; both pay whoever met them, so change what they pay and rerun the campaign.
 - Blessings (`data/blessings.ts`, `core/blessings.ts`) reach the fight only through the hero's spec
