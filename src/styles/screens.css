@@ -2069,7 +2069,8 @@ button.infotag:hover .infotag__q, button.infotag:focus-visible .infotag__q, butt
 .sp-skill__ico .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 5px var(--win-glow)); }
 .sp-skill__body { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 8px 0; }
 .sp-skill__body b { font-size: 0.86rem; font-style: italic; font-weight: 700; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 10px var(--win-glow); }
-.sp-skill__body small { font-size: 0.72rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 78%, transparent); }
+/* A skill's or a trait's line set as a creature card's habit is: its figures in blue, its statuses gold and tapped (ui/wards.tsx). */
+.sp-skill__body small { font-size: 0.74rem; line-height: 1.5; color: color-mix(in srgb, var(--sys-ink) 88%, transparent); }
 .sp-skill.is-sealed { opacity: 0.5; }
 .sp-skill.is-sealed .sp-skill__ico { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 
@@ -3737,11 +3738,6 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .rpay__one.is-ember > b { display: inline-flex; align-items: center; gap: 5px; color: var(--ember); text-shadow: 0 0 14px color-mix(in srgb, var(--ember) 45%, transparent); }
 .rpay__one i { font-style: normal; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 /* The hunter's condition after it: health and fatigue as bars, and what comes back with time. */
-.rcond { display: flex; flex-direction: column; gap: 8px; }
-.rcond__row { display: grid; grid-template-columns: 18px 64px minmax(0, 1fr); align-items: center; gap: 8px; }
-.rcond__row .ico { width: 16px; height: 16px; color: var(--ink-2); }
-.rcond__row .label { font-size: 0.58rem; }
-.rcond > small { align-self: flex-end; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
 
 /* A section of the results: its head (label, hairline, a count), then what it holds, unframed. */
 .rsec { display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; }
@@ -4475,6 +4471,9 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .bformation__seats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 4px; margin: 0; padding: 10px 6px; list-style: none; }
 .bformation__one { display: grid; justify-items: center; gap: 2px; min-width: 0; text-align: center; animation: rowIn 320ms var(--ease) both; }
 .bformation__face { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.6); }
+/* A favourite hunter's star, at their face's corner, in the System's own colour. */
+.bformation__fav { position: absolute; top: -6px; left: -6px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #06101d; color: var(--mana); }
+.bformation__fav .ico { width: 12px; height: 12px; filter: drop-shadow(0 0 4px var(--mana-glow)); }
 .bformation__one.is-free .bformation__face .ico { width: 14px; height: 14px; }
 .bformation__one.is-shadow b { color: #d9c6ff; }
 .bformation__one b { max-width: 100%; overflow: hidden; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
@@ -4535,13 +4534,15 @@ button.huntercard__class.is-classed { color: var(--gold); }
 .huntercard .sp-tag--style svg { color: var(--mana); }
 /* Their stats in one row of five, the lead lit in advancement's gold. */
 .hc-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
-.hc-stats li { position: relative; display: grid; justify-items: center; gap: 2px; padding: 9px 2px 7px; }
+.hc-stats li { position: relative; display: grid; padding: 0; }
+/* Each stat a tap that opens the one stat tooltip (ui/stattip.tsx), the tile its whole face. */
+button.hc-stats__tip.infotag { display: grid; justify-items: center; gap: 2px; width: 100%; padding: 9px 2px 7px; border: 0; background: none; cursor: help; }
 .hc-stats li .ico { width: 16px; height: 16px; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .hc-stats li b { font-size: 1.15rem; line-height: 1.1; }
 .hc-stats li small { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .hc-stats li.is-lead { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: inset 0 0 14px color-mix(in srgb, var(--gold) 14%, transparent); }
 .hc-stats li.is-lead b, .hc-stats li.is-lead .ico { color: var(--gold); }
-.hc-stats__lead { position: absolute; top: -7px; padding: 0 5px; background: #06101d; color: var(--gold); font-size: 0.52rem; font-style: normal; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.hc-stats__lead { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); pointer-events: none; padding: 0 5px; background: #06101d; color: var(--gold); font-size: 0.52rem; font-style: normal; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
 /* Your record together: the parties made large, the rest under it. */
 .hc-together { display: grid; gap: 10px; }
 .hc-together__lead { display: flex; align-items: baseline; gap: 8px; }

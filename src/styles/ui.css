@@ -674,6 +674,15 @@ button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
   text-transform: uppercase;
   text-shadow: var(--sys-glow);
 }
+/* A header box with something at its far right, in a fixed spot whatever the title's length (a hunter's favourite star). */
+.syshead__boxwrap { position: relative; display: flex; flex: 1; min-width: 0; }
+.syshead__boxwrap > .syshead__title { flex: 1; padding-right: 44px; }
+.syshead__extra { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); display: grid; place-items: center; }
+.favstar { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; background: none; color: color-mix(in srgb, var(--win) 70%, #fff); cursor: pointer; touch-action: manipulation; }
+.favstar .ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; opacity: 0.7; transition: transform 160ms, opacity 160ms; }
+.favstar.is-on .ico { fill: currentColor; opacity: 1; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.favstar:active .ico { transform: scale(0.85); }
+.favstar:focus-visible { outline: 2px solid var(--win); outline-offset: 1px; border-radius: 50%; }
 .syshead__title.is-card { flex: 1; flex-wrap: wrap; column-gap: 7px; row-gap: 0; padding: 6px 12px; font-size: 1rem; letter-spacing: 0.02em; text-transform: none; }
 .syshead__title.is-card small { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
 .syshead__tools { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; }

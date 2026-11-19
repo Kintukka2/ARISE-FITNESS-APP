@@ -39,6 +39,7 @@ import { openExchange } from './Exchange';
 import { openForge } from './Forge';
 import { Avatar, openEquipment, openInventory } from './Gear';
 import { Constellation, openSkills } from './Skills';
+import { statTip } from '@/ui/stattip';
 
 /** The Skills window: kept under its old name for the screens that open it from a class. */
 export const openClass = openSkills;
@@ -381,10 +382,7 @@ function StatsSheet() {
           );
         })}
       </div>
-      {why && (() => {
-        const a = ATTRS.find((x) => x.key === why.k)!;
-        return <Tip tip={{ title: a.name, kind: 'Stat', mark: <span class="tip__mark"><Glyph name={STAT_ICON[why.k]} /></span>, lines: [a.desc], tone: 'system' }} at={why.at} close={() => setWhy(null)} />;
-      })()}
+      {why && <Tip tip={statTip(why.k, { base: s.hunter.attrs[why.k], total: total[why.k], limits: true })} at={why.at} close={() => setWhy(null)} />}
       <header class="exsec__head"><span class="label">In a fight</span><i aria-hidden="true" /><small>Tap one for what it does</small></header>
       <div class="sysfields">{fight.map(([k, val, why]) => <Field key={k} k={k} v={<span class="num">{val}</span>} help={why} kind="In a fight" />)}</div>
       {v.fatigue > 0 && <small class="muted">Fatigue {v.fatigue}: every stat ×{v.drag.toFixed(2)}.</small>}
@@ -462,18 +460,13 @@ function Attributes() {
   const s = useSave();
   const total = gear.boosted(s.hunter.attrs, gear.worn(s), skilltree.flatBonus(s), BOOST_CAP);
   const order: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
-  const spend = (k: Stat) => {
+  // With no point to spend, a stat tapped tells what it is in the one tooltip, as the Stats sheet and a hunter's card do
+  // (the owner's call: a tooltip, never a window); a second tap closes it.
+  const [why, setWhy] = useState<{ k: Stat; at: TipAt } | null>(null);
+  const spend = (k: Stat, el: Element) => {
     if (!s.hunter.points) {
-      const a = ATTRS.find((x) => x.key === k)!;
-      void sys({
-        title: `Stat: ${a.name}`, kind: 'system', typed: false, actions: [{ label: 'Close', value: null }],
-        lines: [
-          a.desc,
-          `Base: <strong>${s.hunter.attrs[k]}</strong>`,
-          ...(total[k] !== s.hunter.attrs[k] ? [`With class and gear: <strong>${Math.round(total[k])}</strong>`] : []),
-          `Limit: ${STAT_CAP} from Ability Points, ${BOOST_CAP} with class and gear.`,
-        ],
-      });
+      sfx.blip();
+      setWhy(why?.k === k ? null : { k, at: tipAt(el) });
       return;
     }
     const ok = store.update((x) => spendPoint(x, k));
@@ -500,7 +493,8 @@ function Attributes() {
         {s.hunter.points > 0 && <Btn kind="gold" size="sm" onClick={auto}>Auto-Allocate</Btn>}
       </div>
       {order.map((k) => (
-        <button type="button" key={k} class="attr" onClick={() => spend(k)} aria-label={`${k} ${Math.round(total[k])}${s.hunter.points ? ', spend a point' : ''}`}>
+        <button type="button" key={k} class={`attr ${why?.k === k ? 'is-open' : ''}`} onClick={(e) => spend(k, e.currentTarget as Element)} aria-expanded={s.hunter.points ? undefined : why?.k === k}
+          aria-label={`${k} ${Math.round(total[k])}${s.hunter.points ? ', spend a point' : ''}`}>
           <Glyph name={STAT_ICON[k]} />
           <span class="attr__k">{k}</span>
           {/* How far its points have taken it toward their limit. */}
@@ -510,6 +504,7 @@ function Attributes() {
           {s.hunter.points > 0 && s.hunter.attrs[k] < STAT_CAP ? <span class="attr__plus"><Glyph name="plus" /></span> : <span class="attr__plus is-none" />}
         </button>
       ))}
+      {why && <Tip tip={statTip(why.k, { base: s.hunter.attrs[why.k], total: total[why.k], limits: true })} at={why.at} close={() => setWhy(null)} />}
     </div>
   );
 }

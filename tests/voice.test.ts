@@ -17,6 +17,7 @@ import { POTIONS } from '@/core/shop';
 import { IDENTITY_GAIN, passiveFor, passiveText, STATUS_TEXT, TACTICS } from '@/core/combat';
 import { STATS, type Attrs } from '@/core/types';
 import { PASSIVES } from '@/data/abilities';
+import { statTip } from '@/ui/stattip';
 import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASS_RANKS, CLASSES, nextRung } from '@/data/classes';
 import { byLead } from '@/core/ranks';
@@ -388,5 +389,16 @@ describe('the full sweep', () => {
 
   it('never lets the System name itself, even in a level name', () => {
     for (const line of [...Object.values(STATUS_TEXT), ...TACTICS.map((t) => t.desc)]) expect(line).not.toMatch(/\bSystem\b/);
+  });
+});
+
+describe('the one stat tooltip', () => {
+  it('tells every stat in whole sentences, the same wherever it is opened', () => {
+    for (const k of STATS) {
+      const own = statTip(k, { base: 18, total: 22, limits: true });
+      expect(own.kind).toBe('Stat');
+      expect(own.lines[1]).toBe('Base 18, 22 with class, skills and gear.');
+      for (const l of [...own.lines, ...statTip(k, { best: true }).lines]) expect(l, l).toMatch(/^[A-Z].*\.$/);
+    }
   });
 });

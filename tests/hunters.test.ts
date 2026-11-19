@@ -94,3 +94,15 @@ describe('an Association hunter', () => {
     }
   });
 });
+
+describe('a favourite hunter', () => {
+  it('is starred on their card and unstarred on a second tap, kept in the save', () => {
+    const s = defaults();
+    expect(hunters.isFavourite(s, 'H-1')).toBe(false);
+    expect(hunters.toggleFavourite(s, 'H-1')).toBe(true);
+    expect(hunters.isFavourite(s, 'H-1')).toBe(true);
+    expect(s.gates.favourites).toEqual(['H-1']);
+    expect(hunters.toggleFavourite(s, 'H-1')).toBe(false);
+    expect(s.gates.favourites).toEqual([]);
+  });
+});

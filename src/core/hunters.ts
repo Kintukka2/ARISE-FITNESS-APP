@@ -47,6 +47,18 @@ export function recordOf(s: Save, id: string) {
   };
 }
 
+/** Whether the hunter has starred this Association hunter on their card. */
+export const isFavourite = (s: Save, id: string) => (s.gates.favourites ?? []).includes(id);
+
+/** Star an Association hunter on their card, or take the star off. Returns whether they are starred now. Mutates. */
+export function toggleFavourite(s: Save, id: string): boolean {
+  const list = (s.gates.favourites ??= []);
+  const at = list.indexOf(id);
+  if (at >= 0) list.splice(at, 1);
+  else list.push(id);
+  return at < 0;
+}
+
 /** Write one run into each of its hunters' records, as `raid.finish` settles it. Mutates. */
 export function log(s: Save, ids: readonly string[], kills: Record<string, { kills: number; bosses: number }>, day: string, outcome?: string) {
   const all = (s.gates.walked ??= {});
