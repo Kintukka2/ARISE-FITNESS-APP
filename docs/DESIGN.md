@@ -2999,6 +2999,41 @@ They keep the keyword's gold, with a dotted rule under them as a ward's word has
 `Keyed` colours them. The tour taps a status in a creature's habit and fails if none opens one. Words only: no
 calibration and no campaign.
 
+## One stat tooltip everywhere, the hunter card's names and star, results without the bars — built
+
+The owner asked for:
+- **Hunter card:** `Best` where it read `Lead`; a better name than `Together`; each stat a tooltip; the skill lines
+  set as a creature's habits are, with tooltips where a word needs one (`Staggered`); a favourite star at the far
+  right of the name, in a fixed spot.
+- **Status sheet:** its stat window replaced by a tooltip, and the tooltips of the Status sheet, the Stats sheet and
+  an Association hunter's card aligned into one.
+- **Results:** no HP and Fatigue on a Gate's results.
+
+What changed:
+- **One stat tooltip** (`statTip` in `ui/stattip.tsx`): the stat's mark and name, `Stat` at the right, what it does.
+  - Where the numbers are the hunter's own, it adds `Base 18, 22 with class, skills and gear.` and `Ability Points
+    take it to 100, and class, skills and gear to 200.`
+  - On an Association hunter's best stat, it adds `Their best stat, the one their class leads with.`
+  - The Status sheet's stat, tapped with no point to spend, opens it where a System window `STAT: Strength` stood.
+    The Stats sheet's rows and a hunter's five stats open the same one.
+- **The hunter card.** `Best` flags the stat their class leads with. `Partnership` heads their record with you. Each
+  skill's and trait's line is set as a creature's habit: its figures in blue, and a status it inflicts a gold word that
+  opens the status's tooltip (`KeyedTips`). The Shadow card's skills and traits are set the same way, in its violet,
+  as the two cards share them.
+- **A favourite star** stands at the far right of the head's name box (`extra` on a System sheet, `SysHead`), outlined
+  until tapped and filled in the frame's cyan. It is kept in the save (`s.gates.favourites`, a field with a default;
+  `hunters.toggleFavourite`), and a starred hunter's face in a Gate's party wears a small star at its corner. The cyan
+  keeps gold to advancement.
+- **The results** no longer show `Health` and `Fatigue` bars; the Gates screen's Condition strip says them, and a
+  carried-out run's line still gives `You are on 1 HP, with Fatigue at 100.`
+- **Held by tests.**
+  - `tests/hunters.test.ts`: a favourite starred and unstarred.
+  - `tests/voice.test.ts`: every stat tooltip in whole sentences.
+  - The tour: opens a hunter's stat, stars them and finds the star on their face in the party, reads `Partnership`,
+    checks the Stats sheet's tooltip carries the base and the limit, and opens a stat on the ascended hunter's Status
+    sheet as a tooltip, never a window.
+- **Balance.** Words and layout only: no calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

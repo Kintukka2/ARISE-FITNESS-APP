@@ -15,7 +15,9 @@ import { nextRung } from '@/data/classes';
 import { ATTRS } from '@/core/progression';
 import type { Stat } from '@/core/types';
 import { daysBetween, dayKey } from '@/core/util';
+import * as store from '@/store';
 import { useSave } from '@/store';
+import { sfx } from '@/audio/audio';
 import { skillLine } from './Skills';
 import { Facts, RankPlate, Section } from '@/ui/components';
 import { Glyph, STAT_ICON } from '@/ui/icons';
@@ -23,6 +25,8 @@ import { InfoTag } from '@/ui/infotag';
 import { openSheet } from '@/ui/overlays';
 import { hunterStyleTip, STYLE_GLYPH, styleOfLead } from '@/ui/stand';
 import type { TipText } from '@/ui/tip';
+import { statTip } from '@/ui/stattip';
+import { KeyedTips } from '@/ui/wards';
 
 const ORDER: Stat[] = ['STR', 'VIT', 'AGI', 'INT', 'PER'];
 
@@ -31,8 +35,24 @@ export function openHunter(a: Ally) {
   openSheet({
     title: `Hunter: ${a.name}`,
     system: { icon: <RankPlate rank={a.rank} size={26} /> },
+    extra: () => <FavStar a={a} />,
     render: () => <HunterCard a={a} />,
   });
+}
+
+/**
+ * The star at the far right of the name, in a fixed spot: tapped, the hunter is a favourite, and their face in a Gate's
+ * party wears the star too (the owner's call). Drawn in the frame's own colour, filled while starred.
+ */
+function FavStar({ a }: { a: Ally }) {
+  const s = useSave();
+  const on = hunters.isFavourite(s, a.id);
+  return (
+    <button type="button" class={`favstar ${on ? 'is-on' : ''}`} aria-pressed={on} aria-label={on ? `${a.name} is a favourite. Remove the star` : `Star ${a.name} as a favourite`}
+      onClick={() => { sfx.blip(); store.update((x) => hunters.toggleFavourite(x, a.id)); }}>
+      <Glyph name="star" />
+    </button>
+  );
 }
 
 /**
@@ -102,18 +122,23 @@ function Head({ a }: { a: Ally }) {
   );
 }
 
-/** Their stats in one row of five, as a party member's sheet sets them side by side, the stat their class leads with lit. */
+/**
+ * Their stats in one row of five, as a party member's sheet sets them side by side, the stat their class leads with lit
+ * under `Best`. Each opens the one tooltip the Status and Stats sheets open for the hunter's own (`ui/stattip.tsx`).
+ */
 function Stats({ a }: { a: Ally }) {
   const c = hunters.classOf(a);
   return (
     <Section title="Stats">
       <ul class="hc-stats">
         {ORDER.map((k) => (
-          <li key={k} class={`sysbox ${c?.lead === k ? 'is-lead' : ''}`} aria-label={`${k} ${a.base[k]}${c?.lead === k ? ', their lead' : ''}`}>
-            <Glyph name={STAT_ICON[k] ?? 'star'} />
-            <b class="num">{a.base[k]}</b>
-            <small>{k}</small>
-            {c?.lead === k && <i class="hc-stats__lead">Lead</i>}
+          <li key={k} class={`sysbox ${c?.lead === k ? 'is-lead' : ''}`}>
+            <InfoTag class="hc-stats__tip" tip={statTip(k, { best: c?.lead === k })}>
+              <Glyph name={STAT_ICON[k] ?? 'star'} />
+              <b class="num">{a.base[k]}</b>
+              <small>{k}</small>
+            </InfoTag>
+            {c?.lead === k && <i class="hc-stats__lead">Best</i>}
           </li>
         ))}
       </ul>
@@ -134,7 +159,7 @@ function Kit({ a }: { a: Ally }) {
             return (
               <div key={n} class="sp-skill">
                 <span class="sp-skill__ico"><Glyph name={ab?.type === 'magic' ? 'bolt' : 'fist'} /></span>
-                <span class="sp-skill__body"><b>[Skill: {n}]</b><small>{ab ? skillLine(ab) : ''}</small></span>
+                <span class="sp-skill__body"><b>[Skill: {n}]</b><small><KeyedTips text={ab ? skillLine(ab) : ''} tone="system" /></small></span>
               </div>
             );
           })}
@@ -146,7 +171,7 @@ function Kit({ a }: { a: Ally }) {
             {k.passives.map((n) => (
               <div key={n} class="sp-skill is-passive">
                 <span class="sp-skill__ico"><Glyph name="star" /></span>
-                <span class="sp-skill__body"><b>[Passive: {n}]</b><small>{passiveText(n)}</small></span>
+                <span class="sp-skill__body"><b>[Passive: {n}]</b><small><KeyedTips text={passiveText(n)} tone="system" /></small></span>
               </div>
             ))}
           </div>
@@ -163,15 +188,15 @@ const ago = (day: string) => {
 };
 
 /**
- * Your record together, the hunter's own and nobody else's: the parties you have made, large, then the Gates cleared
- * and those you were carried out of together, the creatures they defeated beside you and the bosses, when you first
- * and last partied, and where they stand among every hunter you have partied with.
+ * `Partnership`, your record with this hunter and nobody else's (the owner's call, where it read `Together`): the
+ * parties you have made, large, then the Gates cleared and those you were carried out of together, the creatures they
+ * defeated beside you and the bosses, when you first and last partied, and where they stand among your partners.
  */
 function Together({ a }: { a: Ally }) {
   const s = useSave();
   const r = hunters.recordOf(s, a.id);
   return (
-    <Section title="Together">
+    <Section title="Partnership">
       {r.runs === 0
         ? <p class="hc-together__none">You have not partied together yet.</p>
         : (

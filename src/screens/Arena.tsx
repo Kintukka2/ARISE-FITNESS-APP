@@ -1583,7 +1583,6 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const block = r.outcome === 'cleared' && r.spire && spire.isSpire(d) ? spire.nextBlock(s) : null;
   const next = block !== null ? spire.nextSpire(s) : null;
   const climb = next && !entryBlock(s, next) ? next : null;
-  const v = vitals.read(s);
   const trial = isTrial(d);
   const rifted = isRift(d);
   const title = r.outcome === 'cleared' ? r.spire ? `Floor ${r.spire.floor} Cleared` : trial ? 'Trial Won' : rifted ? 'Rift Cleared' : 'Gate Cleared' : r.outcome === 'withdrawn' ? 'Withdrawn' : 'Carried Out';
@@ -1630,11 +1629,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           </div>
           </>
         )}
-        <div class="rcond">
-          <span class="rcond__row"><Glyph name="hp" /><span class="label">Health</span><HpBar cur={v.hp} max={v.hpMax} tone="hp" /></span>
-          <span class="rcond__row"><Glyph name="bolt" /><span class="label">Fatigue</span><HpBar cur={v.fatigue} max={vitals.FATIGUE_MAX} tone={v.fatigue >= 70 ? 'blood' : v.fatigue >= 35 ? 'ember' : 'gold'} /></span>
-          <small>{`HP +${Math.round(vitals.PCT_PER_HOUR * 100)}% and Fatigue -${vitals.FATIGUE_PER_HOUR} each hour`}</small>
-        </div>
+        {/* The hunter's HP and Fatigue are the Gates screen's, under Valcorde, not the results' (the owner's call). */}
         {/* What the clear asked of the hand, after Helldivers 2's mission summary: one band, the medal against par first,
             then the Gate's Feats, a row to each, what each paid the first time at its right. */}
         {r.outcome === 'cleared' && (r.par || r.feats.asked.length > 0) && (

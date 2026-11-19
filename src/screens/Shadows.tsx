@@ -31,7 +31,7 @@ import { claimAll, claimPromotion } from '@/app/flow';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { useDrag } from '@/ui/drag';
-import { WardLines } from '@/ui/wards';
+import { KeyedTips, WardLines } from '@/ui/wards';
 
 export function Shadows() {
   const s = useSave();
@@ -740,7 +740,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
                 <span class="sp-skill__ico"><Glyph name={!on ? 'lock' : a?.type === 'magic' ? 'bolt' : 'fist'} /></span>
                 <span class="sp-skill__body">
                   <b>[Skill: {n}]</b>
-                  <small>{on ? (a ? skillLine(a) : '-- --') : `${shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank`}</small>
+                  <small>{on ? (a ? <KeyedTips text={skillLine(a)} tone="shadow" /> : '-- --') : `${shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank`}</small>
                   {on && !e.kit.includes(n) && <small class="muted">From its kin</small>}
                 </span>
               </div>
@@ -754,7 +754,7 @@ function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
             {e.passive && (
               <div class="sp-skill is-passive">
                 <span class="sp-skill__ico"><Glyph name="star" /></span>
-                <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small>{passiveFor(e.passive, shadows.statsOf(sh))}</small></span>
+                <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small><KeyedTips text={passiveFor(e.passive, shadows.statsOf(sh))} tone="shadow" /></small></span>
               </div>
             )}
             {/* Listed as the creature card lists them, each status's word opening what the ward does (ui/wards.tsx). */}

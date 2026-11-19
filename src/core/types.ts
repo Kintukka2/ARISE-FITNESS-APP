@@ -412,6 +412,8 @@ export interface Save {
      * the days first and last walked with. Clears together are `together`.
      */
     walked: Record<string, { runs: number; carried?: number; kills: number; bosses: number; first: string; last: string }>;
+    /** The Association hunters starred on their cards, by id (`hunters.toggleFavourite`). */
+    favourites: string[];
     bosses: string[];
     /** Every Gate the hunter has walked into: the brief shows its map from then on (`gates.mapKnown`). */
     entered: string[];

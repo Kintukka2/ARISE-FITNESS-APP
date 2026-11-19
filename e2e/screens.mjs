@@ -127,6 +127,14 @@ try {
   await snap('inventory');
   await snap('inventory-full', true);
   await page.locator('[data-hub="status"]').click(); await sleep(400); await snap('status', true);
+  // With no point to spend, a stat tapped tells what it is in the one tooltip, never a window.
+  if ((await page.locator('.sheet.is-top .attrs__head b').innerText()).trim() === '0') {
+    await page.locator('.sheet.is-top .attr').first().click(); await sleep(300);
+    if (await page.locator('.syswin', { hasText: /Stat:/i }).count()) throw new Error('A STAT ON THE STATUS SHEET STILL OPENS A WINDOW');
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A STAT ON THE STATUS SHEET DID NOT OPEN ITS TOOLTIP');
+    await snap('status-stat-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+  }
   // STATUS is the source's window: its fields as plain lines beside the level, no box round each.
   if (!(await page.locator('.sheet.is-top .sthead__lv').count())) throw new Error('THE STATUS SHEET HAS NO LEVEL AT ITS HEAD');
   if (await page.locator('.sheet.is-top .status .sysfield').count()) throw new Error('THE STATUS SHEET STILL BOXES ITS FIELDS');
@@ -144,6 +152,8 @@ try {
   if (await page.locator('.tip').count()) throw new Error('THE STATS TABLE SHOWS A LINE BEFORE A ROW IS TAPPED');
   await page.locator('.sheet.is-top .stattable__row').nth(2).click(); await sleep(250);
   if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Stat' }).isVisible())) throw new Error('A STAT\'S ROW TAPPED DID NOT OPEN ITS TOOLTIP');
+  // The Stats sheet's stat tooltip is the Status sheet's: what it does, where the hunter's stands, how far it goes.
+  if (!(await page.locator('.tip.tip--system', { hasText: /Base \d+/ }).count()) || !(await page.locator('.tip.tip--system', { hasText: 'Ability Points take it to' }).count())) throw new Error('THE STATS SHEET\'S STAT TOOLTIP IS NOT THE STATUS SHEET\'S');
   await snap('stats-row-tip');
   await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(200);
   if (await page.locator('.tip').count()) throw new Error('A TAP AWAY DID NOT CLOSE THE STAT\'S TOOLTIP');
@@ -607,7 +617,7 @@ try {
     metHunter = await ally.getAttribute('data-hunter');
     await ally.click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
-    for (const head of ['Stats', 'Skills', 'Together']) {
+    for (const head of ['Stats', 'Skills', 'Partnership']) {
       if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
     }
     // Shadows and hunters share nothing directly, so the card says nothing of the squad.
@@ -627,9 +637,22 @@ try {
     if (await page.locator('.tip.tip--system', { hasText: /\branks?\b/ }).count()) throw new Error('THE MELEE OR RANGED TOOLTIP CALLS A ROW A RANK');
     await snap('hunter-style-tip');
     await page.keyboard.press('Escape'); await sleep(250);
+    // Each stat opens the one stat tooltip, the same the Status and Stats sheets open; the best is flagged `Best`.
+    await page.locator('.sheet.is-top .huntercard .hc-stats__tip').nth(1).click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A HUNTER\'S STAT TAPPED DID NOT OPEN ITS TOOLTIP');
+    await snap('hunter-stat-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+    if (await page.locator('.sheet.is-top .hc-stats__lead', { hasText: /^Lead$/i }).count()) throw new Error('THE HUNTER CARD STILL FLAGS A STAT LEAD');
+    // The favourite star stands at the far right of the name; starred, their face in the party wears it.
+    const star = page.locator('.sheet.is-top .syshead__extra .favstar');
+    if (!(await star.count())) throw new Error('THE HUNTER CARD HAS NO FAVOURITE STAR IN ITS NAME');
+    await star.click(); await sleep(250);
+    if ((await star.getAttribute('aria-pressed')) !== 'true') throw new Error('THE FAVOURITE STAR DID NOT STAR THE HUNTER');
+    await snap('hunter-favourite');
     await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(500); await snap('hunter-card-2');
     await close(); await sleep(400);
     if (await page.locator('.sheet.is-top .huntercard').count()) throw new Error('THE HUNTER CARD DID NOT CLOSE');
+    if (!(await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"] .bformation__fav`).count())) throw new Error('A FAVOURITE HUNTER\'S FACE IN THE PARTY DOES NOT WEAR THE STAR');
     // A classed hunter's class tooltip: what kind of fighter it is, then its lead and the rung it rises to.
     const allies = page.locator('.sheet.is-top .bformation__ally');
     for (let i = 0; i < (await allies.count()); i++) {
@@ -1236,7 +1259,7 @@ try {
     await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"]`).click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .hc-together__lead', { hasText: '7' }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THEIR PARTIES');
     if (!(await page.locator('.sheet.is-top .hc-together__rows', { hasText: /Most often|The only one/ }).count())) throw new Error('THE MOST FREQUENT PARTNER IS NOT SAID TO BE');
-    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'Together' }).scrollIntoViewIfNeeded(); await sleep(400);
+    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'Partnership' }).scrollIntoViewIfNeeded(); await sleep(400);
     await snap('hunter-card-together');
   }
 
@@ -1245,6 +1268,19 @@ try {
   await page.goto(`http://localhost:${PORT}/`);
   await sleep(1200);
   await drain();
+  // With no point to spend, a stat on the Status sheet opens the one stat tooltip, never a window.
+  {
+    await nav('inventory'); await sleep(600);
+    await page.locator('[data-hub="status"]').click(); await sleep(400);
+    if ((await page.locator('.sheet.is-top .attrs__head b').innerText()).trim() !== '0') throw new Error('THE ASCENDED FIXTURE HAS POINTS TO SPEND');
+    await page.locator('.sheet.is-top .attr').first().click(); await sleep(300);
+    if (await page.locator('.syswin', { hasText: /Stat:/i }).count()) throw new Error('A STAT ON THE STATUS SHEET STILL OPENS A WINDOW');
+    if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A STAT ON THE STATUS SHEET DID NOT OPEN ITS TOOLTIP');
+    if (!(await page.locator('.tip.tip--system', { hasText: 'Ability Points take it to' }).count())) throw new Error('THE STATUS SHEET\'S STAT TOOLTIP IS NOT THE STATS SHEET\'S');
+    await snap('status-stat-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+    await close(); await sleep(300);
+  }
   await nav('quests');
   await sleep(600);
   await snap('asc-quests', true);

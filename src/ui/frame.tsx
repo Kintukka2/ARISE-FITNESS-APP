@@ -38,12 +38,17 @@ export function HeadBox({ title }: { title: string }) {
     : <h2 class="sysbox syshead__title">{title}</h2>;
 }
 
-/** The icon box and the header box, side by side. `icon={null}` leaves the icon box out, as Status does. */
-export function SysHead({ title, icon, tools }: { title: string; icon?: ComponentChildren; tools?: ComponentChildren }) {
+/**
+ * The icon box and the header box, side by side. `icon={null}` leaves the icon box out, as Status does. `extra` stands
+ * inside the header box at its far right, in a fixed spot whatever the title's length (a hunter's favourite star).
+ */
+export function SysHead({ title, icon, tools, extra }: { title: string; icon?: ComponentChildren; tools?: ComponentChildren; extra?: ComponentChildren }) {
   return (
     <header class={`syshead ${tools ? 'has-tools' : ''} ${isCard(title) ? 'is-card' : ''}`}>
       {icon !== null && <span class="sysbox syshead__icon">{icon ?? <Bang />}</span>}
-      <HeadBox title={title} />
+      {extra
+        ? <span class="syshead__boxwrap"><HeadBox title={title} /><span class="syshead__extra">{extra}</span></span>
+        : <HeadBox title={title} />}
       {tools && <span class="syshead__tools">{tools}</span>}
     </header>
   );

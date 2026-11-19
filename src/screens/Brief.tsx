@@ -57,6 +57,7 @@ import * as sealing from '@/core/seals';
 import * as feats from '@/core/feats';
 import * as par from '@/core/par';
 import * as ranks from '@/core/ranks';
+import * as hunters from '@/core/hunters';
 import { ROW_NAME, ROWS, type Row } from '@/data/ranks';
 import { classFor } from '@/data/classes';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
@@ -595,8 +596,9 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
     // An Association hunter opens their card when tapped: their class, kit, stats and record beside you.
     ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
       <li key={a.id} class="bformation__one is-ally">
-        <button type="button" class="bformation__me bformation__ally" data-hunter={a.id} aria-label={`${a.name}, ${a.rank}-Rank. Open their card.`} onClick={() => { sfx.tap(); openHunter(a); }}>
-          <span class="bformation__face"><RankPlate rank={a.rank} size={26} /></span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? <i class="bformation__vs is-up" aria-label="above the Gate's grade"> ▲</i> : rankIdx(a.rank) < rankIdx(d.rank) ? <i class="bformation__vs is-down" aria-label="under the Gate's grade"> ▼</i> : null}</small>
+        <button type="button" class="bformation__me bformation__ally" data-hunter={a.id} aria-label={`${a.name}, ${a.rank}-Rank${hunters.isFavourite(s, a.id) ? ', a favourite' : ''}. Open their card.`} onClick={() => { sfx.tap(); openHunter(a); }}>
+          {/* A hunter starred on their card wears the star on their face here. */}
+          <span class="bformation__face"><RankPlate rank={a.rank} size={26} />{hunters.isFavourite(s, a.id) && <i class="bformation__fav" aria-hidden="true"><Glyph name="star" /></i>}</span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? <i class="bformation__vs is-up" aria-label="above the Gate's grade"> ▲</i> : rankIdx(a.rank) < rankIdx(d.rank) ? <i class="bformation__vs is-down" aria-label="under the Gate's grade"> ▼</i> : null}</small>
         </button>
       </li>
     ) })),
