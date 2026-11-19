@@ -11,7 +11,10 @@ import { STAT_WORDS } from '@/core/gear';
 const KEYWORDS = [...new Set([...Object.keys(STATUS), ...Object.values(STAT_WORDS), 'Attack', 'HP', 'MP', 'defence', 'Shadow', 'Front', 'Rear'])];
 const RX = new RegExp(`([×+-]?\\d+(?:[.,]\\d+)?%?|\\b(?:${KEYWORDS.sort((a, b) => b.length - a.length).join('|')})\\b)`, 'g');
 
+/** A line split as `Keyed` colours it: the plain text at even places, its figures and keywords at odd ones. */
+export const keyedParts = (text: string) => text.split(RX);
+
 export function Keyed({ text }: { text: string }) {
-  const parts = text.split(RX);
+  const parts = keyedParts(text);
   return <>{parts.map((p, i) => (i % 2 ? <b key={i} class={/\d/.test(p) ? 'kw-num' : 'kw'}>{p}</b> : p))}</>;
 }

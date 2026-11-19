@@ -673,6 +673,16 @@ try {
       await page.keyboard.press('Escape'); await sleep(250);
     }
   }
+  // A status a habit or the special drop names (Broken, Stunned) is a word that opens what it does.
+  {
+    const word = page.locator('.sheet.is-top .bcreature .bhabit .kwtip').first();
+    if (await word.count()) {
+      await word.scrollIntoViewIfNeeded(); await word.click(); await sleep(300);
+      if (!(await page.locator('.tip.tip--gate .tip__kind', { hasText: /^Status$/i }).isVisible())) throw new Error('A STATUS IN A CREATURE\'S HABIT TAPPED DID NOT SAY WHAT IT DOES');
+      await snap('brief-creature-habit-tip');
+      await page.keyboard.press('Escape'); await sleep(250);
+    } else throw new Error('NO STATUS IN THE CREATURE CARD\'S HABITS OR DROP OPENS A TOOLTIP');
+  }
   await close(); await sleep(400);
   await page.locator('.sheet.is-top .benemy.is-boss.is-tap').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .bcreature', { hasText: 'Gate boss' }).count())) throw new Error('THE BOSS’S PORTRAIT OPENED NO CARD');

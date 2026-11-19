@@ -2562,6 +2562,10 @@ button.matrow { width: 100%; color: inherit; font: inherit; text-align: left; cu
 /* A tip's keywords, as the reference games colour theirs: figures in the System's blue, statuses and stats in gold. */
 .kw-num { font-weight: 700; color: var(--mana); }
 .kw { font-weight: 700; color: var(--gold); }
+/* A status a creature card's line names, tapped to tell what it does (ui/wards.tsx): the keyword's gold kept, a dotted
+   rule under it as a ward's word has, never a pill. */
+button.kw.kwtip.infotag { display: inline; padding: 0; border: 0; background: none; color: var(--gold); font-weight: 700; text-decoration: underline dotted color-mix(in srgb, var(--gold) 55%, transparent); text-underline-offset: 3px; }
+button.kw.kwtip.infotag:hover, button.kw.kwtip.infotag[aria-expanded="true"] { color: #ffe08a; text-decoration-color: currentColor; }
 
 /* A shrine's or a Font's offer: a card to each blessing, after the boon cards of the references. Its
    Path's mark in a diamond at its left on a gold wedge that deepens with the tier; its name over its
