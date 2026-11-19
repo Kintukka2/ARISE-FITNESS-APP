@@ -64,12 +64,11 @@ import { TRICKS, tricksOf } from '@/data/tricks';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
-import { Keyed } from '@/ui/keyed';
 import { openHunter } from './Hunter';
 import { ModRows, SealArt } from '@/ui/seals';
 import { ParCard } from '@/ui/par';
 import { drinkFlow } from './Inventory';
-import { WardLines } from '@/ui/wards';
+import { KeyedTips, WardLines } from '@/ui/wards';
 
 /**
  * The Seal button's line while none is taken: what Sealing does, the interface's, at the owner's call
@@ -904,7 +903,8 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {habits.length > 0 && (
         <section class="bbox" aria-label="Habits">
           <span class="label bbox__head">Habits</span>
-          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name"><HabitMark id={h} size={17} />{TRICKS[h].name}</b><Keyed text={TRICKS[h].about(String(e.rank))} /></p>)}
+          {/* A status a habit names opens what it does, in the one tooltip (ui/wards.tsx). */}
+          {habits.map((h) => <p key={h} class="bhabit"><b class="bhabit__name"><HabitMark id={h} size={17} />{TRICKS[h].name}</b><KeyedTips text={TRICKS[h].about(String(e.rank))} tone="gate" /></p>)}
         </section>
       )}
       {(e.imm.length > 0 || e.res.length > 0) && (
@@ -917,7 +917,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
       {cond && (
         <section class="bbox" aria-label="Special drop">
           <span class="label bbox__head">Special drop</span>
-          <p class="bhabit"><b class="bhabit__name">{dropPay(id, boss)}</b><Keyed text={`${CONDITION[cond].text}.`} /></p>
+          <p class="bhabit"><b class="bhabit__name">{dropPay(id, boss)}</b><KeyedTips text={`${CONDITION[cond].text}.`} tone="gate" /></p>
         </section>
       )}
     </div>

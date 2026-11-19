@@ -2985,6 +2985,20 @@ What changed:
   - opens a ward's word on a creature's card and on a Shadow's, and fails on a status drawn as a pill
 - **Balance.** Words and layout only: no calibration and no campaign.
 
+## A creature's habits tell their statuses — built
+
+The owner asked for tooltips on the creature card's habits too. A habit's own line already says what it does
+(`Every creature gains 20% Attack for 2 rounds.`), so a tooltip on its name would only repeat it. The habit lines don't
+say what the statuses they name do (`it becomes Broken, is Stunned`), and nor does the special drop
+(`The final hit lands while it is Burning.`). Those words now open the one tooltip (`KeyedTips` and `statusTip` in
+`ui/wards.tsx`):
+- the status by its mark and name, with `Status` at the right
+- what it does: `Physical defence -40%, Magical resistance -40%.`
+
+They keep the keyword's gold, with a dotted rule under them as a ward's word has. The figures and stats stay as
+`Keyed` colours them. The tour taps a status in a creature's habit and fails if none opens one. Words only: no
+calibration and no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

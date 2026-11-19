@@ -5,9 +5,10 @@
  * kind at the right, what the ward does, then what the status would have done. The Shadow card lists its wards the
  * same way (`screens/Shadows.tsx`).
  */
-import { RESIST_STATUS, STATUS_TEXT } from '@/core/combat';
+import { RESIST_STATUS, STATUS, STATUS_TEXT } from '@/core/combat';
 import { STATUS_MARK, StatusMark } from './effects';
 import { InfoTag } from './infotag';
+import { keyedParts } from './keyed';
 import type { TipText } from './tip';
 
 export type WardKind = 'Immune' | 'Resists';
@@ -39,6 +40,34 @@ export function WardWords({ names, kind, tone }: { names: readonly string[]; kin
           {i < names.length - 1 ? ',' : ''}
         </span>
       ))}
+    </>
+  );
+}
+
+/** A status in the one tooltip, as the fight tells one: its mark and name, `Status` at the right, then what it does. */
+export function statusTip(st: string, tone: TipText['tone'] = 'gate'): TipText {
+  return {
+    title: st,
+    kind: 'Status',
+    tone,
+    mark: STATUS_MARK[st] ? <span class={`tip__mark tip__status ${STATUS[st]?.good ? 'is-good' : ''}`}><StatusMark name={st} /></span> : undefined,
+    lines: STATUS_TEXT[st] ? [`${STATUS_TEXT[st]}.`] : [],
+  };
+}
+
+/**
+ * A line coloured as `Keyed` colours it, its statuses the words that tell what they are: a creature card's habit or
+ * special drop names Broken or Stunned without saying what either does, so the word opens the status's tooltip, a
+ * dotted rule under it as a ward's word has. Its figures and its stats stay as `Keyed` sets them.
+ */
+export function KeyedTips({ text, tone }: { text: string; tone?: TipText['tone'] }) {
+  return (
+    <>
+      {keyedParts(text).map((p, i) => (i % 2
+        ? STATUS_TEXT[p]
+          ? <InfoTag key={i} class="kw kwtip" tip={statusTip(p, tone)}>{p}</InfoTag>
+          : <b key={i} class={/\d/.test(p) ? 'kw-num' : 'kw'}>{p}</b>
+        : p))}
     </>
   );
 }
