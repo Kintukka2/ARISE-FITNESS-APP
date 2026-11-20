@@ -50,7 +50,7 @@ import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { HabitMark } from '@/ui/effects';
 import { ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
-import { makeLine } from '@/ui/kin';
+import { BonusChips } from '@/ui/kin';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
@@ -641,10 +641,16 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
             </div>
           );
         })}
+        {/*
+          The board's foot, inside its frame (the owner's call: under it, the bonuses and the hint read as no part of the
+          party): what the squad's roles and Kin give, a chip to each, then how to move a face. Where the hunter stands,
+          their class's place until they move, and each Shadow, its role's until it is moved: kept for every Gate after.
+        */}
+        <div class="bformation__foot">
+          <BonusChips squad={squad} />
+          <p class="bformation__hint"><Glyph name="grip" />{squad.length ? 'Drag yourself or a Shadow to the Front or the Rear. A tap crosses over.' : 'Drag yourself to the Front or the Rear. A tap crosses over.'}</p>
+        </div>
       </div>
-      {/* Where the hunter stands, their class's place until they move, and each Shadow, its role's until it is moved: kept for every Gate after. */}
-      <p class="bstand__hint">{squad.length ? 'Drag yourself or a Shadow to the Front or the Rear. A tap crosses over.' : 'Drag yourself to the Front or the Rear. A tap crosses over.'}</p>
-      {squad.length > 0 && makeLine(squad).length > 0 && <p class="bparty__kin"><Spaced items={makeLine(squad)} /></p>}
       {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
       {createPortal(
         <div class={`dragghost dragghost--you ${liftedShadow ? 'is-shadow' : ''}`} ref={drag.ghost} hidden={!liftedRow} aria-hidden="true">
@@ -668,6 +674,7 @@ function FeatList({ d, met }: { d: Dungeon; met: FeatId[] }) {
   const bpFeat = feats.blueprintFeat(d);
   const asked = feats.featsOf(d);
   const got = asked.filter((id) => met.includes(id)).length;
+  const alloy = ALLOYS[d.rank as Rank] ?? ALLOYS.E;
   return (
     <section class="bbox" aria-label="Feats">
       <span class="label bbox__head">Feats<small class="bbox__right"><span class="btabs__stars">{Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''}>★</i>)}</span></small></span>
@@ -685,7 +692,10 @@ function FeatList({ d, met }: { d: Dungeon; met: FeatId[] }) {
                     <small>{FEATS[id].text}</small>
                   </span>
                   <span class="bfeat__side">
-                    <small class={done ? 'muted' : id === bpFeat ? 'bfeat__bp' : 'grant'}>{done ? 'Met' : id === bpFeat ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
+                    {/* Its pay as the Par card's Ember: the alloy's art and the figure (the owner's call, where it read `Iron Scrap +10`). */}
+                    {done ? <small class="muted">Met</small>
+                      : id === bpFeat ? <small class="bfeat__bp">Blueprint +{FEAT_PAY.blueprints}</small>
+                        : <small class="bfeat__pay" aria-label={`${alloy.name} +${FEAT_PAY.alloy}`}><MatArt id={alloy.id} size={14} /><span class="num">+{FEAT_PAY.alloy}</span></small>}
                   </span>
                 </div>
               );

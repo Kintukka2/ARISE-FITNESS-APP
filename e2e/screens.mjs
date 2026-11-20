@@ -568,6 +568,10 @@ try {
   if (await page.locator('.sheet.is-top .btabs').count()) throw new Error('THE BRIEF STILL HAS TABS');
   if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
   if (await page.locator('.sheet.is-top .bfeats, .sheet.is-top .bpar', { hasText: /System \d+\/\d+/ }).count()) throw new Error('THE BRIEF STILL SAYS HOW OFTEN THE SYSTEM MET A FEAT OR A MEDAL');
+  // An alloy a Feat pays is its art and its figure, as the Par card's Ember is, never its name.
+  for (const pay of await page.locator('.sheet.is-top .bfeat__pay').all()) {
+    if (!(await pay.locator('.matart').count()) || /[a-z]/i.test(await pay.innerText())) throw new Error('A FEAT’S ALLOY IS NOT ITS ART AND FIGURE');
+  }
   await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
   // Gate Clear Par: the road's par and the hunter's own best, then a row to each medal with the rounds it allows and its Ember.
   if ((await page.locator('.sheet.is-top .bpar__row').count()) !== 3) throw new Error('THE BRIEF DOES NOT STATE PAR AND ITS THREE MEDALS');
@@ -591,10 +595,17 @@ try {
   if (await page.locator('.sheet.is-top .dmap__key').count()) throw new Error('A TAP AWAY DID NOT FOLD THE MAP KEY');
   await page.locator('.sheet.is-top [aria-label="Close"]').first().click(); await sleep(400);
   if (!(await page.locator('.sheet.is-top .bfacts').count())) throw new Error('CLOSING THE MAP DID NOT RETURN TO THE BRIEF');
-  // The party lined up, the hunter first, and the squad's role bonuses under it.
+  // The party lined up, the hunter first, and at the board's foot, inside it, a chip to each role bonus the squad reaches.
   if (!(await page.locator('.sheet.is-top .bformation__one.is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
-  if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Role bonus:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S ROLE BONUSES');
+  if (!(await page.locator('.sheet.is-top .bformation .bformation__foot .bonuschips__row', { hasText: 'Role bonus' }).locator('.bonuschip').count())) throw new Error('THE PARTY DOES NOT SET THE SQUAD’S ROLE BONUSES AS CHIPS INSIDE IT');
+  if (!(await page.locator('.sheet.is-top .bformation .bformation__foot .bformation__hint').count())) throw new Error('THE PARTY’S HINT IS NOT INSIDE ITS BOARD');
+  if (await page.locator('.sheet.is-top .bparty__kin, .sheet.is-top .bstand__hint').count()) throw new Error('THE PARTY STILL HAS ITS LINES UNDER THE BOARD');
   await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
+  // A role bonus's chip opens the one tooltip: the role, `Role bonus`, and its breakpoints.
+  await page.locator('.sheet.is-top .bonuschip').first().click(); await sleep(300);
+  if (!(await page.locator('.tip .tip__kind', { hasText: /^Role bonus$/i }).isVisible())) throw new Error('A ROLE BONUS CHIP DID NOT OPEN ITS TOOLTIP');
+  await snap('brief-party-role-tip');
+  await page.keyboard.press('Escape'); await sleep(250);
   // Front and rear: every member's place on their face, and the hunter's own to choose; chosen, it is kept.
   // The party is a formation: a front rank and a rear rank, every member in the rank they stand in, the hunter among them.
   if ((await page.locator('.sheet.is-top .bformation__rank').count()) !== 2) throw new Error('THE PARTY IS NOT DRAWN AS A FORMATION');

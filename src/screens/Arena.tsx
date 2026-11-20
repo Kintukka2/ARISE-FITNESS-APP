@@ -32,7 +32,7 @@ import { Medal } from '@/ui/par';
 import { Challenges, featFinds, featMats } from '@/ui/challenges';
 import * as par from '@/core/par';
 import { chamberOf, isFight, type MapNode } from '@/core/map';
-import { HONE_LEVELS, NODE } from '@/data/nodes';
+import { HONE_LEVELS, NODE, trapById } from '@/data/nodes';
 import * as blessings from '@/core/blessings';
 import { pathOf } from '@/data/tree';
 import { BoonCard, BoonChip } from '@/ui/boons';
@@ -543,7 +543,8 @@ export function Arena() {
 
   /**
    * What the last move did to the Gate clock: the first move past the budget and the Gate turning red each
-   * have their window; every other move past the budget, a line in the feed.
+   * have their window. Every other move past the budget says nothing in the feed (the owner's call: its line restated
+   * the band over the plan, in the feed's green against the red): the band's figure flares as it climbs.
    */
   async function tellClock(was: ClockState | null) {
     const r = store.get().gates.raid;
@@ -563,7 +564,7 @@ export function Arena() {
     } else if (!was.over) {
       sfx.gate();
       await sys(system.notify(['[The Gate is stirring.]', `Creatures not yet fought: ${system.red(more)}`], 'gates'));
-    } else say([{ text: c.red ? `▸ The red deepens. Creatures not yet fought ${more}.` : `▸ The Gate stirs. Creatures not yet fought ${more}.`, tone: 'outcome' }]);
+    }
   }
 
   /** Rest where the hunter stands, the way picked: once at each rest. From its panel, the panel says so; on the map, the feed does. */
@@ -1085,7 +1086,8 @@ function GateClock({ c, more }: { c: ClockState; more: number }) {
         <i class="gclock__fill" style={`width:${(done / CLOCK.red) * 100}%`} />
         <span class="gclock__gate" aria-hidden="true"><Glyph name="roomEntrance" /></span>
       </span>
-      <b class={`gclock__v num ${c.red ? '' : 'is-solo'}`}>+{more}%</b>
+      {/* Keyed by the share, so each move that raises it flares it once. */}
+      <b key={more} class={`gclock__v num ${c.red ? '' : 'is-solo'}`}>+{more}%</b>
       {c.red && <small class="gclock__sub">Sealed</small>}
     </div>
   );
@@ -1150,7 +1152,9 @@ function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
   const asks = x.kind === 'rest' && !p.rested && !!run && raid.canRest(d, run);
   const blessed = x.kind === 'shrine' || x.kind === 'font';
   const offer = blessed && run ? blessings.offerAt(run, x) : null;
-  const glyph = x.kind === 'shrine' && offer ? STAT_ICON[offer.path] ?? kind.glyph : kind.glyph;
+  // A shrine wears its Path's stat, a trap its own kind (the owner's call: one trap's spikes for every kind read as one trap).
+  const glyph = x.kind === 'shrine' && offer ? STAT_ICON[offer.path] ?? kind.glyph
+    : x.kind === 'trap' && x.trap ? trapById(x.trap.id)?.glyph ?? kind.glyph : kind.glyph;
   // A cache or a vault waits shut for the hunter to open it; on Auto it is opened for them.
   const cache = x.kind === 'treasure' || x.kind === 'vault' ? x.kind : null;
   const [stage, setStage] = useState<CacheStage>(cache && !auto ? 'shut' : 'open');

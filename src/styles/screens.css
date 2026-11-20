@@ -685,19 +685,21 @@ button.dmap__floor { cursor: pointer; }
 .gclock__fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gc) 70%, #000), var(--gc)); box-shadow: 0 0 8px var(--gc-glow); transition: width 320ms var(--ease); }
 .gclock__gate { position: absolute; top: 50%; right: -20px; display: grid; place-items: center; width: 16px; height: 16px; transform: translateY(-50%); color: color-mix(in srgb, var(--blood) 55%, var(--ink-3)); }
 .gclock__gate .ico { width: 15px; height: 15px; }
-.gclock__v { justify-self: end; font-size: 0.86rem; color: var(--ink); line-height: 1.1; }
+.gclock__v { justify-self: end; font-size: 0.86rem; color: var(--ink); line-height: 1.1; transform-origin: 100% 50%; }
 .gclock__v.is-solo { grid-row: 1 / 3; }
 .gclock__sub { justify-self: end; font-size: 0.62rem; color: var(--ink-3); line-height: 1.1; }
 .gclock.is-stir { --gc: var(--blood); --gc-glow: var(--blood-glow); }
 .gclock.is-stir .gclock__fill { background: linear-gradient(90deg, var(--ember), var(--blood)); }
 .gclock.is-stir .gclock__gate { color: var(--blood); filter: drop-shadow(0 0 4px var(--blood-glow)); }
 .gclock.is-stir .gclock__v, .gclock.is-red .gclock__v { color: var(--blood); }
+.gclock.is-stir .gclock__v, .gclock.is-red .gclock__v { animation: gclockRise 620ms var(--ease) both; }
+@keyframes gclockRise { 0% { transform: scale(1.35); text-shadow: 0 0 14px var(--gc-glow), 0 0 4px #fff; } 100% { transform: none; text-shadow: none; } }
 .gclock.is-red { --gc: var(--sysred); --gc-glow: rgba(255, 47, 62, 0.55); }
 .gclock.is-red .gclock__fill { animation: redPulse 1.6s ease-in-out infinite; }
 .gclock.is-red .gclock__gate { color: var(--sysred); filter: drop-shadow(0 0 6px rgba(255, 47, 62, 0.8)); }
 .gclock.is-red .gclock__sub { color: var(--sysred); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 @keyframes redPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.62; } }
-@media (prefers-reduced-motion: reduce) { .gclock.is-red .gclock__fill { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .gclock.is-red .gclock__fill, .gclock__v { animation: none !important; } }
 /* A blessing held: a framed boon in the Gates' amber, its mark, its name and what it gives. */
 .boons { display: flex; flex-wrap: wrap; gap: 4px 2px; }
 /* A blessing held: its Path's mark in a gold diamond, its tier's numeral at its foot. A tap tells the rest. */
@@ -1872,6 +1874,7 @@ button.wardword.infotag:hover, button.wardword.infotag[aria-expanded="true"] { c
 .bfeat__side { display: grid; flex: none; justify-items: end; gap: 2px; }
 .bfeat__side small { font-size: 0.64rem; }
 .bfeat__side small.bfeat__bp { color: var(--gold); font-weight: 700; text-shadow: 0 0 6px var(--gold-glow); }
+.bfeat__side small.bfeat__pay { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 700; color: var(--verdant); }
 @keyframes oddsIn { from { width: 0; } }
 
 /* THE SEALS' WINDOW: the gauge as it stands, and a card to each Seal, pressed in wax when taken. */
@@ -2831,7 +2834,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .sp-statrows small { font-size: 0.72rem; text-align: right; }
 
 /* The brief's party: the squad's Kin and Formation under it. */
-.bparty__kin { margin: 6px 0 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink, #dbe9ff) 72%, transparent); }
 
 /* ------------------------------------------------------------------ the Shadows screen
    The army as Solo Leveling: Arise sets its Army of Shadows: a stage of violet fog, the squad standing on it,
@@ -4682,7 +4684,28 @@ button.bdone__text.infotag { align-items: flex-start; padding: 0; border: 0; bac
 .bformation__rank.is-target { background: color-mix(in srgb, var(--mana) 6%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 45%, transparent); }
 .bformation__rank.is-target .bformation__none { color: color-mix(in srgb, var(--mana) 80%, transparent); }
 .bformation__rank.is-over { background: color-mix(in srgb, var(--mana) 16%, transparent); box-shadow: inset 0 0 0 2px var(--mana), inset 0 0 22px color-mix(in srgb, var(--mana) 30%, transparent); }
-.bstand__hint { margin: 0; font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); text-align: center; }
+/* The board's foot, inside its frame: the squad's bonuses, a chip to each, then how a face is moved. */
+.bformation__foot { display: grid; gap: 10px; padding: 10px 10px 9px; border-top: 1px solid var(--sys-hair); background: rgba(255, 255, 255, 0.015); }
+.bformation__hint { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 52%, transparent); }
+.bonuschips + .bformation__hint { padding-top: 9px; border-top: 1px dashed color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+.bformation__hint .ico { flex: none; width: 13px; height: 13px; color: color-mix(in srgb, var(--mana) 75%, transparent); }
+.bonuschips { display: grid; gap: 10px; }
+.bonuschips__row { display: grid; gap: 6px; }
+.bonuschips__label { font-size: 0.54rem; font-weight: 800; letter-spacing: 0.18em; line-height: 1.3; text-transform: uppercase; color: color-mix(in srgb, var(--arcane) 70%, var(--sys-ink)); }
+.bonuschips__list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+/* A role bonus or a Kin the squad reaches, in the Shadows' violet: its mark lit in a hexagon, its name, its tier. */
+button.bonuschip.infotag {
+  --win: var(--arcane); --win-glow: var(--arcane-glow);
+  display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 3px 10px 3px 4px;
+  border: 1px solid color-mix(in srgb, var(--arcane) 45%, transparent); background: color-mix(in srgb, var(--arcane) 11%, rgba(6, 3, 18, 0.6));
+  color: #e4d8ff; font-size: 0.72rem; cursor: help; transition: border-color 140ms, background 140ms;
+}
+button.bonuschip.infotag:hover, button.bonuschip.infotag[aria-expanded="true"] { border-color: color-mix(in srgb, var(--arcane) 85%, #fff); background: color-mix(in srgb, var(--arcane) 22%, rgba(6, 3, 18, 0.6)); }
+.bonuschip .kinhex { width: 22px; height: 24px; }
+.bonuschip .kinhex svg { width: 12px; height: 12px; }
+.bonuschip b { font-weight: 700; white-space: nowrap; }
+/* The tier in its own badge, so a lone I reads as a numeral, not a bar. */
+.bonuschip__tier { display: grid; place-items: center; min-width: 20px; height: 18px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--arcane) 60%, transparent); background: color-mix(in srgb, var(--arcane) 28%, transparent); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1; color: #fff; }
 .dragghost--you { border-color: color-mix(in srgb, var(--mana) 80%, #fff); background: rgba(4, 14, 28, 0.94); box-shadow: 0 0 22px rgba(79, 214, 255, 0.45), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--mana); }
 .dragghost--you b { color: var(--mana); }
 .dragghost--you.is-shadow { border-color: color-mix(in srgb, var(--arcane) 80%, #fff); background: rgba(11, 6, 24, 0.94); box-shadow: 0 0 22px var(--arcane-glow), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--arcane); }

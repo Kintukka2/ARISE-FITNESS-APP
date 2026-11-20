@@ -3307,6 +3307,57 @@ What changed:
   its road par or within two rounds over it. The middle clear rates are unchanged: E 78%, D 77%, C 77%, B 76%, A 81%,
   S 88%.
 
+## The party board's foot, a quiet Red Gate, Feats paid in art, and a mark to each trap — built
+
+The owner asked for:
+- **The brief's party:** the role bonus and the hint under it read as no part of the section, and the role bonus sat
+  awkwardly. Overhaul it, and make each role bonus a tooltip to tap, as a habit's or a skill's is.
+- **The Red Gate's feed line,** `▸ The red deepens. Creatures not yet fought +315%.`, removed. It restated the band
+  over the plan, in the feed's green against the red.
+- **The Feats' pay:** `Iron Scrap +10` made its art and `+10`, as the Ember is.
+- **Traps:** a mark drawn for each kind, where one trap's spikes stood for all twelve.
+
+What changed:
+- **The party board's foot** (`Lineup` in `screens/Brief.tsx`, `BonusChips` in `ui/kin.tsx`).
+  - The bonuses and the hint now sit inside the board's frame, under the Rear, across a hairline.
+  - `Role bonus` in violet capitals over a chip to each role the squad deploys: its mark lit in a hexagon, its name,
+    and its tier in a small badge (`Assassin I`, `Guardian I`). `Kin` over a chip to each family that reaches a tier
+    (`Orc II`).
+  - Each chip is an `InfoTag`, so a tap opens the one tooltip, as a Shadow card's tags do: the role, `Role bonus`, who it
+    gives what, and each breakpoint with the one reached lit (`roleTip`, `familyTip`).
+  - Under them, across a dashed hairline, the hint by a grip mark: `Drag yourself or a Shadow to the Front or the Rear.
+    A tap crosses over.`
+  - The text line `Role bonus: Assassin I, Guardian I` (`makeLine`) and its style are gone.
+- **The Red Gate says nothing more in the feed.** `tellClock` keeps its two windows, the first move past the budget and
+  the Gate turning red, and drops the line every other move wrote. The band over the plan already says it: its figure
+  flares once each time a move raises it (`gclockRise`, keyed by the share), and holds still without motion.
+- **The Feats' alloy** (`FeatList`) is the alloy's art and `+10` in green, as the Par card's Ember is its art and figure.
+  A screen reader still hears `Iron Scrap +10`. The blueprint Feat keeps `Blueprint +1` in gold.
+- **A mark to each trap kind** (`ui/icons.tsx`, `TrapDef.glyph` in `data/nodes.ts`):
+  - Twelve silhouettes on the 24 grid, drawn with the even-odd rule (`EVENODD`) so a pit's spikes stand in it and a
+    net's mesh is open:
+    - A Pressure Plate, a plate sunk in the floor under a pressing arrow;
+    - A Tripwire, a boot catching a wire between two stakes;
+    - A False Floor, a flagstone tipping into a spiked pit;
+    - Arrow Slits, two bolts out of a slit wall;
+    - A Falling Ceiling, a cracked ceiling's stones coming down;
+    - A Flooding Chamber, water rising in a chamber;
+    - Whirling Blades, a saw out of a slot in the floor;
+    - A Falling Net, a weighted net;
+    - A Rolling Boulder, a rough stone rolling down a slope;
+    - A Glyph of Warding, a ring of warding with a star burning in it;
+    - A Rune-Cut Door, an arched door with a rune burning in its panel;
+    - A Caustic Haze, a dripping cloud eating holes in itself.
+  - A trap's scene wears its kind's mark, large in its ring and vast and faint behind it. The plan's tile keeps the one
+    trap's spikes, and passes for an Event's until it is stepped into, so the fog keeps what a trap is.
+- **Held by tests.**
+  - `tests/map.test.ts`: every trap kind has a mark of its own, drawn, never the plan's spikes.
+  - The tour:
+    - the party's role bonuses are chips inside the board's foot, the hint inside it too, and nothing under the board;
+    - a chip opens its `Role bonus` tooltip;
+    - every alloy a Feat pays is its art and figure, with no name.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

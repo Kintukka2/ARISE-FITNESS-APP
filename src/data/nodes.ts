@@ -225,6 +225,8 @@ export interface TrapDef {
   title: string;
   text: string;
   kind: TrapKind;
+  /** Its mark on its scene, drawn after its kind (`ui/icons.tsx`), where the plan's tile is the one trap's spikes. */
+  glyph: string;
   /** The stats it leans on: drawn this many times as often (`TRAP_LEAN`), and at the better odds (`TRAP_ODDS.lean`). */
   lean: readonly Stat[];
   /** What each stat does against it. */
@@ -243,7 +245,7 @@ export const TRAP_ODDS = {
 
 export const TRAPS: TrapDef[] = [
   {
-    id: 'plate', title: 'A Pressure Plate', kind: 'mechanical', lean: ['AGI', 'PER'],
+    id: 'plate', title: 'A Pressure Plate', kind: 'mechanical', glyph: 'trapPlate', lean: ['AGI', 'PER'],
     text: 'The floor ahead is too clean. Something was set here.',
     ways: {
       STR: { label: 'Wedge it down', win: 'You jam the plate with a broken flagstone before it can drop.' },
@@ -255,7 +257,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.2, text: 'The plate drops under your foot.' },
   },
   {
-    id: 'tripwire', title: 'A Tripwire', kind: 'mechanical', lean: ['AGI', 'PER'],
+    id: 'tripwire', title: 'A Tripwire', kind: 'mechanical', glyph: 'trapTripwire', lean: ['AGI', 'PER'],
     text: 'A thread pulled taut across the passage at ankle height, so fine it catches the light only once.',
     ways: {
       STR: { label: 'Hold the wire', win: 'You take the strain on the wire and ease it back down.' },
@@ -267,7 +269,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.15, text: 'Bolts snap out of the walls.' },
   },
   {
-    id: 'pit', title: 'A False Floor', kind: 'mechanical', lean: ['AGI', 'STR'],
+    id: 'pit', title: 'A False Floor', kind: 'mechanical', glyph: 'trapPit', lean: ['AGI', 'STR'],
     text: 'The flagstones ahead ring hollow under the dust.',
     ways: {
       STR: { label: 'Bridge it with a slab', win: 'You heave a slab across the hollow and cross on it.' },
@@ -279,7 +281,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.25, text: 'The floor tips away beneath you. You climb out of the pit.' },
   },
   {
-    id: 'arrows', title: 'Arrow Slits', kind: 'mechanical', lean: ['PER', 'AGI'],
+    id: 'arrows', title: 'Arrow Slits', kind: 'mechanical', glyph: 'trapArrows', lean: ['PER', 'AGI'],
     text: 'Narrow slits line both walls at chest height. Something behind them is wound tight.',
     ways: {
       STR: { label: 'Raise a slab as a shield', win: 'You drag a slab up in front of you. The bolts break on it.' },
@@ -291,7 +293,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.18, text: 'Bolts hiss out of the slits.' },
   },
   {
-    id: 'ceiling', title: 'A Falling Ceiling', kind: 'mechanical', lean: ['STR', 'VIT'],
+    id: 'ceiling', title: 'A Falling Ceiling', kind: 'mechanical', glyph: 'trapCeiling', lean: ['STR', 'VIT'],
     text: 'Cracks run across the ceiling, and dust sifts down when you breathe.',
     ways: {
       STR: { label: 'Hold it up', win: 'The first stone drops onto your shoulders and stops. You hold it until the party is through.' },
@@ -303,7 +305,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.25, text: 'Stone comes down across your shoulders.' },
   },
   {
-    id: 'flood', title: 'A Flooding Chamber', kind: 'mechanical', lean: ['VIT', 'STR'],
+    id: 'flood', title: 'A Flooding Chamber', kind: 'mechanical', glyph: 'trapFlood', lean: ['VIT', 'STR'],
     text: 'The door grinds shut behind you, and water starts pouring in through the walls.',
     ways: {
       STR: { label: 'Force the door', win: 'The door shrieks open, and the water pours out after you.' },
@@ -315,7 +317,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.15, fatigue: 6, text: 'You force your way out, half drowned.' },
   },
   {
-    id: 'blades', title: 'Whirling Blades', kind: 'mechanical', lean: ['AGI', 'PER'],
+    id: 'blades', title: 'Whirling Blades', kind: 'mechanical', glyph: 'trapBlades', lean: ['AGI', 'PER'],
     text: 'Blades spin out of slots in the floor, cutting the room in two.',
     ways: {
       STR: { label: 'Jam the blades', win: 'You drive your weapon into the slot. The blades grind to a halt.' },
@@ -327,7 +329,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.22, text: 'A blade catches you on the way through.' },
   },
   {
-    id: 'net', title: 'A Falling Net', kind: 'mechanical', lean: ['STR', 'AGI'],
+    id: 'net', title: 'A Falling Net', kind: 'mechanical', glyph: 'trapNet', lean: ['STR', 'AGI'],
     text: 'A weighted net hangs folded in the dark above the doorway.',
     ways: {
       STR: { label: 'Tear free', win: 'The net drops. You rip it apart before it settles.' },
@@ -339,7 +341,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.08, text: 'The net drops over you. It takes a while to cut free.' },
   },
   {
-    id: 'boulder', title: 'A Rolling Boulder', kind: 'mechanical', lean: ['STR', 'VIT'],
+    id: 'boulder', title: 'A Rolling Boulder', kind: 'mechanical', glyph: 'trapBoulder', lean: ['STR', 'VIT'],
     text: 'The passage slopes down, and something heavy rumbles at the top of it.',
     ways: {
       STR: { label: 'Stop it', win: 'You set your feet and stop it dead.' },
@@ -351,7 +353,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.28, text: 'It catches you, and carries you down the slope.' },
   },
   {
-    id: 'glyph', title: 'A Glyph of Warding', kind: 'magical', lean: ['INT', 'PER'],
+    id: 'glyph', title: 'A Glyph of Warding', kind: 'magical', glyph: 'trapGlyph', lean: ['INT', 'PER'],
     text: 'A sigil is drawn faintly across the threshold, almost invisible until you look at it sideways.',
     ways: {
       STR: { label: 'Smash its stone', win: 'You crack the stone it is drawn on, and its light goes out.' },
@@ -363,7 +365,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.2, text: 'The glyph flares, and fire rolls over you.' },
   },
   {
-    id: 'runes', title: 'A Rune-Cut Door', kind: 'magical', lean: ['INT', 'STR'],
+    id: 'runes', title: 'A Rune-Cut Door', kind: 'magical', glyph: 'trapRunes', lean: ['INT', 'STR'],
     text: 'The only way on is a door cut with runes that pulse as you come near.',
     ways: {
       STR: { label: 'Force it open', win: 'The runes spit sparks as the door gives. None of them catch.' },
@@ -375,7 +377,7 @@ export const TRAPS: TrapDef[] = [
     lose: { hurt: 0.12, text: 'The runes flare, and the door throws you back.' },
   },
   {
-    id: 'haze', title: 'A Caustic Haze', kind: 'magical', lean: ['INT', 'VIT'],
+    id: 'haze', title: 'A Caustic Haze', kind: 'magical', glyph: 'trapHaze', lean: ['INT', 'VIT'],
     text: 'A green haze hangs at knee height, waiting for something to walk into it.',
     ways: {
       STR: { label: 'Break the vent', win: 'You smash the vent it rises from. The haze thins and is gone.' },
