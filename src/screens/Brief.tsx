@@ -48,6 +48,8 @@ import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { HabitMark } from '@/ui/effects';
 import { Portrait } from '@/ui/portraits';
 import { PartyRow, partyPower } from './Party';
+import { EnemiesRow } from './Enemies';
+import { Versus } from '@/ui/versus';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
@@ -308,7 +310,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         ? <section class="bbox brmods" aria-label="Modifiers"><span class="label bbox__head">Modifiers</span><ModRows mods={offer} /></section>
         : <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} />)}
       {rifted && <RiftScoring />}
-      <EnemyRow d={d} level={level} />
+      {/* The enemies over the party, VS between them: each a card that opens a window of its own. */}
+      <EnemiesRow d={d} level={level} taken={taken} />
+      <Versus />
       <PartyRow d={d} level={level} taken={taken} />
       {hasFeats && <FeatList d={d} met={feats.metOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} />}
       {hasFeats && proj.par.road > 0 && (
@@ -334,7 +338,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
 }
 
 /** The boss, or one of the Chosen in its place, that the brief may name: once the boss is known, or the Chosen walks it. */
-function bossOf(s: Save, d: Dungeon, level: number) {
+export function bossOf(s: Save, d: Dungeon, level: number) {
   const walker = walkers.walking(s, dayKey());
   const holds = walker?.gateId === d.id ? walker : null;
   const met = holds && level >= holds.level ? walkers.walkerOf(holds.level, d.rank as Rank) : null;
@@ -491,55 +495,6 @@ function RiftScoring() {
         {lines.map(([g, k, v]) => <li key={k}><span class="riftres__mark"><Glyph name={g} /></span><span>{k}</span><b class="num">{v}</b></li>)}
       </ul>
       <small class="brift__note">Feats, pace and HP left count on a clear.</small>
-    </section>
-  );
-}
-
-/**
- * Who stands in the Gate, as Honkai: Star Rail lays a stage's enemies: a portrait to each, the boss first and
- * larger in red, one of the Chosen holding the Gate in gold, the Gatekeeper ringed in gold, the rest after;
- * each named under its portrait, `?` until it is known. One identified opens its card.
- */
-function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
-  const s = useSave();
-  const known = bossKnown(s, d);
-  const boss = enemyById(d.boss)!;
-  const { holds, met } = bossOf(s, d, level);
-  const seen = mapKnown(s, d);
-  // The Gatekeeper stands next after the boss, then the rest of what walks in the Gate.
-  const inside = isTrial(d) ? [] : [...new Set([...(d.elite ? [d.elite] : []), ...d.mobs])].map((id) => enemyById(id)).filter((e): e is NonNullable<ReturnType<typeof enemyById>> => !!e);
-  const one = (key: string, cls: string, family: string | null, name: string, tag: string, openIt?: () => void, label?: string) => {
-    const body = (
-      <>
-        <span class="benemy__face">{family && cls.includes('is-boss') && <Glyph name="crown" class="benemy__crown" />}{family ? <Portrait id={key} size={cls.includes('is-boss') ? 40 : 30} tone={cls.includes('is-boss') ? 'red' : 'foe'} /> : <Glyph name="unknown" />}</span>
-        <b class="benemy__name">{name}</b>
-        <small class="benemy__tag">{tag}</small>
-      </>
-    );
-    return (
-      <li key={key}>
-        {openIt
-          ? <button type="button" class={`benemy is-tap ${cls}`} aria-haspopup="dialog" aria-label={label ?? `${name}, ${tag}`} onClick={() => { sfx.tap(); openIt(); }}>{body}</button>
-          : <span class={`benemy ${cls}`} aria-label={label ?? `${name}, ${tag}`}>{body}</span>}
-      </li>
-    );
-  };
-  return (
-    <section class="bbox" aria-label="Enemies" data-tour="boss">
-      <span class="label bbox__head">Enemies</span>
-      <ul class="benemies">
-        {met
-          ? one('chosen', 'is-boss is-chosen', null, met.name, 'In the boss’s place')
-          : isTrial(d)
-            ? one('trial', 'is-boss is-chosen', null, `${d.trial} Chosen`, 'One after another')
-            : known
-              ? one(boss.id, 'is-boss', boss.family, boss.name, 'Gate boss', () => openCreature(boss.id, d), `Gate boss: ${boss.name}`)
-              : one('boss', 'is-boss', null, '?', 'Gate boss')}
-        {inside.map((e) => seen
-          ? one(e.id, e.id === d.elite ? 'is-elite' : '', e.family, e.name, e.id === d.elite ? 'Gatekeeper' : `${e.rank}-Rank ${e.family}`, () => openCreature(e.id, d))
-          : one(e.id, e.id === d.elite ? 'is-elite' : '', null, '?', e.id === d.elite ? 'Gatekeeper' : 'Unidentified'))}
-      </ul>
-      {holds && <ChosenLine d={d} w={holds} level={level} />}
     </section>
   );
 }
@@ -782,7 +737,7 @@ function Objectives({ d, level, taken }: { d: Dungeon; level: number; taken: Sea
 }
 
 /** A creature's card, over the brief: the boss, the Gatekeeper or one of the Gate's creatures. */
-function openCreature(id: string, d: Dungeon) {
+export function openCreature(id: string, d: Dungeon) {
   const e = enemyById(id)!;
   openSheet({
     title: id === d.boss ? `Boss: ${e.name}` : id === d.elite ? `Gatekeeper: ${e.name}` : `Creature: ${e.name}`,
@@ -836,7 +791,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
 }
 
 /** One of the Chosen holding the Gate, under the boss's spotlight: when it shows itself, and what defeating it pays. */
-function ChosenLine({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: number }) {
+export function ChosenLine({ d, w, level }: { d: Dungeon; w: walkers.Walker; level: number }) {
   const s = useSave();
   const pay = ascension.payShare(level);
   const beaten = s.ascension.felled.includes(w.level);

@@ -46,6 +46,7 @@ import { InfoTag } from '@/ui/infotag';
 import { Keyed } from '@/ui/keyed';
 import { familyTip, KIN_TIER, KinHex, ROLE_TIER, roleTip, Steps } from '@/ui/kin';
 import { openSheet, toast } from '@/ui/overlays';
+import { VersusCard, type VGroup, type VMark } from '@/ui/versus';
 import { STYLE_GLYPH, styleOf, styleOfLead } from '@/ui/stand';
 import { openHunter } from './Hunter';
 import { openStatus } from './Inventory';
@@ -90,58 +91,39 @@ function bonusesOf(squad: readonly Shadow[]) {
   return { m, roles: m.roleLines, kins: m.kin.filter((k) => k.tier > 0) };
 }
 
-// ------------------------------------------------------------------ the brief's row
+// ------------------------------------------------------------------ the brief's card
 
 /**
- * The party on the brief, one row: the Front's faces and the Rear's across a seam, an empty Shadow slot as a dashed
- * square, the squad's bonuses as their lit marks at the right, a chevron; a tap opens the window.
+ * The party on the brief, one card under the enemies' (`ui/versus.tsx`): `Your party` and its power at its head, the
+ * Front's faces and the Rear's, an empty Shadow slot as a dashed `+1`, and under them the bonuses the squad reaches,
+ * each its lit hexagon and its name; a tap opens the window.
  */
 export function PartyRow({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
   const s = useSave();
-  const all = membersOf(s, d, level, taken, 26);
+  const all = membersOf(s, d, level, taken, 30);
   const free = isPractice(d) ? 0 : shadows.freeSlots(s);
   const { roles, kins } = bonusesOf(isPractice(d) ? [] : shadows.squad(s));
   const power = partyPower(s, d, level, taken);
+  const title = isTrial(d) ? 'Entering' : 'Your party';
   const said = [
-    `${isTrial(d) ? 'Entering' : 'Your party'}: ${all.map((x) => x.name).join(', ')}`,
+    `${title}: ${all.map((x) => x.name).join(', ')}`,
     `Power ${power}`,
     roles.length ? `Role bonus ${roles.map((l) => `${l.role} ${ROLE_TIER[l.tier - 1]}`).join(', ')}` : '',
   ].filter(Boolean).join('. ');
-  // Crowded, the faces shrink and the bonus marks give way (the window states them); packed, the faces overlap a
-  // little, as a stack of portraits does, so the row stays one row.
-  const tiles = all.length + (free > 0 ? 1 : 0);
-  const crowd = tiles > 6 ? (tiles > 8 ? 'is-crowded is-packed' : 'is-crowded') : '';
-  const group = (r: Row) => {
-    const on = all.filter((x) => x.row === r);
-    if (!on.length && r === 'rear') return null;
-    return (
-      <span class={`bparty__row is-${r}`}>
-        <small class="bparty__label">{ROW_NAME[r]}</small>
-        <span class="bparty__faces">
-          {on.map((x, i) => <i key={x.key} class={`bparty__face is-${x.kind}`} style={`--i: ${i}`}>{x.face}</i>)}
-          {r === 'front' && free > 0 && <i class="bparty__face is-free num">+{free}</i>}
-        </span>
-      </span>
-    );
-  };
+  const group = (r: Row): VGroup => ({
+    key: r, label: ROW_NAME[r],
+    faces: all.filter((x) => x.row === r).map((x) => ({ key: x.key, kind: x.kind, face: x.face })),
+    extra: r === 'front' && free > 0 ? <i class="vcard__face is-free num">+{free}</i> : undefined,
+  });
+  const marks: VMark[] = [
+    ...roles.map((l) => ({ key: l.role, mark: <KinHex role={l.role} on />, name: `${l.role} ${ROLE_TIER[l.tier - 1]}` })),
+    ...kins.map((k) => ({ key: k.family, mark: <KinHex family={k.family} on />, name: `${k.family} ${KIN_TIER[k.tier - 1]}` })),
+  ];
   return (
-    <section class="bbox" aria-label="Party" data-tour="party">
-      <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right bpower" aria-label={`Power ${power}`}><Glyph name="power" /><b class="num">{power}</b></small></span>
-      <button type="button" class={`bparty ${crowd}`} aria-label={`${said}. Open the party.`} aria-haspopup="dialog"
-        onClick={() => { sfx.tap(); openParty(d, level, taken); }}>
-        <span class="bparty__rows">{group('front')}{group('rear')}</span>
-        <span class="bparty__side">
-          {!crowd && (roles.length > 0 || kins.length > 0) && (
-            <span class="bparty__marks" aria-hidden="true">
-              {roles.map((l) => <KinHex key={l.role} role={l.role} on />)}
-              {kins.map((k) => <KinHex key={k.family} family={k.family} on />)}
-            </span>
-          )}
-          <Glyph name="chevron" class="bparty__go" />
-        </span>
-      </button>
+    <VersusCard side="party" title={title} power={power} groups={[group('front'), group('rear')]} marks={marks} said={`${said}. Open the party.`}
+      open={() => openParty(d, level, taken)} tour="party">
       {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
-    </section>
+    </VersusCard>
   );
 }
 
@@ -375,7 +357,7 @@ function MemberRow({ x, i, d, read, s }: { x: Member; i: number; d: Dungeon; rea
   const open = () => { sfx.tap(); if (x.kind === 'you') openStatus(); else if (x.ally) openHunter(x.ally); else if (x.shadow) openShadow(x.shadow.id); };
   const n = read?.now;
   const was = read?.alone;
-  const magic = !!n && n.magic > n.attack;
+  const magic = n?.leans === 'magic';
   const stats: { k: string; v: number; up: number }[] = n && was ? [
     { k: 'HP', v: n.hp, up: n.hp - was.hp },
     magic ? { k: 'Magic', v: n.magic, up: n.magic - was.magic } : { k: 'Attack', v: n.attack, up: n.attack - was.attack },
