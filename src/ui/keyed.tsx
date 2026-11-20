@@ -23,6 +23,15 @@ export const keyedParts = (text: string) => text.split(RX);
 /** How a figure or a keyword is set: a reach and every figure in the System's blue, a status or a stat in gold. */
 export const keyedClass = (p: string) => (IS_REACH.test(p) ? 'kw-num kw-reach' : /\d/.test(p) ? 'kw-num' : 'kw');
 
+/**
+ * A line where only how many it reaches is set as a figure (`Burning on up to 3 targets`): for lines that colour
+ * nothing else, the action wheel's hub, the bag's and the Exchange's.
+ */
+export function Reach({ text }: { text: string }) {
+  const parts = text.split(new RegExp(`(${REACH})`, 'g'));
+  return <>{parts.map((p, i) => (i % 2 ? <b key={i} class="kw-num kw-reach">{p}</b> : p))}</>;
+}
+
 export function Keyed({ text }: { text: string }) {
   const parts = keyedParts(text);
   return <>{parts.map((p, i) => (i % 2 ? <b key={i} class={keyedClass(p)}>{p}</b> : p))}</>;

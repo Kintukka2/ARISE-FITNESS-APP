@@ -4,7 +4,7 @@ import * as gear from '@/core/gear';
 import * as forge from '@/core/forge';
 import { SURVEY } from '@/data/association';
 import * as shop from '@/core/shop';
-import { throwable, type ThrowId } from '@/core/combat';
+import { throwable, throwReachText, type ThrowId } from '@/core/combat';
 import { group, hhmmss, msUntilMidnight } from '@/core/util';
 import { checkAwards } from '@/app/flow';
 import { buy as buyShards, PRODUCTS, storeReady } from '@/platform/native';
@@ -24,6 +24,7 @@ import { drinkFlow } from './Inventory';
 import { openBlueprint } from './Forge';
 import { STATS } from '@/core/types';
 import type { Save } from '@/core/types';
+import { Reach } from '@/ui/keyed';
 
 /** A blueprint rarer than what is worn where its design goes, or for a slot left empty. */
 const rarerThanWorn = (s: Save, defId: string) => {
@@ -105,7 +106,7 @@ function GoodDock({ g, short: isShort, onClose }: { g: Good; short: boolean; onC
       <span class="exdock__text">
         <b>{g.name}</b>
         <small class="exdock__kind">{g.kind}</small>
-        <small class="exdock__gives">{g.gives}</small>
+        <small class="exdock__gives"><Reach text={g.gives} /></small>
         {g.note && <small class="exdock__note">{g.note}</small>}
       </span>
       <button type="button" class="iconbtn exdock__x" aria-label="Close" onClick={() => { sfx.tap(); onClose(); }}><Glyph name="close" /></button>
@@ -169,7 +170,7 @@ function Exchange() {
     const want = await ask(`buy:${id}`, system.offer([
       'Would you like to purchase?',
       system.tag(k.name, 'Item'),
-      `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`,
+      `${k.status} on ${throwReachText(k.reach)}`,
       `Price: ${group(t.price)} Mana Shards`,
       `Held: ${group(store.get().wallet.shards)}`,
     ], 'gear', 'Buy', 'Cancel'));
@@ -280,7 +281,7 @@ function Exchange() {
       const k = throwable(t.id)!;
       return {
         key: t.id, tab: 'gates', name: k.name, art: <ShopArt id={t.id as ShopArtId} size={58} />, kind: 'Thrown in a fight',
-        gives: `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`, note: `Bag: ${shop.held(s, t.id)}/${shop.THROW_MAX}`,
+        gives: `${k.status} on ${throwReachText(k.reach)}`, note: `Bag: ${shop.held(s, t.id)}/${shop.THROW_MAX}`,
         held: shop.held(s, t.id), price: t.price, off: shop.throwRoom(s, t.id) <= 0 ? 'Bag full' : null, buy: () => void buyThrow(t.id),
       };
     }),

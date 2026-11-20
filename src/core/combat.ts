@@ -127,6 +127,9 @@ export const REACH_TEXT: Record<string, string> = {
   burst: `${REACH.burst} targets`, wild: `${REACH.wild} targets`, all: 'every foe', support: 'the whole party', taunt: 'every foe',
 };
 
+/** How many a throwable reaches, as a skill's reach is written: `1 target`, `up to 3 targets`. */
+export const throwReachText = (reach: number) => (reach > 1 ? `up to ${reach} targets` : REACH_TEXT.single);
+
 const STRIKE: Ability = { name: 'Strike', type: 'physical', profile: 'single', mult: 1, cd: 0, inflicts: [] };
 
 /** A melee hit: physical, at one or two, from a unit whose hits are not shots. */

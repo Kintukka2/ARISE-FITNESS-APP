@@ -20,7 +20,7 @@ import { PASSIVES } from '@/data/abilities';
 import { statTip } from '@/ui/stattip';
 import { keyedClass, keyedParts } from '@/ui/keyed';
 import { skillLine } from '@/screens/Skills';
-import { REACH_TEXT } from '@/core/combat';
+import { REACH_TEXT, throwReachText } from '@/core/combat';
 import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASS_RANKS, CLASSES, nextRung } from '@/data/classes';
 import { byLead } from '@/core/ranks';
@@ -239,6 +239,8 @@ describe('the words', () => {
         if (/[\d}%] (a|an|per) (round|hour|turn|day)\b/.test(code)) found.push(`${f}:${i + 1} rate not written "each"`);
         if (/toast\(\s*[`'"]\+|\+\$\{[^}]*\}\s*(Mana Shards|shards)/.test(code)) found.push(`${f}:${i + 1} gain written value first`);
         for (const m of code.matchAll(/<Empty(?:\s[^>]*)?>([^<{]+)<\/Empty>/g)) if (m[1].length > 40) found.push(`${f}:${i + 1} empty state says more than the fact`);
+        // How many an action reaches is a count, a digit with `target`: never `two targets`, `one foe` or `up to 3 foes`.
+        if (/\b(one|two|three|four|five|six) (targets?|foes?)\b/i.test(code) || /up to \$\{[^}]+\} foes|\d+ foes\b/.test(code)) found.push(`${f}:${i + 1} reach not written as N targets`);
         // A range is written with a hyphen, `30-50`, `Floors 26-30`, never `30 to 50`; only a screen reader hears "to".
         if (!/aria-label/.test(code) && /[\d%}]\s+to\s+[+-]?(\d|\$\{|\{)/.test(code)) found.push(`${f}:${i + 1} range written with "to"`);
       });
@@ -418,5 +420,7 @@ describe('the one stat tooltip', () => {
     expect(keyedClass('every foe')).toBe('kw-num kw-reach');
     expect(keyedClass('×0.7')).toBe('kw-num');
     expect(keyedClass('Bleeding')).toBe('kw');
+    expect(throwReachText(1)).toBe('1 target');
+    expect(throwReachText(3)).toBe('up to 3 targets');
   });
 });

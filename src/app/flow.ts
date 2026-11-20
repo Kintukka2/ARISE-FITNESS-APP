@@ -22,7 +22,7 @@ import * as store from '@/store';
 import { fromEl, promotion, rankUp } from '@/ui/arrival';
 import { closeAllSheets, sys, toast } from '@/ui/overlays';
 import * as shop from '@/core/shop';
-import { THROWABLES, type ThrowId } from '@/core/combat';
+import { THROWABLES, throwReachText, type ThrowId } from '@/core/combat';
 import { THROW_GLYPH } from '@/ui/icons';
 import { SURVEY } from '@/data/association';
 import * as system from '@/ui/system';
@@ -420,7 +420,7 @@ export function bagFor(s: Save, d: Dungeon, drink?: () => void): BagItem[] {
       const readied = run ? (run.throw ?? k.id) === k.id : shop.readied(s) === k.id;
       return {
         id: k.id, name: k.name, glyph: THROW_GLYPH[k.id], count: n, held: `${n}/${shop.THROW_MAX}`,
-        effect: `${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes` : 'one foe'}`,
+        effect: `${k.status} on ${throwReachText(k.reach)}`,
         off: n <= 0 ? 'None held' : run ? (readied ? 'In a fight' : 'Not readied') : readied ? 'Readied' : undefined,
         act: 'Ready', use: () => readyThrow(k.id),
       };

@@ -3648,7 +3648,18 @@ What changed:
   - It is blue rather than gold or a colour of its own, since blue is every figure's colour and gold is a stat's or a
     status's.
   - The hunter card, the Shadow card and every tooltip line `Keyed` sets show it alike.
-- **Held by tests.** The voice test holds:
+- **Everywhere it appears** (the owner's call: every screen and every tooltip), one wording and one look:
+  - **The action wheel's hub:** a skill picked shows how many it hits first, then `Damage`, which is each one's, and
+    `Hit`.
+  - **A throw:** `Burn up to 3 targets`, `Stun 1 target` (`throwReachText`), the reach set as a figure (`Reach` in
+    `ui/keyed.tsx`, for lines that colour nothing else). This covers the wheel, the bag's wheel (`Burning on up to 3
+    targets`), the Exchange's row and its offer, and the Guide.
+  - **The Skills screen's card:** what a skill does now is told as the cards tell it, its figures and how many it hits
+    in blue and a status's word its tooltip, and its `Lv.MAX` line sets its reach as a figure.
+  - **The Guide:** `A melee hit, a physical action at 1 target or 2 targets, reaches only the Front row…`.
+- **Held by tests.** The voice test now also fails on a reach written in words anywhere in the source (`two targets`,
+  `one foe`, `up to 3 foes`). The tour checks the wheel's hub sets a skill's reach and a throw's as figures.
+- **Held by the voice test** as well:
   - that no reach is written in words or with a `×`;
   - that a cleave reads `Physical ×0.7 against 2 targets. Inflicts Bleeding. Cooldown 1.`;
   - that `2 targets` and `every foe` are set as figures.

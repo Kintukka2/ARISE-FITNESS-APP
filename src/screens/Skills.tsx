@@ -27,6 +27,8 @@ import { buzz, flash as glow } from '@/ui/feedback';
 import { Glyph, Shard, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
+import { Reach } from '@/ui/keyed';
+import { KeyedTips } from '@/ui/wards';
 
 export function openSkills() {
   openSheet({ title: 'Skills', system: { icon: null }, render: () => <SkillsSheet /> });
@@ -369,10 +371,11 @@ function NodeCard({ s, id, flash, onLearn, onEquip }: { s: Save; id: string | nu
         <span class="st-card__title"><small><Facts items={[word.toUpperCase(), p.name, `${TIER_RANKS[n.tier]}-Rank`]} /></small><b>{n.name}</b></span>
         <span class="st-card__lv num">{n.max > 1 ? `Lv.${k}/${n.max}` : k ? 'Learned' : 'Lv.0/1'}</span>
       </header>
-      <p class="st-card__now">{k === 0 && n.max > 1 ? <span class="st-card__at">Lv.1: </span> : null}{now}</p>
+      {/* Told as a Shadow's or a hunter's card tells it: its figures and how many it hits in blue, a status's word its tooltip. */}
+      <p class="st-card__now">{k === 0 && n.max > 1 ? <span class="st-card__at">Lv.1: </span> : null}<KeyedTips text={now} tone="system" /></p>
       {next && <p class="st-card__next"><span class="st-card__at">Lv.{k + 1}{k + 1 === n.max ? ' (MAX)' : ''}: </span><span class="grant">{next}</span></p>}
       {n.kind === 'skill' && k === 0 && (n.up?.length ?? 0) > 0 && (
-        <p class="st-card__next muted"><span class="st-card__at">Lv.MAX: </span>{skillLine(tree.skillAt(n, n.max))}</p>
+        <p class="st-card__next muted"><span class="st-card__at">Lv.MAX: </span><Reach text={skillLine(tree.skillAt(n, n.max))} /></p>
       )}
       {n.fork && <p class="st-card__fork"><Glyph name="swap" />Fork: [{nodeById(n.fork)!.name}]</p>}
       {why && why !== 'max' && <p class={`st-card__why ${why === 'points' ? '' : 'is-shut'}`}>{blockLine(s, n, why)}</p>}
