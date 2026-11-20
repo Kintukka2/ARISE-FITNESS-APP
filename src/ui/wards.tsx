@@ -8,7 +8,7 @@
 import { RESIST_STATUS, STATUS, STATUS_TEXT } from '@/core/combat';
 import { STATUS_MARK, StatusMark } from './effects';
 import { InfoTag } from './infotag';
-import { keyedParts } from './keyed';
+import { keyedClass, keyedParts } from './keyed';
 import type { TipText } from './tip';
 
 export type WardKind = 'Immune' | 'Resists';
@@ -66,7 +66,7 @@ export function KeyedTips({ text, tone }: { text: string; tone?: TipText['tone']
       {keyedParts(text).map((p, i) => (i % 2
         ? STATUS_TEXT[p]
           ? <InfoTag key={i} class="kw kwtip" tip={statusTip(p, tone)}>{p}</InfoTag>
-          : <b key={i} class={/\d/.test(p) ? 'kw-num' : 'kw'}>{p}</b>
+          : <b key={i} class={keyedClass(p)}>{p}</b>
         : p))}
     </>
   );

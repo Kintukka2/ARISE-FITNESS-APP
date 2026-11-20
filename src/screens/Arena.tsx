@@ -15,7 +15,7 @@ import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
-import { ability, counts, COVER, finishers, POTION_HEAL, GUARD, STATUS, STATUS_TEXT, THROWABLES, throwOrder, type ThrowId } from '@/core/combat';
+import { ability, counts, COVER, finishers, POTION_HEAL, GUARD, REACH_TEXT, STATUS, STATUS_TEXT, THROWABLES, throwOrder, throwReachText, type ThrowId } from '@/core/combat';
 import { MOVE, REAR_MELEE, ROW_NAME, ROWS, type Row } from '@/data/ranks';
 import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
@@ -73,6 +73,7 @@ import { CacheEmblem, openCache, type CacheStage } from '@/ui/cache';
 import { lines, toBeats, type Beat } from '@/ui/log';
 import { HoldButton, openSheet, pushBack, sys } from '@/ui/overlays';
 import { EssenceMark, NameField, ShadowAlerts } from './Shadows';
+import { Reach } from '@/ui/keyed';
 
 interface UnitView {
   uid: string; name: string; side: 'p' | 'e'; tag?: string; mx: number; hp: number; status: string[]; intent?: IntentView; tricks?: TrickId[];
@@ -127,7 +128,7 @@ const spoken = (lo: number, hi: number) => [lo, hi].join(' to ');
 /** The glyph a skill wears on the wheel: its own, or its Path's for one drawn without one. */
 const skillGlyph = (name: string) => SKILL_GLYPH[name] ?? STAT_ICON[NODES.find((n) => n.kind === 'skill' && n.skill === name)?.path ?? ''] ?? 'bolt';
 
-/** What a throwable does, as a verb: `Burn up to 3 foes`. */
+/** What a throwable does, as a verb: `Burn up to 3 targets`. */
 const THROW_VERB: Record<ThrowId, string> = { flash: 'Stun', cord: 'Root', ember: 'Burn' };
 /**
  * A status's line in the hub, where the room is a circle's: "each round" is written `each rd`, the one
@@ -185,10 +186,12 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
     const d = dmg(name, k.cd > 0 ? undefined : fin[name]);
     // What it inflicts, named: the status's own line is the Guide's and the Skills screen's.
     const inflicts = k.ability.inflicts.filter((st) => STATUS_TEXT[st]);
+    // How many it hits, first, as a skill's line sets it (`2 targets`): the damage under it is each one's.
+    const reach = REACH_TEXT[k.ability.profile] ?? REACH_TEXT.single;
     return {
       use: name, name, glyph: skillGlyph(name), off: k.cd > 0 ? `Ready in ${k.cd}` : undefined, ...d,
-      shown: inflicts.length ? [...d.shown, `Inflicts ${inflicts.join(', ')}`] : d.shown,
-      said: inflicts.length ? `${d.said}. Inflicts ${inflicts.join(', ')}` : d.said,
+      shown: [reach, ...d.shown, ...(inflicts.length ? [`Inflicts ${inflicts.join(', ')}`] : [])],
+      said: `${reach}. ${d.said}${inflicts.length ? `. Inflicts ${inflicts.join(', ')}` : ''}`,
     };
   });
   // Cover: what is aimed at the ally before the hunter's next turn, and what of it the hunter would take, guarding.
@@ -207,7 +210,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
   // Throw: the kind the run readied, and how many of it are left.
   const tk = THROWABLES.find((k) => k.id === toss);
   const left = tk ? turn.throws[tk.id] ?? 0 : 0;
-  const reach = tk ? (tk.reach > 1 ? `up to ${tk.reach} foes` : 'one foe') : '';
+  const reach = tk ? throwReachText(tk.reach) : '';
   const thrown: WheelAct = tk
     ? { use: 'Throw', name: tk.name, glyph: THROW_GLYPH[tk.id], count: left, off: left > 0 ? undefined : 'None left',
       shown: [`${THROW_VERB[tk.id]} ${reach}`, hubStatus(tk.status)],
@@ -320,7 +323,7 @@ function ActWheel({ turn, aim, canDrink, slots, give, picked, setPicked, open, s
           <b class="actwheel__name">{shown.name}</b>
           {/* A skill not ready says so at the hub's foot, in red: its level alone here. */}
           {(st.level || st.ready) && <small class="actwheel__ready"><Facts items={[st.level, shown.off ? null : st.ready]} /></small>}
-          {shown.shown.map((l) => <span key={l} class="actwheel__num">{l}</span>)}
+          {shown.shown.map((l) => <span key={l} class="actwheel__num"><Reach text={l} /></span>)}
           {shown.fell && <span class={`actwheel__fell is-${shown.fell}`}>{shown.fell === 'maybe' ? 'May defeat it' : 'Defeats it'}</span>}
           <small class={`actwheel__foot ${(over !== undefined ? dragged?.off : chosen.off) ? 'is-off' : ''}`}>{foot}</small>
         </div>

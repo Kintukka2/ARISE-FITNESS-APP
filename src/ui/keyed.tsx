@@ -9,12 +9,30 @@ import { STAT_WORDS } from '@/core/gear';
 
 /** The statuses, every stat as a tooltip names it (`STAT_WORDS`), the two rows, and Shadow Essence, which a rank asks for. */
 const KEYWORDS = [...new Set([...Object.keys(STATUS), ...Object.values(STAT_WORDS), 'Attack', 'HP', 'MP', 'defence', 'Shadow Essence', 'Shadow', 'Front', 'Rear'])];
-const RX = new RegExp(`([×+-]?\\d+(?:[.,]\\d+)?%?|\\b(?:${KEYWORDS.sort((a, b) => b.length - a.length).join('|')})\\b)`, 'g');
+/**
+ * How many a skill reaches, one figure with its word (`2 targets`, `every foe`; the owner's call: how many it hits is
+ * as much a skill's worth as its multiplier and its cooldown), set in the figures' blue.
+ */
+const REACH = '\\d+ targets?\\b|\\bevery foe\\b';
+const RX = new RegExp(`(${REACH}|[×+-]?\\d+(?:[.,]\\d+)?%?|\\b(?:${KEYWORDS.sort((a, b) => b.length - a.length).join('|')})\\b)`, 'g');
+const IS_REACH = new RegExp(`^(?:${REACH})$`);
 
 /** A line split as `Keyed` colours it: the plain text at even places, its figures and keywords at odd ones. */
 export const keyedParts = (text: string) => text.split(RX);
 
+/** How a figure or a keyword is set: a reach and every figure in the System's blue, a status or a stat in gold. */
+export const keyedClass = (p: string) => (IS_REACH.test(p) ? 'kw-num kw-reach' : /\d/.test(p) ? 'kw-num' : 'kw');
+
+/**
+ * A line where only how many it reaches is set as a figure (`Burning on up to 3 targets`): for lines that colour
+ * nothing else, the action wheel's hub, the bag's and the Exchange's.
+ */
+export function Reach({ text }: { text: string }) {
+  const parts = text.split(new RegExp(`(${REACH})`, 'g'));
+  return <>{parts.map((p, i) => (i % 2 ? <b key={i} class="kw-num kw-reach">{p}</b> : p))}</>;
+}
+
 export function Keyed({ text }: { text: string }) {
   const parts = keyedParts(text);
-  return <>{parts.map((p, i) => (i % 2 ? <b key={i} class={/\d/.test(p) ? 'kw-num' : 'kw'}>{p}</b> : p))}</>;
+  return <>{parts.map((p, i) => (i % 2 ? <b key={i} class={keyedClass(p)}>{p}</b> : p))}</>;
 }

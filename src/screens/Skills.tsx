@@ -27,6 +27,8 @@ import { buzz, flash as glow } from '@/ui/feedback';
 import { Glyph, Shard, SKILL_GLYPH, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys } from '@/ui/overlays';
 import * as system from '@/ui/system';
+import { Reach } from '@/ui/keyed';
+import { KeyedTips } from '@/ui/wards';
 
 export function openSkills() {
   openSheet({ title: 'Skills', system: { icon: null }, render: () => <SkillsSheet /> });
@@ -38,7 +40,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /**
  * What a skill does at a level, in sentences, as Honkai: Star Rail and Slay the Spire tell a skill: its force and
- * reach (`Physical ×1.6 against one target.`), what it inflicts, then its cooldown, never facts joined by a middle dot.
+ * reach (`Physical ×1.6 against 1 target.`), what it inflicts, then its cooldown, never facts joined by a middle dot.
  */
 export function skillLine(a: Ability): string {
   const cd = a.cd ? ` Cooldown ${a.cd}.` : '';
@@ -49,8 +51,8 @@ export function skillLine(a: Ability): string {
   }
   if (a.profile === 'taunt') return `Every foe's next action goes at you. You guard until your next turn.${cd}`;
   const inflicts = a.inflicts.length ? ` Inflicts ${a.inflicts.join(' and ')}.` : '';
-  if (a.mult === 0) return `Inflicts ${a.inflicts.join(' and ')} on ${REACH_TEXT[a.profile] ?? 'one target'}. No damage, and never misses.${cd}`;
-  return `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult} against ${REACH_TEXT[a.profile] ?? 'one target'}.${inflicts}${cd}`;
+  if (a.mult === 0) return `Inflicts ${a.inflicts.join(' and ')} on ${REACH_TEXT[a.profile] ?? REACH_TEXT.single}. No damage, and never misses.${cd}`;
+  return `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult} against ${REACH_TEXT[a.profile] ?? REACH_TEXT.single}.${inflicts}${cd}`;
 }
 
 /** What the next level adds, as the changes it makes. */
@@ -61,7 +63,7 @@ function upLine(n: TreeNode, level: number): string {
   const parts: string[] = [];
   if (now.mult !== was.mult) parts.push(`×${now.mult}`);
   if (up.cd) parts.push(`Cooldown ${now.cd}`);
-  if (up.profile) parts.push(cap(REACH_TEXT[now.profile] ?? 'one target'));
+  if (up.profile) parts.push(cap(REACH_TEXT[now.profile] ?? REACH_TEXT.single));
   if (up.inflicts) parts.push(`Inflicts ${up.inflicts.join(' and ')}`);
   return parts.join(', ');
 }
@@ -369,10 +371,11 @@ function NodeCard({ s, id, flash, onLearn, onEquip }: { s: Save; id: string | nu
         <span class="st-card__title"><small><Facts items={[word.toUpperCase(), p.name, `${TIER_RANKS[n.tier]}-Rank`]} /></small><b>{n.name}</b></span>
         <span class="st-card__lv num">{n.max > 1 ? `Lv.${k}/${n.max}` : k ? 'Learned' : 'Lv.0/1'}</span>
       </header>
-      <p class="st-card__now">{k === 0 && n.max > 1 ? <span class="st-card__at">Lv.1: </span> : null}{now}</p>
+      {/* Told as a Shadow's or a hunter's card tells it: its figures and how many it hits in blue, a status's word its tooltip. */}
+      <p class="st-card__now">{k === 0 && n.max > 1 ? <span class="st-card__at">Lv.1: </span> : null}<KeyedTips text={now} tone="system" /></p>
       {next && <p class="st-card__next"><span class="st-card__at">Lv.{k + 1}{k + 1 === n.max ? ' (MAX)' : ''}: </span><span class="grant">{next}</span></p>}
       {n.kind === 'skill' && k === 0 && (n.up?.length ?? 0) > 0 && (
-        <p class="st-card__next muted"><span class="st-card__at">Lv.MAX: </span>{skillLine(tree.skillAt(n, n.max))}</p>
+        <p class="st-card__next muted"><span class="st-card__at">Lv.MAX: </span><Reach text={skillLine(tree.skillAt(n, n.max))} /></p>
       )}
       {n.fork && <p class="st-card__fork"><Glyph name="swap" />Fork: [{nodeById(n.fork)!.name}]</p>}
       {why && why !== 'max' && <p class={`st-card__why ${why === 'points' ? '' : 'is-shut'}`}>{blockLine(s, n, why)}</p>}

@@ -9,6 +9,7 @@ import { createPortal } from 'preact/compat';
 import { sfx } from '@/audio/audio';
 import { Btn } from './components';
 import { Glyph } from './icons';
+import { Reach } from './keyed';
 
 export interface BagItem {
   id: string;
@@ -121,7 +122,7 @@ function ItemWheel({ items, close }: { items: BagItem[]; close: () => void }) {
           {chosen ? <>
             <span class={`bagwheel__glyph ${chosen.tone ?? ''}`}><Glyph name={chosen.glyph} /></span>
             <b class="bagwheel__name">{chosen.name}</b>
-            <span class="bagwheel__effect">{chosen.effect}</span>
+            <span class="bagwheel__effect"><Reach text={chosen.effect} /></span>
             {/* The count is on the item's slot, so the hub does not say it again, nor that none is held. */}
             {chosen.off
               ? chosen.off !== NONE_HELD && <small class="bagwheel__off">{chosen.off}</small>

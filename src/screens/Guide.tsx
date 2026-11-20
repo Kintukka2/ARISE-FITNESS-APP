@@ -9,7 +9,7 @@ import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, GRADIENT, LABYRINTH, REST_CHANCE, WING, WINGS } from '@/core/map';
 import { CLOCK } from '@/core/clock';
-import { HELD, POTION_HEAL, GUARD, STATUS_TEXT, TACTICS, THROWABLES, RESIST_STATUS } from '@/core/combat';
+import { HELD, POTION_HEAL, GUARD, REACH_TEXT, STATUS_TEXT, TACTICS, THROWABLES, throwReachText, RESIST_STATUS } from '@/core/combat';
 import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
@@ -198,7 +198,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Guard: you take ${GUARD * 100}% of every hit until your next turn.`,
       'Cover: you guard, and everything aimed at the ally you cover comes at you instead, shown on each foe first, until your next turn.',
       'Pick Cover, then tap the ally. The hub shows how many are aimed at them, and with Foresight what of it would land on you.',
-      ...THROWABLES.map((k) => `${k.name}: ${k.status} on ${k.reach > 1 ? `up to ${k.reach} foes, the one you aimed at first` : 'the foe you aimed at'}, with no roll, unless the foe is immune. ${STATUS_TEXT[k.status]}.`),
+      ...THROWABLES.map((k) => `${k.name}: ${k.status} on ${k.reach > 1 ? `${throwReachText(k.reach)}, the one you aimed at first` : `${REACH_TEXT.single}, the one you aimed at`}, with no roll, unless the foe is immune. ${STATUS_TEXT[k.status]}.`),
       `The bag holds ${THROW_MAX} of each throwable, and the Exchange sells them. Ready one from the bag, on a Gate’s brief or anywhere else, and the wheel throws that one in every fight inside.`,
       'Auto never covers or throws, and the brief’s verdict assumes nothing thrown.',
       'Every creature does something besides hit, and shows it first: an action as its next move, a habit named under its bar. Tap a habit, a status or a move on a card to read it.',
@@ -259,7 +259,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       'Each side of a fight stands in two rows: the Front and the Rear. A rank is a hunter’s grade, never a row.',
       `A Gate's fight holds ${PACK.min}-${PACK.max} creatures, in front and in the rear where its creatures stand in both. A Gatekeeper and a boss stand with ${PACK.retinue === 1 ? 'one creature' : `${PACK.retinue} creatures`} of the Gate behind them.`,
-      'A melee hit, a physical action at one foe or two, reaches only the front while anyone stands in it. Magic, a volley, a spread, a burst, a wild swing, a strike at every foe and a throw reach either.',
+      `A melee hit, a physical action at ${REACH_TEXT.single} or ${REACH_TEXT.cleave}, reaches only the Front row while anyone stands in it. Magic, a volley, a spread, a burst, a wild swing, a strike at every foe and a throw reach either.`,
       `A melee hit struck from the rear lands at ${Math.round(REAR_MELEE * 100)}%.`,
       `Creatures stand by their role: ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'front').map(([k]) => k).join(', ')} in front; ${Object.entries(ROLE_ROW).filter(([, r]) => r === 'rear').map(([k]) => k).join(', ')} in the rear. A boss stands in front.`,
       `Every role in the rear is ranged (${RANGED_ROLES.join(', ')}): its hits reach either and lose nothing from the rear, as do a ${RANGED_LEADS.join(', ')} hunter's.`,

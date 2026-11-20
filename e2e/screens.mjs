@@ -855,6 +855,8 @@ try {
   if (await skill.count()) {
     await skill.click(); await sleep(250);
     if (!(await page.locator('.actwheel__hub .actwheel__num').first().isVisible())) throw new Error('A SKILL DID NOT SHOW WHAT IT DOES');
+    // How many it hits leads the hub, set as a figure, as a skill's line sets it.
+    if (!(await page.locator('.actwheel__hub .actwheel__num .kw-reach', { hasText: /^(\d+ targets?|every foe)$/ }).count())) throw new Error('A SKILL PICKED DOES NOT SAY HOW MANY IT HITS');
     if (await page.locator('.actwheel__use, .actwheel__lines, .actwheel__kit').count()) throw new Error('THE WHEEL STILL HAS ITS USE BUTTON, ITS LINES OR ITS CHIPS');
     if (!(await page.locator('.turnbar').isVisible())) throw new Error('PICKING A SKILL USED IT');
     await snap('arena-skill-info');
@@ -881,6 +883,7 @@ try {
   if (!(await page.locator('.actwheel__hub .actwheel__name', { hasText: 'Ember Flask' }).count())) throw new Error('THE WHEEL DOES NOT THROW THE ONE READIED');
   if (!(await page.locator('.actwheel__item', { hasText: 'Ember Flask' }).locator('.actwheel__count').count())) throw new Error('THE THROW SLOT DOES NOT SHOW HOW MANY ARE HELD');
   if (!(await page.locator('.actwheel__hub', { hasText: 'Burning: HP' }).count())) throw new Error('THE HUB DOES NOT SAY WHAT THE THROW INFLICTS');
+  if (!(await page.locator('.actwheel__hub .kw-reach', { hasText: /^\d+ targets?$/ }).count())) throw new Error('THE THROW DOES NOT SAY HOW MANY IT REACHES AS A FIGURE');
   await snap('arena-wheel-throw');
   await page.locator('.actwheel__slot[data-act="Strike"]').click(); await sleep(150);
   // Press the shut button, drag onto Guard, and the hub shows it before anything is used; let go on it, and it is used.
