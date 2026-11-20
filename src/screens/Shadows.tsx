@@ -2,6 +2,7 @@
  * The Shadow army, as a bento grid: the Army, its squad over the reserve, opening the roster where the
  * squad is made; and the Orders under it.
  */
+import { powerText } from '@/ui/power';
 import { sfx } from '@/audio/audio';
 import { ability, passiveFor, TACTICS } from '@/core/combat';
 import { dungeonById, enemyById } from '@/core/gates';
@@ -106,7 +107,7 @@ function ArmyStage({ news }: { news: string[] }) {
           <small>Army of Shadows</small>
           <b>Squad <span class="num">{squad.length}/{n}</span></b>
         </span>
-        <span class="armystage__power"><small>Squad Power</small><b class="num">{shadows.squadPower(s)}</b></span>
+        <span class="armystage__power"><small>Squad Power</small><b class="num">{powerText(shadows.squadPower(s))}</b></span>
       </header>
       <button type="button" class="armystage__stage" onClick={() => { sfx.tap(); openArmy(news); }}
         aria-label={`Army. Squad ${squad.length} of ${n}${lead ? `, led by ${shadows.nameOf(lead)}` : ''}. Open the Army.`}>
@@ -271,7 +272,7 @@ function ArmySheet({ news }: { news: string[] }) {
     <div class={`stack roster ${drag.lifted ? 'is-dragging' : ''}`} {...drag.guard}>
       <div class="bag__head roster__sum">
         <span><b class="num"><EssenceMark />{s.shadows.essence ?? 0}</b><small>Shadow Essence</small></span>
-        <span><b class="num">{shadows.squadPower(s)}</b><small>Squad Power</small></span>
+        <span><b class="num">{powerText(shadows.squadPower(s))}</b><small>Squad Power</small></span>
         <span><b class="num">{s.shadows.army.length}</b><small>Bound</small></span>
         {/* Ready waits on the hunter: a tap offers to promote and awaken them all at once. */}
         {counts.ready > 0
@@ -308,7 +309,7 @@ function ArmySheet({ news }: { news: string[] }) {
                   <span class="roster__slot-grade"><RankPlate rank={e.rank} size={16} /></span>
                   <span class="roster__slot-badge"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh)} size={40} /></span>
                   <b>{shortName(sh)}</b>
-                  <small class="num"><Facts items={[`Lv.${shadows.levelOf(sh)}`, `Power ${shadows.power(sh)}`]} /></small>
+                  <small class="num"><Facts items={[`Lv.${shadows.levelOf(sh)}`, `Power ${powerText(shadows.power(sh))}`]} /></small>
                 </button>
                 <button type="button" class="roster__slot-x" aria-label={`Take out: ${shadows.nameOf(sh)}`} title="Take out"
                   onPointerDown={(ev) => ev.stopPropagation()} onClick={() => move(sh.id)}><Glyph name="close" /></button>
@@ -414,7 +415,7 @@ function RosterRow({ sh, i, on, full, ready, fresh, move, drag, lifted }: { sh: 
           <b class="num">{lv}<small>/{cap}</small></b>
           <i class="roster__bar-lv" aria-hidden="true"><i style={`width: ${Math.round(share(sh) * 100)}%`} /></i>
         </span>
-        <b class="roster__power num">{shadows.power(sh)}</b>
+        <b class="roster__power num">{powerText(shadows.power(sh))}</b>
       </button>
     </li>
   );
@@ -426,7 +427,7 @@ function RosterCard({ sh, i, on, ready, fresh, drag, lifted }: { sh: Shadow; i: 
   const c = 2 * Math.PI * 40;
   return (
     <button type="button" class={`sysbox rostercard ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${lifted ? 'is-lifted' : ''}`} style={`--i: ${Math.min(i, 16)}`} {...drag} onClick={() => { sfx.tap(); openShadow(sh.id); }}>
-      <span class="rostercard__top"><RankPlate rank={e.rank} size={14} /><b class="num">{shadows.power(sh)}</b></span>
+      <span class="rostercard__top"><RankPlate rank={e.rank} size={14} /><b class="num">{powerText(shadows.power(sh))}</b></span>
       <span class="rostercard__art">
         <svg viewBox="0 0 100 100" class="rostercard__ring" aria-hidden="true">
           <circle cx="50" cy="50" r="40" class="rostercard__track" />
@@ -560,7 +561,7 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
             <div class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></div>
             <div class="sp-row">
               <dt>Power</dt>
-              <dd class="sp-row__power num">{shadows.power(sh)}</dd>
+              <dd class="sp-row__power num">{powerText(shadows.power(sh))}</dd>
             </div>
           </dl>
         </div>

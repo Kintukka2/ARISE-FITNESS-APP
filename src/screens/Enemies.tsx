@@ -12,6 +12,7 @@
  *     its power, and its numbers as this Gate fields it (its tuning, the Ascension level and the Seals taken). A tap
  *     opens its card.
  */
+import { powerText } from '@/ui/power';
 import type { ComponentChildren } from 'preact';
 import { powerOf } from '@/core/combat';
 import { bossKnown, enemyById, mapKnown } from '@/core/gates';
@@ -98,7 +99,7 @@ export function EnemiesRow({ d, level, taken }: { d: Dungeon; level: number; tak
   const marks: VMark[] = habits.map((h) => ({ key: h.id, mark: <HabitHex id={h.id} />, name: TRICKS[h.id].name }));
   const said = [
     `Enemies: ${foes.map((f) => (f.e || f.chosen ? `${f.name}, ${f.what}` : f.what)).join('; ')}`,
-    power === null ? 'Power unknown' : `Power ${power}`,
+    power === null ? 'Power unknown' : `Power ${powerText(power)}`,
     habits.length ? `Habits ${habits.map((h) => TRICKS[h.id].name).join(', ')}` : '',
   ].filter(Boolean).join('. ');
   return (
@@ -170,16 +171,16 @@ function FoePower({ foes }: { foes: Foe[] }) {
     .filter((p) => p.all.length)
     .map((p) => ({ ...p, n: p.all.every((f) => f.power !== null) ? p.all.reduce((n, f) => n + (f.power ?? 0), 0) : null }));
   return (
-    <div class="pwin__power" role="group" aria-label={`Enemy power ${total ?? 'unknown'}: ${parts.map((p) => `${p.name} ${p.n ?? 'unknown'}`).join(', ')}`}>
+    <div class="pwin__power" role="group" aria-label={`Enemy power ${total === null ? 'unknown' : powerText(total)}: ${parts.map((p) => `${p.name} ${p.n === null ? 'unknown' : powerText(p.n)}`).join(', ')}`}>
       <span class="pwin__total">
         <small>Enemy power</small>
-        <b class="num"><Glyph name="power" />{total ?? '?'}</b>
+        <b class="num"><Glyph name="power" />{total === null ? '?' : powerText(total)}</b>
       </span>
       <span class="pwin__split" aria-hidden="true">
         {parts.map((p, i) => <i key={p.k} class={`is-${p.k} ${p.n === null ? 'is-unknown' : ''}`} style={`flex: ${p.n ?? Math.max(1, ...parts.map((q) => q.n ?? 0)) / 2}; --i: ${i}`} />)}
       </span>
       <span class="pwin__legend" aria-hidden="true">
-        {parts.map((p) => <span key={p.k} class={`is-${p.k}`}><i />{p.name}<b class="num">{p.n ?? '?'}</b></span>)}
+        {parts.map((p) => <span key={p.k} class={`is-${p.k}`}><i />{p.name}<b class="num">{p.n === null ? '?' : powerText(p.n)}</b></span>)}
       </span>
     </div>
   );
@@ -214,7 +215,7 @@ function FoeRow({ f, i, d, level, taken }: { f: Foe; i: number; d: Dungeon; leve
           </span>
         )}
       </span>
-      <span class="pmember__power" aria-hidden="true"><Glyph name="power" /><b class="num">{f.power ?? '?'}</b></span>
+      <span class="pmember__power" aria-hidden="true"><Glyph name="power" /><b class="num">{f.power === null ? '?' : powerText(f.power)}</b></span>
       {f.e && <Glyph name="chevron" class="pmember__go" />}
       {stats.length > 0 && (
         <span class="pmember__stats" aria-hidden="true">
@@ -224,8 +225,8 @@ function FoeRow({ f, i, d, level, taken }: { f: Foe; i: number; d: Dungeon; leve
     </>
   );
   const label = f.e
-    ? `${f.name}, ${f.what}, in the ${ROW_NAME[row!]}, ${style}. Power ${f.power}. ${stats.map((t) => `${t.k} ${t.v}`).join(', ')}. Open its card.`
-    : f.chosen ? `${f.name}, ${f.what}. Power ${f.power ?? 'unknown'}.` : `${f.what}, not yet identified.`;
+    ? `${f.name}, ${f.what}, in the ${ROW_NAME[row!]}, ${style}. Power ${powerText(f.power ?? 0)}. ${stats.map((t) => `${t.k} ${t.v}`).join(', ')}. Open its card.`
+    : f.chosen ? `${f.name}, ${f.what}. Power ${f.power === null ? 'unknown' : powerText(f.power)}.` : `${f.what}, not yet identified.`;
   return (
     <li class={`pmember is-${f.kind} ${f.e || f.chosen ? '' : 'is-unknown'}`} style={`--i: ${i}`}>
       {f.e

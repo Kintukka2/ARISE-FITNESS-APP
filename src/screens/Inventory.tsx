@@ -4,6 +4,7 @@
  * their name and condition; the stats and the skills as two cards; the bag, the Forge and the Exchange as
  * three stations; the licence along the foot. Each opens its window.
  */
+import { powerText } from '@/ui/power';
 import { RankCrest } from '@/ui/rankcrest';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
@@ -95,7 +96,7 @@ function HunterHero({ s }: { s: Save }) {
   const ups = gear.upgradeCount(s);
   const pts = s.hunter.points;
   const call = !!rc?.ready || pts > 0;
-  const score = Math.round(gear.power(s));
+  const score = powerText(gear.power(s));
   return (
     <SysFrame kind={call ? 'gold' : 'system'} class={`hhero ${call ? 'is-call' : ''}`} label="Hunter" tour="hero">
       <div class="hhero__grid">

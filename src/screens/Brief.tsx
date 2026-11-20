@@ -6,6 +6,7 @@
  * Seals pressed in place, the enemies as portraits, the party lined up, the Feats and Today's map in a row. The
  * way in is docked at its foot. A creature's card, the map and the bag open over it.
  */
+import { powerText } from '@/ui/power';
 import { leftBy } from '@/core/engravings';
 import { ENGRAVED } from '@/data/engravings';
 import { Runestone } from '@/ui/runes';
@@ -360,8 +361,8 @@ function Facts({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[]
   const foe = who ? powerOf(who.base) : null;
   return (
     <dl class="bfacts">
-      <div><dt>Party</dt><dd class="num" aria-label={`Power ${party}`}><Glyph name="power" />{party}</dd></div>
-      <div><dt>{trial ? 'Last Chosen' : 'Boss'}</dt><dd class="num is-foe" aria-label={foe === null ? 'Power unknown' : `Power ${foe}`}><Glyph name="power" />{foe ?? '?'}</dd></div>
+      <div><dt>Party</dt><dd class="num" aria-label={`Power ${powerText(party)}`}><Glyph name="power" />{powerText(party)}</dd></div>
+      <div><dt>{trial ? 'Last Chosen' : 'Boss'}</dt><dd class="num is-foe" aria-label={foe === null ? 'Power unknown' : `Power ${powerText(foe)}`}><Glyph name="power" />{foe === null ? '?' : powerText(foe)}</dd></div>
       <div>
         <dt>{trial ? 'Chosen' : 'Floors'}</dt>
         <dd class="num">{trial || map.tower ? raid.stepsOf(map) : Math.max(1, map.floors.length)}</dd>
@@ -763,7 +764,7 @@ function CreatureCard({ id, d }: { id: string; d: Dungeon }) {
         <span class="bspot__art"><Portrait id={id} size={50} tone="red" /></span>
         <span class="label">{boss ? 'Gate boss' : id === d.elite ? 'Gatekeeper' : 'Creature'}</span>
         <b class="bspot__name">{e.name}</b>
-        <small class="bspot__line"><Spaced items={[`${e.rank}-Rank ${e.family}`, e.role, `Power ${powerOf(e.base)}`]} /></small>
+        <small class="bspot__line"><Spaced items={[`${e.rank}-Rank ${e.family}`, e.role, `Power ${powerText(powerOf(e.base))}`]} /></small>
         {shadows.isBound(s, id) && <span class="gtag is-shadow"><Glyph name="shadows" />Serves as a Shadow</span>}
       </section>
       {habits.length > 0 && (

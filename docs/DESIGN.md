@@ -3470,6 +3470,32 @@ What changed:
   - the Trial's cards hold the Chosen and no Association hunter.
 - **Balance.** Display only: no calibration, no campaign.
 
+## Power shown large — built
+
+The owner asked for power to feel more impressive, and its growth real: `666` against `2382` was flat. Every power on a
+screen, the hunter's, a party's, a Shadow's, a squad's and equipment's, is now shown at 150 times what it was. `666`
+reads `99.9k`, and `2382` reads `357.3k`. The stats, Attack, Defence and the rest, stay exactly as they were.
+
+What changed:
+- **One formatter** (`ui/power.ts`): `powerText` shows a figure at `POWER_SHOWN` (150) times the engine's, compact past
+  a thousand to one decimal, a whole one left bare. `750`, `99.9k`, `120k`, `357.3k`, `1.2M`; just under a million rolls
+  up to `1M`, never `1000k`. `powerGap` shows a difference the same way, beside its ▲ or ▼.
+- **Everywhere power or an equipment score is shown:**
+  - The brief: its facts (`Party`, `Boss`, `Last Chosen`), both cards' heads, both windows' totals, splits and rows, and
+    the formation board's faces.
+  - A creature's card.
+  - The Gate board's boss power.
+  - The Army's `Squad Power`, every Shadow's row, tile and card.
+  - An Association hunter's card.
+  - Equipment: `Equipment score`, each slot's and each piece's score on its art, the item bag, the slot picker, a
+    piece's card and its upgrade (`3.4k` to `3.6k`), the comparison beside it (`▲ 1.8k`), and each loadout's score.
+  - What a screen reader hears says the same figure.
+- **Only the display.** The engine's `powerOf`, `shadows.power`, `gear.score` and `gear.power` are unchanged, and every
+  sort, Auto Deploy's weighing, Auto Equip and the balance tools read them as before. Nothing reads the shown figure.
+- **Held by tests.** `tests/power.test.ts`: `666` reads `99.9k` and `2382` reads `357.3k`, small figures stay whole, a
+  whole thousand is bare, millions roll over cleanly, and a difference is shown without its sign.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
