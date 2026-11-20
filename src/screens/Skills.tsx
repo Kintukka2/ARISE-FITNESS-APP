@@ -38,7 +38,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /**
  * What a skill does at a level, in sentences, as Honkai: Star Rail and Slay the Spire tell a skill: its force and
- * reach (`Physical ×1.6 against one target.`), what it inflicts, then its cooldown, never facts joined by a middle dot.
+ * reach (`Physical ×1.6 against 1 target.`), what it inflicts, then its cooldown, never facts joined by a middle dot.
  */
 export function skillLine(a: Ability): string {
   const cd = a.cd ? ` Cooldown ${a.cd}.` : '';
@@ -49,8 +49,8 @@ export function skillLine(a: Ability): string {
   }
   if (a.profile === 'taunt') return `Every foe's next action goes at you. You guard until your next turn.${cd}`;
   const inflicts = a.inflicts.length ? ` Inflicts ${a.inflicts.join(' and ')}.` : '';
-  if (a.mult === 0) return `Inflicts ${a.inflicts.join(' and ')} on ${REACH_TEXT[a.profile] ?? 'one target'}. No damage, and never misses.${cd}`;
-  return `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult} against ${REACH_TEXT[a.profile] ?? 'one target'}.${inflicts}${cd}`;
+  if (a.mult === 0) return `Inflicts ${a.inflicts.join(' and ')} on ${REACH_TEXT[a.profile] ?? REACH_TEXT.single}. No damage, and never misses.${cd}`;
+  return `${a.type === 'magic' ? 'Magic' : 'Physical'} ×${a.mult} against ${REACH_TEXT[a.profile] ?? REACH_TEXT.single}.${inflicts}${cd}`;
 }
 
 /** What the next level adds, as the changes it makes. */
@@ -61,7 +61,7 @@ function upLine(n: TreeNode, level: number): string {
   const parts: string[] = [];
   if (now.mult !== was.mult) parts.push(`×${now.mult}`);
   if (up.cd) parts.push(`Cooldown ${now.cd}`);
-  if (up.profile) parts.push(cap(REACH_TEXT[now.profile] ?? 'one target'));
+  if (up.profile) parts.push(cap(REACH_TEXT[now.profile] ?? REACH_TEXT.single));
   if (up.inflicts) parts.push(`Inflicts ${up.inflicts.join(' and ')}`);
   return parts.join(', ');
 }

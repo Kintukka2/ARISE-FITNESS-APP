@@ -18,6 +18,9 @@ import { IDENTITY_GAIN, passiveFor, passiveText, STATUS_TEXT, TACTICS } from '@/
 import { STATS, type Attrs } from '@/core/types';
 import { PASSIVES } from '@/data/abilities';
 import { statTip } from '@/ui/stattip';
+import { keyedClass, keyedParts } from '@/ui/keyed';
+import { skillLine } from '@/screens/Skills';
+import { REACH_TEXT } from '@/core/combat';
 import { CLASS_PASSIVES } from '@/data/abilities';
 import { CLASS_RANKS, CLASSES, nextRung } from '@/data/classes';
 import { byLead } from '@/core/ranks';
@@ -401,5 +404,19 @@ describe('the one stat tooltip', () => {
       expect(own.lines[1]).toBe('Base 18, 22 with class, skills and gear.');
       for (const l of [...own.lines, ...statTip(k, { best: true }).lines]) expect(l, l).toMatch(/^[A-Z].*\.$/);
     }
+  });
+
+  // How many a skill reaches is a count, a digit with its word, set as one figure in the System's blue (the owner's call).
+  it('writes how many a skill reaches as a digit, one figure with its word', () => {
+    for (const [k, t] of Object.entries(REACH_TEXT)) expect(t, k).not.toMatch(/\b(one|two|three|four|five)\b|\d+×|×\s*target/);
+    const line = skillLine({ name: 'Test', type: 'physical', profile: 'cleave', mult: 0.7, cd: 1, inflicts: ['Bleeding'] });
+    expect(line).toBe('Physical ×0.7 against 2 targets. Inflicts Bleeding. Cooldown 1.');
+    const odd = keyedParts(line).filter((_, i) => i % 2);
+    expect(odd).toContain('2 targets');
+    expect(keyedClass('2 targets')).toBe('kw-num kw-reach');
+    expect(keyedClass('1 target')).toBe('kw-num kw-reach');
+    expect(keyedClass('every foe')).toBe('kw-num kw-reach');
+    expect(keyedClass('×0.7')).toBe('kw-num');
+    expect(keyedClass('Bleeding')).toBe('kw');
   });
 });

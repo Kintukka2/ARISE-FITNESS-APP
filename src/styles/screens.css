@@ -2705,6 +2705,8 @@ button.matrow { width: 100%; color: inherit; font: inherit; text-align: left; cu
 
 /* A tip's keywords, as the reference games colour theirs: figures in the System's blue, statuses and stats in gold. */
 .kw-num { font-weight: 700; color: var(--mana); }
+/* How many a skill reaches, its count and its word one figure (`2 targets`), kept on one line. */
+.kw-reach { white-space: nowrap; }
 .kw { font-weight: 700; color: var(--gold); }
 /* A status a creature card's line names, tapped to tell what it does (ui/wards.tsx): the keyword's gold kept, a dotted
    rule under it as a ward's word has, never a pill. */

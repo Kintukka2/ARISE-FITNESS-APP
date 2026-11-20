@@ -117,9 +117,14 @@ export const STATUS_TEXT: Record<string, string> = Object.fromEntries(Object.ent
 const REACH: Record<string, number> = { single: 1, cleave: 2, volley: 3, spread: 3, burst: 4, wild: 3, all: 99, support: 0, taunt: 0 };
 /** How many an ability reaches, by its profile. */
 export const reachOf = (profile: string) => REACH[profile] ?? 1;
+/**
+ * How many an ability reaches, as a skill's line says it: a count is a digit (VOICE.md, rule 4), `2 targets`, never
+ * `two targets` or `2× targets`, since `×` is the damage multiplier beside it (`Physical ×0.7 against 2 targets.`).
+ * `Keyed` sets the count and its word in the System's blue, as a figure.
+ */
 export const REACH_TEXT: Record<string, string> = {
-  single: 'one target', cleave: 'two targets', volley: 'three targets', spread: 'three targets',
-  burst: 'four targets', wild: 'three targets', all: 'every foe', support: 'the whole party', taunt: 'every foe',
+  single: `${REACH.single} target`, cleave: `${REACH.cleave} targets`, volley: `${REACH.volley} targets`, spread: `${REACH.spread} targets`,
+  burst: `${REACH.burst} targets`, wild: `${REACH.wild} targets`, all: 'every foe', support: 'the whole party', taunt: 'every foe',
 };
 
 const STRIKE: Ability = { name: 'Strike', type: 'physical', profile: 'single', mult: 1, cd: 0, inflicts: [] };

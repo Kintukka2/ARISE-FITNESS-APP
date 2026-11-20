@@ -3633,6 +3633,27 @@ What changed (`Profile` in `screens/Shadows.tsx`, `.sp-head--shadow`):
   - nothing in Igris's head, gold `Ascendant` included, runs past its edge.
 - **Balance.** Display only: no calibration, no campaign.
 
+## How many a skill hits, set as a figure — built
+
+The owner asked for a skill's targets to stand out as its multiplier and cooldown do, since how many it hits is crucial
+to how good a skill is. They suggested `1x target`, `2x targets`, and left the colour open.
+
+What changed:
+- **A reach is a count, written as a digit** (`REACH_TEXT` in `core/combat.ts`, read from the counts the fight uses,
+  `REACH`): `Physical ×0.7 against 2 targets.`, `1 target`, `3 targets`, `4 targets`, `every foe`.
+  - VOICE's rule 4 already asked that every count be a digit.
+  - It is never `2× targets`, since `×` is the damage multiplier in the same line and the two would read alike.
+- **`Keyed` sets the count and its word as one figure** (`ui/keyed.tsx`, `kw-reach`): `2 targets` and `every foe` in the
+  System's blue, bold, as `×0.7` and the cooldown's figure are, kept on one line.
+  - It is blue rather than gold or a colour of its own, since blue is every figure's colour and gold is a stat's or a
+    status's.
+  - The hunter card, the Shadow card and every tooltip line `Keyed` sets show it alike.
+- **Held by tests.** The voice test holds:
+  - that no reach is written in words or with a `×`;
+  - that a cleave reads `Physical ×0.7 against 2 targets. Inflicts Bleeding. Cooldown 1.`;
+  - that `2 targets` and `every foe` are set as figures.
+- **Balance.** Wording only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
