@@ -170,62 +170,117 @@ const STARS = (() => {
   return Array.from({ length: 46 }, () => ({ x: r() * SIZE, y: r() * SIZE, r: 0.4 + r() * 1.1, d: r() * 5 }));
 })();
 
+/** A diamond's outline around a point, drawn as a path so no CSS transform can move it off its spot. */
+const diamond = (x: number, y: number, r: number) => `M ${x} ${y - r} L ${x + r} ${y} L ${x} ${y + r} L ${x - r} ${y} Z`;
+
 /**
- * The five Paths around the hunter. `mini` draws it for a tile: no labels, nothing to tap.
- * `fresh` is the node a point just went into, which flares.
+ * A link from a node to the one it grows from, bowed gently toward the core so each Path's branches flow out of the
+ * centre as one shape rather than as straight spokes.
+ */
+function linkPath(from: [number, number], to: [number, number]): string {
+  const mx = (from[0] + to[0]) / 2;
+  const my = (from[1] + to[1]) / 2;
+  const pull = 0.12;
+  const cx = mx + (CX - mx) * pull;
+  const cy = my + (CY - my) * pull;
+  return `M ${from[0]} ${from[1]} Q ${cx} ${cy} ${to[0]} ${to[1]}`;
+}
+
+/** Ticks round the rim of the sky, a rune ring that turns slowly. */
+const RIM = Array.from({ length: 60 }, (_, i) => {
+  const a = (i * 6 * Math.PI) / 180;
+  const long = i % 5 === 0;
+  const r1 = RING(4) + 16;
+  const r2 = r1 + (long ? 6 : 3);
+  return { x1: CX + Math.cos(a) * r1, y1: CY + Math.sin(a) * r1, x2: CX + Math.cos(a) * r2, y2: CY + Math.sin(a) * r2, long };
+});
+
+/**
+ * The five Paths around the hunter, as a constellation with an aura (the owner's call: tidied, flowing and impressive):
+ * - a nebula behind it, and an aura along each Path that grows with the points spent there, brightest on the one chosen;
+ * - the rings of the ranks, the open ones lit, and a rune ring turning slowly at the rim;
+ * - each node's link to the one it grows from bowed toward the core, lit and flowing once both are learned;
+ * - skills and stats as stars and passives as diamonds, each learned one haloed, each at its peak ringed in white;
+ * - the core, its layered aura breathing and, while points wait, rippling outward in gold.
+ * `mini` draws it for a tile: no labels, nothing to tap. `fresh` is the node a point just went into, which flares.
  */
 export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?: Stat; onPath?: (p: Stat) => void; fresh?: string | null; mini?: boolean }) {
   const open = tree.rankTier(s);
   const pts = tree.points(s);
   const due = tree.canSpend(s);
   const cls = classById(s.hunter.classId);
+  const id = mini ? 'Mini' : '';
+  const most = Math.max(1, ...PATHS.map((p) => tree.inPath(s, p.key)));
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} class={`st-sky ${mini ? 'is-mini' : ''}`} role={mini ? undefined : 'group'} aria-label={mini ? undefined : 'Paths'} aria-hidden={mini ? 'true' : undefined}>
       <defs>
-        <radialGradient id={mini ? 'stCoreMini' : 'stCore'} cx="50%" cy="50%" r="50%">
+        <radialGradient id={`stCore${id}`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="var(--st-core-a)" />
           <stop offset="100%" stop-color="var(--st-core-b)" />
         </radialGradient>
+        <radialGradient id={`stNebula${id}`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="var(--mana)" stop-opacity="0.32" />
+          <stop offset="35%" stop-color="var(--mana)" stop-opacity="0.12" />
+          <stop offset="70%" stop-color="#6a4cff" stop-opacity="0.06" />
+          <stop offset="100%" stop-color="#6a4cff" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id={`stArm${id}`} cx="0%" cy="50%" r="100%">
+          <stop offset="0%" stop-color="var(--mana)" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="var(--mana)" stop-opacity="0" />
+        </radialGradient>
       </defs>
+      <circle cx={CX} cy={CY} r={RING(4) + 26} fill={`url(#stNebula${id})`} class="st-sky__nebula" />
       {!mini && STARS.map((x, i) => <circle key={i} cx={x.x} cy={x.y} r={x.r} class="st-sky__star" style={`animation-delay: -${x.d}s`} />)}
-      {TIER_RANKS.map((rk, t) => (
-        <g key={rk}>
-          <circle cx={CX} cy={CY} r={RING(t)} class={`st-sky__ring ${t <= open ? 'is-open' : ''}`} />
+      {!mini && (
+        <g class="st-sky__rim">
+          {RIM.map((t, i) => <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} class={t.long ? 'is-long' : ''} />)}
         </g>
-      ))}
+      )}
+      {TIER_RANKS.map((rk, t) => <circle key={rk} cx={CX} cy={CY} r={RING(t)} class={`st-sky__ring ${t <= open ? 'is-open' : ''}`} />)}
       {PATHS.map((p, i) => {
         const a = ANGLE(i);
         const sel = path === p.key;
         const end = RING(4) + 10;
+        const spentHere = tree.inPath(s, p.key);
+        // The aura along the arm: a soft ellipse out from the core, as strong as the points spent there.
+        const glow = 0.18 + 0.82 * (spentHere / most);
+        const deg = (a * 180) / Math.PI;
         return (
           <g key={p.key} class={`st-sky__arm ${sel ? 'is-sel' : ''} ${path && !sel ? 'is-dim' : ''}`}>
+            {spentHere > 0 && (
+              <ellipse cx={CX + Math.cos(a) * 78} cy={CY + Math.sin(a) * 78} rx="78" ry="24" fill={`url(#stArm${id})`}
+                transform={`rotate(${deg} ${CX + Math.cos(a) * 78} ${CY + Math.sin(a) * 78})`} class="st-sky__aura" style={`opacity: ${(sel ? 1 : 0.7) * glow}`} />
+            )}
             <line x1={CX + Math.cos(a) * 30} y1={CY + Math.sin(a) * 30} x2={CX + Math.cos(a) * end} y2={CY + Math.sin(a) * end} class="st-sky__axis" />
             {NODES.filter((n) => n.path === p.key).map((n) => {
-              const from = n.req ? spot(nodeById(n.req)!) : n.tier === 0 ? [CX + Math.cos(a) * 30, CY + Math.sin(a) * 30] : null;
+              const from: [number, number] | null = n.req ? spot(nodeById(n.req)!) : n.tier === 0 ? [CX + Math.cos(a) * 30, CY + Math.sin(a) * 30] : null;
               if (!from) return null;
-              const [x, y] = spot(n);
+              const to = spot(n);
               const lit = tree.levelOf(s, n.id) > 0 && (!n.req || tree.levelOf(s, n.req) > 0);
-              return <line key={`l${n.id}`} x1={from[0]} y1={from[1]} x2={x} y2={y} class={`st-sky__link ${lit ? 'is-lit' : ''}`} />;
+              return <path key={`l${n.id}`} d={linkPath(from, to)} class={`st-sky__link ${lit ? 'is-lit' : ''}`} />;
             })}
             {NODES.filter((n) => n.path === p.key).map((n) => {
               const [x, y] = spot(n);
               const { state, can } = stateOf(s, n);
-              const r = n.kind === 'stat' ? 3 : 3.8;
-              const c = `st-sky__node is-${state} ${can ? 'is-can' : ''} ${fresh === n.id ? 'is-fresh' : ''}`;
-              return n.kind === 'passive'
-                ? <rect key={n.id} x={x - r} y={y - r} width={r * 2} height={r * 2} transform={`rotate(45 ${x} ${y})`} class={c} />
-                : <circle key={n.id} cx={x} cy={y} r={r} class={c} />;
+              const r = n.kind === 'stat' ? 3 : n.kind === 'skill' ? 4.2 : 4.4;
+              const c = `st-sky__node is-${state} ${can ? 'is-can' : ''} ${fresh === n.id ? 'is-fresh' : ''} is-${n.kind}`;
+              const lit = state === 'learned' || state === 'max';
+              return (
+                <g key={n.id}>
+                  {lit && !mini && <circle cx={x} cy={y} r={r + 3.5} class={`st-sky__halo2 ${state === 'max' ? 'is-max' : ''}`} />}
+                  {n.kind === 'passive' ? <path d={diamond(x, y, r)} class={c} /> : <circle cx={x} cy={y} r={r} class={c} />}
+                </g>
+              );
             })}
             {!mini && (() => {
               // Clear of the outermost stars: above them on the top and side arms, below them on the bottom ones.
               const lx = CX + Math.cos(a) * 156;
               const ly = CY + Math.sin(a) * 156 + (Math.sin(a) > 0.5 ? 8 : Math.sin(a) < -0.9 ? -12 : Math.abs(Math.cos(a)) > 0.7 ? -26 : 0);
-              const n = tree.inPath(s, p.key);
               const calls = NODES.some((x) => x.path === p.key && tree.canLearn(s, x));
               return (
                 <g class="st-sky__label">
                   <text x={lx} y={ly - 3} class="st-sky__name">{p.name}</text>
-                  <text x={lx} y={ly + 10} class={`st-sky__count num ${calls ? 'is-call' : ''}`}>{p.key} {n}</text>
+                  <text x={lx} y={ly + 10} class={`st-sky__count num ${calls ? 'is-call' : ''}`}>{p.key} {spentHere}</text>
                 </g>
               );
             })()}
@@ -238,9 +293,13 @@ export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?
         );
       })}
       <g class={`st-sky__core ${due ? 'is-due' : ''}`}>
+        {!mini && <circle cx={CX} cy={CY} r="34" class="st-sky__ripple" />}
+        {!mini && <circle cx={CX} cy={CY} r="34" class="st-sky__ripple is-late" />}
+        <circle cx={CX} cy={CY} r="38" class="st-sky__aurora" />
         <circle cx={CX} cy={CY} r="30" class="st-sky__halo" />
         <circle cx={CX} cy={CY} r="24" class="st-sky__spin" />
-        <circle cx={CX} cy={CY} r="19" fill={`url(#${mini ? 'stCoreMini' : 'stCore'})`} class="st-sky__heart" />
+        <circle cx={CX} cy={CY} r="27" class="st-sky__spin is-back" />
+        <circle cx={CX} cy={CY} r="19" fill={`url(#stCore${id})`} class="st-sky__heart" />
         {mini ? null : pts > 0
           ? <><text x={CX} y={CY + 6} class="st-sky__pts num">{pts}</text><text x={CX} y={CY + 16} class="st-sky__cap">POINTS</text></>
           : <foreignObject x={CX - 10} y={CY - 10} width="20" height="20"><span class="st-sky__glyph"><Glyph name={cls ? STAT_ICON[cls.lead] : 'unknown'} /></span></foreignObject>}
@@ -506,7 +565,7 @@ function SkillsSheet() {
   return (
     <div class={`skilltree stack ${shut ? 'is-shut' : ''}`}>
       <div class="st-head">
-        <span class="st-head__class">{cls ? <><strong>[Class: {cls.name}]</strong><small>{cls.lead} +{cls.bonus}</small></> : <><strong>Unclassified</strong><small>Skills open at D-Rank.</small></>}</span>
+        <span class="st-head__class">{cls ? <strong>[Class: {cls.name}]</strong> : <><strong>Unclassified</strong><small>Skills open at D-Rank.</small></>}</span>
         <span class={`st-head__pts ${due ? 'is-due' : ''}`}>
           <small>Skill Points</small><b class="num">{pts}</b>
         </span>

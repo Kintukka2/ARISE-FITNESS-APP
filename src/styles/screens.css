@@ -853,8 +853,27 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 .st-sky__ring { fill: none; stroke: var(--st-shut); stroke-width: 0.6; stroke-dasharray: 2 4; }
 .st-sky__ring.is-open { stroke: rgba(79, 214, 255, 0.42); stroke-dasharray: none; }
 .st-sky__axis { stroke: rgba(160, 200, 240, 0.12); stroke-width: 0.8; }
-.st-sky__link { stroke: var(--st-shut); stroke-width: 0.8; }
-.st-sky__link.is-lit { stroke: var(--mana); stroke-width: 1.3; filter: drop-shadow(0 0 2px var(--mana)); stroke-dasharray: 3 3; animation: stFlow 1.6s linear infinite; }
+.st-sky__link { fill: none; stroke: var(--st-shut); stroke-width: 0.8; stroke-linecap: round; }
+.st-sky__link.is-lit { stroke: var(--mana); stroke-width: 1.5; filter: drop-shadow(0 0 2.5px var(--mana)); stroke-dasharray: 4 3; animation: stFlow 1.4s linear infinite; }
+/* The sky's aura (the owner's call: tidied, flowing, impressive): a nebula behind it, a glow along each Path as strong
+   as the points spent there, a rune ring turning at the rim, a halo round each learned node, and the core's layered
+   aura, rippling outward in gold while points wait. */
+.st-sky__nebula { animation: stNebula 9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes stNebula { 50% { opacity: 0.75; transform: scale(1.04); } }
+.st-sky__aura { mix-blend-mode: screen; transition: opacity 400ms; filter: blur(2px); }
+.st-sky__rim { transform-box: view-box; transform-origin: 50% 50%; animation: stSpin 120s linear infinite; }
+.st-sky__rim line { stroke: rgba(79, 214, 255, 0.16); stroke-width: 0.6; }
+.st-sky__rim line.is-long { stroke: rgba(79, 214, 255, 0.38); stroke-width: 0.9; }
+.st-sky__halo2 { fill: rgba(79, 214, 255, 0.12); stroke: rgba(79, 214, 255, 0.35); stroke-width: 0.5; }
+.st-sky__halo2.is-max { fill: rgba(217, 247, 255, 0.16); stroke: rgba(255, 255, 255, 0.6); transform-box: fill-box; transform-origin: center; animation: stHalo 2.8s ease-in-out infinite; }
+.st-sky__aurora { fill: rgba(79, 214, 255, 0.06); stroke: rgba(79, 214, 255, 0.14); stroke-width: 6; filter: blur(3px); transform-box: fill-box; transform-origin: center; animation: stHalo 4s ease-in-out infinite; }
+.st-sky__spin.is-back { stroke-dasharray: 1 7; stroke-opacity: 0.55; animation-direction: reverse; animation-duration: 22s; }
+.st-sky__ripple { fill: none; stroke: none; }
+.st-sky__core.is-due .st-sky__ripple { stroke: var(--gold); stroke-width: 1; transform-box: fill-box; transform-origin: center; animation: stRipple 2.6s ease-out infinite; }
+.st-sky__core.is-due .st-sky__ripple.is-late { animation-delay: 1.3s; }
+.st-sky__core.is-due .st-sky__aurora { fill: rgba(255, 203, 92, 0.07); stroke: rgba(255, 203, 92, 0.18); }
+@keyframes stRipple { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(2.6); opacity: 0; } }
+.st-sky__node.is-skill { stroke-width: 1.1; }
 @keyframes stFlow { to { stroke-dashoffset: -12; } }
 .st-sky__node { fill: rgba(30, 50, 80, 0.9); stroke: rgba(150, 180, 220, 0.5); stroke-width: 0.9; transform-box: fill-box; transform-origin: center; transition: fill 300ms, stroke 300ms; }
 .st-sky__node.is-learned { fill: rgba(79, 214, 255, 0.55); stroke: var(--mana); filter: drop-shadow(0 0 3px var(--mana)); }
@@ -1014,7 +1033,7 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 .skilltree.is-shut .st-path, .skilltree.is-shut .st-loadout { opacity: 0.7; }
 
 @media (prefers-reduced-motion: reduce) {
-  .st-sky__star, .st-sky__link.is-lit, .st-sky__node, .st-sky__halo, .st-sky__spin, .st-link__flow, .st-link.is-call, .st-node__shape, .st-node.is-sel::before { animation: none !important; }
+  .st-sky__star, .st-sky__link.is-lit, .st-sky__node, .st-sky__halo, .st-sky__spin, .st-sky__nebula, .st-sky__rim, .st-sky__halo2, .st-sky__aurora, .st-sky__ripple, .st-link__flow, .st-link.is-call, .st-node__shape, .st-node.is-sel::before { animation: none !important; }
 }
 
 /* ------------------------------------------------------------------ Ascension: gold, for advancement */
