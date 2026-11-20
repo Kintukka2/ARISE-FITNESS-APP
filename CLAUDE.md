@@ -196,6 +196,13 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   creatures, both ranks where the Gate's creatures stand in both, and one behind a Gatekeeper or boss
   (`Chamber.retinue`, whose health is the creature's own, never `BOSS_HP`). A run opened on `labyrinth2` keeps its
   fights. Change `PACK` or how a pack is drawn and you must run mapstats, recalibrate, rerun parstats and the campaign.
+- Traps (`data/nodes.ts`, `TRAPS`): new runs open on `labyrinth4`, the plans of `labyrinth3` with each trap one of its
+  kinds and two of the five stats to meet it with (`trapped` in `core/map.ts`, its own seed apart from every other draw,
+  its kind's leaning stats `TRAP_LEAN` times as likely and at `TRAP_ODDS.lean`). `raid.eventAt` builds its choice
+  (`trapEvent`); a run opened on `labyrinth3` keeps the one plate (`TRAP`). The System takes the way its hunter is likelier
+  to pass (`raid.systemChoice` with the hero: the run's party, or the projection's spec). A trap costs HP (the flood
+  fatigue too), never a status carried into the next fight. Change a trap, its odds, its lean, what it costs or that
+  choice and you must recalibrate and rerun the campaign.
 - Standing orders steer the hunter's Shadows, and the hunter when nobody gives their turn an order;
   never the Association's hunters (`combat.aim`). They are set on the Shadows screen
   (`raid.setTactic`). A step underway keeps the orders it opened with: orders set during one reach

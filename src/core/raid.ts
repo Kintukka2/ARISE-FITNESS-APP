@@ -12,7 +12,7 @@ import { engravingById } from '@/data/engravings';
 import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
-import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL, TRAP, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL, TRAP, trapEvent, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { landmarkEvent } from '@/data/landmarks';
 import { NODES } from '@/data/tree';
 import * as blessings from './blessings';
@@ -387,13 +387,26 @@ export function oddsOf(c: Choice, hero: UnitSpec, level = 0): number {
   return Math.max(0.05, odds - asc.oddsCut(level));
 }
 
-/** What a choice node offers: its event, or the trap. */
-export const eventAt = (x: MapNode): GateEvent | null => (x.kind === 'trap' ? TRAP : x.kind === 'event' && x.event ? eventById(x.event) ?? null : x.kind === 'landmark' && x.event ? landmarkEvent(x.event) ?? null : null);
+/** What a choice node offers: its event, or its trap: on the later plans its kind's two ways (`trapEvent`), before them the one plate. */
+export const eventAt = (x: MapNode): GateEvent | null => (x.kind === 'trap' ? (x.trap ? trapEvent(x.trap.id, x.trap.ways) ?? TRAP : TRAP)
+  : x.kind === 'event' && x.event ? eventById(x.event) ?? null : x.kind === 'landmark' && x.event ? landmarkEvent(x.event) ?? null : null);
 
-/** The choice the System makes at a shrine, a Font, a trap or an event: at a shrine or a Font, from what it offered the run. */
-export function systemChoice(x: MapNode, run?: blessings.Held): number {
+/**
+ * The choice the System makes at a shrine, a Font, a trap or an event: at a shrine or a Font, from what it offered the
+ * run; at a trap of the later plans, the way its hunter is likelier to pass (the first, on a tie, or with no hunter to
+ * read); elsewhere the choice marked its own.
+ */
+export function systemChoice(x: MapNode, run?: blessings.Held & { party?: UnitSpec[] }, hero?: UnitSpec): number {
   if (x.kind === 'shrine' || x.kind === 'font') return run ? blessings.systemPick(blessings.offerAt(run, x), run) : 0;
-  return Math.max(0, eventAt(x)?.choices.findIndex((c) => c.system) ?? 0);
+  const ev = eventAt(x);
+  if (x.kind === 'trap' && x.trap && ev) {
+    const who = hero ?? run?.party?.[0];
+    if (!who) return 0;
+    let best = 0;
+    ev.choices.forEach((c, i) => { if (oddsOf(c, who) > oddsOf(ev.choices[best], who)) best = i; });
+    return best;
+  }
+  return Math.max(0, ev?.choices.findIndex((c) => c.system) ?? 0);
 }
 
 // ------------------------------------------------------------------ the run, in the save
@@ -422,7 +435,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
-  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth3'));
+  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth4'));
   // A map charted from the brief today is charted for the run: its hidden passages need no noticing.
   const charted = (s.gates.charted ?? []).includes(mapSeed(d, day));
   // The throwable readied is the one its fights throw, whatever is readied while it is open.
@@ -433,7 +446,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'labyrinth3', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'labyrinth4', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     lean: blessings.leanOf(s), levels: levelsOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
@@ -1320,6 +1333,8 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   const runPar = cleared && !practice && !tower && run.tally?.par !== undefined ? run.tally.par : 0;
   const medal = runPar > 0 ? par.medalOf(run.tally?.rounds ?? 0, runPar) : null;
   const medals = par.settle(s, home, medal);
+  // Every graded clear is held against the Gate's best, medal or none.
+  if (runPar > 0) par.recordRounds(s, home, run.tally?.rounds ?? 0);
   // A Rift's modifiers are its terms, not Seals taken: it pays its own Ember instead.
   const bpFeat = feats.blueprintFeat(d);
   const extra: Extras = { seals: rifted ? [] : sealing.of(run), drops: run.drops ?? [], feats: fresh.filter((id) => id !== bpFeat).length, featBlueprint: !!bpFeat && fresh.includes(bpFeat) };
@@ -1548,7 +1563,7 @@ export function project(s: Save, d: Dungeon, runs = 24, now = Date.now(), seals:
         const pick = offer.picks[blessings.systemPick(offer, held)];
         if (pick) { blessings.take(held, pick); party = rebless(party, specs, held); }
       } else {
-        const c = eventAt(x)?.choices[systemChoice(x)];
+        const c = eventAt(x)?.choices[systemChoice(x, undefined, specs[0])];
         if (c) touch(party, rng(`proj|choice|${seed}|${x.id}`)() < oddsOf(c, specs[0], level) ? c.win : c.lose ?? c.win);
       }
     }

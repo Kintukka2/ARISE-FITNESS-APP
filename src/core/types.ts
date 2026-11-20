@@ -186,7 +186,7 @@ export interface OpenRaid {
   map: string;
   path: string[];
   /** How the map is drawn: a Gate's labyrinth floors. Runs opened before them walk the smaller floors (`floors`), one floor of rooms (`rooms`), or the tower they began on (none). */
-  layout?: 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+  layout?: 'labyrinth4' | 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
   /** The map has been charted by a Gate Survey: its hidden passages open with no noticing. */
   charted?: boolean;
   /** The toll doors paid for, by `map.pairKey`: open for good. */
@@ -435,6 +435,8 @@ export interface Save {
     feats?: Record<string, FeatId[]>;
     /** Each Gate's best medal against its par, by Gate id: each medal pays once, the first time (`par.settle`). */
     par?: Record<string, MedalId>;
+    /** The fewest rounds a clear of each Gate has taken, by its id: the brief's `Personal best` (`par.recordRounds`). */
+    parBest?: Record<string, number>;
   };
 
   shadows: {

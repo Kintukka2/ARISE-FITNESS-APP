@@ -31,6 +31,11 @@
  *   System rests  rests the System's way steps into, and uses
  *   foes          creatures per fight, on the road and off it
  *   strong        fights holding a creature the plan marks strong (`threatOf` in core/map.ts)
+ * Traps (labyrinth4), per grade:
+ *   traps         traps per map, on the road and off it
+ *   kinds         how often each of the trap kinds is drawn
+ *   ways          how often each stat is offered as one of a trap's two ways, and how often a trap's way is a
+ *                 stat its kind leans on
  * Cost of a side fight, for a typical hunter in the middle of the grade, each fight entered at full
  * health with the party the board sends, after the healing every won fight brings:
  *   free          side fights that cost the hunter nothing
@@ -42,6 +47,8 @@ import { chamberAt, partySpecs, runChamber } from '@/core/raid';
 import { Unit } from '@/core/combat';
 import { budgetOf, systemMoves } from '@/core/clock';
 import type { Rank } from '@/core/types';
+import { STATS } from '@/core/types';
+import { TRAPS, trapById } from '@/data/nodes';
 import { LEVELS, typicalHunter } from './hunters';
 
 const DAYS = Number(process.argv[2] ?? 20);
@@ -188,6 +195,29 @@ for (const r of Object.keys(all)) {
   const f = (k: keyof Row, w: number) => avg(rows.map((x) => x[k] as number)).toFixed(2).padEnd(w);
   const thirds = [0, 1, 2].map((b) => avg(rows.flatMap((x) => x.band[b])).toFixed(2)).join(' / ');
   console.log(`  ${r}    ${f('landmarks', 11)}${f('keepers', 9)}${f('wingRooms', 12)}${f('passages2', 10)}${f('secretCaches', 15)}${f('tollCuts', 11)}${f('tollCaches', 13)}${f('deep', 12)}${f('walkRests', 14)}${thirds}`);
+}
+
+// The traps (labyrinth4): how many, where, of which kinds, and the stats they offer.
+console.log('\nTraps, per map: on the road and off it, then the share of each kind drawn and of each stat offered as a way past one');
+console.log(`grade  on road  off road  ${TRAPS.map((x) => x.id.padEnd(9)).join('')}${STATS.map((k) => k.padEnd(5)).join('')}leaning`);
+for (const r of ['E', 'D', 'C', 'B', 'A', 'S'] as Rank[]) {
+  let on = 0, off = 0, maps = 0, lean = 0;
+  const kinds: Record<string, number> = {};
+  const ways: Record<string, number> = {};
+  for (const d of ALL_DUNGEONS.filter((x) => x.rank === r && !isPractice(x))) for (const day of days) {
+    const m = build(d, mapSeed(d, day));
+    const road = new Set(systemRoad(m));
+    maps++;
+    for (const x of m.nodes) {
+      if (x.kind !== 'trap' || !x.trap) continue;
+      if (road.has(x.id)) on++; else off++;
+      kinds[x.trap.id] = (kinds[x.trap.id] ?? 0) + 1;
+      for (const k of x.trap.ways) { ways[k] = (ways[k] ?? 0) + 1; if (trapById(x.trap.id)?.lean.includes(k)) lean++; }
+    }
+  }
+  const traps = on + off;
+  const offered = Object.values(ways).reduce((a, b) => a + b, 0);
+  console.log(`  ${r}    ${(on / maps).toFixed(2).padEnd(9)}${(off / maps).toFixed(2).padEnd(10)}${TRAPS.map((x) => pct((kinds[x.id] ?? 0) / Math.max(1, traps)).padEnd(9)).join('')}${STATS.map((k) => pct((ways[k] ?? 0) / Math.max(1, offered)).padEnd(5)).join('')}${pct(lean / Math.max(1, offered))}`);
 }
 
 // What a side fight costs: each entered at full health, the healing every won fight brings counted.

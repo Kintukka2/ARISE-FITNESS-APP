@@ -5,7 +5,9 @@
  * how often the System reached it today; and the medal held on a Gate's row of the board. The results' Challenges
  * strike it beside the rounds against the par (`ui/challenges.tsx`).
  */
-import { useId } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
+import { sfx } from '@/audio/audio';
+import { Tip, tipAt, tipSaid, type TipAt, type TipText } from './tip';
 import * as par from '@/core/par';
 import type { Dungeon } from '@/core/types';
 import { EMBER } from '@/data/forge';
@@ -63,43 +65,69 @@ export function MedalHeld({ best, size = 16 }: { best: MedalId | null; size?: nu
 const payOf = (d: Dungeon, m: MedalId) => (PAR_EMBER[d.rank as keyof typeof PAR_EMBER] ?? 0) * MEDAL_PAY[m];
 
 /**
- * The brief's Par card: the par of today's road and the rounds the System's middle clear took, two facts side by
- * side as the brief's head sets its own; then
- * a row to each medal, worst first, its medal lit once held here, the rounds it allows, how often the System
- * reached it in its runs, and the Ember it pays the first time, or that it is earned.
+ * The brief's `Gate Clear Par` card (the owner's call, where it read `Par`, and where it gave how the System fared: the
+ * hunter does not need to know it):
+ * - the par of today's road and the hunter's own best clear of this Gate, in rounds, side by side;
+ * - a row to each medal, worst first, its medal lit once held here, the rounds it allows, and the Ember it pays the
+ *   first time, or that it is earned;
+ * - once all three are earned, one row in their place (`ParDone`): the three medals shining in a light that crosses
+ *   it, `All medals earned` and the best, and a tap tells what each medal asked.
  */
-export function ParCard({ d, best, road, rounds, medals, runs }: {
-  d: Dungeon; best: MedalId | null; road: number; rounds: number | null; medals: Record<MedalId, number>; runs: number;
-}) {
+export function ParCard({ d, best, road, mine }: { d: Dungeon; best: MedalId | null; road: number; mine: number | null }) {
   const marks = par.marks(road);
   return (
-    <section class="bbox bpar" aria-label="Par">
-      <span class="label bbox__head">Par<small class="bbox__right bpar__held">{UP.map((m) => <Medal key={m} id={m} size={14} on={par.reaches(best, m)} />)}</small></span>
-      <dl class="bpar__facts">
-        <div><dt>Par today</dt><dd><b class="num">{road}</b><small>rounds</small></dd></div>
-        <div><dt>The System</dt><dd><b class="num">{rounds ?? '-'}</b><small>rounds</small></dd></div>
-      </dl>
-      <ol class="bpar__rows">
-        {UP.map((m, i) => {
-          const held = par.reaches(best, m);
-          const n = medals[m] ?? 0;
-          return (
-            <li key={m} class={`bpar__row is-${m} ${held ? 'is-held' : ''}`} style={`--i: ${i}; --odds: ${runs ? n / runs : 0}`}>
-              <Medal id={m} size={30} on={held} />
-              <span class="bpar__body">
-                <b>{NAME[m]}</b>
-                <small class="num">Within {marks.find((x) => x.id === m)!.rounds} rounds</small>
-                <span class="bpar__odds" aria-hidden="true"><i /></span>
-              </span>
-              <span class="bpar__side">
-                <small class="num" aria-label={`The System reached it in ${n} of ${runs} runs`}>System {n}/{runs}</small>
-                {held ? <small class="bpar__got">Earned</small> : <small class="bpar__pay"><MatArt id={EMBER.id} size={14} /><span class="num">+{payOf(d, m)}</span></small>}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-      <small class="bpar__note">A fight won off the road adds its own par.</small>
+    <section class="bbox bpar" aria-label="Gate Clear Par">
+      <span class="label bbox__head">Gate Clear Par<small class="bbox__right bpar__held">{UP.map((m) => <Medal key={m} id={m} size={14} on={par.reaches(best, m)} />)}</small></span>
+      {best === 'gold'
+        ? <ParDone road={road} mine={mine} marks={marks} />
+        : <>
+          <dl class="bpar__facts">
+            <div><dt>Par today</dt><dd><b class="num">{road}</b><small>rounds</small></dd></div>
+            <div><dt>Personal best</dt><dd><b class="num">{mine ?? '-- --'}</b>{mine !== null && <small>rounds</small>}</dd></div>
+          </dl>
+          <ol class="bpar__rows">
+            {UP.map((m, i) => {
+              const held = par.reaches(best, m);
+              return (
+                <li key={m} class={`bpar__row is-${m} ${held ? 'is-held' : ''}`} style={`--i: ${i}`}>
+                  <Medal id={m} size={30} on={held} />
+                  <span class="bpar__body">
+                    <b>{NAME[m]}</b>
+                    <small class="num">Within {marks.find((x) => x.id === m)!.rounds} rounds</small>
+                  </span>
+                  <span class="bpar__side">
+                    {held ? <small class="bpar__got">Earned</small> : <small class="bpar__pay"><MatArt id={EMBER.id} size={14} /><span class="num">+{payOf(d, m)}</span></small>}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          <small class="bpar__note">A fight won off the road adds its own par.</small>
+        </>}
     </section>
+  );
+}
+
+/** Every medal earned on this Gate: one row, the three medals shining, the best beside them; a tap tells what each asked. */
+function ParDone({ road, mine, marks }: { road: number; mine: number | null; marks: ReturnType<typeof par.marks> }) {
+  const [at, setAt] = useState<TipAt | null>(null);
+  const within = (m: MedalId) => marks.find((x) => x.id === m)!.rounds;
+  const tip: TipText = {
+    title: 'Gate Clear Par', kind: 'Par', tone: 'gate',
+    mark: <span class="tip__mark"><Medal id="gold" size={16} /></span>,
+    lines: [
+      `Par today: ${road} rounds. Bronze within ${within('bronze')} rounds, Silver within ${within('silver')}, Gold within ${within('gold')}.`,
+      ...(mine !== null ? [`Your best clear: ${mine} rounds.`] : []),
+    ],
+  };
+  return (
+    <>
+      <button type="button" class={`bdone bdone--par ${at ? 'is-open' : ''}`} aria-haspopup="dialog" aria-expanded={!!at} aria-label={tipSaid(tip)}
+        onClick={(e) => { sfx.blip(); setAt(at ? null : tipAt(e.currentTarget as Element)); }}>
+        <span class="bdone__marks">{UP.map((m) => <Medal key={m} id={m} size={30} on shine />)}</span>
+        <span class="bdone__text"><b>All medals earned</b>{mine !== null && <small class="num">Best: {mine} rounds</small>}</span>
+      </button>
+      {at && <Tip tip={tip} at={at} close={() => setAt(null)} />}
+    </>
   );
 }
