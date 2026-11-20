@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaults } from '@/core/save';
-import { Unit } from '@/core/combat';
+import { ability, Unit } from '@/core/combat';
 import { ALL_ENEMIES, dungeonById, PRACTICE_GATE } from '@/core/gates';
 import * as kin from '@/core/kin';
 import * as raid from '@/core/raid';
@@ -128,6 +128,25 @@ describe('in a fight', () => {
     // With no squad, nobody gains anything.
     const bare = hunter(1);
     for (const r of raid.partyReadout(bare, d, day, now)) expect(r.now).toEqual(r.alone);
+  });
+
+  it('the enemies window reads a creature as its Gate fields it: the boss its share of HP, harder at a higher Ascension', () => {
+    const g = dungeonById('DNG-005')!;
+    const asBoss = raid.foeReadout(g, g.boss, 'boss');
+    const asMob = raid.foeReadout(g, g.boss, 'mob');
+    expect(asBoss.hp / asMob.hp).toBeCloseTo(2.5, 1);
+    expect(asBoss.attack).toBe(asMob.attack);
+    const higher = raid.foeReadout(g, g.boss, 'boss', 5);
+    expect(higher.hp).toBeGreaterThan(asBoss.hp);
+    expect(higher.attack).toBeGreaterThanOrEqual(asBoss.attack);
+    // What it leans on is what its skills strike with: a creature of physical blows reads its attack.
+    for (const id of g.mobs) {
+      const e = ALL_ENEMIES.find((x) => x.id === id)!;
+      const blows = e.kit.map((n) => ability(n)).filter((a) => !!a && a.mult > 0);
+      const mag = blows.filter((a) => a!.type === 'magic').length;
+      if (mag * 2 < blows.length) expect(raid.foeReadout(g, id, 'mob').leans).toBe('attack');
+      if (mag * 2 > blows.length) expect(raid.foeReadout(g, id, 'mob').leans).toBe('magic');
+    }
   });
 
   it('the Practice Gate takes no Shadows, and so neither', () => {

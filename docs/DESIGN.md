@@ -3415,6 +3415,61 @@ What changed:
     - the Trial's row holds the hunter and no Association hunter.
 - **Balance.** Display only: no calibration, no campaign.
 
+## Enemies VS party: two cards alike, each with a window — built
+
+The owner asked for:
+- **The party card:**
+  - Tidier, without the borders round the hunters' and Shadows' faces.
+  - Its name and power inside the block.
+  - Its bonus marks below the Front and Rear, the card a little bigger.
+- **The enemies, mirrored:** a card that opens an enemies window like the party's, with an enemy power where the party has
+  its power.
+- **The brief laid out as `Enemies`, `VS`, `Your party`,** the two structured as alike as they can be without forcing it.
+
+What changed:
+- **One card, two sides** (`VersusCard` in `ui/versus.tsx`). Each card is one button:
+  - Its name and its power at its head, inside it, and a chevron.
+  - Its faces in named groups, every face its own art with no tile round it, the strongest lit in its colour.
+  - Under a hairline, its marks with their names.
+  - Crowded, the faces shrink; packed, they overlap a little.
+  - The enemies' card is drawn in red, the party's in the Gates' orange. A light crosses each now and then, the two out of
+    step.
+- **`VS` between them** (`Versus`): a disc where the enemies' red above meets the party's cyan below, a line to each side.
+- **The party's card** (`PartyRow`):
+  - `Front` and `Rear`, the hunter's sigil lit cyan, the hunters' plates, the Shadows' badges lit violet, an empty slot
+    the one dashed `+1`.
+  - Under them, the bonuses with their names (`Assassin I`, `Guardian I`).
+- **The enemies' card** (`EnemiesRow` in `screens/Enemies.tsx`), replacing the brief's row of ringed portraits:
+  - `Boss` in red, `Gatekeeper` in gold, `Creatures`.
+  - Each portrait is `?` until the hunter has been inside. One of the Chosen holding the Gate stands crowned in the boss's
+    place, and the Trial's group is `5 Chosen`.
+  - Under them, the habits seen among them, each in a hexagon lit red, as the party's bonuses are lit violet.
+  - Its power is each kind of creature counted once, or `?` while any is unknown.
+- **The enemies' window** (`openEnemies`), laid as the party's:
+  - **Enemy power**: red, split boss, Gatekeeper and the rest, an unknown part striped.
+  - **The Chosen's line**: where one holds the Gate.
+  - **Habits**: a card to each, with who shows it and the one tooltip, as the fight tells a habit (`Habit`).
+  - **Creatures**: a row to each, as the party's members are: its portrait, what it is, its row and how it fights, its
+    power, and its numbers as this Gate fields it. A tap opens its card; one unknown is `?` with nothing to open.
+- **The engine reads a creature as the Gate fields it** (`raid.foeReadout`). It builds the fight's own unit with
+  `foeUnits`, alone in a chamber as the boss, the Gatekeeper or one of the rest, at the Gate's tuning, the Ascension level
+  and the Seals taken, the clock unspent. The boss's HP is its boss share.
+- **A readout's blow follows its skills** (`Readout.leans`). It shows `Attack` or `Magic` by what the unit's damaging
+  skills strike with, the larger figure only when they are even. A Cracked Skeleton reads Attack and a Mourning Wraith
+  Magic, on both windows.
+- **The party window's faces lose their tiles too:** each is its art over a soft light in its colour. The formation board
+  keeps its tiles, which are what is dragged.
+- **Gone:** the brief's `EnemyRow` and its `.benemy` styles. `bossOf`, `openCreature` and `ChosenLine` are exported from
+  `screens/Brief.tsx` for the window.
+- **Held by tests.** The tour checks:
+  - the enemies' card stands over the party's with `VS` between, opens on the boss, and the Gatekeeper is next;
+  - the party's card holds its name, its power and its bonus marks;
+  - the enemies' window splits its power and lists a row to every face the card shows, the boss with its four numbers;
+  - a habit card opens its tooltip, and a creature's row and the boss's open their cards;
+  - closing returns to the window and then to the brief;
+  - the Trial's cards hold the Chosen and no Association hunter.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

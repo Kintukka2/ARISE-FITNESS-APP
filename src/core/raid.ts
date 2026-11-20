@@ -129,10 +129,26 @@ export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[]
  * What a member brings to a fight, as the party window reads it: its health, its blow and its spell, its guard and its
  * speed, from the unit the fight itself builds out of the spec, so a passive or a bonus counts as it will in the fight.
  */
-export interface Readout { hp: number; attack: number; magic: number; defence: number; speed: number }
-export function readout(sp: UnitSpec): Readout {
-  const u = new Unit(sp);
-  return { hp: u.maxHp, attack: Math.round(u.d.patk * u.atkMult), magic: Math.round(u.d.mpow * u.atkMult), defence: Math.round(u.d.defense), speed: Math.round(u.d.initiative) };
+export interface Readout { hp: number; attack: number; magic: number; defence: number; speed: number; leans: 'attack' | 'magic' }
+export const readout = (sp: UnitSpec): Readout => readUnit(new Unit(sp));
+function readUnit(u: Unit): Readout {
+  const attack = Math.round(u.d.patk * u.atkMult);
+  const magic = Math.round(u.d.mpow * u.atkMult);
+  // What it leans on is what its skills strike with, physical or magic; a kit even between them, the larger figure.
+  const blows = u.kit.map((n) => u.ab(n)).filter((a) => !!a && a.mult > 0);
+  const mag = blows.filter((a) => a!.type === 'magic').length;
+  const leans = mag * 2 > blows.length ? 'magic' : mag * 2 < blows.length ? 'attack' : magic > attack ? 'magic' : 'attack';
+  return { hp: u.maxHp, attack, magic, defence: Math.round(u.d.defense), speed: Math.round(u.d.initiative), leans };
+}
+
+/**
+ * A creature as this Gate fields it, read as the party window reads a member, for the enemies window: built by the
+ * fight's own `foeUnits`, alone in a chamber as the boss, the Gatekeeper or one of the rest, at the Gate's tuning, the
+ * Ascension level and the Seals taken, the clock still unspent. Where it stands, and how its hits reach, ride with it.
+ */
+export function foeReadout(d: Dungeon, id: string, as: 'boss' | 'elite' | 'mob', level = 0, seals: readonly SealId[] = []): Readout & { row: Row; ranged: boolean } {
+  const u = foeUnits({ label: '', foes: [id], boss: as === 'boss', elite: as === 'elite' }, d, 0, level, 1, seals)[0];
+  return { ...readUnit(u), row: u.row, ranged: u.ranged };
 }
 
 /**

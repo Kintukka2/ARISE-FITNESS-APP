@@ -1857,9 +1857,6 @@ button.wardword.infotag:hover, button.wardword.infotag[aria-expanded="true"] { c
 /* Seals: a row to each, the rule in red and the pay in green; taken, the row is red-rimmed and locked. */
 /* Feats: a star to each, gold once met, the System's odds and the pay at the side. */
 /* The party: a card each, two to a row, the Shadows in their violet. */
-.bparty__who { display: flex; flex-direction: column; min-width: 0; }
-.bparty__who b { display: -webkit-box; overflow: hidden; font-size: 0.78rem !important; line-height: 1.2; word-break: break-word; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.bparty__who small { font-size: 0.6rem !important; }
 /* The Feats: a row each, its star gold once met, the System's odds as a thin bar under its objective. */
 .bfeat__star { flex: none; width: 22px; height: 22px; color: color-mix(in srgb, var(--sys-ink) 30%, transparent); }
 .bfeat.is-done .bfeat__star { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
@@ -2971,24 +2968,6 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .bseals__rule { min-height: 2.9em; margin: 0; font-size: 0.74rem; line-height: 1.45; text-align: center; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
 .bseals__rule b { color: #fff; }
 
-/* The enemies: a portrait to each, the boss first and larger in red, a Gatekeeper ringed in gold. */
-.benemies { display: flex; align-items: flex-end; gap: 10px; margin: 0; padding: 12px 0 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
-.benemies::-webkit-scrollbar { display: none; }
-.benemy { display: grid; justify-items: center; gap: 3px; width: 68px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
-.benemy.is-tap { cursor: pointer; }
-.benemy.is-tap:active .benemy__face { transform: scale(0.95); }
-.benemy__face { display: grid; place-items: center; width: 50px; height: 50px; border: 1px solid color-mix(in srgb, var(--sys-ink) 26%, transparent); border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.06), rgba(6, 4, 2, 0.85)); color: color-mix(in srgb, var(--sys-ink) 85%, transparent); transition: transform 150ms; }
-.benemy__face .ico { width: 20px; height: 20px; }
-.benemy__name { display: -webkit-box; max-width: 100%; min-height: 2.5em; overflow: hidden; font-size: 0.64rem; font-weight: 600; line-height: 1.25; color: #fff; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.benemy__tag { max-width: 100%; overflow: hidden; font-size: 0.56rem; white-space: nowrap; text-overflow: ellipsis; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.benemy.is-boss { width: 92px; }
-.benemy.is-boss .benemy__face { width: 70px; height: 70px; border-color: #ff3b4b; color: #ff3b4b; background: radial-gradient(circle, rgba(255, 47, 62, 0.32), rgba(20, 2, 4, 0.9)); box-shadow: 0 0 18px rgba(255, 47, 62, 0.35); animation: spotIn 520ms var(--ease) both; }
-.benemy.is-boss .benemy__name { font-size: 0.72rem; }
-.benemy.is-boss .benemy__tag { color: #ff6b74; }
-.benemy.is-chosen .benemy__face { border-color: var(--gold); color: var(--gold); background: radial-gradient(circle, rgba(255, 203, 92, 0.25), rgba(20, 14, 2, 0.9)); box-shadow: 0 0 18px var(--gold-glow); }
-.benemy.is-chosen .benemy__tag { color: var(--gold); }
-.benemy.is-elite .benemy__face { border-color: var(--gold); color: var(--gold); }
-.benemy.is-elite .benemy__tag { color: var(--gold); }
 
 
 /* Today's map, one row: a tap opens it in its own window once the hunter has been inside. */
@@ -4683,52 +4662,80 @@ button.bdone__text.infotag { align-items: flex-start; padding: 0; border: 0; bac
 .bformation__hint { display: flex; align-items: center; gap: 7px; margin: 8px 2px 0; font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 52%, transparent); }
 .bformation__hint .ico { flex: none; width: 13px; height: 13px; color: color-mix(in srgb, var(--mana) 75%, transparent); }
 
-/* The party on the brief, one row, after Honkai: Star Rail's team strip: the Front's faces and the Rear's across a
-   seam, the squad's bonuses as their lit marks, a chevron; the whole row a button to the party window. */
-.bparty {
-  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px;
-  width: 100%; min-height: 64px; padding: 9px 10px 10px 12px; overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--ember) 30%, var(--sys-hair)); color: inherit; font: inherit; text-align: left; cursor: pointer;
-  background: linear-gradient(180deg, rgba(255, 154, 60, 0.08), transparent 70%), rgba(4, 8, 18, 0.55);
+/* The brief's two cards, the enemies' over the party's with VS between (ui/versus.tsx): each one button, its name and
+   its power at its head inside it, its faces in named groups with no tile round them, its marks under a hairline. */
+.vcard { --vc: var(--ember); --vc-glow: rgba(255, 154, 60, 0.4); }
+.vcard--foes { --vc: var(--blood); --vc-glow: var(--blood-glow); }
+.vcard > .hint { margin-top: 8px; }
+.vcard__hit {
+  position: relative; display: grid; gap: 11px; width: 100%; padding: 12px 12px 12px 14px; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--vc) 32%, var(--sys-hair)); color: inherit; font: inherit; text-align: left; cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--vc) 10%, transparent), transparent 75%), rgba(4, 8, 18, 0.55);
   transition: border-color 160ms, background 160ms; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-.bparty::after {
+.vcard__hit::after {
   content: ''; position: absolute; inset: 0 auto 0 -40%; width: 40%; pointer-events: none;
-  background: linear-gradient(100deg, transparent, rgba(255, 186, 120, 0.16), transparent); transform: skewX(-18deg);
-  animation: bpartySweep 6s ease-in-out 1.2s infinite;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--vc) 18%, transparent), transparent); transform: skewX(-18deg);
+  animation: vcardSweep 6.5s ease-in-out 1.2s infinite;
 }
-@keyframes bpartySweep { 0%, 70% { left: -40%; } 100% { left: 120%; } }
-.bparty:hover, .bparty:focus-visible { border-color: color-mix(in srgb, var(--ember) 65%, transparent); background: linear-gradient(180deg, rgba(255, 154, 60, 0.14), transparent 70%), rgba(4, 8, 18, 0.55); }
-.bparty:active { transform: scale(0.995); }
-.bparty__rows { display: flex; align-items: flex-end; gap: 10px; min-width: 0; }
-.bparty__row { display: grid; gap: 5px; min-width: 0; }
-.bparty__row.is-rear { padding-left: 10px; border-left: 1px dashed color-mix(in srgb, var(--sys-ink) 22%, transparent); }
-.bparty__label { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.22em; line-height: 1; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
-.bparty__row.is-front .bparty__label { color: color-mix(in srgb, var(--ember) 85%, transparent); }
-.bparty__faces { display: flex; gap: 4px; }
-.bparty__face {
-  position: relative; display: grid; flex: none; place-items: center; width: 34px; height: 34px; font-style: normal;
-  border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.7); box-shadow: 0 0 0 2px #05070d;
-  animation: bpartyFace 360ms var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms);
+.vcard--foes .vcard__hit::after { animation-delay: 4.4s; }
+@keyframes vcardSweep { 0%, 70% { left: -40%; } 100% { left: 120%; } }
+.vcard__hit:hover, .vcard__hit:focus-visible { border-color: color-mix(in srgb, var(--vc) 68%, transparent); }
+.vcard__hit:active { transform: scale(0.995); }
+.vcard__head { display: flex; align-items: center; gap: 8px; }
+.vcard__title { flex: 1; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.vcard__power { display: inline-flex; align-items: center; gap: 5px; }
+.vcard__power .ico { width: 14px; height: 14px; color: var(--vc); }
+.vcard__power b { font-size: 1.05rem; font-weight: 800; line-height: 1; }
+.vcard__go { width: 16px; height: 16px; color: var(--vc); }
+.vcard__groups { display: flex; align-items: stretch; gap: 12px; min-width: 0; }
+.vcard__group { display: grid; gap: 7px; min-width: 0; }
+.vcard__group + .vcard__group { padding-left: 12px; border-left: 1px dashed color-mix(in srgb, var(--sys-ink) 20%, transparent); }
+.vcard__glabel { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.22em; line-height: 1; text-transform: uppercase; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.vcard--party .is-front > .vcard__glabel { color: color-mix(in srgb, var(--ember) 88%, transparent); }
+.vcard--foes .is-boss > .vcard__glabel { color: var(--blood); }
+.vcard--foes .is-elite > .vcard__glabel { color: var(--gold); }
+.vcard__group { align-content: start; }
+.vcard__faces { display: flex; align-items: center; gap: 7px; min-height: 42px; }
+/* A face is its own art, with no tile round it: the hunter lit in cyan, the Shadows in violet, the boss in red, the
+   Gatekeeper in gold; one not yet known a faint ?; an empty Shadow slot the one dashed square. */
+.vcard__face { position: relative; display: grid; flex: none; place-items: center; width: 34px; height: 34px; font-style: normal; animation: vcardFace 360ms var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes vcardFace { from { opacity: 0; transform: translateY(6px) scale(0.9); } }
+.vcard__face.is-you { filter: drop-shadow(0 0 6px rgba(79, 214, 255, 0.6)); }
+.vcard__face.is-shadow .emblem { color: var(--arcane); filter: drop-shadow(0 0 5px var(--arcane-glow)); }
+.vcard__face.is-boss { width: 42px; height: 42px; filter: drop-shadow(0 0 8px var(--blood-glow)); }
+.vcard__face.is-elite { filter: drop-shadow(0 0 6px var(--gold-glow)); }
+.vcard__face.is-unknown { color: color-mix(in srgb, var(--sys-ink) 38%, transparent); }
+.vcard__face.is-unknown .ico { width: 22px; height: 22px; }
+.vcard__face.is-boss.is-unknown { color: color-mix(in srgb, var(--blood) 70%, transparent); }
+.vcard__face.is-chosen { color: var(--gold); filter: drop-shadow(0 0 8px var(--gold-glow)); }
+.vcard__face.is-chosen .ico { width: 28px; height: 28px; }
+.vcard__face.is-free { width: 30px; height: 30px; border: 1px dashed color-mix(in srgb, var(--sys-ink) 30%, transparent); font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 48%, transparent); }
+/* Crowded, the faces shrink; packed, they overlap a little; the card keeps its one row of faces. */
+.vcard__hit.is-crowded .vcard__faces { gap: 3px; }
+.vcard__hit.is-crowded .vcard__face { width: 29px; height: 29px; }
+.vcard__hit.is-crowded .vcard__face svg { max-width: 27px; max-height: 27px; }
+.vcard__hit.is-packed .vcard__faces { gap: 0; }
+.vcard__hit.is-packed .vcard__face + .vcard__face { margin-left: -4px; }
+.vcard__marks { display: flex; flex-wrap: wrap; gap: 7px 14px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.vcard__mark { display: inline-flex; align-items: center; gap: 6px; font-size: 0.68rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+.vcard__mark .kinhex { width: 20px; height: 22px; }
+.vcard__mark .kinhex svg { width: 11px; height: 11px; }
+.vcard--party .vcard__mark { --win: var(--arcane); --win-glow: var(--arcane-glow); }
+/* A habit's mark in its hexagon, lit red as a bonus's is lit violet. */
+.kinhex.is-habit { --win: var(--blood); --win-glow: var(--blood-glow); }
+.kinhex.is-habit .fxhabit { color: #fff; }
+/* The seam between the cards: VS, the enemies' red above meeting the party's cyan below. */
+.bvs { display: flex; align-items: center; gap: 10px; margin: -6px 0; }
+.bvs i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--blood) 55%, transparent)); }
+.bvs i:last-child { background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--mana) 55%, transparent)); }
+.bvs b {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-size: 0.66rem; font-weight: 900; letter-spacing: 0.08em; color: #fff;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 79, 106, 0.3), transparent 60%), radial-gradient(circle at 50% 75%, rgba(79, 214, 255, 0.28), transparent 60%), #070a14;
+  border: 1px solid color-mix(in srgb, var(--sys-ink) 25%, transparent);
+  box-shadow: 0 -5px 14px rgba(255, 79, 106, 0.22), 0 5px 14px rgba(79, 214, 255, 0.2);
 }
-@keyframes bpartyFace { from { opacity: 0; transform: translateY(6px) scale(0.9); } }
-.bparty__face.is-you { border-color: color-mix(in srgb, var(--mana) 75%, transparent); box-shadow: 0 0 0 2px #05070d, 0 0 12px rgba(79, 214, 255, 0.35); z-index: 2; }
-.bparty__face.is-shadow { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 26%, transparent), rgba(6, 3, 18, 0.85)); }
-.bparty__face.is-shadow .emblem { color: var(--arcane); filter: drop-shadow(0 0 5px var(--arcane-glow)); }
-.bparty__face.is-free { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); font-size: 0.66rem; font-weight: 700; }
-/* Crowded, the faces shrink; packed, they overlap a little as a stack of portraits does, so the row stays one row. */
-.bparty.is-crowded .bparty__faces { gap: 3px; }
-.bparty.is-crowded .bparty__face { width: 30px; height: 30px; }
-.bparty.is-crowded .bparty__face svg { max-width: 26px; max-height: 26px; }
-.bparty.is-packed .bparty__faces { gap: 0; }
-.bparty.is-packed .bparty__face { width: 28px; height: 28px; }
-.bparty.is-packed .bparty__face + .bparty__face { margin-left: -4px; }
-.bparty__side { display: flex; align-items: center; gap: 8px; }
-.bparty__marks { --win: var(--arcane); --win-glow: var(--arcane-glow); display: flex; gap: 2px; }
-.bparty__marks .kinhex { width: 20px; height: 22px; }
-.bparty__marks .kinhex svg { width: 11px; height: 11px; }
-.bparty__go { width: 18px; height: 18px; color: var(--ember); }
-@media (prefers-reduced-motion: reduce) { .bparty::after { animation: none; display: none; } .bparty__face { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .vcard__hit::after { animation: none; display: none; } .vcard__face { animation: none; } }
 
 /* The party window: its power split by who brings it, the formation, the bonuses, every member, the Army. */
 .pwin { gap: 18px; }
@@ -4747,6 +4754,18 @@ button.bdone__text.infotag { align-items: flex-start; padding: 0; border: 0; bac
 .pwin__split .is-you, .pwin__legend .is-you i { background: var(--mana); box-shadow: 0 0 8px rgba(79, 214, 255, 0.5); }
 .pwin__split .is-ally, .pwin__legend .is-ally i { background: #cdd8e8; }
 .pwin__split .is-shadow, .pwin__legend .is-shadow i { background: var(--arcane); box-shadow: 0 0 8px var(--arcane-glow); }
+/* The enemies' window: its power in red, split boss, Gatekeeper and the rest; one not yet known striped. */
+.pwin.is-foes .pwin__power { border-color: color-mix(in srgb, var(--blood) 38%, transparent); background: radial-gradient(120% 90% at 0% 0%, rgba(255, 79, 106, 0.16), transparent 60%), rgba(6, 6, 12, 0.6); }
+.pwin.is-foes .pwin__total b { text-shadow: 0 0 14px rgba(255, 79, 106, 0.35); }
+.pwin.is-foes .pwin__total b .ico { color: var(--blood); }
+.pwin__split .is-boss, .pwin__legend .is-boss i { background: var(--blood); box-shadow: 0 0 8px var(--blood-glow); }
+.pwin__split .is-elite, .pwin__legend .is-elite i { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.pwin__split .is-mob, .pwin__legend .is-mob i { background: #8a97ab; }
+.pwin__split .is-unknown { background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.16) 0 4px, rgba(255, 255, 255, 0.04) 4px 8px); box-shadow: none; }
+button.pbonus.is-habit.infotag { --win: var(--blood); --win-glow: var(--blood-glow); border-color: color-mix(in srgb, var(--blood) 40%, transparent); color: #ffe4e8; background: linear-gradient(90deg, color-mix(in srgb, var(--blood) 16%, transparent), transparent 75%), rgba(18, 4, 8, 0.6); }
+button.pbonus.is-habit.infotag:hover, button.pbonus.is-habit.infotag[aria-expanded="true"] { border-color: color-mix(in srgb, var(--blood) 85%, #fff); }
+.pbonus.is-habit .pbonus__steps small { color: color-mix(in srgb, var(--blood) 75%, var(--sys-ink)); }
+.pbonus .kinhex.is-habit .fxhabit { --fx: 16px; }
 .pwin__legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 .pwin__legend > span { display: inline-flex; align-items: center; gap: 6px; }
 .pwin__legend i { width: 8px; height: 8px; }
@@ -4782,7 +4801,7 @@ button.pbonus.infotag:hover, button.pbonus.infotag[aria-expanded="true"] { borde
    power, and under them its numbers, what the squad's bonuses add in green. A tap opens its card. */
 .pmembers { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .pmember { animation: rowIn 320ms var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms); }
-button.pmember__hit {
+.pmember__hit {
   --mc: color-mix(in srgb, var(--sys-ink) 55%, transparent);
   display: grid; grid-template-columns: 50px minmax(0, 1fr) auto 14px; grid-template-areas: 'face who power go' 'stats stats stats stats';
   align-items: center; column-gap: 10px; row-gap: 9px; width: 100%; padding: 10px 10px 11px 12px;
@@ -4791,13 +4810,23 @@ button.pmember__hit {
 }
 button.pmember__hit:hover, button.pmember__hit:focus-visible { border-color: color-mix(in srgb, var(--mc) 70%, transparent); background: rgba(8, 14, 28, 0.7); }
 .pmember.is-you { --mc: var(--mana); }
-.pmember.is-you button.pmember__hit { --mc: var(--mana); }
-.pmember.is-ally button.pmember__hit { --mc: #cdd8e8; }
-.pmember.is-shadow button.pmember__hit { --mc: var(--arcane); }
-.pmember__face { grid-area: face; position: relative; display: grid; place-items: center; width: 50px; height: 50px; border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.6); }
-.pmember.is-you .pmember__face { border-color: color-mix(in srgb, var(--mana) 70%, transparent); box-shadow: 0 0 12px rgba(79, 214, 255, 0.3); }
-.pmember.is-shadow .pmember__face { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 25%, transparent), rgba(6, 3, 18, 0.8)); }
+.pmember.is-you .pmember__hit { --mc: var(--mana); }
+.pmember.is-ally .pmember__hit { --mc: #cdd8e8; }
+.pmember.is-boss .pmember__hit { --mc: var(--blood); }
+.pmember.is-elite .pmember__hit { --mc: var(--gold); }
+.pmember.is-mob .pmember__hit { --mc: #8a97ab; }
+.pmember.is-unknown .pmember__hit { --mc: color-mix(in srgb, var(--sys-ink) 25%, transparent); }
+.pmember.is-shadow .pmember__hit { --mc: var(--arcane); }
+/* A member's face is its own art over a soft light in its colour, with no tile round it, as on the brief's cards. */
+.pmember__face { grid-area: face; position: relative; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--mc) 22%, transparent), transparent 70%); }
+.pmember.is-you .pmember__face { filter: drop-shadow(0 0 6px rgba(79, 214, 255, 0.5)); }
 .pmember.is-shadow .pmember__face .emblem { color: var(--arcane); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.pmember.is-boss .pmember__face { filter: drop-shadow(0 0 7px var(--blood-glow)); }
+.pmember.is-unknown .pmember__face, .pmember.is-unknown .pmember__name { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.pmember__face .ico { width: 24px; height: 24px; }
+.pmember.is-boss .pmember__name { color: #ff8a96; }
+.pmember.is-elite .pmember__name { color: var(--gold); }
+.pmember.is-boss.is-unknown .pmember__name, .pmember.is-elite.is-unknown .pmember__name { color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
 .pmember__who { grid-area: who; display: grid; gap: 2px; min-width: 0; }
 .pmember__name { overflow: hidden; font-size: 0.9rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .pmember.is-you .pmember__name { color: var(--mana); }
@@ -4832,10 +4861,8 @@ button.pmember__hit:hover, button.pmember__hit:focus-visible { border-color: col
 /* A boss's portrait wears a crown, as the reference games crest a pack's leader (Monster Hunter's Great Jagras, Dragon
    Quest's King slime): its rank not by red alone. White-hot, as its eyes are. The Enemies row scrolls sideways, and a
    scrolling box clips on every side, so the row leaves room over its faces for the crown. */
-.unit__crown, .benemy__crown { position: absolute; left: 50%; z-index: 1; color: #fff4cf; filter: drop-shadow(0 0 3px rgba(255, 47, 62, 0.9)); transform: translateX(-50%); }
+.unit__crown { position: absolute; left: 50%; z-index: 1; color: #fff4cf; filter: drop-shadow(0 0 3px rgba(255, 47, 62, 0.9)); transform: translateX(-50%); }
 .unit__crown { top: -8px; width: 11px; height: 11px; }
-.benemy__face { position: relative; }
-.benemy__crown { top: -9px; width: 18px; height: 18px; }
 /* A blessing's tooltip leads with its Path's mark (a Duo's two), in advancement's gold as its chip wears it. */
 .tip__mark--boon { width: auto; grid-auto-flow: column; gap: 2px; color: var(--gold); }
 
