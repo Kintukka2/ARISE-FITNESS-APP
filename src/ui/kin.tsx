@@ -74,14 +74,6 @@ export function roleTip(role: string, tier: number): TipText {
   };
 }
 
-/** The squad's Kin and role bonuses, for the brief, each its own fact: `Kin: Orc II` and `Role bonus: Brute II, Caster I`. */
-export function makeLine(squad: readonly Shadow[]): string[] {
-  const m = kin.makeOf(squad);
-  const lit = m.kin.filter((k) => k.tier > 0).map((k) => `${k.family} ${KIN_TIER[k.tier - 1]}`);
-  const roles = m.roleLines.map((l) => `${l.role} ${ROLE_TIER[l.tier - 1]}`);
-  return [lit.length ? `Kin: ${lit.join(', ')}` : null, roles.length ? `Role bonus: ${roles.join(', ')}` : null].filter((x): x is string => !!x);
-}
-
 /** A trait's mark, in a hexagon: lit while it is active, grey while it is short. */
 export function KinHex({ family, role, on }: { family?: string; role?: string; on: boolean }) {
   return (

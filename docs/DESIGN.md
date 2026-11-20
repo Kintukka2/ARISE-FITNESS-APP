@@ -3307,6 +3307,114 @@ What changed:
   its road par or within two rounds over it. The middle clear rates are unchanged: E 78%, D 77%, C 77%, B 76%, A 81%,
   S 88%.
 
+## The party board's foot, a quiet Red Gate, Feats paid in art, and a mark to each trap — built
+
+The owner asked for:
+- **The brief's party:** the role bonus and the hint under it read as no part of the section, and the role bonus sat
+  awkwardly. Overhaul it, and make each role bonus a tooltip to tap, as a habit's or a skill's is.
+- **The Red Gate's feed line,** `▸ The red deepens. Creatures not yet fought +315%.`, removed. It restated the band
+  over the plan, in the feed's green against the red.
+- **The Feats' pay:** `Iron Scrap +10` made its art and `+10`, as the Ember is.
+- **Traps:** a mark drawn for each kind, where one trap's spikes stood for all twelve.
+
+What changed:
+- **The party board's foot** (`Lineup` in `screens/Brief.tsx`, `BonusChips` in `ui/kin.tsx`).
+  - The bonuses and the hint now sit inside the board's frame, under the Rear, across a hairline.
+  - `Role bonus` in violet capitals over a chip to each role the squad deploys: its mark lit in a hexagon, its name,
+    and its tier in a small badge (`Assassin I`, `Guardian I`). `Kin` over a chip to each family that reaches a tier
+    (`Orc II`).
+  - Each chip is an `InfoTag`, so a tap opens the one tooltip, as a Shadow card's tags do: the role, `Role bonus`, who it
+    gives what, and each breakpoint with the one reached lit (`roleTip`, `familyTip`).
+  - Under them, across a dashed hairline, the hint by a grip mark: `Drag yourself or a Shadow to the Front or the Rear.
+    A tap crosses over.`
+  - The text line `Role bonus: Assassin I, Guardian I` (`makeLine`) and its style are gone.
+- **The Red Gate says nothing more in the feed.** `tellClock` keeps its two windows, the first move past the budget and
+  the Gate turning red, and drops the line every other move wrote. The band over the plan already says it: its figure
+  flares once each time a move raises it (`gclockRise`, keyed by the share), and holds still without motion.
+- **The Feats' alloy** (`FeatList`) is the alloy's art and `+10` in green, as the Par card's Ember is its art and figure.
+  A screen reader still hears `Iron Scrap +10`. The blueprint Feat keeps `Blueprint +1` in gold.
+- **A mark to each trap kind** (`ui/icons.tsx`, `TrapDef.glyph` in `data/nodes.ts`):
+  - Twelve silhouettes on the 24 grid, drawn with the even-odd rule (`EVENODD`) so a pit's spikes stand in it and a
+    net's mesh is open:
+    - A Pressure Plate, a plate sunk in the floor under a pressing arrow;
+    - A Tripwire, a boot catching a wire between two stakes;
+    - A False Floor, a flagstone tipping into a spiked pit;
+    - Arrow Slits, two bolts out of a slit wall;
+    - A Falling Ceiling, a cracked ceiling's stones coming down;
+    - A Flooding Chamber, water rising in a chamber;
+    - Whirling Blades, a saw out of a slot in the floor;
+    - A Falling Net, a weighted net;
+    - A Rolling Boulder, a rough stone rolling down a slope;
+    - A Glyph of Warding, a ring of warding with a star burning in it;
+    - A Rune-Cut Door, an arched door with a rune burning in its panel;
+    - A Caustic Haze, a dripping cloud eating holes in itself.
+  - A trap's scene wears its kind's mark, large in its ring and vast and faint behind it. The plan's tile keeps the one
+    trap's spikes, and passes for an Event's until it is stepped into, so the fog keeps what a trap is.
+- **Held by tests.**
+  - `tests/map.test.ts`: every trap kind has a mark of its own, drawn, never the plan's spikes.
+  - The tour:
+    - the party's role bonuses are chips inside the board's foot, the hint inside it too, and nothing under the board;
+    - a chip opens its `Role bonus` tooltip;
+    - every alloy a Feat pays is its art and figure, with no name.
+- **Balance.** Display only: no calibration, no campaign.
+
+## The party, one row on the brief and a window of its own — built
+
+The owner asked for the whole `Your party` section to be overhauled:
+- A compact one-row preview of the team members that is also a button.
+- It opens a more detailed party window where everything lives: stats, a way into each hunter, the formation, the
+  boosts.
+- Full creative control, after how other games structure the same screens.
+
+The references are in [the party's README](research/references/party/README.md): Honkai: Star Rail's team strip and
+Team Setup, AFK Arena's rows and faction mark, Solo Leveling: Arise's Battle Tier power, Genshin Impact's Elemental
+Resonance, Darkest Dungeon's lineup, and the team screens of Magia Record, Seven Knights and Tokyo Beast.
+
+What changed:
+- **On the brief, one row** (`PartyRow` in `screens/Party.tsx`), under `Your party` and its power.
+  - `Front` over the Front's faces and `Rear` over the Rear's, across a dashed seam.
+  - The hunter's sigil ringed in cyan, the Association's hunters by their plates, the Shadows by their badges in violet,
+    an empty Shadow slot a dashed square (`+1`).
+  - The squad's bonuses as lit hexes, then a chevron. The whole row is the button, and a light crosses it now and then.
+  - Crowded (seven tiles or more), the faces shrink and the hexes give way. Packed (nine or more), the faces overlap a
+    little. The row stays one row.
+  - Read aloud as the party's names, its power and its role bonuses, then `Open the party.`
+- **The party window** (`openParty`), a System sheet in the Gates' orange (the Trial's gold), headed `Party`:
+  - **Party power**, large, over one bar split by who brings it, the hunter's in cyan, the Association's hunters' in
+    silver, the Shadows' in violet, each named and counted under it. The segments grow in one after another.
+  - **Formation**: the board, moved here whole: Front and Rear facing the enemies, the hunter's face and each Shadow's
+    dragged or tapped across, an Association hunter's face opening their card, the hint under it.
+  - **Bonuses**: a card to each role bonus and Kin the squad reaches. Its mark lit, its name and tier, what it gives in
+    the tooltip's words and colours, and its breakpoints with the count reached. A tap opens the one tooltip. Under them,
+    in green, what every member gains.
+  - **Members**: a row to each, in the order they walk in.
+    - The face, the name, what it is, its row and how it fights, its power.
+    - Under them its HP, its Attack (or Magic), its Defence and its Initiative, each with what the squad's bonuses add
+      in green.
+    - A tap opens the hunter's Status, an Association hunter's card, or a Shadow's card. Closing it returns to the window.
+  - At the foot, **Army** and **Auto Deploy**, as the Army sheet has them.
+- **The engine reads each member** (`raid.readout`, `raid.partyReadout`). It builds the fight's own `Unit` from each spec
+  `partySpecs` makes, so every passive and bonus counts as it will in the fight, and again from the spec without the
+  squad's role bonuses and Kin. The difference is the green figure.
+- **Gone:** the brief's board, the bonus chips at its foot (`BonusChips`), the dead `.sysframe .brief .bparty` rules of
+  an older brief that overrode the new row's grid, and `partyOf` and `partyPower` from `screens/Brief.tsx` (both now in
+  `screens/Party.tsx`).
+- **Held by tests.**
+  - `tests/kin.test.ts`: the readout gives one entry to each member in the order they walk in, each the fight's own
+    unit's figures. Guardians raise every member's Defence over what each would have alone and lower nothing, and with no
+    squad nobody gains.
+  - The tour:
+    - the brief holds the row and no board, and shows the hunter once;
+    - the row opens the window, which splits its power and lists a row to every face the row shows, each with its four
+      numbers;
+    - a role bonus card opens its tooltip;
+    - a Shadow's row opens its card, and the hunter's their Status;
+    - closing a card returns to the window;
+    - every drag and tap of the formation, the hunter cards and the favourite star play inside the window, and closing
+      it returns to the brief;
+    - the Trial's row holds the hunter and no Association hunter.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

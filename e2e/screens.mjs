@@ -568,6 +568,10 @@ try {
   if (await page.locator('.sheet.is-top .btabs').count()) throw new Error('THE BRIEF STILL HAS TABS');
   if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
   if (await page.locator('.sheet.is-top .bfeats, .sheet.is-top .bpar', { hasText: /System \d+\/\d+/ }).count()) throw new Error('THE BRIEF STILL SAYS HOW OFTEN THE SYSTEM MET A FEAT OR A MEDAL');
+  // An alloy a Feat pays is its art and its figure, as the Par card's Ember is, never its name.
+  for (const pay of await page.locator('.sheet.is-top .bfeat__pay').all()) {
+    if (!(await pay.locator('.matart').count()) || /[a-z]/i.test(await pay.innerText())) throw new Error('A FEAT’S ALLOY IS NOT ITS ART AND FIGURE');
+  }
   await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
   // Gate Clear Par: the road's par and the hunter's own best, then a row to each medal with the rounds it allows and its Ember.
   if ((await page.locator('.sheet.is-top .bpar__row').count()) !== 3) throw new Error('THE BRIEF DOES NOT STATE PAR AND ITS THREE MEDALS');
@@ -591,10 +595,38 @@ try {
   if (await page.locator('.sheet.is-top .dmap__key').count()) throw new Error('A TAP AWAY DID NOT FOLD THE MAP KEY');
   await page.locator('.sheet.is-top [aria-label="Close"]').first().click(); await sleep(400);
   if (!(await page.locator('.sheet.is-top .bfacts').count())) throw new Error('CLOSING THE MAP DID NOT RETURN TO THE BRIEF');
-  // The party lined up, the hunter first, and the squad's role bonuses under it.
-  if (!(await page.locator('.sheet.is-top .bformation__one.is-you').count())) throw new Error('THE BRIEF LINES UP NO PARTY');
-  if (!(await page.locator('.sheet.is-top .bparty__kin', { hasText: 'Role bonus:' }).count())) throw new Error('THE PARTY DOES NOT SAY THE SQUAD’S ROLE BONUSES');
-  await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-party');
+  // The party on the brief is one row: every face, the Front's and the Rear's across a seam, and the row opens the party
+  // window, where the formation, the bonuses and every member live.
+  const prow = page.locator('.sheet.is-top .bparty');
+  if (!(await prow.count())) throw new Error('THE BRIEF HAS NO PARTY ROW');
+  if (await page.locator('.sheet.is-top .bformation, .sheet.is-top .bonuschip').count()) throw new Error('THE BRIEF STILL LAYS OUT THE WHOLE FORMATION');
+  if ((await prow.locator('.bparty__face.is-you').count()) !== 1) throw new Error('THE PARTY ROW DOES NOT SHOW THE HUNTER ONCE');
+  const faces = await prow.locator('.bparty__face:not(.is-free)').count();
+  await prow.scrollIntoViewIfNeeded(); await sleep(500); await snap('brief-party');
+  await prow.click(); await sleep(800);
+  // The window: the power split by who brings it, the formation, the bonuses, a row to every member, the Army.
+  if (!(await page.locator('.sheet.is-top .pwin').isVisible())) throw new Error('THE PARTY ROW DID NOT OPEN THE PARTY WINDOW');
+  if (!(await page.locator('.sheet.is-top .pwin__split i').count())) throw new Error('THE PARTY WINDOW DOES NOT SPLIT ITS POWER BY WHO BRINGS IT');
+  if ((await page.locator('.sheet.is-top .pmember').count()) !== faces) throw new Error('THE PARTY WINDOW DOES NOT LIST EVERY MEMBER THE ROW SHOWS');
+  if ((await page.locator('.sheet.is-top .pmember').first().locator('.pmember__stat').count()) !== 4) throw new Error('A MEMBER DOES NOT SET OUT ITS FOUR NUMBERS');
+  await snap('party-window');
+  // A bonus the squad reaches is a card, and opens the one tooltip.
+  if (!(await page.locator('.sheet.is-top .pbonus.is-role').count())) throw new Error('THE PARTY WINDOW DOES NOT STATE THE SQUAD’S ROLE BONUSES');
+  await page.locator('.sheet.is-top .pbonuses').scrollIntoViewIfNeeded(); await sleep(400); await snap('party-bonuses');
+  await page.locator('.sheet.is-top .pbonus').first().click(); await sleep(300);
+  if (!(await page.locator('.tip .tip__kind', { hasText: /^Role bonus$/i }).isVisible())) throw new Error('A ROLE BONUS CARD DID NOT OPEN ITS TOOLTIP');
+  await snap('party-bonus-tip');
+  await page.keyboard.press('Escape'); await sleep(250);
+  await page.locator('.sheet.is-top .pmembers').scrollIntoViewIfNeeded(); await sleep(400); await snap('party-members');
+  // A Shadow's row opens its card, and the hunter's own their Status.
+  await page.locator('.sheet.is-top .pmember.is-shadow .pmember__hit').first().click(); await sleep(700);
+  if (!(await page.locator('.sheet.is-top .shadowcard').isVisible())) throw new Error('A SHADOW’S ROW DID NOT OPEN ITS CARD');
+  await close(); await sleep(400);
+  await page.locator('.sheet.is-top .pmember.is-you .pmember__hit').click(); await sleep(700);
+  if (!(await page.locator('.sheet.is-top .status').isVisible())) throw new Error('THE HUNTER’S ROW DID NOT OPEN THEIR STATUS');
+  await close(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .pwin').isVisible())) throw new Error('CLOSING A CARD DID NOT RETURN TO THE PARTY WINDOW');
+  await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300); await snap('party-formation');
   // Front and rear: every member's place on their face, and the hunter's own to choose; chosen, it is kept.
   // The party is a formation: a front rank and a rear rank, every member in the rank they stand in, the hunter among them.
   if ((await page.locator('.sheet.is-top .bformation__rank').count()) !== 2) throw new Error('THE PARTY IS NOT DRAWN AS A FORMATION');
@@ -712,6 +744,9 @@ try {
       await close(); await sleep(400);
     }
   }
+  // Back from the party window to the brief.
+  await close(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .bparty').count())) throw new Error('CLOSING THE PARTY WINDOW DID NOT RETURN TO THE BRIEF');
   // The enemies as portraits, the boss first and the Gatekeeper next: what walks in the Gate and nothing else.
   if (!(await page.locator('.sheet.is-top .benemy.is-boss').count())) throw new Error('THE ENEMIES DO NOT OPEN ON THE BOSS');
   if (await page.locator('.sheet.is-top .benemy.is-elite').count()) {
@@ -1309,7 +1344,7 @@ try {
     await page.locator('.gradar__all').click(); await sleep(600);
     await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800);
     await drain();
-    await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
+    await page.locator('.sheet.is-top .bparty').click(); await sleep(700);
     await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"]`).click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .hc-history__lead', { hasText: /7\s*Gates together/i }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THE GATES WALKED TOGETHER');
     if (!(await page.locator('.sheet.is-top .hc-history__lead', { hasText: /most frequent partner|only partner/ }).count())) throw new Error('WHERE THEY STAND AMONG YOUR PARTNERS IS NOT SAID PLAINLY');
@@ -1317,6 +1352,8 @@ try {
     if ((await page.locator('.sheet.is-top .hc-history__bar > i').count()) !== 3) throw new Error('THE HISTORY DOES NOT SPLIT HOW THE GATES ENDED');
     await page.locator('.sheet.is-top .huntercard .section', { hasText: 'History' }).scrollIntoViewIfNeeded(); await sleep(400);
     await snap('hunter-card-together');
+    // The card, then the party window, back to the brief.
+    await close(); await sleep(300);
     await close(); await sleep(300);
     // The same Gate with every Feat met and every medal earned: one gold row for each, a tap telling what they asked.
     const gid = await page.locator('.sheet.is-top .brief').getAttribute('data-gate');
@@ -1470,9 +1507,9 @@ try {
   if (await page.locator('.sheet.is-top .bfeat').count()) throw new Error('THE TRIAL HOLDS FEATS');
   if ((await page.locator('.sheet.is-top .bfacts > div').count()) !== 3) throw new Error('THE TRIAL’S FACTS COUNT ITS CHOSEN TWICE');
   if (!(await page.locator('.sheet.is-top .bfacts dt', { hasText: 'Last Chosen' }).count())) throw new Error('THE TRIAL DOES NOT NAME ITS LAST CHOSEN');
-  await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(400);
-  if (!(await page.locator('.sheet.is-top .bformation__one.is-you').count())) throw new Error('THE TRIAL’S PARTY HOLDS NO ONE');
-  if (await page.locator('.sheet.is-top .bformation__one.is-ally').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
+  await page.locator('.sheet.is-top .bparty').scrollIntoViewIfNeeded(); await sleep(400);
+  if (!(await page.locator('.sheet.is-top .bparty__face.is-you').count())) throw new Error('THE TRIAL’S PARTY HOLDS NO ONE');
+  if (await page.locator('.sheet.is-top .bparty__face.is-ally').count()) throw new Error('AN ASSOCIATION HUNTER IS IN THE TRIAL');
   await snap('trial-brief-party');
 
   if (errors.length) throw new Error('CONSOLE ERRORS:\n' + errors.join('\n'));

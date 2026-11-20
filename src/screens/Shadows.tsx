@@ -233,7 +233,7 @@ function sortArmy(s: Save, by: Sort): Shadow[] {
 }
 
 /** ARMY: the squad that walks into the next Gate, and every Shadow bound, a row each, made into the squad from here. */
-function openArmy(news: string[]) {
+export function openArmy(news: string[] = []) {
   openSheet({ title: 'Army', system: { icon: <Glyph name="shadows" />, kind: 'shadow' }, render: () => <ArmySheet news={news} /> });
 }
 
@@ -458,7 +458,7 @@ const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.
 
 // ------------------------------------------------------------------ the card
 
-function openShadow(id: string) {
+export function openShadow(id: string) {
   const at = store.get().shadows.army.find((x) => x.id === id);
   const was = at && enemyById(at.enemyId);
   openSheet({

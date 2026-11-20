@@ -13,6 +13,7 @@ import { EVENTS, REST_HEAL, TRAP, TRAPS, trapById, trapEvent } from '@/data/node
 import * as vitals from '@/core/vitals';
 import { POTION_HEAL } from '@/core/combat';
 import { walk } from './walk';
+import { glyphPath } from '@/ui/icons';
 
 const now = Date.parse('2026-02-02T12:00:00');
 
@@ -687,6 +688,15 @@ describe('choices', () => {
     // A trap's leaning stats are offered far more often than their share of the five.
     expect(lean.on / lean.all).toBeGreaterThan(0.6);
   }, 20_000);
+
+  it('every trap kind wears a mark of its own, drawn, never the plan\'s one trap or another kind\'s', () => {
+    const marks = TRAPS.map((t) => t.glyph);
+    expect(new Set(marks).size).toBe(TRAPS.length);
+    for (const g of marks) {
+      expect(g).not.toBe('roomTrap');
+      expect(glyphPath(g)?.length ?? 0).toBeGreaterThan(40);
+    }
+  });
 
   it('a leaning stat meets its trap at better odds, and the System takes the way its hunter is likelier to pass', () => {
     const t = TRAPS.find((x) => x.lean.includes('INT') && !x.lean.includes('STR'))!;

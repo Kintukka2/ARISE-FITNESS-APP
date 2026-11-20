@@ -125,6 +125,29 @@ export function partySpecs(s: Save, d: Dungeon, day: string, squadIds?: string[]
   return [lead, ...allies, ...squad.map((sh, i) => shadowSpec(sh, i, sumBonuses(bonus, built.aura, kin.kinBonusOf(sh, built))))];
 }
 
+/**
+ * What a member brings to a fight, as the party window reads it: its health, its blow and its spell, its guard and its
+ * speed, from the unit the fight itself builds out of the spec, so a passive or a bonus counts as it will in the fight.
+ */
+export interface Readout { hp: number; attack: number; magic: number; defence: number; speed: number }
+export function readout(sp: UnitSpec): Readout {
+  const u = new Unit(sp);
+  return { hp: u.maxHp, attack: Math.round(u.d.patk * u.atkMult), magic: Math.round(u.d.mpow * u.atkMult), defence: Math.round(u.d.defense), speed: Math.round(u.d.initiative) };
+}
+
+/**
+ * The party as its window reads it, in the order it walks in (the hunter, the Association's hunters, the Shadows): each
+ * member's spec as `partySpecs` builds it, what it brings so (`now`), and what it would bring alone, without the
+ * squad's role bonuses and Kin (`alone`), so the window shows what the squad adds.
+ */
+export function partyReadout(s: Save, d: Dungeon, day: string, now = Date.now(), level = 0, seals: readonly SealId[] = []) {
+  const specs = partySpecs(s, d, day, undefined, now, level, seals);
+  const squad = isPractice(d) ? [] : shadows.squad(s);
+  const bonus = marks.shadowBonus(s);
+  const alone = [heroSpec(s, now, level), ...alliesAt(d, day, licensedRank(s), level, seals).map(allySpec), ...squad.map((sh, i) => shadowSpec(sh, i, bonus))];
+  return specs.map((spec, i) => ({ spec, now: readout(spec), alone: readout(alone[i] ?? spec) }));
+}
+
 /** The share of a gate's fatigue a run costs: more at Heavy Legs, less for every Mark of the Long Stride. */
 export const fatigueShare = (s: Save, level: number) => asc.fatigueShare(level) * marks.fatigueShare(s);
 

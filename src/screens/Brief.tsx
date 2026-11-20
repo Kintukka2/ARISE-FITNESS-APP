@@ -11,7 +11,6 @@ import { ENGRAVED } from '@/data/engravings';
 import { Runestone } from '@/ui/runes';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { createPortal } from 'preact/compat';
 import { sfx } from '@/audio/audio';
 import { powerOf } from '@/core/combat';
 import { bossKnown, dungeonById, enemyById, entryBlock, isPractice, mapKnown, rankIdx } from '@/core/gates';
@@ -45,27 +44,20 @@ import * as store from '@/store';
 import { createStore, useSave } from '@/store';
 import { Btn, Facts as Spaced, RankPlate, useNow } from '@/ui/components';
 import { buzz } from '@/ui/feedback';
-import { useDrag } from '@/ui/drag';
 import { Glyph, Shard, Sigil } from '@/ui/icons';
 import { HabitMark } from '@/ui/effects';
-import { ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
-import { makeLine } from '@/ui/kin';
+import { PartyRow, partyPower } from './Party';
 import { closeAllSheets, confirm, openSheet } from '@/ui/overlays';
 import { bagFor, enterGate } from '@/app/flow';
 import * as sealing from '@/core/seals';
 import * as feats from '@/core/feats';
 import * as par from '@/core/par';
-import * as ranks from '@/core/ranks';
-import * as hunters from '@/core/hunters';
-import { ROW_NAME, ROWS, type Row } from '@/data/ranks';
-import { classFor } from '@/data/classes';
 import { SEAL_IDS, SEALS, sealEmber, type SealId } from '@/data/seals';
 import { TRICKS, tricksOf } from '@/data/tricks';
 import { FEAT_PAY, FEATS, FEATS_PER_GATE, type FeatId } from '@/data/feats';
 import { dropPay } from '@/ui/conditions';
 import { CONDITION } from '@/data/drops';
-import { openHunter } from './Hunter';
 import { ModRows, SealArt } from '@/ui/seals';
 import { ParCard } from '@/ui/par';
 import { InfoTag } from '@/ui/infotag';
@@ -317,7 +309,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
         : <SealStrip d={d} offer={offer} taken={taken} fixed={fixed} />)}
       {rifted && <RiftScoring />}
       <EnemyRow d={d} level={level} />
-      <Lineup d={d} level={level} taken={taken} />
+      <PartyRow d={d} level={level} taken={taken} />
       {hasFeats && <FeatList d={d} met={feats.metOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} />}
       {hasFeats && proj.par.road > 0 && (
         <ParCard d={d} best={par.bestOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} road={proj.par.road} mine={par.bestRounds(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} />
@@ -553,113 +545,6 @@ function EnemyRow({ d, level }: { d: Dungeon; level: number }) {
 }
 
 /**
- * The party as a formation, after Idle Heroes' Hero Deployment: a board facing the enemies above it,
- * the front rank at its head and the rear under it, each member a face in the rank they stand in, the hunter's own
- * lit; the Shadow slots still open dashed at the end of the front. The hunter's own face is dragged to the rank
- * they would stand in, or tapped to cross to the other; the choice is kept for every Gate after.
- */
-function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[] }) {
-  const s = useSave();
-  const { hero, party, squad } = partyOf(s, d, level, taken);
-  const here = ranks.heroRow(s);
-  const other: Row = here === 'front' ? 'rear' : 'front';
-  const stand = (r: Row) => {
-    if (r === ranks.heroRow(store.get())) return;
-    sfx.tap();
-    buzz(12);
-    store.update((x) => ranks.setStand(x, r));
-  };
-  // A Shadow is placed as the hunter is: dragged to a rank, or tapped across. It keeps its place for every Gate after.
-  const place = (id: string, r: Row) => {
-    const sh = store.get().shadows.army.find((x) => x.id === id);
-    if (!sh || r === shadows.standOf(sh)) return;
-    sfx.tap();
-    buzz(12);
-    store.update((x) => shadows.setStand(x, id, r));
-  };
-  const cross = (r: Row): Row => (r === 'front' ? 'rear' : 'front');
-  const drag = useDrag((id, at) => {
-    if (at !== 'front' && at !== 'rear') return;
-    if (id === 'you') stand(at);
-    else place(id, at);
-  });
-  const liftedShadow = drag.lifted && drag.lifted !== 'you' ? squad.find((x) => x.id === drag.lifted) : undefined;
-  const liftedRow: Row | null = drag.lifted === 'you' ? here : liftedShadow ? shadows.standOf(liftedShadow) : null;
-  type Seat = { key: string; row: Row; el: preact.JSX.Element };
-  const seats: Seat[] = [
-    { key: 'you', row: here, el: (
-      <li key="you" class={`bformation__one is-you is-drag ${drag.lifted === 'you' ? 'is-lifted' : ''}`} {...drag.handle('you')}>
-        <button type="button" class="bformation__me" aria-label={`${s.hunter.name}, in the ${ROW_NAME[here]}. Tap to stand in the ${ROW_NAME[other]}, or drag to a row.`}
-          onClick={() => stand(other)}>
-          <span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /><Glyph name="grip" class="bformation__grip" /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small>
-        </button>
-      </li>
-    ) },
-    // An Association hunter opens their card when tapped: their class, kit, stats and record beside you.
-    ...party.map((a) => ({ key: a.id, row: ranks.byLead(classFor(a.base, a.rank)?.lead).row, el: (
-      <li key={a.id} class="bformation__one is-ally">
-        <button type="button" class="bformation__me bformation__ally" data-hunter={a.id} aria-label={`${a.name}, ${a.rank}-Rank${hunters.isFavourite(s, a.id) ? ', a favourite' : ''}. Open their card.`} onClick={() => { sfx.tap(); openHunter(a); }}>
-          {/* A hunter starred on their card wears the star on their face here. */}
-          <span class="bformation__face"><RankPlate rank={a.rank} size={26} />{hunters.isFavourite(s, a.id) && <i class="bformation__fav" aria-hidden="true"><Glyph name="star" /></i>}</span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}{rankIdx(a.rank) > rankIdx(d.rank) ? <i class="bformation__vs is-up" aria-label="above the Gate's grade"> ▲</i> : rankIdx(a.rank) < rankIdx(d.rank) ? <i class="bformation__vs is-down" aria-label="under the Gate's grade"> ▼</i> : null}</small>
-        </button>
-      </li>
-    ) })),
-    ...squad.map((x) => {
-      const e = enemyById(x.enemyId)!;
-      const row = shadows.standOf(x);
-      const name = shadows.nameOf(x).replace(/^Shadow /, '');
-      return { key: x.id, row, el: (
-        <li key={x.id} class={`bformation__one is-shadow is-drag ${drag.lifted === x.id ? 'is-lifted' : ''}`} {...drag.handle(x.id)}>
-          <button type="button" class="bformation__me" aria-label={`${name}, in the ${ROW_NAME[row]}. Tap to place it in the ${ROW_NAME[cross(row)]}, or drag to a row.`}
-            onClick={() => place(x.id, cross(row))}>
-            <span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /><Glyph name="grip" class="bformation__grip" /></span><b>{name}</b><small class="num">{shadows.power(x)}</small>
-          </button>
-        </li>
-      ) };
-    }),
-  ];
-  const free = isPractice(d) ? 0 : shadows.freeSlots(s);
-  return (
-    <section class="bbox" aria-label="Party" data-tour="party">
-      <span class="label bbox__head">{isTrial(d) ? 'Entering' : 'Your party'}<small class="bbox__right bpower" aria-label={`Power ${partyPower(s, d, level, taken)}`}><Glyph name="power" /><b class="num">{partyPower(s, d, level, taken)}</b></small></span>
-      <div class={`bformation ${drag.lifted ? 'is-dragging' : ''}`} {...drag.guard}>
-        <span class="bformation__facing" aria-hidden="true"><Glyph name="up" />Facing the enemies</span>
-        {ROWS.map((r) => {
-          const on = seats.filter((x) => x.row === r);
-          // While the hunter or a Shadow is lifted, the rank it is not in waits for it, and lights under it.
-          const target = liftedRow && r !== liftedRow ? `is-target ${drag.over === r ? 'is-over' : ''}` : '';
-          return (
-            <div key={r} data-drop={r} class={`bformation__rank is-${r} ${target}`}>
-              <span class="bformation__label"><b>{ROW_NAME[r]}</b><small class="num">{on.length}</small></span>
-              <ul class="bformation__seats" aria-label={`${ROW_NAME[r]}: ${on.length}`}>
-                {on.map((x) => x.el)}
-                {r === 'front' && Array.from({ length: free }, (_, i) => (
-                  <li key={`free-${i}`} class="bformation__one is-free" aria-label="Shadow slot empty"><span class="bformation__face"><Glyph name="plus" /></span><b>Free</b><small> </small></li>
-                ))}
-                {!on.length && r === 'rear' && <li class="bformation__none">No one stands behind</li>}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
-      {/* Where the hunter stands, their class's place until they move, and each Shadow, its role's until it is moved: kept for every Gate after. */}
-      <p class="bstand__hint">{squad.length ? 'Drag yourself or a Shadow to the Front or the Rear. A tap crosses over.' : 'Drag yourself to the Front or the Rear. A tap crosses over.'}</p>
-      {squad.length > 0 && makeLine(squad).length > 0 && <p class="bparty__kin"><Spaced items={makeLine(squad)} /></p>}
-      {/* The ghost lives on the page, not in the sheet, so a transform on the sheet cannot move it off the pointer. */}
-      {createPortal(
-        <div class={`dragghost dragghost--you ${liftedShadow ? 'is-shadow' : ''}`} ref={drag.ghost} hidden={!liftedRow} aria-hidden="true">
-          {liftedShadow
-            ? (() => { const e = enemyById(liftedShadow.enemyId)!; return <><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(liftedShadow)} size={34} /><b>{shadows.nameOf(liftedShadow).replace(/^Shadow /, '')}</b></>; })()
-            : <><Sigil rank={licensedRank(s)} size={30} /><b>{s.hunter.name}</b></>}
-        </div>,
-        document.body,
-      )}
-      {isPractice(d) && <p class="hint"><strong>[Ryn Valcorde]</strong> has joined your party.</p>}
-    </section>
-  );
-}
-
-/**
  * A Gate's three Feats, as Honkai: Star Rail sets a stage's three challenges: a star to each, gold once met here,
  * what it asks, and what it pays the first time (the owner's call: never how often the System met it). Once all three
  * are met, one gold row in their place (`FeatsDone`).
@@ -668,6 +553,7 @@ function FeatList({ d, met }: { d: Dungeon; met: FeatId[] }) {
   const bpFeat = feats.blueprintFeat(d);
   const asked = feats.featsOf(d);
   const got = asked.filter((id) => met.includes(id)).length;
+  const alloy = ALLOYS[d.rank as Rank] ?? ALLOYS.E;
   return (
     <section class="bbox" aria-label="Feats">
       <span class="label bbox__head">Feats<small class="bbox__right"><span class="btabs__stars">{Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''}>★</i>)}</span></small></span>
@@ -685,7 +571,10 @@ function FeatList({ d, met }: { d: Dungeon; met: FeatId[] }) {
                     <small>{FEATS[id].text}</small>
                   </span>
                   <span class="bfeat__side">
-                    <small class={done ? 'muted' : id === bpFeat ? 'bfeat__bp' : 'grant'}>{done ? 'Met' : id === bpFeat ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
+                    {/* Its pay as the Par card's Ember: the alloy's art and the figure (the owner's call, where it read `Iron Scrap +10`). */}
+                    {done ? <small class="muted">Met</small>
+                      : id === bpFeat ? <small class="bfeat__bp">Blueprint +{FEAT_PAY.blueprints}</small>
+                        : <small class="bfeat__pay" aria-label={`${alloy.name} +${FEAT_PAY.alloy}`}><MatArt id={alloy.id} size={14} /><span class="num">+{FEAT_PAY.alloy}</span></small>}
                   </span>
                 </div>
               );
@@ -813,18 +702,6 @@ function Vitals() {
 }
 
 /** Who walks in, and their power together: the hunter, the Association's hunters, the Shadows. */
-function partyOf(s: Save, d: Dungeon, level: number, taken: readonly SealId[]) {
-  return {
-    hero: raid.heroSpec(s),
-    party: raid.alliesAt(d, dayKey(), licensedRank(s), level, taken),
-    squad: isPractice(d) ? [] : shadows.squad(s),
-  };
-}
-function partyPower(s: Save, d: Dungeon, level: number, taken: readonly SealId[]) {
-  const { hero, party, squad } = partyOf(s, d, level, taken);
-  return powerOf(hero.base) + party.reduce((n, a) => n + powerOf(a.base), 0) + squad.reduce((n, x) => n + shadows.power(x), 0);
-}
-
 /** The Association's file, in the head, three lines until tapped. The Trial is the System's own: it states its terms. */
 function File({ d }: { d: Dungeon }) {
   const [full, setFull] = useState(false);
