@@ -24,7 +24,7 @@ import { byLead } from '@/core/ranks';
 import { MARKS } from '@/data/ascension';
 import { CONTRACT_KINDS } from '@/data/contracts';
 import { DUNGEONS } from '@/data/dungeons';
-import { OLD_BLESSINGS, EVENTS, TRAP } from '@/data/nodes';
+import { OLD_BLESSINGS, EVENTS, TRAP, TRAPS, trapEvent } from '@/data/nodes';
 import { BOON_LIST } from '@/data/blessings';
 import { HOLLOW_THRONE, PRACTICE_GATE } from '@/data/special';
 import { SPIRE_THEME } from '@/data/spire';
@@ -246,7 +246,8 @@ describe('the words', () => {
 
 describe('the world', () => {
   const files = [...DUNGEONS, HOLLOW_THRONE, PRACTICE_GATE].map((d) => d.theme).concat(SPIRE_THEME);
-  const choices = [...EVENTS, TRAP].flatMap((e) => e.choices);
+  // Every trap with all five of its ways, as any two of them can be drawn.
+  const choices = [...EVENTS, TRAP, ...TRAPS.map((x) => trapEvent(x.id, STATS)!)].flatMap((e) => e.choices);
   const outcomes = choices.flatMap((c) => [c.win, ...(c.lose ? [c.lose] : [])]);
 
   it('files a Gate as the Association would: short, factual, and never to you', () => {

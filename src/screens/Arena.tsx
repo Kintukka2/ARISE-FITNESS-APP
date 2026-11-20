@@ -67,7 +67,7 @@ import { drinkFlow } from './Inventory';
 import { openItem } from './Gear';
 import { openBlueprint } from './Forge';
 import * as forge from '@/core/forge';
-import { bundleText, MatArt, MatList, ordered } from '@/ui/forge';
+import { bundleText, MatArt, ordered } from '@/ui/forge';
 import { LootCell, useReveal, type Loot } from '@/ui/loot';
 import { CacheEmblem, openCache, type CacheStage } from '@/ui/cache';
 import { lines, toBeats, type Beat } from '@/ui/log';
@@ -1100,7 +1100,6 @@ function CacheFind({ defId }: { defId: string }) {
   return (
     <>
       {turn.flash}
-      <p>Something lies under the dust. You take it.</p>
       <div class={`loot loot--cache ${turn.quake ? 'is-quake' : ''}`}>
         <div class="haul"><LootCell loot={loot[0]} i={0} state={turn.stateOf(0)} onTap={() => turn.reveal(0)} /></div>
       </div>
@@ -1118,6 +1117,21 @@ function nodeName(x: MapNode, run: ReturnType<typeof useSave>['gates']['raid']):
 /** The narration over a shrine's or a Font's cards: what the hunter finds, plainly. */
 const SHRINE_LINE = 'Three marks are cut into the altar stone. Each one is warm to the touch.';
 const FONT_LINE = 'Water wells up through a crack in the floor, lit from beneath.';
+
+/** What a cache or a vault held in materials: a tile to each, its art, the figure and its name, as the results' Spoils set them. */
+function MatTiles({ b }: { b: forge.Bundle }) {
+  return (
+    <span class="rmats">
+      {ordered(b).map(([id, n], i) => (
+        <span key={id} class="rmat" data-rarity={forge.materialById(id)?.rank} style={`animation-delay: ${180 + i * 90}ms`}>
+          <span class="rmat__art"><MatArt id={id} size={34} /></span>
+          <b class="num grant">+{group(n)}</b>
+          <small>{forge.materialById(id)?.name ?? id}</small>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 /** A step that is not a fight: what happened, or the choice it puts to you. */
 function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
@@ -1150,6 +1164,12 @@ function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
           ? <CacheEmblem kind={cache} stage={stage} onOpen={() => openCache(cache, setStage)} />
           : <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>}
         <b class="nodepanel__title">{ev?.title ?? nodeName(x, run)}</b>
+        {/* What a cache or a vault held, centred under its emblem as it opens (the owner's call: not at the foot). */}
+        {cache && !shut && (item || p.mats) && (
+          <div class="nodepanel__spoils">
+            {item ? <CacheFind key={x.id} defId={p.item!} /> : <MatTiles b={p.mats!} />}
+          </div>
+        )}
       </header>
       {x.kind === 'rest' && !p.rested && <p>The air is still here. Nothing has come this way in a long time.</p>}
       {asks && run && <RestChoice s={s} run={run} onRest={onRest} />}
@@ -1158,9 +1178,8 @@ function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
       {shut && <small class="nodepanel__hint">Tap the {cache === 'vault' ? 'vault' : 'cache'} to open it.</small>}
       {cache && !shut && (
         <div class="nodepanel__finds">
-          {x.kind === 'vault' && !item && p.mats && <p>The seal is broken. What the Gatekeeper kept is stacked inside.</p>}
-          {item ? <CacheFind key={x.id} defId={p.item!} />
-            : p.mats ? <>{x.kind !== 'vault' && <p>Something lies under the dust. You take what is worth carrying.</p>}<MatList b={p.mats} gain /></>
+          {item ? <p>Something lies under the dust. You take it.</p>
+            : p.mats ? <p>{x.kind === 'vault' ? 'The seal is broken. What the Gatekeeper kept is stacked inside.' : 'Something lies under the dust. You take what is worth carrying.'}</p>
             : <p>The cache is empty.</p>}
         </div>
       )}

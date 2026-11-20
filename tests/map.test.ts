@@ -9,7 +9,7 @@ import { CACHE } from '@/data/forge';
 import type { Dungeon, OpenRaid, Rank, Save } from '@/core/types';
 import * as raid from '@/core/raid';
 import { autoAllocate, grantXP, syncClass, totalXpFor, reclassifyAll } from '@/core/progression';
-import { EVENTS, REST_HEAL, TRAP } from '@/data/nodes';
+import { EVENTS, REST_HEAL, TRAP, TRAPS, trapById, trapEvent } from '@/data/nodes';
 import * as vitals from '@/core/vitals';
 import { POTION_HEAL } from '@/core/combat';
 import { walk } from './walk';
@@ -302,9 +302,8 @@ describe('the fog', () => {
     const run = raid.begin(s, d, now);
     const m = raid.mapOf(d, run);
     const start = m.byId[m.start!];
-    // Landmarks show through the fog from the start, as the entrance and the boss do.
-    const landmarks = m.nodes.filter((x) => x.kind === 'landmark').map((x) => x.id);
-    expect([...raid.seen(s, d, run)].sort()).toEqual([...new Set([m.start!, m.boss, ...landmarks, ...start.next])].sort());
+    // A landmark is fogged as any room is: nothing shows but the entrance, the boss and the rooms beside the entrance.
+    expect([...raid.seen(s, d, run)].sort()).toEqual([...new Set([m.start!, m.boss, ...start.next])].sort());
     const road = systemRoad(m);
     raid.choose(s, d, run, road[0], now);
     clearStep(s, d, run);
@@ -641,11 +640,11 @@ describe('walking it', () => {
 describe('choices', () => {
   it('a choice goes well as often as its odds say', () => {
     const s = hunter(20);
-    const c = TRAP.choices[0];
+    const { d, x: trap, at } = gateWith('trap');
+    const c = raid.eventAt(trap)!.choices[0];
     const odds = raid.oddsOf(c, raid.heroSpec(s, now));
     let won = 0;
     const n = 400;
-    const { d, x: trap, at } = gateWith('trap');
     for (let i = 0; i < n; i++) {
       const x = structuredClone(s);
       const run = raid.begin(x, d, at + i * 1000);
@@ -655,6 +654,54 @@ describe('choices', () => {
       if (raid.resolve(x, d, run, 0, at)?.won) won++;
     }
     expect(Math.abs(won / n - odds)).toBeLessThan(0.08);
+  });
+
+  it('a trap on the later plans is one of its kinds, with two ways past it read from two different stats, and nothing else on the map moves', () => {
+    let traps = 0;
+    const seen = new Set<string>();
+    const lean = { on: 0, all: 0 };
+    for (const day of DAYS.slice(0, 12)) for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) {
+      const seed = mapSeed(d, day);
+      const m = build(d, seed);
+      const old = build(d, seed, 'labyrinth3');
+      for (const x of m.nodes) {
+        const was = old.byId[x.id];
+        // The same rooms, the same creatures, the same corridors: only a trap's kind is new.
+        expect({ ...x, trap: undefined }).toEqual({ ...was, trap: undefined });
+        if (x.kind !== 'trap') { expect(x.trap).toBeUndefined(); continue; }
+        expect(was.trap).toBeUndefined();
+        traps++;
+        const t = trapById(x.trap!.id)!;
+        expect(t).toBeTruthy();
+        seen.add(t.id);
+        expect(x.trap!.ways).toHaveLength(2);
+        expect(new Set(x.trap!.ways).size).toBe(2);
+        for (const k of x.trap!.ways) { lean.all++; if (t.lean.includes(k)) lean.on++; }
+        const ev = raid.eventAt(x)!;
+        expect(ev.title).toBe(t.title);
+        expect(ev.choices.map((c) => c.check?.stat)).toEqual(x.trap!.ways);
+      }
+    }
+    expect(traps).toBeGreaterThan(50);
+    expect(seen.size).toBe(TRAPS.length);
+    // A trap's leaning stats are offered far more often than their share of the five.
+    expect(lean.on / lean.all).toBeGreaterThan(0.6);
+  }, 20_000);
+
+  it('a leaning stat meets its trap at better odds, and the System takes the way its hunter is likelier to pass', () => {
+    const t = TRAPS.find((x) => x.lean.includes('INT') && !x.lean.includes('STR'))!;
+    const ev = trapEvent(t.id, ['INT', 'STR'])!;
+    const hero = raid.heroSpec(hunter(20), now);
+    const flat = { ...hero, base: { ...hero.base, INT: 40, STR: 40 } };
+    expect(raid.oddsOf(ev.choices[0], flat)).toBeGreaterThan(raid.oddsOf(ev.choices[1], flat));
+    const { x } = gateWith('trap');
+    const node = { ...x, trap: { id: t.id, ways: ['INT', 'STR'] as const } as MapNode['trap'] };
+    const brute = { ...hero, base: { ...hero.base, INT: 5, STR: 150 } };
+    const sage = { ...hero, base: { ...hero.base, INT: 150, STR: 5 } };
+    expect(raid.systemChoice(node, undefined, brute)).toBe(1);
+    expect(raid.systemChoice(node, undefined, sage)).toBe(0);
+    // A trap on a plan drawn before its kinds is still the one plate.
+    expect(raid.eventAt({ ...x, trap: undefined })).toBe(TRAP);
   });
 
   it('Perception makes a trap easier to see', () => {

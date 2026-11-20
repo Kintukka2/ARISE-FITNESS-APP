@@ -759,6 +759,12 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 .nodepanel.is-open .nodepanel__head::before { animation-duration: 14s; filter: brightness(1.7); transition: filter 600ms; }
 .nodepanel__hint { margin: 0; color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.12em; text-align: center; text-transform: uppercase; animation: hintPulse 2.4s ease-in-out infinite; }
 .nodepanel__finds { display: flex; flex-direction: column; gap: 12px; animation: findsRise 420ms 140ms var(--ease) both; }
+/* What a cache or a vault held, centred under its emblem: the results' material tiles, or the piece found whole. */
+.nodepanel__spoils { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px; animation: findsRise 420ms 140ms var(--ease) both; }
+.nodepanel__spoils .rmats { justify-content: center; }
+.nodepanel__spoils .rmat__art { background: radial-gradient(color-mix(in srgb, var(--rc) 30%, transparent), color-mix(in srgb, var(--rc) 8%, rgba(4, 10, 24, 0.95)) 75%); }
+.nodepanel__spoils .loot--cache { padding: 6px 0 0; }
+.nodepanel__spoils > p { margin: 0; text-align: center; }
 .nodepanel__finds > p { margin: 0; color: var(--ink-2); line-height: 1.5; text-align: center; text-wrap: balance; }
 .nodepanel__finds > p.muted { color: var(--ink-3); font-size: 0.86rem; }
 .nodepanel.is-open > .btn { animation: findsRise 380ms 320ms var(--ease) both; }
@@ -777,7 +783,7 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 @keyframes findsRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes hintPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .cacheemblem.is-shut, .cacheemblem.is-shut::before, .cacheemblem.is-shut .cachesvg, .cacheemblem.is-opening .cachesvg, .cacheemblem.is-open, .nodepanel__hint, .nodepanel__finds, .nodepanel.is-open > .btn { animation: none; }
+  .cacheemblem.is-shut, .cacheemblem.is-shut::before, .cacheemblem.is-shut .cachesvg, .cacheemblem.is-opening .cachesvg, .cacheemblem.is-open, .nodepanel__hint, .nodepanel__finds, .nodepanel__spoils, .nodepanel.is-open > .btn { animation: none; }
   .cacheemblem.is-open .cachesvg__lid { animation: none; transform: translate(-0.4px, -4.2px) rotate(-16deg); }
   .cacheemblem.is-open .cachesvg__door { animation: none; transform: scaleX(0.2) skewY(-12deg); }
   .cacheemblem.is-open .cachesvg__beam { animation: none; opacity: 0.5; transform: none; }
@@ -1863,9 +1869,6 @@ button.wardword.infotag:hover, button.wardword.infotag[aria-expanded="true"] { c
 .bfeat__body { display: grid; flex: 1; gap: 2px; min-width: 0; }
 .bfeat__body b { font-size: 0.8rem; }
 .bfeat__body small { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bfeat__odds { position: relative; height: 3px; margin-top: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
-.bfeat__odds i { position: absolute; inset: 0 auto 0 0; width: calc(var(--odds) * 100%); background: var(--sys-ink); box-shadow: 0 0 6px var(--sys-ink); animation: oddsIn 800ms calc(200ms + var(--i) * 80ms) var(--ease) both; }
-.bfeat.is-done .bfeat__odds i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
 .bfeat__side { display: grid; flex: none; justify-items: end; gap: 2px; }
 .bfeat__side small { font-size: 0.64rem; }
 .bfeat__side small.bfeat__bp { color: var(--gold); font-weight: 700; text-shadow: 0 0 6px var(--gold-glow); }
@@ -4574,8 +4577,6 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .bpar__row.is-silver .bpar__body b { color: #dfe6f0; }
 .bpar__row.is-gold .bpar__body b { color: var(--gold); }
 .bpar__body small { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.bpar__odds { position: relative; height: 3px; margin-top: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
-.bpar__odds i { position: absolute; inset: 0 auto 0 0; width: calc(var(--odds) * 100%); background: var(--sys-ink); box-shadow: 0 0 6px var(--sys-ink); animation: oddsIn 800ms calc(200ms + var(--i) * 80ms) var(--ease) both; }
 .bpar__side { display: grid; flex: none; justify-items: end; gap: 2px; }
 .bpar__side small { font-size: 0.64rem; }
 .bpar__pay { display: inline-flex; align-items: center; gap: 4px; color: var(--ember); font-weight: 700; }
@@ -4586,8 +4587,24 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .runhud__par.is-silver b { color: #dfe6f0; }
 .runhud__par.is-bronze b { color: #e3a675; }
 @keyframes medalStrike { 0% { transform: scale(1.8) rotate(-20deg); opacity: 0; } 60% { transform: scale(0.92) rotate(4deg); opacity: 1; } 100% { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .bpar__row, .bpar__odds i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .bpar__row, .bdone, .bdone::after { animation: none; } }
 .bpar__got { color: var(--verdant); font-weight: 700; }
+/* Every Feat met, or every medal earned, on this Gate: one gold row in place of the three (the owner's call), its marks
+   shining and a light crossing it now and then, as a clear's results strike them. Tapped, the one tooltip tells what they asked. */
+.bdone { position: relative; isolation: isolate; display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent); background: linear-gradient(90deg, rgba(255, 203, 92, 0.18), rgba(255, 203, 92, 0.04) 75%); color: inherit; font: inherit; text-align: left; box-shadow: inset 0 0 18px rgba(255, 203, 92, 0.1), 0 0 14px rgba(255, 203, 92, 0.16); animation: rowIn 320ms var(--ease) both, bdoneGlow 3.2s ease-in-out 600ms infinite; }
+button.bdone { cursor: pointer; touch-action: manipulation; }
+.bdone::after { content: ''; position: absolute; inset: 0; z-index: -1; width: 45%; background: linear-gradient(100deg, transparent, rgba(255, 240, 200, 0.28), transparent); animation: holdSweep 3.6s ease-in-out 900ms infinite; pointer-events: none; }
+@keyframes bdoneGlow { 50% { box-shadow: inset 0 0 22px rgba(255, 203, 92, 0.16), 0 0 22px rgba(255, 203, 92, 0.3); } }
+.bdone__marks { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+button.bdone__star.infotag { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--gold); cursor: pointer; }
+.bdone__star .ico { width: 24px; height: 24px; filter: drop-shadow(0 0 6px var(--gold-glow)); animation: starBreathe 2.8s ease-in-out infinite; }
+.bdone__star:nth-child(2) .ico { animation-delay: 0.3s; } .bdone__star:nth-child(3) .ico { animation-delay: 0.6s; }
+.bdone__text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+button.bdone__text.infotag { align-items: flex-start; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.bdone__text b { font-size: 0.86rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.bdone__text small { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.bdone--par .bdone__marks { gap: 4px; }
+.bdone.is-open { border-color: var(--gold); }
 
 /* ------------------------------------------------------------------ Front and rear (data/ranks.ts) */
 

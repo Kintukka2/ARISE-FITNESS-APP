@@ -203,6 +203,8 @@ async function raidGate(row, name, auto = false) {
         await page.locator('.nodepanel button.cacheemblem').click();
         await page.waitForSelector('.nodepanel .nodepanel__finds', { timeout: 5000 });
         await sleep(900);
+        // What it held stands centred under its emblem, its line at the foot.
+        if (!(await page.locator('.nodepanel', { hasText: 'The cache is empty.' }).count()) && !(await page.locator('.nodepanel .nodepanel__head .nodepanel__spoils').count())) throw new Error('WHAT A CACHE HELD IS NOT UNDER ITS EMBLEM');
         if (caches === 1) await snap(`${name}-cache-open`);
         continue;
       }

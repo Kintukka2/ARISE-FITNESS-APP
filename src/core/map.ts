@@ -14,11 +14,12 @@
  */
 import { FONT_SHARE } from '@/data/blessings';
 import { landmarkOf, leadFamily } from '@/data/landmarks';
-import { EVENTS, type NodeKind } from '@/data/nodes';
+import { EVENTS, TRAP_LEAN, TRAPS, type NodeKind } from '@/data/nodes';
 import { PACK, ROLE_ROW } from '@/data/ranks';
 import { enemyById, isPractice } from './gates';
 import { powerOf } from './combat';
-import type { Dungeon } from './types';
+import type { Dungeon, Stat } from './types';
+import { STATS } from './types';
 import { rng, weighted, type Rand } from './util';
 
 export interface MapNode {
@@ -60,6 +61,8 @@ export interface MapNode {
   toll?: string[];
   /** A landmark's family. */
   landmark?: string;
+  /** On the later plans (`labyrinth4`), a trap's kind and the two stats it can be met with (`data/nodes.ts`, `TRAPS`). */
+  trap?: { id: string; ways: Stat[] };
 }
 
 export interface GateMap {
@@ -98,7 +101,7 @@ export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${
  * labyrinths walk the smaller floors they began on (`floors`), runs opened before the floors one floor
  * of rooms (`rooms`), and runs opened before the dungeons the tower they began on (`layers`).
  */
-export type Layout = 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+export type Layout = 'labyrinth4' | 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
 
 /** How many floors a Gate goes down, by its grade. */
 export const FLOORS: Record<string, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 };
@@ -819,13 +822,39 @@ function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: 
  * Draw a Gate's map. A Trial and a block of the Spire are towers; any other Gate is a dungeon of its
  * grade's floors, unless an open run began on a tower or on one floor of rooms.
  */
-export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth3'): GateMap {
+export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth4'): GateMap {
   if (d.trial) return trialMap(d);
-  if (d.floor || layout === 'layers') return layered(d, seed);
+  if (d.floor || layout === 'layers') return trapped(seed, layered(d, seed), layout);
   if (layout === 'rooms') return dungeon(d, seed, 1, false);
   if (layout === 'floors') return dungeon(d, seed, floorsOf(d), true);
-  const m = dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout === 'labyrinth2' || layout === 'labyrinth3');
-  return layout === 'labyrinth3' ? packed(d, seed, m) : m;
+  const m = dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout === 'labyrinth2' || layout === 'labyrinth3' || layout === 'labyrinth4');
+  return layout === 'labyrinth3' || layout === 'labyrinth4' ? trapped(seed, packed(d, seed, m), layout) : m;
+}
+
+/**
+ * The later plans' traps (`labyrinth4`): each trap one of the trap kinds (`TRAPS`), and two of the five stats to meet it
+ * with, its kind's leaning stats drawn `TRAP_LEAN` times as often, drawn apart from everything else on the map so
+ * nothing else moves (the owner's call: a trap that was always one Perception check felt the same every time). A plan
+ * drawn before (`labyrinth3` and earlier) keeps its traps as they were. A tower's traps take their kinds from the
+ * start of a run on `labyrinth4`, since a tower's floors are drawn the same on every layout.
+ */
+function trapped(seed: string, m: GateMap, layout: Layout): GateMap {
+  if (layout !== 'labyrinth4') return m;
+  for (const x of m.nodes) {
+    if (x.kind !== 'trap') continue;
+    const rr = rng(`arise|trap|${seed}|${x.id}`);
+    const def = TRAPS[Math.floor(rr() * TRAPS.length)];
+    const pool = STATS.map((k) => ({ k, w: def.lean.includes(k) ? TRAP_LEAN : 1 }));
+    const ways: Stat[] = [];
+    while (ways.length < 2) {
+      const left = pool.filter((p) => !ways.includes(p.k));
+      let roll = rr() * left.reduce((n, p) => n + p.w, 0);
+      const pick = left.find((p) => (roll -= p.w) < 0) ?? left[left.length - 1];
+      ways.push(pick.k);
+    }
+    x.trap = { id: def.id, ways };
+  }
+  return m;
 }
 
 /**
@@ -904,14 +933,15 @@ function opened(m: GateMap, cleared: Set<string>, o: Openings): Map<string, stri
 }
 
 /**
- * What a dungeon's walker can see through the fog: the entrance, the boss's room and every landmark, every
- * room cleared and every room next to one, by corridor, an opened passage or a toll door (sealed or not),
- * and whatever is remembered of the map. Corridors are never fogged; a room behind a hidden passage shows
- * only once it has opened. A tower has no fog.
+ * What a dungeon's walker can see through the fog: the entrance and the boss's room, every room cleared and every
+ * room next to one, by corridor, an opened passage or a toll door (sealed or not), and whatever is remembered of the
+ * map. A landmark is fogged as any room is, found when a room beside it is cleared (the owner's call: kept hidden as
+ * the rest are, where it once showed from the start). Corridors are never fogged; a room behind a hidden passage
+ * shows only once it has opened. A tower has no fog.
  */
 export function sight(m: GateMap, cleared: Set<string>, remembered: Iterable<string> = [], o: Openings = {}): Set<string> {
   if (m.tower) return new Set(m.nodes.map((x) => x.id));
-  const out = new Set<string>([m.start!, m.boss, ...m.nodes.filter((x) => x.kind === 'landmark').map((x) => x.id), ...remembered, ...cleared]);
+  const out = new Set<string>([m.start!, m.boss, ...remembered, ...cleared]);
   for (const id of cleared) for (const nb of [...(m.byId[id]?.next ?? []), ...(m.byId[id]?.toll ?? [])]) out.add(nb);
   for (const [a, b] of passages(m, cleared, o)) { out.add(a); out.add(b); }
   return out;

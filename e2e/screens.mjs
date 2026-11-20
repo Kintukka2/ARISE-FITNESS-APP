@@ -564,13 +564,16 @@ try {
   // Given back, so the run below walks in unsealed.
   await seal.scrollIntoViewIfNeeded(); await seal.click(); await sleep(900);
   if (await page.locator('.sheet.is-top .breward.is-ember').count()) throw new Error('A SEAL GIVEN BACK STILL PAYS');
-  // No tabs: what the Gate holds reads top to bottom. The Feats state the System's odds.
+  // No tabs: what the Gate holds reads top to bottom. The Feats say what they ask and pay, never how the System fared.
   if (await page.locator('.sheet.is-top .btabs').count()) throw new Error('THE BRIEF STILL HAS TABS');
   if ((await page.locator('.sheet.is-top .bfeat').count()) !== 3) throw new Error('THE BRIEF DOES NOT HOLD THREE FEATS');
+  if (await page.locator('.sheet.is-top .bfeats, .sheet.is-top .bpar', { hasText: /System \d+\/\d+/ }).count()) throw new Error('THE BRIEF STILL SAYS HOW OFTEN THE SYSTEM MET A FEAT OR A MEDAL');
   await page.locator('.sheet.is-top .bfeats').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-feats');
-  // Par: the road's par, and a row to each medal with the rounds it allows, the System's odds and its Ember.
+  // Gate Clear Par: the road's par and the hunter's own best, then a row to each medal with the rounds it allows and its Ember.
   if ((await page.locator('.sheet.is-top .bpar__row').count()) !== 3) throw new Error('THE BRIEF DOES NOT STATE PAR AND ITS THREE MEDALS');
   if (!/\d/.test(await page.locator('.sheet.is-top .bpar__facts dd b').first().innerText())) throw new Error('THE BRIEF STATES NO PAR');
+  if (!(await page.locator('.sheet.is-top .bpar .bbox__head', { hasText: 'Gate Clear Par' }).count())) throw new Error('THE PAR CARD IS NOT HEADED GATE CLEAR PAR');
+  if ((await page.locator('.sheet.is-top .bpar__facts dt').allInnerTexts()).map((x) => x.toLowerCase()).join(',') !== 'par today,personal best') throw new Error('THE PAR CARD DOES NOT SET THE PERSONAL BEST BESIDE PAR');
   await page.locator('.sheet.is-top .bpar').scrollIntoViewIfNeeded(); await sleep(300); await snap('brief-par');
   // Today's map is one row, its rooms and floors and no more; a tap opens the map in its own window.
   const maprow = page.locator('.sheet.is-top .bmaprow');
@@ -977,7 +980,10 @@ try {
     // What was met is struck, one row after another, and pays at its right with no New beside it: a material as its
     // art and figure, a blueprint as its box in the row, not among the Spoils.
     if (await page.locator('.arena--results .rnew').count()) throw new Error('A CHALLENGE STILL SAYS NEW');
-    if ((await page.locator('.arena--results .rchal__row.is-met').count()) !== (await page.locator('.arena--results .rchal__row.is-lit').count())) throw new Error('A CHALLENGE MET WAS NOT STRUCK');
+    // Struck 720 ms apart, so wait for the last before counting (a loaded machine runs the timers late).
+    const struck = async () => (await page.locator('.arena--results .rchal__row.is-met').count()) === (await page.locator('.arena--results .rchal__row.is-lit').count());
+    for (let i = 0; i < 40 && !(await struck()); i++) await sleep(200);
+    if (!(await struck())) throw new Error('A CHALLENGE MET WAS NOT STRUCK');
     for (const g of await page.locator('.arena--results .rchal__gain').all()) {
       if (!(await g.locator('.matart').count())) throw new Error('A CHALLENGE PAID A MATERIAL WITHOUT ITS ART');
     }
@@ -1311,6 +1317,26 @@ try {
     if ((await page.locator('.sheet.is-top .hc-history__bar > i').count()) !== 3) throw new Error('THE HISTORY DOES NOT SPLIT HOW THE GATES ENDED');
     await page.locator('.sheet.is-top .huntercard .section', { hasText: 'History' }).scrollIntoViewIfNeeded(); await sleep(400);
     await snap('hunter-card-together');
+    await close(); await sleep(300);
+    // The same Gate with every Feat met and every medal earned: one gold row for each, a tap telling what they asked.
+    const gid = await page.locator('.sheet.is-top .brief').getAttribute('data-gate');
+    await page.evaluate((id) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.gates.feats = { ...(x.gates.feats ?? {}), [id]: ['unbroken', 'swift', 'breaker', 'keeper', 'thorough', 'steady'] }; x.gates.par = { ...(x.gates.par ?? {}), [id]: 'gold' }; x.gates.parBest = { ...(x.gates.parBest ?? {}), [id]: 11 }; localStorage.setItem(k, JSON.stringify(x)); }, gid);
+    await page.reload(); await sleep(1200); await drain();
+    await nav('gates');
+    await page.locator('.gradar__all').click(); await sleep(600);
+    await page.locator('.sheet.is-top .gaterow:not(.is-shut):not(.is-practice)').first().click(); await sleep(800); await drain();
+    if ((await page.locator('.sheet.is-top .brief').getAttribute('data-gate')) !== gid) throw new Error('THE SAME GATE DID NOT OPEN AGAIN');
+    if (await page.locator('.sheet.is-top .bfeat').count() || (await page.locator('.sheet.is-top .bdone--feats .bdone__star').count()) !== 3) throw new Error('THREE FEATS MET ARE NOT ONE ROW OF THREE STARS');
+    if (await page.locator('.sheet.is-top .bpar__row').count() || !(await page.locator('.sheet.is-top .bdone--par', { hasText: 'Best: 11 rounds' }).count())) throw new Error('EVERY MEDAL EARNED IS NOT ONE ROW WITH THE BEST');
+    await page.locator('.sheet.is-top .bdone--feats').scrollIntoViewIfNeeded(); await sleep(500); await snap('brief-done');
+    await page.locator('.sheet.is-top .bdone--feats .bdone__star').nth(2).click(); await sleep(300);
+    if (!(await page.locator('.tip .tip__kind', { hasText: /^Feat$/i }).isVisible())) throw new Error('A STAR OF THE FEATS MET DID NOT TELL ITS FEAT');
+    await snap('brief-done-feat-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+    await page.locator('.sheet.is-top .bdone--par').click(); await sleep(300);
+    if (!(await page.locator('.tip', { hasText: /Bronze within \d+ rounds, Silver within \d+, Gold within \d+/ }).isVisible())) throw new Error('THE MEDALS EARNED DID NOT TELL WHAT EACH ASKED');
+    await snap('brief-done-par-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
   }
 
   // ---------------------------------------------------------------- the ascended hunter: S-Rank, three levels open

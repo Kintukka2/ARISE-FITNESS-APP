@@ -19,8 +19,8 @@ export const NODE: Record<NodeKind, { name: string; glyph: string; desc: string 
   treasure: { name: 'Cache', glyph: 'roomCache', desc: 'Materials one grade below the Gate, now and then a piece found whole. It passes for an Event until you step on it.' },
   shrine: { name: 'Shrine', glyph: 'roomShrine', desc: 'Three blessings of one Path, shown on the plan. Take one for the rest of the Gate.' },
   font: { name: 'Font', glyph: 'font', desc: 'Raises one blessing you hold a tier. With none to raise, it blesses as a shrine does.' },
-  trap: { name: 'Trap', glyph: 'roomTrap', desc: 'A Perception check that costs HP when failed. It passes for an Event until you step on it.' },
-  landmark: { name: 'Landmark', glyph: 'landmark', desc: 'A named room of the creatures that hold the Gate, one to a floor, seen from the moment you walk in. A choice of its own, with its odds stated.' },
+  trap: { name: 'Trap', glyph: 'roomTrap', desc: 'A pressure plate, a tripwire, a falling ceiling, a glyph: two ways past it, each read from a stat, and HP lost when it goes wrong. It passes for an Event until you step on it.' },
+  landmark: { name: 'Landmark', glyph: 'landmark', desc: 'A named room of the creatures that hold the Gate, one to a floor, hidden in the fog until you find it. A choice of its own, with its odds stated.' },
   event: { name: 'Event', glyph: 'event', desc: 'A choice, with its odds stated. A trap, a cache or a rest passes for one until you step in.' },
   boss: { name: 'Boss', glyph: 'roomBoss', desc: 'The Gate’s Boss. Defeating it closes the Gate.' },
   entrance: { name: 'Entrance', glyph: 'roomEntrance', desc: 'The way in, and the way out. Withdraw from here.' },
@@ -209,7 +209,205 @@ export const EVENTS: GateEvent[] = [
 ];
 export const eventById = (id: string) => EVENTS.find((e) => e.id === id);
 
-/** The one choice a trap offers, and what Perception buys. */
+/**
+ * A trap's kinds, after the mechanical and the magical traps of the tabletop games (the owner's call: a trap that was
+ * always one Perception check felt the same every time). A trap on the later plans (`labyrinth4`) is one of these, and
+ * offers two ways past it, two of the five stats drawn for its room (`trapped` in `core/map.ts`), its own leaning stats
+ * drawn more often and at better odds: a magical trap leans on Intelligence, a boulder on Strength and Vitality, a
+ * tripwire on Agility. Each way is that stat's own act against that trap, its odds read from that stat. Failing costs HP
+ * (and the flood, fatigue), never a status: one carried into the next fight compounded under Ascension's Crooked Luck,
+ * and the campaign's three-session hunter cleared 13 points fewer of its last month's Ascension Gates with them.
+ */
+export type TrapKind = 'mechanical' | 'magical';
+export interface TrapWay { label: string; win: string }
+export interface TrapDef {
+  id: string;
+  title: string;
+  text: string;
+  kind: TrapKind;
+  /** The stats it leans on: drawn this many times as often (`TRAP_LEAN`), and at the better odds (`TRAP_ODDS.lean`). */
+  lean: readonly Stat[];
+  /** What each stat does against it. */
+  ways: Record<Stat, TrapWay>;
+  /** What it does to the hunter who fails, whichever way they tried. */
+  lose: Effect;
+}
+
+/** A trap's leaning stats are drawn this many times as often as each other. */
+export const TRAP_LEAN = 3;
+/** The odds a way past a trap goes well, by its stat: a leaning stat's better than another's. */
+export const TRAP_ODDS = {
+  lean: { base: 0.45, per: 0.006, max: 0.92 },
+  plain: { base: 0.3, per: 0.005, max: 0.85 },
+} as const;
+
+export const TRAPS: TrapDef[] = [
+  {
+    id: 'plate', title: 'A Pressure Plate', kind: 'mechanical', lean: ['AGI', 'PER'],
+    text: 'The floor ahead is too clean. Something was set here.',
+    ways: {
+      STR: { label: 'Wedge it down', win: 'You jam the plate with a broken flagstone before it can drop.' },
+      VIT: { label: 'Brace and cross', win: 'It fires. You take it on your guard and keep walking.' },
+      AGI: { label: 'Leap over it', win: 'You clear the plate in one stride.' },
+      INT: { label: 'Find the mechanism', win: 'A loose stone in the wall hides the release. The plate locks in place.' },
+      PER: { label: 'Step carefully', win: 'You see it in time and step around it.' },
+    },
+    lose: { hurt: 0.2, text: 'The plate drops under your foot.' },
+  },
+  {
+    id: 'tripwire', title: 'A Tripwire', kind: 'mechanical', lean: ['AGI', 'PER'],
+    text: 'A thread pulled taut across the passage at ankle height, so fine it catches the light only once.',
+    ways: {
+      STR: { label: 'Hold the wire', win: 'You take the strain on the wire and ease it back down.' },
+      VIT: { label: 'Shoulder through', win: 'The bolts snap off your armour.' },
+      AGI: { label: 'Step over it', win: 'You lift your feet over the thread, one after the other.' },
+      INT: { label: 'Trace where it leads', win: 'You follow the thread to its bolts and pull their pin.' },
+      PER: { label: 'Look for the thread', win: 'You catch the glint and step over it.' },
+    },
+    lose: { hurt: 0.15, text: 'Bolts snap out of the walls.' },
+  },
+  {
+    id: 'pit', title: 'A False Floor', kind: 'mechanical', lean: ['AGI', 'STR'],
+    text: 'The flagstones ahead ring hollow under the dust.',
+    ways: {
+      STR: { label: 'Bridge it with a slab', win: 'You heave a slab across the hollow and cross on it.' },
+      VIT: { label: 'Cross and take the fall', win: 'One stone gives. You catch the edge and haul yourself up, unhurt.' },
+      AGI: { label: 'Jump the hollow', win: 'You land past the hollow stones.' },
+      INT: { label: 'Work out the safe stones', win: 'The dust lies thinner on the stones that hold. You keep to them.' },
+      PER: { label: 'Sound out the floor', win: 'You hear where the floor rings hollow and keep off it.' },
+    },
+    lose: { hurt: 0.25, text: 'The floor tips away beneath you. You climb out of the pit.' },
+  },
+  {
+    id: 'arrows', title: 'Arrow Slits', kind: 'mechanical', lean: ['PER', 'AGI'],
+    text: 'Narrow slits line both walls at chest height. Something behind them is wound tight.',
+    ways: {
+      STR: { label: 'Raise a slab as a shield', win: 'You drag a slab up in front of you. The bolts break on it.' },
+      VIT: { label: 'Run the gauntlet', win: 'The bolts glance off. You make it through.' },
+      AGI: { label: 'Dive between volleys', win: 'You roll through the gap between volleys.' },
+      INT: { label: 'Count the volleys', win: 'They fire to a rhythm. You walk through between beats.' },
+      PER: { label: 'Find the trigger stone', win: 'You spot the trigger stone and step around it.' },
+    },
+    lose: { hurt: 0.18, text: 'Bolts hiss out of the slits.' },
+  },
+  {
+    id: 'ceiling', title: 'A Falling Ceiling', kind: 'mechanical', lean: ['STR', 'VIT'],
+    text: 'Cracks run across the ceiling, and dust sifts down when you breathe.',
+    ways: {
+      STR: { label: 'Hold it up', win: 'The first stone drops onto your shoulders and stops. You hold it until the party is through.' },
+      VIT: { label: 'Brace and run', win: 'Stone rains around you. You keep your feet and come out the far side.' },
+      AGI: { label: 'Sprint for the far side', win: 'You make the far side before the dust settles.' },
+      INT: { label: 'Find the keystone', win: 'One stone carries the rest. You wedge it, and the ceiling holds.' },
+      PER: { label: 'Read the cracks', win: 'The cracks run one way. You keep to the side that will hold.' },
+    },
+    lose: { hurt: 0.25, text: 'Stone comes down across your shoulders.' },
+  },
+  {
+    id: 'flood', title: 'A Flooding Chamber', kind: 'mechanical', lean: ['VIT', 'STR'],
+    text: 'The door grinds shut behind you, and water starts pouring in through the walls.',
+    ways: {
+      STR: { label: 'Force the door', win: 'The door shrieks open, and the water pours out after you.' },
+      VIT: { label: 'Hold your breath and swim', win: 'The water closes over you. You swim out through the drain.' },
+      AGI: { label: 'Climb above the water', win: 'You climb the wall to a ledge and out through a gap in the roof.' },
+      INT: { label: 'Find the sluice', win: 'A lever behind a loose panel. The water drains away.' },
+      PER: { label: 'Look for the drain', win: 'You spot the grate and kick it open. The water drains.' },
+    },
+    lose: { hurt: 0.15, fatigue: 6, text: 'You force your way out, half drowned.' },
+  },
+  {
+    id: 'blades', title: 'Whirling Blades', kind: 'mechanical', lean: ['AGI', 'PER'],
+    text: 'Blades spin out of slots in the floor, cutting the room in two.',
+    ways: {
+      STR: { label: 'Jam the blades', win: 'You drive your weapon into the slot. The blades grind to a halt.' },
+      VIT: { label: 'Push through', win: 'They catch your armour and nothing else.' },
+      AGI: { label: 'Time the gap', win: 'You slip between the blades.' },
+      INT: { label: 'Work out their pattern', win: 'They spin in a pattern. You walk the gaps it leaves.' },
+      PER: { label: 'Watch them turn', win: 'You watch them turn until you see the gap, then take it.' },
+    },
+    lose: { hurt: 0.22, text: 'A blade catches you on the way through.' },
+  },
+  {
+    id: 'net', title: 'A Falling Net', kind: 'mechanical', lean: ['STR', 'AGI'],
+    text: 'A weighted net hangs folded in the dark above the doorway.',
+    ways: {
+      STR: { label: 'Tear free', win: 'The net drops. You rip it apart before it settles.' },
+      VIT: { label: 'Take its weight', win: 'The net drops onto you. You carry it off your shoulders and walk on.' },
+      AGI: { label: 'Slip under it', win: 'You are through the doorway before it lands.' },
+      INT: { label: 'Cut the line first', win: 'You trace the line to its peg and cut it.' },
+      PER: { label: 'Spot the line', win: 'You see the line and step clear of it.' },
+    },
+    lose: { hurt: 0.08, text: 'The net drops over you. It takes a while to cut free.' },
+  },
+  {
+    id: 'boulder', title: 'A Rolling Boulder', kind: 'mechanical', lean: ['STR', 'VIT'],
+    text: 'The passage slopes down, and something heavy rumbles at the top of it.',
+    ways: {
+      STR: { label: 'Stop it', win: 'You set your feet and stop it dead.' },
+      VIT: { label: 'Take the hit', win: 'It hits you full on, and you stay standing.' },
+      AGI: { label: 'Dive aside', win: 'You throw yourself into an alcove as it thunders past.' },
+      INT: { label: 'Find where it will stop', win: 'The slope levels out past the bend. You wait there while it rolls by.' },
+      PER: { label: 'Spot the alcove', win: 'There is a hollow in the wall. You are in it before the boulder passes.' },
+    },
+    lose: { hurt: 0.28, text: 'It catches you, and carries you down the slope.' },
+  },
+  {
+    id: 'glyph', title: 'A Glyph of Warding', kind: 'magical', lean: ['INT', 'PER'],
+    text: 'A sigil is drawn faintly across the threshold, almost invisible until you look at it sideways.',
+    ways: {
+      STR: { label: 'Smash its stone', win: 'You crack the stone it is drawn on, and its light goes out.' },
+      VIT: { label: 'Walk through the fire', win: 'It flares. You walk through the heat and out the other side.' },
+      AGI: { label: 'Step over its edge', win: 'You step over the edge of the sigil without touching it.' },
+      INT: { label: 'Unwrite the glyph', win: 'You trace the sigil backwards, and it fades.' },
+      PER: { label: 'Find where it ends', win: 'You find where the sigil ends and go round it.' },
+    },
+    lose: { hurt: 0.2, text: 'The glyph flares, and fire rolls over you.' },
+  },
+  {
+    id: 'runes', title: 'A Rune-Cut Door', kind: 'magical', lean: ['INT', 'STR'],
+    text: 'The only way on is a door cut with runes that pulse as you come near.',
+    ways: {
+      STR: { label: 'Force it open', win: 'The runes spit sparks as the door gives. None of them catch.' },
+      VIT: { label: 'Endure the runes', win: 'The runes burn as you push through. It passes.' },
+      AGI: { label: 'Slip through the gap', win: 'The door stands open a hand’s width. You slip through.' },
+      INT: { label: 'Read the runes', win: 'The runes are a lock. You read the word that opens it.' },
+      PER: { label: 'Find the worn rune', win: 'One rune is worn smooth from use. You press it, and the door opens.' },
+    },
+    lose: { hurt: 0.12, text: 'The runes flare, and the door throws you back.' },
+  },
+  {
+    id: 'haze', title: 'A Caustic Haze', kind: 'magical', lean: ['INT', 'VIT'],
+    text: 'A green haze hangs at knee height, waiting for something to walk into it.',
+    ways: {
+      STR: { label: 'Break the vent', win: 'You smash the vent it rises from. The haze thins and is gone.' },
+      VIT: { label: 'Hold your breath', win: 'You hold your breath and walk through the haze.' },
+      AGI: { label: 'Run through it', win: 'You are through before it can settle on you.' },
+      INT: { label: 'Unbind the haze', win: 'You find the binding in the haze and pull it apart.' },
+      PER: { label: 'Find the clear path', win: 'The haze drifts one way. You walk the side it leaves clear.' },
+    },
+    lose: { hurt: 0.15, text: 'The haze settles on you, and starts to eat.' },
+  },
+];
+export const trapById = (id: string) => TRAPS.find((t) => t.id === id);
+
+/**
+ * A trap as the choice it offers: its two ways, each its stat's act and that stat's odds, at a leaning stat's better
+ * ones. The System takes whichever its hunter is likelier to pass (`raid.systemChoice`).
+ */
+export function trapEvent(id: string, ways: readonly Stat[]): GateEvent | null {
+  const t = trapById(id);
+  if (!t) return null;
+  return {
+    id: `trap:${t.id}`, title: t.title, text: t.text,
+    choices: ways.map((stat) => ({
+      label: t.ways[stat].label,
+      check: { stat, ...(t.lean.includes(stat) ? TRAP_ODDS.lean : TRAP_ODDS.plain) },
+      win: { text: t.ways[stat].win },
+      lose: t.lose,
+    })),
+  };
+}
+
+/** The one choice a trap offered on the plans before its kinds (`labyrinth3` and earlier), and what Perception buys. */
 export const TRAP: GateEvent = {
   id: 'trap', title: 'A Pressure Plate',
   text: 'The floor ahead is too clean. Something was set here.',

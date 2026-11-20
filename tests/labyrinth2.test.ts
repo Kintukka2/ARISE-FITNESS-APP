@@ -38,7 +38,7 @@ function find(where: (m: GateMap, x: MapNode) => boolean) {
 }
 
 describe('the later plans', () => {
-  it('give every floor a landmark of the family that leads the Gate, off the road, seen from the start', () => {
+  it('give every floor a landmark of the family that leads the Gate, off the road, hidden in the fog as any room is', () => {
     expect(new Set(LANDMARKS.map((l) => l.family)).size).toBe(LANDMARKS.length);
     for (const { d, m } of maps()) {
       const lm = m.nodes.filter((x) => x.kind === 'landmark');
@@ -50,8 +50,14 @@ describe('the later plans', () => {
         expect(x.off).toBeGreaterThanOrEqual(1);
         expect(systemRoad(m)).not.toContain(x.id);
       }
+      // Fogged until a room beside it is cleared, unless it stands beside the entrance.
+      const start = m.byId[m.start!];
       const seen = sight(m, new Set([m.start!]));
-      for (const x of lm) expect(seen.has(x.id)).toBe(true);
+      for (const x of lm) expect(seen.has(x.id)).toBe(start.next.includes(x.id));
+      for (const x of lm) {
+        const beside = m.nodes.find((y) => y.next.includes(x.id))!;
+        expect(sight(m, new Set([m.start!, beside.id])).has(x.id)).toBe(true);
+      }
     }
   });
 

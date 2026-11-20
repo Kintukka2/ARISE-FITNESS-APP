@@ -68,6 +68,8 @@ import { CONDITION } from '@/data/drops';
 import { openHunter } from './Hunter';
 import { ModRows, SealArt } from '@/ui/seals';
 import { ParCard } from '@/ui/par';
+import { InfoTag } from '@/ui/infotag';
+import type { TipText } from '@/ui/tip';
 import { drinkFlow } from './Inventory';
 import { KeyedTips, WardLines } from '@/ui/wards';
 
@@ -275,7 +277,7 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
   };
 
   return (
-    <div class={`stack brief ${trial ? 'is-trial' : ''}`} style={`--rc: ${trial ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
+    <div class={`stack brief ${trial ? 'is-trial' : ''}`} data-gate={d.id} style={`--rc: ${trial ? 'var(--gold)' : `var(--rank-${d.rank})`}`}>
       {/*
         The head, as a boss is revealed: the Gate's portal inside the assessment's ring at its centre, the rate and
         the verdict under it, its grade and its name over it; the file, the chips and the Ascension's rules after.
@@ -316,9 +318,9 @@ function Brief({ d, close }: { d: Dungeon; close: () => void }) {
       {rifted && <RiftScoring />}
       <EnemyRow d={d} level={level} />
       <Lineup d={d} level={level} taken={taken} />
-      {hasFeats && <FeatList d={d} met={feats.metOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} odds={proj.feats} runs={proj.runs} />}
+      {hasFeats && <FeatList d={d} met={feats.metOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} />}
       {hasFeats && proj.par.road > 0 && (
-        <ParCard d={d} best={par.bestOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} road={proj.par.road} rounds={proj.par.rounds} medals={proj.par.medals} runs={proj.runs} />
+        <ParCard d={d} best={par.bestOn(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} road={proj.par.road} mine={par.bestRounds(s, rifted ? dungeonById(d.shape ?? '') ?? d : d)} />
       )}
       <MapRow d={d} road={proj.road} />
 
@@ -658,36 +660,66 @@ function Lineup({ d, level, taken }: { d: Dungeon; level: number; taken: SealId[
 }
 
 /**
- * A Gate's three Feats, as Honkai: Star Rail sets a stage's three challenges: a star to each, gold once met
- * here, what it asks, how often the System met it on today's map, and what it pays the first time.
+ * A Gate's three Feats, as Honkai: Star Rail sets a stage's three challenges: a star to each, gold once met here,
+ * what it asks, and what it pays the first time (the owner's call: never how often the System met it). Once all three
+ * are met, one gold row in their place (`FeatsDone`).
  */
-function FeatList({ d, met, odds, runs }: { d: Dungeon; met: FeatId[]; odds: Partial<Record<FeatId, number>>; runs: number }) {
+function FeatList({ d, met }: { d: Dungeon; met: FeatId[] }) {
   const bpFeat = feats.blueprintFeat(d);
-  const got = feats.featsOf(d).filter((id) => met.includes(id)).length;
+  const asked = feats.featsOf(d);
+  const got = asked.filter((id) => met.includes(id)).length;
   return (
     <section class="bbox" aria-label="Feats">
       <span class="label bbox__head">Feats<small class="bbox__right"><span class="btabs__stars">{Array.from({ length: FEATS_PER_GATE }, (_, i) => <i key={i} class={i < got ? 'is-on' : ''}>★</i>)}</span></small></span>
-      <div class="bfeats">
-        {feats.featsOf(d).map((id, i) => {
-          const done = met.includes(id);
-          const n = odds[id] ?? 0;
-          return (
-            <div key={id} class={`bfeat ${done ? 'is-done' : ''}`} style={`--i: ${i}; --odds: ${runs ? n / runs : 0}`}>
-              <Glyph name="star" class="bfeat__star" />
-              <span class="bfeat__body">
-                <b>{FEATS[id].name}</b>
-                <small>{FEATS[id].text}</small>
-                <span class="bfeat__odds" aria-hidden="true"><i /></span>
-              </span>
-              <span class="bfeat__side">
-                <small class="num" aria-label={`The System met it in ${n} of ${runs} runs`}>System {n}/{runs}</small>
-                <small class={done ? 'muted' : id === bpFeat ? 'bfeat__bp' : 'grant'}>{done ? 'Met' : id === bpFeat ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      {got === asked.length && asked.length > 0
+        ? <FeatsDone asked={asked} />
+        : (
+          <div class="bfeats">
+            {asked.map((id, i) => {
+              const done = met.includes(id);
+              return (
+                <div key={id} class={`bfeat ${done ? 'is-done' : ''}`} style={`--i: ${i}`}>
+                  <Glyph name="star" class="bfeat__star" />
+                  <span class="bfeat__body">
+                    <b>{FEATS[id].name}</b>
+                    <small>{FEATS[id].text}</small>
+                  </span>
+                  <span class="bfeat__side">
+                    <small class={done ? 'muted' : id === bpFeat ? 'bfeat__bp' : 'grant'}>{done ? 'Met' : id === bpFeat ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as Rank]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
     </section>
+  );
+}
+
+/** A Feat in the one tooltip: its name and `Feat`, and what it asks. */
+const featTip = (id: FeatId): TipText => ({
+  title: FEATS[id].name, kind: 'Feat', tone: 'gate',
+  mark: <span class="tip__mark"><Glyph name="star" /></span>,
+  lines: [`${FEATS[id].text}.`],
+});
+
+/**
+ * Every Feat met on this Gate: one gold row, its three stars lit, `All Feats met` (the owner's call: compact once done).
+ * A star tapped tells its Feat; the row's words tapped tell all three.
+ */
+function FeatsDone({ asked }: { asked: FeatId[] }) {
+  const all: TipText = {
+    title: 'Feats', kind: 'Met', tone: 'gate',
+    mark: <span class="tip__mark"><Glyph name="star" /></span>,
+    lines: asked.map((id) => `${FEATS[id].name}: ${FEATS[id].text}.`),
+  };
+  return (
+    <div class="bdone bdone--feats">
+      <span class="bdone__marks">
+        {asked.map((id) => <InfoTag key={id} class="bdone__star" tip={featTip(id)}><Glyph name="star" /></InfoTag>)}
+      </span>
+      <InfoTag class="bdone__text" tip={all}><b>All Feats met</b><small class="num">{asked.length}/{asked.length}</small></InfoTag>
+    </div>
   );
 }
 

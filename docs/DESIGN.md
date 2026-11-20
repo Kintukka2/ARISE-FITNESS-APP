@@ -3159,6 +3159,154 @@ What changed:
   - the ready rank button carries one mark.
 - **Balance.** Display only: no calibration, no campaign.
 
+## Feats and Par done in one row, Gate Clear Par, landmarks fogged, and traps of many kinds — built
+
+The owner asked for:
+- **The brief's Feats:** once all three are met, the section compacted to one gold row with the three stars. A tap on
+  the row or on a star tells the Feat (`Clear every room on the plan`).
+- **The brief's Par:**
+  - Once all three medals are earned, one row with the Gate cleared glow. A tap tells what Bronze, Silver and Gold
+    were.
+  - The head `Par` renamed `Gate Clear Par`.
+  - `The System` fact gone, and a personal best in its place: Gold might be 13 rounds and the best 11.
+  - What defines par? Some read far higher than they should.
+- **Every `System 24/24` and `5/24` gone.** The hunter does not need the projection's counts.
+- **Landmarks** hidden on the map like every other room.
+- **A cache and a vault:** the spoils centred under the emblem, not where they sat.
+- **Traps:**
+  - Many kinds, after the D&D trap list, in place of one Perception check every time.
+  - Each trap offers two ways past it, drawn from the five stats, each its stat's own act with its outcome read from
+    that stat.
+  - Each kind leans to its stats: a magical trap to INT, a rolling boulder to STR and VIT, a pressure plate, a false
+    floor or a tripwire to AGI.
+
+What changed:
+- **Feats, all met** (`FeatsDone` in `screens/Brief.tsx`). The list becomes one gold row: the three stars struck in
+  gold, `All Feats met` and `3/3`.
+  - The row breathes gold, and a light crosses it now and then.
+  - Each star is its own `InfoTag`: the one tooltip, the Feat's name, `Feat` and its line (`Clear every room on the
+    plan.`). The words open a tooltip naming all three.
+  - Before that, the rows are as they were, without the System's count. A Feat met still says `Met`, and one to go its
+    alloy.
+- **Gate Clear Par** (`ParCard` in `ui/par.tsx`).
+  - Its two facts are `Par today` and `Personal best`, each in rounds. `Personal best` reads `-- --` before a clear
+    is graded.
+  - Its medal rows keep the rounds each allows and the Ember it pays, or `Earned`. The System's counts and odds bars
+    are gone.
+  - Once Gold is earned (and so all three), the card is one gold row (`ParDone`):
+    - the three medals lit, each with its glint;
+    - `All medals earned` and `Best: 11 rounds`;
+    - the Gate cleared glow breathing, its light crossing.
+  - A tap opens the one tooltip: `Gate Clear Par` and `Par`, over
+    `Par today: 24 rounds. Bronze within 24 rounds, Silver within 15, Gold within 12.` and
+    `Your best clear: 11 rounds.`.
+- **Personal best is kept by the engine.** `raid.finish` records a graded clear's rounds on its Gate, the Rift's on the
+  Gate it takes the shape of (`par.recordRounds`, `s.gates.parBest`, the fewest kept). `par.bestRounds` reads it. It is
+  an optional field with no default, so no migration, and par still never reaches a fight.
+- **What defines par.** Each fight carries the System's average rounds at its grade's middle level (`PAR`, measured by
+  `npm run parstats`). A clear's par adds up every fight it won, so a fight off the road brings its own par.
+  - This change's parstats run puts the pars on their mark. E's middle level clears in 29 rounds against a road par of
+    27, its fights 5.3 rounds to a par of 5.3. D clears in 21 against 22, C in 23 against 22, B in 29 against 32, A in
+    28 against 36, and S in 75 against 75.
+  - A par that reads high is a hunter far above the Gate's grade. A Level 21 hunter in an E Gate, whose middle level is
+    6, clears in a fraction of its par, so Gold comes easily. Exploring every side room adds those fights' par too
+    (`Par 41` on a full plan).
+  - No par moves.
+- **No System counts.** The brief's Feats and Par carry no `System 24/24` or `5/24`, and no odds bars. The projection
+  still plays for the head's readiness. `.bfeat__odds` and `.bpar__odds` are gone.
+- **Landmarks fogged.** `map.sight` no longer shows a landmark from the start. It is in the fog as any room until a
+  room beside it is cleared, then keeps its standing stone and name. Fog never reaches the fight, the System's road or
+  the projection, so nothing moves.
+- **A cache's spoils under its emblem** (`NodePanel` in `screens/Arena.tsx`). A cache or a vault opened shows what it
+  held centred under its emblem and name (`.nodepanel__spoils`). The materials are tiles as the results' Spoils set
+  them (`MatTiles`), or the piece found whole turning over by its grade. The line and Continue stay at the foot.
+- **Traps of many kinds** (`TRAPS`, `trapEvent` in `data/nodes.ts`; `trapped` in `core/map.ts`). New runs open on
+  `labyrinth4`, the plans of `labyrinth3` with each trap one of twelve kinds:
+
+  | Trap | Kind | Leans to | Failed |
+  |---|---|---|---|
+  | A Pressure Plate | mechanical | AGI, PER | HP -20% |
+  | A Tripwire | mechanical | AGI, PER | HP -15% |
+  | A False Floor | mechanical | AGI, STR | HP -25% |
+  | Arrow Slits | mechanical | PER, AGI | HP -18% |
+  | A Falling Ceiling | mechanical | STR, VIT | HP -25% |
+  | A Flooding Chamber | mechanical | VIT, STR | HP -15%, Fatigue +6 |
+  | Whirling Blades | mechanical | AGI, PER | HP -22% |
+  | A Falling Net | mechanical | STR, AGI | HP -8% |
+  | A Rolling Boulder | mechanical | STR, VIT | HP -28% |
+  | A Glyph of Warding | magical | INT, PER | HP -20% |
+  | A Rune-Cut Door | magical | INT, STR | HP -12% |
+  | A Caustic Haze | magical | INT, VIT | HP -15% |
+
+  - **Two ways past each.** Every kind has an act for each of the five stats, with its own label and its own line when
+    it works: on a plate, `Wedge it down` (STR), `Brace and cross` (VIT), `Leap over it` (AGI), `Find the mechanism`
+    (INT), `Step carefully` (PER).
+  - **Drawn for the room.** `trapped` draws a room's kind and two different stats from its own seed
+    (`arise|trap|<map seed>|<room>`), apart from every other draw, so no room, creature or corridor moves. A kind's
+    leaning stats are drawn `TRAP_LEAN` (3) times as often.
+  - **Odds read from the stat.** A leaning stat meets its trap at better odds (`TRAP_ODDS.lean`: 45% and 0.6% a point,
+    up to 92%) than another (`TRAP_ODDS.plain`: 30% and 0.5% a point, up to 85%). The odds show as every check's do,
+    `Success rate: 64% (AGI)`, and Ascension's Crooked Luck cuts them as it cuts every roll.
+  - **A plan drawn before keeps its plate.** A run opened on `labyrinth3` or earlier keeps the one Perception plate
+    (`TRAP`). `raid.eventAt` builds a typed trap's choice, or falls back to the plate.
+  - **The System takes the way its hunter is likelier to pass** (`raid.systemChoice` with the hero: the run's hunter,
+    or the projection's spec). That moves Auto, the brief and calibration, so this change recalibrates.
+  - **Failing costs HP, never a status.** Each kind costs its own share of the hunter's HP (8% for the net to 28% for
+    the boulder), and the flood fatigue too. The first draft also left a status (Bleeding, Staggered, Rooted,
+    Burning, Cursed, Corroded) to carry into the next fight. The campaign showed that compounding under Ascension's
+    Crooked Luck, which cuts every roll's odds: the three-session hunter was carried out 36 times to 26, and cleared
+    77% of its last month's Ascension Gates to 90%. Run again with HP alone, it matched `main`, so the statuses went.
+  - **Kept to the voice.** The voice test reads every kind's every act and line.
+- **Held by tests.**
+  - `tests/map.test.ts`:
+    - On `labyrinth4` every trap is one of the kinds, with two different stats, its event built from them, and every
+      other room the same as on `labyrinth3`.
+    - Every kind is drawn, and its leaning stats make more than 60% of the ways offered.
+    - A leaning stat meets its trap at better odds. The System takes the way its hunter passes more often, and a trap
+      without a kind is the old plate.
+    - The fog hides landmarks until a neighbour is cleared, as does `tests/labyrinth2.test.ts`.
+  - The tour:
+    - the brief's Feats and Par carry no `System` count;
+    - the head reads `Gate Clear Par` with `Par today` and `Personal best`;
+    - a Gate with every Feat met and Gold earned shows the gold Feats row with its three stars and the Par row with
+      `Best: 11 rounds`;
+    - a star's and the Par row's tooltips open and read right.
+  - The smoke run checks that an opened cache's spoils sit in the head under its emblem.
+- **Calibration.** Against `main`, 3 of the 141 tunings moved, all slightly easier. The first run, with the trap
+  statuses, held 136 and tuned 5; the second, with HP alone, held every tuning as the first left it:
+
+  | Gate | Grade | Before | After | Change |
+  |---|---|---:|---:|---|
+  | DNG-026 Reaper Carapace Hive | C | 1.29 | 1.19 | -7.8% easier |
+  | DNG-033 Cinderhound Kennels | B | 0.55 | 0.54 | -1.8% easier |
+  | DNG-041 Tempest Reliquary | B | 0.70 | 0.68 | -2.9% easier |
+
+  Average by grade: E, D, A and S 0.0%, C -0.6%, B -0.3%. The Spire's blocks, its floors, Ascension and the Trials did
+  not move.
+- **Mapstats.**
+  - Every plan's rooms, roads and moves are as they were, and the System's way fits the clock on every grade.
+  - Traps per map on the System's road and off it run from 0.26 and 0.35 at E to 0.92 and 6.10 at S.
+  - Each of the twelve kinds is drawn 5% to 16% of the time, each stat offered 16% to 25%, and 61% to 64% of the ways
+    offered lean.
+- **Campaign**, 120 days against `main` (run for run, as its clock keeps every run the same):
+
+  | | Days to B, A, S, N | Runs, cleared, carried out | Medals, Bronze, Silver, Gold | Ember from medals | Rift cleared | Ascension opened, last 28 days cleared | Trials |
+  |---|---|---|---|---|---|---|---|
+  | One evening, `main` | 15, 29, 55, 113 | 276, 97%, 9 | 42, 24, 12 | 639 | 93% | 6, 98% | 6 |
+  | This change | 15, 29, 55, 113 | 276, 97%, 9 | 42, 24, 13 | 653 | 93% | 6, 98% | 6 |
+  | Three sessions, `main` | 9, 15, 30, 63 | 418, 94%, 26 | 43, 24, 13 | 699 | 86% | 23, 90% | 23 |
+  | This change | 9, 16, 32, 63 | 415, 94%, 25 | 41, 23, 18 | 758 | 87% | 24, 91% | 25 |
+  | With the trap statuses | 9, 16, 32, 63 | 408, 91%, 36 | 41, 23, 18 | 758 | 84% | 23, 77% | 25 |
+
+  - The one-evening hunter plays the same 120 days, but for one Gold more.
+  - The three-session hunter reaches Sovereign on the same day. A and S come a day or two later as its runs draw
+    differently, and it opens one Ascension level more and walks two more Trials.
+  - Auto takes the likelier of a trap's two ways, a leaning stat's in most rooms, so a trap costs about what the old
+    plate did: the clears and carry-outs hold.
+- **Parstats and balance after the statuses went.** The pars sit where they did: each grade's middle clear is under
+  its road par or within two rounds over it. The middle clear rates are unchanged: E 78%, D 77%, C 77%, B 76%, A 81%,
+  S 88%.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

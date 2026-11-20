@@ -49,6 +49,15 @@ export function settle(s: Save, d: Dungeon, medal: MedalId | null): MedalId[] {
   return fresh;
 }
 
+/** The fewest rounds a clear of this Gate has taken, or null before one was graded. */
+export const bestRounds = (s: Save, d: Dungeon): number | null => s.gates.parBest?.[d.id] ?? null;
+
+/** Keep a graded clear's rounds as the Gate's best when it took fewer than any before. Mutates. */
+export function recordRounds(s: Save, d: Dungeon, rounds: number) {
+  const had = bestRounds(s, d);
+  if (had === null || rounds < had) s.gates.parBest = { ...(s.gates.parBest ?? {}), [d.id]: rounds };
+}
+
 /** The Ember a set of medals pays on a Gate of this grade. */
 export const emberFor = (rank: Rank | string, medals: readonly MedalId[]) =>
   medals.reduce((n, m) => n + (PAR_EMBER[rank as Rank] ?? 0) * MEDAL_PAY[m], 0);
