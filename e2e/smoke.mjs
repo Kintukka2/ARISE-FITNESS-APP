@@ -254,6 +254,20 @@ async function raidGate(row, name, auto = false) {
   if (name === 'practice' && !restedBack) throw new Error('THE PRACTICE GATE NEVER WALKED BACK TO ITS REST');
   await page.waitForSelector('.arena--results');
   if (name !== 'practice') {
+    // What the clear met is struck one row after another, the medal first: frames of it as it goes, then every row
+    // met struck, and none of them saying New.
+    if (await page.locator('.arena--results .rchal').count()) {
+      let was = 0;
+      for (const [k, at] of [[1, 450], [2, 1100], [3, 1800], [4, 3300]]) {
+        await sleep(at - was); was = at;
+        await page.locator('.arena--results .rchal').scrollIntoViewIfNeeded().catch(() => {});
+        await page.locator('.arena--results .rchal').screenshot({ path: `${OUT}/${name}-strike-${k}.png` }).catch(() => {});
+      }
+      const met = await page.locator('.arena--results .rchal__row.is-met').count();
+      if (met !== (await page.locator('.arena--results .rchal__row.is-lit').count())) throw new Error('A CHALLENGE MET WAS NOT STRUCK');
+      if (await page.locator('.arena--results .rnew').count()) throw new Error('A CHALLENGE STILL SAYS NEW');
+      await page.evaluate(() => window.scrollTo(0, 0));
+    }
     // The results show exactly the Daily Quests the run moved, and nothing when it moved none.
     await sleep(400);
     const after = await questCounts();

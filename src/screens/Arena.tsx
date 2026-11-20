@@ -10,10 +10,8 @@ import type { Ev, Intent as CombatIntent, Reckoning, Threat, Turn } from '@/core
 import { TRICKS, type TrickId } from '@/data/tricks';
 import { Tip, tipAt, type TipAt, type TipText } from '@/ui/tip';
 import { CONDITION, type ConditionId } from '@/data/drops';
-import { FEAT_PAY, FEATS } from '@/data/feats';
-import * as feats from '@/core/feats';
 import { SEALS } from '@/data/seals';
-import { ALLOYS, EMBER } from '@/data/forge';
+import { EMBER } from '@/data/forge';
 import * as sealing from '@/core/seals';
 import { conditionLine, dropGlyph, dropPay } from '@/ui/conditions';
 import { HabitMark, STATUS_MARK, StatusMark } from '@/ui/effects';
@@ -30,7 +28,8 @@ import { licensedRank } from '@/core/licence';
 import * as spire from '@/core/spire';
 import { isRift } from '@/core/rift';
 import { RiftResults } from '@/ui/rift';
-import { Medal, ParRow } from '@/ui/par';
+import { Medal } from '@/ui/par';
+import { Challenges, featFinds, featMats } from '@/ui/challenges';
 import * as par from '@/core/par';
 import { chamberOf, isFight, type MapNode } from '@/core/map';
 import { HONE_LEVELS, NODE } from '@/data/nodes';
@@ -1534,8 +1533,15 @@ type Reach = 'bound' | 'essence' | 'failed' | 'lost';
 function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object; r: raid.RaidResult; onDone: (next?: Dungeon) => void }) {
   const s = useSave();
   // Everything the run found, to turn over by its grade (ui/loot.tsx): the blueprints first, then any piece found whole.
-  const [found] = useState<Loot[]>(() => [...r.blueprints.map((defId) => ({ defId, blueprint: true })), ...r.loot.map((item) => ({ item }))]);
+  // A blueprint a Feat paid turns over in its Challenge's row, not among them (`featFinds`).
+  const [found] = useState<Loot[]>(() => {
+    const paid = featFinds(r).map((l) => ('defId' in l ? l.defId : ''));
+    const bps = r.blueprints.filter((id) => { const k = paid.indexOf(id); if (k < 0) return true; paid.splice(k, 1); return false; });
+    return [...bps.map((defId) => ({ defId, blueprint: true })), ...r.loot.map((item) => ({ item }))];
+  });
   const turn = useReveal(found);
+  const [rowFinds] = useState<Loot[]>(() => featFinds(r));
+  const rowTurn = useReveal(rowFinds);
   const [reach, setReach] = useState<Record<number, Reach>>({});
   // The Shadow each extraction bound, by the lingering it came from.
   const [joined, setJoined] = useState<Record<number, string>>({});
@@ -1550,7 +1556,9 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   // Auto Equip's place is kept from the start when an upgrade is waiting, so nothing jumps when it appears.
   const [upgradeWaits] = useState(() => gear.upgradeCount(store.get()) > 0);
   const [equipped, setEquipped] = useState(false);
-  const { faceDown, revealAll } = turn;
+  // Leaving with a find face down is caught wherever it waits: among the Spoils or in a Challenge's row.
+  const faceDown = turn.faceDown + rowTurn.faceDown;
+  const revealAll = () => { rowTurn.revealAll(); turn.revealAll(); };
   // A promotion waiting lands as its alert slides in: a chime, and a touch in the hand.
   useEffect(() => {
     if (!r.ready.length) return;
@@ -1589,7 +1597,9 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
   const deal = r.contracts;
   // Ascendant Ember is paid with the XP and the shards; the rest of what the run left are its spoils.
   const ember = r.mats[EMBER.id] ?? 0;
-  const mats = ordered(r.mats).filter(([id]) => id !== EMBER.id);
+  // What the Feats paid is shown in their rows; the Spoils are what the run left besides.
+  const byFeats = featMats(r);
+  const mats = ordered(r.mats).map(([id, n]) => [id, n - (byFeats[id] ?? 0)] as [string, number]).filter(([id, n]) => id !== EMBER.id && n > 0);
   // The line under the title says what the title does not: it never repeats the outcome (the owner's call).
   const line: string | null = r.outcome === 'cleared'
     ? isPractice(d) ? 'The Practice Gate is closed.'
@@ -1604,8 +1614,8 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         : `You are on ${vitals.WIPE_HP} HP, with Fatigue at ${vitals.FATIGUE_MAX}.`;
   return (
     <div class={`arena arena--results is-${r.outcome}`} role="dialog" aria-label={title}>
-      {turn.flash}
-      <div class={`arena__results stack ${turn.quake ? 'is-quake' : ''}`}>
+      {turn.flash}{rowTurn.flash}
+      <div class={`arena__results stack ${turn.quake || rowTurn.quake ? 'is-quake' : ''}`}>
         {/* The outcome as a title card, after the victory screens of Hades and Slay the Spire: the Gate's grade and
             name small, the outcome large in its colour with a rule drawn under it, then what it means. */}
         {/* A Rift's results are its own: the rating and the score worked out, then what it paid. */}
@@ -1630,30 +1640,13 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
           </>
         )}
         {/* The hunter's HP and Fatigue are the Gates screen's, under Valcorde, not the results' (the owner's call). */}
-        {/* What the clear asked of the hand, after Helldivers 2's mission summary: one band, the medal against par first,
-            then the Gate's Feats, a row to each, what each paid the first time at its right. */}
+        {/* What the clear asked of the hand (`ui/challenges.tsx`): the medal against par, then the Gate's Feats, what was
+            met struck one row after another and what it paid the first time at its right. */}
         {r.outcome === 'cleared' && (r.par || r.feats.asked.length > 0) && (
-          <section class="rsec rband rchal" aria-label="Challenges">
-            <header class="exsec__head"><span class="label">Challenges</span><i aria-hidden="true" />{r.feats.asked.length > 0 && <small class="num">Feats {r.feats.met.length}/{r.feats.asked.length}</small>}</header>
-            <ol class="rchal__rows">
-              {r.par && <ParRow r={r.par} />}
-              {r.feats.asked.map((id) => {
-                const met = r.feats.met.includes(id);
-                const fresh = r.feats.fresh.includes(id);
-                return (
-                  <li key={id} class={`rchal__row ${met ? 'is-met' : 'is-missed'}`}>
-                    <span class="rchal__mark"><Glyph name="star" /></span>
-                    <span class="rchal__body"><b>{FEATS[id].name}</b><small>{FEATS[id].text}</small></span>
-                    <span class="rchal__side">
-                      {fresh ? <><i class="rnew">New</i><small class="grant">{id === feats.blueprintFeat(d) ? `Blueprint +${FEAT_PAY.blueprints}` : `${ALLOYS[d.rank as keyof typeof ALLOYS]?.name ?? 'Alloy'} +${FEAT_PAY.alloy}`}</small></> : <small class={met ? 'rchal__met' : 'muted'}>{met ? 'Met' : 'Not met'}</small>}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
+          <Challenges r={r} turn={rowTurn} onOpen={openBlueprint} />
         )}
-        {/* What the run left, materials and finds together: Ember is paid above, with the XP and the shards. */}
+        {/* What the run left, materials and finds together: Ember is paid above, with the XP and the shards, and what a
+            Feat paid is in its row. */}
         {(mats.length > 0 || found.length > 0) && (
           <section class="rsec rband spoils" aria-label="Spoils">
             <header class="exsec__head"><span class="label">Spoils</span><i aria-hidden="true" />{found.length > 0 && <small>{faceDown ? 'Tap to reveal' : 'Tap a find for its card'}</small>}</header>

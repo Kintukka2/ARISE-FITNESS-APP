@@ -83,8 +83,11 @@ export function useReveal(loot: Loot[]) {
   };
 }
 
-/** One piece: face down, gathering itself, or open in the light it keeps. Once open, `onOpen` (if given) opens its card. */
-export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: number; state: LootState; onTap: () => void; onOpen?: () => void }) {
+/**
+ * One piece: face down, gathering itself, or open in the light it keeps. Once open, `onOpen` (if given) opens its card.
+ * `small` draws it in a row, as a Challenge's pay: a smaller box and no name under it, the name read aloud only.
+ */
+export function LootCell({ loot, i, state, onTap, onOpen, small }: { loot: Loot; i: number; state: LootState; onTap: () => void; onOpen?: () => void; small?: boolean }) {
   const def = defOf(loot);
   const rank = def?.rank ?? 'E';
   const sparks = state === 'open' ? SPARKS[rank] ?? 0 : 0;
@@ -93,7 +96,7 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
   const engraving = 'item' in loot ? engravingById(loot.item.engr) : undefined;
   const name = `${bp ? 'Blueprint: ' : ''}${gear.RARITY[rank as keyof typeof gear.RARITY]?.name ?? ''} ${def?.name ?? ''}${engraving ? `, engraved: ${engraving.name}` : ''}`.trim();
   return (
-    <button type="button" class={`haul__item flip is-${state} ${state === 'open' && onOpen ? 'is-link' : ''} ${bp ? 'is-blueprint' : ''}`} style={`--i:${i}`} data-rarity={rank}
+    <button type="button" class={`haul__item flip is-${state} ${state === 'open' && onOpen ? 'is-link' : ''} ${bp ? 'is-blueprint' : ''} ${small ? 'is-small' : ''}`} style={`--i:${i}`} data-rarity={rank}
       aria-label={state === 'open' ? (onOpen ? `${name}, open its card` : name) : 'Reveal this item'}
       onClick={() => { if (state === 'down') onTap(); else if (state === 'open') onOpen?.(); }}>
       <span class="loot-cell">
@@ -104,11 +107,11 @@ export function LootCell({ loot, i, state, onTap, onOpen }: { loot: Loot; i: num
           {Array.from({ length: sparks }, (_, k) => <i key={k} class="aura__spark" style={`--a:${(k * 137.5) % 360}deg;--d:${30 + (k % 4) * 10 + (rank === 'S' ? 18 : rank === 'A' ? 10 : 0)}px;--t:${(k % 5) * 22}ms`} />)}
           {state === 'open' && (rank === 'A' || rank === 'S') && <><i class="aura__orbit" /><i class="aura__orbit aura__orbit--2" /></>}
         </span>
-        {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={56} /> : <GearArt defId={loot.defId} size={56} />) : <span class="flip__back">?</span>}
+        {state === 'open' ? ('item' in loot ? <GearArt item={loot.item} size={small ? 32 : 56} /> : <GearArt defId={loot.defId} size={small ? 32 : 56} />) : <span class="flip__back">?</span>}
         {state === 'open' && bp && <span class="haul__bp" aria-hidden="true"><Glyph name="blueprint" /></span>}
         {state === 'open' && engraving && <span class="haul__engr" style={`--rh: ${RUNE[engraving.id].hue}`} aria-hidden="true"><RuneGlyph e={engraving} size={14} /></span>}
       </span>
-      <small>{state === 'open' ? <>{bp && <b class="haul__bpname">Blueprint</b>}{engraving && <b class="haul__engrname">{engraving.name}</b>}{def?.name}</> : ''}</small>
+      {!small && <small>{state === 'open' ? <>{bp && <b class="haul__bpname">Blueprint</b>}{engraving && <b class="haul__engrname">{engraving.name}</b>}{def?.name}</> : ''}</small>}
     </button>
   );
 }

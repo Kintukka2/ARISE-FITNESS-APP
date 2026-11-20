@@ -79,21 +79,6 @@
 .sysframe .vrow > .ico { color: var(--sys-ink); filter: drop-shadow(0 0 4px var(--win-glow)); }
 .sysframe .vrow .num { font-size: 0.92rem; }
 .sysframe .pip { border-radius: 0; font-family: var(--font-sys); font-size: 0.72rem; }
-.sysframe .attr { border-color: var(--sys-hair); border-radius: 0; background: rgba(3, 8, 20, 0.45); }
-/* Montserrat runs wide: the base value goes under the stat's name, so the + keeps inside the box. */
-.sysframe .attr:not(.attr--points) { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; grid-template-rows: auto auto; column-gap: 6px; row-gap: 0; align-content: center; padding: 8px 8px 8px 10px; }
-.sysframe .attr:not(.attr--points) > .ico { grid-row: 1 / 3; }
-.sysframe .attr__k { grid-column: 2; grid-row: 1; }
-.sysframe .attr__base { grid-column: 2; grid-row: 2; line-height: 1.1; }
-.sysframe .attr__v { grid-column: 3; grid-row: 1 / 3; margin-left: 0; }
-.sysframe .attr__plus { grid-column: 4; grid-row: 1 / 3; width: 26px; height: 26px; }
-.sysframe .attr > .ico { color: var(--sys-ink); filter: drop-shadow(0 0 4px var(--win-glow)); }
-.sysframe .attr__k { font-size: 0.92rem; font-weight: 700; letter-spacing: 0.06em; text-shadow: var(--sys-glow); }
-.sysframe .attr__base { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); font-size: 0.7rem; }
-.sysframe .attr__v { font-size: 1.25rem; font-weight: 600; text-shadow: var(--sys-glow); }
-.sysframe .attr--points { border-style: solid; }
-.sysframe .attr--points .label { color: inherit; }
-.sysframe .attr--points b { font-size: 1.5rem; font-weight: 600; }
 .sysframe .attrs__alloc small { text-align: center; }
 
 /* The Inventory: a grid of icons under tabs. The item card holds the rest. */
@@ -118,17 +103,6 @@
 /* A potion held in stock: its count, in gold, drunk before one is bought. */
 .pip.is-held { border-style: solid; border-color: color-mix(in srgb, var(--gold) 65%, transparent); color: var(--gold); }
 .attrs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.attr { position: relative; display: flex; align-items: center; gap: 6px; padding: 10px; min-height: 56px; min-width: 0; border: 1px solid var(--edge); border-radius: var(--r-md); background: var(--inset); text-align: left; transition: border-color 160ms, transform 120ms; }
-.attr:active { transform: scale(0.98); }
-.attr > .ico { width: 18px; height: 18px; color: var(--ink-2); }
-.attr__k { font-weight: 700; letter-spacing: 0.12em; }
-.attr__base { color: var(--ink-3); font-size: 0.78rem; }
-.attr__v { margin-left: auto; font-size: 1.4rem; }
-.attr__plus { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--gold); color: #1a1200; box-shadow: 0 0 12px var(--gold-glow); }
-.attr__plus .ico { width: 18px; height: 18px; }
-.attr--points { flex-direction: column; align-items: flex-end; justify-content: center; border-style: dashed; }
-.attr--points.is-hot { border-color: rgba(255, 203, 92, 0.6); color: var(--gold); }
-.attr--points b { font-size: 1.6rem; }
 .attrs__alloc { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding-top: 4px; }
 .up { color: var(--verdant); font-size: 0.8rem; margin-left: 4px; }
 .fav { color: var(--gold); width: 14px; height: 14px; }
@@ -422,7 +396,8 @@ button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration
 .pacemenu__opt--auto { margin-top: 4px; border-top: 1px solid rgba(255, 154, 60, 0.2); border-radius: 0 0 4px 4px; }
 .pacemenu__opt--auto.is-on { background: color-mix(in srgb, var(--mana) 14%, transparent); }
 .arena__head .pacemenu__opt--auto.is-on b { color: var(--mana); }
-.arena--results { overflow-y: auto; }
+/* A find's light can reach past the edge (a Challenge's blueprint at the row's right): it never scrolls the results sideways. */
+.arena--results { overflow-x: hidden; overflow-y: auto; }
 .arena__results { max-width: 560px; width: 100%; margin: 0 auto; padding: calc(var(--safe-t) + 24px) 16px calc(var(--safe-b) + 24px); }
 .arena--results.is-cleared .report__head h2 { color: var(--verdant); text-shadow: 0 0 18px var(--verdant-glow); }
 .arena--results.is-defeated .report__head h2 { color: var(--sysred); }
@@ -1250,14 +1225,12 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 @keyframes qaIn { from { opacity: 0; transform: translateY(-12px) scale(0.97); } }
 
 @keyframes qaSweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
-/* Reclassification's plates: the rank held, the way to the next, and the next, lit once it can be claimed. */
+/* Rank plates: the rank held, the way to the next, and the next, as a Shadow's promotion draws them. */
 .rankplates { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 0 6px; }
 .rankplates .sigil { display: block; }
 .rankplates__path { position: relative; flex: 0 1 96px; height: 6px; overflow: hidden; border: 1px solid var(--sys-hair); }
 .rankplates__path > i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--p, 0)); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 55%, transparent), var(--win)); box-shadow: 0 0 8px var(--win-glow); }
 .rankplates__to { opacity: 0.5; filter: saturate(0.4); transition: opacity 300ms, filter 300ms; }
-.quest-rank.is-ready .rankplates__to { opacity: 1; filter: drop-shadow(0 0 12px var(--win-glow)); animation: floaty 3.4s ease-in-out infinite; }
-.quest-rank.is-ready .rankplates__path::after { content: ''; position: absolute; inset: 0; width: 35%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent); animation: qaSweep 2.6s ease-in-out infinite; }
 /* A Shadow's promotion on its card: its badge now and at the rank above, what the rank brings, and the hold. */
 .promote { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: linear-gradient(180deg, rgba(255, 203, 92, 0.08), rgba(3, 8, 20, 0.5)); box-shadow: inset 0 0 18px rgba(255, 203, 92, 0.08); animation: qaIn 420ms var(--ease) both; }
 .promote > .label { color: var(--gold); }
@@ -1274,6 +1247,151 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 @keyframes holdCall { 50% { box-shadow: inset 0 0 0 1px rgba(255, 203, 92, 0.6), 0 0 32px var(--gold-glow); scale: 1.015; } }
 @keyframes holdSweep { from { transform: translateX(-120%); } 60%, to { transform: translateX(320%); } }
 .rankclaim { display: flex; padding-top: 8px; }
+
+/* A rank waiting on the log: the Advancement card turned gold, its frame breathing light, its rails flaring. */
+.qsec--ascend { animation: ascendAura 2.8s ease-in-out infinite; }
+.qsec--ascend > .sysrail { animation: ascendRail 2.8s ease-in-out infinite; }
+@keyframes ascendAura { 50% { box-shadow: -2px 0 26px -2px var(--gold-glow), 2px 0 26px -2px var(--gold-glow), 0 0 60px rgba(255, 203, 92, 0.26), 0 16px 44px rgba(0, 0, 0, 0.55); } }
+@keyframes ascendRail { 50% { filter: drop-shadow(0 0 5px var(--gold)) drop-shadow(0 0 18px var(--gold-glow)); } }
+/* The card itself: the rank above large in its own light over the rank held, the name, the gains, and Reclassify. */
+.qascend { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; width: calc(100% + 24px); margin: 0 -12px; padding: 2px 16px 16px; overflow: hidden; border: 0; background: radial-gradient(90% 60% at 62% 26%, rgba(255, 203, 92, 0.2), transparent 70%); color: inherit; font: inherit; text-align: center; cursor: pointer; touch-action: manipulation; animation: qascendIn 760ms var(--ease) both; }
+.qascend:active .qascend__cta { scale: 0.98; }
+@keyframes qascendIn { 0% { opacity: 0; transform: scale(0.94); filter: brightness(2.2); } 60% { opacity: 1; filter: brightness(1.2); } }
+.qascend__stage { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 138px; }
+.qascend__from { position: relative; z-index: 1; opacity: 0.6; filter: saturate(0.5); }
+.qascend__from .sigil, .qascend__to .sigil { display: block; }
+/* Chevrons pulling from the rank held toward the rank above, one after another. */
+.qascend__pull { display: flex; gap: 2px; }
+.qascend__pull > i { width: 10px; height: 10px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); transform: rotate(45deg); opacity: 0.2; filter: drop-shadow(0 0 4px var(--gold)); animation: ascendPull 1.2s ease-in-out infinite; animation-delay: calc(var(--k) * 0.18s); }
+@keyframes ascendPull { 40% { opacity: 1; } }
+.qascend__to { position: relative; display: grid; place-items: center; width: 132px; height: 132px; }
+.qascend__to > .sigil { position: relative; z-index: 2; filter: drop-shadow(0 0 10px var(--gold-glow)) drop-shadow(0 0 24px rgba(255, 203, 92, 0.35)); animation: floaty 3.4s ease-in-out infinite; }
+.qascend__to > i { position: absolute; display: block; pointer-events: none; }
+.qascend__rays { inset: -34px; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 214, 120, 0.42) 0 5deg, transparent 5deg 20deg); -webkit-mask: radial-gradient(closest-side, #000 22%, transparent 100%); mask: radial-gradient(closest-side, #000 22%, transparent 100%); animation: auraSpin 18s linear infinite; }
+.qascend__halo { --hi: 1; inset: 6px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 226, 150, 0.6), rgba(255, 203, 92, 0.16) 62%, transparent); opacity: 0.75; animation: auraPulse 2.2s ease-in-out infinite; }
+.qascend__ring { inset: 18px; border: 1px solid rgba(255, 214, 120, 0.8); border-radius: 50%; box-shadow: 0 0 10px var(--gold-glow); opacity: 0; animation: ascendRing 2.8s ease-out infinite; }
+.qascend__ring.is-2 { animation-delay: 1.4s; }
+@keyframes ascendRing { 0% { transform: scale(0.55); opacity: 0; } 18% { opacity: 0.95; } 100% { transform: scale(1.55); opacity: 0; } }
+.qascend__mote { bottom: 10px; left: var(--x); z-index: 1; width: var(--s); height: var(--s); border-radius: 50%; background: #fff4cf; box-shadow: 0 0 6px 1px var(--gold); opacity: 0; animation: moteRise var(--t) ease-in var(--d) infinite; }
+@keyframes moteRise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-120px) translateX(6px); opacity: 0; } }
+.qascend__met { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.qascend__name { font-size: 1.12rem; line-height: 1.2; font-style: italic; font-weight: 800; color: #fff; text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 16px var(--gold-glow); }
+.qascend__pay { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
+/* Reclassify: gold, breathing, a light crossing it, as every hold that claims advancement is. */
+.qascend__cta { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 8px; padding: 13px 12px; overflow: hidden; border: 1px solid var(--gold); background: linear-gradient(180deg, rgba(255, 203, 92, 0.34), rgba(255, 170, 40, 0.12)); color: #fff6dc; font-size: 0.86rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; text-shadow: 0 0 8px var(--gold-glow); box-shadow: inset 0 0 0 1px rgba(255, 203, 92, 0.3), 0 0 16px var(--gold-glow); animation: holdCall 1.6s ease-in-out infinite; transition: scale 120ms; }
+.qascend__cta::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 246, 220, 0.5), transparent); animation: holdSweep 2.4s ease-in-out infinite; pointer-events: none; }
+.qascend__cta .ico { width: 13px; height: 13px; }
+@media (prefers-reduced-motion: reduce) {
+  .qsec--ascend, .qsec--ascend > .sysrail, .qascend, .qascend__pull > i, .qascend__to > .sigil, .qascend__rays, .qascend__halo, .qascend__ring, .qascend__mote, .qascend__cta, .qascend__cta::after { animation: none; }
+  .qascend__ring, .qascend__mote { display: none; }
+  .qascend__pull > i { opacity: 0.8; }
+}
+
+/* RECLASSIFICATION, the window: its name; the stage, the rank held and the rank above; GOAL as the climb; REWARDS by
+   kind; the hold. Gold throughout, for advancement. */
+.rcl { gap: 16px; }
+.rcl .questinfo__head { align-self: center; }
+.rclstage { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 0 2px; }
+.rclstage__rank { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rclstage__rank small { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.rclstage__plate { position: relative; display: grid; place-items: center; }
+.rclstage__plate .sigil { position: relative; z-index: 1; display: block; }
+.rclstage__rank.is-from .rclstage__plate { height: 112px; opacity: 0.75; }
+.rclstage__rank.is-to .rclstage__plate { width: 112px; height: 112px; opacity: 0.5; filter: saturate(0.4); transition: opacity 300ms, filter 300ms; }
+.rcl.is-ready .rclstage__rank.is-to .rclstage__plate { opacity: 1; filter: none; }
+.rcl.is-ready .rclstage__rank.is-to .sigil { filter: drop-shadow(0 0 12px var(--gold-glow)) drop-shadow(0 0 26px rgba(255, 203, 92, 0.35)); animation: floaty 3.4s ease-in-out infinite; }
+.rcl.is-ready .rclstage__rank.is-to small { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.rclstage__rays { position: absolute; inset: -26px; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 214, 120, 0.4) 0 5deg, transparent 5deg 20deg); -webkit-mask: radial-gradient(closest-side, #000 22%, transparent 100%); mask: radial-gradient(closest-side, #000 22%, transparent 100%); animation: auraSpin 18s linear infinite; pointer-events: none; }
+.rclstage__halo { --hi: 1; position: absolute; inset: 4px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 226, 150, 0.5), rgba(255, 203, 92, 0.14) 62%, transparent); opacity: 0.75; animation: auraPulse 2.2s ease-in-out infinite; pointer-events: none; }
+/* The way between: a bar filled as far as the XP stands, chevrons pulling along it once the rank waits. */
+.rclstage__pull { position: relative; display: flex; align-items: center; justify-content: center; gap: 2px; flex: 0 1 84px; height: 22px; margin-bottom: 22px; }
+.rclstage__bar { position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; overflow: hidden; border: 1px solid var(--sys-hair); }
+.rclstage__bar > i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--p, 0)); background: linear-gradient(90deg, color-mix(in srgb, var(--win) 55%, transparent), var(--win)); box-shadow: 0 0 8px var(--win-glow); }
+.rclstage__pull > b { position: relative; width: 9px; height: 9px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); transform: rotate(45deg); opacity: 0; }
+.rcl.is-ready .rclstage__bar { opacity: 0.35; }
+.rcl.is-ready .rclstage__pull > b { opacity: 0.2; filter: drop-shadow(0 0 4px var(--gold)); animation: ascendPull 1.2s ease-in-out infinite; animation-delay: calc(var(--k) * 0.18s); }
+/* A section: its head over a hairline box. */
+.rclsec { display: flex; flex-direction: column; gap: 10px; }
+/* GOAL: the order and the count, the climb, then what is left or that it is met. */
+.rclgoal { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.rclgoal__line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0; }
+.rclgoal__line b { font-size: 0.98rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.rclgoal__line .num { font-size: 0.9rem; font-weight: 700; color: var(--sys-ink); }
+.rcl.is-ready .rclgoal__line .num { color: var(--gold); }
+.rclclimb { position: relative; display: flex; flex-direction: column; gap: 6px; padding-top: 24px; }
+.rclclimb.is-ready { padding-top: 2px; }
+.rclclimb__notches { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2px; height: 12px; }
+.rclclimb__notches > i { position: relative; overflow: hidden; background: rgba(255, 255, 255, 0.07); transform: skewX(-18deg); }
+.rclclimb__notches > i::before { content: ''; position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--f)); background: var(--mana); box-shadow: 0 0 6px var(--mana-glow); animation: qbarIn 700ms var(--ease) both; animation-delay: calc(var(--i) * 30ms); }
+.rclclimb.is-ready .rclclimb__notches > i::before { background: linear-gradient(180deg, #fff1c2, var(--gold)); box-shadow: 0 0 8px var(--gold-glow); }
+/* Once met, a light runs the length of the climb, again and again. */
+.rclclimb.is-ready .rclclimb__notches { position: relative; }
+.rclclimb.is-ready .rclclimb__notches::after { content: ''; position: absolute; top: -2px; bottom: -2px; left: 0; width: 16%; background: linear-gradient(90deg, transparent, rgba(255, 250, 230, 0.6), transparent); mix-blend-mode: screen; animation: qaSweep 2.6s ease-in-out infinite; pointer-events: none; }
+/* Under way, a light runs along what is lit, toward the level asked. */
+.rclclimb:not(.is-ready) .rclclimb__notches { position: relative; }
+.rclclimb:not(.is-ready) .rclclimb__notches::after { content: ''; position: absolute; top: -2px; bottom: -2px; left: 0; width: calc(var(--pin) * 100%); background: linear-gradient(90deg, transparent 0 60%, rgba(220, 245, 255, 0.55) 85%, transparent) no-repeat; background-size: 40% 100%; mix-blend-mode: screen; animation: climbRun 2.8s ease-in-out infinite; pointer-events: none; }
+@keyframes climbRun { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+/* Every fifth or tenth level stands a little taller, its level under it. */
+.rclclimb__notches > i.is-mark { margin-top: -3px; }
+.rclclimb__ends { position: relative; }
+.rclclimb__marks { position: absolute; inset: 0; pointer-events: none; }
+.rclclimb__marks > small { position: absolute; top: 0; translate: -50% 0; font-size: 0.6rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); }
+.rclclimb__pin { position: absolute; top: 0; left: clamp(30px, calc(var(--pin) * 100%), calc(100% - 30px)); translate: -50% 0; display: flex; flex-direction: column; align-items: center; }
+.rclclimb__pin b { padding: 1px 6px; border: 1px solid var(--mana); background: rgba(3, 8, 20, 0.92); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap; color: #fff; box-shadow: 0 0 8px var(--mana-glow); }
+.rclclimb__pin::after { content: ''; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--mana); }
+.rclclimb__ends { display: flex; justify-content: space-between; }
+.rclclimb__ends small { display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.rclgoal__hint { font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.rclgoal__hint b { color: var(--sys-ink); }
+.rclgoal__met { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.86rem; font-weight: 800; letter-spacing: 0.04em; color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.rclgoal__met .ico { width: 16px; height: 16px; padding: 2px; border: 1px solid var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.rcl.is-ready .rclgoal { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: linear-gradient(180deg, rgba(255, 203, 92, 0.1), rgba(3, 8, 20, 0.45)); }
+/* REWARDS: the figures side by side, each its mark, the figure large and green, the name under it. */
+.rclgains { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rclgains > li { --rc: var(--gold); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); text-align: center; animation: rowIn 320ms var(--ease) both; }
+.rclgains > li:nth-child(2) { animation-delay: 60ms; } .rclgains > li:nth-child(3) { animation-delay: 120ms; }
+.rclgains > li[data-rarity='D'] { --rc: var(--rank-D); } .rclgains > li[data-rarity='C'] { --rc: var(--rank-C); } .rclgains > li[data-rarity='B'] { --rc: var(--rank-B); }
+.rclgains > li[data-rarity='A'] { --rc: var(--rank-A); } .rclgains > li[data-rarity='S'] { --rc: var(--rank-S); }
+.rclgains .ico { width: 16px; height: 16px; color: var(--rc); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--rc) 70%, transparent)); }
+.rclgains b { font-size: 1.35rem; font-weight: 800; line-height: 1.1; color: var(--verdant); text-shadow: 0 0 10px var(--verdant-glow); }
+.rclgains small { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.25; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+/* What changes: a line to each, its name at the left, what it was, a chevron, what it becomes. */
+.rclchanges { display: grid; margin: 0; border: 1px solid var(--sys-hair); background: rgba(3, 8, 20, 0.45); }
+.rclchanges > div { display: grid; gap: 4px; padding: 9px 12px; }
+.rclchanges > div + div { border-top: 1px solid var(--sys-hair); }
+.rclchanges dt { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.rclchanges dd { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin: 0; font-size: 0.86rem; }
+.rclchanges__plus { margin-left: auto; }
+.rclchanges dd > .ico { width: 10px; height: 10px; color: var(--gold); }
+.rclchanges__was { color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.rclchanges__is strong { color: #fff; text-shadow: var(--sys-glow); }
+.rclchanges__plus { font-size: 0.76rem; font-weight: 600; color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
+/* What it opens, under Access granted, each with an open lock. */
+.rclaccess { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--verdant) 40%, transparent); background: color-mix(in srgb, var(--verdant) 6%, rgba(3, 8, 20, 0.45)); }
+.rclaccess__head { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.rclaccess ul { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; }
+.rclaccess li { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 700; color: #fff; }
+.rclaccess li .ico { width: 13px; height: 13px; color: var(--verdant); }
+/* The hold that claims it: gold, breathing, a light crossing it, as a Shadow's promotion's is. */
+.rcl .holdbtn { border: 1px solid var(--gold); color: #fff6dc; text-shadow: 0 0 8px var(--gold-glow); background: linear-gradient(180deg, rgba(255, 203, 92, 0.3), rgba(255, 170, 40, 0.12)); box-shadow: inset 0 0 0 1px rgba(255, 203, 92, 0.3), 0 0 16px var(--gold-glow); }
+.rcl .holdbtn:not(.is-holding):not(.is-done):not(.is-failed):not([disabled]) { animation: holdCall 1.6s ease-in-out infinite; }
+.rcl .holdbtn:not(.is-holding):not(.is-done):not(.is-failed):not([disabled])::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 246, 220, 0.45), transparent); animation: holdSweep 2.4s ease-in-out infinite; pointer-events: none; }
+.rcl .holdbtn__fill { background: linear-gradient(90deg, rgba(255, 203, 92, 0.45), rgba(255, 203, 92, 0.95)); }
+@media (prefers-reduced-motion: reduce) {
+  .rclstage__rays, .rclstage__halo, .rcl.is-ready .rclstage__rank.is-to .sigil, .rcl.is-ready .rclstage__pull > b, .rclclimb__notches > i::before, .rclclimb.is-ready .rclclimb__notches::after, .rclclimb__notches::after, .rclgains > li, .rcl .holdbtn, .rcl .holdbtn::after { animation: none; }
+}
+
+/* Status: a rank waiting is a gold button that opens its window. */
+.stclimb__go { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; padding: 8px 12px 8px 8px; overflow: hidden; border: 1px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.22), rgba(255, 203, 92, 0.05) 75%); color: var(--gold); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; box-shadow: 0 0 14px var(--gold-glow), inset 0 0 12px rgba(255, 203, 92, 0.1); animation: stclimbCall 1.8s ease-in-out infinite; transition: scale 120ms; }
+.stclimb__go:active { scale: 0.98; }
+.stclimb__go::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 246, 220, 0.35), transparent); animation: holdSweep 2.6s ease-in-out infinite; pointer-events: none; }
+@keyframes stclimbCall { 50% { box-shadow: 0 0 26px var(--gold-glow), inset 0 0 16px rgba(255, 203, 92, 0.2); } }
+.stclimb__mark { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--gold); background: rgba(255, 203, 92, 0.12); box-shadow: 0 0 10px var(--gold-glow); animation: apdue 1.6s ease-in-out infinite; }
+.stclimb__mark .ico { width: 16px; height: 16px; }
+.stclimb__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stclimb__text small { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+.stclimb__text strong { font-size: 0.9rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: 0 0 10px var(--gold-glow); }
+@media (prefers-reduced-motion: reduce) { .stclimb__go, .stclimb__go::after, .stclimb__mark { animation: none; } }
 
 @keyframes qaCall { 50% { background: color-mix(in srgb, var(--win) 38%, transparent); box-shadow: 0 0 14px var(--win-glow); } }
 
@@ -1313,13 +1431,6 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 /* STATS: the figure large, a box per stat with where it comes from, then the fight's numbers. */
 .statsheet__radar { display: grid; place-items: center; gap: 4px; padding: 6px 0 2px; }
 .statsheet__radar .ia-radar { width: min(64vw, 220px); height: min(64vw, 220px); }
-.statrows { display: flex; flex-direction: column; gap: 8px; }
-.statrow { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; }
-.statrow__icon { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border: 1px solid var(--sys-hair); color: var(--win); }
-.statrow__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.statrow__head { display: flex; justify-content: space-between; gap: 10px; }
-.statrow__head .num { text-shadow: var(--sys-glow); }
-.statrow small { font-size: 0.74rem; line-height: 1.35; }
 .ia-radar__ring { fill: none; stroke: var(--sys-hair); stroke-width: 0.5; }
 .ia-radar__axis { stroke: color-mix(in srgb, var(--sys-ink) 22%, transparent); stroke-width: 0.5; }
 .ia-radar__shape { fill: color-mix(in srgb, var(--win) 30%, transparent); stroke: var(--win); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--win-glow)); transform-origin: 50px 50px; animation: iaGrow 900ms var(--ease) both; }
@@ -3591,22 +3702,19 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .sthead__fields dd.status__rank { display: flex; align-items: center; gap: 6px; }
 .stclimb { display: flex; flex-direction: column; gap: 6px; }
 .stclimb > small { font-size: 0.76rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
-.stclimb__bar { display: block; height: 3px; background: rgba(255, 255, 255, 0.08); }
-.stclimb__bar > i { display: block; height: 100%; background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
+/* The climb to the next rank on Status: its head, the bar the Reclassification window's GOAL draws, and what is left. */
+.stclimb__next { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 10px 12px 10px; border: 1px solid var(--sys-hair); background: linear-gradient(180deg, color-mix(in srgb, var(--win) 7%, transparent), rgba(3, 8, 20, 0.45)); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, background 160ms; }
+.stclimb__next:active { background: color-mix(in srgb, var(--win) 12%, transparent); }
+@media (hover: hover) { .stclimb__next:hover { border-color: color-mix(in srgb, var(--win) 50%, transparent); } }
+.stclimb__head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.stclimb__head .label { flex: none; font-size: 0.58rem; color: var(--win); }
+.stclimb__head > i { flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 40%, transparent), transparent); }
+.stclimb__head strong { flex: none; font-size: 0.78rem; font-style: italic; font-weight: 800; color: #fff; text-shadow: var(--sys-glow); }
+.stclimb__next .rclclimb { padding-top: 26px; }
+.stclimb__foot { display: flex; justify-content: space-between; gap: 10px; font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.stclimb__foot b { color: var(--sys-ink); }
 /* The vitals without their box: a hairline above and below. */
 .status .vitals { gap: 12px; padding: 12px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); border-radius: 0; background: none; }
-/* The stats, two to a row, a hairline between rows; each a button that spends, its bar the base toward the points' limit. */
-.status .attrs { gap: 0 18px; }
-.status .attr { flex-wrap: wrap; min-height: 58px; padding: 10px 2px 12px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; }
-.status .attr > .ico { color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
-.status .attr__k { color: #fff; }
-.status .attr__v { color: #fff; text-shadow: var(--sys-glow); }
-.attr__bar { position: absolute; left: 2px; right: 2px; bottom: 5px; height: 2px; background: rgba(255, 255, 255, 0.07); }
-.attr__bar > i { display: block; height: 100%; background: color-mix(in srgb, var(--win) 75%, transparent); }
-.status .attr--points { align-items: flex-end; border-style: none; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
-.status .attr--points .label { font-size: 0.56rem; }
-.status .attr--points.is-hot { color: var(--gold); }
-.status .attr--points.is-hot b { color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
 .status .attrs__alloc { padding-top: 10px; }
 
 /* STATS: the radar, then a table of where each stat comes from, its columns lined up, then the fight's
@@ -3756,30 +3864,78 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .rband { gap: 10px; }
 .rband > .exsec__head small { font-weight: 600; }
 /* Challenges: the medal against par first, then the Feats, a row to each in one grid: the mark, the name and what
-   it asks, and at the right what it paid the first time, or that it was met. */
+   it asks, and at the right what it paid the first time, or that it was met. What was met is struck one row after
+   another (`is-lit`, `ui/challenges.tsx`): its star or medal lands in its metal with a flash, a ring and sparks, a
+   light crosses the row and leaves it washed in gold, then its pay slides in. A struck star or medal keeps a glint
+   crossing it. What was not met stands dim from the start. */
+/* The band reaches into the results' gutters and clips there, so a strike's flash has room and a find's light at a
+   row's right never widens the page. */
+.rchal { overflow-x: clip; margin-inline: -16px; padding-inline: 16px; }
 .rchal__rows { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
-.rchal__row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 58px; padding: 9px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); animation: rowIn 320ms var(--ease) both; }
+.rchal__row { --rg: var(--gold); position: relative; isolation: isolate; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 60px; padding: 9px 2px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); animation: rowIn 320ms var(--ease) both; }
 .rchal__row:nth-child(2) { animation-delay: 70ms; } .rchal__row:nth-child(3) { animation-delay: 140ms; } .rchal__row:nth-child(4) { animation-delay: 210ms; }
-.rchal__mark { display: grid; place-items: center; width: 44px; height: 44px; }
-.rchal__mark > .ico { width: 22px; height: 22px; color: color-mix(in srgb, var(--sys-ink) 28%, transparent); }
-.rchal__row.is-met:not(.rchal__par) .rchal__mark > .ico { color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.6)); }
-.rchal__medal .medal.is-on { animation: medalStrike 620ms 300ms var(--ease) both; }
+.rchal__par.is-silver { --rg: #d3dbe8; } .rchal__par.is-bronze { --rg: #d9925a; }
+/* The wash it keeps, and the light that crosses it as it is struck. */
+.rchal__row::before, .rchal__row::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; }
+.rchal__row::before { background: linear-gradient(90deg, color-mix(in srgb, var(--rg) 15%, transparent), color-mix(in srgb, var(--rg) 4%, transparent) 70%, transparent); transition: opacity 600ms 120ms; }
+.rchal__row.is-lit::before { opacity: 1; }
+.rchal__row::after { background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--rg) 50%, rgba(255, 255, 255, 0.5)) 50%, transparent 70%) no-repeat; background-size: 220% 100%; }
+.rchal__row.is-lit::after { animation: rchalCross 820ms ease-out both; }
+@keyframes rchalCross { 0% { opacity: 1; background-position: 140% 0; } 70% { opacity: 0.8; } 100% { opacity: 0; background-position: -40% 0; } }
+.rchal__mark { position: relative; display: grid; place-items: center; width: 44px; height: 44px; }
+/* The Feat's star: an outline until struck, then gold, breathing its light, a glint crossing it. */
+.fstar { position: relative; z-index: 1; overflow: visible; }
+.fstar__body { fill: color-mix(in srgb, var(--sys-ink) 5%, transparent); stroke: color-mix(in srgb, var(--sys-ink) 30%, transparent); stroke-width: 1.1; stroke-linejoin: round; }
+.fstar.is-on .fstar__body { stroke: #fff2c4; stroke-width: 0.7; }
+.fstar.is-on { filter: drop-shadow(0 0 5px var(--gold-glow)); animation: starStrike 640ms cubic-bezier(0.2, 1.5, 0.4, 1) both, starBreathe 2.8s ease-in-out 900ms infinite; }
+@keyframes starStrike { 0% { transform: scale(2.4) rotate(-40deg); opacity: 0; } 55% { transform: scale(0.88) rotate(6deg); opacity: 1; } 100% { transform: none; } }
+@keyframes starBreathe { 50% { filter: drop-shadow(0 0 10px rgba(255, 210, 110, 0.9)); } }
+/* A glint across a struck star or medal, every few seconds. */
+.fstar .shine, .medal .shine { fill: rgba(255, 255, 255, 0.82); transform: translateX(-6px) skewX(-18deg); animation: glint 3.6s ease-in-out 1.2s infinite; }
+@keyframes glint { 0% { transform: translateX(-6px) skewX(-18deg); } 30%, 100% { transform: translateX(42px) skewX(-18deg); } }
+.rchal__medal .medal.is-on { animation: medalStrike 640ms var(--ease) both, medalBreathe 2.8s ease-in-out 900ms infinite; }
+@keyframes medalBreathe { 50% { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--mc) 85%, transparent)); } }
+/* The strike: a flash, a ring going out and sparks thrown round, once. */
+.rchal__burst { position: absolute; inset: 0; pointer-events: none; }
+.rchal__burst > i { position: absolute; display: block; }
+.rchal__flash { inset: -16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 252, 235, 0.95), color-mix(in srgb, var(--rg) 65%, transparent) 45%, transparent); animation: rchalFlash 560ms ease-out both; }
+@keyframes rchalFlash { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.7); opacity: 0; } }
+.rchal__ring { --ring: 2.2; inset: 4px; border: 2px solid var(--rg); border-radius: 50%; box-shadow: 0 0 12px var(--rg); animation: auraRing 680ms ease-out both; }
+.rchal__spark { left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; background: linear-gradient(#fff, var(--rg)); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); animation: auraSpark 760ms cubic-bezier(0.15, 0.8, 0.3, 1) 40ms both; }
 .rchal__body { display: grid; gap: 3px; min-width: 0; }
-.rchal__body b { font-size: 0.86rem; color: #fff; }
-.rchal__row.is-met:not(.rchal__par) .rchal__body b { color: var(--gold); }
-.rchal__par.is-gold .rchal__body b { color: var(--gold); }
-.rchal__par.is-silver .rchal__body b { color: #e6ecf5; }
-.rchal__par.is-bronze .rchal__body b { color: #e3a675; }
-.rchal__row.is-missed .rchal__body b { color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.rchal__body b { font-size: 0.86rem; color: #fff; transition: color 300ms, text-shadow 300ms; }
+.rchal__row.is-lit .rchal__body b { color: var(--rg); text-shadow: 0 0 10px color-mix(in srgb, var(--rg) 45%, transparent); }
+.rchal__par.is-gold.is-lit .rchal__body b { color: var(--gold); }
+.rchal__par.is-silver.is-lit .rchal__body b { color: #e6ecf5; }
+.rchal__par.is-bronze.is-lit .rchal__body b { color: #e3a675; }
+.rchal__row.is-missed .rchal__body b { color: color-mix(in srgb, var(--sys-ink) 64%, transparent); }
+.rchal__row.is-missed .rchal__mark { opacity: 0.75; }
 .rchal__body small { font-size: 0.7rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .rchal__under { color: var(--verdant); font-weight: 700; }
 .rchal__over { color: var(--blood); font-weight: 700; }
 .rchal__side { display: grid; justify-items: end; gap: 4px; text-align: right; }
 .rchal__side small { font-size: 0.68rem; font-weight: 700; }
+/* What was met waits unseen until it is struck, then slides in. */
+.rchal__row.is-met:not(.is-lit) .rchal__side { visibility: hidden; opacity: 0; }
+.rchal__row.is-met.is-lit .rchal__side { animation: rchalPay 480ms var(--ease) 300ms both; }
+@keyframes rchalPay { from { opacity: 0; transform: translateX(16px) scale(0.9); } to { opacity: 1; transform: none; } }
 .rchal__met { color: color-mix(in srgb, var(--sys-ink) 80%, transparent); }
-.rchal__ember { display: inline-flex; align-items: center; gap: 4px; color: var(--ember); }
-/* New: reached here for the first time, green, as a stat that rises. */
-.rnew { padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--verdant) 55%, transparent); background: color-mix(in srgb, var(--verdant) 10%, transparent); color: var(--verdant); font-size: 0.56rem; font-style: normal; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+/* What it paid: a material or Ember as its art and the figure, a blueprint as its box. */
+.rchal__pay { display: inline-flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.rchal__gain { display: inline-flex; align-items: center; gap: 6px; }
+.rchal__gain > b { font-size: 1rem; font-weight: 800; color: var(--verdant); text-shadow: 0 0 8px var(--verdant-glow); }
+.rchal__gain.is-ember > b { color: var(--ember); text-shadow: 0 0 8px rgba(255, 154, 60, 0.5); }
+.haul__item.is-small { width: auto; gap: 0; }
+/* A find in a row stands about as tall as a material's art beside it (the owner's call: smaller than the Spoils' box). */
+.haul__item.is-small .loot-cell, .haul__item.is-small .flip__back { width: 34px; height: 34px; }
+.haul__item.is-small .flip__back { font-size: 0.95rem; }
+.haul__item.is-small .haul__bp { right: -6px; bottom: -6px; scale: 0.62; transform-origin: 100% 100%; }
+.haul__item.is-small .aura__glow { inset: -10px; }
+.haul__item.is-small .aura__rays { inset: -16px; }
+@media (prefers-reduced-motion: reduce) {
+  .rchal__burst, .fstar .shine, .medal .shine { display: none; }
+  .fstar.is-on, .rchal__medal .medal.is-on, .rchal__row.is-lit::after, .rchal__row.is-met.is-lit .rchal__side { animation: none; }
+}
 /* Spoils: the materials, then the finds under them, in one band. */
 .spoils .loot { padding-top: 4px; }
 .arena__results { --win: var(--mana); --win-glow: var(--mana-glow); }
@@ -3946,19 +4102,36 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 
 /* ------------------------------------------------------------------ Status, Stats and Skills, decluttered */
 
-/* STATUS: the points at the head of the stats, then a row to each stat: its mark, its key, a bar toward
-   the points' limit, its base, its value, and a + while a point can go there. */
+/* STATUS: the points at the head of the stats, then a row to each stat (`.statrow`, below). */
 .status .attrs { display: flex; flex-direction: column; gap: 0; }
 .attrs__head { display: flex; align-items: center; gap: 10px; padding: 4px 2px 8px; }
 .attrs__head .label { font-size: 0.6rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 .attrs__head > b { flex: 1; font-size: 1.3rem; font-weight: 800; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
 .attrs__head.is-hot .label, .attrs__head.is-hot > b { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
-.status .attr { display: grid; grid-template-columns: 20px 36px minmax(0, 1fr) 38px 36px 28px; align-items: center; gap: 8px; min-height: 48px; padding: 6px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; flex-wrap: nowrap; }
-.status .attr__bar { position: static; height: 3px; background: rgba(255, 255, 255, 0.08); }
-.status .attr__base { text-align: right; font-size: 0.72rem; }
-.status .attr__v { margin: 0; text-align: right; font-size: 1.15rem; }
-.status .attr__plus { width: 26px; height: 26px; }
-.status .attr__plus.is-none { background: none; box-shadow: none; }
+/* A stat as a row, the one look for the Status sheet and an Association hunter's card (ui/statrow.tsx): open, a hairline
+   between rows, no box round each stat. Its mark in the System's cyan, its key, a bar toward the Ability Points'
+   limit, what stands beside the figure (the hunter's own points, or `Best`), the figure, and the Status sheet's +. */
+.statrows { display: flex; flex-direction: column; }
+.statrow { position: relative; display: grid; grid-template-columns: 20px 38px minmax(0, 1fr) 42px 38px; align-items: center; gap: 8px; width: 100%; min-height: 48px; margin: 0; padding: 6px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-radius: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background 160ms; }
+.statrow.has-plus { grid-template-columns: 20px 38px minmax(0, 1fr) 42px 38px 28px; }
+.statrow:last-child { border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.statrow:active { background: color-mix(in srgb, var(--win) 8%, transparent); }
+.statrow.is-open { background: color-mix(in srgb, var(--win) 7%, transparent); }
+.statrow:focus-visible { outline: none; background: color-mix(in srgb, var(--win) 7%, transparent); box-shadow: inset 2px 0 0 var(--win); }
+.statrow > .ico { width: 18px; height: 18px; color: var(--win); filter: drop-shadow(0 0 5px var(--win-glow)); }
+.statrow__k { font-size: 0.92rem; font-weight: 700; letter-spacing: 0.06em; color: #fff; text-shadow: var(--sys-glow); }
+.statrow__bar { display: block; height: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.statrow__bar > i { display: block; height: 100%; background: color-mix(in srgb, var(--win) 75%, transparent); box-shadow: 0 0 6px var(--win-glow); }
+.statrow__aside { text-align: right; font-size: 0.72rem; line-height: 1; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.statrow__v { margin: 0; text-align: right; font-size: 1.15rem; font-weight: 600; color: #fff; text-shadow: var(--sys-glow); }
+.statrow__plus { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: #1a1200; box-shadow: 0 0 12px var(--gold-glow); }
+.statrow__plus .ico { width: 16px; height: 16px; }
+.statrow__plus.is-none { background: none; box-shadow: none; }
+/* An Association hunter's best stat, the one their class leads with: lit in advancement's gold, `Best` beside it. */
+.statrow.is-best > .ico, .statrow.is-best .statrow__k, .statrow.is-best .statrow__v { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.statrow.is-best > .ico { filter: drop-shadow(0 0 5px var(--gold-glow)); }
+.statrow.is-best .statrow__bar > i { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+.statrow.is-best .statrow__aside { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
 /* The potions on the vitals are buttons, but light ones: a tint, no frame. */
 .status .pip { min-height: 30px; border: 0; background: color-mix(in srgb, currentColor 12%, transparent); }
 
@@ -3972,10 +4145,6 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 
 /* SKILLS: the points gold on their own, no mark beside them; the slots lighter. */
 .st-slot { border-color: color-mix(in srgb, var(--sys-ink) 22%, transparent); background: rgba(3, 8, 20, 0.35); }
-/* The framed sheet's older two-row stat cell gives way to the row: every part on one line, in its own column. */
-.sysframe .status .attr:not(.attr--points) { grid-template-columns: 20px 38px minmax(0, 1fr) 40px 36px 28px; grid-template-rows: auto; column-gap: 8px; padding: 6px 2px; border-radius: 0; background: none; }
-.sysframe .status .attr:not(.attr--points) > * { grid-row: 1; grid-column: auto; }
-.sysframe .status .attr__base { line-height: 1; }
 
 /* The rank's crest behind the licence, where its letter stood: line work in the rank's colour, faint. */
 .glicence__crest, .licence__crest { position: absolute; z-index: 0; width: 132px; height: 132px; color: color-mix(in srgb, var(--rc) 30%, transparent); pointer-events: none; }
@@ -4417,7 +4586,7 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .runhud__par.is-silver b { color: #dfe6f0; }
 .runhud__par.is-bronze b { color: #e3a675; }
 @keyframes medalStrike { 0% { transform: scale(1.8) rotate(-20deg); opacity: 0; } 60% { transform: scale(0.92) rotate(4deg); opacity: 1; } 100% { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .rchal__medal .medal.is-on, .bpar__row, .bpar__odds i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .bpar__row, .bpar__odds i { animation: none; } }
 .bpar__got { color: var(--verdant); font-weight: 700; }
 
 /* ------------------------------------------------------------------ Front and rear (data/ranks.ts) */
@@ -4532,28 +4701,47 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 button.huntercard__class.infotag { padding: 0 2px 0 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline dotted color-mix(in srgb, var(--sys-ink) 45%, transparent); text-underline-offset: 4px; }
 button.huntercard__class.is-classed { color: var(--gold); }
 .huntercard .sp-tag--style svg { color: var(--mana); }
-/* Their stats in one row of five, the lead lit in advancement's gold. */
-.hc-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
-.hc-stats li { position: relative; display: grid; padding: 0; }
-/* Each stat a tap that opens the one stat tooltip (ui/stattip.tsx), the tile its whole face. */
-button.hc-stats__tip.infotag { display: grid; justify-items: center; gap: 2px; width: 100%; padding: 9px 2px 7px; border: 0; background: none; cursor: help; }
-.hc-stats li .ico { width: 16px; height: 16px; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.hc-stats li b { font-size: 1.15rem; line-height: 1.1; }
-.hc-stats li small { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.hc-stats li.is-lead { border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: inset 0 0 14px color-mix(in srgb, var(--gold) 14%, transparent); }
-.hc-stats li.is-lead b, .hc-stats li.is-lead .ico { color: var(--gold); }
-.hc-stats__lead { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); pointer-events: none; padding: 0 5px; background: #06101d; color: var(--gold); font-size: 0.52rem; font-style: normal; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
-/* Your record together: the parties made large, the rest under it. */
-.hc-together { display: grid; gap: 10px; }
-.hc-together__lead { display: flex; align-items: baseline; gap: 8px; }
-.hc-together__lead b { font-size: 2rem; line-height: 1; color: #fff; text-shadow: 0 0 12px var(--win-glow); }
-.hc-together__lead span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
-.hc-together__rows { display: grid; gap: 0; margin: 0; }
-.hc-together__rows div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); font-size: 0.78rem; }
-.hc-together__rows dt { color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.hc-together__rows dd { margin: 0; color: var(--sys-ink); }
-.hc-together__rows dd small { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.hc-together__none { margin: 0; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+
+/* A hunter's card, tidied (the owner's call): every section opens on its label and a hairline, the same room between them. */
+.huntercard.stack { gap: 18px; }
+.huntercard .section { gap: 8px; }
+.huntercard .section__head { align-items: center; }
+.huntercard .section__head::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--win) 40%, transparent), transparent); }
+.huntercard .section__head .label { font-size: 0.6rem; color: var(--win); }
+.huntercard .statrows { margin-top: 2px; }
+/* History: the Gates walked together large, where they stand among your partners under it; how those Gates ended as
+   one bar, its counts under it; what they defeated beside you; and when you first and last walked one together. */
+.hc-history { display: flex; flex-direction: column; gap: 14px; }
+.hc-history__lead { display: flex; align-items: center; gap: 12px; }
+.hc-history__lead > b { font-size: 2.4rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 2px rgba(255, 255, 255, 0.6), 0 0 14px var(--win-glow); }
+.hc-history__what { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hc-history__what > span { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sys-ink); }
+.hc-history__what > small { font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 66%, transparent); }
+.hc-history__what > small.is-first { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.hc-history__ends { display: flex; flex-direction: column; gap: 7px; }
+.hc-history__bar { display: flex; gap: 2px; height: 6px; }
+.hc-history__bar > i { display: block; flex-basis: 0; min-width: 4px; }
+.hc-history__bar > i.is-cleared { background: var(--verdant); box-shadow: 0 0 8px var(--verdant-glow); }
+.hc-history__bar > i.is-carried { background: var(--blood); box-shadow: 0 0 8px color-mix(in srgb, var(--blood) 50%, transparent); }
+.hc-history__bar > i.is-withdrawn { background: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
+.hc-history__legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.hc-history__legend li { display: inline-flex; align-items: center; gap: 6px; }
+.hc-history__legend li > i { width: 8px; height: 8px; }
+.hc-history__legend li.is-cleared > i { background: var(--verdant); }
+.hc-history__legend li.is-carried > i { background: var(--blood); }
+.hc-history__legend li.is-withdrawn > i { background: color-mix(in srgb, var(--sys-ink) 35%, transparent); }
+.hc-history__legend b { color: #fff; }
+.hc-history__figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.hc-history__figs > span { display: flex; flex-direction: column; gap: 3px; padding: 10px 2px; }
+.hc-history__figs > span + span { padding-left: 14px; border-left: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.hc-history__figs b { font-size: 1.3rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: var(--sys-glow); }
+.hc-history__figs small { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.hc-history__rows { display: grid; margin: -4px 0 0; }
+.hc-history__rows div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px; font-size: 0.8rem; }
+.hc-history__rows div + div { border-top: 1px solid color-mix(in srgb, var(--sys-ink) 8%, transparent); }
+.hc-history__rows dt { color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.hc-history__rows dd { margin: 0; color: var(--sys-ink); }
+.hc-history__none { margin: 0; font-size: 0.8rem; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
 
 /* The Settings foot: the version, the instructor and where the save lives, a line each. */
 .settings__foot { display: flex; flex-direction: column; align-items: center; gap: 2px; }

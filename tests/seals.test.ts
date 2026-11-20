@@ -9,7 +9,7 @@ import { defaults } from '@/core/save';
 import type { Dungeon, Save } from '@/core/types';
 import { dayKey } from '@/core/util';
 import { CONDITION, FAMILY_CONDITION } from '@/data/drops';
-import { FEAT, FEATS_PER_GATE } from '@/data/feats';
+import { FEAT, FEAT_PAY, FEATS_PER_GATE } from '@/data/feats';
 import { SEAL, sealEmber, SEALS_PER_GATE, type SealId } from '@/data/seals';
 import { ALLOYS, EMBER } from '@/data/forge';
 import { typicalHunter } from '../scripts/hunters';
@@ -157,6 +157,28 @@ describe('Feats', () => {
     expect(feats.metOn(s, d)).toEqual(first.feats.met);
     const again = clear();
     expect(again.feats.fresh.filter((id) => first.feats.met.includes(id))).toEqual([]);
+  });
+
+  it('the result records what each Feat met for the first time paid, for its row: the alloy, or the blueprint Feat\'s blueprint', () => {
+    for (const d of board.filter((x) => x.rank === 'D' || x.rank === 'C').slice(0, 6)) {
+      const s = typicalHunter(40, 'B', `pay|${d.id}`);
+      const run = raid.begin(s, d, now); walk(s, d, now);
+      const res = raid.finish(s, d, run, 'cleared', now);
+      expect(Object.keys(res.feats.pay).sort()).toEqual([...res.feats.fresh].sort());
+      for (const id of res.feats.fresh) {
+        const pay = res.feats.pay[id]!;
+        if (id === feats.blueprintFeat(d)) {
+          // A blueprint learned is among the run's, and whatever it paid instead is the grade's alloy.
+          for (const bp of pay.blueprints) expect(res.blueprints).toContain(bp);
+          expect(pay.blueprints.length + (pay.mats[ALLOYS[d.rank as keyof typeof ALLOYS].id] ? 1 : 0)).toBe(1);
+        } else {
+          expect(pay.blueprints).toEqual([]);
+          expect(pay.mats).toEqual({ [ALLOYS[d.rank as keyof typeof ALLOYS].id]: FEAT_PAY.alloy });
+        }
+        // What it paid is in what the run left.
+        for (const [m, n] of Object.entries(pay.mats)) expect(res.mats[m] ?? 0).toBeGreaterThanOrEqual(n);
+      }
+    }
   });
 
   it('the brief counts how often the System met each, and never Thorough or Wardenbane: its road leaves the road for neither', () => {

@@ -1143,7 +1143,8 @@ export interface RaidResult {
   /** A Rift's score, worked a line at a time, with the best before it. */
   rift?: rift.RiftResult;
   /** The Gate's Feats, those the clear met, and those met here for the first time, which paid. */
-  feats: { asked: FeatId[]; met: FeatId[]; fresh: FeatId[] };
+  /** The Gate's Feats, those met, those met here for the first time, and what each of those paid. */
+  feats: { asked: FeatId[]; met: FeatId[]; fresh: FeatId[]; pay: Partial<Record<FeatId, FeatPay>> };
   /** Creatures felled the way their condition asks, kept by the run. */
   drops: number;
   /**
@@ -1168,6 +1169,17 @@ export const homeSets = (d: Dungeon) => SETS.filter((x) => x.home === (d.shape ?
  */
 /** What a run's Seals, its condition drops and its first Feats add to what it leaves. */
 /** `feats`: the Feats met for the first time that pay alloy; `featBlueprint`, whether the one that pays a blueprint was among them. */
+/** What a Feat met for the first time paid: the Gate's alloy, or the blueprint Feat's blueprint (alloy instead once every blueprint of the grade is known). */
+export interface FeatPay { mats: forge.Bundle; blueprints: string[] }
+
+/** What each Feat met for the first time paid, from what `spoils` kept apart for them. */
+function featPay(fresh: FeatId[], bp: FeatId | null, feat: { alloy: forge.Bundle; blueprints: string[]; mats: forge.Bundle } | null): Partial<Record<FeatId, FeatPay>> {
+  const out: Partial<Record<FeatId, FeatPay>> = {};
+  if (!feat) return out;
+  for (const id of fresh) out[id] = id === bp ? { mats: feat.mats, blueprints: feat.blueprints } : { mats: feat.alloy, blueprints: [] };
+  return out;
+}
+
 interface Extras { seals: readonly SealId[]; drops: readonly { ref: string; boss: boolean }[]; feats: number; featBlueprint?: boolean }
 
 function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: number, elites: number, cleared: boolean, first: boolean, level: number, vault: number, pace = 1, extra: Extras = { seals: [], drops: [], feats: 0 }) {
@@ -1229,7 +1241,17 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
   // the Gate's alloy, but for the one Feat on some Gates that pays a blueprint.
   for (const x of extra.drops) if (x.boss && r() < DROP.bossBlueprint) leave(rank);
   if (extra.feats) Object.assign(mats, forge.addUp(mats, { [forge.alloyId(rank)]: extra.feats * FEAT_PAY.alloy }));
-  if (extra.featBlueprint) for (let i = 0; i < FEAT_PAY.blueprints; i++) leave(rank);
+  // What the blueprint Feat left is kept apart too, so its row on the results can show it: the blueprint, or the
+  // alloy paid instead once every blueprint of the grade is known.
+  const feat = { alloy: { [forge.alloyId(rank)]: FEAT_PAY.alloy } as forge.Bundle, blueprints: [] as string[], mats: {} as forge.Bundle };
+  if (extra.featBlueprint) {
+    for (let i = 0; i < FEAT_PAY.blueprints; i++) {
+      const got = forge.leaveBlueprint(s, rank, r);
+      if (got.blueprint) { blueprints.push(got.blueprint); feat.blueprints.push(got.blueprint); }
+      Object.assign(mats, forge.addUp(mats, got.mats));
+      feat.mats = forge.addUp(feat.mats, got.mats);
+    }
+  }
   // A piece found whole, rarely.
   const forged: string[] = [];
   if (cleared && r() < FORGED.clear) {
@@ -1237,7 +1259,7 @@ function spoils(s: Save, d: Dungeon, run: OpenRaid, r: () => number, fights: num
     const id = pool[Math.floor(r() * pool.length)]?.id;
     if (id) forged.push(id);
   }
-  return { mats, blueprints, forged };
+  return { mats, blueprints, forged, feat };
 }
 
 /** Close an open run: pay out, record, seal. A withdrawal is only ever from the entrance, or a tower's rest. Mutates. */
@@ -1301,7 +1323,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   // A Rift's modifiers are its terms, not Seals taken: it pays its own Ember instead.
   const bpFeat = feats.blueprintFeat(d);
   const extra: Extras = { seals: rifted ? [] : sealing.of(run), drops: run.drops ?? [], feats: fresh.filter((id) => id !== bpFeat).length, featBlueprint: !!bpFeat && fresh.includes(bpFeat) };
-  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m), extra) : { mats: {}, blueprints: [] as string[], forged: [] as string[] };
+  const left = kept && !practice ? spoils(s, d, run, r, fights, elites, cleared, firstClear, level, vault, paceOf(d, m), extra) : { mats: {}, blueprints: [] as string[], forged: [] as string[], feat: null };
   let lootIds = kept ? [...left.forged, ...(run.haul ?? [])] : [];
   let mats = kept ? forge.addUp(left.mats, run.stash ?? {}) : {};
   if (practice) {
@@ -1423,7 +1445,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
     outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: out.hp, heroMax: out.hpMax, allies: allies.map((a) => a.name),
-    seals: extra.seals.slice(), feats: { asked, met, fresh }, drops: kept ? extra.drops.length : 0,
+    seals: extra.seals.slice(), feats: { asked, met, fresh, pay: featPay(fresh, bpFeat, left.feat) }, drops: kept ? extra.drops.length : 0,
     par: runPar > 0 ? { rounds: run.tally?.rounds ?? 0, par: par.whole(runPar), medal, best: par.bestOn(s, home), fresh: medals, ember: par.emberFor(d.rank, medals) } : null,
     ...(scored ? { rift: scored } : {}),
   };

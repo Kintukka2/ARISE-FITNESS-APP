@@ -127,9 +127,12 @@ try {
   await snap('inventory');
   await snap('inventory-full', true);
   await page.locator('[data-hub="status"]').click(); await sleep(400); await snap('status', true);
+  // The climb to the next rank: a notch to each level from C-Rank's 20 to B-Rank's 35, the level pinned on it.
+  if ((await page.locator('.sheet.is-top .stclimb__next .rclclimb__notches > i').count()) !== 15) throw new Error('THE STATUS SHEET DOES NOT DRAW THE CLIMB TO THE NEXT RANK');
+  if (!(await page.locator('.sheet.is-top .stclimb__next .rclclimb__pin', { hasText: 'Level 32' }).count())) throw new Error('THE CLIMB DOES NOT PIN THE HUNTER\'S LEVEL');
   // With no point to spend, a stat tapped tells what it is in the one tooltip, never a window.
   if ((await page.locator('.sheet.is-top .attrs__head b').innerText()).trim() === '0') {
-    await page.locator('.sheet.is-top .attr').first().click(); await sleep(300);
+    await page.locator('.sheet.is-top .statrow').first().click(); await sleep(300);
     if (await page.locator('.syswin', { hasText: /Stat:/i }).count()) throw new Error('A STAT ON THE STATUS SHEET STILL OPENS A WINDOW');
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A STAT ON THE STATUS SHEET DID NOT OPEN ITS TOOLTIP');
     await snap('status-stat-tip');
@@ -429,6 +432,37 @@ try {
   await page.evaluate((was) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.contracts = JSON.parse(was); localStorage.setItem(k, JSON.stringify(x)); }, dailies);
   await page.reload(); await sleep(1400); await drain();
 
+  // A rank waiting: the Advancement card turns gold and alight, its window is RECLASSIFICATION, and the Status sheet's
+  // line is a button to it. The veteran is lifted to the level B-Rank asks, and set back after.
+  await sleep(1500);
+  const levelWas = await page.evaluate(() => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); const was = { level: x.hunter.level, xp: x.hunter.xp }; x.hunter.level = 35; x.hunter.xp = 0; localStorage.setItem(k, JSON.stringify(x)); return was; });
+  await page.reload(); await sleep(1400); await drain();
+  await nav('quests'); await sleep(900);
+  if (!(await page.locator('.sysframe--gold.qsec--ascend .qascend').count())) throw new Error('A RANK WAITING DID NOT TURN THE ADVANCEMENT CARD GOLD');
+  if (await page.locator('.qsec--ascend .qrow--rank .qrank').count()) throw new Error('A RANK WAITING IS STILL A PLAIN ROW');
+  await page.locator('.qascend').scrollIntoViewIfNeeded(); await sleep(1200); await snap('quests-rank-ready');
+  await page.locator('.qascend').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .quest-rank.is-ready').isVisible())) throw new Error('THE READY RANK DID NOT OPEN ITS WINDOW');
+  if (!(await page.locator('.sheet.is-top .syshead', { hasText: 'Reclassification' }).count()) || await page.locator('.sheet.is-top .syshead', { hasText: 'Quest Info' }).count()) throw new Error('THE RANK\'S WINDOW IS NOT HEADED RECLASSIFICATION');
+  if (await page.locator('.sheet.is-top .quest-rank .sysrewards').count()) throw new Error('THE RANK\'S REWARDS ARE STILL A NUMBERED LIST');
+  if ((await page.locator('.sheet.is-top .rclclimb__notches > i').count()) !== 15) throw new Error('THE CLIMB DOES NOT NOTCH EACH LEVEL FROM C-RANK TO B-RANK');
+  if ((await page.locator('.sheet.is-top .rclclimb__notches > i.is-on').count()) !== 15) throw new Error('THE CLIMB IS NOT LIT ONCE THE LEVEL IS REACHED');
+  if (!(await page.locator('.sheet.is-top .rankclaim .holdbtn').count())) throw new Error('THE READY RANK HAS NO HOLD');
+  await snap('quest-rank-ready');
+  await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(400); await snap('quest-rank-ready-foot');
+  await close(); await sleep(300);
+  await nav('inventory');
+  await page.locator('[data-hub="status"]').click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .stclimb__go').isVisible())) throw new Error('THE STATUS SHEET DOES NOT OFFER THE RANK WAITING');
+  // One arrow on it: the up mark, no chevron beside it.
+  if ((await page.locator('.sheet.is-top .stclimb__go .ico').count()) !== 1) throw new Error('THE STATUS SHEET\'S RANK BUTTON CARRIES TWO ARROWS');
+  await snap('status-rank-ready');
+  await page.locator('.sheet.is-top .stclimb__go').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .quest-rank.is-ready').isVisible())) throw new Error('THE STATUS SHEET\'S RANK DID NOT OPEN ITS WINDOW');
+  await close(); await sleep(250); await close(); await sleep(250);
+  await page.evaluate((was) => { const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k)); x.hunter.level = was.level; x.hunter.xp = was.xp; localStorage.setItem(k, JSON.stringify(x)); }, levelWas);
+  await page.reload(); await sleep(1400); await drain();
+
   await nav('gates');
   await snap('gates', true);
   if (await page.locator('.ghcard.is-ascension').count()) throw new Error('THE ASCENSION CARD SHOWED BELOW S-RANK');
@@ -617,7 +651,7 @@ try {
     metHunter = await ally.getAttribute('data-hunter');
     await ally.click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
-    for (const head of ['Stats', 'Skills', 'Partnership']) {
+    for (const head of ['Stats', 'Skills', 'History']) {
       if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
     }
     // Shadows and hunters share nothing directly, so the card says nothing of the squad.
@@ -625,7 +659,10 @@ try {
     // The class is said once, in its row, and Strike is a skill like any other.
     if ((await page.locator('.sheet.is-top .huntercard .huntercard__class').count()) !== 1) throw new Error('THE HUNTER CARD DOES NOT NAME THEIR CLASS ONCE');
     if (!(await page.locator('.sheet.is-top .huntercard .sp-skill', { hasText: '[Skill: Strike]' }).count())) throw new Error('THE HUNTER CARD DOES NOT LIST STRIKE AMONG THEIR SKILLS');
-    if ((await page.locator('.sheet.is-top .huntercard .hc-stats li').count()) !== 5) throw new Error('THE HUNTER CARD DOES NOT SET OUT FIVE STATS');
+    if ((await page.locator('.sheet.is-top .huntercard .statrows .statrow').count()) !== 5) throw new Error('THE HUNTER CARD DOES NOT SET OUT FIVE STATS');
+    // A hunter's stats are set out as the Status sheet sets the hunter's own: rows, open, no box round each.
+    if (await page.locator('.sheet.is-top .huntercard .statrows .sysbox, .sheet.is-top .huntercard .hc-stats').count()) throw new Error('THE HUNTER CARD STILL BOXES ITS STATS');
+    if (await page.locator('.sheet.is-top .huntercard', { hasText: /Partnership|Parties together|Among your partners/i }).count()) throw new Error('THE HUNTER CARD STILL SPEAKS OF PARTIES OR PARTNERSHIP');
     await snap('hunter-card');
     await page.locator('.sheet.is-top .huntercard .huntercard__class').click(); await sleep(300);
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: 'Class' }).isVisible())) throw new Error('A HUNTER\'S CLASS TAG DID NOT OPEN ITS TOOLTIP');
@@ -638,11 +675,13 @@ try {
     await snap('hunter-style-tip');
     await page.keyboard.press('Escape'); await sleep(250);
     // Each stat opens the one stat tooltip, the same the Status and Stats sheets open; the best is flagged `Best`.
-    await page.locator('.sheet.is-top .huntercard .hc-stats__tip').nth(1).click(); await sleep(300);
+    await page.locator('.sheet.is-top .huntercard .statrow').nth(1).click(); await sleep(300);
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A HUNTER\'S STAT TAPPED DID NOT OPEN ITS TOOLTIP');
+    // The same tooltip as the Status sheet's: what the stat does, then the figure.
+    if (!(await page.locator('.tip.tip--system', { hasText: /Base \d+/ }).count())) throw new Error('A HUNTER\'S STAT TOOLTIP DOES NOT GIVE ITS FIGURE AS STATUS DOES');
     await snap('hunter-stat-tip');
     await page.keyboard.press('Escape'); await sleep(250);
-    if (await page.locator('.sheet.is-top .hc-stats__lead', { hasText: /^Lead$/i }).count()) throw new Error('THE HUNTER CARD STILL FLAGS A STAT LEAD');
+    if (await page.locator('.sheet.is-top .huntercard .statrow__aside', { hasText: /^Lead$/i }).count()) throw new Error('THE HUNTER CARD STILL FLAGS A STAT LEAD');
     // The favourite star stands at the far right of the name; starred, their face in the party wears it.
     const star = page.locator('.sheet.is-top .syshead__extra .favstar');
     if (!(await star.count())) throw new Error('THE HUNTER CARD HAS NO FAVOURITE STAR IN ITS NAME');
@@ -935,6 +974,15 @@ try {
     if ((await page.locator('.arena--results .rchal .rchal__row').first().getAttribute('class')).indexOf('rchal__par') < 0) throw new Error('THE CHALLENGES DO NOT OPEN ON PAR');
     // Ember is paid beside the XP and the shards, never again among the materials.
     if (await page.locator('.arena--results .spoils .rmat', { hasText: 'Ascendant Ember' }).count()) throw new Error('EMBER IS COUNTED AMONG THE MATERIALS');
+    // What was met is struck, one row after another, and pays at its right with no New beside it: a material as its
+    // art and figure, a blueprint as its box in the row, not among the Spoils.
+    if (await page.locator('.arena--results .rnew').count()) throw new Error('A CHALLENGE STILL SAYS NEW');
+    if ((await page.locator('.arena--results .rchal__row.is-met').count()) !== (await page.locator('.arena--results .rchal__row.is-lit').count())) throw new Error('A CHALLENGE MET WAS NOT STRUCK');
+    for (const g of await page.locator('.arena--results .rchal__gain').all()) {
+      if (!(await g.locator('.matart').count())) throw new Error('A CHALLENGE PAID A MATERIAL WITHOUT ITS ART');
+    }
+    // A find's light at a row's edge never scrolls the results sideways.
+    if (await page.locator('.arena--results').evaluate((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollLeft > 0)) throw new Error('THE RESULTS SCROLL SIDEWAYS');
     await page.locator('.arena--results .rchal').scrollIntoViewIfNeeded(); await sleep(1000); await snap('raid-results-par');
   }
   {
@@ -1257,9 +1305,11 @@ try {
     await drain();
     await page.locator('.sheet.is-top .bformation').scrollIntoViewIfNeeded(); await sleep(300);
     await page.locator(`.sheet.is-top .bformation__ally[data-hunter="${metHunter}"]`).click(); await sleep(700);
-    if (!(await page.locator('.sheet.is-top .hc-together__lead', { hasText: '7' }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THEIR PARTIES');
-    if (!(await page.locator('.sheet.is-top .hc-together__rows', { hasText: /Most often|The only one/ }).count())) throw new Error('THE MOST FREQUENT PARTNER IS NOT SAID TO BE');
-    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'Partnership' }).scrollIntoViewIfNeeded(); await sleep(400);
+    if (!(await page.locator('.sheet.is-top .hc-history__lead', { hasText: /7\s*Gates together/i }).count())) throw new Error('A HUNTER PARTIED WITH BEFORE DOES NOT COUNT THE GATES WALKED TOGETHER');
+    if (!(await page.locator('.sheet.is-top .hc-history__lead', { hasText: /most frequent partner|only partner/ }).count())) throw new Error('WHERE THEY STAND AMONG YOUR PARTNERS IS NOT SAID PLAINLY');
+    // How the Gates ended, one bar split cleared, carried out and withdrawn from: 5, 1 and 1 of the 7.
+    if ((await page.locator('.sheet.is-top .hc-history__bar > i').count()) !== 3) throw new Error('THE HISTORY DOES NOT SPLIT HOW THE GATES ENDED');
+    await page.locator('.sheet.is-top .huntercard .section', { hasText: 'History' }).scrollIntoViewIfNeeded(); await sleep(400);
     await snap('hunter-card-together');
   }
 
@@ -1273,7 +1323,12 @@ try {
     await nav('inventory'); await sleep(600);
     await page.locator('[data-hub="status"]').click(); await sleep(400);
     if ((await page.locator('.sheet.is-top .attrs__head b').innerText()).trim() !== '0') throw new Error('THE ASCENDED FIXTURE HAS POINTS TO SPEND');
-    await page.locator('.sheet.is-top .attr').first().click(); await sleep(300);
+    // At S-Rank the climb runs to Sovereign: a notch to each level from 70 to 100, every tenth marked under it.
+    if ((await page.locator('.sheet.is-top .stclimb__next .rclclimb__notches > i').count()) !== 30) throw new Error('THE CLIMB TO SOVEREIGN DOES NOT NOTCH EACH LEVEL FROM 70');
+    if ((await page.locator('.sheet.is-top .stclimb__next .rclclimb__marks > small').allInnerTexts()).join() !== '80,90') throw new Error('THE CLIMB TO SOVEREIGN DOES NOT MARK EVERY TENTH LEVEL');
+    await page.locator('.sheet.is-top .stclimb__next').screenshot({ path: `${OUT}/status-sovereign-climb.png` });
+    await snap('status-sovereign');
+    await page.locator('.sheet.is-top .statrow').first().click(); await sleep(300);
     if (await page.locator('.syswin', { hasText: /Stat:/i }).count()) throw new Error('A STAT ON THE STATUS SHEET STILL OPENS A WINDOW');
     if (!(await page.locator('.tip.tip--system .tip__kind', { hasText: /^Stat$/i }).isVisible())) throw new Error('A STAT ON THE STATUS SHEET DID NOT OPEN ITS TOOLTIP');
     if (!(await page.locator('.tip.tip--system', { hasText: 'Ability Points take it to' }).count())) throw new Error('THE STATUS SHEET\'S STAT TOOLTIP IS NOT THE STATS SHEET\'S');
