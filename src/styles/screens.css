@@ -4489,7 +4489,7 @@ button.ghlicence.is-hot { border-color: var(--gold); box-shadow: 0 0 16px color-
 .embercost b { font-weight: 800; }
 .embercost.is-short { color: var(--blood); }
 .temperslot__go, .temperwin__go { min-height: 48px; }
-.temperslot__go .ico, .temperwin__go .ico { width: 17px; height: 17px; vertical-align: -3px; }
+.temperslot__go > .ico, .temperwin__go > .ico { width: 17px; height: 17px; vertical-align: -3px; }
 /* TEMPER: the piece, the properties to choose from, the roll, Current against New, and the button with its price. */
 .temperwin { gap: 14px; }
 .temperwin__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--sys-ink) 14%, transparent); }

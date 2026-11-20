@@ -82,7 +82,7 @@ export function AttunedTriad({ onPick, chosen }: { onPick: (g: EngraveGroup, id?
 /**
  * A piece's engraving on its card, a socket as its Temper's is (`ui/mod.tsx`): its stone in its own colour, opening the
  * Codex on it, over how it stands (attuned, dormant while another piece of its kind holds the attuned one, or engraved
- * on a piece not worn) and `[Engraving: Name]`, its rule in the one tooltip a tap on the name opens; and **Engrave** or **Engrave Anew** while the Codex holds a
+ * on a piece not worn) and `[Engraving: Name]`, its rule in the one tooltip a tap on the name opens; and **Engrave** while the Codex holds a
  * power of its kind. With nothing cut and nothing kept, the socket stands empty and opens the Codex on its kind.
  */
 export function EngravingBlock({ it }: { it: Item }) {
@@ -97,7 +97,7 @@ export function EngravingBlock({ it }: { it: Item }) {
   const price = engr.cost(it);
   const short = ember(s) < price;
   const action = options.length > 0
-    ? <Btn kind={e ? 'ghost' : undefined} block class="mod__btn" onClick={() => openCodex(it.id)}><Glyph name="engrave" /> {e ? 'Engrave Anew' : 'Engrave'}<span class="btn__aside"><EmberCost n={price} short={short} /></span></Btn>
+    ? <Btn kind={e ? 'ghost' : undefined} block class="mod__btn" onClick={() => openCodex(it.id)}><Glyph name="engrave" /> Engrave<span class="btn__aside"><EmberCost n={price} short={short} /></span></Btn>
     : !e ? <Btn kind="ghost" block class="mod__btn" onClick={() => openCodex(undefined, g)}><Glyph name="engrave" /> Codex</Btn> : undefined;
   if (!e) {
     return (

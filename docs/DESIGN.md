@@ -3782,6 +3782,15 @@ The owner asked, on a wide screen where the two sockets sit side by side:
   its glyph, its name, `Engraving`, and the rule. The card no longer writes the rule.
 - **Balance.** Display only.
 
+## Engrave and Temper, said plainly; one Ember size — built
+
+- **The sockets' buttons say `Engrave` and `Temper`,** never `Engrave Anew` or `Temper Again` (the owner's call).
+  The TEMPER window's button too.
+- **One Ember size.** The Temper button's rule for its hammer (`.temperslot__go .ico`) also enlarged the Ember
+  mark's flame inside its price. It now reaches the button's own icon alone (`> .ico`), so both sockets' Ember
+  marks are the same size.
+- **Balance.** Display only.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

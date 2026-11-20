@@ -91,7 +91,7 @@ export function TemperBlock({ it }: { it: Item }) {
   const short = (s.materials?.[EMBER.id] ?? 0) < ember;
   const action = (
     <Btn kind={it.temperNew ? 'gold' : t ? 'ghost' : undefined} block class="temperslot__go mod__btn" onClick={() => openTemper(it.id)}>
-      {it.temperNew ? 'Choose' : <><Glyph name="hammer" /> {t ? 'Temper Again' : 'Temper'}<span class="btn__aside"><EmberCost n={ember} short={short} /></span></>}
+      {it.temperNew ? 'Choose' : <><Glyph name="hammer" /> Temper<span class="btn__aside"><EmberCost n={ember} short={short} /></span></>}
     </Btn>
   );
   return (
@@ -234,7 +234,7 @@ function TemperWindow({ itemId }: { itemId: string }) {
           <Btn kind="primary" block class="temperwin__go" disabled={!!short} onClick={roll}>
             {short === 'short'
               ? <>Ascendant Ember <span class="num">{group(held)}/{group(ember)}</span></>
-              : <><Glyph name="hammer" /> {it.temper ? 'Temper Again' : 'Temper'} <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} /></>}
+              : <><Glyph name="hammer" /> Temper <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} /></>}
           </Btn>
         </>
       )}

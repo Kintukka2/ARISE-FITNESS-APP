@@ -929,7 +929,7 @@ each was drawn its own way): the mark at the left in its own light, a rule of th
 a small capital line, the socket's name large and what it does, and its button across its foot. The Engraving's: its
 stone, opening the Codex on it, `Attuned`, `Dormant` or `Engraved` (a piece not worn) over `[Engraving: Name]`, dotted, which opens the one tooltip
 on its rule (the owner's call: the rule is not written on the card); `Another armour piece worn holds the attuned
-engraving.` while dormant, and never `Not in the Codex.`; and **Engrave** (or **Engrave Anew**) with its Ember set apart while the Codex holds a power of its kind.
+engraving.` while dormant, and never `Not in the Codex.`; and **Engrave** (never **Engrave Anew**, the owner's call) with its Ember set apart while the Codex holds a power of its kind.
 With nothing cut, the socket stands dashed: `Engraving` over `Empty`, `2 kept` at its right and their names under it,
 or `None kept` and `No weapon power in the Codex.` with **Codex**, which opens the Codex on its kind.
 `Enhancements` counts the sockets filled at its right (`1/2`). Side by side, each socket fits its words to its own width: no word breaks inside itself, a value too wide drops under its name, and the mark, type and button shrink. Equipment's `Engravings`, `Codex 4/16` at its right, sets the three attuned: a
@@ -1031,8 +1031,8 @@ higher carries a Temper socket on its card under `Enhancements`, beside its Engr
 perfect.` until it is, the socket dim and dashed; then the slot, a hammer in a diamond, dashed and `Empty` while empty with the slot's properties under it (`Crit Chance,
 Accuracy, Effect Chance`), gold and lit with what it holds once tempered (`Crit Chance`, `+10.7%` at the right in
 gold, and under them its bar, the fill gold and a white mark where the roll sits, beside its range); `New roll` and
-`Crit Chance +9.6%` on a gold rule while one waits; and its button across the socket's foot, **Temper** or **Temper Again** with the next
-temper's Ember set apart on it, by Ember's art (`30`, red while the Ember held falls short), or **Choose** in
+`Crit Chance +9.6%` on a gold rule while one waits; and its button across the socket's foot, **Temper** (never **Temper Again**, the owner's call) with the next
+temper's Ember set apart on it, its Ember the same size as the Engraving's, by Ember's art (`30`, red while the Ember held falls short), or **Choose** in
 gold while a roll waits. A perfect piece's card says no more of its upgrades: the quality line at its head says
 `Perfect`, and the Temper slot is what follows. A tempered property stands last among the piece's properties, the
 hammer before it, its name in gold, its size, its bar and its range (`9-13%`). A property is named as the card names
@@ -1040,7 +1040,7 @@ it (`Crit Chance`, `Effect Chance`), never by the design's own word. A temper co
 written with shards, and never in a `Price` grid of its own. The `TEMPER` window: the piece, `Never tempered` or
 `Tempered 2 times`, the Ember held (red while it falls short); `Choose a property`, a row to each of its slot's, a
 diamond lit for the one chosen, `Current +10.7%` in gold by the one the slot holds, its range at the right; and
-**Temper** or **Temper Again** with its Ember on the button, as Warframe's `CYCLE FOR 7,000` carries its price, or,
+**Temper** with its Ember on the button, as Warframe's `CYCLE FOR 7,000` carries its price, or,
 short, `Ascendant Ember 12/30`. Pressed, the roll lands: the property's name over its bar, the mark sweeping across
 the whole range and settling where it rolled. The first lands as `Tempered` over `Crit Chance +10.7%`; after it,
 `Current` and `New` side by side, each the property, its size large, its bar and its range, the better of the two
@@ -1048,7 +1048,7 @@ edged in green with `▲ Better` on its border, as a piece's card marks a stat t
 marked. Under them **Keep Current** and **Use New**, the better one's lit, as NIKKE's `Keep Effects` and Honkai: Star
 Rail's `Use the new stats` pair a keep with a use. The roll the slot holds is `Current`, never `Held`. Taken: the
 toast `Tempered: Crit Chance +11.4%`. A temper is never called an affix, an enchantment or a reroll; to temper again
-is **Temper Again**. Recycling a tempered piece says in red, `Its temper, Crit Chance +10.7%, is lost.`
+is **Temper** still. Recycling a tempered piece says in red, `Its temper, Crit Chance +10.7%, is lost.`
 
 **The Daily Rift.** On Quests, in the Gates' orange, under the Daily Quests: `Daily Rift` with `Closes in: 13:01:48` at its
 right. Its card, after Monster Train's Daily Challenge: the Rift's tear, a ring of the Gates' orange split by a bolt of
@@ -1438,11 +1438,11 @@ Map events, traps, caches, shrines and rests (`data/nodes.ts`) are narrated as t
 | info tag | tooltip trigger, help icon (on screen) | A tag that tells what it is when tapped (`ui/infotag.tsx`): it looks as it did, shows a small `?` under a resting pointer, and opens the one tooltip (The tooltip, in The look). The Shadow card's family (`Undead` and `Kin` over `Deployed together, Undead Shadows each gain Max HP and Status Save.`, then `(2) Max HP +8%, Status Save +8` and `(3) Max HP +16%, Status Save +16`, the one its squad reaches lit), role (`Status Specialist` and `Role bonus` over `Deployed, Status Specialist Shadows give the whole party Effect Chance, the Association’s hunters included.`, then `(1) Effect Chance +6` to `(3) Effect Chance +18`, the one its squad reaches lit; where it stands decides nothing of it) and how it fights (`Melee` or `Ranged`, `ui/stand.tsx`, its tooltip `How it fights`: Melee, Ranged in Words) are info tags |
 | Health Potion | Field Potion, field potion | The one healing potion: carried in the satchel, drunk on the hunter's turn in a fight, between rooms from the bag, or out of a Gate. There is no Field Potion any more; Ryn may still call one a flask |
 | Items | bag, inventory, quick menu, wheel, radial (on screen) | What the hunter carries into a Gate, in the bag at the dock's right on the map and its wheel. Its label is `Items`; its glyph a satchel, not the Item Bag's bag |
-| Engraving | aspect, rune, enchantment, legendary power | A power cut into a piece that changes a rule of the fight, one to each family of creature: `[Engraving: Withering Strike]`. A worn piece's is `Attuned`, or `Dormant` while another piece of its kind holds the attuned one. To cut one into a piece is to engrave it: **Engrave**, **Engrave Anew**, `Would you like to engrave this item?` |
+| Engraving | aspect, rune, enchantment, legendary power | A power cut into a piece that changes a rule of the fight, one to each family of creature: `[Engraving: Withering Strike]`. A worn piece's is `Attuned`, or `Dormant` while another piece of its kind holds the attuned one. To cut one into a piece is to engrave it: **Engrave**, `Would you like to engrave this item?` |
 | Attuned | live, active | An engraving in play from a piece worn, one to each kind of gear: `ATTUNED`, `ATTUNED` beside `WEAPON`. Its opposite is `Dormant`. |
 | Rating | rank, grade, tier | A Rift score's letter against its full marks, E to S, in its grade's colour: `Rating B` to a screen reader. Rank and grade stay the hunter's and the Gate's. |
 | Daily Rift | daily challenge, daily run, daily dungeon | One Gate a day, drawn from the date, the same for every hunter of a grade, walked once: `Daily Rift`, `Rift Cleared`, `Rift Score`, **Enter The Rift**. Its rules are `Modifiers`, never Seals. |
-| Temper | affix, enchant, reroll, reforge | The one property a perfect piece takes beyond its design's, chosen and rolled: **Temper**, **Temper Again**, `Temper slot open`, `Tempered: Crit Chance +11.4%`, `Held` and `New`, **Keep Held** and **Take New**. |
+| Temper | affix, enchant, reroll, reforge | The one property a perfect piece takes beyond its design's, chosen and rolled: **Temper**, `Temper slot open`, `Tempered: Crit Chance +11.4%`, `Held` and `New`, **Keep Held** and **Take New**. |
 | Par, medal | target, goal, rank, stars (for par) | Par is the rounds a fight should take; Bronze, Silver and Gold are the medals a clear earns against it. Stars are the Feats'. |
 | Front, Rear | rank, line, back line, back row (for where a unit stands) | The two rows a side stands in: the `Front` row and the `Rear` row, as Etrian Odyssey and Final Fantasy name a party's rows (the owner's call). Rank is only ever a hunter's grade, so no line about a fight's rows says it. |
 | Codex | collection, library, archive | Where an engraving is kept for good once its piece is recycled: `CODEX`, `Kept 4/16`, `[Engraving: Warcry] kept in the Codex.` A power not kept reads `Left by Orc bosses and Gatekeepers.` |
