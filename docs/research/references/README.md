@@ -17,6 +17,7 @@ one folder up say what the games do; these show it.
 | [Effect icons](effect-icons/) (not a step) | A mark to every habit and status, drawn alone with no frame: a habit's beside its name, a status's in its tag, the special drop's by the HP | 16 |
 | [Creature icons](creature-icons/) (not a step) | A portrait to every kind of creature, its eyes lit; a boss crowned; a Shadow as the dark its creature became, rimmed and eyed in violet | 15 |
 | [Tooltips](tooltips/) (not a step) | The one tooltip, the fight's: a mark and a name, its kind at the right, a sentence with the trigger first, a Kin's breakpoints a line each with the one reached lit | 14 |
+| [The party](party/) (not a step) | One row of faces on the brief that opens the party window: its power split by who brings it, the formation, a card to each bonus, a row to each member with its numbers | written, no captures |
 
 Every image belongs to the game's publisher, or to the wiki, site or player who captured it, as listed beside it. They are kept here as design reference only: nothing in ARISE copies their art, and none of them ships with the game.
 

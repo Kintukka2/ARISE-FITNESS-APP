@@ -1846,11 +1846,6 @@ button.wardword.infotag:hover, button.wardword.infotag[aria-expanded="true"] { c
 .bfeat { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--sys-hair); animation: rowIn 320ms calc(var(--i) * 60ms) var(--ease) both; }
 .bfeat:first-child { border-top: 0; padding-top: 2px; }
 .bfeat.is-done .bfeat__body b { color: var(--gold); }
-.sysframe .brief .bparty { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
-.sysframe .brief .bparty li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 8px; padding: 8px 2px 8px 8px; border: 0; border-left: 2px solid var(--sys-hair); border-bottom: 1px solid var(--sys-hair); background: none; }
-.sysframe .brief .bparty li > .num { font-size: 0.82rem; }
-.sysframe .brief .bparty li.is-you { border-left-color: var(--mana); }
-.sysframe .brief .bparty li.is-shadow { border-left-color: var(--arcane); background: linear-gradient(90deg, color-mix(in srgb, var(--arcane) 10%, transparent), transparent 80%); }
 
 /* The tabs: a name over a count each, a bar sliding under the one shown. */
 .btabs__stars { display: inline-flex; gap: 1px; letter-spacing: 0; }
@@ -4684,28 +4679,144 @@ button.bdone__text.infotag { align-items: flex-start; padding: 0; border: 0; bac
 .bformation__rank.is-target { background: color-mix(in srgb, var(--mana) 6%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mana) 45%, transparent); }
 .bformation__rank.is-target .bformation__none { color: color-mix(in srgb, var(--mana) 80%, transparent); }
 .bformation__rank.is-over { background: color-mix(in srgb, var(--mana) 16%, transparent); box-shadow: inset 0 0 0 2px var(--mana), inset 0 0 22px color-mix(in srgb, var(--mana) 30%, transparent); }
-/* The board's foot, inside its frame: the squad's bonuses, a chip to each, then how a face is moved. */
-.bformation__foot { display: grid; gap: 10px; padding: 10px 10px 9px; border-top: 1px solid var(--sys-hair); background: rgba(255, 255, 255, 0.015); }
-.bformation__hint { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 52%, transparent); }
-.bonuschips + .bformation__hint { padding-top: 9px; border-top: 1px dashed color-mix(in srgb, var(--sys-ink) 16%, transparent); }
+/* How a face is moved, under the board in the party window. */
+.bformation__hint { display: flex; align-items: center; gap: 7px; margin: 8px 2px 0; font-size: 0.66rem; line-height: 1.35; color: color-mix(in srgb, var(--sys-ink) 52%, transparent); }
 .bformation__hint .ico { flex: none; width: 13px; height: 13px; color: color-mix(in srgb, var(--mana) 75%, transparent); }
-.bonuschips { display: grid; gap: 10px; }
-.bonuschips__row { display: grid; gap: 6px; }
-.bonuschips__label { font-size: 0.54rem; font-weight: 800; letter-spacing: 0.18em; line-height: 1.3; text-transform: uppercase; color: color-mix(in srgb, var(--arcane) 70%, var(--sys-ink)); }
-.bonuschips__list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-/* A role bonus or a Kin the squad reaches, in the Shadows' violet: its mark lit in a hexagon, its name, its tier. */
-button.bonuschip.infotag {
-  --win: var(--arcane); --win-glow: var(--arcane-glow);
-  display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 3px 10px 3px 4px;
-  border: 1px solid color-mix(in srgb, var(--arcane) 45%, transparent); background: color-mix(in srgb, var(--arcane) 11%, rgba(6, 3, 18, 0.6));
-  color: #e4d8ff; font-size: 0.72rem; cursor: help; transition: border-color 140ms, background 140ms;
+
+/* The party on the brief, one row, after Honkai: Star Rail's team strip: the Front's faces and the Rear's across a
+   seam, the squad's bonuses as their lit marks, a chevron; the whole row a button to the party window. */
+.bparty {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  width: 100%; min-height: 64px; padding: 9px 10px 10px 12px; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ember) 30%, var(--sys-hair)); color: inherit; font: inherit; text-align: left; cursor: pointer;
+  background: linear-gradient(180deg, rgba(255, 154, 60, 0.08), transparent 70%), rgba(4, 8, 18, 0.55);
+  transition: border-color 160ms, background 160ms; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-button.bonuschip.infotag:hover, button.bonuschip.infotag[aria-expanded="true"] { border-color: color-mix(in srgb, var(--arcane) 85%, #fff); background: color-mix(in srgb, var(--arcane) 22%, rgba(6, 3, 18, 0.6)); }
-.bonuschip .kinhex { width: 22px; height: 24px; }
-.bonuschip .kinhex svg { width: 12px; height: 12px; }
-.bonuschip b { font-weight: 700; white-space: nowrap; }
-/* The tier in its own badge, so a lone I reads as a numeral, not a bar. */
-.bonuschip__tier { display: grid; place-items: center; min-width: 20px; height: 18px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--arcane) 60%, transparent); background: color-mix(in srgb, var(--arcane) 28%, transparent); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1; color: #fff; }
+.bparty::after {
+  content: ''; position: absolute; inset: 0 auto 0 -40%; width: 40%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 186, 120, 0.16), transparent); transform: skewX(-18deg);
+  animation: bpartySweep 6s ease-in-out 1.2s infinite;
+}
+@keyframes bpartySweep { 0%, 70% { left: -40%; } 100% { left: 120%; } }
+.bparty:hover, .bparty:focus-visible { border-color: color-mix(in srgb, var(--ember) 65%, transparent); background: linear-gradient(180deg, rgba(255, 154, 60, 0.14), transparent 70%), rgba(4, 8, 18, 0.55); }
+.bparty:active { transform: scale(0.995); }
+.bparty__rows { display: flex; align-items: flex-end; gap: 10px; min-width: 0; }
+.bparty__row { display: grid; gap: 5px; min-width: 0; }
+.bparty__row.is-rear { padding-left: 10px; border-left: 1px dashed color-mix(in srgb, var(--sys-ink) 22%, transparent); }
+.bparty__label { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.22em; line-height: 1; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.bparty__row.is-front .bparty__label { color: color-mix(in srgb, var(--ember) 85%, transparent); }
+.bparty__faces { display: flex; gap: 4px; }
+.bparty__face {
+  position: relative; display: grid; flex: none; place-items: center; width: 34px; height: 34px; font-style: normal;
+  border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.7); box-shadow: 0 0 0 2px #05070d;
+  animation: bpartyFace 360ms var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms);
+}
+@keyframes bpartyFace { from { opacity: 0; transform: translateY(6px) scale(0.9); } }
+.bparty__face.is-you { border-color: color-mix(in srgb, var(--mana) 75%, transparent); box-shadow: 0 0 0 2px #05070d, 0 0 12px rgba(79, 214, 255, 0.35); z-index: 2; }
+.bparty__face.is-shadow { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 26%, transparent), rgba(6, 3, 18, 0.85)); }
+.bparty__face.is-shadow .emblem { color: var(--arcane); filter: drop-shadow(0 0 5px var(--arcane-glow)); }
+.bparty__face.is-free { border-style: dashed; color: color-mix(in srgb, var(--sys-ink) 45%, transparent); font-size: 0.66rem; font-weight: 700; }
+/* Crowded, the faces shrink; packed, they overlap a little as a stack of portraits does, so the row stays one row. */
+.bparty.is-crowded .bparty__faces { gap: 3px; }
+.bparty.is-crowded .bparty__face { width: 30px; height: 30px; }
+.bparty.is-crowded .bparty__face svg { max-width: 26px; max-height: 26px; }
+.bparty.is-packed .bparty__faces { gap: 0; }
+.bparty.is-packed .bparty__face { width: 28px; height: 28px; }
+.bparty.is-packed .bparty__face + .bparty__face { margin-left: -4px; }
+.bparty__side { display: flex; align-items: center; gap: 8px; }
+.bparty__marks { --win: var(--arcane); --win-glow: var(--arcane-glow); display: flex; gap: 2px; }
+.bparty__marks .kinhex { width: 20px; height: 22px; }
+.bparty__marks .kinhex svg { width: 11px; height: 11px; }
+.bparty__go { width: 18px; height: 18px; color: var(--ember); }
+@media (prefers-reduced-motion: reduce) { .bparty::after { animation: none; display: none; } .bparty__face { animation: none; } }
+
+/* The party window: its power split by who brings it, the formation, the bonuses, every member, the Army. */
+.pwin { gap: 18px; }
+.pwin__count { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 58%, transparent); }
+.pwin__power {
+  display: grid; gap: 9px; padding: 14px 14px 12px; border: 1px solid color-mix(in srgb, var(--ember) 35%, transparent);
+  background: radial-gradient(120% 90% at 0% 0%, rgba(255, 154, 60, 0.16), transparent 60%), rgba(6, 6, 12, 0.6);
+}
+.pwin__total { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pwin__total small { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.pwin__total b { display: inline-flex; align-items: center; gap: 7px; font-size: 1.9rem; font-weight: 800; line-height: 1; text-shadow: 0 0 14px rgba(255, 154, 60, 0.35); }
+.pwin__total b .ico { width: 20px; height: 20px; color: var(--ember); }
+.pwin__split { display: flex; gap: 2px; height: 8px; }
+.pwin__split i { border-radius: 1px; transform-origin: 0 50%; animation: pwinGrow 620ms var(--ease) both; animation-delay: calc(120ms + var(--i) * 110ms); }
+@keyframes pwinGrow { from { transform: scaleX(0); } }
+.pwin__split .is-you, .pwin__legend .is-you i { background: var(--mana); box-shadow: 0 0 8px rgba(79, 214, 255, 0.5); }
+.pwin__split .is-ally, .pwin__legend .is-ally i { background: #cdd8e8; }
+.pwin__split .is-shadow, .pwin__legend .is-shadow i { background: var(--arcane); box-shadow: 0 0 8px var(--arcane-glow); }
+.pwin__legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.pwin__legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.pwin__legend i { width: 8px; height: 8px; }
+.pwin__legend b { font-weight: 700; color: var(--sys-ink); }
+.pwin__empty { margin: 0; font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.pwin__aura { display: flex; align-items: flex-start; gap: 6px; margin: 10px 2px 0; font-size: 0.72rem; line-height: 1.4; color: var(--verdant); }
+.pwin__aura .ico { flex: none; width: 12px; height: 12px; margin-top: 2px; }
+.pwin__acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pwin__act { white-space: nowrap; }
+.pwin__act .ico { width: 15px; height: 15px; }
+/* A bonus the squad reaches, after Genshin's Elemental Resonance: its mark lit, its name and tier, what it gives, and
+   how many count toward its breakpoints. In the Shadows' violet; a tap opens the one tooltip. */
+.pbonuses { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pbonuses > li { animation: rowIn 320ms var(--ease) both; }
+button.pbonus.infotag {
+  --win: var(--arcane); --win-glow: var(--arcane-glow);
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; width: 100%; padding: 9px 12px 9px 9px;
+  border: 1px solid color-mix(in srgb, var(--arcane) 40%, transparent); color: #e8ddff; text-align: left; cursor: help;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--arcane) 18%, transparent), transparent 75%), rgba(6, 3, 18, 0.6);
+  transition: border-color 140ms;
+}
+button.pbonus.infotag:hover, button.pbonus.infotag[aria-expanded="true"] { border-color: color-mix(in srgb, var(--arcane) 85%, #fff); }
+.pbonus .kinhex { width: 32px; height: 34px; }
+.pbonus .kinhex svg { width: 16px; height: 16px; }
+.pbonus__body { display: grid; gap: 3px; min-width: 0; }
+.pbonus__name { display: flex; align-items: center; gap: 7px; }
+.pbonus__name b { font-size: 0.86rem; font-weight: 700; }
+.pbonus__tier { display: grid; place-items: center; min-width: 20px; height: 18px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--arcane) 60%, transparent); background: color-mix(in srgb, var(--arcane) 28%, transparent); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1; color: #fff; }
+.pbonus__gain { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 82%, transparent); }
+.pbonus__steps { display: grid; justify-items: end; gap: 3px; }
+.pbonus__steps small { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in srgb, var(--arcane) 65%, var(--sys-ink)); }
+/* A member, after Epic Seven's and Arknights' squad lists: the face, who it is, where it stands and how it fights, its
+   power, and under them its numbers, what the squad's bonuses add in green. A tap opens its card. */
+.pmembers { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pmember { animation: rowIn 320ms var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms); }
+button.pmember__hit {
+  --mc: color-mix(in srgb, var(--sys-ink) 55%, transparent);
+  display: grid; grid-template-columns: 50px minmax(0, 1fr) auto 14px; grid-template-areas: 'face who power go' 'stats stats stats stats';
+  align-items: center; column-gap: 10px; row-gap: 9px; width: 100%; padding: 10px 10px 11px 12px;
+  border: 1px solid var(--sys-hair); background: rgba(4, 8, 18, 0.55); box-shadow: inset 3px 0 0 var(--mc);
+  color: inherit; font: inherit; text-align: left; cursor: pointer; transition: border-color 140ms, background 140ms; touch-action: manipulation;
+}
+button.pmember__hit:hover, button.pmember__hit:focus-visible { border-color: color-mix(in srgb, var(--mc) 70%, transparent); background: rgba(8, 14, 28, 0.7); }
+.pmember.is-you { --mc: var(--mana); }
+.pmember.is-you button.pmember__hit { --mc: var(--mana); }
+.pmember.is-ally button.pmember__hit { --mc: #cdd8e8; }
+.pmember.is-shadow button.pmember__hit { --mc: var(--arcane); }
+.pmember__face { grid-area: face; position: relative; display: grid; place-items: center; width: 50px; height: 50px; border: 1px solid var(--sys-hair); background: rgba(6, 4, 2, 0.6); }
+.pmember.is-you .pmember__face { border-color: color-mix(in srgb, var(--mana) 70%, transparent); box-shadow: 0 0 12px rgba(79, 214, 255, 0.3); }
+.pmember.is-shadow .pmember__face { border-color: color-mix(in srgb, var(--arcane) 60%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--arcane) 25%, transparent), rgba(6, 3, 18, 0.8)); }
+.pmember.is-shadow .pmember__face .emblem { color: var(--arcane); filter: drop-shadow(0 0 6px var(--arcane-glow)); }
+.pmember__who { grid-area: who; display: grid; gap: 2px; min-width: 0; }
+.pmember__name { overflow: hidden; font-size: 0.9rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.pmember.is-you .pmember__name { color: var(--mana); }
+.pmember.is-shadow .pmember__name { color: #d9c6ff; }
+.pmember__what { overflow: hidden; font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
+.pmember__tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.pmember__tag { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border: 1px solid var(--sys-hair); font-size: 0.54rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 72%, transparent); }
+.pmember__tag.is-front { border-color: color-mix(in srgb, var(--ember) 45%, transparent); color: var(--ember); }
+.pmember__tag .ico { width: 10px; height: 10px; }
+.pmember__power { grid-area: power; display: inline-flex; align-items: center; gap: 4px; }
+.pmember__power b { font-size: 0.95rem; font-weight: 800; }
+.pmember__power .ico { width: 13px; height: 13px; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
+.pmember__go { grid-area: go; width: 14px; height: 14px; color: color-mix(in srgb, var(--sys-ink) 40%, transparent); }
+.pmember__stats { grid-area: stats; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding-top: 9px; border-top: 1px dashed color-mix(in srgb, var(--sys-ink) 13%, transparent); }
+.pmember__stat { display: grid; gap: 2px; min-width: 0; }
+.pmember__stat small { overflow: hidden; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.12em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); }
+.pmember__stat b { font-size: 0.86rem; font-weight: 700; white-space: nowrap; }
+.pmember__up { margin-left: 3px; font-size: 0.62rem; font-style: normal; font-weight: 700; color: var(--verdant); }
+@media (prefers-reduced-motion: reduce) { .pwin__split i, .pmember, .pbonuses > li { animation: none; } }
 .dragghost--you { border-color: color-mix(in srgb, var(--mana) 80%, #fff); background: rgba(4, 14, 28, 0.94); box-shadow: 0 0 22px rgba(79, 214, 255, 0.45), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--mana); }
 .dragghost--you b { color: var(--mana); }
 .dragghost--you.is-shadow { border-color: color-mix(in srgb, var(--arcane) 80%, #fff); background: rgba(11, 6, 24, 0.94); box-shadow: 0 0 22px var(--arcane-glow), 0 10px 24px rgba(0, 0, 0, 0.5); color: var(--arcane); }

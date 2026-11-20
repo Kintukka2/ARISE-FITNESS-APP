@@ -15,7 +15,6 @@ import type { Shadow } from '@/core/types';
 import { Section } from './components';
 import { FamilyGlyph } from './emblems';
 import { Glyph } from './icons';
-import { InfoTag } from './infotag';
 import { Keyed } from './keyed';
 import { TipBody, type TipText } from './tip';
 
@@ -73,46 +72,6 @@ export function roleTip(role: string, tier: number): TipText {
     lines: aura ? [`Deployed, ${role} Shadows give the whole party ${tipNames(aura)}, the Association’s hunters included.`] : [],
     tiers: aura ? kin.ROLE_AT.map((at, i) => ({ at, text: tipStats(kin.roleBoon(role, i + 1)), on: tier === i + 1 })) : [],
   };
-}
-
-/**
- * The squad's live bonuses at the foot of the brief's party board (the owner's call: a line of text under the board read
- * as no part of it, and its names told nothing): a row to the role bonuses and one to the Kin, each a chip with its mark
- * in a lit hexagon, its name and its tier, and a tap opens the one tooltip, as a habit's or a Shadow card's tag does:
- * what it gives and to whom, each breakpoint, the one reached lit.
- */
-export function BonusChips({ squad }: { squad: readonly Shadow[] }) {
-  const m = kin.makeOf(squad);
-  const kins = m.kin.filter((k) => k.tier > 0);
-  if (!kins.length && !m.roleLines.length) return null;
-  return (
-    <div class="bonuschips">
-      {m.roleLines.length > 0 && (
-        <div class="bonuschips__row">
-          <span class="bonuschips__label">Role bonus</span>
-          <span class="bonuschips__list">
-            {m.roleLines.map((l) => (
-              <InfoTag key={l.role} class="bonuschip" tip={roleTip(l.role, l.tier)}>
-                <KinHex role={l.role} on /><b>{l.role}</b><span class="bonuschip__tier">{ROLE_TIER[l.tier - 1]}</span>
-              </InfoTag>
-            ))}
-          </span>
-        </div>
-      )}
-      {kins.length > 0 && (
-        <div class="bonuschips__row">
-          <span class="bonuschips__label">Kin</span>
-          <span class="bonuschips__list">
-            {kins.map((k) => (
-              <InfoTag key={k.family} class="bonuschip" tip={familyTip(k.family, k.tier)}>
-                <KinHex family={k.family} on /><b>{k.family}</b><span class="bonuschip__tier">{KIN_TIER[k.tier - 1]}</span>
-              </InfoTag>
-            ))}
-          </span>
-        </div>
-      )}
-    </div>
-  );
 }
 
 /** A trait's mark, in a hexagon: lit while it is active, grey while it is short. */

@@ -110,6 +110,26 @@ describe('in a fight', () => {
     expect(kept.d.patk / alone.d.patk).toBeCloseTo((1 + kin.KIN.Orc.patk + (m.aura.patk ?? 0)) / (1 + (kin.makeOf([s.shadows.army[0]]).aura.patk ?? 0)), 6);
   });
 
+  it('the party window reads every member as the fight builds them, and what the squad adds over each alone', () => {
+    const s = hunter(3);
+    const guards = ALL_ENEMIES.filter((e) => e.role === 'Guardian' && e.family !== kin.KIN_ALL).slice(0, 2);
+    bindAll(s, guards);
+    const read = raid.partyReadout(s, d, day, now);
+    const specs = raid.partySpecs(s, d, day, undefined, now);
+    // One to each member, in the order they walk in, each the fight's own unit.
+    expect(read.map((r) => r.spec.uid)).toEqual(specs.map((u) => u.uid));
+    for (const r of read) expect(r.now.hp).toBe(new Unit(r.spec).maxHp);
+    // Guardians raise the whole party's defence: every member stands higher than alone, and never lower in anything.
+    expect(kin.makeOf(shadows.squad(s)).aura.defense ?? 0).toBeGreaterThan(0);
+    for (const r of read) {
+      expect(r.now.defence).toBeGreaterThan(r.alone.defence);
+      for (const k of ['hp', 'attack', 'magic', 'speed'] as const) expect(r.now[k]).toBeGreaterThanOrEqual(r.alone[k]);
+    }
+    // With no squad, nobody gains anything.
+    const bare = hunter(1);
+    for (const r of raid.partyReadout(bare, d, day, now)) expect(r.now).toEqual(r.alone);
+  });
+
   it('the Practice Gate takes no Shadows, and so neither', () => {
     const s = hunter(2);
     bindAll(s, of('Orc').slice(0, 2));

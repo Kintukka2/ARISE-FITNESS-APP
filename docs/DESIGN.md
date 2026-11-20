@@ -3358,6 +3358,63 @@ What changed:
     - every alloy a Feat pays is its art and figure, with no name.
 - **Balance.** Display only: no calibration, no campaign.
 
+## The party, one row on the brief and a window of its own — built
+
+The owner asked for the whole `Your party` section to be overhauled:
+- A compact one-row preview of the team members that is also a button.
+- It opens a more detailed party window where everything lives: stats, a way into each hunter, the formation, the
+  boosts.
+- Full creative control, after how other games structure the same screens.
+
+The references are in [the party's README](research/references/party/README.md): Honkai: Star Rail's team strip and
+Team Setup, AFK Arena's rows and faction mark, Solo Leveling: Arise's Battle Tier power, Genshin Impact's Elemental
+Resonance, Darkest Dungeon's lineup, and the team screens of Magia Record, Seven Knights and Tokyo Beast.
+
+What changed:
+- **On the brief, one row** (`PartyRow` in `screens/Party.tsx`), under `Your party` and its power.
+  - `Front` over the Front's faces and `Rear` over the Rear's, across a dashed seam.
+  - The hunter's sigil ringed in cyan, the Association's hunters by their plates, the Shadows by their badges in violet,
+    an empty Shadow slot a dashed square (`+1`).
+  - The squad's bonuses as lit hexes, then a chevron. The whole row is the button, and a light crosses it now and then.
+  - Crowded (seven tiles or more), the faces shrink and the hexes give way. Packed (nine or more), the faces overlap a
+    little. The row stays one row.
+  - Read aloud as the party's names, its power and its role bonuses, then `Open the party.`
+- **The party window** (`openParty`), a System sheet in the Gates' orange (the Trial's gold), headed `Party`:
+  - **Party power**, large, over one bar split by who brings it, the hunter's in cyan, the Association's hunters' in
+    silver, the Shadows' in violet, each named and counted under it. The segments grow in one after another.
+  - **Formation**: the board, moved here whole: Front and Rear facing the enemies, the hunter's face and each Shadow's
+    dragged or tapped across, an Association hunter's face opening their card, the hint under it.
+  - **Bonuses**: a card to each role bonus and Kin the squad reaches. Its mark lit, its name and tier, what it gives in
+    the tooltip's words and colours, and its breakpoints with the count reached. A tap opens the one tooltip. Under them,
+    in green, what every member gains.
+  - **Members**: a row to each, in the order they walk in.
+    - The face, the name, what it is, its row and how it fights, its power.
+    - Under them its HP, its Attack (or Magic), its Defence and its Initiative, each with what the squad's bonuses add
+      in green.
+    - A tap opens the hunter's Status, an Association hunter's card, or a Shadow's card. Closing it returns to the window.
+  - At the foot, **Army** and **Auto Deploy**, as the Army sheet has them.
+- **The engine reads each member** (`raid.readout`, `raid.partyReadout`). It builds the fight's own `Unit` from each spec
+  `partySpecs` makes, so every passive and bonus counts as it will in the fight, and again from the spec without the
+  squad's role bonuses and Kin. The difference is the green figure.
+- **Gone:** the brief's board, the bonus chips at its foot (`BonusChips`), the dead `.sysframe .brief .bparty` rules of
+  an older brief that overrode the new row's grid, and `partyOf` and `partyPower` from `screens/Brief.tsx` (both now in
+  `screens/Party.tsx`).
+- **Held by tests.**
+  - `tests/kin.test.ts`: the readout gives one entry to each member in the order they walk in, each the fight's own
+    unit's figures. Guardians raise every member's Defence over what each would have alone and lower nothing, and with no
+    squad nobody gains.
+  - The tour:
+    - the brief holds the row and no board, and shows the hunter once;
+    - the row opens the window, which splits its power and lists a row to every face the row shows, each with its four
+      numbers;
+    - a role bonus card opens its tooltip;
+    - a Shadow's row opens its card, and the hunter's their Status;
+    - closing a card returns to the window;
+    - every drag and tap of the formation, the hunter cards and the favourite star play inside the window, and closing
+      it returns to the brief;
+    - the Trial's row holds the hunter and no Association hunter.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
