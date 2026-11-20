@@ -3695,6 +3695,17 @@ What changed:
 - **Balance.** The hone's numbers are unchanged, since `blessed` reads `honedAbility` and plays the same, so no tuning
   moves. Display and feedback otherwise: no calibration, no campaign.
 
+## A hone past Lv.MAX breathes gold; Perfect said once — built
+
+The owner asked for the Hone button to pump with a glow when it hones past Lv.MAX, and for the `Perfect` under an item's
+quality bar to go, since the `✦ Perfect` tag under its name already says it.
+- **Hone past Lv.MAX:** a skill row at Lv.MAX or past it (`.restskill.is-past`) is edged in gold and breathes, a glow
+  swelling and the row lifting a little every 1.8s, and its honed level and multiplier are in gold. Rows short of Lv.MAX
+  are as they were. Under reduced motion it glows without moving.
+- **Perfect said once:** the quality line under the bar reads `Steps to perfect: 9` while there are steps, and nothing
+  once the piece is perfect.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

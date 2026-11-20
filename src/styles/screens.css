@@ -2768,6 +2768,11 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .restskill__name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .restskill__up { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; font-size: 0.74rem; white-space: nowrap; }
 .restskill__mult { font-size: 0.68rem; opacity: 0.85; }
+/* A skill at Lv.MAX, honed past it: the row breathes in gold, since honing it still makes it stronger (the owner's call). */
+.restskill.is-past { border-color: color-mix(in srgb, var(--gold) 70%, transparent); background: linear-gradient(90deg, rgba(255, 203, 92, 0.12), rgba(255, 203, 92, 0.02)); animation: honePast 1.8s ease-in-out infinite; }
+.restskill.is-past .restskill__up .grant { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+@keyframes honePast { 0%, 100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); } 50% { box-shadow: 0 0 16px var(--gold-glow), inset 0 0 12px rgba(255, 203, 92, 0.12); transform: scale(1.012); } }
+@media (prefers-reduced-motion: reduce) { .restskill.is-past { animation: none; box-shadow: 0 0 12px var(--gold-glow); } }
 .restskill .ico { width: 18px; height: 18px; color: var(--gold); }
 
 /* The later plans. A landmark in the Gates' orange, always seen; a toll door a corridor sealed in red with

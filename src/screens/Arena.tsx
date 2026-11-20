@@ -1261,7 +1261,7 @@ function RestChoice({ s, run, onRest }: { s: ReturnType<typeof useSave>; run: No
           const now = raid.honedAbility(run, name);
           const then = raid.honedAbility(run, name, HONE_LEVELS);
           return (
-            <button type="button" key={name} class="choice-row restskill" onClick={() => onRest({ kind: 'hone', skill: name })}
+            <button type="button" key={name} class={`choice-row restskill ${k >= skillMax(name) ? 'is-past' : ''}`} onClick={() => onRest({ kind: 'hone', skill: name })}
               aria-label={`Hone ${name}: ${lv(name, k)} to ${lv(name, k + HONE_LEVELS)}${now && then ? `, ×${now.mult} to ×${then.mult}` : ''}`}>
               <span class="restskill__name"><Glyph name={SKILL_GLYPH[name] ?? 'bolt'} /><b>{name}</b></span>
               <span class="restskill__up num" aria-hidden="true">
