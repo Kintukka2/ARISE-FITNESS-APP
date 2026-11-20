@@ -530,8 +530,9 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
 
 /**
  * The head of the card, after the info panel of Solo Leveling: Arise's Army of Shadows: its badge inside the ring of
- * its next level, and beside it what it was (small, as the panel's epithet) with whether it is deployed, then a row to
- * each of `Rank | Bound`, `Lv. | 3/10` over its XP, and `Power | 80`; its grade, family, role and how it fights under them.
+ * its next level, its creature's grade pinned to the badge's corner; beside it what it was (small, as the panel's
+ * epithet), whether it is deployed on a row of its own, then a row to each of `Rank | Bound`, `Lv. | 3/10` over its XP,
+ * and `Power | 80`; its family, role and how it fights under them.
  * - `Deployed` and `Not deployed` are the one button that puts it in the squad or takes it out (the owner's call, where
  *   `Deploy` and `Recall` stood under the head).
  * - Its rank tells what the next asks when tapped (`rankTip`); while a promotion or a star waits, the rank is a gold
@@ -560,7 +561,7 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
     sfx.blip();
   };
   return (
-    <section class={`sysbox sp-head ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
+    <section class={`sysbox sp-head sp-head--shadow ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
       <div class="sp-head__badge">
         <svg viewBox="0 0 120 120" class="sp-ring" aria-hidden="true">
           <circle cx="60" cy="60" r="58" class="sp-ring__runes" />
@@ -568,39 +569,43 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
           <circle cx="60" cy="60" r="52" class="sp-ring__fill" style={`stroke-dasharray: ${c * unit(share)} ${c}`} />
         </svg>
         <span class="sp-head__smoke" />
-        <ShadowEmblem family={e.family} id={e.id} rank={at} size={66} />
+        <ShadowEmblem family={e.family} id={e.id} rank={at} size={62} />
         {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
+        {/* Its creature's grade, pinned to the badge's corner as a unit portrait wears its grade (the owner's call, where it led the tags). */}
+        <span class="sp-head__grade" role="img" aria-label={`${e.rank}-Rank`}><RankPlate rank={e.rank} size={20} /></span>
       </div>
       <div class="sp-head__who">
-        <span class="sp-head__was">
-          <span class="sp-head__kind">{sh.name ? <Facts items={[e.name, e.shadow]} /> : e.name}</span>
-          {/* Whether it is in the squad, beside its name, as a game's unit card marks the units in the party; a tap changes it. */}
-          <button type="button" class={`sp-tag sp-head__state ${on ? 'is-on' : ''} ${full ? 'is-full' : ''}`} aria-pressed={on}
-            aria-label={on ? `Deployed. Take ${name} out of the squad` : full ? 'Not deployed. The squad is full' : `Not deployed. Deploy ${name}`}
-            onClick={deploy}>
-            <Glyph name={on ? 'check' : 'plus'} />{on ? 'Deployed' : 'Not deployed'}
-          </button>
-        </span>
+        {/* What it was, one line: every Shadow's other name is only `Shadow` and this. */}
+        <span class="sp-head__was"><span class="sp-head__kind">{e.name}</span></span>
+        {/* Whether it is in the squad, on a row of its own so a long name never moves it (the owner's call); a tap changes it. */}
+        <button type="button" class={`sp-tag sp-head__state ${on ? 'is-on' : ''} ${full ? 'is-full' : ''}`} aria-pressed={on}
+          aria-label={on ? `Deployed. Take ${name} out of the squad` : full ? 'Not deployed. The squad is full' : `Not deployed. Deploy ${name}`}
+          onClick={deploy}>
+          <Glyph name={on ? 'check' : 'plus'} />{on ? 'Deployed' : 'Not deployed'}
+        </button>
         <dl class="sp-rows">
           <div class="sp-row">
             <dt>Rank</dt>
             <dd class="sp-row__rank"><RankWord sh={sh} e={e} /></dd>
           </div>
-          <div class="sp-row">
+          <div class="sp-row sp-row--lv">
             <dt>Lv.</dt>
             <dd class="num"><span>{top ? 'MAX' : lv}{!top && <small>/{shadows.rankOf(sh).cap}</small>}</span></dd>
-            <span class="sp-row__xp num">{top ? '' : p.need ? `XP ${p.into}/${p.need}` : 'Level cap'}</span>
           </div>
-          <div class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></div>
+          {/* Its XP beside the bar, on the bar's own line, so a narrow phone never runs the level into it. At the cap the
+              full bar and `10/10` say so, and no figure stands beside it. */}
+          <div class="sp-xp">
+            <span class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></span>
+            {!top && p.need > 0 && <small class="sp-xp__n num">XP {p.into}/{p.need}</small>}
+          </div>
           <div class="sp-row">
             <dt>Power</dt>
             <dd class="sp-row__power num">{powerText(shadows.power(sh))}</dd>
           </div>
         </dl>
       </div>
-      {/* Under the badge and the rows, across the panel, so its four tags keep one line on a phone. */}
+      {/* Under the badge and the rows, across the panel, so its three tags keep one line on a phone. */}
       <span class="sp-head__tags">
-        <RankPlate rank={e.rank} size={20} />
         {/* Family and role tell what they are to the squad when tapped, and how it fights where it takes its place. */}
         <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
         <InfoTag class="sp-tag" tip={roleTip(e.role, roleTier)}>{e.role}</InfoTag>
@@ -611,14 +616,13 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
 }
 
 /**
- * The rank in its row (the owner's call, where a `Next rank` box stood under the head): the word underlined as every
- * word that tells what it is, opening what the next rank asks; while a promotion or a star waits on the hunter, a gold
- * button with a chevron that opens it, its name alone so `Ascendant` keeps to the row (the badge beside it wears the
- * rank's insignia).
+ * The rank in its row (the owner's call, where a `Next rank` box stood under the head): the word alone, underlined as
+ * every word that tells what it is, opening what the next rank asks; while a promotion or a star waits on the hunter, a
+ * gold button with a chevron that opens it. The badge beside it wears the rank's chevrons, so the row carries no
+ * insignia of its own.
  */
 function RankWord({ sh, e }: { sh: Shadow; e: Enemy }) {
   const s = useSave();
-  const at = shadows.rankIndex(sh);
   const name = shadows.rankOf(sh).name;
   const promote = shadows.canPromote(s, sh);
   if (promote || shadows.canAwaken(s, sh)) {
@@ -629,7 +633,7 @@ function RankWord({ sh, e }: { sh: Shadow; e: Enemy }) {
       </button>
     );
   }
-  return <InfoTag class="sp-rank" tip={rankTip(s, sh, e)}><Insignia rank={at} size={14} /><span class="sp-rank__name">{name}</span></InfoTag>;
+  return <InfoTag class="sp-rank" tip={rankTip(s, sh, e)}><span class="sp-rank__name">{name}</span></InfoTag>;
 }
 
 const bosses = (n: number) => `${n} ${n === 1 ? 'boss' : 'bosses'}`;
