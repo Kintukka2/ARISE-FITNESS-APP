@@ -105,7 +105,6 @@ function HunterHero({ s }: { s: Save }) {
           <span class="hhero__aura" aria-hidden="true" />
           <span class="hhero__fig" aria-hidden="true"><Avatar s={s} hot={null} /></span>
           <span class="hhero__score">
-            <small class="label">Equipment</small>
             <b class="num">{score}</b>
             {ups > 0 && <span class="hhero__up" aria-hidden="true">▲ {ups}</span>}
           </span>
