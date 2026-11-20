@@ -156,14 +156,41 @@ const CY = SIZE / 2;
 const RING = (t: number) => 46 + t * 24.5;
 const ANGLE = (i: number) => ((-90 + i * 72) * Math.PI) / 180;
 
-/** Where a node sits on the constellation: out along its Path's arm, its column spread across it. */
+/**
+ * How far round the ring a node's column fans from its Path's arm, in radians: wider at each rank out, so a Path fills
+ * its fifth of the sky (up to ±28° at the last rank, of its ±36°) rather than running out as a straight spoke (the
+ * owner's call: the sky filled, interconnected and grand).
+ */
+const FAN = (tier: number) => ((7 + tier * 1.8) * Math.PI) / 180;
+
+/** Where a node sits on the constellation: on its rank's ring, its column fanned round it from its Path's arm. */
 function spot(n: TreeNode): [number, number] {
   const i = PATHS.findIndex((p) => p.key === n.path);
-  const a = ANGLE(i);
+  const a = ANGLE(i) + (n.col - 2) * FAN(n.tier);
   const r = RING(n.tier);
-  const off = (n.col - 2) * (8 + n.tier * 1.4);
-  return [CX + Math.cos(a) * r - Math.sin(a) * off, CY + Math.sin(a) * r + Math.cos(a) * off];
+  return [CX + Math.cos(a) * r, CY + Math.sin(a) * r];
 }
+
+/**
+ * The threads between neighbouring Paths: on each rank's ring, an arc from the last node of one Path to the first of
+ * the next, so the five read as one web. Lit once both ends are learned. Only the eye follows them: no rule does.
+ */
+const THREADS = (() => {
+  const out: { a: TreeNode; b: TreeNode; t: number }[] = [];
+  for (let i = 0; i < PATHS.length; i++) {
+    const p = PATHS[i];
+    const q = PATHS[(i + 1) % PATHS.length];
+    for (let t = 0; t < TIER_RANKS.length; t++) {
+      const mine = NODES.filter((n) => n.path === p.key && n.tier === t);
+      const theirs = NODES.filter((n) => n.path === q.key && n.tier === t);
+      if (!mine.length || !theirs.length) continue;
+      const a = mine.reduce((m, n) => (n.col > m.col ? n : m));
+      const b = theirs.reduce((m, n) => (n.col < m.col ? n : m));
+      out.push({ a, b, t });
+    }
+  }
+  return out;
+})();
 
 const STARS = (() => {
   const r = rng('arise|constellation');
@@ -198,6 +225,7 @@ const RIM = Array.from({ length: 60 }, (_, i) => {
 /**
  * The five Paths around the hunter, as a constellation with an aura (the owner's call: tidied, flowing and impressive):
  * - a nebula behind it, and an aura along each Path that grows with the points spent there, brightest on the one chosen;
+ * - each Path's nodes fanned round their ranks' rings to fill its fifth of the sky, threaded to the next Path's on each ring;
  * - the rings of the ranks, the open ones lit, and a rune ring turning slowly at the rim;
  * - each node's link to the one it grows from bowed toward the core, lit and flowing once both are learned;
  * - skills and stats as stars and passives as diamonds, each learned one haloed, each at its peak ringed in white;
@@ -225,7 +253,7 @@ export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?
           <stop offset="100%" stop-color="#6a4cff" stop-opacity="0" />
         </radialGradient>
         <radialGradient id={`stArm${id}`} cx="0%" cy="50%" r="100%">
-          <stop offset="0%" stop-color="var(--mana)" stop-opacity="0.55" />
+          <stop offset="0%" stop-color="var(--mana)" stop-opacity="0.3" />
           <stop offset="100%" stop-color="var(--mana)" stop-opacity="0" />
         </radialGradient>
       </defs>
@@ -237,6 +265,12 @@ export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?
         </g>
       )}
       {TIER_RANKS.map((rk, t) => <circle key={rk} cx={CX} cy={CY} r={RING(t)} class={`st-sky__ring ${t <= open ? 'is-open' : ''}`} />)}
+      {THREADS.map(({ a, b, t }) => {
+        const [x1, y1] = spot(a);
+        const [x2, y2] = spot(b);
+        const lit = tree.levelOf(s, a.id) > 0 && tree.levelOf(s, b.id) > 0;
+        return <path key={`${a.id}-${b.id}`} d={`M ${x1} ${y1} A ${RING(t)} ${RING(t)} 0 0 1 ${x2} ${y2}`} class={`st-sky__thread ${lit ? 'is-lit' : ''} ${t <= open ? 'is-open' : ''}`} />;
+      })}
       {PATHS.map((p, i) => {
         const a = ANGLE(i);
         const sel = path === p.key;
@@ -248,8 +282,8 @@ export function Constellation({ s, path, onPath, fresh, mini }: { s: Save; path?
         return (
           <g key={p.key} class={`st-sky__arm ${sel ? 'is-sel' : ''} ${path && !sel ? 'is-dim' : ''}`}>
             {spentHere > 0 && (
-              <ellipse cx={CX + Math.cos(a) * 78} cy={CY + Math.sin(a) * 78} rx="78" ry="24" fill={`url(#stArm${id})`}
-                transform={`rotate(${deg} ${CX + Math.cos(a) * 78} ${CY + Math.sin(a) * 78})`} class="st-sky__aura" style={`opacity: ${(sel ? 1 : 0.7) * glow}`} />
+              <ellipse cx={CX + Math.cos(a) * 82} cy={CY + Math.sin(a) * 82} rx="84" ry="46" fill={`url(#stArm${id})`}
+                transform={`rotate(${deg} ${CX + Math.cos(a) * 82} ${CY + Math.sin(a) * 82})`} class="st-sky__aura" style={`opacity: ${(sel ? 1 : 0.7) * glow}`} />
             )}
             <line x1={CX + Math.cos(a) * 30} y1={CY + Math.sin(a) * 30} x2={CX + Math.cos(a) * end} y2={CY + Math.sin(a) * end} class="st-sky__axis" />
             {NODES.filter((n) => n.path === p.key).map((n) => {

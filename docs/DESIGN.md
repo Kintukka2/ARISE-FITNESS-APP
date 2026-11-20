@@ -3723,6 +3723,12 @@ What changed (`Constellation` in `screens/Skills.tsx`):
   Lit ones flow, wider and brighter.
 - **Nodes:** skills are a little larger. Each learned node is haloed, and each at its peak is ringed in white,
   breathing.
+- **The sky filled** (the owner's call: not five spokes but one grand, interconnected circle):
+  - Each Path's nodes sit on their rank's ring, fanned round it from the Path's arm, wider at each rank out (`FAN`, up
+    to ±28° of a Path's ±36°), so each Path fills its fifth of the sky.
+  - On every ring, an arc threads the last node of each Path to the first of the next (`THREADS`). It is faint while
+    shut, lit and flowing once both ends are learned. Only the eye follows it: no rule does.
+  - A Path's tap area no longer shades under a pointer.
 - **The core** has a second, counter-turning ring and an aura. While points wait, gold ripples spread outward from
   it.
 - **The class line** names the class alone.

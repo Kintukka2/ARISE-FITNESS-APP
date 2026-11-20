@@ -890,7 +890,10 @@ button.cacheemblem { padding: 0; font: inherit; cursor: pointer; -webkit-tap-hig
 .st-sky__count.is-call { fill: var(--gold); }
 .st-sky__arm.is-sel .st-sky__name { fill: var(--mana); filter: drop-shadow(0 0 4px var(--mana-glow)); }
 .st-sky__hit { fill: transparent; cursor: pointer; }
-.st-sky__hit:hover { fill: rgba(79, 214, 255, 0.04); }
+/* A Path's slice is only for a finger: it never shades (the owner's call, where a dark wedge showed under a pointer). */
+.st-sky__thread { fill: none; stroke: rgba(150, 180, 220, 0.12); stroke-width: 0.7; stroke-dasharray: 1.5 3; }
+.st-sky__thread.is-open { stroke: rgba(79, 214, 255, 0.2); }
+.st-sky__thread.is-lit { stroke: rgba(79, 214, 255, 0.7); stroke-width: 1.1; stroke-dasharray: 4 3; filter: drop-shadow(0 0 2px var(--mana)); animation: stFlow 2.2s linear infinite; }
 .st-sky__core { pointer-events: none; }
 .st-sky__halo { fill: none; stroke: rgba(79, 214, 255, 0.25); stroke-width: 0.8; transform-box: fill-box; transform-origin: center; animation: stHalo 3.2s ease-in-out infinite; }
 @keyframes stHalo { 50% { transform: scale(1.12); stroke-opacity: 0.6; } }
