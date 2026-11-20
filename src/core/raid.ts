@@ -358,13 +358,8 @@ export function blessed(specs: UnitSpec[], run: Carried): UnitSpec[] {
   const bonus = { ...(hero.bonus ?? {}) };
   for (const id of run.blessings) for (const [k, v] of Object.entries(blessingById(id)?.bonus ?? {})) bonus[k] = (bonus[k] ?? 0) + v;
   const own = (hero.own ?? []).map((a) => {
-    const n = skillNode(a.name);
     const times = honed.filter((x) => x === a.name).length;
-    if (!n || !times) return a;
-    // Up to Lv.MAX a level honed is the tree's own; past it, each adds the force a level adds.
-    const to = (run.levels?.[a.name] ?? 1) + times * HONE_LEVELS;
-    const at = tree.skillAt(n, Math.min(n.max, to));
-    return to > n.max ? { ...at, mult: Math.round((at.mult + (to - n.max) * HONE_PAST) * 100) / 100 } : at;
+    return (times && honedAbility(run, a.name)) || a;
   });
   // The run's blessings join what the hunter's sets grant; one held both ways counts at the higher tier.
   const boons = { ...(hero.boons ?? {}) };
@@ -379,6 +374,19 @@ export const levelsOf = (s: Save): Record<string, number> => Object.fromEntries(
 export const honeable = (run: Carried & { party?: UnitSpec[] }): string[] => (run.party?.[0]?.kit ?? []).filter((name) => !!skillNode(name));
 
 /** The level a skill fights at in this run: as it walked in, and every level honed since. */
+/**
+ * A skill as the run's rests have honed it, `more` levels further: up to Lv.MAX a level honed is the tree's own; past
+ * it, each adds `HONE_PAST` to its multiplier, so honing a skill at Lv.MAX still makes it stronger. Null for a skill
+ * the tree does not hold.
+ */
+export function honedAbility(run: Carried, name: string, more = 0) {
+  const n = skillNode(name);
+  if (!n) return null;
+  const to = honedLevel(run, name) + more;
+  const at = tree.skillAt(n, Math.min(n.max, to));
+  return to > n.max ? { ...at, mult: Math.round((at.mult + (to - n.max) * HONE_PAST) * 100) / 100 } : at;
+}
+
 export const honedLevel = (run: Carried, name: string) => (run.levels?.[name] ?? 1) + (run.honed ?? []).filter((x) => x === name).length * HONE_LEVELS;
 
 // ------------------------------------------------------------------ what a step does to the party

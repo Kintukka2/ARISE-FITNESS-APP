@@ -3665,6 +3665,36 @@ What changed:
   - that `2 targets` and `every foe` are set as figures.
 - **Balance.** Wording only: no calibration, no campaign.
 
+## A piece made perfect, a hone past Lv.MAX shown, and the Equipment head as one band — built
+
+The owner asked for:
+- **An effect when an upgrade takes a piece to 100%.**
+- **The `Lv.MAX → Lv.MAX` text on a rest's Hone fixed.**
+- **A maxed skill honed to still get stronger.**
+- **The Equipment sheet's top section fixed up.**
+
+What changed:
+- **Perfect** (`PerfectBurst` in `screens/Gear.tsx`): an upgrade that brings a piece to perfect plays it on the card's
+  head.
+  - A gold light sweeps the head, a ring breaks out from its art with sparks thrown round it, and `✦ Perfect` is
+    stamped across it, all gone in under two seconds. Then its quality bar shines once.
+  - The card scrolls to its head, and the rank's sound plays with a gold flash and a buzz. No toast: the stamp says
+    it, and a toast would cover it.
+  - Every other upgrade is as it was.
+- **Hone:**
+  - **The engine.** A skill honed at Lv.MAX already grew stronger: each level past it adds ×`HONE_PAST` (0.1) to its
+    multiplier. That rule now lives in `raid.honedAbility`, which the fight's spec reads, so the picker and the fight
+    read one rule.
+  - **The picker.** Each skill's row shows its level and its multiplier now and honed (`Lv.MAX → Lv.MAX+1` over
+    `×1.4 → ×1.5`, the honed side in green), each on one line that never wraps. Before, the text broke over three lines
+    and ran out of its row, hiding the `+1`.
+- **The Equipment head** is one band:
+  - `Score` large by the power mark, where a hexagon had squeezed it;
+  - `Slots 10/10` and `Perfect 3/10` at its right, gold once any worn piece is perfect;
+  - under both, a bar of a segment to each slot, lit in its piece's rarity, where diamond pips said the slots again.
+- **Balance.** The hone's numbers are unchanged, since `blessed` reads `honedAbility` and plays the same, so no tuning
+  moves. Display and feedback otherwise: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
