@@ -1,4 +1,5 @@
 /** The Gates: the board, and the way to each Gate's brief (`./Brief`). */
+import { powerText } from '@/ui/power';
 import { RankCrest } from '@/ui/rankcrest';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -357,8 +358,8 @@ function GateRow({ s, d, mark, i }: { s: Save; d: Dungeon; mark: string | undefi
         {locked
           ? <span aria-hidden="true" />
           : (
-            <span class={`gaterow__might ${might === null ? 'is-unknown' : ''}`} aria-label={might === null ? 'Boss power unknown' : `Boss power ${might}`}>
-              <Glyph name="power" /><b class="num">{might ?? '?'}</b>
+            <span class={`gaterow__might ${might === null ? 'is-unknown' : ''}`} aria-label={might === null ? 'Boss power unknown' : `Boss power ${powerText(might)}`}>
+              <Glyph name="power" /><b class="num">{might === null ? '?' : powerText(might)}</b>
             </span>
           )}
         <Glyph name="chevron" class="gaterow__go" />

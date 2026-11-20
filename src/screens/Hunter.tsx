@@ -8,6 +8,7 @@
  * follows them from Gate to Gate (`hunters.recordOf`). Each section opens on its label and a hairline. Every number is the engine's: their class from
  * `hunters.classOf`, their kit from `hunters.kitOf`, as the fight builds them.
  */
+import { powerText } from '@/ui/power';
 import { ability, passiveText, STRIKE } from '@/core/combat';
 import { regNo, type Ally } from '@/core/gates';
 import * as hunters from '@/core/hunters';
@@ -114,7 +115,7 @@ function Head({ a }: { a: Ally }) {
             <dt>Class</dt>
             <dd><InfoTag class={`huntercard__class ${c ? 'is-classed' : ''}`} tip={classTip(a)}>{c?.name ?? 'Unclassified'}</InfoTag></dd>
           </div>
-          <div class="sp-row"><dt>Power</dt><dd class="sp-row__power num">{hunters.powerOfAlly(a)}</dd></div>
+          <div class="sp-row"><dt>Power</dt><dd class="sp-row__power num">{powerText(hunters.powerOfAlly(a))}</dd></div>
         </dl>
         <span class="sp-head__tags">
           <InfoTag class="sp-tag sp-tag--style" tip={hunterStyleTip(c?.lead)}><Glyph name={STYLE_GLYPH[style]} />{style}</InfoTag>

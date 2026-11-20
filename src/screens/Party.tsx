@@ -16,6 +16,7 @@
  *     bonuses add in green, its power; a tap opens its card.
  *   - The Army and Auto Deploy, for the Shadows.
  */
+import { powerText } from '@/ui/power';
 import type { ComponentChildren } from 'preact';
 import { createPortal } from 'preact/compat';
 import { sfx } from '@/audio/audio';
@@ -107,7 +108,7 @@ export function PartyRow({ d, level, taken }: { d: Dungeon; level: number; taken
   const title = isTrial(d) ? 'Entering' : 'Your party';
   const said = [
     `${title}: ${all.map((x) => x.name).join(', ')}`,
-    `Power ${power}`,
+    `Power ${powerText(power)}`,
     roles.length ? `Role bonus ${roles.map((l) => `${l.role} ${ROLE_TIER[l.tier - 1]}`).join(', ')}` : '',
   ].filter(Boolean).join('. ');
   const group = (r: Row): VGroup => ({
@@ -170,16 +171,16 @@ function PowerSplit({ all }: { all: Member[] }) {
   const part = (k: Kind) => all.filter((x) => x.kind === k).reduce((n, x) => n + x.power, 0);
   const parts = ([['you', 'You'], ['ally', 'Hunters'], ['shadow', 'Shadows']] as const).map(([k, name]) => ({ k, name, n: part(k) })).filter((p) => p.n > 0);
   return (
-    <div class="pwin__power" role="group" aria-label={`Party power ${total}: ${parts.map((p) => `${p.name} ${p.n}`).join(', ')}`}>
+    <div class="pwin__power" role="group" aria-label={`Party power ${powerText(total)}: ${parts.map((p) => `${p.name} ${powerText(p.n)}`).join(', ')}`}>
       <span class="pwin__total">
         <small>Party power</small>
-        <b class="num"><Glyph name="power" />{total}</b>
+        <b class="num"><Glyph name="power" />{powerText(total)}</b>
       </span>
       <span class="pwin__split" aria-hidden="true">
         {parts.map((p, i) => <i key={p.k} class={`is-${p.k}`} style={`flex: ${p.n}; --i: ${i}`} />)}
       </span>
       <span class="pwin__legend" aria-hidden="true">
-        {parts.map((p) => <span key={p.k} class={`is-${p.k}`}><i />{p.name}<b class="num">{p.n}</b></span>)}
+        {parts.map((p) => <span key={p.k} class={`is-${p.k}`}><i />{p.name}<b class="num">{powerText(p.n)}</b></span>)}
       </span>
     </div>
   );
@@ -224,7 +225,7 @@ function Formation({ d, level, taken }: { d: Dungeon; level: number; taken: Seal
       <li key="you" class={`bformation__one is-you is-drag ${drag.lifted === 'you' ? 'is-lifted' : ''}`} {...drag.handle('you')}>
         <button type="button" class="bformation__me" aria-label={`${s.hunter.name}, in the ${ROW_NAME[here]}. Tap to stand in the ${ROW_NAME[other]}, or drag to a row.`}
           onClick={() => stand(other)}>
-          <span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /><Glyph name="grip" class="bformation__grip" /></span><b>{s.hunter.name}</b><small class="num">{powerOf(hero.base)}</small>
+          <span class="bformation__face"><Sigil rank={licensedRank(s)} size={30} /><Glyph name="grip" class="bformation__grip" /></span><b>{s.hunter.name}</b><small class="num">{powerText(powerOf(hero.base))}</small>
         </button>
       </li>
     ) },
@@ -233,7 +234,7 @@ function Formation({ d, level, taken }: { d: Dungeon; level: number; taken: Seal
       <li key={a.id} class="bformation__one is-ally">
         <button type="button" class="bformation__me bformation__ally" data-hunter={a.id} aria-label={`${a.name}, ${a.rank}-Rank${hunters.isFavourite(s, a.id) ? ', a favourite' : ''}. Open their card.`} onClick={() => { sfx.tap(); openHunter(a); }}>
           {/* A hunter starred on their card wears the star on their face here. */}
-          <span class="bformation__face"><RankPlate rank={a.rank} size={26} />{hunters.isFavourite(s, a.id) && <i class="bformation__fav" aria-hidden="true"><Glyph name="star" /></i>}</span><b>{a.name.split(' ')[0]}</b><small class="num">{powerOf(a.base)}<Versus a={a} d={d} /></small>
+          <span class="bformation__face"><RankPlate rank={a.rank} size={26} />{hunters.isFavourite(s, a.id) && <i class="bformation__fav" aria-hidden="true"><Glyph name="star" /></i>}</span><b>{a.name.split(' ')[0]}</b><small class="num">{powerText(powerOf(a.base))}<Versus a={a} d={d} /></small>
         </button>
       </li>
     ) })),
@@ -245,7 +246,7 @@ function Formation({ d, level, taken }: { d: Dungeon; level: number; taken: Seal
         <li key={x.id} class={`bformation__one is-shadow is-drag ${drag.lifted === x.id ? 'is-lifted' : ''}`} {...drag.handle(x.id)}>
           <button type="button" class="bformation__me" aria-label={`${name}, in the ${ROW_NAME[row]}. Tap to place it in the ${ROW_NAME[cross(row)]}, or drag to a row.`}
             onClick={() => place(x.id, cross(row))}>
-            <span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /><Glyph name="grip" class="bformation__grip" /></span><b>{name}</b><small class="num">{shadows.power(x)}</small>
+            <span class="bformation__face"><ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(x)} size={34} /><Glyph name="grip" class="bformation__grip" /></span><b>{name}</b><small class="num">{powerText(shadows.power(x))}</small>
           </button>
         </li>
       ) };
@@ -366,7 +367,7 @@ function MemberRow({ x, i, d, read, s }: { x: Member; i: number; d: Dungeon; rea
   ] : [];
   return (
     <li class={`pmember is-${x.kind}`} style={`--i: ${i}`}>
-      <button type="button" class="pmember__hit" data-member={x.key} aria-label={`${x.name}, ${what}, in the ${ROW_NAME[x.row]}, ${style}. Power ${x.power}. ${stats.map((t) => `${t.k} ${t.v}`).join(', ')}. Open their card.`} onClick={open}>
+      <button type="button" class="pmember__hit" data-member={x.key} aria-label={`${x.name}, ${what}, in the ${ROW_NAME[x.row]}, ${style}. Power ${powerText(x.power)}. ${stats.map((t) => `${t.k} ${t.v}`).join(', ')}. Open their card.`} onClick={open}>
         <span class="pmember__face" aria-hidden="true">{x.face}{x.ally && hunters.isFavourite(s, x.ally.id) && <i class="bformation__fav"><Glyph name="star" /></i>}</span>
         <span class="pmember__who">
           <b class="pmember__name">{x.name}{x.ally && <Versus a={x.ally} d={d} />}</b>
@@ -376,7 +377,7 @@ function MemberRow({ x, i, d, read, s }: { x: Member; i: number; d: Dungeon; rea
             <span class="pmember__tag"><Glyph name={STYLE_GLYPH[style]} />{style}</span>
           </span>
         </span>
-        <span class="pmember__power" aria-hidden="true"><Glyph name="power" /><b class="num">{x.power}</b></span>
+        <span class="pmember__power" aria-hidden="true"><Glyph name="power" /><b class="num">{powerText(x.power)}</b></span>
         <Glyph name="chevron" class="pmember__go" />
         {stats.length > 0 && (
           <span class="pmember__stats" aria-hidden="true">

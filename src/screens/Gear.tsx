@@ -6,6 +6,7 @@
  * Pieces are forged at the Forge (`screens/Forge.tsx`) and recycled here for materials. Every number
  * comes from `core/gear.ts` and `core/forge.ts`; the screens only show and ask.
  */
+import { powerGap, powerText } from '@/ui/power';
 import * as engr from '@/core/engravings';
 import { AttunedTriad, EngravedBadge, EngravingBlock, openCodex } from '@/ui/engrave';
 import { TemperBlock, TemperLine, temperValue } from '@/ui/temper';
@@ -269,11 +270,11 @@ function BagTile({ it, i, picking, picked, locked, on, onTap }: { it: Item; i: n
     <button type="button" class={`bagtile ${picked ? 'is-picked' : ''} ${picking && locked ? 'is-locked' : ''} ${fresh ? 'is-new' : ''} ${on ? 'is-on' : ''} ${worn ? 'is-worn' : ''}`}
       data-rarity={d.rank} style={`--i: ${Math.min(i, 24)}`} aria-pressed={picking ? picked : on}
       onClick={() => { sfx.tap(); onTap(); }}
-      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${Math.round(gear.score(it))}${it.engr ? `, engraved: ${engr.engravingById(it.engr)?.name}` : ''}${worn ? ', worn' : ''}${up ? ', an upgrade on what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
+      aria-label={`${d.name}, ${rarity(d.rank)} ${d.slot}, score ${powerText(gear.score(it))}${it.engr ? `, engraved: ${engr.engravingById(it.engr)?.name}` : ''}${worn ? ', worn' : ''}${up ? ', an upgrade on what is worn' : ''}${fresh ? ', new' : ''}${starred ? ', starred' : ''}`}>
       <span class="bagtile__art"><GearArt item={it} size={60} plain /></span>
       <span class="bagtile__foot">
         {worn ? <span class="bagtile__worn">Worn</span> : starred ? <Glyph name="star" class="bagtile__fav" /> : <span />}
-        <b class="num">{Math.round(gear.score(it))}</b>
+        <b class="num">{powerText(gear.score(it))}</b>
       </span>
       <span class="bagtile__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></span>
       {fresh && <span class="bagtile__new">New</span>}
@@ -307,8 +308,8 @@ function Peek({ id, onClose }: { id: string; onClose: () => void }) {
         <Gains parts={statParts(it)} class="gains--stats" />
       </span>
       <span class="bagpeek__score">
-        <b class="num">{Math.round(gear.score(it))}</b>
-        {other && <small class={`num ${diff > 0 ? 'is-up' : diff < 0 ? 'is-down' : ''}`}>{diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {Math.abs(Math.round(diff))}</small>}
+        <b class="num">{powerText(gear.score(it))}</b>
+        {other && <small class={`num ${diff > 0 ? 'is-up' : diff < 0 ? 'is-down' : ''}`}>{diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {powerGap(diff)}</small>}
       </span>
       <span class="bagpeek__acts">
         <Btn size="sm" kind="primary" class="grow" sound="success" onClick={() => {
@@ -530,7 +531,7 @@ export function PieceLink({ it, label }: { it: Item; label: string }) {
     <button type="button" class="sysbox piecelink" data-rarity={d?.rank} onClick={() => { sfx.tap(); openItem(it.id); }}>
       <GearArt item={it} size={38} />
       <span class="piecelink__text"><span class="label">{label}</span><span class="piecelink__name">{d?.name}</span></span>
-      <b class="num">{Math.round(gear.score(it))}</b>
+      <b class="num">{powerText(gear.score(it))}</b>
       <Glyph name="chevron" class="piecelink__go" />
     </button>
   );
@@ -578,8 +579,8 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
           {it.master && <span class="itag is-master">Masterwork</span>}
           {d.issued && <span class="itag">Issued</span>}
         </>}
-        score={<b class="num">{Math.round(gear.score(it))}</b>}
-        vs={other && <span class={`piecehero__vs num ${diff.score > 0 ? 'is-up' : diff.score < 0 ? 'is-down' : ''}`}>{diff.score > 0 ? '▲' : diff.score < 0 ? '▼' : '='} {Math.abs(Math.round(diff.score))}</span>}
+        score={<b class="num">{powerText(gear.score(it))}</b>}
+        vs={other && <span class={`piecehero__vs num ${diff.score > 0 ? 'is-up' : diff.score < 0 ? 'is-down' : ''}`}>{diff.score > 0 ? '▲' : diff.score < 0 ? '▼' : '='} {powerGap(diff.score)}</span>}
         foot={!d.issued && <QualityLine it={it} />} />
       {other && <PieceLink it={other} label="Compared with" />}
       <div class="pieceacts">
@@ -689,7 +690,7 @@ function Upgrade({ it }: { it: Item }) {
       <div class="sysbox pieceup">
         <span class="pieceup__pair">
           <span class="pieceup__one"><span class="label">Quality</span><b class="num">{gear.qualityText(it)}<Glyph name="chevron" /><span class="pieceup__to">{gear.qualityText(next)}</span></b></span>
-          <span class="pieceup__one"><span class="label">Score</span><b class="num">{Math.round(gear.score(it))}<Glyph name="chevron" /><span class="pieceup__to">{Math.round(gear.score(next))}</span></b></span>
+          <span class="pieceup__one"><span class="label">Score</span><b class="num">{powerText(gear.score(it))}<Glyph name="chevron" /><span class="pieceup__to">{powerText(gear.score(next))}</span></b></span>
         </span>
         <CostGrid s={s} c={cost} />
         <Btn kind="gold" disabled={!ok} onClick={() => {
@@ -814,7 +815,7 @@ function Equipment() {
   return (
     <div class="stack armory">
       <section class="sysbox gearhead">
-        <span class="gearhead__gem"><b class="num">{Math.round(gear.power(s))}</b></span>
+        <span class="gearhead__gem"><b class="num">{powerText(gear.power(s))}</b></span>
         <span class="gearhead__what">
           <span class="label">Equipment score</span>
           <span class="gearhead__pips" aria-hidden="true">{gear.SLOTS.map((x) => <i key={x.key} class={s.equipped[x.key] ? 'is-on' : ''} />)}</span>
@@ -936,7 +937,7 @@ function Loadouts() {
                 {l && held ? (
                   <>
                     <span class="loadrow__pips" aria-hidden="true">{gear.SLOTS.map((sl) => <i key={sl.key} class={held.held[sl.key] ? 'is-on' : l.slots[sl.key] ? 'is-gone' : ''} />)}</span>
-                    <small class="num"><Facts items={[`Score ${Math.round(score)}`, held.missing ? `Missing: ${held.missing}` : null]} /></small>
+                    <small class="num"><Facts items={[`Score ${powerText(score)}`, held.missing ? `Missing: ${held.missing}` : null]} /></small>
                   </>
                 ) : <small class="muted">-- --</small>}
               </span>
@@ -1010,7 +1011,7 @@ function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
               return (
                 <li key={it.id} class={`sysbox slotrow ${pick === it.id ? 'is-pick' : ''}`} data-rarity={pd.rank}>
                   <button type="button" class="slotrow__open" onClick={() => { sfx.tap(); openItem(it.id); }}
-                    aria-label={`${pd.name}, score ${Math.round(gear.score(it))}${on ? `, ${diff >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(diff))}` : ''}: open`}>
+                    aria-label={`${pd.name}, score ${powerText(gear.score(it))}${on ? `, ${diff >= 0 ? 'up' : 'down'} ${powerGap(diff)}` : ''}: open`}>
                     <GearArt item={it} size={48} equipped={!!elsewhere} />
                     <span class="slotrow__text">
                       <b>{pd.name}{s.favourites.includes(it.id) && <Glyph name="star" class="fav" />}</b>
@@ -1018,8 +1019,8 @@ function SlotWindow({ k, close }: { k: SlotKey; close: () => void }) {
                       <Gains parts={statParts(it)} class="gains--stats" />
                     </span>
                     <span class="slotrow__score">
-                      <b class="num">{Math.round(gear.score(it))}</b>
-                      {on && <small class={`num ${diff > 0 ? 'is-up' : diff < 0 ? 'is-down' : ''}`}>{diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {Math.abs(Math.round(diff))}</small>}
+                      <b class="num">{powerText(gear.score(it))}</b>
+                      {on && <small class={`num ${diff > 0 ? 'is-up' : diff < 0 ? 'is-down' : ''}`}>{diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {powerGap(diff)}</small>}
                     </span>
                   </button>
                   <Btn size="sm" kind={pick === it.id ? 'gold' : 'primary'} onClick={() => wear(it)}>Equip</Btn>

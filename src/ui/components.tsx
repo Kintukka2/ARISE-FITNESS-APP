@@ -1,4 +1,5 @@
 /** The building blocks every screen is made of. */
+import { powerText } from './power';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
@@ -197,7 +198,7 @@ export function GearArt({ item, defId, size = 52, equipped, plain }: { item?: It
     <span class="art" data-rarity={rank} style={{ width: `${size}px`, height: `${size}px` }} title={d ? `${RARITY[rank].name} ${d.slot}` : undefined}>
       <span class="art__rays" aria-hidden="true" />
       <Glyph name={d?.slot ?? 'Chest'} class="art__glyph" />
-      {item && size >= 44 && !plain && <span class="art__score num">{Math.round(score(item))}</span>}
+      {item && size >= 44 && !plain && <span class="art__score num">{powerText(score(item))}</span>}
       {tag && <span class={`art__tag art__tag--${tag}`} aria-label={tag === 'perfect' ? 'Perfect' : tag === 'peak' ? 'Perfect quality' : 'Dead roll'}>{tag === 'perfect' ? '✦' : tag === 'peak' ? '✧' : '✕'}</span>}
       {equipped && <span class="art__worn">Worn</span>}
       {/* A set's piece carries the set's mark, in the set's own hue, so pieces of one set read as one. */}

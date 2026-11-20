@@ -209,6 +209,9 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   the run when its next step is chosen (`raid.choose`). No Shadow takes orders of its own.
 - Copy that quotes a number reads it from the engine's constants (see `screens/Guide.tsx`), so the
   text cannot drift from the rules.
+- Every power and equipment score a player reads goes through `powerText` (`ui/power.ts`): `POWER_SHOWN` (150) times
+  the engine's figure, compact (`99.9k`). Only the display: the stats are never scaled, and no rule, sort or weighing
+  reads the shown figure.
 - Every tooltip is the one tooltip, the fight's: `Tip` in `src/ui/tip.tsx`, opened by a fight's `tell`, an
   `InfoTag`, a System `Field`'s help or a panel's `TipBody`. Its mark and name, its kind at the right, a sentence
   or two told as a fight's tip tells a habit (the trigger, then what happens), coloured by `Keyed`, and its

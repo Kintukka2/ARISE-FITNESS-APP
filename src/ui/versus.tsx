@@ -8,6 +8,7 @@
  * - under a hairline, its marks with their names: the party's bonuses, the enemies' habits.
  * Crowded, the faces shrink; packed, they overlap a little; the card keeps its one row of faces.
  */
+import { powerText } from './power';
 import type { ComponentChildren } from 'preact';
 import { sfx } from '@/audio/audio';
 import { Glyph } from './icons';
@@ -27,7 +28,7 @@ export function VersusCard({ side, title, power, groups, marks, said, open, tour
       <button type="button" class={`vcard__hit ${crowd}`} aria-haspopup="dialog" aria-label={said} onClick={() => { sfx.tap(); open(); }}>
         <span class="vcard__head">
           <span class="vcard__title">{title}</span>
-          <span class="vcard__power"><Glyph name="power" /><b class="num">{power ?? '?'}</b></span>
+          <span class="vcard__power"><Glyph name="power" /><b class="num">{power === null ? '?' : powerText(power)}</b></span>
           <Glyph name="chevron" class="vcard__go" />
         </span>
         <span class="vcard__groups">
