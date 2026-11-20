@@ -71,7 +71,7 @@ export function EmberCost({ n, short = false }: { n: number; short?: boolean }) 
 
 /**
  * The Temper slot on a piece's card, a socket as its Engraving's is (`ui/mod.tsx`): its diamond, gold once it holds a
- * temper, over `Tempered 2 times` (or `Empty`), the property and its size large, its place in its range, a new roll
+ * temper, over the property (or `Empty`; how often it was tempered is the TEMPER window's), the property and its size large, its place in its range, a new roll
  * waiting if one is; and the way to the TEMPER window, with the next temper's Ember on it. A piece of C-Rank or higher
  * short of perfect shows the slot locked (the steps still to perfect are under its quality); below C-Rank, or issued, it has none.
  */
@@ -89,7 +89,6 @@ export function TemperBlock({ it }: { it: Item }) {
   const t = it.temper;
   const ember = temper.emberFor(it);
   const short = (s.materials?.[EMBER.id] ?? 0) < ember;
-  const n = temper.count(it);
   const action = (
     <Btn kind={it.temperNew ? 'gold' : t ? 'ghost' : undefined} block class="temperslot__go mod__btn" onClick={() => openTemper(it.id)}>
       {it.temperNew ? 'Choose' : <><Glyph name="hammer" /> {t ? 'Temper Again' : 'Temper'}<span class="btn__aside"><EmberCost n={ember} short={short} /></span></>}
@@ -98,7 +97,7 @@ export function TemperBlock({ it }: { it: Item }) {
   return (
     <ModCard class={`temperslot ${t ? 'is-held' : 'is-open'} ${it.temperNew ? 'is-waiting' : ''}`} tone="var(--gold)" state={it.temperNew ? 'call' : t ? 'on' : 'empty'}
       mark={<TemperMark on={!!t} size={46} />}
-      kicker="Temper" side={n ? <small class="mod__count num">Tempered {n} {n === 1 ? 'time' : 'times'}</small> : undefined}
+      kicker="Temper"
       title={t ? nameOf(t.stat) : 'Empty'} value={t ? temperValue(t) : undefined} action={action}>
       {t ? (
         <span class="temperslot__range"><RangeBar at={temper.share(it, t)} /><small class="num">{rangeText(t.stat, d.rank)}</small></span>

@@ -927,12 +927,12 @@ the word was awkward), or `Dormant` while another piece of its kind holds the at
 its engraving under `Enhancements`, a socket of the one shape its Temper shares (`ui/mod.tsx`; the owner's call, where
 each was drawn its own way): the mark at the left in its own light, a rule of that light down the socket's edge, then
 a small capital line, the socket's name large and what it does, and its button across its foot. The Engraving's: its
-stone, opening the Codex on it, `Attuned`, `Dormant` or `Engraved` (a piece not worn) over `[Engraving: Name]` and its
-rule; `Another armour piece worn holds the attuned engraving.` while dormant, `Not in the Codex.` while its power is
-not kept; and **Engrave** (or **Engrave Anew**) with its Ember set apart while the Codex holds a power of its kind.
+stone, opening the Codex on it, `Attuned`, `Dormant` or `Engraved` (a piece not worn) over `[Engraving: Name]`, dotted, which opens the one tooltip
+on its rule (the owner's call: the rule is not written on the card); `Another armour piece worn holds the attuned
+engraving.` while dormant, and never `Not in the Codex.`; and **Engrave** (or **Engrave Anew**) with its Ember set apart while the Codex holds a power of its kind.
 With nothing cut, the socket stands dashed: `Engraving` over `Empty`, `2 kept` at its right and their names under it,
 or `None kept` and `No weapon power in the Codex.` with **Codex**, which opens the Codex on its kind.
-`Enhancements` counts the sockets filled at its right (`1/2`). Equipment's `Engravings`, `Codex 4/16` at its right, sets the three attuned: a
+`Enhancements` counts the sockets filled at its right (`1/2`). Side by side, each socket fits its words to its own width: no word breaks inside itself, a value too wide drops under its name, and the mark, type and button shrink. Equipment's `Engravings`, `Codex 4/16` at its right, sets the three attuned: a
 socket to each kind, `WEAPON` over the engraving's name, or `None` beside an empty stone. The `CODEX` window opens
 on `Kept` and the count large beside the Ascendant Ember held; then `ATTUNED` and the three sockets; then the
 engraving chosen, read large: `ATTUNED` beside `WEAPON` (or `KEPT`, `NOT KEPT`), its name, its rule, the piece it is
@@ -1027,7 +1027,7 @@ Each band opens on its label and hairline, with the same room above and below ev
 
 **Tempering.** The System's, in the gear's cyan, its results in advancement's gold. A piece of C-Rank or
 higher carries a Temper socket on its card under `Enhancements`, beside its Engraving and in the same shape (below):
-`TEMPER` in small capitals, `Tempered 2 times` at its right once tempered; `Locked` over `Opens once the piece is
+`TEMPER` in small capitals, and never how often it was tempered, which the `TEMPER` window says (the owner's call); `Locked` over `Opens once the piece is
 perfect.` until it is, the socket dim and dashed; then the slot, a hammer in a diamond, dashed and `Empty` while empty with the slot's properties under it (`Crit Chance,
 Accuracy, Effect Chance`), gold and lit with what it holds once tempered (`Crit Chance`, `+10.7%` at the right in
 gold, and under them its bar, the fill gold and a white mark where the roll sits, beside its range); `New roll` and

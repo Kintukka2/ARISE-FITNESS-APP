@@ -5085,3 +5085,22 @@ button.mod__mark:active .mod__well { transform: scale(0.93); }
   .bpcard__art { width: 52px; height: 52px; }
   .bpcard__text b { font-size: 0.92rem; }
 }
+/* The engraving's name opens its rule in the one tooltip, dotted as a told word is. */
+button.mod__tip.infotag { display: inline; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; text-decoration: underline dotted color-mix(in srgb, var(--mt) 60%, transparent); text-underline-offset: 4px; }
+button.mod__tip.infotag:hover, button.mod__tip.infotag[aria-expanded="true"] { text-decoration-color: var(--mt); }
+button.mod__tip .infotag__q { display: none; }
+/* A socket sizes itself by its own width, so two side by side keep their words whole (the owner's call): a word
+   never breaks inside itself, a value too wide drops under its name, and the mark, type and button shrink. */
+.mod { container-type: inline-size; }
+.mod__title { flex-wrap: wrap; }
+.mod__title b { overflow-wrap: normal; word-break: normal; hyphens: none; }
+@container (max-width: 300px) {
+  .mod__main { grid-template-columns: 44px minmax(0, 1fr); gap: 10px; }
+  .mod__mark, .mod__well { width: 44px; height: 44px; }
+  .mod__mark .rune, .mod__mark .tmark { --s: 40px; }
+  .mod__mark .rune svg { width: 40px; height: 40px; }
+  .mod__title b { font-size: 0.86rem; }
+  .mod__v { font-size: 0.98rem; }
+  .mod__btn { padding-left: 6px; padding-right: 6px; font-size: 0.86rem; letter-spacing: 0.02em; }
+  .mod__btn .btn__aside { margin-left: 0.4em; padding-left: 0.4em; }
+}

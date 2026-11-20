@@ -25,6 +25,7 @@ import { Btn, Facts, GearArt } from './components';
 import { MatArt } from './forge';
 import { Glyph } from './icons';
 import { openSheet, sys, toast } from './overlays';
+import { InfoTag } from './infotag';
 import { ModCard } from './mod';
 import { EmberCost } from './temper';
 import { ArcaneRing, EmptyStone, RUNE, RuneGlyph, Runestone, type RuneState } from './runes';
@@ -81,7 +82,7 @@ export function AttunedTriad({ onPick, chosen }: { onPick: (g: EngraveGroup, id?
 /**
  * A piece's engraving on its card, a socket as its Temper's is (`ui/mod.tsx`): its stone in its own colour, opening the
  * Codex on it, over how it stands (attuned, dormant while another piece of its kind holds the attuned one, or engraved
- * on a piece not worn), `[Engraving: Name]` and its rule; and **Engrave** or **Engrave Anew** while the Codex holds a
+ * on a piece not worn) and `[Engraving: Name]`, its rule in the one tooltip a tap on the name opens; and **Engrave** or **Engrave Anew** while the Codex holds a
  * power of its kind. With nothing cut and nothing kept, the socket stands empty and opens the Codex on its kind.
  */
 export function EngravingBlock({ it }: { it: Item }) {
@@ -111,10 +112,8 @@ export function EngravingBlock({ it }: { it: Item }) {
     <ModCard class={`engblock is-${state}`} tone={RUNE[e.id].hue} state={dormant ? 'dim' : 'on'}
       mark={<Runestone e={e} size={52} state={state} />} onMark={() => { sfx.tap(); openCodex(undefined, e.id); }} markLabel={`[Engraving: ${e.name}] in the Codex`}
       kicker={<span class="engblock__state">{dormant ? 'Dormant' : worn ? 'Attuned' : 'Engraved'}</span>}
-      title={`[Engraving: ${e.name}]`} action={action}>
-      <small class="mod__line engblock__rule">{e.text}</small>
+      title={<InfoTag class="mod__tip" tip={{ title: e.name, kind: 'Engraving', lines: [e.text], mark: <RuneGlyph e={e} size={16} />, tone: 'system' }}>[Engraving: {e.name}]</InfoTag>} action={action}>
       {dormant && <small class="mod__hint">Another {groupName(g).toLowerCase()} piece worn holds the attuned engraving.</small>}
-      {!engr.known(s, e.id) && <small class="mod__hint">Not in the Codex.</small>}
     </ModCard>
   );
 }

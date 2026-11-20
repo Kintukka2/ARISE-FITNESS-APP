@@ -3770,6 +3770,18 @@ What changed:
   keeps only the Ascension card under the radar.
 - **Balance.** Display only: no calibration, no campaign.
 
+## Sockets side by side that fit their words; an engraving's rule in its tooltip — built
+
+The owner asked, on a wide screen where the two sockets sit side by side:
+- **Fit the text.** `Resistance` broke into `Resistanc` / `e`. Each socket now sizes itself by its own width (a
+  container query). No word breaks inside itself, a value too wide drops under its name, and under 300px the mark,
+  the name and the button shrink.
+- **No `Tempered 2 times`** on the Temper socket: the TEMPER window says it.
+- **No `Not in the Codex.`** on the Engraving socket.
+- **The engraving's rule in its tooltip.** `[Engraving: Siegebreaker]` is dotted, and a tap opens the one tooltip:
+  its glyph, its name, `Engraving`, and the rule. The card no longer writes the rule.
+- **Balance.** Display only.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
