@@ -668,7 +668,8 @@ function QualityLine({ it }: { it: Item }) {
         <i style={`width: ${q}%`} />
         {[25, 50, 75].map((m) => <span key={m} class="pieceq__tick" style={`left: ${m}%`} />)}
       </i>
-      <small class="num">{left ? `Steps to perfect: ${left}` : it.over ? `Perfect +${it.over}` : 'Perfect'}</small>
+      {/* Once perfect, the `✦ Perfect` tag under its name says it, so the line here says nothing more (the owner's call). */}
+      {left > 0 && <small class="num">Steps to perfect: {left}</small>}
       {cap > 0 && !left && (
         <span class="pieceq__over" aria-label={`Past perfect: ${it.over ?? 0} of ${cap}`}>
           {Array.from({ length: cap }, (_, i) => <i key={i} class={i < (it.over ?? 0) ? 'is-on' : ''} />)}
