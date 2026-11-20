@@ -193,17 +193,34 @@ function Stations({ s }: { s: Save }) {
   );
 }
 
-/** The hunter's licence along the page's foot: its number and the Gates cleared. It opens the dossier. */
+/**
+ * The hunter's licence at the page's foot, drawn as the Association issues it (the owner's call: the Gates page's card,
+ * moved here so the licence stands in one place): the grade's crest behind it, its seal, `Hunter` over their name and
+ * `Licence` over its number, and `Grade` over the grade with what it opens. Gold while the Association Licence waits
+ * to be bought. It opens the dossier.
+ */
 function LicenceRow({ s }: { s: Save }) {
-  const r = rankOf(s);
-  const shown = r.key === 'N' ? 'N' : licensedRank(s);
+  const mine = licensedRank(s);
+  const holding = licenceHolding(s);
+  const opens = holding ? `Held at ${mine}-Rank` : `Gates up to ${RANKS[Math.min(5, RANKS.indexOf(mine) + 1)]}-Rank`;
   return (
-    <button type="button" class="hublicence" data-hub="dossier" aria-label={`Hunter: ${s.hunter.name}, licence ${s.hunter.regNo || 'none'}. Open the dossier`}
+    <button type="button" class={`glicence__card ghlicence ${holding && licenceRequired(s) && storeReady() ? 'is-hot' : ''}`} data-hub="dossier" data-tour="licence" style={`--rc: var(--rank-${mine})`}
+      aria-label={`Hunter ${s.hunter.name}, licence ${s.hunter.regNo || 'none'}, ${mine}-Rank, ${opens}. Open your page`}
       onClick={() => { sfx.tap(); openDossier(); }}>
-      <Sigil rank={shown} size={30} />
-      <span class="hublicence__one"><small class="label">Hunter Licence</small><b class="num">{s.hunter.regNo || '-- --'}</b></span>
-      <span class="hublicence__one"><small class="label">Gates cleared</small><b class="num">{s.gates.clears}</b></span>
-      <Glyph name="chevron" class="hublicence__go" />
+      <RankCrest rank={mine} class="glicence__crest" />
+      <span class="glicence__seal"><Sigil rank={mine} size={44} /></span>
+      <span class="glicence__who">
+        <small class="label">Hunter</small>
+        <b>{s.hunter.name}</b>
+        <small class="label">Licence</small>
+        <b class="num">{s.hunter.regNo || '-- --'}</b>
+      </span>
+      <span class="ghlicence__grade">
+        <small class="label">Grade</small>
+        <b>{mine}-Rank</b>
+        <small>{opens}</small>
+      </span>
+      <Glyph name="chevron" class="ghlicence__go" />
     </button>
   );
 }

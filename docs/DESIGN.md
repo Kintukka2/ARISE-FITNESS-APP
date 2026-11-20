@@ -3735,6 +3735,41 @@ What changed (`Constellation` in `screens/Skills.tsx`):
 - **Reduced motion** stills all of it.
 - **Balance.** Display only: no calibration, no campaign.
 
+## A blueprint that is no piece; a piece's sockets, dial and blueprint redrawn; the licence on the Inventory — built
+
+The owner asked for:
+- **No Familiarity and no Quality on a blueprint.** Nothing is learnt on a blueprint, so its card shows neither.
+  The Familiarity panel, the `Quality 16-100%` beside the stats, and the quality bar at the altar are gone.
+- **A blueprint's power ×150, as every power is shown.** Its range read the engine's raw `90-135`. It is now
+  written through `powerText` (`13.4k-20.3k`), set a size smaller so it fits.
+- **`Equipment Power` for `Score`** on a piece's card, the blueprint's, and the Upgrade's before-and-after.
+- **The item card's Familiarity, Temper, Engraving and blueprint sections overhauled,** with full creative control.
+- **The Gates page's licence moved to the Inventory,** replacing the licence row there, so it stands in one place.
+
+What changed:
+- **One socket shape** (`ui/mod.tsx`, after Diablo IV's aspect and temper rows and Lost Ark's engraving slots).
+  - The Engraving and the Temper sit under `Enhancements`, which counts the sockets filled (`1/2`).
+  - Each socket has its mark in its own light at the left (the engraving's colour, the temper's gold), with a rule
+    of that light down its edge. Beside the mark: a small capital line, the name large, then what it does. The
+    action runs across its foot, its Ember set apart on the button.
+  - An empty socket is dashed and hatched, a locked one dimmer, a waiting roll gold.
+  - The two sockets stand side by side from 560px wide.
+  - The engraving's stone still opens the Codex on it.
+  - With nothing cut and nothing kept, the Engraving socket now shows, empty, with **Codex**. It used to be hidden.
+  - A C-Rank or higher piece short of perfect now shows its Temper socket `Locked`. The steps still to perfect
+    stay under its quality.
+- **Familiarity as a dial** (`ui/familiarity.tsx`, after Destiny's and Monster Hunter's mastery rings).
+  - A segment to each rank round the rim, lit gold in turn to the rank reached. The rank in progress fills its own
+    segment.
+  - The rank large at the heart; beside it `Rank 2`, the points, a bar and `110 to Rank 3`.
+  - Two tiles across: what the rank gives, each with the next rank's figure in gold.
+- **The blueprint as a drafting sheet** (`BlueprintCard` in `screens/Gear.tsx`): a cyan grid with corner marks, and
+  the design's art traced on crosshairs. It shows how many are held, whether the materials are, and the shards.
+- **The forged piece and the Held rows** show Equipment Power where they showed Quality.
+- **The licence card** is the Inventory's foot (`LicenceRow` in `screens/Inventory.tsx`), unchanged in look. Gates
+  keeps only the Ascension card under the radar.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

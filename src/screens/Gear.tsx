@@ -32,7 +32,9 @@ import { buzz, flash } from '@/ui/feedback';
 import { CostGrid, MatList, bundleText } from '@/ui/forge';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys, toast } from '@/ui/overlays';
-import { Familiarity, openBlueprint } from './Forge';
+import { openBlueprint } from './Forge';
+import { Familiarity } from '@/ui/familiarity';
+import { TEMPER_FROM } from '@/data/temper';
 
 const unit = (x: number) => Math.max(0, Math.min(1, x));
 const signed = (n: number, digits = 1) => `${n < 0 ? '-' : '+'}${Math.abs(n).toFixed(digits).replace(/\.0$/, '')}`;
@@ -518,7 +520,7 @@ export function PieceHero({ d, art, tags, score, vs, foot, fx }: { d: GearDef; a
       <div class="piecehero__who">
         <span class="piecehero__kind"><RankPlate rank={d.rank} size={18} />{rarity(d.rank)} {d.slot}</span>
         {tags && <span class="piecehero__tags">{tags}</span>}
-        <span class="piecehero__score"><span class="label">Score</span><span class="piecehero__n">{score}{vs}</span></span>
+        <span class="piecehero__score"><span class="label">Equipment Power</span><span class="piecehero__n">{score}{vs}</span></span>
       </div>
       {foot && <div class="piecehero__foot">{foot}</div>}
     </section>
@@ -549,6 +551,11 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
   const tag = gear.rollTag(it);
   const set = d.set ? setById(d.set) : undefined;
   const starred = s.favourites.includes(it.id);
+  // Its sockets: an engraving for any kind of gear but issued kit, a temper from C-Rank; how many it has and holds.
+  const engraves = !!engr.groupOf(it) && !d.issued;
+  const tempers = !d.issued && RANKS.indexOf(d.rank as Rank) >= RANKS.indexOf(TEMPER_FROM);
+  const mods = Number(engraves) + Number(tempers);
+  const filled = Number(engraves && !!it.engr) + Number(tempers && !!it.temper);
   // The moment an upgrade makes it perfect: a stamp of its own over the card's head, played once.
   const [perfected, setPerfected] = useState(0);
   const recycle = async () => {
@@ -634,23 +641,54 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
         {d.desc && <p class="itemcard__text">{d.desc}</p>}
         {it.master && <p class="itemcard__text hint">Masterwork of {walkerOf(it.master, d.rank).name}.</p>}
       </section>
-      <EngravingBlock it={it} />
       {!d.issued && <Upgrade it={it} onPerfect={() => setPerfected(Date.now())} />}
-      <TemperBlock it={it} />
-      {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
+      {mods > 0 && (
+        <Section title="Enhancements" right={<span class="num">{filled}/{mods}</span>}>
+          <div class="mods">
+            <EngravingBlock it={it} />
+            <TemperBlock it={it} />
+          </div>
+        </Section>
+      )}
+      {d.slot === 'Weapon' && !d.issued && (
+        <Section title="Familiarity">
+          <Familiarity defId={d.id} />
+        </Section>
+      )}
       {set && (
         <Section title={`Set: ${set.id}`} right={<span class="num"><Facts items={[`${gear.heldOf(s, set.id).size}/${gear.setPieces(set.id).length}`, gear.setsIn(gear.worn(s)).get(set.id) ? `Worn ${gear.setsIn(gear.worn(s)).get(set.id)}` : null]} /></span>}>
           <SetCard set={set} compact />
         </Section>
       )}
-      {!d.issued && forge.knows(s, d.id) && (
-        <button type="button" class="sysbox piecelink piecelink--forge" onClick={() => { sfx.tap(); openBlueprint(d.id); }}>
-          <span class="piecelink__icon"><Glyph name="forge" /></span>
-          <span class="piecelink__text"><span class="label">Blueprint</span><span class="piecelink__name">Forge another</span></span>
-          <Glyph name="chevron" class="piecelink__go" />
-        </button>
-      )}
+      {!d.issued && forge.knows(s, d.id) && <BlueprintCard d={d} />}
     </div>
+  );
+}
+
+/**
+ * The way back to the Forge from a piece's card, drawn as the blueprint it is (the owner's call, where a plain row read
+ * `Blueprint` over `Forge another`): a drafting sheet in the System's cyan, its grid and its corner marks, the design's
+ * art traced on it, `Blueprint` over `Forge another`, how many of it are held and whether its materials are, and the
+ * shards it costs. It opens the blueprint.
+ */
+function BlueprintCard({ d }: { d: GearDef }) {
+  const s = useSave();
+  const cost = forge.recipe(d);
+  const ok = forge.affords(s, cost);
+  const held = s.items.filter((x) => x.defId === d.id).length;
+  return (
+    <button type="button" class={`sysbox bpcard ${ok ? 'is-ready' : ''}`} data-rarity={d.rank} onClick={() => { sfx.tap(); openBlueprint(d.id); }}
+      aria-label={`Blueprint: ${d.name}. Forge another. ${held} held, ${ok ? 'materials held' : 'materials missing'}`}>
+      <span class="bpcard__sheet" aria-hidden="true"><i /><i /><i /><i /></span>
+      <span class="bpcard__art" aria-hidden="true"><GearArt defId={d.id} size={50} /></span>
+      <span class="bpcard__text">
+        <small class="label"><Glyph name="blueprint" />Blueprint</small>
+        <b>Forge another</b>
+        <small><Facts items={[`${held} held`, <span key="m" class={ok ? 'grant' : 'muted'}>{ok ? 'Materials held' : 'Materials missing'}</span>]} /></small>
+      </span>
+      <span class="bpcard__cost"><Shards n={cost.shards} /></span>
+      <Glyph name="chevron" class="bpcard__go" />
+    </button>
   );
 }
 
@@ -710,7 +748,7 @@ function Upgrade({ it, onPerfect }: { it: Item; onPerfect?: () => void }) {
       <div class="sysbox pieceup">
         <span class="pieceup__pair">
           <span class="pieceup__one"><span class="label">Quality</span><b class="num">{gear.qualityText(it)}<Glyph name="chevron" /><span class="pieceup__to">{gear.qualityText(next)}</span></b></span>
-          <span class="pieceup__one"><span class="label">Score</span><b class="num">{powerText(gear.score(it))}<Glyph name="chevron" /><span class="pieceup__to">{powerText(gear.score(next))}</span></b></span>
+          <span class="pieceup__one"><span class="label">Equipment Power</span><b class="num">{powerText(gear.score(it))}<Glyph name="chevron" /><span class="pieceup__to">{powerText(gear.score(next))}</span></b></span>
         </span>
         <CostGrid s={s} c={cost} />
         <Btn kind="gold" disabled={!ok} onClick={() => {

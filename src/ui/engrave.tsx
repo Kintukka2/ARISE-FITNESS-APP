@@ -25,6 +25,8 @@ import { Btn, Facts, GearArt } from './components';
 import { MatArt } from './forge';
 import { Glyph } from './icons';
 import { openSheet, sys, toast } from './overlays';
+import { ModCard } from './mod';
+import { EmberCost } from './temper';
 import { ArcaneRing, EmptyStone, RUNE, RuneGlyph, Runestone, type RuneState } from './runes';
 import * as system from './system';
 
@@ -77,9 +79,10 @@ export function AttunedTriad({ onPick, chosen }: { onPick: (g: EngraveGroup, id?
 }
 
 /**
- * A piece's engraving on its card: its mark, whether it is attuned, dormant (another piece of its kind
- * holds the attuned one) or on a piece not worn, `[Engraving: Name]` and its rule; and the way to the Codex.
- * With no engraving, the card offers to cut one while the Codex holds a power of its kind.
+ * A piece's engraving on its card, a socket as its Temper's is (`ui/mod.tsx`): its stone in its own colour, opening the
+ * Codex on it, over how it stands (attuned, dormant while another piece of its kind holds the attuned one, or engraved
+ * on a piece not worn), `[Engraving: Name]` and its rule; and **Engrave** or **Engrave Anew** while the Codex holds a
+ * power of its kind. With nothing cut and nothing kept, the socket stands empty and opens the Codex on its kind.
  */
 export function EngravingBlock({ it }: { it: Item }) {
   const s = useSave();
@@ -89,28 +92,30 @@ export function EngravingBlock({ it }: { it: Item }) {
   const options = ENGRAVINGS.filter((x) => x.group === g && engr.known(s, x.id) && x.id !== it.engr);
   const worn = !!gear.slotOf(s, it);
   const dormant = engr.dormant(s, it);
-  if (!e && !options.length) return null;
   const state: RuneState = dormant ? 'dormant' : worn ? 'attuned' : 'kept';
+  const price = engr.cost(it);
+  const short = ember(s) < price;
+  const action = options.length > 0
+    ? <Btn kind={e ? 'ghost' : undefined} block class="mod__btn" onClick={() => openCodex(it.id)}><Glyph name="engrave" /> {e ? 'Engrave Anew' : 'Engrave'}<span class="btn__aside"><EmberCost n={price} short={short} /></span></Btn>
+    : !e ? <Btn kind="ghost" block class="mod__btn" onClick={() => openCodex(undefined, g)}><Glyph name="engrave" /> Codex</Btn> : undefined;
+  if (!e) {
+    return (
+      <ModCard class="engblock is-empty" state="empty" mark={<EmptyStone group={g} size={44} />}
+        kicker="Engraving" side={<small class="mod__count num">{options.length ? `${options.length} kept` : 'None kept'}</small>}
+        title="Empty" action={action}>
+        <small class="mod__line">{options.length ? options.map((x) => x.name).join(', ') : `No ${groupName(g).toLowerCase()} power in the Codex.`}</small>
+      </ModCard>
+    );
+  }
   return (
-    <section class={`engblock ${e ? `is-${state}` : 'is-empty'}`} style={e ? hue(e) : undefined}>
-      {e ? (
-        <button type="button" class="engblock__power" onClick={() => { sfx.tap(); openCodex(undefined, e.id); }} aria-label={`[Engraving: ${e.name}] in the Codex`}>
-          <Runestone e={e} size={56} state={state} />
-          <span class="engblock__text">
-            <span class="engblock__state">{dormant ? 'Dormant' : worn ? 'Attuned' : 'Engraved'}</span>
-            <b>[Engraving: {e.name}]</b>
-            <small>{e.text}</small>
-            {dormant && <small class="hint">Another {groupName(g).toLowerCase()} piece worn holds the attuned engraving.</small>}
-            {!engr.known(s, e.id) && <small class="hint">Not in the Codex.</small>}
-          </span>
-        </button>
-      ) : (
-        <p class="engblock__none"><EmptyStone group={g} size={30} /> No engraving.</p>
-      )}
-      {options.length > 0 && (
-        <Btn kind="ghost" block onClick={() => openCodex(it.id)}><Glyph name="engrave" /> {e ? 'Engrave Anew' : 'Engrave'}</Btn>
-      )}
-    </section>
+    <ModCard class={`engblock is-${state}`} tone={RUNE[e.id].hue} state={dormant ? 'dim' : 'on'}
+      mark={<Runestone e={e} size={52} state={state} />} onMark={() => { sfx.tap(); openCodex(undefined, e.id); }} markLabel={`[Engraving: ${e.name}] in the Codex`}
+      kicker={<span class="engblock__state">{dormant ? 'Dormant' : worn ? 'Attuned' : 'Engraved'}</span>}
+      title={`[Engraving: ${e.name}]`} action={action}>
+      <small class="mod__line engblock__rule">{e.text}</small>
+      {dormant && <small class="mod__hint">Another {groupName(g).toLowerCase()} piece worn holds the attuned engraving.</small>}
+      {!engr.known(s, e.id) && <small class="mod__hint">Not in the Codex.</small>}
+    </ModCard>
   );
 }
 

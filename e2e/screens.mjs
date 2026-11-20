@@ -346,6 +346,9 @@ try {
   await page.locator('.sheet.is-top .bprow.is-ready').first().click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .costgrid__one').count())) throw new Error('A BLUEPRINT SHOWS NO MATERIALS');
   await snap('blueprint'); await snap('blueprint-full', true);
+  // A blueprint is no piece: no Familiarity, no Quality, its Equipment Power a range as every power is shown.
+  if (await page.locator('.sheet.is-top .famcard, .sheet.is-top .qrange').count() || await page.locator('.sheet.is-top .recipe', { hasText: /Quality|Familiarity/ }).count()) throw new Error('THE BLUEPRINT STILL SHOWS FAMILIARITY OR QUALITY');
+  if (!(await page.locator('.sheet.is-top .piecehero__score', { hasText: /Equipment Power/i }).count()) || !(await page.locator('.sheet.is-top .piecehero__score b', { hasText: /^[\d.]+k?-[\d.]+k?$/ }).count())) throw new Error('THE BLUEPRINT\'S EQUIPMENT POWER IS NOT A RANGE AS POWER IS SHOWN');
   const held = await page.locator('.sheet.is-top .heldrow').count();
   await page.locator('.sheet.is-top .forgebtn').click(); await sleep(1800);
   if ((await page.locator('.sheet.is-top .heldrow').count()) !== held + 1) throw new Error('FORGING PUT NO PIECE IN THE BAG');
@@ -371,6 +374,10 @@ try {
   await page.locator('.sheet.is-top .slotworn__open').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .famcard').count())) throw new Error('THE WORN WEAPON SHOWS NO FAMILIARITY');
   await page.locator('.sheet.is-top .famcard').scrollIntoViewIfNeeded(); await snap('item-weapon');
+  // Its sockets as one shape under Enhancements, and the way back to the Forge drawn as a blueprint.
+  if ((await page.locator('.sheet.is-top .mods > .mod').count()) !== 2) throw new Error('THE WEAPON\'S CARD DOES NOT SET ITS ENGRAVING AND TEMPER AS TWO SOCKETS');
+  if (!(await page.locator('.sheet.is-top .bpcard', { hasText: 'Forge another' }).count())) throw new Error('THE ITEM CARD HAS NO BLUEPRINT TO FORGE ANOTHER');
+  await page.locator('.sheet.is-top .bpcard').scrollIntoViewIfNeeded(); await snap('item-weapon-foot');
   if (await page.locator('.sheet.is-top .fusion').count()) throw new Error('FUSION IS STILL ON THE ITEM CARD');
   await close(); await close(); await close();
   await page.locator('[data-hub="dossier"]').click(); await sleep(400); await snap('dossier');
@@ -467,11 +474,10 @@ try {
   await nav('gates');
   await snap('gates', true);
   if (await page.locator('.ghcard.is-ascension').count()) throw new Error('THE ASCENSION CARD SHOWED BELOW S-RANK');
-  // The day's Gates as a radar: a portal to each grade round the count, the hunter's licence under it, one card.
+  // The day's Gates as a radar: a portal to each grade round the count. The licence is the Inventory's alone.
   if ((await page.locator('.gradar__gate').count()) !== 6) throw new Error('THE RADAR DOES NOT HOLD A PORTAL TO EACH GRADE');
   if (await page.locator('.ghrecord, .ghcard.is-licence').count()) throw new Error('THE GATES SCREEN STILL HAS A GRADE CARD AND A RECORD ROW');
-  if ((await page.locator('.ghlicence').count()) !== 1) throw new Error('THE GATES SCREEN DOES NOT SHOW THE HUNTER\'S LICENCE');
-  if (!(await page.locator('.ghlicence .glicence__who', { hasText: /Licence/i }).count()) || !(await page.locator('.ghlicence .ghlicence__grade', { hasText: /-Rank/ }).count())) throw new Error('THE LICENCE CARD DOES NOT GIVE THE NAME, NUMBER AND GRADE');
+  if (await page.locator('.ghlicence').count()) throw new Error('THE LICENCE IS STILL ON THE GATES SCREEN');
   if (await page.evaluate(() => document.querySelector('.app, body').scrollWidth > window.innerWidth)) throw new Error('THE GATES SCREEN SCROLLS SIDEWAYS');
   // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
   if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
@@ -480,6 +486,9 @@ try {
   if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
   await snap('gates-potion');
   await page.locator('.syswin__foot .btn', { hasText: 'Cancel' }).click(); await sleep(300);
+  await nav('inventory'); await sleep(400);
+  if ((await page.locator('.ghlicence').count()) !== 1) throw new Error('THE INVENTORY DOES NOT SHOW THE HUNTER\'S LICENCE');
+  if (!(await page.locator('.ghlicence .glicence__who', { hasText: /Licence/i }).count()) || !(await page.locator('.ghlicence .ghlicence__grade', { hasText: /-Rank/ }).count())) throw new Error('THE LICENCE CARD DOES NOT GIVE THE NAME, NUMBER AND GRADE');
   await page.locator('.ghlicence').click(); await sleep(500);
   // The licence opens the hunter's page: the licence, the grade, every figure a record of its own, and the log.
   if (!(await page.locator('.sheet.is-top .dossier .glicence__facts').count())) throw new Error('THE LICENCE DID NOT OPEN THE HUNTER\'S PAGE WITH THEIR GRADE');
@@ -488,6 +497,7 @@ try {
     if (!(await page.locator('.sheet.is-top .drecord__one small', { hasText: new RegExp(`^${k}$`, 'i') }).count())) throw new Error(`THE HUNTER'S PAGE HAS NO RECORD OF ${k.toUpperCase()}`);
   }
   await snap('grade'); await close();
+  await nav('gates');
   // A grade's portal opens the board on that grade alone.
   await page.locator('.gradar__gate:not(.is-none):not(.is-shut)').first().click(); await sleep(600);
   if ((await page.locator('.sheet.is-top .gband').count()) !== 1) throw new Error('A GRADE ON THE RADAR DID NOT OPEN THE BOARD ON IT');

@@ -1,11 +1,10 @@
 /** The Gates: the board, and the way to each Gate's brief (`./Brief`). */
 import { powerText } from '@/ui/power';
-import { RankCrest } from '@/ui/rankcrest';
 import { useEffect, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
-import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice, rankIdx } from '@/core/gates';
+import { board, bossKnown, dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
 import { powerOf } from '@/core/combat';
-import { licenceHolding, licenceRequired, licensedRank } from '@/core/licence';
+import { licensedRank } from '@/core/licence';
 import * as gear from '@/core/gear';
 import { SETS } from '@/data/sets';
 import * as forge from '@/core/forge';
@@ -25,15 +24,14 @@ import { RANKS } from '@/core/types';
 import { dayKey, hhmmss, msUntilMidnight } from '@/core/util';
 import * as vitals from '@/core/vitals';
 import { arena } from '@/app/router';
-import { storeReady } from '@/platform/native';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Facts, Shards, useNow, Voice } from '@/ui/components';
 import { SysFrame } from '@/ui/frame';
 import { buzz } from '@/ui/feedback';
-import { Glyph, Sigil } from '@/ui/icons';
+import { Glyph } from '@/ui/icons';
 import { openSheet, sys, toast, tour } from '@/ui/overlays';
-import { openDossier, VitalsBlock } from './Inventory';
+import { VitalsBlock } from './Inventory';
 import * as feats from '@/core/feats';
 import * as par from '@/core/par';
 import { MedalHeld } from '@/ui/par';
@@ -144,39 +142,16 @@ function GateRadar({ s, gates }: { s: Save; gates: Dungeon[] }) {
 }
 
 /**
- * The hunter under the radar: their licence, drawn as the Association issues it, the grade's seal, their name, their
- * number and their grade with what it opens, one button that opens the hunter's page (the dossier: the licence, the
- * grade, the record and the log; the owner's call: one card where a grade card and a record row stood, the licence's
- * look kept). From Ascension's grade, their Ascension under it.
+ * Under the radar, from Ascension's grade, the hunter's Ascension. Their licence stood here too; it is the Inventory's
+ * alone now (the owner's call), at the foot of the hunter's page.
  */
 function HunterRow({ s }: { s: Save }) {
-  const mine = licensedRank(s);
-  const holding = licenceHolding(s);
   const a = s.ascension;
   const unset = marks.unset(s);
   const told = story.seen(s, 'ascension-told');
-  const opens = holding ? `Held at ${mine}-Rank` : `Gates up to ${RANKS[Math.min(5, rankIdx(mine) + 1)]}-Rank`;
+  if (!ascension.ascensionOpen(s)) return null;
   return (
     <section class="ghunter" aria-label="Hunter">
-      {/* Gold while the Association Licence waits to be bought, on the page it opens. */}
-      <button type="button" class={`glicence__card ghlicence ${holding && licenceRequired(s) && storeReady() ? 'is-hot' : ''}`} data-tour="licence" style={`--rc: var(--rank-${mine})`}
-        aria-label={`Hunter ${s.hunter.name}, licence ${s.hunter.regNo || 'none'}, ${mine}-Rank, ${opens}. Open your page`}
-        onClick={() => { sfx.tap(); openDossier(); }}>
-        <RankCrest rank={mine} class="glicence__crest" />
-        <span class="glicence__seal"><Sigil rank={mine} size={44} /></span>
-        <span class="glicence__who">
-          <small class="label">Hunter</small>
-          <b>{s.hunter.name}</b>
-          <small class="label">Licence</small>
-          <b class="num">{s.hunter.regNo || '-- --'}</b>
-        </span>
-        <span class="ghlicence__grade">
-          <small class="label">Grade</small>
-          <b>{mine}-Rank</b>
-          <small>{opens}</small>
-        </span>
-        <Glyph name="chevron" class="ghlicence__go" />
-      </button>
       <div class="ghunter__cards">
         {ascension.ascensionOpen(s) && (
           // Gold only while something waits: a mark to set, or the card not yet opened.
