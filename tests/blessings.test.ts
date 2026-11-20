@@ -402,6 +402,19 @@ describe('rests', () => {
     expect(raid.restHere(s, d, { ...(structuredClone(run) as OpenRaid), rested: [] }, { kind: 'hone', skill: 'Nothing' }, at)).toBe(false);
   });
 
+  it('a skill at Lv.MAX honed still grows: the picker and the fight read one rule', () => {
+    const { s, d, run, at } = atRest();
+    const name = raid.honeable(run)[0];
+    const n = NODES.find((x) => x.kind === 'skill' && x.name === name)!;
+    run.levels = { ...(run.levels ?? {}), [name]: n.max };
+    const now = raid.honedAbility(run, name)!;
+    const then = raid.honedAbility(run, name, HONE_LEVELS)!;
+    expect(now.mult).toBeCloseTo(skillAt(n, n.max).mult, 5);
+    expect(then.mult).toBeCloseTo(skillAt(n, n.max).mult + HONE_LEVELS * HONE_PAST, 5);
+    expect(raid.restHere(s, d, run, { kind: 'hone', skill: name }, at)).toBe(true);
+    expect(raid.partyFor(s, d, run, at)[0].ab(name)!.mult).toBeCloseTo(then.mult, 5);
+  });
+
   it('the System heals below its line and hones above it; where a rest heals nothing, it hones', () => {
     const { run } = atRest();
     expect(raid.systemRestPick(REST_LINE - 0.01, run).kind).toBe('heal');

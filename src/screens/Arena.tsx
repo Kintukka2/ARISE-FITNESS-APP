@@ -1254,12 +1254,23 @@ function RestChoice({ s, run, onRest }: { s: ReturnType<typeof useSave>; run: No
     return (
       <div class="stack stack--tight">
         <small class="label">Hone a skill for the rest of the Gate</small>
-        {o.hone.map((name) => (
-          <button type="button" key={name} class="choice-row restskill" onClick={() => onRest({ kind: 'hone', skill: name })}>
-            <span class="row"><Glyph name={SKILL_GLYPH[name] ?? 'bolt'} /><b>{name}</b></span>
-            <small>{lv(name, raid.honedLevel(run, name))} → {lv(name, raid.honedLevel(run, name) + HONE_LEVELS)}</small>
-          </button>
-        ))}
+        {o.hone.map((name) => {
+          // Its level and its multiplier now and honed, each on one line: past Lv.MAX the level reads `Lv.MAX+1` and
+          // the multiplier still climbs, so a skill at its peak shows what honing it adds.
+          const k = raid.honedLevel(run, name);
+          const now = raid.honedAbility(run, name);
+          const then = raid.honedAbility(run, name, HONE_LEVELS);
+          return (
+            <button type="button" key={name} class="choice-row restskill" onClick={() => onRest({ kind: 'hone', skill: name })}
+              aria-label={`Hone ${name}: ${lv(name, k)} to ${lv(name, k + HONE_LEVELS)}${now && then ? `, ×${now.mult} to ×${then.mult}` : ''}`}>
+              <span class="restskill__name"><Glyph name={SKILL_GLYPH[name] ?? 'bolt'} /><b>{name}</b></span>
+              <span class="restskill__up num" aria-hidden="true">
+                <span class="restskill__lv">{lv(name, k)} → <span class="grant">{lv(name, k + HONE_LEVELS)}</span></span>
+                {now && then && now.mult !== then.mult && <span class="restskill__mult">×{now.mult} → <span class="grant">×{then.mult}</span></span>}
+              </span>
+            </button>
+          );
+        })}
         <Btn kind="ghost" block onClick={() => setHoning(false)}>Back</Btn>
       </div>
     );

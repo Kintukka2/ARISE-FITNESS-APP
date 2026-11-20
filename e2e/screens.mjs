@@ -202,7 +202,8 @@ try {
   // Equipment: the score in its hexagon, a square to each of the ten slots around the figure, the sets worn and the loadouts as rows.
   await page.locator('[data-hub="equipment"]').click(); await sleep(900);
   if ((await page.locator('.sheet.is-top .pslot').count()) !== 10) throw new Error('THE FIGURE DOES NOT HAVE TEN SLOTS');
-  if (!(await page.locator('.sheet.is-top .gearhead__gem').count())) throw new Error('EQUIPMENT SHOWS NO SCORE');
+  if (!(await page.locator('.sheet.is-top .gearhead__score b').count())) throw new Error('EQUIPMENT SHOWS NO SCORE');
+  if ((await page.locator('.sheet.is-top .gearhead__bar i').count()) !== 10) throw new Error('THE EQUIPMENT HEAD DOES NOT BAR EVERY SLOT');
   if ((await page.locator('.sheet.is-top .loadrow').count()) !== 3) throw new Error('EQUIPMENT DOES NOT SHOW THREE LOADOUTS');
   await snap('equipment');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2');

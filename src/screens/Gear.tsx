@@ -28,7 +28,7 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import * as system from '@/ui/system';
 import { Btn, Count, Empty, Facts, GearArt, IconBtn, RankPlate, Section, SetMark, Shards } from '@/ui/components';
-import { buzz } from '@/ui/feedback';
+import { buzz, flash } from '@/ui/feedback';
 import { CostGrid, MatList, bundleText } from '@/ui/forge';
 import { Glyph, STAT_ICON } from '@/ui/icons';
 import { openSheet, sys, toast } from '@/ui/overlays';
@@ -510,9 +510,10 @@ export function openItem(id: string) {
  * its tags, its score and what it gains over the piece it would replace, and a foot (its quality).
  * The blueprint's card (`screens/Forge.tsx`) is headed the same way.
  */
-export function PieceHero({ d, art, tags, score, vs, foot }: { d: GearDef; art: ComponentChildren; tags?: ComponentChildren; score: ComponentChildren; vs?: ComponentChildren; foot?: ComponentChildren }) {
+export function PieceHero({ d, art, tags, score, vs, foot, fx }: { d: GearDef; art: ComponentChildren; tags?: ComponentChildren; score: ComponentChildren; vs?: ComponentChildren; foot?: ComponentChildren; fx?: ComponentChildren }) {
   return (
     <section class="sysbox piecehero" data-rarity={d.rank}>
+      {fx}
       <span class="piecehero__art">{art}</span>
       <div class="piecehero__who">
         <span class="piecehero__kind"><RankPlate rank={d.rank} size={18} />{rarity(d.rank)} {d.slot}</span>
@@ -548,6 +549,8 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
   const tag = gear.rollTag(it);
   const set = d.set ? setById(d.set) : undefined;
   const starred = s.favourites.includes(it.id);
+  // The moment an upgrade makes it perfect: a stamp of its own over the card's head, played once.
+  const [perfected, setPerfected] = useState(0);
   const recycle = async () => {
     const back = forge.salvage(it);
     const kept = it.engr && !engr.known(store.get(), it.engr) ? engr.engravingById(it.engr) : undefined;
@@ -568,8 +571,8 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
     close();
   };
   return (
-    <div class="stack itemcard" data-rarity={d.rank}>
-      <PieceHero d={d} art={<GearArt item={it} size={104} />}
+    <div class={`stack itemcard ${perfected ? 'is-perfected' : ''}`} data-rarity={d.rank}>
+      <PieceHero d={d} art={<GearArt item={it} size={104} />} fx={perfected ? <PerfectBurst key={perfected} /> : null}
         tags={<>
           {worn && <span class="itag is-worn">Worn: {gear.SLOTS.find((x) => x.key === worn)?.name}</span>}
           {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
@@ -632,7 +635,7 @@ function ItemCard({ id, close }: { id: string; close: () => void }) {
         {it.master && <p class="itemcard__text hint">Masterwork of {walkerOf(it.master, d.rank).name}.</p>}
       </section>
       <EngravingBlock it={it} />
-      {!d.issued && <Upgrade it={it} />}
+      {!d.issued && <Upgrade it={it} onPerfect={() => setPerfected(Date.now())} />}
       <TemperBlock it={it} />
       {d.slot === 'Weapon' && !d.issued && <Familiarity defId={d.id} />}
       {set && (
@@ -676,7 +679,23 @@ function QualityLine({ it }: { it: Item }) {
 }
 
 /** The next upgrade step on a piece: what it raises, before and after side by side, and the alloys and shards it takes. Nothing once it is perfect. */
-function Upgrade({ it }: { it: Item }) {
+/**
+ * A piece made perfect by an upgrade (the owner's call: reaching 100% should be felt): a gold light sweeps the card's
+ * head, a ring breaks out from its art with sparks thrown round it, and `Perfect` is stamped across it, then all of it
+ * fades and leaves the head as it now stands, its quality bar full and shining.
+ */
+function PerfectBurst() {
+  return (
+    <span class="perfectfx" aria-hidden="true">
+      <i class="perfectfx__sweep" />
+      <i class="perfectfx__ring" />
+      {Array.from({ length: 10 }, (_, i) => <i key={i} class="perfectfx__spark" style={`--a: ${i * 36}deg; --d: ${(i % 3) * 60}ms`} />)}
+      <b class="perfectfx__stamp">✦ Perfect</b>
+    </span>
+  );
+}
+
+function Upgrade({ it, onPerfect }: { it: Item; onPerfect?: () => void }) {
   const s = useSave();
   const cap = overCap(s);
   const next = gear.upgradeStep(it, cap);
@@ -694,10 +713,22 @@ function Upgrade({ it }: { it: Item }) {
         </span>
         <CostGrid s={s} c={cost} />
         <Btn kind="gold" disabled={!ok} onClick={() => {
+          const short = gear.stepsToPerfect(it);
           if (!store.update((x) => forge.upgrade(x, it.id, cap))) return;
-          sfx.success();
-          buzz([14, 24]);
-          toast(`${gear.defOf(it)?.name} upgraded.`, 'good');
+          const now = store.get().items.find((x) => x.id === it.id);
+          if (short > 0 && now && gear.stepsToPerfect(now) === 0) {
+            // Perfect: the card's head plays it, so it is scrolled to, and the System's gold and the rank's sound mark it.
+            sfx.rankUp();
+            flash('gold');
+            buzz([30, 60, 30, 60, 120]);
+            document.querySelector('.sheet.is-top .sheet__body')?.scrollTo({ top: 0, behavior: 'smooth' });
+            // The stamp across the card's head says it; a toast would only cover it.
+            onPerfect?.();
+          } else {
+            sfx.success();
+            buzz([14, 24]);
+            toast(`${gear.defOf(it)?.name} upgraded.`, 'good');
+          }
           void checkAwards();
         }}>{ok ? <>Upgrade<span class="btn__aside"><Shards n={cost.shards} /></span></> : s.wallet.shards < cost.shards ? `Mana Shards ${group(s.wallet.shards)}/${group(cost.shards)}` : 'Materials missing'}</Btn>
       </div>
@@ -781,6 +812,8 @@ function Equipment() {
   const plan = gear.autoPlan(s);
   const offers = gear.offers(s);
   const items = gear.worn(s);
+  // Worn pieces at perfect quality, as the upgrade makes them.
+  const perfect = items.filter((it) => !gear.defOf(it)?.issued && gear.stepsToPerfect(it) === 0).length;
   const core = gear.boosted({ STR: 0, VIT: 0, AGI: 0, INT: 0, PER: 0 }, items, {}, 999);
   const extra = gear.sumBonuses(gear.rollBonuses(items), gear.setBonuses(items));
   const props = Object.keys(extra).length ? gear.bonusParts(extra).map(nameAndValue) : [];
@@ -819,12 +852,24 @@ function Equipment() {
   };
   return (
     <div class="stack armory">
-      <section class="sysbox gearhead">
-        <span class="gearhead__gem"><b class="num">{powerText(gear.power(s))}</b></span>
-        <span class="gearhead__what">
+      {/* The head, one band (the owner's call, where a hexagon squeezed the score beside a row of pips that said the
+          slots again): `Score` large by the power mark, the slots filled and the pieces at perfect at its right, and a
+          bar under both, a segment to each slot lit in its piece's rarity. */}
+      <section class="sysbox gearhead" aria-label={`Equipment: score ${powerText(gear.power(s))}, ${items.length} of ${gear.SLOTS.length} slots, ${perfect} perfect`}>
+        <span class="gearhead__score">
           <span class="label">Score</span>
-          <span class="gearhead__pips" aria-hidden="true">{gear.SLOTS.map((x) => <i key={x.key} class={s.equipped[x.key] ? 'is-on' : ''} />)}</span>
-          <small class="num">Slots: {items.length}/{gear.SLOTS.length}</small>
+          <b class="num"><Glyph name="power" />{powerText(gear.power(s))}</b>
+        </span>
+        <span class="gearhead__facts">
+          <span><small class="label">Slots</small><b class="num">{items.length}/{gear.SLOTS.length}</b></span>
+          <span class={perfect ? 'is-gold' : ''}><small class="label">Perfect</small><b class="num">{perfect}/{gear.SLOTS.length}</b></span>
+        </span>
+        <span class="gearhead__bar" aria-hidden="true">
+          {gear.SLOTS.map((x) => {
+            const it = gear.equippedIn(s, x.key);
+            const r = it ? gear.defOf(it)?.rank : undefined;
+            return <i key={x.key} class={it ? 'is-on' : ''} style={r ? `--rc: var(--rank-${r})` : undefined} />;
+          })}
         </span>
       </section>
       <div class="paperdoll">

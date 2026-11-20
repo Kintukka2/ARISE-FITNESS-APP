@@ -2439,18 +2439,19 @@ button.sp-head__state.is-full { opacity: 0.6; }
 /* What is worn: the score in its hexagon, the stats and the properties it adds; the hunter's figure with
  * a square to each slot either side, lit where something is worn, gold where something held is better;
  * then Auto Equip, the sets worn as rows, and the loadouts as rows. */
-.gearhead { position: relative; display: flex; align-items: center; gap: 14px; overflow: hidden; padding: 10px 12px;
-  background: radial-gradient(70% 160% at 0% 50%, color-mix(in srgb, var(--win) 16%, transparent), transparent 70%), rgba(3, 8, 20, 0.5); }
-.gearhead__gem { position: relative; display: grid; place-items: center; flex: none; width: 92px; height: 80px; filter: drop-shadow(0 0 10px var(--win-glow)); }
-.gearhead__gem::before, .gearhead__gem::after { content: ''; position: absolute; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
-.gearhead__gem::before { inset: 0; background: linear-gradient(160deg, var(--win), color-mix(in srgb, var(--win) 22%, transparent)); }
-.gearhead__gem::after { inset: 2px; background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--win) 32%, #06122a), #030814 78%); }
-.gearhead__gem b { position: relative; z-index: 1; font-size: 1.75rem; font-weight: 800; line-height: 1; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 14px var(--win-glow); }
-.gearhead__what { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-.gearhead__pips { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
-.gearhead__pips i { width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid color-mix(in srgb, var(--sys-ink) 30%, transparent); }
-.gearhead__pips i.is-on { border-color: var(--win); background: var(--win); box-shadow: 0 0 6px var(--win-glow); }
-.gearhead__what small { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 65%, transparent); }
+.gearhead { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px 16px; overflow: hidden; padding: 12px 14px 12px;
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--win) 16%, transparent), transparent 60%), rgba(3, 8, 20, 0.5); }
+.gearhead__score { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gearhead__score b { display: inline-flex; align-items: center; gap: 8px; font-size: 2rem; font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 16px var(--win-glow); white-space: nowrap; }
+.gearhead__score b .ico { width: 22px; height: 22px; color: var(--win); filter: drop-shadow(0 0 6px var(--win-glow)); }
+.gearhead__facts { display: flex; gap: 16px; padding-bottom: 2px; }
+.gearhead__facts > span { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.gearhead__facts b { font-size: 1.05rem; font-weight: 700; color: #fff; text-shadow: var(--sys-glow); }
+.gearhead__facts > span.is-gold b { color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+/* A segment to each slot, lit in its piece's rarity; dim while empty. */
+.gearhead__bar { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; height: 5px; }
+.gearhead__bar i { display: block; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
+.gearhead__bar i.is-on { background: var(--rc, var(--win)); box-shadow: 0 0 6px color-mix(in srgb, var(--rc, var(--win)) 60%, transparent); }
 .gearstats { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
 .gearstats__core { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .gearstats__core > span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 1px solid color-mix(in srgb, var(--sys-ink) 12%, transparent); background: rgba(3, 8, 20, 0.4); }
@@ -2760,7 +2761,13 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 .restway--steady .restway__mark .ico { color: var(--guard); filter: drop-shadow(0 0 6px var(--guard-glow)); }
 .restway:disabled { cursor: default; filter: grayscale(1); opacity: 0.5; }
 .restway:disabled small { color: var(--blood); }
-.restskill .row { gap: 8px; }
+/* A skill to hone: its mark and name at the left; at the right, its level and multiplier now and honed, each on one
+   line that never wraps (the owner's call, where `Lv.MAX → Lv.MAX+1` broke over three lines and ran out of its row). */
+.restskill { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.restskill__name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.restskill__name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.restskill__up { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; font-size: 0.74rem; white-space: nowrap; }
+.restskill__mult { font-size: 0.68rem; opacity: 0.85; }
 .restskill .ico { width: 18px; height: 18px; color: var(--gold); }
 
 /* The later plans. A landmark in the Gates' orange, always seen; a toll door a corridor sealed in red with
@@ -4940,3 +4947,28 @@ button.huntercard__class.is-classed { color: var(--gold); }
 
 /* The Settings foot: the version, the instructor and where the save lives, a line each. */
 .settings__foot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+/* A piece made perfect by an upgrade (`PerfectBurst` in screens/Gear.tsx): a gold sweep across the card's head, a ring
+   out of its art, sparks thrown round it and `✦ Perfect` stamped over it, all gone in under two seconds; then its
+   quality bar shines once. */
+.piecehero { position: relative; }
+.perfectfx { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.perfectfx__sweep { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 30%, rgba(255, 214, 120, 0.55) 48%, rgba(255, 244, 210, 0.85) 50%, rgba(255, 214, 120, 0.55) 52%, transparent 70%); transform: translateX(-100%); animation: pfxSweep 900ms var(--ease) 80ms both; mix-blend-mode: screen; }
+.perfectfx__ring { position: absolute; left: 64px; top: 64px; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 2px solid var(--gold); border-radius: 50%; box-shadow: 0 0 18px var(--gold-glow), inset 0 0 12px var(--gold-glow); animation: pfxRing 1100ms var(--ease) both; }
+.perfectfx__spark { position: absolute; left: 64px; top: 64px; width: 4px; height: 12px; margin: -6px 0 0 -2px; border-radius: 2px; background: linear-gradient(#fff6d8, var(--gold)); box-shadow: 0 0 8px var(--gold-glow); transform: rotate(var(--a)) translateY(0); opacity: 0; animation: pfxSpark 900ms ease-out calc(120ms + var(--d)) both; }
+.perfectfx__stamp { position: absolute; left: 50%; top: 46%; padding: 4px 16px; border: 2px solid var(--gold); background: rgba(24, 16, 2, 0.82); color: var(--gold); font-size: 1.3rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 0 12px var(--gold-glow); box-shadow: 0 0 24px var(--gold-glow); transform: translate(-50%, -50%) scale(1.8) rotate(-6deg); opacity: 0; animation: pfxStamp 1800ms var(--ease) 260ms both; }
+@keyframes pfxSweep { to { transform: translateX(100%); } }
+@keyframes pfxRing { 0% { transform: scale(0.4); opacity: 1; } 100% { transform: scale(14); opacity: 0; } }
+@keyframes pfxSpark { 0% { opacity: 1; transform: rotate(var(--a)) translateY(-10px); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-90px); } }
+@keyframes pfxStamp {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.8) rotate(-6deg); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(0.94) rotate(-6deg); }
+  26% { transform: translate(-50%, -50%) scale(1) rotate(-6deg); }
+  78% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.04) rotate(-6deg); }
+}
+.itemcard.is-perfected .piecehero { animation: pfxHero 1400ms var(--ease) both; }
+@keyframes pfxHero { 0% { box-shadow: 0 0 0 1px var(--gold), 0 0 40px var(--gold-glow); } 100% { box-shadow: none; } }
+.itemcard.is-perfected .pieceq__bar > i { animation: pfxBar 1200ms ease-out 600ms both; }
+@keyframes pfxBar { 0% { filter: brightness(2.2); box-shadow: 0 0 16px var(--gold-glow); } 100% { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .perfectfx__sweep, .perfectfx__ring, .perfectfx__spark { display: none; } .perfectfx__stamp { animation-duration: 1ms; animation-delay: 0ms; opacity: 0; } }
