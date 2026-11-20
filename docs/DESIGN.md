@@ -3706,6 +3706,35 @@ quality bar to go, since the `✦ Perfect` tag under its name already says it.
   once the piece is perfect.
 - **Balance.** Display only: no calibration, no campaign.
 
+## The skill tree's sky, with an aura; its stray diamonds put back — built
+
+The owner asked for:
+- **The skill tree's diagram tidied:** cooler, flowing better and impressive, with an aura.
+- **The stray diamonds circled.** They were bugs: the passive nodes, drawn as squares turned 45° by an SVG `rotate`.
+  The nodes' `transform-origin: center` moved that rotation's centre, so every passive sat off its spot, some far
+  outside the sky. Passives are now drawn as diamond paths, which no CSS transform can move.
+- **No `INT +5` under the class.**
+
+What changed (`Constellation` in `screens/Skills.tsx`):
+- **A nebula** breathes behind the sky.
+- **An aura along each Path,** as strong as the points spent there, brightest on the one chosen.
+- **A rune ring** turns slowly at the rim.
+- **Links** from each node to the one it grows from bow toward the core, so the branches flow out of the centre.
+  Lit ones flow, wider and brighter.
+- **Nodes:** skills are a little larger. Each learned node is haloed, and each at its peak is ringed in white,
+  breathing.
+- **The sky filled** (the owner's call: not five spokes but one grand, interconnected circle):
+  - Each Path's nodes sit on their rank's ring, fanned round it from the Path's arm, wider at each rank out (`FAN`, up
+    to ±28° of a Path's ±36°), so each Path fills its fifth of the sky.
+  - On every ring, an arc threads the last node of each Path to the first of the next (`THREADS`). It is faint while
+    shut, lit and flowing once both ends are learned. Only the eye follows it: no rule does.
+  - A Path's tap area no longer shades under a pointer.
+- **The core** has a second, counter-turning ring and an aura. While points wait, gold ripples spread outward from
+  it.
+- **The class line** names the class alone.
+- **Reduced motion** stills all of it.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
