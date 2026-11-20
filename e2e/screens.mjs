@@ -1163,9 +1163,17 @@ try {
     if (await page.locator('.sheet.is-top .tip--inline').count()) throw new Error('A SECOND TAP DID NOT CLOSE THE KIN');
   }
   await page.locator('.sheet.is-top .roster__row .roster__who').first().click(); await sleep(1200); await snap('shadow-detail');
-  // Whether it is in the squad sits beside its name, never under its tags.
-  if (!(await page.locator('.sheet.is-top .sp-head__was .sp-head__state').count())) throw new Error('THE SHADOW CARD DOES NOT SAY BESIDE ITS NAME WHETHER IT IS DEPLOYED');
+  // Whether it is in the squad sits on a row of its own under what it was, never beside it or under its tags.
+  {
+    const kind = await page.locator('.sheet.is-top .sp-head--shadow .sp-head__was').boundingBox();
+    const pill = await page.locator('.sheet.is-top .sp-head--shadow > .sp-head__who > .sp-head__state').boundingBox();
+    if (!kind || !pill) throw new Error('THE SHADOW CARD DOES NOT SAY UNDER ITS NAME WHETHER IT IS DEPLOYED');
+    if (pill.y < kind.y + kind.height - 1) throw new Error('THE DEPLOYED PILL DOES NOT STAND ON A ROW OF ITS OWN');
+  }
   if (await page.locator('.sheet.is-top .sp-head__tags .sp-head__state').count()) throw new Error('THE DEPLOYED TAG STILL SITS UNDER THE SHADOW\'S TAGS');
+  // Its creature's grade is pinned to the badge, and the tags are its family, role and how it fights alone.
+  if (!(await page.locator('.sheet.is-top .sp-head__badge .sp-head__grade .rankplate').count())) throw new Error('THE GRADE IS NOT ON THE SHADOW\'S BADGE');
+  if (await page.locator('.sheet.is-top .sp-head__tags .rankplate').count()) throw new Error('THE GRADE STILL LEADS THE SHADOW\'S TAGS');
   // Set out as a hunter's card: Stats, Skills & Traits, History, and no box of its next rank or of its Kin and role.
   {
     const heads = (await page.locator('.sheet.is-top .shadowcard .section__head .label').allInnerTexts()).map((x) => x.trim().toUpperCase());
@@ -1176,7 +1184,7 @@ try {
   }
   // `Deployed` is the button that takes it out of the squad, `Not deployed` the one that puts it back.
   {
-    const pill = page.locator('.sheet.is-top .sp-head__was button.sp-head__state');
+    const pill = page.locator('.sheet.is-top .sp-head--shadow > .sp-head__who > button.sp-head__state');
     const was = (await pill.innerText()).trim().toUpperCase();
     if (!/^(DEPLOYED|NOT DEPLOYED)$/.test(was)) throw new Error(`THE DEPLOYED PILL READS ${was}`);
     if (await pill.evaluate((el) => el.classList.contains('is-full'))) {
@@ -1515,6 +1523,17 @@ try {
   await page.locator('.sheet.is-top .roster__row .roster__who', { hasText: 'Igris' }).first().click(); await sleep(900);
   // A star waiting turns its rank gold, and the gold rank opens the Awakening.
   if (!(await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call', { hasText: 'Ascendant' }).count())) throw new Error('A STAR WAITING DOES NOT TURN THE RANK GOLD');
+  // Nothing in the head runs past its edge, the longest rank, `Ascendant`, as a gold button included.
+  {
+    const off = await page.evaluate(() => {
+      const head = document.querySelector('.sheet.is-top .sp-head--shadow');
+      if (!head) return ['no head'];
+      const edge = head.getBoundingClientRect().right;
+      return [...head.querySelectorAll('.sp-rank, .sp-head__state, .sp-tag, .sp-xp__n, .sp-row__power')]
+        .filter((el) => el.getBoundingClientRect().right > edge - 2).map((el) => el.textContent.trim());
+    });
+    if (off.length) throw new Error(`THE SHADOW CARD'S HEAD RUNS PAST ITS EDGE: ${off.join(', ')}`);
+  }
   await snap('shadow-ascendant');
   await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .sp-awaken.promote').count())) throw new Error('THE AWAKENING DID NOT WAIT ON THE HUNTER');

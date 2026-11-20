@@ -3600,6 +3600,39 @@ What changed:
   - each of those windows closing once claimed.
 - **Balance.** Display only: no calibration, no campaign.
 
+## A Shadow card's head that holds still — built
+
+The owner asked for:
+- **The card's head tidied**, since it looked all over the place when a text ran wide.
+- **The `Deployed` button on a row of its own**, in a fixed spot that a long name cannot move.
+- **The head's spacing fixed**, so everything fits.
+- **A better look or spot for the rank icon.**
+
+What changed (`Profile` in `screens/Shadows.tsx`, `.sp-head--shadow`):
+- **What it was** is one line, the creature's name alone (`Lich`, `Orc Shaman`).
+  - It is never followed by `Shadow Lich` any more. Every Shadow's other name is only `Shadow` and the same name,
+    and it was that pair of names that pushed the pill under it.
+- **The pill** stands on its own row under that line, always in the same place.
+- **The creature's grade** (`E`, `D`, `A`) is pinned to the badge's top-left corner on a dark disc, as a unit
+  portrait wears its grade.
+  - It no longer leads the tags, so the tags are the family, the role and `Melee` or `Ranged` alone, in one violet
+    row.
+- **The rank's chevron is gone from its row:** `Rank │ Bound`.
+  - The badge's emblem already wears the rank's chevrons, and the small caret read as a stray mark.
+  - The rank tooltip keeps the insignia as its mark.
+- **XP stands beside its bar**, on the bar's own line, so a narrow phone never runs the level into it.
+  - At the cap no figure stands there: `10/10` and the full bar say it, where `Level cap` ran into the level.
+- **Spacing:**
+  - The badge column is 108px, not 118px, so the rows have room.
+  - The rows and the tags have a little more space between them.
+  - Below 375px wide, the badge (92px) and the rows' labels give a little more.
+  - Measured at 390px and 360px: the gold `Ascendant`, the pill and every tag end inside the head.
+- **Held by tests.** The tour checks:
+  - the pill stands below the name's line;
+  - the grade is on the badge, not in the tags;
+  - nothing in Igris's head, gold `Ascendant` included, runs past its edge.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.
