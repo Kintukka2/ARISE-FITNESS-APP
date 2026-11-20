@@ -477,7 +477,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .art__rays { position: absolute; inset: -40%; display: none; background: repeating-conic-gradient(from 0deg, rgba(255, 200, 215, 0.2) 0 8deg, transparent 8deg 22deg); animation: halo 16s linear infinite; }
 .art[data-rarity='S'] .art__rays { display: block; }
 .art__glyph { position: relative; width: 56%; height: 56%; opacity: 0.85; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--rc) 70%, transparent)); }
-.art__score { position: absolute; left: 11px; top: 2px; font-size: 0.6rem; color: var(--ink-2); }
+/* A piece's score on its art, as the item bag's foot sets it: white and bold, on a dark backing so it reads on any rarity. */
+.art__score { position: absolute; left: 9px; top: 3px; z-index: 2; padding: 1px 3px; border-radius: 2px; background: rgba(3, 8, 20, 0.62); font-size: 0.66rem; font-weight: 800; line-height: 1.1; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
 .art__tag { position: absolute; right: 4px; top: 2px; font-size: 0.7rem; }
 .art__tag--perfect { color: var(--gold); }
 .art__tag--peak { color: color-mix(in srgb, var(--gold) 70%, transparent); }

@@ -3496,6 +3496,32 @@ What changed:
   whole thousand is bare, millions roll over cleanly, and a difference is shown without its sign.
 - **Balance.** Display only: no calibration, no campaign.
 
+## The shield in front, one look for a piece's score, and Score alone — built
+
+The owner asked for:
+- **The figure's off-hand shield:** larger, and brought to the front, overlapping the hand. The hands now light both
+  whole arms, and the shield behind them was lost.
+- **One look for equipment score:** the item bag's white and bold figure, where the Equipment sheet's slots and a
+  slot's window showed it small and grey.
+- **No `Equipment` beside the score:** not on the Inventory's preview, where `EQUIPMENT 22.5k` ran out of its frame,
+  and not on the Equipment sheet.
+
+What changed:
+- **The figure** (`Avatar` in `screens/Gear.tsx`):
+  - The shield is drawn after the hands, so it stands in front of them, half as large again, its boss over the left
+    fist and its rim past the forearm.
+  - Both rings now sit on the sword hand, since the left one would be under the shield.
+- **A piece's score on its art** (`.art__score`): white, bold, on a dark backing in the art's corner, as the item bag's
+  foot sets it. One rule, so the Equipment sheet's slots, a slot's window, the slot picker and every other place a
+  piece's art carries its score read alike.
+- **Score alone:**
+  - The Inventory's figure shows its score large and white under it, with no label.
+  - The Equipment sheet's hexagon stands beside `Score`.
+  - A screen reader still hears `Equipment: score 58.5k`.
+- **Held by tests.** The tour and the smoke run are green, and the sheet, a slot's window and the Inventory were looked
+  at.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

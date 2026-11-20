@@ -732,8 +732,7 @@ export function Avatar({ s, hot }: { s: Save; hot: SlotKey | null }) {
       {/* The ground the hunter stands on. */}
       <ellipse class="avatar__ground" cx="70" cy="212" rx="40" ry="8" />
       <ellipse class="avatar__ground avatar__ground--in" cx="70" cy="212" rx="27" ry="4.6" />
-      {/* What is held sits behind the hand that holds it. */}
-      <g {...at('offhand', true)}><path d="M9 97 Q20 92 31 97 L30 116 Q26 128 20 134 Q14 128 10 116 Z" /><path class="av__line" d="M20 99 V129 M13 108 H27" /></g>
+      {/* The weapon sits behind the hand that holds it; the shield comes after the hands, in front of them. */}
       <g {...at('weapon', true)}>
         <circle cx="105.5" cy="105" r="2.2" /><rect x="104.3" y="106.5" width="2.4" height="9" />
         <path d="M98 121 H113 L112 124 H99 Z" /><path d="M103 124 H108 L107.2 188 L105.5 196 L103.8 188 Z" /><path class="av__line" d="M105.5 128 V184" />
@@ -750,8 +749,14 @@ export function Avatar({ s, hot }: { s: Save; hot: SlotKey | null }) {
       <g {...at('head')}><ellipse cx="70" cy="21" rx="11" ry="12.5" /><path class="av__line" d="M61 22 H79" /></g>
       <g {...at('amulet', true)}><path class="av__chain" d="M60 46 Q70 55 80 46" /><path d="M70 52 L74 57 L70 63 L66 57 Z" /></g>
       <g {...at('hands')}><path d="M30 109 H39 L40 119 Q38.5 124.5 34.5 124.5 Q30.5 124.5 29.3 119.5 Z" /><path d="M110 109 H101 L100 119 Q101.5 124.5 105.5 124.5 Q109.5 124.5 110.7 119.5 Z" /></g>
-      <g {...at('ring2', true)}><circle class="av__ring" cx="36.5" cy="121" r="2" /></g>
-      <g {...at('ring1', true)}><circle class="av__ring" cx="103.5" cy="121" r="2" /></g>
+      {/*
+        The off-hand's shield, larger and in front of the hand that holds it (the owner's call: the hands light both
+        whole arms, so a shield behind the arm was lost): its boss over the left fist, its rim past the forearm.
+      */}
+      <g {...at('offhand', true)}><path d="M17 99 Q34 92 51 99 L50 123 Q45 138 34 146 Q23 138 18 123 Z" /><path class="av__line" d="M34 101 V142 M22 113 H46" /></g>
+      {/* Both rings on the right hand, the left one being under the shield. */}
+      <g {...at('ring2', true)}><circle class="av__ring" cx="107.6" cy="121" r="2" /></g>
+      <g {...at('ring1', true)}><circle class="av__ring" cx="103" cy="121" r="2" /></g>
       <rect x="6" y="0" width="128" height="40" fill="url(#avscan)" class="figure__scan" />
     </svg>
   );
@@ -817,7 +822,7 @@ function Equipment() {
       <section class="sysbox gearhead">
         <span class="gearhead__gem"><b class="num">{powerText(gear.power(s))}</b></span>
         <span class="gearhead__what">
-          <span class="label">Equipment score</span>
+          <span class="label">Score</span>
           <span class="gearhead__pips" aria-hidden="true">{gear.SLOTS.map((x) => <i key={x.key} class={s.equipped[x.key] ? 'is-on' : ''} />)}</span>
           <small class="num">Slots: {items.length}/{gear.SLOTS.length}</small>
         </span>
