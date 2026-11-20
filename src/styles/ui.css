@@ -684,6 +684,12 @@ button.sysalert.is-fyi { width: 100%; text-align: left; cursor: pointer; }
 .favstar.is-on .ico { fill: currentColor; opacity: 1; filter: drop-shadow(0 0 6px var(--win-glow)); }
 .favstar:active .ico { transform: scale(0.85); }
 .favstar:focus-visible { outline: 2px solid var(--win); outline-offset: 1px; border-radius: 50%; }
+/* A Shadow card's pencil, where a hunter's card keeps its star: a tap opens the window that names it. */
+.headedit { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; background: none; color: color-mix(in srgb, var(--win) 70%, #fff); cursor: pointer; touch-action: manipulation; }
+.headedit .ico { width: 17px; height: 17px; opacity: 0.75; transition: transform 160ms, opacity 160ms; }
+.headedit:hover .ico, .headedit:focus-visible .ico { opacity: 1; filter: drop-shadow(0 0 6px var(--win-glow)); }
+.headedit:active .ico { transform: scale(0.85); }
+.headedit:focus-visible { outline: 2px solid var(--win); outline-offset: 1px; border-radius: 50%; }
 /* A long head beside the tools (`RECLASSIFICATION`) sets smaller and tighter, and takes the room left of them instead of centring. */
 .syshead.has-tools .syshead__title.is-long { flex: 1; justify-content: center; padding: 6px 10px; font-size: 0.88rem; letter-spacing: 0.08em; }
 .syshead.has-tools.is-long:not(.is-card) { padding-left: 0; }

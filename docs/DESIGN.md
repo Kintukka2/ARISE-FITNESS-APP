@@ -3522,6 +3522,84 @@ What changed:
   at.
 - **Balance.** Display only: no calibration, no campaign.
 
+## A Shadow's card set out as a hunter's: Stats, Skills & Traits, History — built
+
+The owner asked for:
+- **The hunter card's layout on the Shadow card,** as much of it as fits: each heading with its hairline, in the
+  Shadows' violet where the hunter's is cyan, the stat marks violet too.
+- **The same three headings on both cards, in one order:** `Stats`, `Skills & Traits`, `History`. `Skills` and
+  `Traits` become one section on both, and the Shadow's `Record` becomes `History`.
+- **Stats that open their tooltip,** as the hunter card's do.
+- **No `Kin & Role` section.** The family and role tags at the card's head already tell both. (The owner first
+  asked for it to copy the Party window's Bonuses, then for it to go.)
+- **No `Name` or `Recall` buttons:**
+  - a pencil in the header's box opens the naming window;
+  - the `Deployed` pill is itself the button that deploys and recalls;
+  - outside the squad it reads `Not deployed`, never `Reserve`.
+- **No `Next rank` box.** The level is already above it, so:
+  - the rank (`Bound`) is underlined as every word that tells what it is;
+  - tapped, it says the next rank, the Shadow Essence it takes and the change in level cap;
+  - once the Shadow can go up, the rank itself is a gold button.
+
+What changed:
+- **The head** (`Profile` in `screens/Shadows.tsx`):
+  - **The pill** is a button: `Deployed` with a tick, or `Not deployed` dashed with a plus.
+    - A tap puts the Shadow in the squad or takes it out (`shadows.toggleDeploy`).
+    - With the squad full it is dimmed, and a tap says `The squad is full.`
+  - **The pencil** (`NameEdit`, a new `edit` glyph) stands where a hunter's card keeps its star.
+    - The header reads the name as it stands, so a name bestowed shows at once, without the card closing and opening
+      again.
+  - **The rank** is an info tag opening the one tooltip (`rankTip`):
+    - `Bound Rank` and `Rank` at its head;
+    - `At Level 10, 4 Shadow Essence raises it to Sworn Rank.`, with `with 1 boss defeated` where the rank asks for
+      bosses;
+    - `Level cap: 10 → 20.`, and `Learns War Totem.` where the rank brings a skill;
+    - then its asks.
+  - **At the top rank** the tooltip says what a star of Awakening asks and adds, or that every star is held.
+  - **The gold rank.** While a promotion or a star waits (`shadows.waiting`), the rank is a gold, breathing button:
+    its name alone and a chevron, taking the row's spare column, so `Ascendant` keeps to the head on a phone. It opens `Promotion` or `Awakening` in a window of its own (`openRankUp`).
+    - That window holds the old box: the badge now and above, the asks, the gains and the hold.
+    - It closes once the promotion or star is claimed.
+  - The gold arrow that scrolled to the old box is gone.
+- **The one tooltip lists what a thing asks** (`TipText.needs` in `ui/tip.tsx`):
+  - under a hairline, a line to each ask: a lock, or a tick once met, its name, and what is held of it
+    (`Shadow Essence 3/4`);
+  - the ones met in green;
+  - a screen reader hears them with the rest.
+  - `Shadow Essence` is coloured as a keyword (`ui/keyed.tsx`).
+- **Stats** are the hunter card's rows (`StatRow`): violet marks, a bar, the figure, and its highest stat in gold
+  with `Best`.
+  - A full bar is the most its best stat can grow to (`StatRow`'s new `of`), so the five read against one another.
+    Against the Ability Points' 100, a grown Shadow's would all fill.
+  - Each opens the stat tooltip in the Shadows' violet: `Its creature's own 12, grown to 16.`, and `Its best stat.`
+    on its best.
+  - `Growth +33% / +120%` stays after the heading's hairline.
+- **`Skills & Traits`:** one section on both cards, the skills then the passives, and the wards after them on a
+  Shadow's.
+- **`History`** (the hunter card's look, shared helpers in `ui/when.ts`):
+  - `14` beside `Gates walked`;
+  - under it, where it stands among the army (`Your most deployed Shadow, of 12.` in gold), then `Creatures
+    defeated` and `Bosses defeated`;
+  - then `Bound` (`12 days ago`);
+  - before any Gate, `No Gates walked yet.`
+- **Removed:**
+  - the `Kin & Role` section (`KinOfShadow` in `ui/kin.tsx`);
+  - the Deploy, Recall and Name buttons;
+  - the `Next rank` and `Awakening` boxes on the card, with the styles only they used.
+- **Both cards share one heading style** (`.shadowcard`): label, hairline in the frame's colour, anything at its
+  right after the hairline.
+- **The Guide** says the rank tells what the next asks and turns gold once all is met.
+- **Held by tests.** The tour checks:
+  - both cards' three headings in order;
+  - no `Next rank` box and no `Kin & Role` section;
+  - the pill deploying and recalling;
+  - the rank's tooltip and its asks;
+  - a stat's tooltip;
+  - the pencil opening the naming window;
+  - the gold rank opening the promotion and the awakening;
+  - each of those windows closing once claimed.
+- **Balance.** Display only: no calibration, no campaign.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

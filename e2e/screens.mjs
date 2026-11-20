@@ -689,8 +689,10 @@ try {
     metHunter = await ally.getAttribute('data-hunter');
     await ally.click(); await sleep(700);
     if (!(await page.locator('.sheet.is-top .huntercard').isVisible())) throw new Error('TAPPING A HUNTER DID NOT OPEN THEIR CARD');
-    for (const head of ['Stats', 'Skills', 'History']) {
-      if (!(await page.locator('.sheet.is-top .huntercard .section', { hasText: head }).count())) throw new Error(`THE HUNTER CARD HAS NO ${head.toUpperCase()}`);
+    // Three sections, in the order a Shadow's card has them.
+    {
+      const heads = (await page.locator('.sheet.is-top .huntercard .section__head .label').allInnerTexts()).map((x) => x.trim().toUpperCase());
+      if (heads.join('|') !== 'STATS|SKILLS & TRAITS|HISTORY') throw new Error(`THE HUNTER CARD'S SECTIONS ARE NOT STATS, SKILLS & TRAITS, HISTORY (${heads.join(', ')})`);
     }
     // Shadows and hunters share nothing directly, so the card says nothing of the squad.
     if (await page.locator('.sheet.is-top .huntercard .section', { hasText: 'From your Shadows' }).count()) throw new Error('THE HUNTER CARD STILL SPEAKS OF YOUR SHADOWS');
@@ -1164,6 +1166,51 @@ try {
   // Whether it is in the squad sits beside its name, never under its tags.
   if (!(await page.locator('.sheet.is-top .sp-head__was .sp-head__state').count())) throw new Error('THE SHADOW CARD DOES NOT SAY BESIDE ITS NAME WHETHER IT IS DEPLOYED');
   if (await page.locator('.sheet.is-top .sp-head__tags .sp-head__state').count()) throw new Error('THE DEPLOYED TAG STILL SITS UNDER THE SHADOW\'S TAGS');
+  // Set out as a hunter's card: Stats, Skills & Traits, History, and no box of its next rank or of its Kin and role.
+  {
+    const heads = (await page.locator('.sheet.is-top .shadowcard .section__head .label').allInnerTexts()).map((x) => x.trim().toUpperCase());
+    if (heads.join('|') !== 'STATS|SKILLS & TRAITS|HISTORY') throw new Error(`THE SHADOW CARD'S SECTIONS ARE NOT STATS, SKILLS & TRAITS, HISTORY (${heads.join(', ')})`);
+    if (await page.locator('.sheet.is-top .shadowcard .sp-next').count()) throw new Error('THE SHADOW CARD STILL HOLDS A NEXT RANK BOX');
+    if (await page.locator('.sheet.is-top .shadowcard .btn', { hasText: /^(Name|Rename|Recall|Deploy|Squad Full)$/ }).count()) throw new Error('THE SHADOW CARD STILL HAS ITS NAME OR RECALL BUTTONS');
+    if ((await page.locator('.sheet.is-top .shadowcard .statrows .statrow').count()) !== 5) throw new Error('THE SHADOW CARD DOES NOT SET OUT FIVE STAT ROWS');
+  }
+  // `Deployed` is the button that takes it out of the squad, `Not deployed` the one that puts it back.
+  {
+    const pill = page.locator('.sheet.is-top .sp-head__was button.sp-head__state');
+    const was = (await pill.innerText()).trim().toUpperCase();
+    if (!/^(DEPLOYED|NOT DEPLOYED)$/.test(was)) throw new Error(`THE DEPLOYED PILL READS ${was}`);
+    if (await pill.evaluate((el) => el.classList.contains('is-full'))) {
+      // A full squad: the pill says so and leaves the squad as it is.
+      await pill.click(); await sleep(300);
+      if (!(await page.locator('.toast', { hasText: 'The squad is full.' }).count())) throw new Error('A FULL SQUAD DID NOT SAY SO');
+    }
+    else {
+    await pill.click(); await sleep(300);
+    const now = (await pill.innerText()).trim().toUpperCase();
+    if (now === was) throw new Error('TAPPING THE DEPLOYED PILL DID NOT DEPLOY OR TAKE OUT THE SHADOW');
+    if (now === 'NOT DEPLOYED') await snap('shadow-not-deployed');
+    await pill.click(); await sleep(300);
+    if ((await pill.innerText()).trim().toUpperCase() !== was) throw new Error('A SECOND TAP ON THE PILL DID NOT PUT IT BACK');
+    }
+  }
+  // Its rank tells what the next asks, in the one tooltip, each ask met or not.
+  {
+    const rank = page.locator('.sheet.is-top .sp-row__rank .sp-rank');
+    await rank.click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Rank' }).isVisible())) throw new Error('THE RANK TAPPED DID NOT OPEN ITS TOOLTIP');
+    if (!(await page.locator('.tip.tip--shadow', { hasText: /level cap|awakens it a star|every star awakened/i }).count())) throw new Error('THE RANK\'S TOOLTIP DOES NOT SAY WHAT THE NEXT RANK BRINGS');
+    if (!(await page.locator('.tip.tip--shadow .tip__needs li', { hasText: 'Shadow Essence' }).count()) && !(await page.locator('.tip.tip--shadow', { hasText: 'every star awakened' }).count())) throw new Error('THE RANK\'S TOOLTIP DOES NOT SAY THE SHADOW ESSENCE IT TAKES');
+    await snap('shadow-rank-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+  }
+  // A stat tells what it is, and its creature's own figure beside what it has grown to.
+  {
+    await page.locator('.sheet.is-top .shadowcard .statrow').first().click(); await sleep(300);
+    if (!(await page.locator('.tip.tip--shadow .tip__kind', { hasText: 'Stat' }).isVisible())) throw new Error('A SHADOW\'S STAT TAPPED DID NOT OPEN ITS TOOLTIP');
+    if (!(await page.locator('.tip.tip--shadow', { hasText: "Its creature's own" }).count())) throw new Error('A SHADOW\'S STAT DOES NOT SAY ITS CREATURE\'S OWN FIGURE');
+    await snap('shadow-stat-tip');
+    await page.keyboard.press('Escape'); await sleep(250);
+  }
   // The card's family and role tell what they are to the squad when tapped, and a tap away closes it.
   if ((await page.locator('.sheet.is-top .sp-head__tags .infotag').count()) !== 3) throw new Error('THE SHADOW CARD\'S FAMILY, ROLE AND PLACE DO NOT TELL WHAT THEY ARE');
   await page.locator('.sheet.is-top .sp-head__tags .infotag').first().hover(); await sleep(200);
@@ -1193,13 +1240,13 @@ try {
   await page.keyboard.press('Escape'); await sleep(250);
   // The card runs past the fold: its stats, skills, record and release, scrolled to.
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(900); await snap('shadow-detail-2');
-  if (!(await page.locator('.sheet.is-top .sp-auth', { hasText: 'Kin' }).count())) throw new Error('THE CARD DOES NOT SAY THE SHADOW’S KIN AND ROLE');
-  // Who gains a role bonus is said once, never on every breakpoint.
-  if (await page.locator('.sheet.is-top .sp-auth .kintiers li', { hasText: 'for the whole party' }).count()) throw new Error('THE ROLE BONUS SAYS FOR THE WHOLE PARTY ON EVERY LINE');
+  // Its Kin and role bonus are its tags' to tell: the card keeps no section of them.
+  if (await page.locator('.sheet.is-top .shadowcard .section', { hasText: 'Kin & Role' }).count()) throw new Error('THE CARD STILL KEEPS A KIN & ROLE SECTION');
+  if (!(await page.locator('.sheet.is-top .shadowcard .hc-history__rows', { hasText: 'Bound' }).count())) throw new Error('THE SHADOW\'S HISTORY DOES NOT SAY WHEN IT WAS BOUND');
   if (await page.locator('.sheet.is-top .sp-skill', { hasText: 'Leading derived stat' }).count()) throw new Error('A PASSIVE STILL SAYS LEADING DERIVED STAT');
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = 0; }); await sleep(200);
-  // Naming from the card: the System's line, the field across the window, and the two acts under it.
-  await page.locator('.sheet.is-top .btn', { hasText: /^(Name|Rename)$/ }).click(); await sleep(400);
+  // Naming from the pencil in the card's header: the System's line, the field across the window, and the two acts under it.
+  await page.locator('.sheet.is-top .syshead .headedit').click(); await sleep(400);
   if (!(await page.locator('.syswin .namefield__input').isVisible())) throw new Error('THE NAME WINDOW DID NOT OPEN');
   await page.locator('.syswin .namefield__input').click(); await page.keyboard.type('Bellion'); await sleep(200); await snap('shadow-name');
   await page.locator('.syswin .namefield .btn', { hasText: 'Cancel' }).click(); await sleep(300);
@@ -1227,9 +1274,14 @@ try {
     }
     if (!told) throw new Error('NO SHADOW IN THE VETERAN\'S ARMY WARDS OFF A STATUS TO TEST');
   }
-  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, its card holds the promotion, and the hold plays it.
+  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, its rank on its card turns
+  // gold, the gold rank opens the promotion, and the hold plays it.
   if (!(await page.locator('.sheet.is-top .roster__row.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
   await page.locator('.sheet.is-top .roster__row.is-ready .roster__who').first().click(); await sleep(500);
+  if (!(await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').count())) throw new Error('A SHADOW READY FOR PROMOTION DOES NOT TURN ITS RANK GOLD');
+  await snap('shadow-rank-ready');
+  await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').click(); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .promote .holdbtn').count())) throw new Error('THE GOLD RANK DID NOT OPEN THE PROMOTION');
   await snap('shadow-promote');
   {
     const box = await page.locator('.sheet.is-top .promote .holdbtn').boundingBox();
@@ -1242,8 +1294,10 @@ try {
   if (!(await page.locator('.syswin', { hasText: 'has been promoted' }).isVisible())) throw new Error('THE PROMOTION WAS NOT REPORTED');
   await page.locator('.syswin__foot .btn').last().click();
   await page.waitForFunction(() => !document.querySelector('canvas.arrival'), null, { timeout: 8000 });
+  for (let i = 0; i < 20 && (await page.locator('.sheet.is-top .promote').count()); i++) await sleep(150);
   await sleep(400); await snap('shadow-promoted');
-  if (await page.locator('.sheet.is-top .promote').count()) throw new Error('THE PROMOTION STAYED ON THE CARD');
+  if (await page.locator('.sheet.is-top .promote').count()) throw new Error('THE PROMOTION STAYED OPEN AFTER IT WAS CLAIMED');
+  if (await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').count()) throw new Error('THE RANK STAYED GOLD AFTER THE PROMOTION');
   await close();
   // The roster makes the squad: a row's box takes a Shadow out and puts one in, and the squad's count follows.
   const count = async () => (await page.locator('.sheet.is-top .roster__count').innerText()).trim();
@@ -1459,8 +1513,12 @@ try {
   await page.locator('.sheet.is-top .roster__view[aria-label="Grid"]').click(); await sleep(700); await snap('asc-army-grid', true);
   await page.locator('.sheet.is-top .roster__view[aria-label="List"]').click(); await sleep(300);
   await page.locator('.sheet.is-top .roster__row .roster__who', { hasText: 'Igris' }).first().click(); await sleep(900);
+  // A star waiting turns its rank gold, and the gold rank opens the Awakening.
+  if (!(await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call', { hasText: 'Ascendant' }).count())) throw new Error('A STAR WAITING DOES NOT TURN THE RANK GOLD');
+  await snap('shadow-ascendant');
+  await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').click(); await sleep(600);
   if (!(await page.locator('.sheet.is-top .sp-awaken.promote').count())) throw new Error('THE AWAKENING DID NOT WAIT ON THE HUNTER');
-  await page.locator('.sheet.is-top .sp-awaken').scrollIntoViewIfNeeded(); await sleep(300); await snap('shadow-awaken');
+  await snap('shadow-awaken');
   {
     const box = await page.locator('.sheet.is-top .sp-awaken .holdbtn').boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -1469,6 +1527,7 @@ try {
   await page.waitForSelector('.syswin', { timeout: 6000 }); await sleep(500); await snap('shadow-awakened');
   if (!(await page.locator('.syswin', { hasText: 'has awakened' }).isVisible())) throw new Error('THE AWAKENING WAS NOT REPORTED');
   await page.locator('.syswin__foot .btn').last().click(); await sleep(300);
+  if (await page.locator('.sheet.is-top .sp-awaken').count()) throw new Error('THE AWAKENING STAYED OPEN AFTER IT WAS TAKEN');
   await close(); await close();
   // The Ready count claims every ready Shadow at once: the System's offer, the cinematic once, and one window for all.
   // The awakening spent the Essence, so the save is given more, and two Shadows at their caps are ready again.

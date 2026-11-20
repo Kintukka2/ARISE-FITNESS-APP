@@ -28,6 +28,7 @@ const P: Record<string, string> = {
   check: 'M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z',
   swap: 'M7 7h11l-3-3 1.4-1.4L21.8 8l-5.4 5.4L15 12l3-3H7zm10 10H6l3 3-1.4 1.4L2.2 16l5.4-5.4L9 12l-3 3h11z',
   trash: 'M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7z',
+  edit: 'M4 16.6 14.9 5.7l3.4 3.4L7.4 20H4zM16.3 4.3l1.6-1.6a1.4 1.4 0 0 1 2 0l1.4 1.4a1.4 1.4 0 0 1 0 2l-1.6 1.6zM12 20h8v1.6h-8z',
   star: 'm12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z',
   // A Gate's rooms on the plan and in their scenes, after the rooms of Slay the Spire's and Darkest Dungeon's
   // maps: each a silhouette that reads at a tile's size. Drawn on the 24 grid, a hole wound against its shape.

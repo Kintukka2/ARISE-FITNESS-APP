@@ -13,17 +13,16 @@ import * as store from '@/store';
 import { useSave } from '@/store';
 import { Btn, Empty, Facts, RankPlate, Section } from '@/ui/components';
 import * as kin from '@/core/kin';
-import type { Enemy, Save, Shadow, Tactic } from '@/core/types';
+import type { Enemy, Save, Shadow, Stat, Tactic } from '@/core/types';
 import { RANKS } from '@/core/types';
 import type { RaidResult } from '@/core/raid';
-import { dayKey, daysBetween } from '@/core/util';
 import * as system from '@/ui/system';
 import { skillLine } from './Skills';
 import { SysAlert, SysFrame } from '@/ui/frame';
-import { Glyph, STAT_ICON } from '@/ui/icons';
+import { Glyph } from '@/ui/icons';
 import { FamilyGlyph, Insignia, ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
-import { familyTip, KIN_TIER, KinHex, KinOfShadow, KinTracker, ROLE_TIER, roleTip } from '@/ui/kin';
+import { familyTip, KIN_TIER, KinHex, KinTracker, ROLE_TIER, roleTip } from '@/ui/kin';
 import { InfoTag } from '@/ui/infotag';
 import { STYLE_GLYPH, styleOf, styleTip } from '@/ui/stand';
 import { HoldButton, openSheet, sys, toast } from '@/ui/overlays';
@@ -33,6 +32,10 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { useDrag } from '@/ui/drag';
 import { KeyedTips, WardLines } from '@/ui/wards';
+import { StatRow } from '@/ui/statrow';
+import { statTip } from '@/ui/stattip';
+import { Tip, tipAt, type TipAt, type TipText } from '@/ui/tip';
+import { ago, ordinal } from '@/ui/when';
 
 export function Shadows() {
   const s = useSave();
@@ -459,12 +462,19 @@ const tacticName = (t: Tactic | undefined) => TACTICS.find((x) => x.key === t)?.
 
 // ------------------------------------------------------------------ the card
 
+/**
+ * Open a Shadow's card. Its header reads its name as it stands, so a name bestowed from the pencil at the header's
+ * right shows at once.
+ */
 export function openShadow(id: string) {
-  const at = store.get().shadows.army.find((x) => x.id === id);
-  const was = at && enemyById(at.enemyId);
+  const was = (() => { const at = store.get().shadows.army.find((x) => x.id === id); return at && enemyById(at.enemyId); })();
   openSheet({
-    title: `Shadow: ${at ? shadows.nameOf(at) : 'Unknown'}`,
+    title: () => {
+      const at = store.get().shadows.army.find((x) => x.id === id);
+      return `Shadow: ${at ? shadows.nameOf(at) : 'Unknown'}`;
+    },
     system: { icon: was ? <CardBadge id={id} /> : null, kind: 'shadow' },
+    extra: () => <NameEdit id={id} />,
     render: (close) => <ShadowCard id={id} close={close} />,
   });
 }
@@ -477,13 +487,30 @@ function CardBadge({ id }: { id: string }) {
   return e ? <ShadowEmblem family={e.family} id={e.id} rank={shadows.rankIndex(sh!)} size={44} /> : null;
 }
 
+/**
+ * The pencil at the far right of the card's header, where a hunter's card keeps its star (the owner's call, where a
+ * `Name` button stood under the head): a tap opens the window that bestows a name.
+ */
+function NameEdit({ id }: { id: string }) {
+  const s = useSave();
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return null;
+  return (
+    <button type="button" class="headedit" aria-label={sh.name ? `Rename ${shadows.nameOf(sh)}` : `Name ${shadows.nameOf(sh)}`}
+      onClick={() => { sfx.tap(); void nameShadow(id); }}>
+      <Glyph name="edit" />
+    </button>
+  );
+}
+
 const ORDER = ['STR', 'VIT', 'AGI', 'INT', 'PER'] as const;
 const unit = (x: number) => Math.max(0, Math.min(1, x));
 const pct = (x: number) => Math.round(x * 100);
 
 /**
- * A Shadow's card, as a profile: who it is and how far it has grown, the road of its ranks and what the
- * one above asks, its stats against its creature's own, what it fights with, its record, and its release.
+ * A Shadow's card, set out as an Association hunter's is (the owner's call): its head, then `Stats`, `Skills & Traits`
+ * and `History`, each opening on its label and a hairline in the Shadows' violet; then its release. What its next rank
+ * asks is its rank's tooltip, and a promotion or a star waiting turns the rank gold.
  */
 function ShadowCard({ id, close }: { id: string; close: () => void }) {
   const s = useSave();
@@ -492,26 +519,25 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
   const e = enemyById(sh.enemyId)!;
   return (
     <div class="stack shadowcard">
-      <Profile sh={sh} e={e} close={close} />
-      <NextRank sh={sh} e={e} />
-      <Awakening sh={sh} />
+      <Profile sh={sh} e={e} />
       <Stats sh={sh} e={e} />
-      {/* What it brings to a squad, under its stats, as Solo Leveling: Arise sets a Shadow's aura. */}
-      <KinOfShadow sh={sh} family={e.family} role={e.role} squad={shadows.squad(s)} />
       <Kit sh={sh} e={e} />
-      <Record sh={sh} />
+      <History sh={sh} />
       <Release sh={sh} close={close} />
     </div>
   );
 }
 
 /**
- * The head of the card, after the info panel of Solo Leveling: Arise's Army of Shadows: its badge inside
- * the ring of its next level, and beside it what it was (small, as the panel's epithet), then a row to
- * each of `Rank | Bound` (an arrow at its end while a promotion waits), `Lv. | 3/10` over its XP, and
- * `Power | 80`; its grade, family, role and whether it is deployed under them.
+ * The head of the card, after the info panel of Solo Leveling: Arise's Army of Shadows: its badge inside the ring of
+ * its next level, and beside it what it was (small, as the panel's epithet) with whether it is deployed, then a row to
+ * each of `Rank | Bound`, `Lv. | 3/10` over its XP, and `Power | 80`; its grade, family, role and how it fights under them.
+ * - `Deployed` and `Not deployed` are the one button that puts it in the squad or takes it out (the owner's call, where
+ *   `Deploy` and `Recall` stood under the head).
+ * - Its rank tells what the next asks when tapped (`rankTip`); while a promotion or a star waits, the rank is a gold
+ *   button that opens it (`openRankUp`).
  */
-function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) {
+function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
   const s = useSave();
   const squad = shadows.squad(s);
   const on = squad.includes(sh);
@@ -527,74 +553,155 @@ function Profile({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) 
   const ready = shadows.waiting(s, sh);
   const share = p.need ? p.into / p.need : 1;
   const c = 2 * Math.PI * 52;
-  const toPromotion = () => { sfx.tap(); document.querySelector('.sheet.is-top .sp-next')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+  const name = shadows.nameOf(sh);
+  const deploy = () => {
+    if (full) { sfx.tap(); toast('The squad is full.', 'warn'); return; }
+    store.update((x) => shadows.toggleDeploy(x, sh.id));
+    sfx.blip();
+  };
   return (
-    <>
-      <section class={`sysbox sp-head ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
-        <div class="sp-head__badge">
-          <svg viewBox="0 0 120 120" class="sp-ring" aria-hidden="true">
-            <circle cx="60" cy="60" r="58" class="sp-ring__runes" />
-            <circle cx="60" cy="60" r="52" class="sp-ring__track" />
-            <circle cx="60" cy="60" r="52" class="sp-ring__fill" style={`stroke-dasharray: ${c * unit(share)} ${c}`} />
-          </svg>
-          <span class="sp-head__smoke" />
-          <ShadowEmblem family={e.family} id={e.id} rank={at} size={66} />
-          {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
-        </div>
-        <div class="sp-head__who">
-          <span class="sp-head__was">
-            <span class="sp-head__kind">{sh.name ? <Facts items={[e.name, e.shadow]} /> : e.name}</span>
-            {/* Whether it is in the squad, beside its name, as a game's unit card marks the units in the party. */}
-            <span class={`sp-tag sp-head__state ${on ? 'is-on' : ''}`}>{on ? 'Deployed' : 'Reserve'}</span>
-          </span>
-          <dl class="sp-rows">
-            <div class="sp-row">
-              <dt>Rank</dt>
-              <dd class="sp-row__rank"><Insignia rank={at} size={14} />{shadows.rankOf(sh).name}</dd>
-              {ready && <button type="button" class="sysbox sp-up" aria-label={shadows.canPromote(s, sh) ? 'Promotion ready' : 'Awakening ready'} onClick={toPromotion}><Glyph name="up" /></button>}
-            </div>
-            <div class="sp-row">
-              <dt>Lv.</dt>
-              <dd class="num"><span>{top ? 'MAX' : lv}{!top && <small>/{shadows.rankOf(sh).cap}</small>}</span></dd>
-              <span class="sp-row__xp num">{top ? '' : p.need ? `XP ${p.into}/${p.need}` : 'Level cap'}</span>
-            </div>
-            <div class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></div>
-            <div class="sp-row">
-              <dt>Power</dt>
-              <dd class="sp-row__power num">{powerText(shadows.power(sh))}</dd>
-            </div>
-          </dl>
-        </div>
-        {/* Under the badge and the rows, across the panel, so its four tags keep one line on a phone. */}
-        <span class="sp-head__tags">
-          <RankPlate rank={e.rank} size={20} />
-          {/* Family and role tell what they are to the squad when tapped, and how it fights where it takes its place. */}
-          <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
-          <InfoTag class="sp-tag" tip={roleTip(e.role, roleTier)}>{e.role}</InfoTag>
-          <InfoTag class="sp-tag sp-tag--style" tip={styleTip(e.role)}><Glyph name={STYLE_GLYPH[styleOf(e.role)]} />{styleOf(e.role)}</InfoTag>
-        </span>
-      </section>
-      <div class="row">
-        <Btn kind={on ? undefined : 'primary'} class="grow" disabled={full} onClick={() => { store.update((x) => shadows.toggleDeploy(x, sh.id)); sfx.blip(); }}>
-          <Glyph name={on ? 'recall' : 'shadows'} /> {on ? 'Recall' : full ? 'Squad Full' : 'Deploy'}
-        </Btn>
-        {/* A name changes the card's header, so the card opens again under it. */}
-        <Btn onClick={async () => { const v = await nameShadow(sh.id); if (typeof v === 'string') { close(); openShadow(sh.id); } }}>{sh.name ? 'Rename' : 'Name'}</Btn>
+    <section class={`sysbox sp-head ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
+      <div class="sp-head__badge">
+        <svg viewBox="0 0 120 120" class="sp-ring" aria-hidden="true">
+          <circle cx="60" cy="60" r="58" class="sp-ring__runes" />
+          <circle cx="60" cy="60" r="52" class="sp-ring__track" />
+          <circle cx="60" cy="60" r="52" class="sp-ring__fill" style={`stroke-dasharray: ${c * unit(share)} ${c}`} />
+        </svg>
+        <span class="sp-head__smoke" />
+        <ShadowEmblem family={e.family} id={e.id} rank={at} size={66} />
+        {shadows.starsOf(sh) > 0 && <span class="sp-head__stars"><Stars n={shadows.starsOf(sh)} /></span>}
       </div>
-    </>
+      <div class="sp-head__who">
+        <span class="sp-head__was">
+          <span class="sp-head__kind">{sh.name ? <Facts items={[e.name, e.shadow]} /> : e.name}</span>
+          {/* Whether it is in the squad, beside its name, as a game's unit card marks the units in the party; a tap changes it. */}
+          <button type="button" class={`sp-tag sp-head__state ${on ? 'is-on' : ''} ${full ? 'is-full' : ''}`} aria-pressed={on}
+            aria-label={on ? `Deployed. Take ${name} out of the squad` : full ? 'Not deployed. The squad is full' : `Not deployed. Deploy ${name}`}
+            onClick={deploy}>
+            <Glyph name={on ? 'check' : 'plus'} />{on ? 'Deployed' : 'Not deployed'}
+          </button>
+        </span>
+        <dl class="sp-rows">
+          <div class="sp-row">
+            <dt>Rank</dt>
+            <dd class="sp-row__rank"><RankWord sh={sh} e={e} /></dd>
+          </div>
+          <div class="sp-row">
+            <dt>Lv.</dt>
+            <dd class="num"><span>{top ? 'MAX' : lv}{!top && <small>/{shadows.rankOf(sh).cap}</small>}</span></dd>
+            <span class="sp-row__xp num">{top ? '' : p.need ? `XP ${p.into}/${p.need}` : 'Level cap'}</span>
+          </div>
+          <div class="sp-exp" aria-hidden="true"><i style={`width: ${pct(unit(share))}%`} /></div>
+          <div class="sp-row">
+            <dt>Power</dt>
+            <dd class="sp-row__power num">{powerText(shadows.power(sh))}</dd>
+          </div>
+        </dl>
+      </div>
+      {/* Under the badge and the rows, across the panel, so its four tags keep one line on a phone. */}
+      <span class="sp-head__tags">
+        <RankPlate rank={e.rank} size={20} />
+        {/* Family and role tell what they are to the squad when tapped, and how it fights where it takes its place. */}
+        <InfoTag class="sp-tag" tip={familyTip(e.family, kinTier)}><FamilyGlyph family={e.family} size={13} />{e.family}</InfoTag>
+        <InfoTag class="sp-tag" tip={roleTip(e.role, roleTier)}>{e.role}</InfoTag>
+        <InfoTag class="sp-tag sp-tag--style" tip={styleTip(e.role)}><Glyph name={STYLE_GLYPH[styleOf(e.role)]} />{styleOf(e.role)}</InfoTag>
+      </span>
+    </section>
   );
 }
 
 /**
- * The rank above: what it asks, each met or not, and what it brings. Once all is met it is the
- * promotion, waiting on the hunter: its badge now and at the rank above, and the hold that claims it.
- * The badge lifts off into the promotion (`claimPromotion`).
+ * The rank in its row (the owner's call, where a `Next rank` box stood under the head): the word underlined as every
+ * word that tells what it is, opening what the next rank asks; while a promotion or a star waits on the hunter, a gold
+ * button with a chevron that opens it, its name alone so `Ascendant` keeps to the row (the badge beside it wears the
+ * rank's insignia).
  */
-function NextRank({ sh, e }: { sh: Shadow; e: Enemy }) {
+function RankWord({ sh, e }: { sh: Shadow; e: Enemy }) {
+  const s = useSave();
+  const at = shadows.rankIndex(sh);
+  const name = shadows.rankOf(sh).name;
+  const promote = shadows.canPromote(s, sh);
+  if (promote || shadows.canAwaken(s, sh)) {
+    return (
+      <button type="button" class="sp-rank is-call" aria-haspopup="dialog" aria-label={`${name} Rank. ${promote ? 'Promotion' : 'Awakening'} ready`}
+        onClick={() => { sfx.tap(); openRankUp(sh.id); }}>
+        <span>{name}</span><Glyph name="chevron" />
+      </button>
+    );
+  }
+  return <InfoTag class="sp-rank" tip={rankTip(s, sh, e)}><Insignia rank={at} size={14} /><span class="sp-rank__name">{name}</span></InfoTag>;
+}
+
+const bosses = (n: number) => `${n} ${n === 1 ? 'boss' : 'bosses'}`;
+
+/**
+ * A Shadow's rank in the game's one tooltip: its insignia and name, `Rank` at the right; what raises it to the next and
+ * what that brings, told as a fight's tip tells a habit; then what it asks, each met or not (`TipText.needs`). At the top
+ * rank, what a star of Awakening asks and adds, until every star is held.
+ */
+export function rankTip(s: Save, sh: Shadow, e: Enemy): TipText {
+  const at = shadows.rankIndex(sh);
+  const here = shadows.rankOf(sh);
+  const next = shadows.nextRank(sh);
+  const head = { title: `${here.name} Rank`, kind: 'Rank', tone: 'shadow' as const, mark: <span class="tip__mark"><Insignia rank={at} size={16} /></span> };
+  if (next) {
+    const second = at + 1 === shadows.SECOND_AT ? shadows.secondOf(e) : null;
+    const by = [`At Level ${here.cap}`, ...(next.bosses ? [`with ${bosses(next.bosses)} defeated`] : [])].join(', ');
+    return {
+      ...head,
+      lines: [
+        next.essence ? `${by}, ${next.essence} Shadow Essence raises it to ${next.name} Rank.` : `${by}, it rises to ${next.name} Rank.`,
+        `Level cap: ${here.cap} → ${next.cap}.${second ? ` Learns ${second}.` : ''}`,
+      ],
+      needs: shadows.requirements(s, sh).map((r) => ({ label: r.label, have: r.have, need: r.need, met: r.met })),
+    };
+  }
+  const cost = shadows.awakenCost(sh);
+  if (cost === null) return { ...head, lines: ['The highest rank, every star awakened.', `Every stat is grown +${pct(shadows.growth(sh))}%.`] };
+  const essence = s.shadows.essence ?? 0;
+  return {
+    ...head,
+    lines: [
+      `The highest rank. At Level ${shadows.MAX_LEVEL}, ${cost} Shadow Essence awakens it a star.`,
+      `Each star grows every stat +${pct(shadows.AWAKENING.growth)}% more.`,
+    ],
+    needs: [
+      { label: 'Level', have: shadows.levelOf(sh), need: shadows.MAX_LEVEL, met: shadows.atTop(sh) },
+      { label: 'Shadow Essence', have: essence, need: cost, met: essence >= cost },
+    ],
+  };
+}
+
+/**
+ * A promotion or a star waiting, in a window of its own, opened by the gold rank on the card: the badge now and at the
+ * rank above, what it asks and brings, and the hold that claims it. The window closes once it is claimed.
+ */
+export function openRankUp(id: string) {
+  const sh = store.get().shadows.army.find((x) => x.id === id);
+  if (!sh) return;
+  openSheet({
+    title: shadows.nextRank(sh) ? 'Promotion' : 'Awakening',
+    system: { icon: <CardBadge id={id} />, kind: 'shadow' },
+    render: (close) => <RankUp id={id} close={close} />,
+  });
+}
+
+function RankUp({ id, close }: { id: string; close: () => void }) {
+  const s = useSave();
+  const sh = s.shadows.army.find((x) => x.id === id);
+  if (!sh) return <Empty>That Shadow is gone.</Empty>;
+  const e = enemyById(sh.enemyId)!;
+  return shadows.nextRank(sh) ? <Promotion sh={sh} e={e} close={close} /> : <Awakening sh={sh} close={close} />;
+}
+
+/**
+ * The rank above: what it asks, each met or not, and what it brings; once all is met, its badge now and at the rank
+ * above, and the hold that claims it. The badge lifts off into the promotion (`claimPromotion`).
+ */
+function Promotion({ sh, e, close }: { sh: Shadow; e: Enemy; close: () => void }) {
   const s = useSave();
   const badge = useRef<HTMLSpanElement>(null);
-  const next = shadows.nextRank(sh);
-  if (!next) return null;
+  const next = shadows.nextRank(sh)!;
   const at = shadows.rankIndex(sh);
   const need = shadows.requirements(s, sh);
   const ready = need.every((r) => r.met);
@@ -602,33 +709,38 @@ function NextRank({ sh, e }: { sh: Shadow; e: Enemy }) {
   return (
     <section class={`sysbox sp-next ${ready ? 'promote' : ''}`} key={at}>
       <header class="sp-next__head">
-        <span class="label">{ready ? 'Promotion' : 'Next rank'}</span>
+        <span class="label">{shadows.nameOf(sh)}</span>
         <span class="sa-rank"><Insignia rank={at + 1} size={14} />{next.name} Rank</span>
       </header>
-      {ready && (
-        <div class="rankplates promote__plates" aria-label={`${shadows.rankOf(sh).name} Rank to ${next.name} Rank`}>
-          <span class="rankplates__from" ref={badge}><ShadowEmblem family={e.family} id={e.id} rank={at} size={60} /></span>
-          <span class="rankplates__path" style="--p: 1" aria-hidden="true"><i /></span>
-          <span class="rankplates__to"><ShadowEmblem family={e.family} id={e.id} rank={at + 1} size={60} /></span>
-        </div>
-      )}
-      <ul class="sp-reqs">
-        {need.map((r) => (
-          <li key={r.key} class={r.met ? 'is-met' : ''}>
-            <Glyph name={r.met ? 'check' : 'lock'} />
-            <span>{r.label}</span>
-            <b class="num">{r.have}/{r.need}</b>
-            <i class="sp-reqs__bar" aria-hidden="true"><i style={`width: ${pct(unit(r.have / r.need))}%`} /></i>
-          </li>
-        ))}
-      </ul>
+      <div class="rankplates promote__plates" aria-label={`${shadows.rankOf(sh).name} Rank to ${next.name} Rank`}>
+        <span class="rankplates__from" ref={badge}><ShadowEmblem family={e.family} id={e.id} rank={at} size={60} /></span>
+        <span class="rankplates__path" style="--p: 1" aria-hidden="true"><i /></span>
+        <span class="rankplates__to"><ShadowEmblem family={e.family} id={e.id} rank={at + 1} size={60} /></span>
+      </div>
+      <Asks needs={need} />
       <ul class="promote__gains">
         <li>Level cap: {shadows.rankOf(sh).cap} → <span class="grant">{next.cap}</span></li>
         {second && <li>Skill: <strong>[{second}]</strong></li>}
       </ul>
       {ready && <HoldButton hold={{ label: 'Hold To Promote', ms: 2000, ticks: 5, holding: 'Promoting…', done: 'Promoted', after: 260 }}
-        onFire={() => void claimPromotion(sh.id, badge.current?.querySelector('svg') ?? badge.current)} />}
+        onFire={() => void claimPromotion(sh.id, badge.current?.querySelector('svg') ?? badge.current).then(close)} />}
     </section>
+  );
+}
+
+/** What a rank or a star asks, each a line with its own bar, ticked once met. */
+function Asks({ needs }: { needs: { key: string; label: string; have: number; need: number; met: boolean }[] }) {
+  return (
+    <ul class="sp-reqs">
+      {needs.map((r) => (
+        <li key={r.key} class={r.met ? 'is-met' : ''}>
+          <Glyph name={r.met ? 'check' : 'lock'} />
+          <span>{r.label}</span>
+          <b class="num">{r.have}/{r.need}</b>
+          <i class="sp-reqs__bar" aria-hidden="true"><i style={`width: ${pct(unit(r.have / r.need))}%`} /></i>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -643,16 +755,16 @@ function Stars({ n, of = 0 }: { n: number; of?: number }) {
 }
 
 /**
- * Awakening, once a Shadow is Ascendant: its stars, what the next asks (its level at the cap and the
- * Shadow Essence it costs) and what it adds; once all is met, the hold that takes it.
+ * Awakening, once a Shadow is Ascendant: its stars, what the next asks (its level at the cap and the Shadow Essence it
+ * costs) and what it adds; once all is met, the hold that takes it, and the window closes on it.
  */
-function Awakening({ sh }: { sh: Shadow }) {
+function Awakening({ sh, close }: { sh: Shadow; close: () => void }) {
   const s = useSave();
-  if (shadows.rankIndex(sh) < shadows.SHADOW_RANKS.length - 1) return null;
   const n = shadows.starsOf(sh);
   const cost = shadows.awakenCost(sh);
   const ready = shadows.canAwaken(s, sh);
   const name = shadows.nameOf(sh);
+  const essence = s.shadows.essence ?? 0;
   const go = async () => {
     const was = shadows.growth(sh);
     const got = store.update((x) => shadows.awaken(x, sh.id));
@@ -661,6 +773,7 @@ function Awakening({ sh }: { sh: Shadow }) {
     flash('shadow');
     buzz([60, 90, 30, 60, 140]);
     const now = store.get().shadows.army.find((x) => x.id === sh.id);
+    close();
     await sys({
       ...system.notify([
         `${system.tag(name)} has awakened.`,
@@ -673,23 +786,17 @@ function Awakening({ sh }: { sh: Shadow }) {
   return (
     <section class={`sysbox sp-next sp-awaken ${ready ? 'promote' : ''}`} key={n}>
       <header class="sp-next__head">
-        <span class="label">Awakening</span>
+        <span class="label">{name}</span>
         <Stars n={n} of={shadows.MAX_STARS} />
       </header>
       {cost === null ? (
         <ul class="promote__gains"><li>Stats: <span class="grant">+{pct(shadows.growth(sh))}%</span></li></ul>
       ) : (
         <>
-          <ul class="sp-reqs">
-            <li class={shadows.atTop(sh) ? 'is-met' : ''}>
-              <Glyph name={shadows.atTop(sh) ? 'check' : 'lock'} /><span>Level</span><b class="num">{shadows.levelOf(sh)}/{shadows.MAX_LEVEL}</b>
-              <i class="sp-reqs__bar" aria-hidden="true"><i style={`width: ${pct(unit(shadows.levelOf(sh) / shadows.MAX_LEVEL))}%`} /></i>
-            </li>
-            <li class={(s.shadows.essence ?? 0) >= cost ? 'is-met' : ''}>
-              <Glyph name={(s.shadows.essence ?? 0) >= cost ? 'check' : 'lock'} /><span>Shadow Essence</span><b class="num">{s.shadows.essence ?? 0}/{cost}</b>
-              <i class="sp-reqs__bar" aria-hidden="true"><i style={`width: ${pct(unit((s.shadows.essence ?? 0) / cost))}%`} /></i>
-            </li>
-          </ul>
+          <Asks needs={[
+            { key: 'level', label: 'Level', have: shadows.levelOf(sh), need: shadows.MAX_LEVEL, met: shadows.atTop(sh) },
+            { key: 'essence', label: 'Shadow Essence', have: essence, need: cost, met: essence >= cost },
+          ]} />
           <ul class="promote__gains">
             <li>Awakening: {'★'.repeat(n) || '-- --'} → <span class="grant">{'★'.repeat(n + 1)}</span></li>
             <li>Stats: +{pct(shadows.growth(sh))}% → <span class="grant">+{pct(shadows.growth(sh) + shadows.AWAKENING.growth)}%</span></li>
@@ -702,81 +809,108 @@ function Awakening({ sh }: { sh: Shadow }) {
 }
 
 /**
- * Its stats, as Solo Leveling: Arise lists them: a row each, its mark, its name and its value, and what
- * its level and stars have added to its creature's own, in green. Over them, how far it has grown of the
- * most it can.
+ * Its stats, a row to each, as an Association hunter's card sets theirs (`ui/statrow.tsx`): the mark in the Shadows'
+ * violet, the key, a bar and the figure, its best stat lit in gold under `Best`. A full bar is the most its best stat can
+ * grow to, so the five read against one another and against what is still to come. Each opens the one stat tooltip,
+ * which tells its creature's own figure beside what its level and stars have made of it. Over them, how far it has grown
+ * of the most it can.
  */
 function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
   const now = shadows.statsOf(sh);
+  const fig = (k: Stat) => Math.round(now[k]);
+  const best = ORDER.reduce<Stat>((b, k) => (fig(k) > fig(b) ? k : b), ORDER[0]);
+  const of = Math.max(1, ...ORDER.map((k) => e.base[k])) * (1 + shadows.MAX_GROWTH);
+  const [why, setWhy] = useState<{ k: Stat; at: TipAt } | null>(null);
   return (
     <Section title="Stats" right={<span class="num">Growth <span class="grant">+{pct(shadows.growth(sh))}%</span> / +{pct(shadows.MAX_GROWTH)}%</span>}>
-      <ul class="sp-statrows">
+      <div class="statrows">
         {ORDER.map((k) => (
-          <li key={k}>
-            <Glyph name={STAT_ICON[k] ?? 'star'} />
-            <span class="sp-statrows__name">{k}</span>
-            <b class="num">{now[k]}</b>
-            <small class="num grant">{now[k] > e.base[k] ? `+${now[k] - e.base[k]}` : ''}</small>
-          </li>
+          <StatRow key={k} k={k} value={fig(k)} bar={fig(k)} of={of} best={best === k} open={why?.k === k}
+            aside={best === k ? 'Best' : undefined} label={`${k} ${fig(k)}${best === k ? ', its best' : ''}`}
+            onTap={(el) => { sfx.blip(); setWhy(why?.k === k ? null : { k, at: tipAt(el) }); }} />
         ))}
-      </ul>
+      </div>
+      {why && <Tip tip={statTip(why.k, { shadow: { own: e.base[why.k], now: fig(why.k), best: best === why.k } })} at={why.at} close={() => setWhy(null)} />}
     </Section>
   );
 }
 
-/** What it fights with: its skills, the second sealed until the rank that remembers it; and its traits. */
+/**
+ * `Skills & Traits`, one section as an Association hunter's card has (the owner's call): its skills, the second sealed
+ * until the rank that remembers it; under them its passive, and what it wards off.
+ */
 function Kit({ sh, e }: { sh: Shadow; e: Enemy }) {
   const known = shadows.kitOf(sh);
   const names = [e.kit[0], shadows.secondOf(e)].filter((n): n is string => !!n);
-  const traits = !!e.passive || e.imm.length > 0 || e.res.length > 0;
   return (
-    <>
-      <Section title="Skills">
-        <div class="sp-skills">
-          {names.map((n) => {
-            const a = ability(n);
-            const on = known.includes(n);
-            return (
-              <div key={n} class={`sp-skill ${on ? '' : 'is-sealed'}`}>
-                <span class="sp-skill__ico"><Glyph name={!on ? 'lock' : a?.type === 'magic' ? 'bolt' : 'fist'} /></span>
-                <span class="sp-skill__body">
-                  <b>[Skill: {n}]</b>
-                  <small>{on ? (a ? <KeyedTips text={skillLine(a)} tone="shadow" /> : '-- --') : `${shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank`}</small>
-                  {on && !e.kit.includes(n) && <small class="muted">From its kin</small>}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </Section>
-      {traits && (
-        <Section title="Traits">
-          <div class="sp-traits">
-            {e.passive && (
-              <div class="sp-skill is-passive">
-                <span class="sp-skill__ico"><Glyph name="star" /></span>
-                <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small><KeyedTips text={passiveFor(e.passive, shadows.statsOf(sh))} tone="shadow" /></small></span>
-              </div>
-            )}
-            {/* Listed as the creature card lists them, each status's word opening what the ward does (ui/wards.tsx). */}
-            <WardLines imm={e.imm} res={e.res} tone="shadow" />
+    <Section title="Skills & Traits">
+      <div class="sp-skills">
+        {names.map((n) => {
+          const a = ability(n);
+          const on = known.includes(n);
+          return (
+            <div key={n} class={`sp-skill ${on ? '' : 'is-sealed'}`}>
+              <span class="sp-skill__ico"><Glyph name={!on ? 'lock' : a?.type === 'magic' ? 'bolt' : 'fist'} /></span>
+              <span class="sp-skill__body">
+                <b>[Skill: {n}]</b>
+                <small>{on ? (a ? <KeyedTips text={skillLine(a)} tone="shadow" /> : '-- --') : `${shadows.SHADOW_RANKS[shadows.SECOND_AT].name} Rank`}</small>
+                {on && !e.kit.includes(n) && <small class="muted">From its kin</small>}
+              </span>
+            </div>
+          );
+        })}
+        {e.passive && (
+          <div class="sp-skill is-passive">
+            <span class="sp-skill__ico"><Glyph name="star" /></span>
+            <span class="sp-skill__body"><b>[Passive: {e.passive}]</b><small><KeyedTips text={passiveFor(e.passive, shadows.statsOf(sh))} tone="shadow" /></small></span>
           </div>
-        </Section>
-      )}
-    </>
+        )}
+      </div>
+      {/* Listed as the creature card lists them, each status's word opening what the ward does (ui/wards.tsx). */}
+      {(e.imm.length > 0 || e.res.length > 0) && <div class="sp-traits"><WardLines imm={e.imm} res={e.res} tone="shadow" /></div>}
+    </Section>
   );
 }
 
-/** What it has done: the Gates it walked into, the creatures and bosses it helped defeat, and days served. */
-function Record({ sh }: { sh: Shadow }) {
-  const days = Math.max(0, daysBetween(sh.boundAt, dayKey()));
+/** Where it stands among the army by the Gates it has walked, said as a hunter's card says a partner's place. */
+function deployedLine(place: number, of: number): string {
+  if (of <= 1) return 'Your only Shadow so far.';
+  if (place === 1) return `Your most deployed Shadow, of ${of}.`;
+  return `Your ${ordinal(place)} most deployed Shadow, of ${of}.`;
+}
+
+/**
+ * `History`, as an Association hunter's card keeps it (the owner's call, where it read `Record`): the Gates it has
+ * walked, large, with where it stands among the army under it; what it has helped defeat, the creatures and the bosses;
+ * and when it was bound.
+ */
+function History({ sh }: { sh: Shadow }) {
+  const s = useSave();
+  const army = s.shadows.army;
+  const place = 1 + army.filter((x) => x.id !== sh.id && x.out > sh.out).length;
   return (
-    <Section title="Record">
-      <div class="sp-record">
-        <span><b class="num">{sh.out}</b><small>Gates</small></span>
-        <span><b class="num">{sh.kills}</b><small>Defeated</small></span>
-        <span><b class="num">{sh.bosses}</b><small>Bosses</small></span>
-        <span><b class="num">{days}</b><small>Days served</small></span>
+    <Section title="History">
+      <div class="hc-history">
+        {sh.out === 0
+          ? <p class="hc-history__none">No Gates walked yet.</p>
+          : (
+            <>
+              <div class="hc-history__lead">
+                <b class="num">{sh.out}</b>
+                <span class="hc-history__what">
+                  <span>{sh.out === 1 ? 'Gate walked' : 'Gates walked'}</span>
+                  <small class={place === 1 && army.length > 1 ? 'is-first' : ''}>{deployedLine(place, army.length)}</small>
+                </span>
+              </div>
+              <div class="hc-history__figs">
+                <span><b class="num">{sh.kills}</b><small>Creatures defeated</small></span>
+                <span><b class="num">{sh.bosses}</b><small>Bosses defeated</small></span>
+              </div>
+            </>
+          )}
+        <dl class="hc-history__rows">
+          <div><dt>Bound</dt><dd>{ago(sh.boundAt)}</dd></div>
+        </dl>
       </div>
     </Section>
   );

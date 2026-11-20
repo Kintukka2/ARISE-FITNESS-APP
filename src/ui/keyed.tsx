@@ -7,8 +7,8 @@
 import { STATUS } from '@/core/combat';
 import { STAT_WORDS } from '@/core/gear';
 
-/** The statuses, every stat as a tooltip names it (`STAT_WORDS`), and the two ranks. */
-const KEYWORDS = [...new Set([...Object.keys(STATUS), ...Object.values(STAT_WORDS), 'Attack', 'HP', 'MP', 'defence', 'Shadow', 'Front', 'Rear'])];
+/** The statuses, every stat as a tooltip names it (`STAT_WORDS`), the two rows, and Shadow Essence, which a rank asks for. */
+const KEYWORDS = [...new Set([...Object.keys(STATUS), ...Object.values(STAT_WORDS), 'Attack', 'HP', 'MP', 'defence', 'Shadow Essence', 'Shadow', 'Front', 'Rear'])];
 const RX = new RegExp(`([×+-]?\\d+(?:[.,]\\d+)?%?|\\b(?:${KEYWORDS.sort((a, b) => b.length - a.length).join('|')})\\b)`, 'g');
 
 /** A line split as `Keyed` colours it: the plain text at even places, its figures and keywords at odd ones. */

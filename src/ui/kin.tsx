@@ -4,7 +4,6 @@
  * the one reached lit; `1 / 2` while short), grey until the first, and tells what each breakpoint gives
  * in a tooltip (`(2) Attack +10%`). A family is a Kin, as Teamfight Tactics' origins are; a role gives a role
  * bonus, as its classes do, at one, two and three of it (`1 › 2 › 3`). Solo Leveling: Arise writes a Shadow's
- * aura under its stats as a name over one line (`Shadow's Authority` / `Increases entire team's Defense`).
  * Every number is read from `data/kin.ts` through `core/kin.ts`.
  */
 import { useState } from 'preact/hooks';
@@ -12,10 +11,8 @@ import { sfx } from '@/audio/audio';
 import { bonusText, tipNames, tipStats } from '@/core/gear';
 import * as kin from '@/core/kin';
 import type { Shadow } from '@/core/types';
-import { Section } from './components';
 import { FamilyGlyph } from './emblems';
 import { Glyph } from './icons';
-import { Keyed } from './keyed';
 import { TipBody, type TipText } from './tip';
 
 /** Each role's mark. */
@@ -96,20 +93,6 @@ export function Steps({ n, at: steps = kin.KIN_AT }: { n: number; at?: readonly 
   );
 }
 
-/**
- * Each breakpoint and what it gives, as a trait's tooltip lists them: `(2) Attack +10%`, the one reached lit, its stats
- * spelt and coloured as the tooltip's are (`tipStats`, `Keyed`).
- */
-function Tiers({ steps, text, tier }: { steps: readonly number[]; text: (tier: number) => string; tier: number }) {
-  return (
-    <ul class="kintiers">
-      {steps.map((at, i) => (
-        <li key={at} class={tier === i + 1 ? 'is-on' : ''}><b class="num">({at})</b> <Keyed text={text(i + 1)} /></li>
-      ))}
-    </ul>
-  );
-}
-
 type Trait = { key: string; kind: 'kin' | 'all' | 'role'; name: string; n: number; tier: number };
 
 /**
@@ -158,35 +141,3 @@ export function KinTracker({ squad }: { squad: readonly Shadow[] }) {
   );
 }
 
-/**
- * What a Shadow brings to a squad, on its card, as Solo Leveling: Arise sets a Shadow's aura under its
- * stats, each block headed as the tooltip is: the mark and name, its kind at the right (`Role bonus`, `Kin`), one line
- * of who gains it, said once (`The whole party gains it.`), then each breakpoint and what it gives, the one its squad
- * reaches lit while it is deployed. Hairlines between.
- */
-export function KinOfShadow({ sh, family, role, squad }: { sh: Shadow; family: string; role: string; squad: readonly Shadow[] }) {
-  const on = squad.includes(sh);
-  const m = on ? kin.makeOf(squad) : null;
-  const tier = m ? (family === kin.KIN_ALL ? Math.max(0, ...m.kin.map((k) => k.tier)) : m.kin.find((k) => k.family === family)?.tier ?? 0) : 0;
-  const roleTier = m?.roleLines.find((l) => l.role === role)?.tier ?? 0;
-  return (
-    <Section title="Kin & Role">
-    <div class="sp-auth">
-      <div class="sp-auth__row">
-        <span class="sp-auth__head"><span class="sp-auth__name"><Glyph name={ROLE_GLYPH[role] ?? 'shadows'} />{role}</span><small class="sp-auth__kind">Role bonus</small></span>
-        <p class="sp-auth__who">The whole party gains it.</p>
-        <Tiers steps={kin.ROLE_AT} text={(t) => tipStats(kin.roleBoon(role, t))} tier={roleTier} />
-      </div>
-      <div class="sp-auth__row">
-        <span class="sp-auth__head"><span class="sp-auth__name"><FamilyGlyph family={family} size={13} />{family}</span><small class="sp-auth__kind">Kin</small></span>
-        {family === kin.KIN_ALL
-          ? <p class={`sp-auth__who ${tier ? 'is-on' : ''}`}>Kin to every family: it adds to each Kin beside it.</p>
-          : <>
-            <p class="sp-auth__who">Each {family} Shadow deployed gains it.</p>
-            <Tiers steps={kin.KIN_AT} text={(t) => tipStats(kin.kinBoon(family, t))} tier={tier} />
-          </>}
-      </div>
-    </div>
-    </Section>
-  );
-}

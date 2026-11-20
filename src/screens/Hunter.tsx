@@ -3,9 +3,10 @@
  * (`screens/Shadows.tsx`) and the info panel of Solo Leveling: Arise, in the System's cyan: what the System sees of a
  * hunter beside you. Top to bottom it reads who they are, what they fight with, and what you have done together:
  * their grade's plate in a ring, their registration, `Rank`, `Class` (the class itself tells what it is when tapped)
- * and `Power`, and how they fight; their stats, a row to each as the Status sheet sets the hunter's own; their skills,
- * Strike first, and their traits, as their class gives them; and `History`, your record with them alone, which
- * follows them from Gate to Gate (`hunters.recordOf`). Each section opens on its label and a hairline. Every number is the engine's: their class from
+ * and `Power`, and how they fight; their stats, a row to each as the Status sheet sets the hunter's own; `Skills & Traits`,
+ * Strike first, then their traits, as their class gives them; and `History`, your record with them alone, which
+ * follows them from Gate to Gate (`hunters.recordOf`). A Shadow's card has the same three sections in the same order
+ * (the owner's call). Each section opens on its label and a hairline. Every number is the engine's: their class from
  * `hunters.classOf`, their kit from `hunters.kitOf`, as the fight builds them.
  */
 import { powerText } from '@/ui/power';
@@ -15,7 +16,7 @@ import * as hunters from '@/core/hunters';
 import { nextRung } from '@/data/classes';
 import { ATTRS } from '@/core/progression';
 import type { Stat } from '@/core/types';
-import { daysBetween, dayKey } from '@/core/util';
+import { ago, ordinal } from '@/ui/when';
 import * as store from '@/store';
 import { useSave } from '@/store';
 import { sfx } from '@/audio/audio';
@@ -147,46 +148,35 @@ function Stats({ a }: { a: Ally }) {
   );
 }
 
-/** What they fight with: Strike, as everyone does, then their class's skills; and its passives, every rung's first, as the fight builds them. */
+/**
+ * `Skills & Traits`, one section as a Shadow's card has (the owner's call): Strike, as everyone has, then their class's
+ * skills, and under them its passives, every rung's first, as the fight builds them.
+ */
 function Kit({ a }: { a: Ally }) {
   const k = hunters.kitOf(a);
   const skills = [STRIKE.name, ...k.kit];
   return (
-    <>
-      <Section title="Skills">
-        <div class="sp-skills">
-          {skills.map((n) => {
-            const ab = n === STRIKE.name ? STRIKE : ability(n);
-            return (
-              <div key={n} class="sp-skill">
-                <span class="sp-skill__ico"><Glyph name={ab?.type === 'magic' ? 'bolt' : 'fist'} /></span>
-                <span class="sp-skill__body"><b>[Skill: {n}]</b><small><KeyedTips text={ab ? skillLine(ab) : ''} tone="system" /></small></span>
-              </div>
-            );
-          })}
-        </div>
-      </Section>
-      {k.passives.length > 0 && (
-        <Section title="Traits">
-          <div class="sp-traits">
-            {k.passives.map((n) => (
-              <div key={n} class="sp-skill is-passive">
-                <span class="sp-skill__ico"><Glyph name="star" /></span>
-                <span class="sp-skill__body"><b>[Passive: {n}]</b><small><KeyedTips text={passiveText(n)} tone="system" /></small></span>
-              </div>
-            ))}
+    <Section title="Skills & Traits">
+      <div class="sp-skills">
+        {skills.map((n) => {
+          const ab = n === STRIKE.name ? STRIKE : ability(n);
+          return (
+            <div key={n} class="sp-skill">
+              <span class="sp-skill__ico"><Glyph name={ab?.type === 'magic' ? 'bolt' : 'fist'} /></span>
+              <span class="sp-skill__body"><b>[Skill: {n}]</b><small><KeyedTips text={ab ? skillLine(ab) : ''} tone="system" /></small></span>
+            </div>
+          );
+        })}
+        {k.passives.map((n) => (
+          <div key={n} class="sp-skill is-passive">
+            <span class="sp-skill__ico"><Glyph name="star" /></span>
+            <span class="sp-skill__body"><b>[Passive: {n}]</b><small><KeyedTips text={passiveText(n)} tone="system" /></small></span>
           </div>
-        </Section>
-      )}
-    </>
+        ))}
+      </div>
+    </Section>
   );
 }
-
-const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
-const ago = (day: string) => {
-  const n = Math.max(0, daysBetween(day, dayKey()));
-  return n === 0 ? 'Today' : n === 1 ? 'Yesterday' : `${n} days ago`;
-};
 
 /** Where they stand among the hunters you have walked Gates with, said plainly (the owner's call, where it read `Among your partners`). */
 function partnerLine(place: number, partners: number): string {
