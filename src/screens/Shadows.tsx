@@ -613,7 +613,8 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
 /**
  * The rank in its row (the owner's call, where a `Next rank` box stood under the head): the word underlined as every
  * word that tells what it is, opening what the next rank asks; while a promotion or a star waits on the hunter, a gold
- * button with a chevron that opens it.
+ * button with a chevron that opens it, its name alone so `Ascendant` keeps to the row (the badge beside it wears the
+ * rank's insignia).
  */
 function RankWord({ sh, e }: { sh: Shadow; e: Enemy }) {
   const s = useSave();
@@ -624,7 +625,7 @@ function RankWord({ sh, e }: { sh: Shadow; e: Enemy }) {
     return (
       <button type="button" class="sp-rank is-call" aria-haspopup="dialog" aria-label={`${name} Rank. ${promote ? 'Promotion' : 'Awakening'} ready`}
         onClick={() => { sfx.tap(); openRankUp(sh.id); }}>
-        <Insignia rank={at} size={14} /><span>{name}</span><Glyph name="chevron" />
+        <span>{name}</span><Glyph name="chevron" />
       </button>
     );
   }

@@ -2802,9 +2802,10 @@ button.boonc:active { transform: scale(0.985); border-color: var(--gold); }
 button.sp-rank.infotag { display: inline-flex; align-items: center; gap: 6px; padding: 0 2px 0 0; border: 0; background: none; font: inherit; }
 .sp-rank__name { text-decoration: underline dotted color-mix(in srgb, var(--sys-ink) 45%, transparent); text-underline-offset: 4px; }
 /* A promotion or a star waiting turns the rank gold (the owner's call): a button with a chevron that opens it. */
-button.sp-rank.is-call { display: inline-flex; align-items: center; gap: 6px; margin: -3px 0; padding: 3px 8px 3px 6px; border: 1px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.2), rgba(255, 203, 92, 0.05)); color: var(--gold); font: inherit; font-weight: 700; text-shadow: 0 0 8px var(--gold-glow); box-shadow: 0 0 12px var(--gold-glow); cursor: pointer; touch-action: manipulation; animation: readyCall 2s ease-in-out infinite; }
-button.sp-rank.is-call .insignia { color: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); }
-button.sp-rank.is-call > .ico { width: 13px; height: 13px; }
+/* The rank takes the row's third column too, so the longest, `Ascendant`, keeps to the head on a phone. */
+.sp-row__rank { grid-column: 2 / -1; min-width: 0; }
+button.sp-rank.is-call { display: inline-flex; align-items: center; gap: 4px; margin: -3px 0; padding: 2px 6px 2px 8px; font-size: 0.84rem; border: 1px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.2), rgba(255, 203, 92, 0.05)); color: var(--gold); font-family: inherit; font-weight: 700; text-shadow: 0 0 8px var(--gold-glow); box-shadow: 0 0 12px var(--gold-glow); cursor: pointer; touch-action: manipulation; animation: readyCall 2s ease-in-out infinite; }
+button.sp-rank.is-call > .ico { width: 11px; height: 11px; }
 button.sp-rank.is-call:active { transform: scale(0.96); }
 button.sp-rank.is-call:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { button.sp-rank.is-call { animation: none; } }

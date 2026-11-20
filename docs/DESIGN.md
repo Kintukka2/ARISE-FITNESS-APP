@@ -3556,8 +3556,8 @@ What changed:
     - `Level cap: 10 → 20.`, and `Learns War Totem.` where the rank brings a skill;
     - then its asks.
   - **At the top rank** the tooltip says what a star of Awakening asks and adds, or that every star is held.
-  - **The gold rank.** While a promotion or a star waits (`shadows.waiting`), the rank is a gold, breathing button
-    with a chevron. It opens `Promotion` or `Awakening` in a window of its own (`openRankUp`).
+  - **The gold rank.** While a promotion or a star waits (`shadows.waiting`), the rank is a gold, breathing button:
+    its name alone and a chevron, taking the row's spare column, so `Ascendant` keeps to the head on a phone. It opens `Promotion` or `Awakening` in a window of its own (`openRankUp`).
     - That window holds the old box: the badge now and above, the asks, the gains and the hold.
     - It closes once the promotion or star is claimed.
   - The gold arrow that scrolled to the old box is gone.
