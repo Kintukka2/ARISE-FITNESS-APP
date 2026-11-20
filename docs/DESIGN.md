@@ -3791,6 +3791,35 @@ The owner asked, on a wide screen where the two sockets sit side by side:
   marks are the same size.
 - **Balance.** Display only.
 
+## Familiarity said once, after Destiny's Weapon Level — built
+
+The owner found Familiarity still awkward and saying the same things twice:
+- a dial and a bar both showed the progress;
+- `Rank 2` and `2/5` both gave the rank;
+- `110 to Rank 3` repeated the bar;
+- `Forged quality from` meant nothing to them;
+- `+4%` beside `▲ +6%` did not say whether the next rank adds 6% or reaches it.
+
+It reaches it: a rank's bonus is a total (2% a rank), so the next figure was only noise.
+
+The references were the weapon-level panels of the games the owner plays:
+- Destiny 2's crafted weapons: `Weapon Level 12` over one progress bar, with the perks it has unlocked under it.
+- Call of Duty's weapon levels: the level once, one bar of XP to the next, what it gives as it stands.
+- Warframe's mastery: one rank, one bar.
+
+None shows the same progress twice, and none sets the next level's number beside the current one.
+
+What changed (`ui/familiarity.tsx`):
+- **The rank once.** `Rank` over `2` large in gold, the points at its right (`150/260`).
+- **One track** under them, a segment to each rank: lit gold to the rank reached, the rank in progress filling its
+  own. The dial, the second bar and `110 to Rank 3` are gone.
+- **What it gives, in plain words.** `Attack and magic` `+4%`, and `Forged copies` `16% quality or better`, each a
+  total. No next-rank figures.
+- **A tooltip on `Rank`,** the one tooltip, says how a point is earned and what each rank adds. Its figures are read
+  from `FAMILIARITY`.
+- **No rule between a button's word and its Ember** on the Engrave and Temper buttons, and the TEMPER window's.
+- **Balance.** Display only.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

@@ -234,7 +234,7 @@ function TemperWindow({ itemId }: { itemId: string }) {
           <Btn kind="primary" block class="temperwin__go" disabled={!!short} onClick={roll}>
             {short === 'short'
               ? <>Ascendant Ember <span class="num">{group(held)}/{group(ember)}</span></>
-              : <><Glyph name="hammer" /> Temper <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} /></>}
+              : <><Glyph name="hammer" /> Temper <EmberCost n={ember} /></>}
           </Btn>
         </>
       )}

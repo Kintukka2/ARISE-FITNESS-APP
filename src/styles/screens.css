@@ -4990,7 +4990,7 @@ button.mod__mark:active .mod__well { transform: scale(0.93); }
 .mod__hint { font-size: 0.68rem; line-height: 1.4; color: color-mix(in srgb, var(--sys-ink) 52%, transparent); }
 .mod__act { display: flex; }
 .mod__act .btn { flex: 1; }
-.mod__btn .btn__aside { opacity: 1; }
+.mod__btn .btn__aside { opacity: 1; border-left: 0; padding-left: 0; }
 /* Empty: the socket dashed, the card unlit. Locked: dimmer still, the mark faded. Waiting: gold, breathing. */
 .mod.is-empty, .mod.is-locked { --mt: color-mix(in srgb, var(--sys-ink) 55%, transparent); border-style: dashed; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--sys-ink) 4%, transparent) 0 6px, transparent 6px 12px), rgba(3, 8, 20, 0.45); }
 .mod.is-empty::before, .mod.is-locked::before { opacity: 0.35; box-shadow: none; }
@@ -5006,40 +5006,26 @@ button.mod__mark:active .mod__well { transform: scale(0.93); }
 .temperslot__can { overflow-wrap: anywhere; }
 .temperslot .tmark { --s: 46px; }
 
-/* Familiarity: the dial, then the rank, the points and what it gives. */
-.famcard { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 12px 14px; padding: 12px;
-  background: radial-gradient(110px 110px at 54px 54px, color-mix(in srgb, var(--gold) 11%, transparent), transparent 70%), rgba(3, 8, 20, 0.5); }
-.famdial { position: relative; display: grid; place-items: center; width: 84px; height: 84px; }
-.famdial svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.famdial__face { fill: rgba(3, 8, 20, 0.75); stroke: color-mix(in srgb, var(--gold) 22%, transparent); stroke-width: 1; }
-.famdial__seg { fill: none; stroke: color-mix(in srgb, var(--sys-ink) 12%, transparent); stroke-width: 6; stroke-linecap: butt; }
-.famdial__seg.is-on { stroke: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); stroke-dasharray: 60; stroke-dashoffset: 60; animation: famSeg 520ms var(--ease) forwards; animation-delay: calc(var(--k) * 110ms); }
-.famdial__seg.is-part { stroke: color-mix(in srgb, var(--gold) 55%, transparent); }
-.famdial__tick { stroke: color-mix(in srgb, var(--gold) 30%, transparent); stroke-width: 1; }
-@keyframes famSeg { to { stroke-dashoffset: 0; } }
-.famdial__n { position: relative; display: flex; align-items: baseline; }
-.famdial__n b { font-size: 1.6rem; font-weight: 800; line-height: 1; color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
-.famdial__n small { font-size: 0.7rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.famcard__body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.famcard__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.famcard__rank { font-size: 1.05rem; font-weight: 800; color: #fff; }
-.famcard__pts { font-size: 0.72rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+/* Familiarity, as Destiny 2's Weapon Level: the rank once, one track of a segment to each rank, then what it gives. */
+.famcard { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 6%, rgba(3, 8, 20, 0.5)), rgba(3, 8, 20, 0.5)); }
+.famcard__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+button.famcard__rank.infotag { display: inline-flex; align-items: baseline; gap: 6px; padding: 0; border: 0; background: none; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); text-decoration: underline dotted color-mix(in srgb, var(--gold) 50%, transparent); text-underline-offset: 4px; }
+button.famcard__rank b { font-size: 1.5rem; font-weight: 800; letter-spacing: 0; line-height: 1; color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); }
+button.famcard__rank .infotag__q { display: none; }
+.famcard__pts { font-size: 0.74rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
 .famcard__max { padding: 2px 8px; border: 1px solid var(--gold); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 30%, transparent); }
-.famcard__bar { position: relative; display: block; height: 4px; background: color-mix(in srgb, var(--sys-ink) 12%, transparent); }
-.famcard__bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 50%, transparent), var(--gold)); box-shadow: 0 0 6px var(--gold-glow); animation: spGrow 900ms var(--ease) both; }
-.famcard__to { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
-.famcard__boons { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.famcard__boons li { display: flex; flex-direction: column; justify-content: space-between; gap: 3px; min-width: 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--gold) 18%, transparent); background: rgba(3, 8, 20, 0.45); }
-.famcard__boons li > span { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 60%, transparent); }
-.famcard__boons li > span + span { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-size: inherit; letter-spacing: 0; text-transform: none; }
-.famcard__boons b { font-size: 1rem; font-weight: 800; color: #fff; }
-.famcard__next { font-size: 0.68rem; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.famtrack { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+.famtrack i { position: relative; display: block; height: 8px; overflow: hidden; background: color-mix(in srgb, var(--sys-ink) 10%, transparent); transform: skewX(-18deg); }
+.famtrack i.is-on::before, .famtrack i.is-now::before { content: ''; position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 70%, transparent), var(--gold)); box-shadow: 0 0 8px var(--gold-glow); }
+.famtrack i.is-on::before { width: 100%; animation: famFill 420ms var(--ease) both; animation-delay: calc(var(--k) * 90ms); }
+.famtrack i.is-now::before { width: var(--f); opacity: 0.6; }
+@keyframes famFill { from { width: 0; } }
+.famcard__boons { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 0; padding: 10px 0 0; border-top: 1px solid color-mix(in srgb, var(--sys-ink) 10%, transparent); }
+.famcard__boons > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.famcard__boons dt { font-size: 0.78rem; color: color-mix(in srgb, var(--sys-ink) 75%, transparent); }
+.famcard__boons dd { margin: 0; font-size: 0.88rem; font-weight: 800; color: #fff; text-align: right; }
+.famcard.is-none .famcard__boons dd { color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .famcard.is-max { border-color: color-mix(in srgb, var(--gold) 55%, var(--sys-hair)); }
-@media (max-width: 359px) {
-  .famcard { grid-template-columns: 70px minmax(0, 1fr); }
-  .famdial { width: 70px; height: 70px; }
-  .famdial__n b { font-size: 1.3rem; }
-}
 
 /* The blueprint: a drafting sheet, its grid in the System's cyan, its corners marked, the design traced on it. */
 .bpcard { --bp: var(--win); position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; min-height: 84px; padding: 12px 12px 12px 10px; overflow: hidden;
@@ -5102,5 +5088,5 @@ button.mod__tip .infotag__q { display: none; }
   .mod__title b { font-size: 0.86rem; }
   .mod__v { font-size: 0.98rem; }
   .mod__btn { padding-left: 6px; padding-right: 6px; font-size: 0.86rem; letter-spacing: 0.02em; }
-  .mod__btn .btn__aside { margin-left: 0.4em; padding-left: 0.4em; }
+  .mod__btn .btn__aside { margin-left: 0.4em; }
 }
