@@ -51,7 +51,7 @@ export const fatigueShare = (s: Save) => Math.max(0, 1 - MARKS.reduce((n, m) => 
 export function markText(m: Mark, n = 1): string {
   const parts: string[] = [];
   if (m.hero) parts.push(bonusText(times(m.hero, n)));
-  if (m.shadows) parts.push(`${bonusText(times(m.shadows, n))} for every Shadow`);
+  if (m.shadows) parts.push(`every Shadow ${bonusText(times(m.shadows, n))}`);
   if (m.fatigue) parts.push(`Fatigue -${Math.round(m.fatigue * n * 100)}% for every Gate`);
   return parts.join(', ');
 }
