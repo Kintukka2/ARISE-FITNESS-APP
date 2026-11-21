@@ -627,8 +627,9 @@ and once the level is reached **Hold To Reclassify**. Every quest's name wears i
   owner's call). From Ascension's grade, `Ascension` under the radar, over the marks to set, `New` or `2/3` beside the level large in gold, gold while something waits. Shadows (the Army and
   the Orders; the Army is the screen's centre: the squad's slots over the reserve). The Army opens ARMY, a roster
   with a row to every Shadow, where the squad is made. On Gates, the hunter's condition is not a
-  tile but a strip under Valcorde's line, in the System's frame: the Status sheet's HP, MP and FTG
-  rows, each with its potion, so a potion is one tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
+  tile but the head of the radar's frame, in the Gates' orange, over a hairline (the owner's call: one frame, where
+  it stood in a strip of its own): the Status sheet's HP, MP and FTG rows, each with its potion, so a potion is one
+  tap from the board. A tile names a window's subject as a header word (`STATUS`, `GRADE`) or a
   name with its type (`[Gate name]`, `[Hunter: {name}]`), and opens that window. Two half tiles share
   a row; one left alone spans it. Valcorde's line keeps his own frame above the Gates screen.
 - **The licence's window** is gone: the Inventory's licence opens the hunter's page, where the licence, `Gates
