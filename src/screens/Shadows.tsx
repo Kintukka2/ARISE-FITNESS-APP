@@ -8,6 +8,8 @@ import { ability, passiveFor, TACTICS } from '@/core/combat';
 import { dungeonById, enemyById } from '@/core/gates';
 import * as raid from '@/core/raid';
 import * as shadows from '@/core/shadows';
+import * as shadowgear from '@/core/shadowgear';
+import { ShadowArmoury, ShadowGearSlots } from '@/ui/shadowgear';
 import * as story from '@/core/story';
 import * as store from '@/store';
 import { useSave } from '@/store';
@@ -53,6 +55,9 @@ export function Shadows() {
       )}
       <ArmyStage news={news} />
       <OrdersBand />
+      <SysFrame kind="shadow" class="sgframe" title="Equipment" icon={<Glyph name="Weapon" />} label="Shadow equipment">
+        <ShadowArmoury />
+      </SysFrame>
     </div>
   );
 }
@@ -521,6 +526,7 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
     <div class="stack shadowcard">
       <Profile sh={sh} e={e} />
       <Stats sh={sh} e={e} />
+      <Equipment sh={sh} />
       <Kit sh={sh} e={e} />
       <History sh={sh} />
       <Release sh={sh} close={close} />
@@ -839,7 +845,20 @@ function Stats({ sh, e }: { sh: Shadow; e: Enemy }) {
             onTap={(el) => { sfx.blip(); setWhy(why?.k === k ? null : { k, at: tipAt(el) }); }} />
         ))}
       </div>
-      {why && <Tip tip={statTip(why.k, { shadow: { own: e.base[why.k], now: fig(why.k), best: best === why.k } })} at={why.at} close={() => setWhy(null)} />}
+      {why && <Tip tip={statTip(why.k, { shadow: { own: e.base[why.k], now: fig(why.k), best: best === why.k, worn: shadowgear.bonusOf(sh)[why.k] } })} at={why.at} close={() => setWhy(null)} />}
+    </Section>
+  );
+}
+
+/**
+ * `Equipment` (the owner's call): its four slots, a weapon, an off-hand, an armour and an accessory, each a tile that opens
+ * the slot, with the pieces worn counted at the section's right.
+ */
+function Equipment({ sh }: { sh: Shadow }) {
+  const n = Object.values(sh.gear ?? {}).filter(Boolean).length;
+  return (
+    <Section title="Equipment" right={<span class="num">{n}/{shadowgear.SHADOW_SLOTS.length}</span>}>
+      <ShadowGearSlots shadowId={sh.id} />
     </Section>
   );
 }

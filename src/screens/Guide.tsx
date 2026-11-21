@@ -34,6 +34,7 @@ import { RANKS, STATS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
 import { GRADES } from '@/core/raid';
 import { SEAL_IDS, sealEmber, SEALS, SEALS_FROM, SEALS_PER_GATE } from '@/data/seals';
+import { SHADOW_GEAR_STAT, SHADOW_SLOTS } from '@/data/shadowgear';
 import { FEAT_IDS, FEAT_PAY, FEATS, FEATS_PER_GATE } from '@/data/feats';
 import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION } from '@/data/drops';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
@@ -145,7 +146,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A passage noticed opens for good. A Gate Survey charts every passage, and a charted one needs no noticing.',
       'A cache or a vault waits shut until you tap it. What it holds is yours from the moment you step in.',
       'A secret cache sits in a gap in the plan beside rooms, behind a hidden passage. Each floor counts its secrets found at the plan’s top.',
-      `A toll door is a corridor sealed in red. Tap its seal, or the room it seals, and pay ${TOLL.hp * 100}% of your maximum HP: it opens for good, to a shortcut or a cache of its own.`,
+      `A toll door is a corridor sealed in red. Tap its seal, or the room it seals, and pay what the seal asks: it opens for good, to a shortcut or a cache of its own.`,
+      `A seal asks one of four: ${TOLL.hp * 100}% of your maximum HP, ${TOLL.mp * 100}% of your maximum MP, ${TOLL.alloy.E}-${TOLL.alloy.S} of the Gate's own alloy by grade, or, rarely, ${TOLL.essence.E}-${TOLL.essence.S} Shadow Essence by grade.`,
+      'A seal of Shadow Essence is drawn in violet. A Shadows\u2019 cache waits behind it, holding a piece of Shadow equipment at the Gate\u2019s grade.',
       'Breaking a seal from across the plan walks you to it first, a move for each corridor.',
       'The bag at the map’s corner holds your items, one slot to each. Tap an item to see what it does, then Use.',
       `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it, and costs no moves. The Exchange sells them for ${SURVEY.price}.`,
@@ -407,6 +410,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each star grows every attribute by ${AWAKENING.growth * 100}% more of its creature’s own.`,
       `A creature like one already in your army gives Shadow Essence when its extraction holds, by grade, E-S: ${ESSENCE.E}-${ESSENCE.S}, and twice that from a boss.`,
       'Release a Shadow from its card for Shadow Essence: its creature’s, and half of what its ranks cost. A Shadow released is gone.',
+      `A Shadow wears ${SHADOW_SLOTS.length} pieces of Shadow equipment: ${SHADOW_SLOTS.map((x) => x.name.toLowerCase()).join(', ')}. Tap a slot on its card to put one on.`,
+      `A piece adds its leading stat, ${SHADOW_GEAR_STAT.E}-${SHADOW_GEAR_STAT.S} by grade at its best roll, and half that to a second stat.`,
+      'A Shadow released gives back what it wore, to the equipment held on the Shadows screen.',
       `Each rank has its insignia: ${SHADOW_RANKS.map((r, i) => `${r.name} ${['one chevron', 'two', 'three', 'three over a rocker'][i] ?? ''}`.trim()).join(', ')}.`,
       'A Shadow’s badge shows what it was, its family’s glyph, with its shadow behind it.',
       'A newly bound Shadow fights with its creature’s first ability.',

@@ -19,7 +19,7 @@ export interface StatFacts {
   /** An Association hunter's best stat, the one their class leads with. */
   best?: boolean;
   /** A Shadow's: its creature's own figure, what its level and stars have grown it to, and whether it is its best. */
-  shadow?: { own: number; now: number; best: boolean };
+  shadow?: { own: number; now: number; best: boolean; worn?: number };
 }
 
 export function statTip(k: Stat, f: StatFacts = {}): TipText {
@@ -32,7 +32,9 @@ export function statTip(k: Stat, f: StatFacts = {}): TipText {
   if (f.limits) lines.push(`Ability Points take it to ${STAT_CAP}, and class, skills and gear to ${BOOST_CAP}.`);
   if (f.best) lines.push('Their best stat, the one their class leads with.');
   if (f.shadow) {
-    lines.push(f.shadow.now > f.shadow.own ? `Its creature's own ${f.shadow.own}, grown to ${f.shadow.now}.` : `Its creature's own ${f.shadow.own}.`);
+    const grown = f.shadow.now - (f.shadow.worn ?? 0);
+    lines.push(grown > f.shadow.own ? `Its creature's own ${f.shadow.own}, grown to ${grown}.` : `Its creature's own ${f.shadow.own}.`);
+    if (f.shadow.worn) lines.push(`Its equipment adds ${f.shadow.worn}.`);
     if (f.shadow.best) lines.push('Its best stat.');
   }
   return { title: a.name, kind: 'Stat', mark: <span class="tip__mark"><Glyph name={STAT_ICON[k] ?? 'star'} /></span>, lines, tone: f.shadow ? 'shadow' : 'system' };

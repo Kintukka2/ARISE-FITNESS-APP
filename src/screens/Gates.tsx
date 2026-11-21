@@ -171,10 +171,10 @@ function HunterRow({ s }: { s: Save }) {
 
 /**
  * The hunter's condition at a glance, under Valcorde's line: HP, MP and Fatigue, each with its potion
- * one tap away, held or bought. The System's, so its frame.
+ * one tap away, held or bought. The System's frame in the Gates' orange (the owner's call), as the radar's under it.
  */
 function Condition() {
-  return <SysFrame class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
+  return <SysFrame kind="gates" class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
 }
 
 type Band = 'all' | 'marked' | Rank;

@@ -10,6 +10,7 @@ import { AWAKENING, ECHO, ECHO_COST, ESSENCE, GROWTH_PER_LEVEL, LEVEL_XP, SECOND
 import { powerOf } from './combat';
 import { ALL_ENEMIES, enemyById } from './gates';
 import * as kin from './kin';
+import { bonusOf as gearBonus, strip } from './shadowgear';
 import * as ranks from './ranks';
 import type { Row } from '@/data/ranks';
 import { licensedRank } from './licence';
@@ -200,6 +201,8 @@ export function release(s: Save, id: string): number | null {
   const sh = s.shadows.army.find((x) => x.id === id);
   if (!sh || inRun(s, id)) return null;
   const got = releaseValue(sh);
+  // What it wore goes back to the hold.
+  strip(s, sh);
   s.shadows.army = s.shadows.army.filter((x) => x.id !== id);
   s.shadows.squad = s.shadows.squad.filter((x) => x !== id);
   s.shadows.fresh = s.shadows.fresh.filter((x) => x !== id);
@@ -252,6 +255,15 @@ export function kitOf(sh: Shadow): string[] {
 }
 
 export function statsOf(sh: Shadow): Attrs {
+  const e = enemyById(sh.enemyId)!;
+  const k = 1 + growth(sh);
+  // What it wears adds on top (`core/shadowgear.ts`); the balance tools' Shadows wear nothing, so no tuning moves.
+  const worn = gearBonus(sh);
+  return Object.fromEntries(STATS.map((st) => [st, Math.round(e.base[st] * k) + worn[st]])) as Attrs;
+}
+
+/** Its stats as its creature grew them, before what it wears. */
+export function ownStatsOf(sh: Shadow): Attrs {
   const e = enemyById(sh.enemyId)!;
   const k = 1 + growth(sh);
   return Object.fromEntries(STATS.map((st) => [st, Math.round(e.base[st] * k)])) as Attrs;

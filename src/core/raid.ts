@@ -12,14 +12,14 @@ import { engravingById } from '@/data/engravings';
 import { BLUEPRINTS, CACHE, DROPS, FAMILY_PART, FORGED } from '@/data/forge';
 import { GATE_TUNE } from '@/data/gatetune';
 import { classFor } from '@/data/classes';
-import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL, TRAP, trapEvent, type Choice, type Effect, type GateEvent } from '@/data/nodes';
+import { blessingById, eventById, FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL, TRAP, trapEvent, type SealKind, type Choice, type Effect, type GateEvent } from '@/data/nodes';
 import { landmarkEvent } from '@/data/landmarks';
 import { NODES } from '@/data/tree';
 import * as blessings from './blessings';
 import { SETS } from '@/data/sets';
 import { tricksOf, type TrickId } from '@/data/tricks';
 import { battle, counts, POTION_HEAL, STATUS, THROWABLES, thrownBy, throwOrder, Unit, type Ev, type FightResult, type ThrowId, type Turn, type UnitSpec } from './combat';
-import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, pairKey, passages, reach, sight, systemPick, systemRoad, systemWalk, type Chamber, type GateMap, type MapNode, type Openings } from './map';
+import { across, build, chamberOf, choiceLayers, isFight, mapSeed, next, pairKey, sealOf, passages, reach, sight, systemPick, systemRoad, systemWalk, type Chamber, type GateMap, type MapNode, type Openings } from './map';
 import { dungeonById, enemyById, allies as alliesFor, isPractice, type Ally, seal, rankIdx } from './gates';
 import { boosted, grant, make, ofRank, rollBonuses, setBonuses, setBoons, setPieces, sumBonuses, worn as wornItems } from './gear';
 import * as forge from './forge';
@@ -52,10 +52,11 @@ import type { MedalId } from '@/data/par';
 import { LOG_MAX } from './save';
 import type { AssocMove } from './association';
 import * as shop from './shop';
-import type { Dungeon, Item, OpenRaid, Order, Rank, RunTally, Save, Shadow, Tactic } from './types';
+import type { Dungeon, Item, OpenRaid, Order, Rank, RunTally, Save, Shadow, ShadowItem, Tactic } from './types';
 import { RANKS } from './types';
 import { clamp, dayKey, rng } from './util';
 import * as vitals from './vitals';
+import * as shadowgear from './shadowgear';
 
 /** The hunter is the protagonist: an edge on top of their attributes. */
 export const HERO = { hp: 2, atk: 1.5 };
@@ -482,7 +483,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
   const frac = vitals.read(s, now).hp / Math.max(1, vitals.maxima(s).hp);
   hero.hp = Math.max(1, Math.round(hero.maxHp * frac));
   // A Gate's clock is set as the run walks in; a tower and the Practice Gate have none.
-  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth4'));
+  const budget = isPractice(d) ? 0 : clock.budgetOf(build(d, mapSeed(d, day), 'labyrinth5'));
   // A map charted from the brief today is charted for the run: its hidden passages need no noticing.
   const charted = (s.gates.charted ?? []).includes(mapSeed(d, day));
   // The throwable readied is the one its fights throw, whatever is readied while it is open.
@@ -493,7 +494,7 @@ export function begin(s: Save, d: Dungeon, now = Date.now(), seals: readonly Sea
     squad: isPractice(d) ? [] : shadows.squad(s).map((x) => x.id),
     carried: snapshot(party), won: 0, felled: [], kills: {}, startHp: hero.hp, bossFaced: false,
     party: specs, tactic: s.gates.tactic, orders: [],
-    map: mapSeed(d, day), layout: 'labyrinth4', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
+    map: mapSeed(d, day), layout: 'labyrinth5', path: [], rested: [], haul: [], stash: {}, purse: 0, blessings: [], lost: false, fatigue, ascension: level, weapon: forge.weaponOf(s),
     lean: blessings.leanOf(s), levels: levelsOf(s),
     chosen: walkers.meets(s, d, day, level),
     ...(budget ? { clock: budget, moves: 0, held: s.hunter.rank } : {}),
@@ -713,27 +714,52 @@ export function tollDoorsOpen(d: Dungeon, run: OpenRaid): { key: string; near: s
 /** What a toll costs the hunter now, in HP: `TOLL.hp` of their maximum. */
 export const tollCost = (hero: { maxHp: number }) => Math.round(hero.maxHp * TOLL.hp);
 
+/** What a seal asks: its kind, how much, and for materials the Gate's own alloy. */
+export interface TollPrice { kind: SealKind; n: number; mat?: string }
+
+/** What breaking the seal between two rooms asks of the hunter now (`map.sealOf`, `TOLL`). */
+export function tollPrice(s: Save, d: Dungeon, run: OpenRaid, a: string, b: string, now = Date.now()): TollPrice {
+  const kind = sealOf(mapOf(d, run), a, b);
+  if (kind === 'mp') return { kind, n: Math.max(1, Math.round(vitals.maxima(s).mp * TOLL.mp)) };
+  if (kind === 'mats') return { kind, n: TOLL.alloy[d.rank] ?? 4, mat: forge.alloyId(d.rank as Rank) };
+  if (kind === 'essence') return { kind, n: TOLL.essence[d.rank] ?? 1 };
+  return { kind, n: tollCost(partyFor(s, d, run, now)[0]) };
+}
+
+/** Whether the hunter has what a seal asks: HP to pay and still stand, the MP, the alloy, or the Shadow Essence. */
+export function canPay(s: Save, d: Dungeon, run: OpenRaid, p: TollPrice, now = Date.now()): boolean {
+  if (p.kind === 'mp') return vitals.read(s, now).mp >= p.n;
+  if (p.kind === 'mats') return forge.held(s, p.mat!) >= p.n;
+  if (p.kind === 'essence') return (s.shadows.essence ?? 0) >= p.n;
+  return partyFor(s, d, run, now)[0].hp > p.n;
+}
+
 /**
- * Pay a toll door where the hunter stands, in HP: it opens for good. False if there is no such door here,
- * or the hunter has too little HP to pay and still stand. Mutates.
+ * Pay a toll door's seal where the hunter stands, in what it asks (`tollPrice`): it opens for good. False if there is no
+ * such door here, or the hunter has too little to pay (HP enough to pay and still stand). Mutates.
  */
 export function payToll(s: Save, d: Dungeon, run: OpenRaid, to: string, now = Date.now()): boolean {
   // Broken from the plan, the hunter walks to the door first, a move for each corridor, as walking back is.
   const far = tollDoorsOpen(d, run).find((t) => t.far === to || t.key === to);
-  if (far && standing(d, run)?.id !== far.near) {
-    const party = partyFor(s, d, run, now);
-    if (party[0].hp <= tollCost(party[0])) return false;
-    moveTo(d, run, far.near);
-  }
-  const door = tollsHere(d, run).find((t) => t.to === (far?.far ?? to));
+  const at = far ? far.near : standing(d, run)?.id;
+  const beyond = far?.far ?? to;
+  if (!at) return false;
+  const price = tollPrice(s, d, run, at, beyond, now);
+  if (!canPay(s, d, run, price, now)) return false;
+  if (far && standing(d, run)?.id !== far.near) moveTo(d, run, far.near);
+  const door = tollsHere(d, run).find((t) => t.to === beyond);
   if (!door) return false;
-  const party = partyFor(s, d, run, now);
-  const hero = party[0];
-  const cost = tollCost(hero);
-  if (hero.hp <= cost) return false;
-  hero.hp -= cost;
+  if (price.kind === 'hp') {
+    const party = partyFor(s, d, run, now);
+    party[0].hp -= price.n;
+    run.tolls = [...(run.tolls ?? []), door.key];
+    settleParty(s, d, run, party, now);
+    return true;
+  }
+  if (price.kind === 'mp') vitals.spendMp(s, price.n, now);
+  else if (price.kind === 'mats') s.materials[price.mat!] = forge.held(s, price.mat!) - price.n;
+  else s.shadows.essence = (s.shadows.essence ?? 0) - price.n;
   run.tolls = [...(run.tolls ?? []), door.key];
-  settleParty(s, d, run, party, now);
   return true;
 }
 
@@ -963,6 +989,8 @@ export interface StepResult {
   item?: string;
   /** Or the materials it held, banked the same way. */
   mats?: forge.Bundle;
+  /** A Shadows' cache's piece of Shadow equipment, banked the same way. */
+  shadowItem?: ShadowItem;
 }
 
 /**
@@ -994,6 +1022,13 @@ export function choose(s: Save, d: Dungeon, run: OpenRaid, id: string, _now = Da
     const below = across(m, x);
     run.at += 1;
     if (below) { run.path.push(below.id); run.at += 1; run.pos = below.id; }
+  } else if (x.kind === 'treasure' && x.shadow) {
+    // A Shadows' cache, behind a seal of Shadow Essence: a piece of Shadow equipment at the Gate's grade, banked for the
+    // end of the run as everything it finds is.
+    const piece = shadowgear.draw(d.rank as Rank, rng(`arise|shadowcache|${run.seed}|${id}`), `sg-${run.seed}-${id}`);
+    run.shadowHaul = [...(run.shadowHaul ?? []), piece];
+    out.shadowItem = piece;
+    run.at += 1;
   } else if (x.kind === 'treasure' || x.kind === 'vault') {
     // A cache found deep (two corridors off the road, in a wing, behind a secret or a toll) finds at the Gate's own grade.
     Object.assign(out, haulFind(d, run, rng(`arise|cache|${run.seed}|${id}`), x.kind === 'vault' || x.deep ? 0 : -1, x.kind === 'vault'));
@@ -1169,6 +1204,8 @@ export interface RaidResult {
   xp: XpResult | null;
   /** Pieces found whole: rare, since gear is forged. */
   loot: Item[];
+  /** Shadow equipment found in a Shadows' cache. */
+  shadowLoot: ShadowItem[];
   /** The materials it left, what the haul banked among them. */
   mats: forge.Bundle;
   /** The blueprints it left, learned. */
@@ -1397,6 +1434,9 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   if (rifted && cleared) mats = forge.addUp(mats, { [forge.EMBER.id]: RIFT_EMBER[d.rank as Rank] ?? 0 });
   if (medals.length) mats = forge.addUp(mats, { [forge.EMBER.id]: par.emberFor(d.rank, medals) });
   forge.give(s, mats);
+  // Shadow equipment found in a Shadows' cache, kept as the rest of the haul is.
+  const shadowLoot = kept ? run.shadowHaul ?? [] : [];
+  shadowgear.give(s, shadowLoot);
   const loot = lootIds.map((id, i) => grant(s, id, `${run.seed}|${i}`) ?? make(id)).filter(Boolean);
   // A clear's boss and Gatekeeper leave a piece found whole with their family's engraving, at stated odds,
   // drawn apart from everything else the run leaves.
@@ -1504,7 +1544,7 @@ export function finish(s: Save, d: Dungeon, run: OpenRaid, outcome: Outcome, now
   s.log.unshift({ day: dayKey(now), kind: 'gate', name: `${d.name}, ${outcome}`, xp: xp?.gained ?? 0 });
   s.log.length = Math.min(s.log.length, LOG_MAX);
   return {
-    outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, mats, blueprints: left.blueprints, familiarity, lingering,
+    outcome, dungeonId: d.id, shards, banked, bounty, xp, loot, shadowLoot, mats, blueprints: left.blueprints, familiarity, lingering,
     steps: run.at, depth, rooms: m.tower ? null : m.nodes.length - 1, contracts: deal, spire: climb, grew, ready, assoc: job, ascended, chosen,
     heroHp: out.hp, heroMax: out.hpMax, allies: allies.map((a) => a.name),
     seals: extra.seals.slice(), feats: { asked, met, fresh, pay: featPay(fresh, bpFeat, left.feat) }, drops: kept ? extra.drops.length : 0,

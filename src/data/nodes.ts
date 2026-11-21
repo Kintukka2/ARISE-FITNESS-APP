@@ -53,8 +53,26 @@ export const FIGHT_PURSE = { fight: 0.2, deep: 0.3, elite: 0.5 } as const;
  */
 export const NOTICE = { base: 0.35, per: 0.006, max: 0.9 } as const;
 
-/** A toll door: a sealed corridor that opens for good when the hunter pays this share of their maximum HP, standing at it. */
-export const TOLL = { hp: 0.2 } as const;
+/**
+ * A toll door: a sealed corridor that opens for good when the hunter pays its seal, standing at it. On the plans of
+ * `labyrinth5` each seal asks one thing, drawn for it (`SEALS`): this share of their maximum HP or of their maximum MP,
+ * this many of the Gate's own alloy, or, rarely and only on the one way into a cache, this much Shadow Essence. Older
+ * plans' seals all ask HP.
+ */
+export const TOLL = {
+  hp: 0.2,
+  mp: 0.35,
+  alloy: { E: 4, D: 5, C: 6, B: 7, A: 8, S: 10 } as Record<string, number>,
+  essence: { E: 1, D: 1, C: 2, B: 2, A: 3, S: 3 } as Record<string, number>,
+} as const;
+
+export type SealKind = 'hp' | 'mp' | 'mats' | 'essence';
+/**
+ * How often a seal asks each, by weight (the owner's call: not always HP). Shadow Essence is the rare one, drawn only for a
+ * seal that is the one way into a cache, at `essence` odds; that cache is the Shadows' own (`map.MapNode.shadow`), and
+ * holds a piece of Shadow equipment (`data/shadowgear.ts`).
+ */
+export const SEALS = { weights: { hp: 4, mp: 3, mats: 3 } as Record<'hp' | 'mp' | 'mats', number>, essence: 0.1 } as const;
 
 /**
  * The five blessings shrines offered before the Paths' (`data/blessings.ts`): flat stats, in the units

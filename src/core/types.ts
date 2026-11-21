@@ -156,6 +156,18 @@ export interface Shadow {
   name?: string;
   /** Where the hunter has placed it, dragged on a Gate's brief. Unset, it stands where its role does (`ranks.byRole`). */
   stand?: 'front' | 'rear';
+  /** The Shadow equipment it wears, a piece to each of its four slots (`data/shadowgear.ts`), held inside it. */
+  gear?: Partial<Record<'weapon' | 'offhand' | 'armour' | 'accessory', ShadowItem>>;
+}
+
+/** A piece of Shadow equipment: its slot, its grade, and what it adds, fixed when it was found. */
+export interface ShadowItem {
+  id: string;
+  slot: 'weapon' | 'offhand' | 'armour' | 'accessory';
+  rank: Rank;
+  /** Its roll, from `ROLL.min` to `ROLL.max`. */
+  q: number;
+  stats: Partial<Record<Stat, number>>;
 }
 
 export interface OpenRaid {
@@ -186,11 +198,13 @@ export interface OpenRaid {
   map: string;
   path: string[];
   /** How the map is drawn: a Gate's labyrinth floors. Runs opened before them walk the smaller floors (`floors`), one floor of rooms (`rooms`), or the tower they began on (none). */
-  layout?: 'labyrinth4' | 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+  layout?: 'labyrinth5' | 'labyrinth4' | 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
   /** The map has been charted by a Gate Survey: its hidden passages open with no noticing. */
   charted?: boolean;
   /** The toll doors paid for, by `map.pairKey`: open for good. */
   tolls?: string[];
+  /** Shadow equipment the run found in a Shadows' cache, paid in `raid.finish` as everything it finds is. */
+  shadowHaul?: ShadowItem[];
   /** The room the hunter stands in: the last entered, or walked back to. Unset, the entrance. */
   pos?: string;
   /** The rests the run has used: each heals once. */
@@ -447,6 +461,8 @@ export interface Save {
     fresh: string[];
     /** Shadow Essence, spent on promotions. */
     essence: number;
+    /** Shadow equipment held and worn by none (`core/shadowgear.ts`). A piece worn is held inside its Shadow. */
+    items?: ShadowItem[];
   };
 
   shop: { day: string | null; taken: number[] };

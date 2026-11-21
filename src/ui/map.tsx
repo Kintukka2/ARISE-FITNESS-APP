@@ -6,7 +6,7 @@
  * cleared room can be walked back to. On the Gate clock, past the budget the plan stirs, and a Red Gate's plan
  * is red, its entrance sealed; what a walk costs in moves is never shown (the owner's call).
  */
-import { across, pairKey, passages, threatOf, tollDoors, unsealed, type GateMap, type MapNode, type Openings } from '@/core/map';
+import { across, pairKey, passages, sealOf, threatOf, tollDoors, unsealed, type GateMap, type MapNode, type Openings } from '@/core/map';
 import { landmarkOf } from '@/data/landmarks';
 import { HIDDEN, HIDDEN_IN_ROOMS, NODE, type NodeKind } from '@/data/nodes';
 import type { ComponentChildren } from 'preact';
@@ -95,7 +95,8 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
   for (const x of rooms) for (const id of x.next) if (x.id < id && on(m.byId[id])) halls.push([x, m.byId[id]]);
   const secret = passages(m, done, openings).map(([x, y]) => [m.byId[x], m.byId[y]] as const).filter(([x]) => on(x));
   // A toll door is a corridor sealed in red until it is paid, its seal at its middle; paid, a corridor like any.
-  const tolls = tollDoors(m).map(([x, y]) => ({ x: m.byId[x], y: m.byId[y], paid: !!openings.tolls?.has(pairKey(x, y)) })).filter((t) => on(t.x));
+  // A seal of Shadow Essence is drawn in the Shadows' violet, not the seal's red (the owner's call): a Shadows' cache waits behind it.
+  const tolls = tollDoors(m).map(([x, y]) => ({ x: m.byId[x], y: m.byId[y], paid: !!openings.tolls?.has(pairKey(x, y)), shade: sealOf(m, x, y) === 'essence' })).filter((t) => on(t.x));
   const found = secrets?.(f);
   // What the plan shows of a room: a trap, a cache or a rest passes for an Event until the hunter has stood in it.
   const looksOf = (x: MapNode): NodeKind => (HIDDEN_IN_ROOMS.has(x.kind) && !entered.has(x.id) ? 'event' : x.kind);
@@ -129,7 +130,7 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           {/* A corridor is drawn twice: its walls, then its floor between them. */}
           {[...halls.map(([x, y]) => [x, y, done.has(x.id) && done.has(y.id) ? 'is-walked' : (done.has(x.id) || done.has(y.id)) && !compact ? 'is-near' : ''] as const),
             ...secret.map(([x, y]) => [x, y, 'is-hidden'] as const),
-            ...tolls.map((t) => [t.x, t.y, t.paid ? 'is-walked' : 'is-toll'] as const)].map(([x, y, lit]) => (
+            ...tolls.map((t) => [t.x, t.y, t.paid ? 'is-walked' : t.shade ? 'is-toll is-shade' : 'is-toll'] as const)].map(([x, y, lit]) => (
             <g key={`${x.id}-${y.id}`} class={`dmap__hall ${lit}`}>
               <line class="dmap__wall" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} />
               <line class="dmap__floor" x1={cx(x)} y1={cy(x)} x2={cx(y)} y2={cy(y)} />
@@ -144,8 +145,8 @@ function RoomsView({ m, path = [], at = 0, options = [], road = [], onPick, pos,
           // A seal the hunter can break is tapped to break it: it asks first.
           const can = onToll ? tollable.find((k) => k.key === pairKey(t.x.id, t.y.id)) : undefined;
           return can
-            ? <button type="button" key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll is-live" style={style} aria-label="Toll door: break the seal" onClick={() => { sfx.tap(); onToll!(can.key); }}><Glyph name="lock" /></button>
-            : <span key={`toll${t.x.id}-${t.y.id}`} class="dmap__toll" aria-hidden="true" style={style}><Glyph name="lock" /></span>;
+            ? <button type="button" key={`toll${t.x.id}-${t.y.id}`} class={`dmap__toll is-live ${t.shade ? 'is-shade' : ''}`} style={style} aria-label={t.shade ? 'Seal of Shadow Essence: break the seal' : 'Toll door: break the seal'} onClick={() => { sfx.tap(); onToll!(can.key); }}><Glyph name="lock" /></button>
+            : <span key={`toll${t.x.id}-${t.y.id}`} class={`dmap__toll ${t.shade ? 'is-shade' : ''}`} aria-hidden="true" style={style}><Glyph name="lock" /></span>;
         })}
         {rooms.map((x) => {
           const style = { gridColumn: X(x) + 1, gridRow: Y(x) + 1 };

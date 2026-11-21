@@ -53,7 +53,7 @@ export function defaults(): Save {
       runs: {}, raid: null, met: [], together: {}, walked: {}, favourites: [], bosses: [], entered: [], surveyed: [], seen: {},
       last: null, unbroken: 0, bestUnbroken: 0, tactic: 'default',
     },
-    shadows: { army: [], squad: [], fresh: [], essence: 0 },
+    shadows: { army: [], squad: [], fresh: [], essence: 0, items: [] },
     shop: { day: null, taken: [] },
     contracts: { day: null, grade: 'E', list: [], bonus: false, seen: false },
     spire: { season: null, best: 0, top: 0, seasons: 0, last: null },
