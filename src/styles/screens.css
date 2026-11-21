@@ -5102,3 +5102,51 @@ button.mod__tip .infotag__q { display: none; }
 /* Its mark on a band of its own above the head's rows, so it never sits over what the Shadow was. */
 .sp-head--shadow.is-call { padding-top: 32px; }
 .sp-head--shadow.is-call .sp-head__call { top: 8px; right: 10px; }
+
+/* The figure answers as the slots do: a part pointed at lights white, with its slot; a tap opens the slot. */
+.avatar.is-live .av { cursor: pointer; pointer-events: visiblePainted; }
+.avatar.is-live .av--held:not(.is-on) { pointer-events: visiblePainted; }
+.pslot.is-hot .pslot__box { border-color: #fff; box-shadow: 0 0 0 1px #fff, 0 0 14px color-mix(in srgb, #fff 45%, transparent); }
+.pslot.is-hot .pslot__name { color: #fff; }
+/* On the Gates screen the hunter's condition takes the Gates' orange, as the radar's frame under it does. */
+.vitalstrip.sysframe--gates .vrow > .ico { filter: drop-shadow(0 0 4px var(--ember-glow)); }
+/* A seal of Shadow Essence: the Shadows' violet where a seal is red, its corridor dashed violet. */
+.dmap__hall.is-toll.is-shade .dmap__wall { stroke: color-mix(in srgb, var(--arcane) 85%, transparent); }
+.dmap__hall.is-toll.is-shade .dmap__floor { stroke: #120a24; }
+.dmap__toll.is-shade { border-color: var(--arcane); background: #120a24; color: #c9b1ff; box-shadow: 0 0 10px var(--arcane-glow); }
+.dmap__toll.is-shade.is-live { animation-name: shadePulse; }
+@keyframes shadePulse { from { box-shadow: 0 0 4px var(--arcane-glow); } to { box-shadow: 0 0 14px var(--arcane-glow); } }
+
+/* ------------------------------------------------------------------ Shadow equipment, in the Shadows' violet */
+.sgart { --s: 48px; --rc: var(--arcane); position: relative; display: grid; place-items: center; flex: none; width: var(--s); height: var(--s); border: 1px solid color-mix(in srgb, var(--arcane) 55%, transparent); background: radial-gradient(closest-side, color-mix(in srgb, var(--rc) 24%, transparent), rgba(12, 8, 28, 0.85)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 25%, transparent); clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%); }
+.sgart[data-rarity="E"] { --rc: var(--rank-E); } .sgart[data-rarity="D"] { --rc: var(--rank-D); } .sgart[data-rarity="C"] { --rc: var(--rank-C); }
+.sgart[data-rarity="B"] { --rc: var(--rank-B); } .sgart[data-rarity="A"] { --rc: var(--rank-A); } .sgart[data-rarity="S"] { --rc: var(--rank-S); }
+.sgart__glow { position: absolute; inset: 18%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--arcane) 40%, transparent), transparent); filter: blur(3px); }
+.sgart__glyph { position: relative; width: 52%; height: 52%; color: color-mix(in srgb, var(--rc) 70%, #fff); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--arcane) 80%, transparent)); }
+.sgart.is-empty { border-style: dashed; background: rgba(12, 8, 28, 0.6); box-shadow: none; }
+.sgart.is-empty .sgart__glyph { color: color-mix(in srgb, var(--sys-ink) 30%, transparent); filter: none; }
+.sgart.is-empty .sgart__glow { display: none; }
+.sgslots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.sgslot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 4px 6px; border: 1px solid color-mix(in srgb, var(--arcane) 22%, transparent); background: rgba(12, 8, 28, 0.45); color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; transition: border-color 160ms, transform 140ms var(--ease); }
+.sgslot:active { transform: scale(0.96); }
+.sgslot:focus-visible { outline: 2px solid var(--arcane); outline-offset: 2px; }
+.sgslot.is-on { border-color: color-mix(in srgb, var(--arcane) 50%, transparent); }
+.sgslot__name { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.sgslot__plus { position: absolute; top: 4px; right: 4px; }
+.sgrow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-left: 2px solid color-mix(in srgb, var(--arcane) 70%, transparent); }
+.sgrow__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sgrow__text b { font-size: 0.88rem; color: #fff; }
+.sgrow__text small { display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 62%, transparent); }
+.sgrow__stats { gap: 10px !important; color: #c9b1ff !important; font-weight: 700; }
+.sgrow__end { display: flex; align-items: center; gap: 8px; }
+.sgrow__end .is-up { color: var(--verdant); } .sgrow__end .is-down { color: var(--blood); }
+.sgrow__who { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 50%, transparent); text-align: right; }
+.sgrow__who.is-worn { color: #c9b1ff; font-weight: 700; }
+.sgframe > .sysframe__glass { padding-bottom: 12px; }
+.sgarmoury { padding: 0 2px; }
+.shadefind { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; animation: qaIn 420ms var(--ease) both; }
+.shadefind b { font-size: 0.92rem; font-style: italic; color: #fff; text-shadow: 0 0 10px var(--arcane-glow); }
+.shadefind small { font-size: 0.68rem; color: color-mix(in srgb, var(--sys-ink) 70%, transparent); }
+.shadefind__stats { display: inline-flex; gap: 10px; color: #c9b1ff !important; font-weight: 700; }
+.rshade { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding-top: 8px; }
+.nodepanel.is-shade { --accent: var(--arcane); }

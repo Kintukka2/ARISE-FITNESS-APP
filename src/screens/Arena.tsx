@@ -21,7 +21,10 @@ import * as skilltree from '@/core/skilltree';
 import { NODES } from '@/data/tree';
 import { TRICK } from '@/data/tricks';
 import * as story from '@/core/story';
-import type { Dungeon, Order } from '@/core/types';
+import type { Dungeon, Order, Rank, ShadowItem } from '@/core/types';
+import * as shadowgear from '@/core/shadowgear';
+import { ShadowGearArt, statsText } from '@/ui/shadowgear';
+import { RARITY } from '@/core/gear';
 import { group } from '@/core/util';
 import { dungeonById, enemyById, entryBlock, isPractice } from '@/core/gates';
 import { licensedRank } from '@/core/licence';
@@ -425,7 +428,7 @@ interface Room { label: string; boss: boolean; index: number }
 type Phase = 'map' | 'fight' | 'turn' | 'decide' | 'node' | 'results';
 
 /** A step being shown: a rest or a cache as it happened, or a choice waiting, then how it went. */
-interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; done?: raid.Resolution; rested?: { pick: raid.RestPick; potions: number } }
+interface Panel { node: MapNode; item?: string; mats?: Record<string, number>; shade?: ShadowItem; done?: raid.Resolution; rested?: { pick: raid.RestPick; potions: number } }
 
 export function Arena() {
   const s = useSave();
@@ -588,28 +591,31 @@ export function Arena() {
   }
 
   /**
-   * A toll door's seal, or the room it seals, tapped: ask first, then walk to it and pay, in HP, and it opens
-   * for good. Too hurt to pay and still stand, the window says so and nothing is paid.
+   * A toll door's seal, or the room it seals, tapped: ask first, then walk to it and pay what the seal asks (HP, MP, the
+   * Gate's alloy, or Shadow Essence), and it opens for good. A seal of Shadow Essence asks in the Shadows' violet. Short
+   * of what it asks (too hurt to pay HP and still stand), the window says so and nothing is paid.
    */
   function askToll(key: string) {
     return guarded(async () => {
       const r = store.get().gates.raid;
       const door = r ? raid.tollDoorsOpen(d!, r).find((t) => t.key === key) : undefined;
       if (!r || !door) return;
-      const hero = raid.partyFor(store.get(), d!, r)[0];
-      const cost = raid.tollCost(hero);
-      if (hero.hp <= cost) {
-        await sys(system.refuse(['Not enough HP.', `HP -${cost}`], 'gates'));
+      const price = raid.tollPrice(store.get(), d!, r, door.near, door.far);
+      const shade = price.kind === 'essence';
+      const kind = shade ? 'shadow' : 'gates';
+      const what = price.kind === 'hp' ? 'HP' : price.kind === 'mp' ? 'MP' : price.kind === 'mats' ? forge.materialById(price.mat!)?.name ?? 'Materials' : 'Shadow Essence';
+      const have = price.kind === 'mats' ? forge.held(store.get(), price.mat!) : price.kind === 'essence' ? store.get().shadows.essence ?? 0 : null;
+      if (!raid.canPay(store.get(), d!, r, price)) {
+        await sys(system.refuse([have === null ? `Not enough ${what}.` : `Not enough ${what}. (${group(have)}/${group(price.n)})`, system.red(`${what} -${group(price.n)}`)], kind));
         return;
       }
-      // The System's window, as every window the plan opens: the Gates' frame, the cost in red.
-      const yes = await sys(system.offer(['Would you like to break the seal and open the room?', system.red(`HP -${cost}`)], 'gates', 'Break The Seal', 'No', true));
+      // The System's window, as every window the plan opens: the Gates' frame (the Shadows' for Essence), the cost in red.
+      const yes = await sys(system.offer([shade ? 'Would you like to break the seal of Shadow Essence and open the room?' : 'Would you like to break the seal and open the room?', system.red(`${what} -${group(price.n)}`)], kind, 'Break The Seal', 'No', true));
       if (!yes) return;
       const was = clockNow();
       if (!store.update((x) => raid.payToll(x, d!, x.gates.raid!, door.far))) return;
-      sfx.hit(-40);
-      flash('danger');
-      say([{ text: '▸ You pay the toll. The seal breaks.', tone: 'outcome' }]);
+      if (price.kind === 'hp') { sfx.hit(-40); flash('danger'); } else { sfx.stamp(); buzz([12, 30, 18]); }
+      say([{ text: shade ? '\u25b8 The Shadow Essence is spent. The seal breaks.' : '\u25b8 You pay the toll. The seal breaks.', tone: 'outcome' }]);
       await tellClock(was);
     });
   }
@@ -668,7 +674,7 @@ export function Arena() {
         sfx.gate();
         return toMap();
       }
-      open({ node: res.node, item: res.item, mats: res.mats });
+      open({ node: res.node, item: res.item, mats: res.mats, shade: res.shadowItem });
     });
   }
 
@@ -1113,6 +1119,18 @@ function CacheFind({ defId }: { defId: string }) {
   );
 }
 
+/** A Shadows' cache's find: its piece of Shadow equipment in the Shadows' violet, its name, grade and what it adds. */
+function ShadeFind({ it }: { it: ShadowItem }) {
+  return (
+    <div class="shadefind">
+      <ShadowGearArt it={it} size={64} />
+      <b>[{shadowgear.nameOf(it)}]</b>
+      <small>{RARITY[it.rank as Rank].name} Shadow {shadowgear.slotDef(it.slot).name}</small>
+      <small class="num shadefind__stats">{statsText(it).map((t) => <span key={t}>{t}</span>)}</small>
+    </div>
+  );
+}
+
 /** A room's name as the panel heads it: a shrine by its Path (`Shrine of Ruin`). */
 function nodeName(x: MapNode, run: ReturnType<typeof useSave>['gates']['raid']): string {
   if (x.kind === 'shrine' && run) return `Shrine of ${pathOf(blessings.offerAt(run, x).path)?.name ?? ''}`;
@@ -1163,7 +1181,7 @@ function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
   const [stage, setStage] = useState<CacheStage>(cache && !auto ? 'shut' : 'open');
   const shut = !!cache && stage !== 'open';
   return (
-    <section class={`nodepanel nodepanel--${x.kind} ${cache ? `is-${stage}` : ''}`}>
+    <section class={`nodepanel nodepanel--${x.kind} ${cache ? `is-${stage}` : ''} ${x.shadow ? 'is-shade' : ''}`}>
       <header class="nodepanel__head">
         {/* The scene's art: the room's mark, vast and faint, behind light turning slowly round its emblem. */}
         <span class="nodepanel__art" aria-hidden="true"><Glyph name={glyph} /></span>
@@ -1172,9 +1190,9 @@ function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
           : <span class="nodepanel__emblem" aria-hidden="true"><Glyph name={glyph} /></span>}
         <b class="nodepanel__title">{ev?.title ?? nodeName(x, run)}</b>
         {/* What a cache or a vault held, centred under its emblem as it opens (the owner's call: not at the foot). */}
-        {cache && !shut && (item || p.mats) && (
+        {cache && !shut && (item || p.mats || p.shade) && (
           <div class="nodepanel__spoils">
-            {item ? <CacheFind key={x.id} defId={p.item!} /> : <MatTiles b={p.mats!} />}
+            {p.shade ? <ShadeFind it={p.shade} /> : item ? <CacheFind key={x.id} defId={p.item!} /> : <MatTiles b={p.mats!} />}
           </div>
         )}
       </header>
@@ -1185,7 +1203,8 @@ function NodePanel({ d, p, auto, onChoose, onGo, onWithdraw, onRest }: {
       {shut && <small class="nodepanel__hint">Tap the {cache === 'vault' ? 'vault' : 'cache'} to open it.</small>}
       {cache && !shut && (
         <div class="nodepanel__finds">
-          {item ? <p>Something lies under the dust. You take it.</p>
+          {p.shade ? <p>Shadows gather over something in the dark. You take it.</p>
+            : item ? <p>Something lies under the dust. You take it.</p>
             : p.mats ? <p>{x.kind === 'vault' ? 'The seal is broken. What the Gatekeeper kept is stacked inside.' : 'Something lies under the dust. You take what is worth carrying.'}</p>
             : <p>The cache is empty.</p>}
         </div>
@@ -1684,7 +1703,7 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
         )}
         {/* What the run left, materials and finds together: Ember is paid above, with the XP and the shards, and what a
             Feat paid is in its row. */}
-        {(mats.length > 0 || found.length > 0) && (
+        {(mats.length > 0 || found.length > 0 || (r.shadowLoot ?? []).length > 0) && (
           <section class="rsec rband spoils" aria-label="Spoils">
             <header class="exsec__head"><span class="label">Spoils</span><i aria-hidden="true" />{found.length > 0 && <small>{faceDown ? 'Tap to reveal' : 'Tap a find for its card'}</small>}</header>
             {mats.length > 0 && <span class="rmats">{mats.map(([id, n]) => (
@@ -1710,6 +1729,12 @@ function Results({ d, r, onDone }: { d: ReturnType<typeof dungeonById> & object;
                       : <Btn kind="gold" size="sm" disabled={faceDown > 0} onClick={() => { store.update(gear.autoEquip); setEquipped(true); sfx.success(); }}>Auto Equip Upgrades</Btn>}
                   </div>
                 )}
+              </div>
+            )}
+            {/* Shadow equipment from a Shadows' cache, in the Shadows' violet: it waits in the hold on the Shadows screen. */}
+            {(r.shadowLoot ?? []).length > 0 && (
+              <div class="rshade">
+                {(r.shadowLoot ?? []).map((it) => <ShadeFind key={it.id} it={it} />)}
               </div>
             )}
           </section>

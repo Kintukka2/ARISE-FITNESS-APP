@@ -14,7 +14,7 @@
  */
 import { FONT_SHARE } from '@/data/blessings';
 import { landmarkOf, leadFamily } from '@/data/landmarks';
-import { EVENTS, TRAP_LEAN, TRAPS, type NodeKind } from '@/data/nodes';
+import { EVENTS, SEALS, TRAP_LEAN, TRAPS, type NodeKind, type SealKind } from '@/data/nodes';
 import { PACK, ROLE_ROW } from '@/data/ranks';
 import { enemyById, isPractice } from './gates';
 import { powerOf } from './combat';
@@ -63,6 +63,8 @@ export interface MapNode {
   landmark?: string;
   /** On the later plans (`labyrinth4`), a trap's kind and the two stats it can be met with (`data/nodes.ts`, `TRAPS`). */
   trap?: { id: string; ways: Stat[] };
+  /** On the plans of `labyrinth5`, a cache behind a seal of Shadow Essence: the Shadows' own, holding a piece of their equipment. */
+  shadow?: boolean;
 }
 
 export interface GateMap {
@@ -83,6 +85,8 @@ export interface GateMap {
   floors: { start: string; end: string; rows: number; cols: number }[];
   /** The later plans' (`labyrinth2`): a hidden passage opens only when it is noticed or charted. */
   secrets?: boolean;
+  /** On the plans of `labyrinth5`, what each toll door's seal asks, by `pairKey`. A seal not listed asks HP. */
+  seals?: Record<string, SealKind>;
 }
 
 /**
@@ -101,7 +105,7 @@ export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${
  * labyrinths walk the smaller floors they began on (`floors`), runs opened before the floors one floor
  * of rooms (`rooms`), and runs opened before the dungeons the tower they began on (`layers`).
  */
-export type Layout = 'labyrinth4' | 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
+export type Layout = 'labyrinth5' | 'labyrinth4' | 'labyrinth3' | 'labyrinth2' | 'labyrinth' | 'floors' | 'rooms' | 'layers';
 
 /** How many floors a Gate goes down, by its grade. */
 export const FLOORS: Record<string, number> = { E: 1, D: 1, C: 2, B: 2, A: 3, S: 4 };
@@ -822,14 +826,43 @@ function dungeon(d: Dungeon, seed: string, floors: number, vary: boolean, size: 
  * Draw a Gate's map. A Trial and a block of the Spire are towers; any other Gate is a dungeon of its
  * grade's floors, unless an open run began on a tower or on one floor of rooms.
  */
-export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth4'): GateMap {
+export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth5'): GateMap {
   if (d.trial) return trialMap(d);
   if (d.floor || layout === 'layers') return trapped(seed, layered(d, seed), layout);
   if (layout === 'rooms') return dungeon(d, seed, 1, false);
   if (layout === 'floors') return dungeon(d, seed, floorsOf(d), true);
-  const m = dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout === 'labyrinth2' || layout === 'labyrinth3' || layout === 'labyrinth4');
-  return layout === 'labyrinth3' || layout === 'labyrinth4' ? trapped(seed, packed(d, seed, m), layout) : m;
+  const m = dungeon(d, seed, floorsOf(d), true, floorSizeOf(d), layout !== 'labyrinth');
+  return layout === 'labyrinth2' || layout === 'labyrinth' ? m : sealed(seed, trapped(seed, packed(d, seed, m), layout), layout);
 }
+
+/**
+ * The plans of `labyrinth5`: the plans of `labyrinth4`, each toll door's seal asking one thing, drawn for it apart from
+ * everything else on the map so nothing else moves (the owner's call: not always HP). A seal that is the one way into a
+ * cache may, rarely, ask Shadow Essence, and that cache is then the Shadows' own. A plan drawn before keeps its seals,
+ * every one asking HP.
+ */
+function sealed(seed: string, m: GateMap, layout: Layout): GateMap {
+  if (layout !== 'labyrinth5') return m;
+  const seals: Record<string, SealKind> = {};
+  for (const x of m.nodes) for (const y of x.toll ?? []) {
+    if (x.id > y) continue;
+    const key = pairKey(x.id, y);
+    const rr = rng(`arise|seal|${seed}|${key}`);
+    // The one way into a cache: the room at either end whose only way in is this door.
+    const cache = [m.byId[x.id], m.byId[y]].find((n) => n && n.kind === 'treasure' && !n.next.length && (n.toll ?? []).length === 1 && !(n.hidden ?? []).length);
+    if (cache && rr() < SEALS.essence) {
+      seals[key] = 'essence';
+      cache.shadow = true;
+      continue;
+    }
+    seals[key] = weighted(Object.entries(SEALS.weights).map(([k, w]) => ({ v: k as SealKind, w })), rr()).v;
+  }
+  m.seals = seals;
+  return m;
+}
+
+/** What a toll door's seal asks: drawn on the plans of `labyrinth5`, HP on every plan before. */
+export const sealOf = (m: GateMap, a: string, b: string): SealKind => m.seals?.[pairKey(a, b)] ?? 'hp';
 
 /**
  * The later plans' traps (`labyrinth4`): each trap one of the trap kinds (`TRAPS`), and two of the five stats to meet it
@@ -839,7 +872,7 @@ export function build(d: Dungeon, seed: string, layout: Layout = 'labyrinth4'): 
  * start of a run on `labyrinth4`, since a tower's floors are drawn the same on every layout.
  */
 function trapped(seed: string, m: GateMap, layout: Layout): GateMap {
-  if (layout !== 'labyrinth4') return m;
+  if (layout !== 'labyrinth4' && layout !== 'labyrinth5') return m;
   for (const x of m.nodes) {
     if (x.kind !== 'trap') continue;
     const rr = rng(`arise|trap|${seed}|${x.id}`);

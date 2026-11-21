@@ -1025,6 +1025,20 @@ title card; what it paid, `XP`, `Shards` and `Ember` side by side (Ember is neve
 pay, `Tap a find for its card` at the head's right; then the System's reports, each in its frame; and the way out.
 Each band opens on its label and hairline, with the same room above and below every band.
 
+**Seals and Shadow equipment.** A toll door's seal asks one thing, and its window says it in red: `HP -361`, `MP -150`,
+`Mana Silver -6`, or `Shadow Essence -2`. Short of it, `Not enough MP.` (`Not enough Mana Silver. (3/6)` where a count
+is held). A seal of Shadow Essence is drawn on the plan in the Shadows' violet, never the seal's red, its corridor
+dashed violet, and its window is the Shadows' violet: `Would you like to break the seal of Shadow Essence and open the
+room?`, then `▸ The Shadow Essence is spent. The seal breaks.` (the owner's call). The cache behind it is a Shadows'
+cache: `Shadows gather over something in the dark. You take it.` over its piece in a violet frame, `[Umbral Edge]` in
+italic, `Rare Shadow Weapon`, `STR +8   AGI +4`. A Shadow's card carries `Equipment` (`2/4` at its right) after its
+`Stats`: four tiles, `Weapon`, `Off-Hand`, `Armour`, `Accessory`, the piece worn in its grade's light or the slot's glyph
+dashed, `+` in gold while a piece held fits an empty one; a tap opens `EQUIPMENT: Weapon`, `Worn` and `Held` (`▲ 4` beside
+a piece that adds more, **Equip**, **Unequip**; `Nothing worn.`, `No weapon held.`). The Shadows screen ends on
+`Equipment` in the Shadows' frame, every piece found, the ones worn by none first, each with who wears it or `Not worn`
+(`No Shadow equipment held.`). A Shadow's stat tooltip adds `Its equipment adds 8.`. A piece of Shadow equipment is never
+called an item of the hunter's: it has no Equipment Power, no Quality and no Familiarity.
+
 **Tempering.** The System's, in the gear's cyan, its results in advancement's gold. A piece of C-Rank or
 higher carries a Temper socket on its card under `Enhancements`, beside its Engraving and in the same shape (below):
 `TEMPER` in small capitals, and never how often it was tempered, which the `TEMPER` window says (the owner's call); `Locked` over `Opens once the piece is

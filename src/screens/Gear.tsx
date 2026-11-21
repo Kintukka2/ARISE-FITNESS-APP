@@ -787,14 +787,25 @@ export function openEquipment() {
  * hands, the legs, the feet, the pendant, a ring on each hand, the sword in one hand and the shield at the other)
  * filled in the piece's rarity, dashed while the slot is empty; the slot pointed at glows white.
  */
-export function Avatar({ s, hot }: { s: Save; hot: SlotKey | null }) {
+export function Avatar({ s, hot, onHot, onPick }: { s: Save; hot: SlotKey | null; onHot?: (k: SlotKey | null) => void; onPick?: (k: SlotKey) => void }) {
   const at = (k: SlotKey, held = false) => {
     const it = gear.equippedIn(s, k);
     const r = it ? gear.defOf(it)?.rank : undefined;
-    return { class: `av ${held ? 'av--held' : ''} ${r ? 'is-on' : ''} ${hot === k ? 'is-hot' : ''}`, style: r ? `--rc: var(--rank-${r})` : undefined };
+    return {
+      class: `av ${held ? 'av--held' : ''} ${r ? 'is-on' : ''} ${hot === k ? 'is-hot' : ''} ${onPick ? 'is-live' : ''}`,
+      style: r ? `--rc: var(--rank-${r})` : undefined,
+      'data-slot': k,
+      // Pointing at a part lights its slot beside the figure, and a tap opens the slot (the owner's call: the figure
+      // answers as the slots do). The slots stay the keyboard's way in; the figure is for the pointer.
+      ...(onPick ? {
+        onPointerEnter: () => onHot?.(k),
+        onPointerLeave: () => onHot?.(null),
+        onClick: () => onPick(k),
+      } : {}),
+    };
   };
   return (
-    <svg viewBox="6 0 128 226" class="avatar">
+    <svg viewBox="6 0 128 226" class={`avatar ${onPick ? 'is-live' : ''}`}>
       <defs>
         <linearGradient id="avscan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0" /><stop offset="0.5" stop-color="currentColor" stop-opacity="0.5" /><stop offset="1" stop-color="currentColor" stop-opacity="0" /></linearGradient>
       </defs>
@@ -868,7 +879,7 @@ function Equipment() {
     const better = !!it && !!plan[k];
     const offer = !it && offers.includes(k);
     return (
-      <button type="button" key={k} class={`pslot is-${def.side} ${it ? 'is-filled' : ''} ${set ? 'is-set' : ''} ${better || offer ? 'is-better' : ''}`} style={set ? `--set-h: ${gear.setHue(set)}` : undefined}
+      <button type="button" key={k} class={`pslot is-${def.side} ${hot === k ? 'is-hot' : ''} ${it ? 'is-filled' : ''} ${set ? 'is-set' : ''} ${better || offer ? 'is-better' : ''}`} style={set ? `--set-h: ${gear.setHue(set)}` : undefined}
         onClick={() => { sfx.tap(); openSlot(k); }}
         onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot((h) => (h === k ? null : h))} onFocus={() => setHot(k)} onBlur={() => setHot((h) => (h === k ? null : h))}
         aria-label={`${def.name}: ${d?.name ?? 'empty'}${better ? ', an upgrade is held' : offer ? ', something held fits' : ''}`}>
@@ -915,7 +926,7 @@ function Equipment() {
         <div class="paperdoll__col">{gear.SLOTS.filter((x) => x.side === 'l').map((x) => slot(x.key))}</div>
         <div class="paperdoll__fig" aria-hidden="true">
           <span class="paperdoll__aura" />
-          <Avatar s={s} hot={hot} />
+          <Avatar s={s} hot={hot} onHot={setHot} onPick={(k) => { sfx.tap(); openSlot(k); }} />
         </div>
         <div class="paperdoll__col">{gear.SLOTS.filter((x) => x.side === 'r').map((x) => slot(x.key))}</div>
       </div>

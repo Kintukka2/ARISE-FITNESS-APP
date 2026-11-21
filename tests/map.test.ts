@@ -663,7 +663,7 @@ describe('choices', () => {
     const lean = { on: 0, all: 0 };
     for (const day of DAYS.slice(0, 12)) for (const d of ALL_DUNGEONS.filter((g) => !g.floor && !g.trial)) {
       const seed = mapSeed(d, day);
-      const m = build(d, seed);
+      const m = build(d, seed, 'labyrinth4');
       const old = build(d, seed, 'labyrinth3');
       for (const x of m.nodes) {
         const was = old.byId[x.id];

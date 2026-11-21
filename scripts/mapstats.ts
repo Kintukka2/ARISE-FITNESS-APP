@@ -42,7 +42,7 @@
  *   cost          the hunter's HP lost, as a share of the maximum (mean, and the worst seen)
  */
 import { ALL_DUNGEONS, isPractice } from '@/core/gates';
-import { build, mapSeed, systemRoad, systemWalk, threatOf, tollDoors, type GateMap, type MapNode } from '@/core/map';
+import { build, mapSeed, sealOf, systemRoad, systemWalk, threatOf, tollDoors, type GateMap, type MapNode } from '@/core/map';
 import { chamberAt, partySpecs, runChamber } from '@/core/raid';
 import { Unit } from '@/core/combat';
 import { budgetOf, systemMoves } from '@/core/clock';
@@ -218,6 +218,22 @@ for (const r of ['E', 'D', 'C', 'B', 'A', 'S'] as Rank[]) {
   const traps = on + off;
   const offered = Object.values(ways).reduce((a, b) => a + b, 0);
   console.log(`  ${r}    ${(on / maps).toFixed(2).padEnd(9)}${(off / maps).toFixed(2).padEnd(10)}${TRAPS.map((x) => pct((kinds[x.id] ?? 0) / Math.max(1, traps)).padEnd(9)).join('')}${STATS.map((k) => pct((ways[k] ?? 0) / Math.max(1, offered)).padEnd(5)).join('')}${pct(lean / Math.max(1, offered))}`);
+}
+
+// The seals (labyrinth5): what each toll door's seal asks, and how often a Shadows' cache waits behind one.
+console.log('\nSeals, per map: toll doors, then the share asking each, and the Shadows\u2019 caches behind a seal of Shadow Essence');
+console.log('grade  doors  HP     MP     alloy  essence  Shadows\u2019 caches');
+for (const r of ['E', 'D', 'C', 'B', 'A', 'S'] as Rank[]) {
+  let doors = 0, maps = 0, shade = 0;
+  const kinds: Record<string, number> = {};
+  for (const d of ALL_DUNGEONS.filter((x) => x.rank === r && !isPractice(x) && !x.floor && !x.trial)) for (const day of days) {
+    const m = build(d, mapSeed(d, day));
+    maps++;
+    for (const [a, b] of tollDoors(m)) { doors++; const k = sealOf(m, a, b); kinds[k] = (kinds[k] ?? 0) + 1; }
+    shade += m.nodes.filter((x) => x.shadow).length;
+  }
+  const share = (k: string) => pct((kinds[k] ?? 0) / Math.max(1, doors)).padEnd(7);
+  console.log(`  ${r}    ${(doors / Math.max(1, maps)).toFixed(2).padEnd(7)}${share('hp')}${share('mp')}${share('mats')}${share('essence').padEnd(9)}${(shade / Math.max(1, maps)).toFixed(3)}`);
 }
 
 // What a side fight costs: each entered at full health, the healing every won fight brings counted.

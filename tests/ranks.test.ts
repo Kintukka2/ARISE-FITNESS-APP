@@ -138,7 +138,7 @@ describe('front and rear', () => {
     const d = ALL_DUNGEONS.find((x) => x.rank === 'C')!;
     const s = defaults();
     const run = raid.begin(s, d, Date.parse('2026-03-01T12:00:00'));
-    expect(run.layout).toBe('labyrinth4');
+    expect(run.layout).toBe('labyrinth5');
     run.layout = 'labyrinth2';
     const m = raid.mapOf(d, run);
     const old = build(d, run.map!, 'labyrinth2');

@@ -3832,6 +3832,36 @@ What changed (`ui/familiarity.tsx`):
   buttons sit at the foot of sockets of one height.
 - **Balance.** Display only.
 
+## Seals that ask more than HP; Shadow equipment; the figure answers; Gates' condition in orange — built
+
+The owner asked for:
+- **The HP, MP and Fatigue panel on the Gates screen in orange,** like the radar's frame under it. It is the System's
+  frame in the Gates' orange (`Condition` in `screens/Gates.tsx`).
+- **The figure on Equipment answering both ways.** Pointing at a part of the figure lights it and its slot, as a slot
+  pointed at lights its part. A tap on a part opens its slot window (`Avatar`'s `onHot` and `onPick`). The slots stay
+  the keyboard's way in.
+- **Seals costing more than HP** (`data/nodes.ts`, `TOLL`, `SEALS`; `sealed` in `core/map.ts`).
+  - New runs open on `labyrinth5`, the plans of `labyrinth4` with each seal asking one thing, drawn apart from
+    everything else so no room, road or tuning moves.
+  - A seal asks HP (20% of the maximum), MP (35% of the maximum) or 4-10 of the Gate's own alloy by grade.
+  - Rarely, and only on the one way into a cache, a seal asks 1-3 Shadow Essence by grade. That seal is violet on the
+    plan, its window is the Shadows' violet, and the cache behind it is a Shadows' cache holding a piece of Shadow
+    equipment.
+  - Odds, from `npm run mapstats`: HP 31-53% of seals, MP 17-31%, alloy 21-34%, Essence 4-9%. That is one Shadows'
+    cache in about every 10 to 50 maps.
+  - Runs opened on `labyrinth4` keep their HP seals.
+- **Equipment for Shadows**: four slots, not the hunter's ten — a weapon, an off-hand, an armour and an accessory
+  (`data/shadowgear.ts`, `core/shadowgear.ts`, `ui/shadowgear.tsx`).
+  - A piece adds its slot's leading stat, 4-25 by grade at its best roll, and half that to a second stat.
+  - A piece worn is held inside its Shadow, so its stats (`shadows.statsOf`, then `raid.shadowSpec`) read it without the
+    save.
+  - The Shadow card gains `Equipment` after `Stats`: four tiles, each opening its slot's window (worn, held, Equip,
+    Unequip).
+  - The Shadows screen ends on `Equipment`: every piece found, with who wears it.
+  - A released Shadow gives back what it wore.
+- **Balance.** The balance tools' Shadows wear nothing and the System never breaks a seal, so no tuning moves and the
+  campaign plays as it did. `npm run mapstats` gains a seals table.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

@@ -93,6 +93,17 @@ reintroduce anything that needs the player to exercise; that belongs to a separa
   toll doors paid (`run.tolls`). Pass it to `reach`, `sight`, `passages` and the clock's walks; never store
   what it decides. Landmarks, secrets, wings and toll doors are off the System's way, so they move no road;
   what they pay needs the campaign rerun.
+- Toll doors' seals (`data/nodes.ts`, `TOLL`, `SEALS`): new runs open on `labyrinth5`, the plans of `labyrinth4` with each
+  seal asking HP, MP, the Gate's alloy or, rarely and only on the one way into a cache, Shadow Essence (`sealed` in
+  `core/map.ts`, its own seed apart from every other draw, `GateMap.seals`, read through `map.sealOf`). That cache is a
+  Shadows' cache (`MapNode.shadow`): it banks a piece of Shadow equipment on the run (`run.shadowHaul`), paid in
+  `raid.finish`. Seals are off the System's way, so they move no road and no tuning; a run opened on `labyrinth4` keeps
+  its HP seals. Change what a seal asks, its odds or what a Shadows' cache holds and rerun mapstats and the campaign.
+- Shadow equipment (`data/shadowgear.ts`, `core/shadowgear.ts`): four slots, a weapon, an off-hand, an armour and an
+  accessory. A piece worn is held inside its Shadow (`Shadow.gear`), one held by none in `s.shadows.items`. It reaches
+  the fight only through `shadows.statsOf` (its stats on top of the creature's), and so `raid.shadowSpec`; an open run
+  keeps the Shadows it walked in with (`run.party`). The balance tools' Shadows wear none, so no tuning moves; give them
+  any and you must recalibrate.
 - Gear is forged (`core/forge.ts`, `data/forge.ts`): Gates leave materials and now and then a
   blueprint, and a blueprint forges its design as often as the materials allow. There is no fusion.
   Weapon Familiarity reaches the fight only through `raid.heroSpec` (`forge.familiarityBonus`); the

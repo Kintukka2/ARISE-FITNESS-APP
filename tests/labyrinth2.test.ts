@@ -164,6 +164,8 @@ describe('toll doors', () => {
     const { d, m, x, at } = find((mm, y) => !!y.toll && y.next.length > 0 && !y.wing && wayLen(mm, y) > 0);
     const s = hunter(30);
     const run = raid.begin(s, d, at);
+    // A run on the plans before `labyrinth5`, where every seal asks HP.
+    run.layout = 'labyrinth2';
     // Stand in the room at the door, every room on the way there cleared.
     const way = wayTo(m, x.id);
     run.path = way;
@@ -183,6 +185,7 @@ describe('toll doors', () => {
     expect(raid.payToll(s, d, run, to, at)).toBe(false);
     const s2 = hunter(30);
     const run2 = raid.begin(s2, d, at);
+    run2.layout = 'labyrinth2';
     run2.path = way;
     run2.at = way.length;
     run2.pos = x.id;
@@ -196,6 +199,7 @@ describe('breaking a seal from the plan', () => {
     const { d, m, x, at } = find((mm, y) => !!y.toll && y.next.length > 0 && !y.wing && wayLen(mm, y) > 1);
     const s = hunter(30);
     const run = raid.begin(s, d, at);
+    run.layout = 'labyrinth2';
     const way = wayTo(m, x.id);
     run.path = way;
     run.at = way.length;

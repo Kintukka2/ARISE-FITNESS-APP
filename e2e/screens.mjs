@@ -206,6 +206,16 @@ try {
   if ((await page.locator('.sheet.is-top .gearhead__bar i').count()) !== 10) throw new Error('THE EQUIPMENT HEAD DOES NOT BAR EVERY SLOT');
   if ((await page.locator('.sheet.is-top .loadrow').count()) !== 3) throw new Error('EQUIPMENT DOES NOT SHOW THREE LOADOUTS');
   await snap('equipment');
+  // The figure answers as the slots do: a part pointed at lights its slot, and a tap opens the slot.
+  {
+    const chest = page.locator('.sheet.is-top .paperdoll__fig .av[data-slot="chest"]').first();
+    await chest.hover(); await sleep(250);
+    if (!(await page.locator('.sheet.is-top .pslot.is-hot', { hasText: 'Chest' }).count())) throw new Error('A PART OF THE FIGURE POINTED AT DOES NOT LIGHT ITS SLOT');
+    await snap('equipment-hover');
+    await chest.click(); await sleep(600);
+    if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: 'Chest' }).count())) throw new Error('A PART OF THE FIGURE TAPPED DOES NOT OPEN ITS SLOT');
+    await close(); await sleep(400);
+  }
   await page.locator('.sheet.is-top .sheet__body').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await sleep(300); await snap('equipment-2');
   // A set worn opens its own window.
   if (await page.locator('.sheet.is-top .setrow').count()) {
@@ -482,6 +492,7 @@ try {
   // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
   if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
   if ((await page.locator('.vitalstrip .vrow').count()) < 3) throw new Error('THE CONDITION STRIP IS NOT UNDER VALCORDE');
+  if (!(await page.locator('.vitalstrip.sysframe--gates').count())) throw new Error('THE CONDITION STRIP IS NOT IN THE GATES\' ORANGE');
   await page.locator('.vitalstrip .pip').nth(1).click(); await sleep(400);
   if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
   await snap('gates-potion');
@@ -1156,9 +1167,19 @@ try {
     await page.locator('.qsec--rift').scrollIntoViewIfNeeded(); await sleep(300); await snap('quests-rift-done');
   } else await close();
 
+  // A piece of Shadow equipment held, as a Shadows' cache leaves one.
+  await page.evaluate(() => {
+    const k = 'arise-rpg:save'; const x = JSON.parse(localStorage.getItem(k));
+    x.shadows.items = [{ id: 'sg-tour', slot: 'weapon', rank: 'C', q: 0.9, stats: { STR: 8, AGI: 4 } }];
+    localStorage.setItem(k, JSON.stringify(x));
+  });
+  await page.reload(); await sleep(1400); await drain();
   await nav('shadows');
   await snap('shadows', true);
   await sleep(600);
+  // The Shadows screen ends on its equipment, every piece found with who wears it.
+  if (!(await page.locator('.sgframe .sgrow', { hasText: 'Umbral Edge' }).count())) throw new Error('THE SHADOWS SCREEN DOES NOT LIST THE SHADOW EQUIPMENT HELD');
+  await page.locator('.sgframe').scrollIntoViewIfNeeded(); await sleep(300); await snap('shadows-equipment');
   // The Army is one tile: the squad's slots over the reserve. There is no Squad tile beside it.
   if (await page.locator('.btile--squad').count()) throw new Error('THE SQUAD IS STILL A TILE OF ITS OWN');
   await page.locator('.armystage__stage').click(); await sleep(700); await snap('army'); await snap('army-full', true);
@@ -1191,10 +1212,23 @@ try {
   // Set out as a hunter's card: Stats, Skills & Traits, History, and no box of its next rank or of its Kin and role.
   {
     const heads = (await page.locator('.sheet.is-top .shadowcard .section__head .label').allInnerTexts()).map((x) => x.trim().toUpperCase());
-    if (heads.join('|') !== 'STATS|SKILLS & TRAITS|HISTORY') throw new Error(`THE SHADOW CARD'S SECTIONS ARE NOT STATS, SKILLS & TRAITS, HISTORY (${heads.join(', ')})`);
+    if (heads.join('|') !== 'STATS|EQUIPMENT|SKILLS & TRAITS|HISTORY') throw new Error(`THE SHADOW CARD'S SECTIONS ARE NOT STATS, EQUIPMENT, SKILLS & TRAITS, HISTORY (${heads.join(', ')})`);
     if (await page.locator('.sheet.is-top .shadowcard .sp-next').count()) throw new Error('THE SHADOW CARD STILL HOLDS A NEXT RANK BOX');
     if (await page.locator('.sheet.is-top .shadowcard .btn', { hasText: /^(Name|Rename|Recall|Deploy|Squad Full)$/ }).count()) throw new Error('THE SHADOW CARD STILL HAS ITS NAME OR RECALL BUTTONS');
     if ((await page.locator('.sheet.is-top .shadowcard .statrows .statrow').count()) !== 5) throw new Error('THE SHADOW CARD DOES NOT SET OUT FIVE STAT ROWS');
+  }
+  // Its equipment: four slots, the weapon's lit gold while a piece held fits; its window puts the piece on.
+  {
+    if ((await page.locator('.sheet.is-top .sgslots .sgslot').count()) !== 4) throw new Error('THE SHADOW CARD DOES NOT HAVE FOUR EQUIPMENT SLOTS');
+    const power = await page.locator('.sheet.is-top .sp-row__power').innerText();
+    await page.locator('.sheet.is-top .sgslot.is-call').first().click(); await sleep(600);
+    if (!(await page.locator('.sheet.is-top .sgwin .sgrow', { hasText: 'Umbral Edge' }).count())) throw new Error('THE SLOT WINDOW DOES NOT OFFER THE PIECE HELD');
+    await snap('shadow-slot');
+    await page.locator('.sheet.is-top .sgwin .btn', { hasText: 'Equip' }).first().click(); await sleep(400);
+    await close(); await sleep(400);
+    if (!(await page.locator('.sheet.is-top .sgslot.is-on').count())) throw new Error('THE PIECE WAS NOT PUT ON');
+    if ((await page.locator('.sheet.is-top .sp-row__power').innerText()) === power) throw new Error('THE PIECE WORN DID NOT RAISE THE SHADOW\'S POWER');
+    await page.locator('.sheet.is-top .sgslots').scrollIntoViewIfNeeded(); await sleep(300); await snap('shadow-equipment');
   }
   // `Deployed` is the button that takes it out of the squad, `Not deployed` the one that puts it back.
   {
