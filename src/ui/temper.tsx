@@ -11,13 +11,15 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { sfx } from '@/audio/audio';
 import * as gear from '@/core/gear';
 import * as temper from '@/core/temper';
-import type { Item, Temper } from '@/core/types';
+import type { Item, Rank, Temper } from '@/core/types';
+import { RANKS } from '@/core/types';
 import { group } from '@/core/util';
 import { EMBER } from '@/data/forge';
 import { TEMPER_FROM } from '@/data/temper';
 import * as store from '@/store';
 import { useSave } from '@/store';
-import { Btn, GearArt, Section } from './components';
+import { Btn, GearArt } from './components';
+import { ModCard } from './mod';
 import { buzz } from './feedback';
 import { MatArt } from './forge';
 import { Glyph } from './icons';
@@ -68,43 +70,44 @@ export function EmberCost({ n, short = false }: { n: number; short?: boolean }) 
 }
 
 /**
- * The Temper slot on a piece's card, a panel as Familiarity's is: the slot's mark and what it holds, its place in
- * its range, or the properties it can take while it is empty; a new roll waiting, if one is; and the way to the
- * TEMPER window, with the next temper's Ember on it. A piece short of perfect, or below C-Rank, has no slot.
+ * The Temper slot on a piece's card, a socket as its Engraving's is (`ui/mod.tsx`): its diamond, gold once it holds a
+ * temper, over the property (or `Empty`; how often it was tempered is the TEMPER window's), the property and its size large, its place in its range, a new roll
+ * waiting if one is; and the way to the TEMPER window, with the next temper's Ember on it. A piece of C-Rank or higher
+ * short of perfect shows the slot locked (the steps still to perfect are under its quality); below C-Rank, or issued, it has none.
  */
 export function TemperBlock({ it }: { it: Item }) {
   const s = useSave();
   const d = gear.defOf(it);
-  if (!d || !temper.temperable(it)) return null;
+  if (!d || d.issued || RANKS.indexOf(d.rank as Rank) < RANKS.indexOf(TEMPER_FROM)) return null;
+  if (!temper.temperable(it)) {
+    return (
+      <ModCard class="temperslot is-locked" state="locked" mark={<TemperMark on={false} size={46} />} kicker="Temper" title="Locked">
+        <small class="mod__line">Opens once the piece is perfect.</small>
+      </ModCard>
+    );
+  }
   const t = it.temper;
   const ember = temper.emberFor(it);
   const short = (s.materials?.[EMBER.id] ?? 0) < ember;
-  const n = temper.count(it);
+  const action = (
+    <Btn kind={it.temperNew ? 'gold' : t ? 'ghost' : undefined} block class="temperslot__go mod__btn" onClick={() => openTemper(it.id)}>
+      {it.temperNew ? 'Choose' : <><Glyph name="hammer" /> Temper<span class="btn__aside"><EmberCost n={ember} short={short} /></span></>}
+    </Btn>
+  );
   return (
-    <Section title="Temper" right={n ? <span class="num">Tempered {n} {n === 1 ? 'time' : 'times'}</span> : undefined}>
-      <div class={`sysbox temperslot ${t ? 'is-held' : 'is-open'} ${it.temperNew ? 'is-waiting' : ''}`}>
-        <div class="temperslot__row">
-          <TemperMark on={!!t} />
-          {t ? (
-            <span class="temperslot__text">
-              <span class="temperslot__line"><b>{nameOf(t.stat)}</b><span class="temperslot__v num">{temperValue(t)}</span></span>
-              <span class="temperslot__range"><RangeBar at={temper.share(it, t)} /><small class="num">{rangeText(t.stat, d.rank)}</small></span>
-            </span>
-          ) : (
-            <span class="temperslot__text">
-              <b>Empty</b>
-              <small class="temperslot__can">{temper.statsFor(it).map(nameOf).join(', ')}</small>
-            </span>
-          )}
-        </div>
-        {it.temperNew && (
-          <p class="temperslot__wait"><span class="label">New roll</span><b>{nameOf(it.temperNew.stat)} <span class="num">{temperValue(it.temperNew)}</span></b></p>
-        )}
-        <Btn kind={it.temperNew ? 'gold' : undefined} block class="temperslot__go" onClick={() => openTemper(it.id)}>
-          {it.temperNew ? 'Choose' : <><Glyph name="hammer" /> {t ? 'Temper Again' : 'Temper'} <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} short={short} /></>}
-        </Btn>
-      </div>
-    </Section>
+    <ModCard class={`temperslot ${t ? 'is-held' : 'is-open'} ${it.temperNew ? 'is-waiting' : ''}`} tone="var(--gold)" state={it.temperNew ? 'call' : t ? 'on' : 'empty'}
+      mark={<TemperMark on={!!t} size={46} />}
+      kicker="Temper"
+      title={t ? nameOf(t.stat) : 'Empty'} value={t ? temperValue(t) : undefined} action={action}>
+      {t ? (
+        <span class="temperslot__range"><RangeBar at={temper.share(it, t)} /><small class="num">{rangeText(t.stat, d.rank)}</small></span>
+      ) : (
+        <small class="mod__line temperslot__can">{temper.statsFor(it).map(nameOf).join(', ')}</small>
+      )}
+      {it.temperNew && (
+        <p class="temperslot__wait"><span class="label">New roll</span><b>{nameOf(it.temperNew.stat)} <span class="num">{temperValue(it.temperNew)}</span></b></p>
+      )}
+    </ModCard>
   );
 }
 
@@ -231,7 +234,7 @@ function TemperWindow({ itemId }: { itemId: string }) {
           <Btn kind="primary" block class="temperwin__go" disabled={!!short} onClick={roll}>
             {short === 'short'
               ? <>Ascendant Ember <span class="num">{group(held)}/{group(ember)}</span></>
-              : <><Glyph name="hammer" /> {it.temper ? 'Temper Again' : 'Temper'} <i class="tsep" aria-hidden="true" /> <EmberCost n={ember} /></>}
+              : <><Glyph name="hammer" /> Temper <EmberCost n={ember} /></>}
           </Btn>
         </>
       )}

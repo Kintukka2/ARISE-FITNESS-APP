@@ -3735,6 +3735,91 @@ What changed (`Constellation` in `screens/Skills.tsx`):
 - **Reduced motion** stills all of it.
 - **Balance.** Display only: no calibration, no campaign.
 
+## A blueprint that is no piece; a piece's sockets, dial and blueprint redrawn; the licence on the Inventory — built
+
+The owner asked for:
+- **No Familiarity and no Quality on a blueprint.** Nothing is learnt on a blueprint, so its card shows neither.
+  The Familiarity panel, the `Quality 16-100%` beside the stats, and the quality bar at the altar are gone.
+- **A blueprint's power ×150, as every power is shown.** Its range read the engine's raw `90-135`. It is now
+  written through `powerText` (`13.4k-20.3k`), set a size smaller so it fits.
+- **`Equipment Power` for `Score`** on a piece's card, the blueprint's, and the Upgrade's before-and-after.
+- **The item card's Familiarity, Temper, Engraving and blueprint sections overhauled,** with full creative control.
+- **The Gates page's licence moved to the Inventory,** replacing the licence row there, so it stands in one place.
+
+What changed:
+- **One socket shape** (`ui/mod.tsx`, after Diablo IV's aspect and temper rows and Lost Ark's engraving slots).
+  - The Engraving and the Temper sit under `Enhancements`, which counts the sockets filled (`1/2`).
+  - Each socket has its mark in its own light at the left (the engraving's colour, the temper's gold), with a rule
+    of that light down its edge. Beside the mark: a small capital line, the name large, then what it does. The
+    action runs across its foot, its Ember set apart on the button.
+  - An empty socket is dashed and hatched, a locked one dimmer, a waiting roll gold.
+  - The two sockets stand side by side from 560px wide.
+  - The engraving's stone still opens the Codex on it.
+  - With nothing cut and nothing kept, the Engraving socket now shows, empty, with **Codex**. It used to be hidden.
+  - A C-Rank or higher piece short of perfect now shows its Temper socket `Locked`. The steps still to perfect
+    stay under its quality.
+- **Familiarity as a dial** (`ui/familiarity.tsx`, after Destiny's and Monster Hunter's mastery rings).
+  - A segment to each rank round the rim, lit gold in turn to the rank reached. The rank in progress fills its own
+    segment.
+  - The rank large at the heart; beside it `Rank 2`, the points, a bar and `110 to Rank 3`.
+  - Two tiles across: what the rank gives, each with the next rank's figure in gold.
+- **The blueprint as a drafting sheet** (`BlueprintCard` in `screens/Gear.tsx`): a cyan grid with corner marks, and
+  the design's art traced on crosshairs. It shows how many are held, whether the materials are, and the shards.
+- **The forged piece and the Held rows** show Equipment Power where they showed Quality.
+- **The licence card** is the Inventory's foot (`LicenceRow` in `screens/Inventory.tsx`), unchanged in look. Gates
+  keeps only the Ascension card under the radar.
+- **Balance.** Display only: no calibration, no campaign.
+
+## Sockets side by side that fit their words; an engraving's rule in its tooltip — built
+
+The owner asked, on a wide screen where the two sockets sit side by side:
+- **Fit the text.** `Resistance` broke into `Resistanc` / `e`. Each socket now sizes itself by its own width (a
+  container query). No word breaks inside itself, a value too wide drops under its name, and under 300px the mark,
+  the name and the button shrink.
+- **No `Tempered 2 times`** on the Temper socket: the TEMPER window says it.
+- **No `Not in the Codex.`** on the Engraving socket.
+- **The engraving's rule in its tooltip.** `[Engraving: Siegebreaker]` is dotted, and a tap opens the one tooltip:
+  its glyph, its name, `Engraving`, and the rule. The card no longer writes the rule.
+- **Balance.** Display only.
+
+## Engrave and Temper, said plainly; one Ember size — built
+
+- **The sockets' buttons say `Engrave` and `Temper`,** never `Engrave Anew` or `Temper Again` (the owner's call).
+  The TEMPER window's button too.
+- **One Ember size.** The Temper button's rule for its hammer (`.temperslot__go .ico`) also enlarged the Ember
+  mark's flame inside its price. It now reaches the button's own icon alone (`> .ico`), so both sockets' Ember
+  marks are the same size.
+- **Balance.** Display only.
+
+## Familiarity said once, after Destiny's Weapon Level — built
+
+The owner found Familiarity still awkward and saying the same things twice:
+- a dial and a bar both showed the progress;
+- `Rank 2` and `2/5` both gave the rank;
+- `110 to Rank 3` repeated the bar;
+- `Forged quality from` meant nothing to them;
+- `+4%` beside `▲ +6%` did not say whether the next rank adds 6% or reaches it.
+
+It reaches it: a rank's bonus is a total (2% a rank), so the next figure was only noise.
+
+The references were the weapon-level panels of the games the owner plays:
+- Destiny 2's crafted weapons: `Weapon Level 12` over one progress bar, with the perks it has unlocked under it.
+- Call of Duty's weapon levels: the level once, one bar of XP to the next, what it gives as it stands.
+- Warframe's mastery: one rank, one bar.
+
+None shows the same progress twice, and none sets the next level's number beside the current one.
+
+What changed (`ui/familiarity.tsx`):
+- **The rank once.** `Rank` over `2` large in gold, the points at its right (`150/260`).
+- **One track** under them, a segment to each rank: lit gold to the rank reached, the rank in progress filling its
+  own. The dial, the second bar and `110 to Rank 3` are gone.
+- **What it gives, in plain words.** `Attack and magic` `+4%`, and `Forged copies` `16% quality or better`, each a
+  total. No next-rank figures.
+- **A tooltip on `Rank`,** the one tooltip, says how a point is earned and what each rank adds. Its figures are read
+  from `FAMILIARITY`.
+- **No rule between a button's word and its Ember** on the Engrave and Temper buttons, and the TEMPER window's.
+- **Balance.** Display only.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

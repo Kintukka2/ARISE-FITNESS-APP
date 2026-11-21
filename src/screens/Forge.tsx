@@ -22,6 +22,7 @@ import { CostGrid, MatArt, TrackMark, bundleText, track } from '@/ui/forge';
 import { Glyph, Shard, STAT_ICON } from '@/ui/icons';
 import { LootCell, useReveal } from '@/ui/loot';
 import { openSheet, sys, toast } from '@/ui/overlays';
+import { powerText } from '@/ui/power';
 import * as system from '@/ui/system';
 import { openItem, PieceHero, PieceLink, SetCard } from './Gear';
 
@@ -212,10 +213,10 @@ function Recipe({ defId }: { defId: string }) {
           <span class="itag is-blueprint"><Glyph name="blueprint" />{known ? 'Blueprint' : 'Blueprint not known'}</span>
           {d.set && <span class="itag is-set" style={`--set-h: ${gear.setHue(d.set)}`}><SetMark id={d.set} />{d.set}</span>}
         </>}
-        score={<b class="num" aria-label={`${Math.round(base * qLo)} to ${Math.round(base * gear.Q_HIGH)}`}>{Math.round(base * qLo)}-{Math.round(base * gear.Q_HIGH)}</b>} />
+        score={<b class="num is-range" aria-label={`${powerText(base * qLo)} to ${powerText(base * gear.Q_HIGH)}`}>{powerText(base * qLo)}-{powerText(base * gear.Q_HIGH)}</b>} />
       {worn && <PieceLink it={worn} label="Worn" />}
       <section class="sysbox piecepanel">
-        <span class="piecepanel__head"><span class="label">Stats</span><small class="num">Quality {Math.round(floor * 100)}-100%</small></span>
+        <span class="label">Stats</span>
         <ul class="itemstats">
           {STATS.filter((k) => d.core[k]).map((k) => (
             <li key={k}><Glyph name={STAT_ICON[k]} /><span>{k} +{fmt((d.core[k] ?? 0) * qLo)}-{fmt((d.core[k] ?? 0) * gear.Q_HIGH)}</span></li>
@@ -235,7 +236,6 @@ function Recipe({ defId }: { defId: string }) {
           </>
         )}
       </section>
-      {d.slot === 'Weapon' && <Familiarity defId={d.id} />}
       {set && (
         <Section title={`Set: ${set.id}`}>
           <SetCard set={set} compact />
@@ -245,7 +245,6 @@ function Recipe({ defId }: { defId: string }) {
         <span class="forgealtar__head"><span class="label">Required materials</span><Shards n={cost.shards} /></span>
         <CostGrid s={s} c={cost} />
         <TrackMissing c={cost} />
-        <QualityRange from={Math.round(floor * 100)} last={fresh[0] ? s.items.find((x) => x.id === fresh[0]) : undefined} />
         {fresh.length > 0 && (
           <div class="haul recipe__fresh">{fresh.slice(0, 1).map((id) => <Forged key={id} id={id} />)}</div>
         )}
@@ -285,26 +284,6 @@ function TrackMissing({ c }: { c: forge.Cost }) {
   );
 }
 
-/**
- * The quality a forged piece of the design can roll, as a bar from 0 to 100: the floor familiarity has
- * raised it to shaded off, and where the piece just forged landed marked on it.
- */
-function QualityRange({ from, last }: { from: number; last?: Item }) {
-  const q = last ? gear.quality(last) : null;
-  return (
-    <div class="qrange" aria-label={`Quality ${from} to 100%${q !== null ? `. The piece just forged: ${q}%` : ''}`}>
-      <span class="qrange__head"><span class="label">Quality</span><b class="num">{from}-100%</b></span>
-      <span class="qrange__bar" aria-hidden="true">
-        {from > 0 && <i class="qrange__floor" style={`width: ${from}%`} />}
-        <i class="qrange__span" style={`left: ${from}%`} />
-        {[25, 50, 75].map((m) => <span key={m} class="qrange__tick" style={`left: ${m}%`} />)}
-        {q !== null && <span class="qrange__mark" style={`left: ${q}%`}><b class="num">{q}%</b></span>}
-      </span>
-      {from > 0 && <small>Familiarity holds every roll at {from}% or better.</small>}
-    </div>
-  );
-}
-
 /** A piece just forged, turned over by its grade where the Forge button is. */
 function Forged({ id }: { id: string }) {
   const s = useSave();
@@ -317,12 +296,12 @@ function Forged({ id }: { id: string }) {
     <div class={`recipe__reveal ${turn.quake ? 'is-quake' : ''}`}>
       {turn.flash}
       <LootCell loot={loot[0]} i={0} state={turn.stateOf(0)} onTap={() => turn.reveal(0)} onOpen={() => { sfx.tap(); openItem(it.id); }} />
-      {turn.stateOf(0) === 'open' && <b class="num recipe__q">Quality {gear.qualityText(it)}</b>}
+      {turn.stateOf(0) === 'open' && <span class="recipe__q"><small class="label">Equipment Power</small><b class="num">{powerText(gear.score(it))}</b></span>}
     </div>
   );
 }
 
-/** A piece of this design held: its quality, and a way back to the Forge for a poor one. */
+/** A piece of this design held: its Equipment Power, and a way back to the Forge for a weak one. */
 function HeldRow({ it }: { it: Item }) {
   const s = useSave();
   const worn = !!gear.slotOf(s, it);
@@ -331,7 +310,7 @@ function HeldRow({ it }: { it: Item }) {
   const recycle = async () => {
     const okay = await sys(system.offer([
       'Would you like to recycle this item?',
-      `${system.tag(gear.defOf(it)!.name, 'Item')} Quality ${gear.qualityText(it)}`,
+      `${system.tag(gear.defOf(it)!.name, 'Item')} Equipment Power ${powerText(gear.score(it))}`,
       system.gain(bundleText(back)),
       system.red('A recycled item cannot be recovered.'),
     ], 'gear', 'Recycle', 'Cancel'));
@@ -346,32 +325,14 @@ function HeldRow({ it }: { it: Item }) {
       <button type="button" class="heldrow__open" onClick={() => { sfx.tap(); openItem(it.id); }}>
         <GearArt item={it} size={40} equipped={worn} />
         <span class="heldrow__text">
-          <b class="num">Quality {gear.qualityText(it)}</b>
-          <i class="heldrow__q" aria-hidden="true"><i style={`width: ${gear.quality(it)}%`} /></i>
+          <small class="label">Equipment Power</small>
+          <b class="num">{powerText(gear.score(it))}</b>
         </span>
       </button>
       {!worn && !starred
         ? <Btn size="sm" kind="ghost" onClick={() => void recycle()}><Glyph name="trash" /> Recycle</Btn>
         : <small class="muted">{worn ? 'Worn' : 'Starred'}</small>}
     </div>
-  );
-}
-
-/** A weapon design's familiarity: its rank, the points to the next, what it adds, and how far it lifts a forged roll. */
-export function Familiarity({ defId }: { defId: string }) {
-  const s = useSave();
-  const f = forge.familiarity(s, defId);
-  const share = f.next ? (f.points - f.from) / Math.max(1, f.next - f.from) : 1;
-  const bonus = Math.round(forge.FAMILIARITY.bonus * f.rank * 100);
-  return (
-    <Section title="Familiarity" right={<span class="num">{f.rank}/{forge.FAMILIARITY_MAX}</span>}>
-      <div class="sysbox famcard">
-        <Pips n={f.rank} />
-        <i class="famcard__bar" aria-hidden="true"><i style={`width: ${Math.round(share * 100)}%`} /></i>
-        <small class="num">{f.next ? `Familiarity points: ${group(f.points)}/${group(f.next)}` : `Familiarity points: ${group(f.points)}`}</small>
-        <small><Facts items={[<>Attack and magic <b class="num grant">+{bonus}%</b></>, <>Forged quality from <b class="num grant">{Math.round(forge.floorOf(s, defId) * 100)}%</b></>]} /></small>
-      </div>
-    </Section>
   );
 }
 
