@@ -3820,6 +3820,18 @@ What changed (`ui/familiarity.tsx`):
 - **No rule between a button's word and its Ember** on the Engrave and Temper buttons, and the TEMPER window's.
 - **Balance.** Display only.
 
+## The Shadow card's head calls for its rank-up; the sockets' buttons on one line — built
+
+- **A rank-up waiting lights the whole head** (`Profile` in `screens/Shadows.tsx`, the owner's call, where the rank
+  alone was a gold button).
+  - The head turns gold and breathes, with `Promotion ready` (or `Awakening ready`) and a chevron at its top right.
+  - The rank's name stands plain in gold.
+  - A tap anywhere on the head, or Enter, opens the Promotion or Awakening. The deploy pill and the tags still answer
+    their own taps.
+- **The Engraving's and Temper's buttons line up** side by side: each socket's body takes the spare height, so both
+  buttons sit at the foot of sockets of one height.
+- **Balance.** Display only.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

@@ -535,8 +535,8 @@ function ShadowCard({ id, close }: { id: string; close: () => void }) {
  * and `Power | 80`; its family, role and how it fights under them.
  * - `Deployed` and `Not deployed` are the one button that puts it in the squad or takes it out (the owner's call, where
  *   `Deploy` and `Recall` stood under the head).
- * - Its rank tells what the next asks when tapped (`rankTip`); while a promotion or a star waits, the rank is a gold
- *   button that opens it (`openRankUp`).
+ * - Its rank tells what the next asks when tapped (`rankTip`); while a promotion or a star waits, the whole head is
+ *   lit gold, `Promotion ready` at its corner, and a tap anywhere on it opens it (`openRankUp`).
  */
 function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
   const s = useSave();
@@ -555,13 +555,26 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
   const share = p.need ? p.into / p.need : 1;
   const c = 2 * Math.PI * 52;
   const name = shadows.nameOf(sh);
-  const deploy = () => {
+  // A promotion or a star waiting on the hunter: the whole head turns gold and opens it (the owner's call, where the
+  // rank alone was a gold button).
+  const promote = shadows.canPromote(s, sh);
+  const call = promote || shadows.canAwaken(s, sh);
+  const rankUp = () => { sfx.tap(); openRankUp(sh.id); };
+  const deploy = (ev: Event) => {
+    ev.stopPropagation();
     if (full) { sfx.tap(); toast('The squad is full.', 'warn'); return; }
     store.update((x) => shadows.toggleDeploy(x, sh.id));
     sfx.blip();
   };
   return (
-    <section class={`sysbox sp-head sp-head--shadow ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${p.need ? '' : 'is-capped'}`}>
+    <section class={`sysbox sp-head sp-head--shadow ${on ? 'is-on' : ''} ${ready ? 'is-ready' : ''} ${call ? 'is-call' : ''} ${p.need ? '' : 'is-capped'}`}
+      {...(call ? {
+        role: 'button', tabIndex: 0, 'aria-haspopup': 'dialog' as const,
+        'aria-label': `${name}: ${promote ? 'Promotion' : 'Awakening'} ready. Open it`,
+        onClick: rankUp,
+        onKeyDown: (ev: KeyboardEvent) => { if (ev.target === ev.currentTarget && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); rankUp(); } },
+      } : {})}>
+      {call && <span class="sp-head__call" aria-hidden="true">{promote ? 'Promotion ready' : 'Awakening ready'}<Glyph name="chevron" /></span>}
       <div class="sp-head__badge">
         <svg viewBox="0 0 120 120" class="sp-ring" aria-hidden="true">
           <circle cx="60" cy="60" r="58" class="sp-ring__runes" />
@@ -586,7 +599,7 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
         <dl class="sp-rows">
           <div class="sp-row">
             <dt>Rank</dt>
-            <dd class="sp-row__rank"><RankWord sh={sh} e={e} /></dd>
+            <dd class="sp-row__rank"><RankWord sh={sh} e={e} plain={call} /></dd>
           </div>
           <div class="sp-row sp-row--lv">
             <dt>Lv.</dt>
@@ -617,22 +630,14 @@ function Profile({ sh, e }: { sh: Shadow; e: Enemy }) {
 
 /**
  * The rank in its row (the owner's call, where a `Next rank` box stood under the head): the word alone, underlined as
- * every word that tells what it is, opening what the next rank asks; while a promotion or a star waits on the hunter, a
- * gold button with a chevron that opens it. The badge beside it wears the rank's chevrons, so the row carries no
- * insignia of its own.
+ * every word that tells what it is, opening what the next rank asks. While a promotion or a star waits (`plain`), the
+ * word stands plain in gold: the head round it is the button. The badge beside it wears the rank's chevrons, so the
+ * row carries no insignia of its own.
  */
-function RankWord({ sh, e }: { sh: Shadow; e: Enemy }) {
+function RankWord({ sh, e, plain }: { sh: Shadow; e: Enemy; plain?: boolean }) {
   const s = useSave();
   const name = shadows.rankOf(sh).name;
-  const promote = shadows.canPromote(s, sh);
-  if (promote || shadows.canAwaken(s, sh)) {
-    return (
-      <button type="button" class="sp-rank is-call" aria-haspopup="dialog" aria-label={`${name} Rank. ${promote ? 'Promotion' : 'Awakening'} ready`}
-        onClick={() => { sfx.tap(); openRankUp(sh.id); }}>
-        <span>{name}</span><Glyph name="chevron" />
-      </button>
-    );
-  }
+  if (plain) return <span class="sp-rank is-ready">{name}</span>;
   return <InfoTag class="sp-rank" tip={rankTip(s, sh, e)}><span class="sp-rank__name">{name}</span></InfoTag>;
 }
 

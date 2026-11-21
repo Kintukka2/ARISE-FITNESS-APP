@@ -1296,14 +1296,14 @@ try {
     }
     if (!told) throw new Error('NO SHADOW IN THE VETERAN\'S ARMY WARDS OFF A STATUS TO TEST');
   }
-  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, its rank on its card turns
-  // gold, the gold rank opens the promotion, and the hold plays it.
+  // The veteran's second Shadow stands at its cap with the Essence for Sworn: its row calls, the head of its card turns
+  // gold, a tap on the head opens the promotion, and the hold plays it.
   if (!(await page.locator('.sheet.is-top .roster__row.is-ready').count())) throw new Error('NO SHADOW IS WAITING TO BE PROMOTED');
   await page.locator('.sheet.is-top .roster__row.is-ready .roster__who').first().click(); await sleep(500);
-  if (!(await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').count())) throw new Error('A SHADOW READY FOR PROMOTION DOES NOT TURN ITS RANK GOLD');
+  if (!(await page.locator('.sheet.is-top .sp-head.is-call', { hasText: 'Promotion ready' }).count())) throw new Error('A SHADOW READY FOR PROMOTION DOES NOT TURN ITS CARD GOLD');
   await snap('shadow-rank-ready');
-  await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').click(); await sleep(600);
-  if (!(await page.locator('.sheet.is-top .promote .holdbtn').count())) throw new Error('THE GOLD RANK DID NOT OPEN THE PROMOTION');
+  await page.locator('.sheet.is-top .sp-head.is-call .sp-head__who').click({ position: { x: 4, y: 4 } }); await sleep(600);
+  if (!(await page.locator('.sheet.is-top .promote .holdbtn').count())) throw new Error('THE GOLD CARD DID NOT OPEN THE PROMOTION');
   await snap('shadow-promote');
   {
     const box = await page.locator('.sheet.is-top .promote .holdbtn').boundingBox();
@@ -1319,7 +1319,7 @@ try {
   for (let i = 0; i < 20 && (await page.locator('.sheet.is-top .promote').count()); i++) await sleep(150);
   await sleep(400); await snap('shadow-promoted');
   if (await page.locator('.sheet.is-top .promote').count()) throw new Error('THE PROMOTION STAYED OPEN AFTER IT WAS CLAIMED');
-  if (await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').count()) throw new Error('THE RANK STAYED GOLD AFTER THE PROMOTION');
+  if (await page.locator('.sheet.is-top .sp-head.is-call').count()) throw new Error('THE CARD STAYED GOLD AFTER THE PROMOTION');
   await close();
   // The roster makes the squad: a row's box takes a Shadow out and puts one in, and the squad's count follows.
   const count = async () => (await page.locator('.sheet.is-top .roster__count').innerText()).trim();
@@ -1535,21 +1535,21 @@ try {
   await page.locator('.sheet.is-top .roster__view[aria-label="Grid"]').click(); await sleep(700); await snap('asc-army-grid', true);
   await page.locator('.sheet.is-top .roster__view[aria-label="List"]').click(); await sleep(300);
   await page.locator('.sheet.is-top .roster__row .roster__who', { hasText: 'Igris' }).first().click(); await sleep(900);
-  // A star waiting turns its rank gold, and the gold rank opens the Awakening.
-  if (!(await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call', { hasText: 'Ascendant' }).count())) throw new Error('A STAR WAITING DOES NOT TURN THE RANK GOLD');
-  // Nothing in the head runs past its edge, the longest rank, `Ascendant`, as a gold button included.
+  // A star waiting turns its card's head gold, and a tap on the head opens the Awakening.
+  if (!(await page.locator('.sheet.is-top .sp-head.is-call', { hasText: 'Awakening ready' }).count()) || !(await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-ready', { hasText: 'Ascendant' }).count())) throw new Error('A STAR WAITING DOES NOT TURN THE CARD GOLD');
+  // Nothing in the head runs past its edge, the longest rank, `Ascendant`, and the `Awakening ready` mark included.
   {
     const off = await page.evaluate(() => {
       const head = document.querySelector('.sheet.is-top .sp-head--shadow');
       if (!head) return ['no head'];
       const edge = head.getBoundingClientRect().right;
-      return [...head.querySelectorAll('.sp-rank, .sp-head__state, .sp-tag, .sp-xp__n, .sp-row__power')]
+      return [...head.querySelectorAll('.sp-rank, .sp-head__state, .sp-head__call, .sp-tag, .sp-xp__n, .sp-row__power')]
         .filter((el) => el.getBoundingClientRect().right > edge - 2).map((el) => el.textContent.trim());
     });
     if (off.length) throw new Error(`THE SHADOW CARD'S HEAD RUNS PAST ITS EDGE: ${off.join(', ')}`);
   }
   await snap('shadow-ascendant');
-  await page.locator('.sheet.is-top .sp-row__rank .sp-rank.is-call').click(); await sleep(600);
+  await page.locator('.sheet.is-top .sp-head.is-call .sp-head__who').click({ position: { x: 4, y: 4 } }); await sleep(600);
   if (!(await page.locator('.sheet.is-top .sp-awaken.promote').count())) throw new Error('THE AWAKENING DID NOT WAIT ON THE HUNTER');
   await snap('shadow-awaken');
   {

@@ -2859,11 +2859,6 @@ button.sp-rank.infotag { display: inline-flex; align-items: center; gap: 6px; pa
 /* A promotion or a star waiting turns the rank gold (the owner's call): a button with a chevron that opens it. */
 /* The rank takes the row's third column too, so the longest, `Ascendant`, keeps to the head on a phone. */
 .sp-row__rank { grid-column: 2 / -1; min-width: 0; }
-button.sp-rank.is-call { display: inline-flex; align-items: center; gap: 4px; margin: -3px 0; padding: 2px 6px 2px 8px; font-size: 0.84rem; border: 1px solid var(--gold); background: linear-gradient(90deg, rgba(255, 203, 92, 0.2), rgba(255, 203, 92, 0.05)); color: var(--gold); font-family: inherit; font-weight: 700; text-shadow: 0 0 8px var(--gold-glow); box-shadow: 0 0 12px var(--gold-glow); cursor: pointer; touch-action: manipulation; animation: readyCall 2s ease-in-out infinite; }
-button.sp-rank.is-call > .ico { width: 11px; height: 11px; }
-button.sp-rank.is-call:active { transform: scale(0.96); }
-button.sp-rank.is-call:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { button.sp-rank.is-call { animation: none; } }
 .sp-row__xp { font-size: 0.66rem; color: color-mix(in srgb, var(--sys-ink) 55%, transparent); }
 .sp-row__power { font-size: 1.3rem !important; font-weight: 800 !important; text-shadow: 0 0 3px rgba(255, 255, 255, 0.5), 0 0 14px var(--win-glow); }
 .sp-rows .sp-exp { margin: -1px 0 2px 58px; height: 4px; }
@@ -5090,3 +5085,20 @@ button.mod__tip .infotag__q { display: none; }
   .mod__btn { padding-left: 6px; padding-right: 6px; font-size: 0.86rem; letter-spacing: 0.02em; }
   .mod__btn .btn__aside { margin-left: 0.4em; }
 }
+
+/* A Shadow whose promotion or star waits: the whole head lit gold, breathing, `Promotion ready` at its corner; a tap on
+   it opens the rank-up (the owner's call, where the rank alone was a gold button). */
+.sp-head.is-call { border-color: var(--gold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent), 0 0 22px color-mix(in srgb, var(--gold) 28%, transparent), inset 0 0 40px color-mix(in srgb, var(--gold) 10%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--gold) 12%, rgba(12, 8, 28, 0.85)), rgba(12, 8, 28, 0.85) 60%); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; animation: readyCall 2.4s ease-in-out infinite; transition: transform 140ms var(--ease); }
+.sp-head.is-call::before { background: radial-gradient(closest-side, color-mix(in srgb, var(--gold) 22%, transparent), transparent); }
+.sp-head.is-call:active { transform: scale(0.99); }
+.sp-head.is-call:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.sp-head__call { position: absolute; top: 8px; right: 10px; z-index: 2; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px 2px 8px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 16%, rgba(12, 8, 28, 0.9)); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+.sp-head__call .ico { width: 9px; height: 9px; }
+.sp-rank.is-ready { font-weight: 800; color: var(--gold); text-shadow: 0 0 8px var(--gold-glow); }
+@media (prefers-reduced-motion: reduce) { .sp-head.is-call { animation: none; } }
+/* Side by side, the two sockets share one height and their buttons one line at the foot. */
+.mod__main { flex: 1; }
+/* Its mark on a band of its own above the head's rows, so it never sits over what the Shadow was. */
+.sp-head--shadow.is-call { padding-top: 32px; }
+.sp-head--shadow.is-call .sp-head__call { top: 8px; right: 10px; }
