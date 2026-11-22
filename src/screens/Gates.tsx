@@ -72,7 +72,6 @@ export function Gates() {
   return (
     <div class="stack gatehome">
       <Voice>{coachLine(s)}</Voice>
-      <Condition />
       {/* A run left open is one tap from where it stopped; its brief, from the board, holds Abandon. */}
       {open && run && <RunCard d={open} steps={raid.stepsOf(raid.mapOf(open, run))} at={run.at} />}
       {/* The practice Gate stands first, until it is cleared: Valcorde's tour points at it. */}
@@ -110,6 +109,8 @@ function GateRadar({ s, gates }: { s: Save; gates: Dungeon[] }) {
   const named = contracts.named(s, day);
   return (
     <SysFrame kind="gates" class="gradar" tour="bands" label="Open Gates">
+      {/* The hunter's condition heads the radar's frame (the owner's call: one frame, where a strip of its own stood). */}
+      <div class="vitalstrip gradar__vitals" aria-label="Condition"><VitalsBlock /></div>
       <div class="gradar__scope">
         <i class="gradar__ring" /><i class="gradar__ring" /><i class="gradar__ring" />
         <i class="gradar__sweep" aria-hidden="true" />
@@ -167,14 +168,6 @@ function HunterRow({ s }: { s: Save }) {
       </div>
     </section>
   );
-}
-
-/**
- * The hunter's condition at a glance, under Valcorde's line: HP, MP and Fatigue, each with its potion
- * one tap away, held or bought. The System's frame in the Gates' orange (the owner's call), as the radar's under it.
- */
-function Condition() {
-  return <SysFrame kind="gates" class="vitalstrip" label="Condition"><VitalsBlock /></SysFrame>;
 }
 
 type Band = 'all' | 'marked' | Rank;

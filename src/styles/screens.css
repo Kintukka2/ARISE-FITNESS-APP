@@ -5109,7 +5109,10 @@ button.mod__tip .infotag__q { display: none; }
 .pslot.is-hot .pslot__box { border-color: #fff; box-shadow: 0 0 0 1px #fff, 0 0 14px color-mix(in srgb, #fff 45%, transparent); }
 .pslot.is-hot .pslot__name { color: #fff; }
 /* On the Gates screen the hunter's condition takes the Gates' orange, as the radar's frame under it does. */
-.vitalstrip.sysframe--gates .vrow > .ico { filter: drop-shadow(0 0 4px var(--ember-glow)); }
+.gradar__vitals { align-self: stretch; padding-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, var(--ember) 28%, transparent); }
+.gradar__vitals .vitals { gap: 6px; padding: 2px 4px; }
+.gradar__vitals .vrow > .ico { color: var(--sys-ink); filter: drop-shadow(0 0 4px var(--ember-glow)); }
+.gradar__vitals .pip { min-height: 30px; min-width: 64px; justify-content: center; }
 /* A seal of Shadow Essence: the Shadows' violet where a seal is red, its corridor dashed violet. */
 .dmap__hall.is-toll.is-shade .dmap__wall { stroke: color-mix(in srgb, var(--arcane) 85%, transparent); }
 .dmap__hall.is-toll.is-shade .dmap__floor { stroke: #120a24; }

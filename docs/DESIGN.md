@@ -3862,6 +3862,46 @@ The owner asked for:
 - **Balance.** The balance tools' Shadows wear nothing and the System never breaks a seal, so no tuning moves and the
   campaign plays as it did. `npm run mapstats` gains a seals table.
 
+## The condition in the radar's frame; the Guide audited — built
+
+- **One frame on Gates.** The hunter's HP, MP and Fatigue head the radar's orange frame, over a hairline, where they
+  stood in a strip of their own (the owner's call).
+- **The Guide audited** against the engine, every line rendered and traced, for what is false and what is missing.
+  - Fixed, among others:
+    - a first clear pays three times a clear's shards, not double;
+    - being carried out pays a share, and Seals pay only on a clear;
+    - Ascension's pay is linear;
+    - fights hold packs of 2-4;
+    - landmarks sit in the fog;
+    - hone past Lv.MAX adds to the multiplier;
+    - the Exchange's spread and the premium on blueprints a grade or more above;
+    - the ▲ on the Forge and the Item Bag mean different things;
+    - Ember comes from Seals, the Rift and medals too;
+    - an Epic set's blessing tier;
+    - stars count toward a release;
+    - recovery never falls under its flat floor;
+    - the Trial and the Rift are once a day;
+    - the Dry Seal blocks the Revival Potion too.
+  - Added:
+    - the Licence's cap;
+    - what the board holds besides its Gates;
+    - trap odds and lean;
+    - a cache's contents;
+    - when the Gate turns red;
+    - paying a seal;
+    - every status;
+    - when the tree opens;
+    - class bonuses;
+    - lingering and echoes;
+    - Shadow levels and equipment;
+    - blueprints a rarity up;
+    - masterwork salvage;
+    - tempering's limits;
+    - the backup and Restore.
+- **An engine fix the audit found.** Honing a skill that deals no damage past Lv.MAX gave it a multiplier, so a curse
+  became a weak hit that could miss. Such a skill now stays as it is (`raid.honedAbility`). Calibration held 139 of 141
+  tunings; the other 2 re-tuned to the same values, so no tuning moved.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

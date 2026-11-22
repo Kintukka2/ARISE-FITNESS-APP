@@ -492,7 +492,7 @@ try {
   // The hunter's condition under Valcorde's line, its potions one tap away; no Condition tile.
   if (await page.locator('.btile--condition').count()) throw new Error('THE CONDITION TILE IS STILL ON THE GATES SCREEN');
   if ((await page.locator('.vitalstrip .vrow').count()) < 3) throw new Error('THE CONDITION STRIP IS NOT UNDER VALCORDE');
-  if (!(await page.locator('.vitalstrip.sysframe--gates').count())) throw new Error('THE CONDITION STRIP IS NOT IN THE GATES\' ORANGE');
+  if (!(await page.locator('.gradar.sysframe--gates .gradar__vitals .vrow').count())) throw new Error('THE CONDITION IS NOT IN THE RADAR\'S FRAME');
   await page.locator('.vitalstrip .pip').nth(1).click(); await sleep(400);
   if (!(await page.locator('.syswin', { hasText: /Would you like to (purchase|drink)\?/ }).isVisible())) throw new Error('A POTION ON THE CONDITION STRIP DID NOT OFFER ITSELF');
   await snap('gates-potion');

@@ -377,7 +377,8 @@ export const honeable = (run: Carried & { party?: UnitSpec[] }): string[] => (ru
 /** The level a skill fights at in this run: as it walked in, and every level honed since. */
 /**
  * A skill as the run's rests have honed it, `more` levels further: up to Lv.MAX a level honed is the tree's own; past
- * it, each adds `HONE_PAST` to its multiplier, so honing a skill at Lv.MAX still makes it stronger. Null for a skill
+ * it, each adds `HONE_PAST` to its multiplier (a skill dealing no damage has none, and stays as it is), so honing a skill
+ * at Lv.MAX still makes it stronger. Null for a skill
  * the tree does not hold.
  */
 export function honedAbility(run: Carried, name: string, more = 0) {
@@ -385,7 +386,9 @@ export function honedAbility(run: Carried, name: string, more = 0) {
   if (!n) return null;
   const to = honedLevel(run, name) + more;
   const at = tree.skillAt(n, Math.min(n.max, to));
-  return to > n.max ? { ...at, mult: Math.round((at.mult + (to - n.max) * HONE_PAST) * 100) / 100 } : at;
+  // A skill that deals no damage (a curse, a taunt, a support) has no multiplier to grow: past Lv.MAX it stays as it is,
+  // and so stays a skill that never misses.
+  return to > n.max && at.mult > 0 ? { ...at, mult: Math.round((at.mult + (to - n.max) * HONE_PAST) * 100) / 100 } : at;
 }
 
 export const honedLevel = (run: Carried, name: string) => (run.levels?.[name] ?? 1) + (run.honed ?? []).filter((x) => x === name).length * HONE_LEVELS;

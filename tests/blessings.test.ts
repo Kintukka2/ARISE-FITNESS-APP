@@ -415,6 +415,16 @@ describe('rests', () => {
     expect(raid.partyFor(s, d, run, at)[0].ab(name)!.mult).toBeCloseTo(then.mult, 5);
   });
 
+  it('a skill that deals no damage, honed past Lv.MAX, stays as it is: a curse never becomes a hit', () => {
+    const { run } = atRest();
+    const quiet = NODES.filter((x) => x.kind === 'skill' && skillAt(x, x.max).mult === 0);
+    expect(quiet.length).toBeGreaterThan(0);
+    for (const n of quiet) {
+      run.levels = { ...(run.levels ?? {}), [n.name]: n.max };
+      expect(raid.honedAbility(run, n.name, HONE_LEVELS * 3)!.mult).toBe(0);
+    }
+  });
+
   it('the System heals below its line and hones above it; where a rest heals nothing, it hones', () => {
     const { run } = atRest();
     expect(raid.systemRestPick(REST_LINE - 0.01, run).kind).toBe('heal');

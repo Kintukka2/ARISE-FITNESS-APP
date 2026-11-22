@@ -4,26 +4,28 @@ import { TEMPER_CAP, TEMPER_EMBER, TEMPER_FROM, TEMPER_STEP } from '@/data/tempe
 import { MEDAL_PAY, MEDALS, PAR, PAR_EMBER } from '@/data/par';
 import { LEAD_ROW, PACK, RANGED_LEADS, RANGED_ROLES, REACHING_LEADS, REACHING_ROLES, REAR_MELEE, ROLE_ROW } from '@/data/ranks';
 import { RIFT_EMBER, RIFT_KEPT, RIFT_MODIFIERS, RIFT_OPENS, RIFT_PAR, RIFT_RATINGS, SCORE } from '@/data/rift';
-import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, MATERIALS, POTIONS, REVIVE, SATCHEL, THROW_MAX } from '@/core/shop';
+import { BLUEPRINT_SHELF, GATE_SHARDS, gateShards, MATERIALS, POTIONS, REACH_PREMIUM, REVIVE, SATCHEL, THROW_MAX } from '@/core/shop';
 import * as forge from '@/core/forge';
 import { ALLOYS, BLUEPRINTS, CACHE, DROPS, FAMILIARITY, FAMILIARITY_MAX, FAMILY_PART, FORGED, PARTS, RECIPE, SALVAGE, UPGRADE_COST } from '@/data/forge';
 import { FLOORS, GRADIENT, LABYRINTH, REST_CHANCE, WING, WINGS } from '@/core/map';
 import { CLOCK } from '@/core/clock';
-import { HELD, POTION_HEAL, GUARD, REACH_TEXT, STATUS_TEXT, TACTICS, THROWABLES, throwReachText, RESIST_STATUS } from '@/core/combat';
+import { HELD, POTION_HEAL, GUARD, REACH_TEXT, STATUS, STATUS_TEXT, TACTICS, THROWABLES, throwReachText, RESIST_STATUS } from '@/core/combat';
 import { FAMILY_FROM, FAMILY_TRICK, ROLE_TRICK, TRICKS } from '@/data/tricks';
 import { ATTRS, GATE_XP, POINTS_PER_LEVEL, PRACTICE_LEVEL, RANK_LADDER, RANK_UP_POINTS, STAT_CAP, BOOST_CAP } from '@/core/progression';
 import { MISSIONS } from '@/core/missions';
 import { OPEN_PER_DAY } from '@/core/gates';
+import { UNLICENSED_CAP } from '@/core/licence';
 import { FORMATION, KIN, KIN_ALL, KIN_AT, ROLE_AT } from '@/data/kin';
-import { bonusText, setPieces } from '@/core/gear';
+import { bonusText, Q_HIGH, Q_LOW, setPieces } from '@/core/gear';
 import { SLOTS as SQUAD, AWAKENING, ESSENCE, EXTRACT_MP, EXTRACT_TRIES, GROWTH_PER_LEVEL, HOLD, SECOND_AT, SHADOW_RANKS, SHADOW_XP } from '@/core/shadows';
-import { drag, RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, PCT_PER_HOUR, WIPE_HP } from '@/core/vitals';
+import { ECHO, ECHO_COST, LEVEL_XP } from '@/data/shadows';
+import { drag, RAID_FATIGUE, FATIGUE_MAX, FATIGUE_PER_HOUR, FLAT_PER_HOUR, PCT_PER_HOUR, WIPE_HP } from '@/core/vitals';
 import { CLASSES } from '@/data/classes';
 import { PATHS, RESET, SKILL_POINTS, SKILL_SLOTS, TIER_GATE, TIER_RANKS, TREE_PASSIVES } from '@/data/tree';
 
 /** Sight's Foresight, quoted from the tree. */
 const FORESIGHT_P = TREE_PASSIVES.find((p) => p.style === 'foresight')!;
-import { FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NODE, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL } from '@/data/nodes';
+import { FIGHT_PURSE, HONE_LEVELS, HONE_PAST, NODE, NOTICE, REST_HEAL, REST_LINE, STEADY_POTIONS, TOLL, TRAP_LEAN, TRAP_ODDS } from '@/data/nodes';
 import { LANDMARKS } from '@/data/landmarks';
 import { BOON_LIST, FONT_OFFER, FONT_SHARE, OFFER, STEER, TIER_ODDS, TIERS, type BoonDef } from '@/data/blessings';
 import { LOADOUTS, SETS, UPGRADE } from '@/data/sets';
@@ -34,7 +36,7 @@ import { RANKS, STATS } from '@/core/types';
 import { DUNGEONS } from '@/data/dungeons';
 import { GRADES } from '@/core/raid';
 import { SEAL_IDS, sealEmber, SEALS, SEALS_FROM, SEALS_PER_GATE } from '@/data/seals';
-import { SHADOW_GEAR_STAT, SHADOW_SLOTS } from '@/data/shadowgear';
+import { ROLL, SHADOW_GEAR_STAT, SHADOW_SLOTS } from '@/data/shadowgear';
 import { FEAT_IDS, FEAT_PAY, FEATS, FEATS_PER_GATE } from '@/data/feats';
 import { BOSS_CONDITION, CONDITION, DROP, FAMILY_CONDITION } from '@/data/drops';
 import { CONTRACT_BONUS, CONTRACT_PAY, CONTRACTS_PER_DAY } from '@/data/contracts';
@@ -46,6 +48,8 @@ import { Glyph } from '@/ui/icons';
 import { openSheet } from '@/ui/overlays';
 
 /** A list as a sentence says it: `STR, AGI and VIT`. */
+/** A fight's creatures on the later plans: the gradient's count, grown into a pack (`packed` in `core/map.ts`). */
+const pk = (n: number) => Math.max(PACK.min, Math.min(PACK.max, n + PACK.add));
 const andList = (xs: readonly string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
 
 /**
@@ -90,15 +94,16 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Classes and skills',
     lines: [
       `From D-Rank the System assigns a class from your highest stat: ${CLASSES.length} classes in five lines.`,
-      'Your class is reassigned at every rank, and follows your highest stat. It adds flat points to that stat.',
+      `Your class is reassigned at every rank, and follows your highest stat. It adds flat points to that stat by rank, D-S: ${[...new Set(CLASSES.map((c) => c.bonus))].join(', ')}.`,
       `${andList(STATS.filter((k) => LEAD_ROW[k] === 'front'))} classes stand in the Front row, ${andList(STATS.filter((k) => LEAD_ROW[k] === 'rear'))} classes in the Rear, until you choose another row on a Gate’s brief.`,
       'A class’s tooltip names the class it rises to at the next rank.',
       `Skill Points: ${SKILL_POINTS.level} each level, and ${SKILL_POINTS.rank} more for each rank you claim. Spend them on the Skills screen.`,
+      'The skill tree opens at D-Rank. Points earned before it wait for you.',
       `The skill tree has ${PATHS.length} Paths, one for each stat: ${PATHS.map((p) => `${p.name} (${p.key})`).join(', ')}.`,
-      'You can spend in any Path, whatever your class. The skills of a Path grow stronger with its stat.',
+      'You can spend in any Path, whatever your class. A physical skill hits harder with STR, a magic one with INT.',
       `A Path has a tier for each rank, ${TIER_RANKS[0]}-${TIER_RANKS[TIER_RANKS.length - 1]}. A tier opens at its rank, once the Path holds enough of your points: ${TIER_RANKS.slice(1).map((r, i) => `${r} ${TIER_GATE[i + 1]}`).join(', ')}.`,
       'A node needs the one it grows from. Each point you spend counts toward the next tier of its Path.',
-      'A skill levels up to Lv.MAX: more force at every level, and its own edge at the top.',
+      'Most skills level to Lv.MAX: more force at each level, and their own edge at the top. Shieldwall and each Path’s skill that does no damage take one level, a turn off the cooldown.',
       'Each Path has one skill that does no damage, at B: a curse that never misses, a taunt, or a support for the whole party.',
       'Two passives in each B and S tier are a fork. Learning one seals the other.',
       `Skill slots: the skills you take into a fight. ${(['D', 'C', 'B', 'A', 'S', 'N'] as const).map((r) => `${r === 'N' ? 'Sovereign' : `${r}-Rank`} ${SKILL_SLOTS[r]}`).join(', ')}.`,
@@ -121,11 +126,11 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A deeper Gate’s road is longer, and its fights share out what a one-floor road pays.',
       'The map is drawn from the Gate and the day.',
       'The brief shows a Gate’s map only once you have been inside it. Until then it is unidentified, like its boss.',
-      'Every room is in the fog until you see it, the stairs among them. Corridors, the entrance, the boss’s room and the landmarks always show.',
-      `Each floor holds a landmark of the family that leads the Gate (${LANDMARKS.slice(0, 3).map((l) => `${l.name} for ${l.family}`).join(', ')} and so on), off the road and seen from the moment you walk in.`,
-      `A floor opens on a fight with one creature. Its fights hold ${GRADIENT.lo[0]}-${GRADIENT.hi[0]} creatures in its first third, ${GRADIENT.lo[1]}-${GRADIENT.hi[1]} in its middle and ${GRADIENT.lo[2]}-${GRADIENT.hi[2]} in its last, and one more on each floor down, to 3.`,
+      'Every room is in the fog until you see it, the stairs and the landmarks among them. Corridors, the entrance and the boss’s room always show.',
+      `Each floor holds a landmark of the family that leads the Gate (${LANDMARKS.slice(0, 3).map((l) => `${l.name} for ${l.family}`).join(', ')} and so on), off the road, found as any room is.`,
+      `A floor opens on a fight of ${PACK.min}. Its fights hold ${pk(GRADIENT.lo[0])}-${pk(GRADIENT.hi[0])} creatures in its first third, ${pk(GRADIENT.lo[1])}-${pk(GRADIENT.hi[1])} in its middle and ${pk(GRADIENT.lo[2])}-${pk(GRADIENT.hi[2])} in its last, one more on each floor down, to ${PACK.max}.`,
       'The road holds one room that is not a fight, in its middle third, and never a trap before the stairs or the boss.',
-      `A room two corridors or more off the road is deep. A cache there finds at the Gate’s own grade, and a fight there banks ${FIGHT_PURSE.deep * 100}% of a clear’s shards.`,
+      `A room two corridors or more off the road, in a Gatekeeper’s wing, or behind a hidden passage or a toll door is deep. A cache there finds at the Gate’s own grade, and a fight there banks ${FIGHT_PURSE.deep * 100}% of a clear’s shards.`,
       'A room you have cleared reads Cleared. A rest, the stairs and the entrance keep their marks, for coming back to.',
       'You see every room next to one you have cleared. A room seen stays seen on that map, for as long as it stands.',
       'You can enter any room next to one you have cleared.',
@@ -133,13 +138,19 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Every Gate has a budget of moves, set by the size of its map. You never see it, or the moves you have spent.',
       'Entering a room is a move, and so is every corridor walked back through cleared rooms, the shortest way.',
       `Past the budget the Gate stirs: every creature you have not yet fought, and the boss, is ${Math.round(CLOCK.stir * 100)}% stronger for each move over.`,
-      `Stir long enough and the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
+      `${CLOCK.red} moves over the budget, the Gate turns red. Its creatures fight as if ${CLOCK.grades} grades above your rank, each grade ${CLOCK.step}× the one below, and the way out seals until the boss falls.`,
       'The System’s road always fits inside the budget, so the brief’s verdict and Auto never stir.',
       'The Practice Gate, the Pale Spire and the Trials have no clock.',
       ...(['fight', 'elite', 'vault', 'rest', 'treasure', 'shrine', 'font', 'trap', 'event', 'landmark', 'entrance'] as const).map((k) => `${NODE[k].name}: ${NODE[k].desc}`),
+      `A cache holds ${CACHE.alloy}-${CACHE.alloy + 2} alloy and a part, or a piece found whole ${FORGED.cache * 100}% of the time.`,
+      `A trap offers two ways past it, each read from one stat. Its kind leans on some stats, offered ${TRAP_LEAN} times as often.`,
+      `A way read from a leaning stat passes ${Math.round(TRAP_ODDS.lean.base * 100)}% of the time, ${TRAP_ODDS.lean.per * 100}% more a point, up to ${Math.round(TRAP_ODDS.lean.max * 100)}%. Any other: ${Math.round(TRAP_ODDS.plain.base * 100)}%, ${TRAP_ODDS.plain.per * 100}% more a point, up to ${Math.round(TRAP_ODDS.plain.max * 100)}%.`,
+      'A trap that catches you costs HP, never a status, and the flood costs Fatigue too.',
+      'The System takes the way past a trap it is likelier to pass.',
       `A vault holds ${CACHE.vault}-${CACHE.vault + 2} alloy of the Gate’s own grade and two parts, or a piece found whole ${FORGED.vault * 100}% of the time.`,
       `An opened vault leaves a blueprint of the Gate’s grade ${BLUEPRINTS.vault * 100}% of the time, unless you are carried out.`,
-      `A floor holds one rest at most, ${Object.entries(REST_CHANCE).map(([r, x]) => `${r}-Rank ${Math.round(x * 100)}%`).join(', ')} of the time, one corridor off the road past halfway. It passes for an Event until you find it.`,
+      `A floor holds one rest beside the road at most, ${Object.entries(REST_CHANCE).map(([r, x]) => `${r}-Rank ${Math.round(x * 100)}%`).join(', ')} of the time, one corridor off the road past halfway. It passes for an Event until you find it.`,
+      'A Gatekeeper’s wing can hold a rest of its own besides.',
       `A Gatekeeper guards a wing of ${WING.rooms[0]}-${WING.rooms[1]} rooms before its vault, reached through its room alone; from ${WING.restFrom}-Rank a wing can hold a rest. A- and S-Rank Gates have ${WINGS.A} wings.`,
       `A rest gives one of three, once: Heal, party HP +${REST_HEAL * 100}%; Hone, one skill equipped +${HONE_LEVELS} level until you leave the Gate; or Steady, every debuff lifted and Health Potion +${STEADY_POTIONS} if the satchel has room. Use it when you find it, or tap it on the plan to walk back to it later.`,
       `Some floors hide a passage between two rooms. As you clear a room at either end, you notice it ${Math.round(NOTICE.base * 100)}% of the time, ${NOTICE.per * 100}% more for each point of Perception, up to ${Math.round(NOTICE.max * 100)}%.`,
@@ -150,14 +161,15 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `A seal asks one of four: ${TOLL.hp * 100}% of your maximum HP, ${TOLL.mp * 100}% of your maximum MP, ${TOLL.alloy.E}-${TOLL.alloy.S} of the Gate's own alloy by grade, or, rarely, ${TOLL.essence.E}-${TOLL.essence.S} Shadow Essence by grade.`,
       'A seal of Shadow Essence is drawn in violet. A Shadows\u2019 cache waits behind it, holding a piece of Shadow equipment at the Gate\u2019s grade.',
       'Breaking a seal from across the plan walks you to it first, a move for each corridor.',
+      'An HP seal is paid only with HP to spare. MP, alloy and Shadow Essence are paid from what you hold, not from what the run has found.',
       'The bag at the map’s corner holds your items, one slot to each. Tap an item to see what it does, then Use.',
       `A ${SURVEY.name} charts every room of a Gate’s map, from its brief or inside it, and costs no moves. The Exchange sells them for ${SURVEY.price}.`,
       `A Health Potion can be drunk from the bag between rooms, for ${POTION_HEAL * 100}% of your health, as well as on your turn in a fight. A Mana Potion can be drunk from it too.`,
-      `Each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards, ${FIGHT_PURSE.deep * 100}% deep. A gatekeeper banks ${FIGHT_PURSE.elite * 100}%.`,
+      `On a one-floor Gate each fight cleared banks ${FIGHT_PURSE.fight * 100}% of a clear’s shards, ${FIGHT_PURSE.deep * 100}% deep; a deeper Gate shares that out across its longer road. A Gatekeeper banks ${FIGHT_PURSE.elite * 100}% on any Gate.`,
       'What the run banks is paid when the boss falls or you withdraw. Carried out, you lose it.',
       'You can withdraw only from the entrance, once you have cleared a room, and never from a Red Gate before its boss falls.',
       'The brief’s verdict follows the marked road, the fewest rooms to the boss, and makes the System’s choices. Auto does the same.',
-      `A skill honed past Lv.MAX gains ×${HONE_PAST} for each level past it, as each level past Lv.1 does.`,
+      `A skill honed past Lv.MAX adds ${HONE_PAST} to its multiplier for each level past it. A skill that deals no damage stays as it is.`,
       'The System steps into a rest beside its road as it passes. It uses one on a floor above the boss’s at once, and keeps the boss’s floor’s for the boss.',
       `At a rest the System heals ${REST_LINE >= 1 ? 'unless your HP is full' : `while your HP is below ${REST_LINE * 100}%`}, and otherwise hones its first skill.`,
       'Take another road and the verdict no longer applies.',
@@ -175,7 +187,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `${Math.round(FONT_SHARE * 100)}% of shrines are Fonts. A Font raises one of up to ${FONT_OFFER} blessings you hold a tier, and with none to raise it blesses as a shrine does.`,
       'A status a blessing inflicts lands unless the foe is immune to it.',
       `A creature or Shadow immune to a status never takes it. One that resists a status has Status Save +${RESIST_STATUS} against it.`,
-      'Auto never Guards, Covers or throws, so the System never takes a blessing that needs them.',
+      'Auto never Guards, Covers or throws, so the System takes a blessing that needs them only when nothing else is offered.',
       'The System takes the blessing with the highest tier it can play, a Capstone before a Duo before the rest. At a Font, it raises the lowest.',
       ...PATHS.flatMap((p) => BOON_LIST.filter((b) => b.kind === 'path' && b.paths[0] === p.key).map((b) => `${p.name}: ${boonLine(b)}`)),
       ...BOON_LIST.filter((b) => b.kind === 'capstone').map((b) => `Capstone: ${boonLine(b)}`),
@@ -187,14 +199,14 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       'Turns go in order of initiative.',
       'On your turn, tap a foe to aim at it, then act.',
-      'A skill or a Strike goes at the foe you aimed at first. It can still miss.',
+      'A skill or a Strike goes at the foe you aimed at first, if it can reach it. It can still miss.',
       'A skill that reaches several foes finds the rest itself.',
       'Every foe shows its next move, and whoever it goes at wears ◀ on their card. It does exactly that, unless its target falls first or it is stunned.',
       'A taunt turns every foe’s next move on you, and the move shows the change before it is made.',
       'A card with foes coming for it wears a tab at its corner: ◀ and the place of each one in the foes’ order.',
       'On your turn each foe shows where its move comes in their order, and Lethal when it would defeat its target. A dashed number comes after your next turn.',
       `${FORESIGHT_P.name}, a passive on Sight’s first tier, lets you ${FORESIGHT_P.text.charAt(0).toLowerCase()}${FORESIGHT_P.text.slice(1)} Auto Assign never takes it.`,
-      'Your actions sit on a wheel behind one button: a slot for each skill slot your rank holds, then Throw, Health Potion, Guard, Cover and Strike. Press the button and drag onto a slot to see what it does on the foe you aimed at, then let go on it to use it, or tap a slot to see it and tap it again.',
+      'Your actions sit on a wheel behind one button: a slot for each skill slot your rank holds, then Throw, Health Potion, Guard, Cover, Step Back or Step Forward, and Strike. Press the button and drag onto a slot to see what it does on the foe you aimed at, then let go on it to use it, or tap a slot to see it and tap it again.',
       'A green mark on a skill means it defeats the foe you aimed at more surely than a Strike would. A Strike is never marked, and when a Strike defeats the foe every time, nothing is.',
       'Guard shows how many foes are aimed at you before your next turn, and with Foresight what they would do, and the same guarded.',
       'The pace button in the head sets how fast the fight plays, and holds Auto. The pace you set is kept for the next Gate.',
@@ -207,10 +219,12 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Every creature does something besides hit, and shows it first: an action as its next move, a habit named under its bar. Tap a habit, a status or a move on a card to read it.',
       'A status on a card shows the turns it has left after its name, one fewer at the end of each round. Stunned shows the one turn it costs.',
       `${[...HELD].slice(0, -1).join(', ')} and ${[...HELD].at(-1)} last until something ends them, and show no count.`,
+      ...Object.keys(STATUS).map((k) => `${k}: ${STATUS_TEXT[k]}.`),
       `A creature has its role’s behaviour at every grade, and from ${FAMILY_FROM}-Rank its family’s too.`,
       ...Object.entries(ROLE_TRICK).map(([role, k]) => `${role} (${TRICKS[k].name}): ${TRICKS[k].text}`),
       ...[...new Set(Object.values(FAMILY_TRICK))].map((k) => `${Object.entries(FAMILY_TRICK).filter(([, t]) => t === k).map(([f]) => f).join(', ')} (${TRICKS[k].name}): ${TRICKS[k].text}`),
-      `Bosses and Gatekeepers (${TRICKS.windup.name}): ${TRICKS.windup.text}`,
+      `Bosses, Gatekeepers and the Trial’s Chosen (${TRICKS.windup.name}): ${TRICKS.windup.text}`,
+      'The creature standing behind a boss or a Gatekeeper never charges.',
       'A creature charging or channelling turns its health bar blue, a section to each hit it can still take. Every hit landed on it takes one, a skill that reaches several foes one on each, and a stun cancels it too.',
       'Your Shadows go for a creature charging or channelling, whatever their orders, and so does Auto.',
       `Health Potion: restores ${POTION_HEAL * 100}% of your health. The satchel holds ${SATCHEL}, and the Association can add room.`,
@@ -226,15 +240,17 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Gates',
     lines: [
       'A Gate is the door to a Dungeon: a sealed space full of hostile creatures.',
-      'A Gate closes once its Boss is slain.',
+      'A cleared Gate closes for the rest of the day. A Daily Rift never does.',
       `${OPEN_PER_DAY} Gates stand open at a time: one of every grade, at least two at yours.`,
       'You can enter up to one grade above your own.',
+      `Without the Association Licence, the board and the Exchange stop at ${UNLICENSED_CAP}-Rank. You keep every level, point and Shadow.`,
+      'The board also holds the Gate of Ryn’s job, the Practice Gate until it is cleared, and from S-Rank The Hollow Throne until it is cleared.',
       'A cleared Gate is replaced by another of its grade. The board redraws at midnight.',
       'The brief runs the Gate 24 times with your party and grades how often it cleared. Its ring holds a tick for each run, lit for each clear.',
       'The + beside HP, MP and Fatigue in a brief’s banner drinks that potion at once: one held, or one bought if none is held.',
       'A brief’s objectives open on its boss, then list what a clear there also counts toward: Ryn’s job, the Daily Quests, the Ascension proof.',
       `Grades: ${GRADES.map((g) => (g.min ? `${g.text} at ${Math.round(g.min * 100)}% or more` : `${g.text} below that`)).join(', ')}.`,
-      `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear pays double, once.`,
+      `A clear pays shards by grade, E-S: ${GATE_SHARDS.E}-${GATE_SHARDS.S}. The first clear of each Gate pays twice as many shards again on top, once, and double the XP.`,
       'A clear leaves materials for the Forge, and now and then a blueprint.',
       `Being carried out leaves you on ${WIPE_HP} HP, with Fatigue at ${FATIGUE_MAX}: Stats ×${drag(FATIGUE_MAX).toFixed(2)} until it eases. Nothing locks you out of the Gates.`,
     ],
@@ -244,9 +260,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     lines: [
       `From ${SEALS_FROM}-Rank, a Gate on the board offers up to ${SEALS_PER_GATE} Seals, drawn from its map each day. A Seal is a rule you take on for stated pay.`,
       'Seal The Gate, on the brief, opens its Seals: tap one to press it in, and the assessment plays it at once. The run keeps the Seals it walked in with.',
-      'Seals pay Ascendant Ember on a clear, more at a higher grade, and never Mana Shards. Carried out, a run pays nothing, Seals included.',
+      'Seals pay Ascendant Ember on a clear, more at a higher grade, and never Mana Shards. Withdrawn or carried out, they pay nothing.',
       ...SEAL_IDS.map((id) => `${SEALS[id].name}: ${SEALS[id].rule}. A clear pays Ascendant Ember +${sealEmber(id, 'E')}-${sealEmber(id, 'S')} by grade${SEALS[id].note ? `, ${SEALS[id].note}` : ''}.`),
-      'Lightless and Wardens Wake leave the assessment where it was: the System rests only before the boss and never meets a Gatekeeper.',
+      'Wardens Wake leaves the assessment where it was: the System never meets a Gatekeeper.',
       `Every Gate holds ${FEATS_PER_GATE} Feats, the same every day. Each pays once, the first time a clear meets it on that Gate: ${FEAT_PAY.alloy} of the Gate’s alloy.`,
       'On about one Gate in four, one of its Feats pays a blueprint instead. Its brief marks which.',
       'The brief’s Feats tab says how often the System met each Feat in its runs. A Feat met wears a gold star there and on the board.',
@@ -255,6 +271,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       ...[...new Set(Object.values(FAMILY_CONDITION))].map((c) => `${Object.entries(FAMILY_CONDITION).filter(([, x]) => x === c).map(([f]) => f).join(', ')}: ${CONDITION[c].text}.`),
       'A creature’s special drop is on its card, opened from its line on a brief’s Threat tab. In a fight its part’s glyph turns gold on its card while the condition holds, and a tap tells it.',
       'Feats and special drops count however they are met, by your hand or the System’s.',
+      'The Practice Gate, the Pale Spire and the Trials hold no Feats. Carried out, a run keeps none of its special drops.',
     ],
   },
   {
@@ -282,7 +299,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `Each medal pays Ascendant Ember once on its Gate, the first time it is reached there: ${MEDALS.slice().reverse().map((m) => `${m.name} ${MEDAL_PAY[m.id]}×`).join(', ')} the grade’s ${RANKS.map((r) => `${r} ${PAR_EMBER[r]}`).join(', ')}. A better medal pays the ones below it not yet reached.`,
       'A fight won off the road brings its own par with it: a room explored is graded like any other.',
       'The brief states the par of today’s road, the rounds each medal allows, and how often the System reached each in its runs. A Gate’s row on the board shows the best medal earned there.',
-      'A Daily Rift’s medal is the Gate it takes the shape of. The Practice Gate, the Pale Spire and the Trials have no par.',
+      'A Daily Rift’s medal is earned on the Gate it takes the shape of. The Practice Gate, the Pale Spire and the Trials have no par.',
       'Medals count however they are reached, by your hand or the System’s.',
     ],
   },
@@ -290,7 +307,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Quests',
     lines: [
       'The Quests screen opens once the Practice Gate is cleared.',
-      'It holds Ryn Valcorde’s Association Quest, the day’s Daily Quests, your next rank, the Pale Spire’s week, the Trial, the Chosen and the Secret Quests.',
+      'It holds Ryn Valcorde’s Association Quest, the day’s Daily Quests, the Daily Rift, your next rank, the Pale Spire’s week, the Trial, the Chosen and the Secret Quests.',
       'Each quest is a tile that shows where it stands. Tap one to open its window.',
       'Reclassification: your next rank, the level it needs, and what it brings.',
       'Weekly Quest: the next floor of the Pale Spire that raises what the week pays.',
@@ -310,11 +327,12 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'A Chosen standing in the boss’s place is that boss, for his job. Clear the Gate past it and the job is done.',
       'When it is done, report to him from his card on the Quests screen. He pays, then hands over the next.',
       `Every job pays ${Math.round(ASSOC.xp * 100)}% of a clear’s XP at its grade.`,
-      `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, shards or a ${SURVEY.name}.`,
+      `About ${Math.round(ASSOC.bare * 100)}% pay nothing more. The rest pay a potion, shards, a ${SURVEY.name}, the job’s alloy, or now and then a blueprint.`,
       `Jobs ${ASSOC.satchelAt.map((n) => n + 1).join(', ')} widen your satchel by one Health Potion each.`,
       'The line loops through the three kinds, and asks for more creatures and stronger Gates each time round.',
       `A ${SURVEY.name} charts every room of a Gate’s map, before you go in or once you are inside.`,
       'A potion you hold is drunk before one is bought. The potion buttons show how many you hold.',
+      `A Health Potion with no room in the satchel is paid in shards instead, ${POTIONS[0].price} each.`,
     ],
   },
   {
@@ -355,7 +373,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Choose a level on the Ascension tile of the Gates screen. Every Gate you enter is played at it, and Level 0 is the board as it stands.',
       `The first ${ASCENSION_RULED} levels each make every foe stronger and add a rule, on top of every rule below it.`,
       `Past them the ladder has no top. Each level makes every foe ${Math.round((BEYOND.growth - 1) * 100)}% stronger than the one below, and adds no rule.`,
-      `Each level pays ${ASCENSION_PAY * 100}% more on a Gate than the level below.`,
+      `Each level adds ${ASCENSION_PAY * 100}% of what a Gate pays at Level 0: Level 5 pays ${100 + 5 * ASCENSION_PAY * 100}%.`,
       'You can step back down at any time.',
       `A level opens when you prove the one below it: ${proofOf(ASCENSION_FROM)} cleared at it, then the Trial.`,
       ...SHORT.map((g) => `At ${g}-Rank the proof is ${proofOf(g)}.`),
@@ -369,7 +387,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       'Each day one holds the first Gate of your grade, and shows itself only at its level or higher. Then it stands in the boss’s place.',
       'Defeating it there counts as defeating that Gate’s boss for an Association Quest.',
       'The first time it falls it leaves a masterwork: a piece of the Gate’s grade, perfect, as many steps past it as its level.',
-      `Each level’s Chosen guards its own slot: ${MASTERWORK_SLOTS.map((x, i) => `${i + 1}, ${x}`).join('; ')}.`,
+      `Each level’s Chosen guards its own slot: ${MASTERWORK_SLOTS.map((x, i) => `${i + 1}, ${x}`).join('; ')}. From Level ${MASTERWORK_SLOTS.length + 1} the slots come round again.`,
       `After that, defeating it again pays ${WALKERS.bounty} clears’ shards.`,
       ...rulesAt(ASCENSION_RULED).map((r) => `Level ${r.level}, ${r.name}: ${r.rule}`),
       'The level you choose is fixed for a run when you walk in. The brief plays every rule it brings.',
@@ -383,35 +401,40 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Health, mana and fatigue',
     lines: [
-      `Health and mana carry between Gates and recover about ${Math.round(PCT_PER_HOUR * 100)}% each hour.`,
+      `Health and mana carry between Gates and recover ${Math.round(PCT_PER_HOUR * 100)}% of their maximum each hour, never less than ${FLAT_PER_HOUR}.`,
       `Each Gate adds fatigue by grade, E-S: ${RAID_FATIGUE.E}-${RAID_FATIGUE.S}, out of ${FATIGUE_MAX}.`,
       `Fatigue lowers every stat, to half strength at ${FATIGUE_MAX}.`,
       `It fades about ${FATIGUE_PER_HOUR} each hour.`,
-      'It is the only limit on how much you can raid.',
+      'Fatigue is added as you walk into a Gate, and the Gate is fought at the fatigue you carried in.',
+      'Apart from the Trial and the Daily Rift, once a day each, fatigue is the only limit on how much you can raid.',
     ],
   },
   {
     title: 'Shadows',
     lines: [
-      'A defeated creature can linger after a clear.',
+      'A defeated creature can linger after a clear: at most two, the boss far likelier than the rest.',
+      `One like a Shadow you already have lingers ${ECHO} times as often, and costs ${ECHO_COST === 0.5 ? 'half' : `${ECHO_COST * 100}%`} the MP to reach for.`,
       `Extract it with mana and it may join your army. Its success rate is ${Math.round(HOLD.base * 100)}%, plus ${Math.round(HOLD.perInt * 1000) / 10}% for each point of INT, up to ${Math.round(HOLD.max * 100)}%.`,
-      `Extraction costs MP by grade, E-S: ${EXTRACT_MP.E}-${EXTRACT_MP.S}, whether or not it holds.`,
+      `Extraction costs MP by the creature’s grade, E-S: ${EXTRACT_MP.E}-${EXTRACT_MP.S}, whether or not it holds.`,
       `A Shadow that does not hold still lingers: you can reach for it ${EXTRACT_TRIES.max} times in all. Each reach costs ${EXTRACT_TRIES.step === 2 ? 'twice' : `${EXTRACT_TRIES.step} times`} the one before.`,
       `You can deploy ${SQUAD.E} at E, ${SQUAD.C} at C and ${SQUAD.A} at A. Some Secret Quests add more.`,
       'Shadows never make a Gate harder.',
+      `A Shadow’s level takes ${LEVEL_XP.base} XP, and ${LEVEL_XP.step} more for each level it holds.`,
       `A Shadow levels on every creature it helps defeat: XP ${SHADOW_XP.kill} for each one it landed a hit on, and ${SHADOW_XP.boss} for a boss.`,
       `Each level grows every attribute by ${GROWTH_PER_LEVEL * 100}% of its creature’s own.`,
       `Each rank caps its level: ${SHADOW_RANKS.map((r) => `${r.name} Lv.${r.cap}`).join(', ')}. At the cap it takes no more XP until it is promoted, and the promotion lifts the cap without changing its level.`,
-      `Promotion asks for its level at the cap and Shadow Essence, and from ${SHADOW_RANKS.find((r) => r.bosses)?.name} Rank bosses it helped defeat: ${SHADOW_RANKS.slice(1).map((r) => `${r.name} ${r.essence} Essence${r.bosses ? ` and ${r.bosses} bosses` : ''}`).join(', ')}.`,
+      `Promotion asks for its level at the cap and Shadow Essence, and from ${SHADOW_RANKS.find((r) => r.bosses)?.name} Rank bosses it helped defeat: ${SHADOW_RANKS.slice(1).map((r) => `${r.name} ${r.essence} Essence${r.bosses ? ` and ${r.bosses} ${r.bosses === 1 ? 'boss' : 'bosses'}` : ''}`).join(', ')}.`,
       'Tap its rank on its card on the Shadows screen to see what the next rank asks. Once all is met the rank turns gold: tap it, then hold Hold To Promote.',
       'A Shadow ready to be promoted is marked Ready on the Army, and lights its tile.',
-      'Tap Ready on the Army to promote and awaken every ready Shadow at once, as far as your Shadow Essence goes.',
+      'Tap Ready on the Army to give every ready Shadow its next rank or star at once, as far as your Shadow Essence goes.',
       `An Ascendant Shadow at Lv.${SHADOW_RANKS[SHADOW_RANKS.length - 1].cap} can be awakened from its card with Shadow Essence, ${AWAKENING.cost.length} stars in all: ${AWAKENING.cost.join(', ')}.`,
       `Each star grows every attribute by ${AWAKENING.growth * 100}% more of its creature’s own.`,
       `A creature like one already in your army gives Shadow Essence when its extraction holds, by grade, E-S: ${ESSENCE.E}-${ESSENCE.S}, and twice that from a boss.`,
-      'Release a Shadow from its card for Shadow Essence: its creature’s, and half of what its ranks cost. A Shadow released is gone.',
+      'Release a Shadow from its card for Shadow Essence: its creature’s, and half of what its ranks and stars cost. A Shadow released is gone.',
+      'A Shadow in a Gate you are inside cannot be released.',
       `A Shadow wears ${SHADOW_SLOTS.length} pieces of Shadow equipment: ${SHADOW_SLOTS.map((x) => x.name.toLowerCase()).join(', ')}. Tap a slot on its card to put one on.`,
-      `A piece adds its leading stat, ${SHADOW_GEAR_STAT.E}-${SHADOW_GEAR_STAT.S} by grade at its best roll, and half that to a second stat.`,
+      `A piece adds its leading stat, ${SHADOW_GEAR_STAT.E}-${SHADOW_GEAR_STAT.S} by grade at its best roll, and half that to a second stat. It rolls ${ROLL.min * 100}-${ROLL.max * 100}% of its grade’s best.`,
+      'Shadow equipment is found only in a Shadows’ cache. Carried out, you lose it.',
       'A Shadow released gives back what it wore, to the equipment held on the Shadows screen.',
       `Each rank has its insignia: ${SHADOW_RANKS.map((r, i) => `${r.name} ${['one chevron', 'two', 'three', 'three over a rocker'][i] ?? ''}`.trim()).join(', ')}.`,
       'A Shadow’s badge shows what it was, its family’s glyph, with its shadow behind it.',
@@ -444,26 +467,27 @@ export const TOPICS: { title: string; lines: string[] }[] = [
     title: 'Equipment and the Exchange',
     lines: [
       'Ten slots, six rarities.',
-      'Every piece rolls its core bonus at 75-125% of its design, plus its own properties.',
+      `Every piece rolls its core bonus at ${Q_LOW * 100}-${Q_HIGH * 100}% of its design. Every Epic piece and higher, and many Rare ones, roll properties of their own too.`,
+      'Issued kit rolls at 100% and is never upgraded.',
       'Auto Equip picks the best of what you hold, and favours a set you hold two or more pieces of.',
       'On the Equipment sheet a slot opens everything you hold that fits it, best first, each with what it gains or loses on what you wear there. A slot marked ▲ in gold is one Auto Equip would change.',
       `${SETS.filter((x) => x.kind === 'armour').length} armour sets, Rare and up, of five pieces: one to each of head, chest, hands, legs and feet.`,
       'Two pieces of an armour set worn together pay a bonus. Four pay another, and a blessing for every Gate, held as a shrine’s would be.',
-      `A set’s blessing is at tier ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'C')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Rare set, ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'A')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Heroic and ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'S')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Legendary. A shrine’s of the same name at a higher tier outranks it.`,
+      `A set’s blessing is at tier ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'C')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Rare or Epic set, ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'A')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Heroic and ${TIERS[(SETS.find((x) => x.kind === 'armour' && setPieces(x.id)[0]?.rank === 'S')?.tiers.at(-1)?.boon?.tier ?? 1) - 1]} on a Legendary. A shrine’s of the same name at a higher tier outranks it.`,
       'Four leave the fifth armour slot for the best piece of any other set, or wear two of each of two sets for both their bonuses.',
       `${SETS.filter((x) => x.kind === 'jewellery').length} jewellery sets: an amulet and a ring, paying when both are worn, beside any armour set.`,
       'Weapons and off-hands belong to no set. The item’s sheet says what each set pays.',
       `An upgrade moves an item’s quality and every property ${UPGRADE.share * 100}% across its design’s range, until it is perfect.`,
       'Perfect means its quality and every property are at their best. A piece whose quality alone is at its best is marked Perfect quality, and its card counts the steps left.',
       `A step takes alloys of the item’s rarity and Mana Shards: ${UPGRADE_COST.alloy[2]} ${ALLOYS.C.name} at Rare, ${UPGRADE_COST.alloy[5]} ${ALLOYS.S.name} at Legendary.`,
-      `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank. Each step past also takes ${forge.EMBER.name}, ${UPGRADE_COST.ember} more for every step already past.`,
+      `Past perfect, it goes as far as your Ascension allows, from ${ASCENSION_FROM}-Rank. Each step past takes ${UPGRADE_COST.overAlloy} alloys of its rarity and ${forge.EMBER.name}: ${UPGRADE_COST.ember} for the first step past, ${2 * UPGRADE_COST.ember} for the second, and so on.`,
       'Properties apply in the fight as they read: Crit Chance +9% is 9 points of crit chance.',
       `Save what you wear as a loadout from the Equipment sheet, ${LOADOUTS} in all, and wear it again in one tap.`,
       'An item stays marked New until you look at it, or leave the Item Bag.',
       'Select in the Item Bag picks items to recycle together. Worn and starred items cannot be picked.',
       'In the Item Bag, a card tapped is shown at its foot, to equip or star there; tapped again, or Details, opens its own card.',
       'A rarity tapped in Select picks all of it, and tapped again unpicks it.',
-      `The Exchange redraws ${BLUEPRINT_SHELF} blueprints at midnight, mostly at your grade.`,
+      `The Exchange redraws ${BLUEPRINT_SHELF} blueprints at midnight, most within a grade of yours. One more than a grade above costs ${REACH_PREMIUM * 100}% more for each grade past the first.`,
       `Potions are always in stock: ${POTIONS.map((p) => `${p.name} ${p.price}`).join(', ')}.`,
       'Health and Mana Potions are bought to carry. Health Potions go in your satchel, for a fight or between rooms.',
       'The other potions are drunk when bought.',
@@ -484,22 +508,24 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `A set’s piece also takes ${RECIPE.trophy} trophy of its home Gate’s boss. Every clear there leaves one.`,
       `Fights, gatekeepers and the clear leave alloys of the Gate’s grade, and some of the grade below. Each creature defeated leaves its part ${Math.round(DROPS.part * 100)}% of the time.`,
       `The clear also leaves ${DROPS.clearParts} of every part.`,
-      `${forge.EMBER.name} comes from clears entered at an Ascension level, more the higher it is, and from the Chosen.`,
+      `${forge.EMBER.name} comes from clears entered at an Ascension level, more the higher it is, from Seals, from the Daily Rift, from par medals and from the Chosen.`,
       `Blueprints are rare. A Gate’s first clear leaves one ${Math.round(BLUEPRINTS.first * 100)}% of the time, for the kind of piece your best blueprint is weakest at.`,
       'At a set’s home Gate, that first find is one of the set’s own.',
       `Each rank you claim pays ${BLUEPRINTS.rank} blueprints of its grade, chosen the same way.`,
       `Any other clear leaves one ${Math.round(BLUEPRINTS.clear * 100)}% of the time, and a gatekeeper ${Math.round(BLUEPRINTS.elite * 100)}%. A set’s home Gate leaves one of its own ${Math.round(BLUEPRINTS.home * 100)}% of the time.`,
       `When you know every design of a rarity, a blueprint of it comes as ${BLUEPRINTS.known} of its alloy instead.`,
+      `A blueprint from a clear or a Gatekeeper is one rarity up ${Math.round(BLUEPRINTS.up * 100)}% of the time, below Legendary.`,
       'Blueprints also come from the Exchange, from the Pale Spire’s week, and sometimes from Ryn Valcorde.',
       `A piece found whole is rare: ${Math.round(FORGED.clear * 100)}% of clears, ${Math.round(FORGED.cache * 100)}% of caches.`,
-      `Recycling gives back ${Math.round(SALVAGE.alloy * 100)}% of the recipe’s alloy and ${Math.round(SALVAGE.part * 100)}% of its part, and half the alloy its upgrades took.`,
+      `Recycling gives back ${Math.round(SALVAGE.alloy * 100)}% of the recipe’s alloy and ${Math.round(SALVAGE.part * 100)}% of its part, and half the alloy its upgrades took. A masterwork recycles for ${SALVAGE.masterwork} times as much.`,
       `Issued kit recycles into ${SALVAGE.issued} ${ALLOYS.E.name}.`,
       `Weapon Familiarity: every creature defeated while you carry a weapon is a point toward knowing its design. ${FAMILIARITY_MAX} ranks, at ${FAMILIARITY.at.join(', ')} points.`,
       `Each rank adds Attack and magic +${FAMILIARITY.bonus * 100}% while it is worn.`,
       `Each rank also lifts every roll when you forge that design: its quality starts ${FAMILIARITY.floor * 100}% further up its range, and so do its properties.`,
       'Familiarity belongs to the design. Forge it again and the new piece is known as well as the old.',
       'Tap a material in a recipe to track it, or tap it in the Forge’s Materials and Track. The anvil marks it, and every Gate on the board that leaves it.',
-      'A piece rarer than what you wear where it goes is an upgrade, marked ▲. Upgrades, in the Forge and the Item Bag, shows only those.',
+      'In the Forge, a blueprint you can forge now that is rarer than what you wear where it goes is an upgrade, marked ▲. Upgrades shows only those.',
+      'In the Item Bag, a piece Auto Equip would rather wear than what is there is an upgrade, marked ▲. Upgrades shows only those.',
       'Track Missing on a blueprint tracks every material it is short of at once. Tapped again, it stops tracking them.',
       'A part is tracked where its families walk. Every clear leaves one of each besides.',
     ],
@@ -523,6 +549,7 @@ export const TOPICS: { title: string; lines: string[] }[] = [
       `A piece of ${TEMPER_FROM}-Rank or higher opens a Temper slot once it is perfect.`,
       'Choose one of its slot’s properties. Its size rolls within that property’s range at the piece’s rarity, as its own properties roll.',
       'Tempered again, the new roll stands beside the current one, and you keep either. Nothing is lost.',
+      'You cannot temper again until you keep one. Issued kit is never tempered.',
       `A temper costs Ascendant Ember alone. The first takes ${RANKS.filter((r) => TEMPER_EMBER[r]).map((r) => `${r} ${TEMPER_EMBER[r]}`).join(', ')} Ember, by the piece’s rarity.`,
       `Each temper after it costs ${Math.round(TEMPER_STEP * 100)}% of the first more, up to ${TEMPER_CAP} times the first.`,
       'A tempered piece recycled loses its temper.',
@@ -547,9 +574,9 @@ export const TOPICS: { title: string; lines: string[] }[] = [
   {
     title: 'Your data',
     lines: [
-      'Everything is stored on this device. Nothing is sent anywhere.',
+      'Your save is stored on this device, and never sent anywhere. A purchase goes through your platform’s store.',
       'Export your save from Settings now and then.',
-      'Importing keeps the previous save as a backup.',
+      'Importing keeps the previous save as a backup, and so does erasing, until your next import or erase. Restore Previous Save, in Settings, swaps back to it.',
     ],
   },
 ];

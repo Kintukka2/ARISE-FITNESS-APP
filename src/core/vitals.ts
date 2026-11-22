@@ -6,7 +6,7 @@ import type { Attrs, Save } from './types';
 import { clamp } from './util';
 
 const HOUR = 36e5;
-const FLAT_PER_HOUR = 10;
+export const FLAT_PER_HOUR = 10;
 export const PCT_PER_HOUR = 0.05;
 export const FATIGUE_PER_HOUR = 5;
 export const FATIGUE_MAX = 100;
