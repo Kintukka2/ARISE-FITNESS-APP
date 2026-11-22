@@ -338,7 +338,9 @@ Cards have no header word. Their header box is the name: `ITEM: …`, `SKILL: �
 Windows written by other speakers are not System windows: Valcorde's carry his name, the app's
 own (settings, data, confirmations, tutorials) carry a plain label, and another voice carries
 `???` until the game has named it, then its name (`The Hollow Monarch`). Only another voice uses
-the red `danger` frame.
+the red `danger` frame. After the B-Rank window the Monarch tells of the first candidate (the owner's call, where the
+window itself read `[A record has been unsealed.]` over two candidates): `“You were not the first it chose.”`, under
+`???` until it has been named.
 
 ### Colour and emphasis
 
