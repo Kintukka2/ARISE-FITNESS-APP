@@ -868,6 +868,16 @@ try {
   await snap('arena-tip');
   await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(200);
   if (await page.locator('.tip').count()) throw new Error('THE TIP DID NOT CLOSE');
+  // A foe's name opens its creature card over the fight, and the fight waits under it.
+  {
+    const name = page.locator('.arena__band--foes button.unit__name').first();
+    if (!(await name.count())) throw new Error('A FOE\'S NAME DOES NOT OPEN ITS CARD');
+    await name.click(); await sleep(600);
+    if (!(await page.locator('.sheet.is-top .syshead__title', { hasText: /^(Creature|Boss|Gatekeeper):/ }).count())) throw new Error('A FOE\'S NAME TAPPED DID NOT OPEN ITS CREATURE CARD');
+    await snap('arena-creature');
+    await close(); await sleep(400);
+    if (!(await page.locator('.turnbar').isVisible())) throw new Error('THE FIGHT DID NOT WAIT UNDER THE CREATURE CARD');
+  }
   // The actions are a wheel behind one button: a slot to each skill slot the rank holds, then Potion, Guard and Strike.
   await page.locator('.turnbar .actbtn').click(); await sleep(300);
   if (!(await page.locator('.actwheel').isVisible())) throw new Error('THE ACTION WHEEL DID NOT OPEN');
@@ -1348,6 +1358,14 @@ try {
   await page.waitForSelector('.syswin', { timeout: 8000 });
   await sleep(500); await snap('promote-window');
   if (!(await page.locator('.syswin', { hasText: 'has been promoted' }).isVisible())) throw new Error('THE PROMOTION WAS NOT REPORTED');
+  // The skill it learned is a told word: a tap opens it in the one tooltip.
+  if (await page.locator('.syswin .learned__skill').count()) {
+    await page.locator('.syswin .learned__skill').first().click(); await sleep(300);
+    if (!(await page.locator('.tip', { hasText: 'Skill' }).isVisible())) throw new Error('THE SKILL LEARNED DID NOT OPEN ITS TOOLTIP');
+    await snap('promote-skill-tip');
+    await page.locator('.tipshade').click({ position: { x: 5, y: 5 } }); await sleep(250);
+    if (!(await page.locator('.syswin', { hasText: 'has been promoted' }).isVisible())) throw new Error('CLOSING THE SKILL\'S TOOLTIP CLOSED THE PROMOTION');
+  }
   await page.locator('.syswin__foot .btn').last().click();
   await page.waitForFunction(() => !document.querySelector('canvas.arrival'), null, { timeout: 8000 });
   for (let i = 0; i < 20 && (await page.locator('.sheet.is-top .promote').count()); i++) await sleep(150);

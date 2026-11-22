@@ -3902,6 +3902,15 @@ The owner asked for:
   became a weak hit that could miss. Such a skill now stays as it is (`raid.honedAbility`). Calibration held 139 of 141
   tunings; the other 2 re-tuned to the same values, so no tuning moved.
 
+## A skill learned told in its window; a foe's name opens its card — built
+
+- **The promotion window's skill.** `Skill learned: [Venom Spray]` is a told word under the window's lines
+  (`ui/learned.tsx`, the window's `body`). A tap opens the one tooltip with the line the Shadow's card gives the skill.
+  Promote All names whose each skill is.
+- **A foe's name in a fight** opens its creature card (`openCreature`, the brief's Threat tab's card) over the fight.
+  The fight waits under it.
+- **Balance.** Display only.
+
 ## What stays out
 
 - Anything that needs the player to exercise. That is the fitness app's job.

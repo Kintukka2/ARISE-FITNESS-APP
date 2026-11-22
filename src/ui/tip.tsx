@@ -90,8 +90,10 @@ export function Tip({ tip, at, close }: { tip: TipText; at: TipAt; close: () => 
   const left = Math.max(12, Math.min(window.innerWidth - w - 12, at.x - w / 2));
   // Under the word, unless that runs off the foot of the screen.
   const up = at.below > window.innerHeight - 160;
+  // Opened from inside a System window, the tooltip stands over the window, not under its scrim.
+  const over = !!document.querySelector('.sysgate');
   return createPortal(
-    <div class="tipshade" onPointerDown={(e) => { e.preventDefault(); close(); }}>
+    <div class={`tipshade ${over ? 'is-over' : ''}`} onPointerDown={(e) => { e.preventDefault(); close(); }}>
       <div class={`tip tip--${tip.tone ?? 'gate'}`} role="tooltip" style={`left:${left}px;width:${w}px;${up ? `bottom:${window.innerHeight - at.top + 6}px` : `top:${at.below + 6}px`}`}>
         <TipBody {...tip} />
       </div>

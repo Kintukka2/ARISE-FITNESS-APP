@@ -161,8 +161,9 @@ async function raidGate(row, name, auto = false) {
       if (!turns++) {
         await snap(`${name}-turn`);
         // Aim at the last foe standing in the list, so aiming is exercised as well as striking. The tap is on
-        // its name: the middle of the card may be a status tag, which opens its tooltip instead of aiming.
-        if (await visible('.unit.is-pickable')) await page.locator('.unit.is-pickable').last().locator('.unit__name').click();
+        // its portrait: the middle of the card may be a status tag, which opens its tooltip, and its name opens
+        // its creature card, neither of them aiming.
+        if (await visible('.unit.is-pickable')) await page.locator('.unit.is-pickable').last().locator('.unit__mark').click();
       }
       if (name === 'practice' && turns === 2) {
         // Leave with a turn waiting. Every order so far is in the save, so coming back
