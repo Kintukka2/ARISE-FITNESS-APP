@@ -83,7 +83,9 @@ export async function playBeats() {
   for (const b of story.pending(store.get())) {
     store.update((s) => story.markSeen(s, b.id));
     if (b.kind === 'gold') flash('gold');
-    await sys({ title: b.title, kind: b.kind, lines: b.lines, center: b.center, actions: [{ label: 'Close', value: null }] });
+    // A speaker not yet named goes by `???` until the beat that names them has played.
+    const title = b.named && store.get().story.includes(b.named.id) ? b.named.name : b.title;
+    await sys({ title, kind: b.kind, lines: b.lines, center: b.center, actions: [{ label: 'Close', value: null }] });
   }
 }
 

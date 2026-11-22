@@ -92,6 +92,8 @@ export interface Beat {
   when: (s: Save) => boolean;
   kind: WindowKind;
   title: string;
+  /** A speaker not yet named goes by `title` (`???`) until the beat `id` names them, then by `name`. */
+  named?: { id: string; name: string };
   lines: string[];
   center?: boolean;
 }
@@ -181,9 +183,17 @@ export const BEATS: Beat[] = [
       'Reclassification approved.',
       `Rank: ${change('C', 'B')}`,
       RANK_POINTS,
-      '[A record has been unsealed.]',
-      'Candidate 1: Player designation declined.',
-      'Candidate 2: Player designation accepted.',
+    ],
+  },
+  {
+    // The first candidate, told by the Monarch after the B-Rank window (the owner's call: it stood in that window as a
+    // System record, and read as a hint that led nowhere).
+    id: 'monarch_candidate', when: (s) => holds(s, 'B'), kind: 'danger', title: '???', named: { id: 'monarch_named', name: 'The Hollow Monarch' },
+    lines: [
+      '<em>“You were not the first it chose.”</em>',
+      '<em>“There was another before you. The same window, the same word. Player. They read it, and they closed it.”</em>',
+      '<em>“They are in here with me now. They do not speak much.”</em>',
+      '<em>“You said yes. I want to see what that buys you.”</em>',
     ],
   },
   {
