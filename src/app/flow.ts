@@ -26,6 +26,7 @@ import { THROWABLES, throwReachText, type ThrowId } from '@/core/combat';
 import { THROW_GLYPH } from '@/ui/icons';
 import { SURVEY } from '@/data/association';
 import * as system from '@/ui/system';
+import { learnedBody } from '@/ui/learned';
 import { bundleText } from '@/ui/forge';
 import { openStatus } from '@/screens/Inventory';
 import { arena, go, type Route } from './router';
@@ -165,8 +166,9 @@ export async function claimPromotion(id: string, badge: Element | null) {
           `${system.tag(shadows.nameOf(sh))} has been promoted.`,
           system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`),
           `Level cap: ${system.change(R[p.from].cap, system.gain(R[p.to].cap))}`,
-          ...(p.second ? [`Skill learned: ${system.tag(p.second)}`] : []),
         ], 'shadow'),
+        // The skill learned is a told word under the lines: a tap opens it (`ui/learned.tsx`).
+        body: learnedBody(p.second ? [{ skill: p.second }] : []),
         typed: false,
       });
     }
@@ -209,12 +211,12 @@ export async function claimAll(badge: Element | null) {
   const e = firstSh && enemyById(firstSh.enemyId);
   let made: shadows.Claimed | null = null;
   const claim = () => { if (!made) made = store.update((x) => shadows.claimAll(x)); };
+  const taught = (got: shadows.Claimed) => got.promoted.filter((p) => p.second).map((p) => ({ skill: p.second!, who: nameOf(p.id) }));
   const lines = (got: shadows.Claimed) => [
     ...got.promoted.flatMap((p) => [
       `${system.tag(nameOf(p.id))} has been promoted.`,
       system.gain(`${R[p.from].name} Rank → ${R[p.to].name} Rank`),
       `Level cap: ${system.change(R[p.from].cap, system.gain(R[p.to].cap))}`,
-      ...(p.second ? [`Skill learned: ${system.tag(p.second)}`] : []),
     ]),
     ...got.awakened.map((w) => `${system.tag(nameOf(w.id))} has awakened. ${system.gain(`Awakening ${'★'.repeat(w.to)}`)}`),
   ];
@@ -222,7 +224,7 @@ export async function claimAll(badge: Element | null) {
     claim();
     sfx.rankUp();
     flash('shadow');
-    await sys({ ...system.notify(lines(made!), 'shadow'), typed: false });
+    await sys({ ...system.notify(lines(made!), 'shadow'), body: learnedBody(taught(made!)), typed: false });
     await checkAwards();
     return;
   }
@@ -230,7 +232,7 @@ export async function claimAll(badge: Element | null) {
   try {
     await cut.ready;
     claim();
-    await sys({ ...system.notify(lines(made!), 'shadow'), typed: false });
+    await sys({ ...system.notify(lines(made!), 'shadow'), body: learnedBody(taught(made!)), typed: false });
     await checkAwards();
     await cut.leave();
   } finally {

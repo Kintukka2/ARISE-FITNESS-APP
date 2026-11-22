@@ -61,6 +61,7 @@ import * as association from '@/core/association';
 import { SysAlert } from '@/ui/frame';
 import { ShadowEmblem } from '@/ui/emblems';
 import { Portrait } from '@/ui/portraits';
+import { openCreature } from './Brief';
 import { MapView } from '@/ui/map';
 import { ItemsMark } from '@/ui/items';
 import { buzz, flash } from '@/ui/feedback';
@@ -1443,7 +1444,12 @@ function UnitChip({ u, acting, aimed, onPick, intent, incoming, threat, pick = '
     <>
       <span class={`unit__mark ${u.boss ? 'is-boss' : ''}`} aria-hidden="true">{mark}</span>
       <div class="row between">
-        <b class="unit__name">{u.name}</b>
+        {/* A foe's name opens its creature card, as its line on a brief's Threat tab does (the owner's call). */}
+        {foe
+          ? <button type="button" class="unit__name is-told" aria-label={`${u.name}: open its card`}
+              onClick={(ev) => { ev.stopPropagation(); sfx.tap(); const r = store.get().gates.raid; const g = r ? dungeonById(r.dungeonId) : undefined; if (g) openCreature(foe.id, g); }}
+              onKeyDown={(ev) => ev.stopPropagation()}>{u.name}</button>
+          : <b class="unit__name">{u.name}</b>}
         {far && <small class="unit__far">Out of reach</small>}
         <span class="num unit__hp">
           {count > 0 && u.hp > 0 && (

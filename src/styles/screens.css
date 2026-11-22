@@ -238,6 +238,7 @@ button.trick.is-told .trick__name, button.intent__what.is-told { text-decoration
 /* The game's one tooltip (ui/tip.tsx): a fight's, a Shadow card's, the Army's, the run strip's. Its edge takes
    where it opens: a Gate's ember, or the Shadows' violet. */
 .tipshade { position: fixed; inset: 0; z-index: var(--z-tip); }
+.tipshade.is-over { z-index: calc(var(--z-window) + 10); }
 .tip { position: fixed; display: grid; gap: 3px; padding: 8px 10px; border: 1px solid rgba(255, 154, 60, 0.45); border-radius: 6px; background: rgba(14, 9, 5, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); animation: feedIn 140ms var(--ease) both; }
 .tip--shadow { border-color: color-mix(in srgb, var(--arcane) 55%, transparent); background: rgba(11, 6, 22, 0.97); }
 .tip--system { border-color: color-mix(in srgb, var(--mana) 50%, transparent); background: rgba(4, 10, 20, 0.97); }
@@ -5153,3 +5154,11 @@ button.mod__tip .infotag__q { display: none; }
 .shadefind__stats { display: inline-flex; gap: 10px; color: #c9b1ff !important; font-weight: 700; }
 .rshade { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding-top: 8px; }
 .nodepanel.is-shade { --accent: var(--arcane); }
+/* A foe's name on its fight card opens its creature card: plain text, dotted as a told word, never a box. */
+button.unit__name { min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-align: left; cursor: pointer; text-decoration: underline dotted color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 3px; touch-action: manipulation; }
+button.unit__name:focus-visible { outline: 2px solid var(--blood); outline-offset: 2px; }
+/* A skill a Shadow learned, under its promotion's lines: its name opens the skill in the one tooltip. */
+.learned { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 2px; }
+.learned__line { margin: 0; font-size: 0.86rem; }
+button.learned__skill.infotag { padding: 0; border: 0; background: none; font: inherit; font-style: italic; font-weight: 800; color: #fff; text-decoration: underline dotted color-mix(in srgb, var(--arcane) 70%, transparent); text-underline-offset: 4px; }
+button.learned__skill .infotag__q { display: none; }
