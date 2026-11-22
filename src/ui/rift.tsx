@@ -59,7 +59,7 @@ export function RatingMark({ rating, size = 72, stamp = false }: { rating: Rank;
 
 /**
  * The days played, a bar to each of the last `n`, today's at the right: as tall as its score against the best
- * of them, green for a clear, red for one carried out, grey walked out of, a dashed gap for a day not played; a
+ * of them, in its rating's colour where it earned one, else red for one carried out, grey walked out of, a dashed gap for a day not played; a
  * fortnight's bars carry their rating over them. A day missed costs nothing, so it is only a gap.
  */
 export function RiftHistory({ s, day = dayKey(), n = 14 }: { s: Save; day?: string; n?: number }) {
@@ -74,9 +74,10 @@ export function RiftHistory({ s, day = dayKey(), n = 14 }: { s: Save; day?: stri
           const x = got[i];
           const h = x ? Math.max(0.06, x.score / top) : 0;
           return (
-            <li key={d} class={`${x ? `is-${x.outcome}` : 'is-none'} ${d === day ? 'is-today' : ''}`} style={`--h: ${h}; --i: ${i}`}
+            <li key={d} class={`${x ? `is-${x.outcome}` : 'is-none'} ${x?.rating ? 'is-rated' : ''} ${d === day ? 'is-today' : ''}`}
+              style={`--h: ${h}; --i: ${i}${x?.rating ? `; --rr: var(--rank-${x.rating})` : ''}`}
               aria-label={x ? `${riftDate(d)}: ${OUTCOME[x.outcome]}, ${group(x.score)}${x.rating ? `, rating ${x.rating}` : ''}` : `${riftDate(d)}: not played`}>
-              {n <= 14 && <em style={x?.rating ? `--rr: var(--rank-${x.rating})` : undefined}>{x?.rating ?? ''}</em>}
+              {n <= 14 && <em>{x?.rating ?? ''}</em>}
               <i />
               {/* A fortnight is numbered day by day; a month only every seventh day back from today. */}
               <small class="num">{n <= 14 || (n - 1 - i) % 7 === 0 ? Number(d.slice(8)) : ''}</small>
